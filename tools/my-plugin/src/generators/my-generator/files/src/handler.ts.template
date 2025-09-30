@@ -1,0 +1,26 @@
+import type { APIGatewayEvent, APIGatewayProxyResultV2 } from 'aws-lambda';
+import type { Dependencies } from './app';
+import { logger } from './logger';
+import type { MiddyfiedHandler } from '@middy/core';
+import middy from '@middy/core';
+import { injectLambdaContext } from '@aws-lambda-powertools/logger/middleware';
+import { captureLambdaHandler } from '@aws-lambda-powertools/tracer/middleware';
+import { tracer } from './tracer';
+
+export const createHandler = (
+  dependencies: Dependencies,
+): MiddyfiedHandler<
+  APIGatewayEvent,
+  APIGatewayProxyResultV2,
+  Error,
+  AppContext
+> =>
+  middy<APIGatewayEvent, APIGatewayProxyResultV2>()
+    .use(
+      injectLambdaContext(logger, {
+        correlationIdPath: 'requestContext.requestId',
+      }),
+    )
+    .use(captureLambdaHandler(tracer))
+    // .use(parser({ schema: grantUnionSchema, envelope: ApiGatewayEnvelope }))
+    .handler(async (event: RequestBody, context: AppContext) => {});
