@@ -1,0 +1,11 @@
+# CODEOWNERS maps directories to maintainers for required review.
+
+# Default owners (fallback)
+*       @owner1 @owner2
+
+# Area ownership examples (replace with real paths/owners)
+docs/           @owner1 @owner3
+docs/rfcs/      @tsc1 @tsc2
+docs/adr/       @owner1
+infra/          @owner2 @owner5
+modules/        @owner3 @owner4
