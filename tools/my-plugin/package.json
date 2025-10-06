@@ -1,13 +1,16 @@
 {
   "name": "@flex/my-plugin",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "@nx/devkit": "21.6.2",
+    "@nx/devkit": "21.6.3",
     "tslib": "^2.3.0"
   },
-  "generators": "./generators.json"
+  "generators": "./generators.json",
+  "nx-migrations": {
+    "migrations": "./migrations.json"
+  }
 }

@@ -16,6 +16,7 @@ export async function myGeneratorGenerator(
     root: projectRoot,
     projectType: 'application',
     sourceRoot: `${projectRoot}/src`,
+    tags: [`scope:${options.scope}`],
     targets: {},
   });
   generateFiles(tree, path.join(__dirname, 'files'), projectRoot, options);

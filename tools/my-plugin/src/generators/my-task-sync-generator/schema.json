@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "MyTaskSyncGenerator",
+  "title": "",
+  "type": "object",
+  "sync": {
+    "applyChanges": true
+  },
+  "properties": {},
+  "required": []
+}

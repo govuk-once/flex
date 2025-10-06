@@ -1,9 +1,10 @@
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import nx from '@nx/eslint-plugin';
 
 export default [
+  eslintPluginPrettierRecommended,
   {
     files: ['**/*.json'],
-    // Override or add rules here
     rules: {},
     languageOptions: {
       parser: await import('jsonc-eslint-parser'),
@@ -17,6 +18,7 @@ export default [
       '**/dist',
       '**/vite.config.*.timestamp*',
       '**/vitest.config.*.timestamp*',
+      '**/vite.config.ts.timestamp*',
     ],
   },
   {
@@ -48,7 +50,6 @@ export default [
       '**/*.cjs',
       '**/*.mjs',
     ],
-    // Override or add rules here
     rules: {},
   },
 ];

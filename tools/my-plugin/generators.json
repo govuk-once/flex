@@ -4,6 +4,16 @@
       "factory": "./src/generators/my-generator/my-generator",
       "schema": "./src/generators/my-generator/schema.json",
       "description": "my-generator generator"
+    },
+    "my-sync-generator": {
+      "factory": "./src/generators/my-sync-generator/my-sync-generator",
+      "schema": "./src/generators/my-sync-generator/schema.json",
+      "description": "my-sync-generator generator"
+    },
+    "my-task-sync-generator": {
+      "factory": "./src/generators/my-task-sync-generator/my-task-sync-generator",
+      "schema": "./src/generators/my-task-sync-generator/schema.json",
+      "description": "my-task-sync-generator generator"
     }
   }
 }

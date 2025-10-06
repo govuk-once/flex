@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "change-executor-name": {
+      "version": "1.0.0",
+      "description": "Migration for v1.0.0",
+      "implementation": "./src/migrations/change-executor-name"
+    }
+  }
+}

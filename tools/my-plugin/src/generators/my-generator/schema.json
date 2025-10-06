@@ -12,6 +12,29 @@
         "index": 0
       },
       "x-prompt": "What name would you like to use?"
+    },
+    "scope": {
+      "type": "string",
+      "description": "The scope of your library.",
+      "enum": ["api", "store", "shared"],
+      "x-prompt": {
+        "message": "What is the scope of this library?",
+        "type": "list",
+        "items": [
+          {
+            "value": "store",
+            "label": "store"
+          },
+          {
+            "value": "api",
+            "label": "api"
+          },
+          {
+            "value": "shared",
+            "label": "shared"
+          }
+        ]
+      }
     }
   },
   "required": ["name"]
