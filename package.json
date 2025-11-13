@@ -1,0 +1,25 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@nx/esbuild": "22.0.3",
+    "@nx/eslint-plugin": "22.0.3",
+    "@nx/node": "22.0.3",
+    "@nx/vite": "22.0.3",
+    "@nx/web": "22.0.3",
+    "@types/node": "24.10.1",
+    "@typescript-eslint/eslint-plugin": "8.46.4",
+    "@typescript-eslint/parser": "8.46.4",
+    "@vitest/coverage-v8": "4.0.8",
+    "esbuild": "0.27.0",
+    "eslint": "9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.4",
+    "jiti": "2.4.2",
+    "nx": "22.0.3",
+    "prettier": "3.6.2",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3",
+    "vite-tsconfig-paths": "5.1.4",
+    "vitest": "4.0.8"
+  }
+}

@@ -1,0 +1,8 @@
+extends:
+  - r/javascript.lang.security
+  - r/typescript.lang.security
+  - r/nodejs
+  - r/owasp-top-ten
+  - p/cwe-top-25
+
+rules: []

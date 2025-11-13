@@ -1,0 +1,53 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/tbroadley/spellchecker-cli
+    rev: v6.2.0
+    hooks:
+      - id: spellchecker-cli
+        args: ['-l', 'en-GB', '-d', '.spelling', '-f', './**/*.md']
+        name: spellcheck
+        language_version: 18.19.1
+        types: [markdown]
+        stages:
+          - 'pre-commit'
+
+  - repo: local
+    hooks:
+      - id: format_check
+        entry: make format-check
+        language: system
+        name: format_check
+        pass_filenames: false
+        stages:
+          - 'pre-commit'
+
+      - id: linting_check
+        entry: make lint-affected
+        language: system
+        name: linting_check
+        pass_filenames: false
+        stages:
+          - 'pre-commit'
+
+      - id: run_unit_test
+        entry: make test-affected
+        language: system
+        name: run_unit_test
+        pass_filenames: false
+        stages:
+          - 'pre-commit'
+
+  - repo: https://github.com/semgrep/semgrep
+    rev: v1.89.0
+    hooks:
+      - id: semgrep
+        args: ['--config', 'auto']
+        language_version: python3.13
+        pass_filenames: false # This forces it to scan all files in repo
+        always_run: true # Run even if no files match
+        verbose: true

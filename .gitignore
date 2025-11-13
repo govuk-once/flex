@@ -1,0 +1,14 @@
+# Node
+node_modules/
+
+# Nx build output
+dist/
+
+# Nx cache
+.nx/
+
+# OS
+.DS_Store
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*

@@ -1,0 +1,10 @@
+# Ignore artifacts:
+.DS_Store
+/node_modules
+/coverage
+package-lock.json
+dist
+.nx
+
+/.nx/cache
+/.nx/workspace-data
