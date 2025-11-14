@@ -1,0 +1,23 @@
+name: Release Candidate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Lint & format check
+        run: echo 'TODO implement linting and format check'
+
+      - name: Build
+        run: echo 'TODO implement build'
+
+      - name: Unit Tests
+        run: echo 'TODO implement unit tests'
+
+      - name: Run Semgrep
+        run: echo 'TODO implement semgrep'

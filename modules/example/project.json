@@ -1,0 +1,30 @@
+{
+  "name": "@modules/example",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "modules/example/src",
+  "projectType": "application",
+  "implicitDependencies": ["utils"],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "options": {
+        "outputPath": "dist/modules/example",
+        "main": "modules/example/src/main.ts",
+        "tsConfig": "modules/example/tsconfig.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["modules/example/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "config": "vitest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
