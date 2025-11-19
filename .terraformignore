@@ -1,0 +1,13 @@
+.terraform/
+.terragrunt-cache/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+.DS_Store
+node_modules/
+dist/
+

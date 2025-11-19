@@ -11,3 +11,10 @@ pre-commit
 rebase
 repo
 utils
+Terraform
+Terragrunt
+Checkov
+backend
+CLI
+SSO
+env

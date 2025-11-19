@@ -12,3 +12,26 @@ dist/
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+
+# Terragrunt
+.terragrunt-cache/
+.terraformignore
+.tflint.hcl
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
