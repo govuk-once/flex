@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "NewModule",
+  "cli": "nx",
+  "title": "Create new module",
+  "type": "object",
+  "properties": {
+    "projectName": {
+      "type": "string"
+    }
+  },
+  "required": ["projectName"]
+}

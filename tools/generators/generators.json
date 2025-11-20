@@ -1,0 +1,15 @@
+{
+  "generators": {
+    "new-module": {
+      "factory": "./module",
+      "schema": "./module/schema.json",
+      "description": "Generator new project module"
+    },
+
+    "new-lib": {
+      "factory": "./sharedLib",
+      "schema": "./sharedLib/schema.json",
+      "description": "Generator new project shared lib"
+    }
+  }
+}

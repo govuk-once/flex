@@ -1,7 +1,7 @@
 # Utils
 
-> Utils project which is a shared library to be used across the modules in the
-> Business Layer
+> Utils project is a shared library to be used across the modules in the
+> Business Layer to allow us to easily share code across teams
 
 ## Commands
 
@@ -19,7 +19,4 @@ make test PROJECT=@libs/utils
 
 ## Utilities
 
-### Greetings
-
-Placeholder class currently being used in `@modules/example` while flushing out
-the repo.
+> OVERVIEW of utilities will be added here once we add some within to the repo

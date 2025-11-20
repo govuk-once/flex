@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "@libs/*": ["libs/*/src"],
-      "@modules/*": ["modules/*/src"]
+      "@modules/*": ["modules/*/src"],
+      "@generator/*": ["tools/*/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

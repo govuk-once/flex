@@ -1,6 +1,6 @@
 # FLEX (Federated Logic and Events eXchange System)
 
-> Monorepo for the business layer known as FLEX internally
+> Monorepo for the business layer known as FLEX
 
 ## Installation
 
@@ -9,6 +9,7 @@
 1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
 2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
 3. **Nx** install globally: `npm add --global nx@latest`
+4. **PNPM** install globally: [Install page](https://pnpm.io/installation)
 
 ### 2. Installation
 
@@ -50,16 +51,18 @@ Usage:
 ## Repo Overview
 
 ```txt
-flex/
-├── libs/        # Shared libraries directory
-│   └── utils/   # Shared utils for modules to use
-└── modules/     # Module directory
+flex/           # Root of the repo
+├── libs/       # Shared libraries directory
+│   └── utils/  # Shared utils for modules to use
+├── tools/      # NX project generators
+└── modules/    # Module directory
 ```
 
-| Repo             | Overview                               | README                              |
-| ---------------- | -------------------------------------- | ----------------------------------- |
-| @modules/example | Example module repo                    | [Link](./modules/example/README.md) |
-| @libs/utils      | Shared utils to be used across modules | [Link](./libs/utils/README.md)      |
+### List of Shared Libraries we have within FLEX
+
+| Repo        | Overview                               | README                         |
+| ----------- | -------------------------------------- | ------------------------------ |
+| @libs/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
 
 ## Committing work
 
@@ -73,7 +76,8 @@ Get the current number of commits on your branch:
 git rev-list --count HEAD ^main
 ```
 
-Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
+Supposing this returns 3 then you have made 3 commits since creating your
+branch and you want to squash them down into one:
 
 ```bash
 git rebase -i HEAD~3

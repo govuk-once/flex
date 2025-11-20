@@ -1,15 +1,15 @@
-# example
+# <%= projectName %>
 
-> example module for `FLEX`
+> <%= projectName %> module for `FLEX`
 
 ## Available Commands
 
 Here is the list of commands to run for the project:
 
 ```bash
-make build PROJECT=example
-make lint PROJECT=example
-make test PROJECT=example
+make build PROJECT=<%= projectName %>
+make lint PROJECT=<%= projectName %>
+make test PROJECT=<%= projectName %>
 ```
 
 > If you want the full list of preconfigured commands run `make` within the

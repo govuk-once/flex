@@ -7,7 +7,7 @@ explain:
 
 .PHONY: init
 init: ## Initialise the project: install dependencies, setup pre-commit
-	@npm ci
+	@pnpm install --frozen-lockfile
 	@pre-commit install
 
 .PHONY: pre-commit
@@ -95,6 +95,32 @@ projects-libs: ## List only libraries
 projects-modules: ## List only modules
 	@echo "Available Nx modules:"
 	@npx nx show projects --type=app
+
+.PHONY: generate-lib
+generate-lib: ## Generate shared lib for FLEX repo: make generate-lib PROJECT=<project>
+	@if [ -z "$(PROJECT)" ]; then \
+		echo "Error: PROJECT variable not set."; \
+		exit 1; \
+	fi
+	@echo "Generating module $(PROJECT)"
+	@cd tools/generators/sharedLib && npx tsc --skipLibCheck --esModuleInterop --module commonjs --target ES2020 index.ts
+	@npx nx g ./tools/generators:new-lib --libName=$(PROJECT); \
+	EXIT_CODE=$$?; \
+	rm -f tools/generators/sharedLib/index.js; \
+	exit $$EXIT_CODE
+
+.PHONY: generate-module
+generate-module: ## Generate base module for FLEX repo: make generate-module PROJECT=<project>
+	@if [ -z "$(PROJECT)" ]; then \
+		echo "Error: PROJECT variable not set."; \
+		exit 1; \
+	fi
+	@echo "Generating module $(PROJECT)"
+	@cd tools/generators/module && npx tsc --skipLibCheck --esModuleInterop --module commonjs --target ES2020 index.ts
+	@npx nx g ./tools/generators:new-module --projectName=$(PROJECT); \
+	EXIT_CODE=$$?; \
+	rm -f tools/generators/module/index.js; \
+	exit $$EXIT_CODE
 
 .PHONY: clean
 clean: ## Remove build output and Nx cache
