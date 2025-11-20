@@ -10,6 +10,11 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@b3498302c5c423fa896b97a26bb183df735d08f8 # v4.3.0
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
       - name: Lint & format check
         run: echo 'TODO implement linting and format check'
 
@@ -21,3 +26,22 @@ jobs:
 
       - name: Run Semgrep
         run: echo 'TODO implement semgrep'
+
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+        with:
+          python-version: 3.8
+
+      - uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
+        name: Setup TFLint
+        with:
+          tflint_version: v0.60.0
+          cache: true
+
+      - name: Run TFLint
+        run: make tflint
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov
+        run: make checkov

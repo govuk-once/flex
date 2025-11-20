@@ -21,4 +21,3 @@ rule "terraform_unused_declarations" {
 rule "aws_instance_previous_type" {
   enabled = true
 }
-

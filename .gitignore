@@ -26,8 +26,6 @@ crash.*.log
 
 # Terragrunt
 .terragrunt-cache/
-.terraformignore
-.tflint.hcl
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
