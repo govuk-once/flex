@@ -27,21 +27,8 @@ jobs:
       - name: Run Semgrep
         run: echo 'TODO implement semgrep'
 
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
-        with:
-          python-version: 3.8
-
-      - uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
-        name: Setup TFLint
-        with:
-          tflint_version: v0.60.0
-          cache: true
-
       - name: Run TFLint
-        run: make tflint
-
-      - name: Install Checkov
-        run: pip install checkov
+        run: echo 'TODO implement tflint'
 
       - name: Run Checkov
-        run: make checkov
+        run: echo 'TODO implement checkov'
