@@ -100,3 +100,15 @@ projects-modules: ## List only modules
 clean: ## Remove build output and Nx cache
 	@rm -rf dist/
 	@npx nx reset
+
+.PHONY: terragrunt-init
+terragrunt-init: ## Initialise Terragrunt to wrap the shared Terraform sources
+	@cd infra && terragrunt init
+
+.PHONY: tflint
+tflint: ## Run TFLint with the configured AWS ruleset
+	@cd infra && tflint --init && tflint .
+
+.PHONY: checkov
+checkov: ## Execute Checkov against the infra directory
+	@checkov -d infra --framework terraform --quiet

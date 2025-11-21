@@ -9,6 +9,10 @@
 1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
 2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
 3. **Nx** install globally: `npm add --global nx@latest`
+4. **Terraform CLI** `>=1.8`: `brew tap hashicorp/tap && brew install hashicorp/tap/terraform`
+5. **Terragrunt**: `brew install terragrunt`
+6. **TFLint**: `brew install tflint`
+7. **Checkov**: `brew install checkov`
 
 ### 2. Installation
 
@@ -45,6 +49,10 @@ Usage:
   projects-libs         List only libraries
   projects-modules      List only modules
   clean                 Remove build output and Nx cache
+  terraform-init        Initialise Terraform providers for infra/bootstrap
+  terragrunt-init       Initialise Terragrunt to wrap the shared Terraform sources
+  tflint                Run TFLint with the configured AWS ruleset
+  checkov               Execute Checkov against the infra directory
 ```
 
 ## Repo Overview
@@ -60,6 +68,20 @@ flex/
 | ---------------- | -------------------------------------- | ----------------------------------- |
 | @modules/example | Example module repo                    | [Link](./modules/example/README.md) |
 | @libs/utils      | Shared utils to be used across modules | [Link](./libs/utils/README.md)      |
+| infra            | Terraform/Terragrunt bounded context   | (this file)                         |
+
+## Infrastructure
+
+### Folder Structure
+
+The `infra/` contains the core infrastructure owned and maintained by the FLEX platform. Core infra is orchestrated through Terragrunt to support environment-specific stacks. Each workspace inherits the same AWS provider configuration and linting standards enforced through `.tflint.hcl`, `.terraformignore`, and Checkov.
+
+### Quick start
+
+1. `make terraform-init`
+2. `make terragrunt-init`
+3. `make tflint`
+4. `make checkov`
 
 ## Committing work
 

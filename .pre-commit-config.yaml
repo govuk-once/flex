@@ -42,6 +42,17 @@ repos:
         stages:
           - 'pre-commit'
 
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: 3.2.334
+    hooks:
+      - id: checkov
+        name: checkov_iac_scan
+        entry: make checkov
+        language: system
+        pass_filenames: false
+        stages:
+          - 'pre-commit'
+
   - repo: https://github.com/semgrep/semgrep
     rev: v1.89.0
     hooks:
