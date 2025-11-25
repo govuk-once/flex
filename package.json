@@ -6,6 +6,7 @@
     "@nx/node": "22.0.3",
     "@nx/vite": "22.0.3",
     "@nx/web": "22.0.3",
+    "@types/aws-lambda": "^8.10.0",
     "@types/node": "24.10.1",
     "@typescript-eslint/eslint-plugin": "8.46.4",
     "@typescript-eslint/parser": "8.46.4",

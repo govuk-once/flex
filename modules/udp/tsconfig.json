@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../build/modules/udp",
+    "rootDir": "."
+  },
+  "include": [
+    "src/**/*",
+    "application/use-cases/createSettings",
+    "application/use-cases/deleteSettings",
+    "application/use-cases/getSettings",
+    "adapters",
+    "domain",
+    "lambdas"
+  ]
+}

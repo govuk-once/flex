@@ -1,0 +1,30 @@
+{
+  "name": "@modules/udp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "modules/udp/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "options": {
+        "outputPath": "dist/modules/udp",
+        "main": "modules/udp/src/index.ts",
+        "tsConfig": "modules/udp/tsconfig.json",
+        "generatePackageJson": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["modules/udp/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "config": "vitest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
