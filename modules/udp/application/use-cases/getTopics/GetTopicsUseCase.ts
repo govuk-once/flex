@@ -2,9 +2,9 @@ import type { UserDataPlatformPort } from '../../../domain/ports/UserDataPlatfor
 import type { UserDataResponse } from '../../../domain/models/UserData';
 
 /**
- * Use case for retrieving user settings from the User Data Platform
+ * Use case for retrieving user topics from the User Data Platform
  */
-export class GetSettingsUseCase {
+export class GetTopicsUseCase {
   constructor(private readonly userDataPlatform: UserDataPlatformPort) {}
 
   async execute(userId: string): Promise<UserDataResponse> {

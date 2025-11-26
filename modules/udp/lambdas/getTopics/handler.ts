@@ -1,16 +1,16 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { GetSettingsUseCase } from '../../application/use-cases/getSettings/GetSettingsUseCase';
+import { GetTopicsUseCase } from '../../application/use-cases/getTopics/GetTopicsUseCase';
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
 
-export interface GetSettingsLambdaDependencies {
+export interface GetTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
 }
 
 export const createHandler = (
-  dependencies: GetSettingsLambdaDependencies,
+  dependencies: GetTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
   middy().handler(
     async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -24,7 +24,7 @@ export const createHandler = (
           };
         }
 
-        const useCase = new GetSettingsUseCase(dependencies.udpClient);
+        const useCase = new GetTopicsUseCase(dependencies.udpClient);
         const result = await useCase.execute(userId);
 
         return {
@@ -32,7 +32,7 @@ export const createHandler = (
           body: JSON.stringify(result),
         };
       } catch (error) {
-        console.error('Error retrieving settings:', error);
+        console.error('Error retrieving topics:', error);
 
         if (error instanceof Error) {
           if (
@@ -41,7 +41,7 @@ export const createHandler = (
           ) {
             return {
               statusCode: 404,
-              body: JSON.stringify({ error: 'User settings not found' }),
+              body: JSON.stringify({ error: 'User topics not found' }),
             };
           }
         }

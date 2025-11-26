@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { APIGatewayProxyEvent } from 'aws-lambda';
-import { createHandler, CreateSettingsLambdaDependencies } from './handler';
+import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
+import { createHandler, CreateTopicsLambdaDependencies } from './handler';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import { UserDataResponse } from 'modules/udp/domain/models/UserData';
 import { AuthTokenProviderPort } from 'modules/udp/domain/ports/AuthTokenProviderPort';
 
-describe('createSettings handler', () => {
+describe('createTopics handler', () => {
   class MockUdpHttpClient implements UserDataPlatformPort {
     getUserData(userId: string): Promise<UserDataResponse> {
       return Promise.resolve({
@@ -37,7 +37,7 @@ describe('createSettings handler', () => {
 
   const mockAuthProvider = new MockAuthTokenProvider();
 
-  const createMockDependencies = (): CreateSettingsLambdaDependencies => {
+  const createMockDependencies = (): CreateTopicsLambdaDependencies => {
     return {
       udpClient: mockUdpClient,
       authProvider: mockAuthProvider,
@@ -48,12 +48,12 @@ describe('createSettings handler', () => {
 
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
-  };
+  } as unknown as Context;
 
-  it('should create user settings successfully', async () => {
+  it('should create user topics successfully', async () => {
     const event: APIGatewayProxyEvent = {
       pathParameters: { userId: 'user-123' },
-      body: JSON.stringify({ theme: 'light', language: 'en' }),
+      body: JSON.stringify({ topic1: 'value1', topic2: 'value2' }),
     } as unknown as APIGatewayProxyEvent;
 
     const result = await mockHandler(event, mockContext);
@@ -61,7 +61,7 @@ describe('createSettings handler', () => {
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
       userId: 'user-123',
-      data: { theme: 'light', language: 'en' },
+      data: { topic1: 'value1', topic2: 'value2' },
     });
   });
 });

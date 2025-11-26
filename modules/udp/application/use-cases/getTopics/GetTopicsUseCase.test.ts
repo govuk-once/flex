@@ -1,25 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GetSettingsUseCase } from './GetSettingsUseCase';
+import { GetTopicsUseCase } from './GetTopicsUseCase';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
 } from '../../../testing/mocks';
 
-describe('GetSettingsUseCase', () => {
+describe('GetTopicsUseCase', () => {
   let mockUserDataPlatform: MockUserDataPlatform;
-  let useCase: GetSettingsUseCase;
+  let useCase: GetTopicsUseCase;
 
   beforeEach(() => {
     mockUserDataPlatform = createMockUserDataPlatform();
 
-    useCase = new GetSettingsUseCase(mockUserDataPlatform);
+    useCase = new GetTopicsUseCase(mockUserDataPlatform);
   });
 
-  it('should retrieve user settings successfully', async () => {
+  it('should retrieve user topics successfully', async () => {
     const userId = 'user-123';
     const mockUserData = {
       userId,
-      data: { theme: 'dark', notifications: true },
+      data: { topic1: 'value1', topic2: 'value2' },
     };
 
     vi.mocked(mockUserDataPlatform.getUserData).mockResolvedValue(mockUserData);

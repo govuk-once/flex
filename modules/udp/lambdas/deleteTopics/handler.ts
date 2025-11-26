@@ -1,20 +1,20 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DeleteSettingsUseCase } from '../../application/use-cases/deleteSettings/DeleteSettingsUseCase';
+import { DeleteTopicsUseCase } from '../../application/use-cases/deleteTopics/DeleteTopicsUseCase';
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
 
-export interface DeleteSettingsLambdaDependencies {
+export interface DeleteTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
 }
 
 /**
- * Lambda handler for DELETE /settings/{userId}
- * Deletes user settings from the User Data Platform
+ * Lambda handler for DELETE /topics/{userId}
+ * Deletes user topics from the User Data Platform
  */
 export const createHandler = (
-  dependencies: DeleteSettingsLambdaDependencies,
+  dependencies: DeleteTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
   middy().handler(
     async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -28,7 +28,7 @@ export const createHandler = (
           };
         }
 
-        const useCase = new DeleteSettingsUseCase(dependencies.udpClient);
+        const useCase = new DeleteTopicsUseCase(dependencies.udpClient);
         await useCase.execute(userId);
 
         return {
@@ -36,7 +36,7 @@ export const createHandler = (
           body: '',
         };
       } catch (error) {
-        console.error('Error deleting settings:', error);
+        console.error('Error deleting topics:', error);
 
         if (error instanceof Error) {
           if (
@@ -45,7 +45,7 @@ export const createHandler = (
           ) {
             return {
               statusCode: 404,
-              body: JSON.stringify({ error: 'User settings not found' }),
+              body: JSON.stringify({ error: 'User topics not found' }),
             };
           }
         }

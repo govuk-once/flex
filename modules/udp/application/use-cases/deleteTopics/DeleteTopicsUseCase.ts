@@ -1,9 +1,9 @@
 import type { UserDataPlatformPort } from '../../../domain/ports/UserDataPlatformPort';
 
 /**
- * Use case for deleting user settings from the User Data Platform
+ * Use case for deleting user topics from the User Data Platform
  */
-export class DeleteSettingsUseCase {
+export class DeleteTopicsUseCase {
   constructor(private readonly userDataPlatform: UserDataPlatformPort) {}
 
   async execute(userId: string): Promise<void> {

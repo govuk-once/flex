@@ -1,19 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import {
-  createHandler,
-  type DeleteSettingsLambdaDependencies,
-} from './handler';
+import { createHandler, type DeleteTopicsLambdaDependencies } from './handler';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
 } from '../../testing/mocks';
 
-describe('deleteSettings handler', () => {
-  let dependencies: DeleteSettingsLambdaDependencies & {
+describe('deleteTopics handler', () => {
+  let dependencies: DeleteTopicsLambdaDependencies & {
     udpClient: MockUserDataPlatform;
   };
-  let deleteSettingsHandler: ReturnType<typeof createHandler>;
+  let deleteTopicsHandler: ReturnType<typeof createHandler>;
 
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
@@ -23,17 +20,17 @@ describe('deleteSettings handler', () => {
     dependencies = {
       udpClient: createMockUserDataPlatform(),
     };
-    deleteSettingsHandler = createHandler(dependencies);
+    deleteTopicsHandler = createHandler(dependencies);
   });
 
-  it('should delete user settings successfully', async () => {
+  it('should delete user topics successfully', async () => {
     dependencies.udpClient.deleteUserData.mockResolvedValue(undefined);
 
     const event = {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event, mockContext);
+    const result = await deleteTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(204);
     expect(result.body).toBe('');
@@ -47,7 +44,7 @@ describe('deleteSettings handler', () => {
       pathParameters: null,
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event, mockContext);
+    const result = await deleteTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(400);
   });
@@ -61,7 +58,7 @@ describe('deleteSettings handler', () => {
       pathParameters: { userId: 'non-existent' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event, mockContext);
+    const result = await deleteTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(404);
   });
