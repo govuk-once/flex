@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { APIGatewayProxyEvent } from 'aws-lambda';
+import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import {
   createHandler,
   type DeleteSettingsLambdaDependencies,
@@ -15,6 +15,10 @@ describe('deleteSettings handler', () => {
   };
   let deleteSettingsHandler: ReturnType<typeof createHandler>;
 
+  const mockContext = {
+    getRemainingTimeInMillis: () => 1000,
+  } as unknown as Context;
+
   beforeEach(() => {
     dependencies = {
       udpClient: createMockUserDataPlatform(),
@@ -29,7 +33,7 @@ describe('deleteSettings handler', () => {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event);
+    const result = await deleteSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(204);
     expect(result.body).toBe('');
@@ -43,7 +47,7 @@ describe('deleteSettings handler', () => {
       pathParameters: null,
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event);
+    const result = await deleteSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(400);
   });
@@ -57,7 +61,7 @@ describe('deleteSettings handler', () => {
       pathParameters: { userId: 'non-existent' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await deleteSettingsHandler(event);
+    const result = await deleteSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(404);
   });

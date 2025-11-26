@@ -22,5 +22,8 @@
     "typescript": "5.9.3",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.8"
+  },
+  "dependencies": {
+    "@middy/core": "^6.4.5"
   }
 }

@@ -3,6 +3,7 @@ import { DeleteSettingsUseCase } from '../../application/use-cases/deleteSetting
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
+import middy, { MiddyfiedHandler } from '@middy/core';
 
 export interface DeleteSettingsLambdaDependencies {
   udpClient: UserDataPlatformPort;
@@ -12,47 +13,50 @@ export interface DeleteSettingsLambdaDependencies {
  * Lambda handler for DELETE /settings/{userId}
  * Deletes user settings from the User Data Platform
  */
-export const createHandler =
-  (dependencies: DeleteSettingsLambdaDependencies) =>
-  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    try {
-      const userId = event.pathParameters?.userId;
+export const createHandler = (
+  dependencies: DeleteSettingsLambdaDependencies,
+): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
+  middy().handler(
+    async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+      try {
+        const userId = event.pathParameters?.userId;
 
-      if (!userId) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'UserId is required in path' }),
-        };
-      }
-
-      const useCase = new DeleteSettingsUseCase(dependencies.udpClient);
-      await useCase.execute(userId);
-
-      return {
-        statusCode: 204,
-        body: '',
-      };
-    } catch (error) {
-      console.error('Error deleting settings:', error);
-
-      if (error instanceof Error) {
-        if (
-          error.message.includes('404') ||
-          error.message.includes('Not Found')
-        ) {
+        if (!userId) {
           return {
-            statusCode: 404,
-            body: JSON.stringify({ error: 'User settings not found' }),
+            statusCode: 400,
+            body: JSON.stringify({ error: 'UserId is required in path' }),
           };
         }
-      }
 
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Internal server error' }),
-      };
-    }
-  };
+        const useCase = new DeleteSettingsUseCase(dependencies.udpClient);
+        await useCase.execute(userId);
+
+        return {
+          statusCode: 204,
+          body: '',
+        };
+      } catch (error) {
+        console.error('Error deleting settings:', error);
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes('404') ||
+            error.message.includes('Not Found')
+          ) {
+            return {
+              statusCode: 404,
+              body: JSON.stringify({ error: 'User settings not found' }),
+            };
+          }
+        }
+
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Internal server error' }),
+        };
+      }
+    },
+  );
 
 const deleteAuthProvider = new ClientCredentialsProvider({
   tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',

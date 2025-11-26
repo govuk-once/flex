@@ -46,13 +46,17 @@ describe('createSettings handler', () => {
 
   const mockHandler = createHandler(createMockDependencies());
 
+  const mockContext = {
+    getRemainingTimeInMillis: () => 1000,
+  };
+
   it('should create user settings successfully', async () => {
     const event: APIGatewayProxyEvent = {
       pathParameters: { userId: 'user-123' },
       body: JSON.stringify({ theme: 'light', language: 'en' }),
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await mockHandler(event);
+    const result = await mockHandler(event, mockContext);
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
