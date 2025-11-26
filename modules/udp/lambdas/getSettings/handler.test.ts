@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { APIGatewayProxyEvent } from 'aws-lambda';
+import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import { createHandler, type GetSettingsLambdaDependencies } from './handler';
 import {
   createMockUserDataPlatform,
@@ -11,6 +11,10 @@ describe('getSettings handler', () => {
     udpClient: MockUserDataPlatform;
   };
   let getSettingsHandler: ReturnType<typeof createHandler>;
+
+  const mockContext = {
+    getRemainingTimeInMillis: () => 1000,
+  } as unknown as Context;
 
   beforeEach(() => {
     dependencies = {
@@ -31,7 +35,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event);
+    const result = await getSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual(mockUserData);
@@ -42,7 +46,7 @@ describe('getSettings handler', () => {
       pathParameters: null,
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event);
+    const result = await getSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(400);
     expect(JSON.parse(result.body)).toHaveProperty('error');
@@ -57,7 +61,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'non-existent' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event);
+    const result = await getSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(404);
   });
@@ -71,7 +75,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event);
+    const result = await getSettingsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(500);
   });

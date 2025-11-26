@@ -4,34 +4,38 @@ import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import { AuthTokenProviderPort } from 'modules/udp/domain/ports/AuthTokenProviderPort';
+import middy, { MiddyfiedHandler } from '@middy/core';
 
 export interface CreateSettingsLambdaDependencies {
   udpClient: UserDataPlatformPort;
   authProvider: AuthTokenProviderPort;
 }
 
-export const createHandler =
-  (dependencies: CreateSettingsLambdaDependencies) =>
-  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    try {
-      const userId = event.pathParameters?.userId;
+export const createHandler = (
+  dependencies: CreateSettingsLambdaDependencies,
+): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
+  middy().handler(
+    async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+      try {
+        const userId = event.pathParameters?.userId;
 
-      // Initialize dependencies
-      const useCase = new CreateSettingsUseCase(dependencies.udpClient);
-      const result = await useCase.execute(userId, JSON.parse(event.body));
+        // Initialize dependencies
+        const useCase = new CreateSettingsUseCase(dependencies.udpClient);
+        const result = await useCase.execute(userId, JSON.parse(event.body));
 
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result),
-      };
-    } catch (error) {
-      console.error('Error creating settings:', error);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Internal server error' }),
-      };
-    }
-  };
+        return {
+          statusCode: 200,
+          body: JSON.stringify(result),
+        };
+      } catch (error) {
+        console.error('Error creating settings:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Internal server error' }),
+        };
+      }
+    },
+  );
 
 /**
  * Lambda handler for PUT /settings/{userId}

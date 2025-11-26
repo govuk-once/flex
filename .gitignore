@@ -12,3 +12,6 @@ dist/
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# Coverage
+coverage/
