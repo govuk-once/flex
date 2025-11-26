@@ -15,3 +15,11 @@ vitest.config.*.timestamp*
 
 # Coverage
 coverage/
+
+# SST output
+.sst
+.env*.local
+.env
+
+# Terraform
+.terraform/
