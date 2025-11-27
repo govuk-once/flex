@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { createHandler, type GetSettingsLambdaDependencies } from './handler';
+import { createHandler, type GetTopicsLambdaDependencies } from './handler';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
 } from '../../testing/mocks';
 
-describe('getSettings handler', () => {
-  let dependencies: GetSettingsLambdaDependencies & {
+describe('getTopics handler', () => {
+  let dependencies: GetTopicsLambdaDependencies & {
     udpClient: MockUserDataPlatform;
   };
-  let getSettingsHandler: ReturnType<typeof createHandler>;
+  let getTopicsHandler: ReturnType<typeof createHandler>;
 
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
@@ -20,13 +20,13 @@ describe('getSettings handler', () => {
     dependencies = {
       udpClient: createMockUserDataPlatform(),
     };
-    getSettingsHandler = createHandler(dependencies);
+    getTopicsHandler = createHandler(dependencies);
   });
 
-  it('should return user settings successfully', async () => {
+  it('should return user topics successfully', async () => {
     const mockUserData = {
       userId: 'user-123',
-      data: { theme: 'dark', notifications: true },
+      data: { topic1: 'value1', topic2: 'value2' },
     };
 
     dependencies.udpClient.getUserData.mockResolvedValue(mockUserData);
@@ -35,7 +35,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event, mockContext);
+    const result = await getTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toEqual(mockUserData);
@@ -46,7 +46,7 @@ describe('getSettings handler', () => {
       pathParameters: null,
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event, mockContext);
+    const result = await getTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(400);
     expect(JSON.parse(result.body)).toHaveProperty('error');
@@ -61,7 +61,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'non-existent' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event, mockContext);
+    const result = await getTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(404);
   });
@@ -75,7 +75,7 @@ describe('getSettings handler', () => {
       pathParameters: { userId: 'user-123' },
     } as unknown as APIGatewayProxyEvent;
 
-    const result = await getSettingsHandler(event, mockContext);
+    const result = await getTopicsHandler(event, mockContext);
 
     expect(result.statusCode).toBe(500);
   });

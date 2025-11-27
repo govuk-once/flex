@@ -1,12 +1,12 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { CreateSettingsUseCase } from '../../application/use-cases/createSettings/CreateSettingsUseCase';
+import { CreateTopicsUseCase } from '../../application/use-cases/createTopics/CreateTopicsUseCase';
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import { AuthTokenProviderPort } from 'modules/udp/domain/ports/AuthTokenProviderPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
 
-export interface CreateSettingsLambdaDependencies {
+export interface CreateTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
   authProvider: AuthTokenProviderPort;
 }
@@ -20,7 +20,7 @@ export const createHandler = (
         const userId = event.pathParameters?.userId;
 
         // Initialize dependencies
-        const useCase = new CreateSettingsUseCase(dependencies.udpClient);
+        const useCase = new CreateTopicsUseCase(dependencies.udpClient);
         const result = await useCase.execute(userId, JSON.parse(event.body));
 
         return {
@@ -28,7 +28,7 @@ export const createHandler = (
           body: JSON.stringify(result),
         };
       } catch (error) {
-        console.error('Error creating settings:', error);
+        console.error('Error creating topics:', error);
         return {
           statusCode: 500,
           body: JSON.stringify({ error: 'Internal server error' }),
@@ -38,8 +38,8 @@ export const createHandler = (
   );
 
 /**
- * Lambda handler for PUT /settings/{userId}
- * Creates or updates user settings in the User Data Platform
+ * Lambda handler for PUT /topics/{userId}
+ * Creates or updates user topics in the User Data Platform
  */
 export const handler = createHandler({
   udpClient: new UdpHttpClient({

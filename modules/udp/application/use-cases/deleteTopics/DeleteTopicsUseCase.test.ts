@@ -1,21 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeleteSettingsUseCase } from './DeleteSettingsUseCase';
+import { DeleteTopicsUseCase } from './DeleteTopicsUseCase';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
 } from '../../../testing/mocks';
 
-describe('DeleteSettingsUseCase', () => {
+describe('DeleteTopicsUseCase', () => {
   let mockUserDataPlatform: MockUserDataPlatform;
-  let useCase: DeleteSettingsUseCase;
+  let useCase: DeleteTopicsUseCase;
 
   beforeEach(() => {
     mockUserDataPlatform = createMockUserDataPlatform();
 
-    useCase = new DeleteSettingsUseCase(mockUserDataPlatform);
+    useCase = new DeleteTopicsUseCase(mockUserDataPlatform);
   });
 
-  it('should delete user settings successfully', async () => {
+  it('should delete user topics successfully', async () => {
     const userId = 'user-123';
 
     vi.mocked(mockUserDataPlatform.deleteUserData).mockResolvedValue(undefined);
