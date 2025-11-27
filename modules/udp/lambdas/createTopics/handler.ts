@@ -12,7 +12,7 @@ export interface CreateTopicsLambdaDependencies {
 }
 
 export const createHandler = (
-  dependencies: CreateSettingsLambdaDependencies,
+  dependencies: CreateTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
   middy().handler(
     async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

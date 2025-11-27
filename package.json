@@ -1,5 +1,17 @@
 {
   "type": "module",
+  "scripts": {
+    "test:all": "npx nx run-many --target=test",
+    "test:affected": "npx nx affected --target=test",
+    "build:all": "npx nx run-many --target=build",
+    "build:affected": "npx nx affected --target=build --verbose",
+    "build:project": "npx nx affected --target=build",
+    "lint:all": "npx nx run-many --target=lint",
+    "lint:affected": "npx nx affected --target=lint",
+    "lint:project": "npx nx affected --target=lint",
+    "format:write": "npx prettier --write .",
+    "format:check": "npx prettier --check ."
+  },
   "devDependencies": {
     "@nx/esbuild": "22.0.3",
     "@nx/eslint-plugin": "22.0.3",

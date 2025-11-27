@@ -19,7 +19,7 @@ repos:
   - repo: local
     hooks:
       - id: format_check
-        entry: make format-check
+        entry: pnpm format:check
         language: system
         name: format_check
         pass_filenames: false
@@ -27,7 +27,7 @@ repos:
           - 'pre-commit'
 
       - id: linting_check
-        entry: make lint-affected
+        entry: pnpm lint:affected
         language: system
         name: linting_check
         pass_filenames: false
@@ -35,7 +35,7 @@ repos:
           - 'pre-commit'
 
       - id: run_unit_test
-        entry: make test-affected
+        entry: pnpm test:affected
         language: system
         name: run_unit_test
         pass_filenames: false
