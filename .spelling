@@ -17,3 +17,6 @@ udp:write
 UDP
 adapters
 Adapters
+CORS
+JSON
+preload
