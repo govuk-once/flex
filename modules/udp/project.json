@@ -2,15 +2,12 @@
   "name": "@modules/udp",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "modules/udp/src",
-  "projectType": "library",
+  "projectType": "application",
   "targets": {
     "build": {
-      "executor": "@nx/esbuild:esbuild",
+      "executor": "nx:run-commands",
       "options": {
-        "outputPath": "dist/modules/udp",
-        "main": "modules/udp/src/index.ts",
-        "tsConfig": "modules/udp/tsconfig.json",
-        "generatePackageJson": true
+        "command": "npx esbuild modules/udp/lambdas/*/handler.ts --bundle --outdir=dist/modules/udp --platform=node --format=cjs"
       }
     },
     "lint": {

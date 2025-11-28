@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+  - esbuild
+  - nx
+  - unrs-resolver
+packages:
+  - 'modules/**'
+  - 'libs/**'
