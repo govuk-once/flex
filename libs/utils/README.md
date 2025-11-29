@@ -1,25 +1,15 @@
 # Utils
 
-> Utils project which is a shared library to be used across the modules in the
-> Business Layer
+> Utils project which is a shared library to be used across the domains in the
+> FLEX project
 
-## Commands
+## Available Commands
 
-You can build the project by running the following command:
-
-```sh
-make build PROJECT=@libs/utils
-```
-
-You can run unit test against the project by running the following command:
-
-```sh
-make test PROJECT=@libs/utils
+```bash
+npx nx test utils
+npx nx lint utils
 ```
 
 ## Utilities
 
-### Greetings
-
-Placeholder class currently being used in `@modules/example` while flushing out
-the repo.
+> OVERVIEW of utilities will be added here once we add some within to the repo
