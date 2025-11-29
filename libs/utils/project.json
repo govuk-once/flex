@@ -11,10 +11,9 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "nx:run-commands",
       "options": {
-        "config": "vitest.config.ts",
-        "passWithNoTests": true
+        "command": "vitest run libs/utils/src/ --passWithNoTests"
       }
     }
   }

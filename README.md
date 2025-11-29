@@ -10,8 +10,7 @@
 
 1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
 2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
-3. **Nx** install globally: `npm add --global nx@latest`
-4. **PNPM**: [install](https://pnpm.io/installation)
+3. **PNPM**: [install](https://pnpm.io/installation)
 
 ### 2. Installation
 
@@ -40,12 +39,12 @@ pnpm format:check
 flex/
 ├── libs/        # Shared libraries directory
 │   └── utils/   # Shared utils for modules to use
-└── modules/     # Module directory
+└── domains/     # Domains directory (application code)
 ```
 
 | Repo        | Overview                               | README                         |
 | ----------- | -------------------------------------- | ------------------------------ |
-| @modules    | Module README                          | [Link](./modules/README.md)    |
+| @domains    | Domains - application code             | [Link](./domains/README.md)    |
 | @libs/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
 
 ## Committing work
@@ -60,7 +59,8 @@ Get the current number of commits on your branch:
 git rev-list --count HEAD ^main
 ```
 
-Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
+Supposing this returns 3 then you have made 3 commits since creating your
+branch and you want to squash them down into one:
 
 ```bash
 git rebase -i HEAD~3

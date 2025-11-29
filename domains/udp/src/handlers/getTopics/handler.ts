@@ -1,22 +1,22 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DeleteTopicsUseCase } from '../../application/use-cases/deleteTopics/DeleteTopicsUseCase';
+import { GetTopicsUseCase } from '../../application/use-cases/getTopics/GetTopicsUseCase';
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
-import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
+import { UserDataPlatformPort } from '../../domain/ports/UserDataPlatformPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
 
-export interface DeleteTopicsLambdaDependencies {
+export interface GetTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
 }
 
 /**
- * Lambda handler for DELETE /topics/{userId}
- * Deletes user topics from the User Data Platform
+ * Lambda handler for GET /users/{userId}/topics
+ * Get user topics from the User Data Platform
  */
-export const createHandler = (
-  dependencies: DeleteTopicsLambdaDependencies,
+export const getHandler = (
+  dependencies: GetTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
-  middy().handler(
+  middy<APIGatewayProxyEvent, APIGatewayProxyResult>().handler(
     async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
       try {
         const userId = event.pathParameters?.userId;
@@ -28,15 +28,15 @@ export const createHandler = (
           };
         }
 
-        const useCase = new DeleteTopicsUseCase(dependencies.udpClient);
-        await useCase.execute(userId);
+        const useCase = new GetTopicsUseCase(dependencies.udpClient);
+        const result = await useCase.execute(userId);
 
         return {
-          statusCode: 204,
-          body: '',
+          statusCode: 200,
+          body: JSON.stringify(result),
         };
       } catch (error) {
-        console.error('Error deleting topics:', error);
+        console.error('Error retrieving topics:', error);
 
         if (error instanceof Error) {
           if (
@@ -58,16 +58,16 @@ export const createHandler = (
     },
   );
 
-const deleteAuthProvider = new ClientCredentialsProvider({
+const authProvider = new ClientCredentialsProvider({
   tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',
   clientId: process.env.UDP_CLIENT_ID || '',
   clientSecret: process.env.UDP_CLIENT_SECRET || '',
-  scope: process.env.UDP_SCOPE || 'udp:write',
+  scope: process.env.UDP_SCOPE || 'udp:read',
 });
 
-export const handler = createHandler({
+export const handler = getHandler({
   udpClient: new UdpHttpClient({
     baseUrl: process.env.UDP_BASE_URL || '',
-    authTokenProvider: deleteAuthProvider,
+    authTokenProvider: authProvider,
   }),
 });
