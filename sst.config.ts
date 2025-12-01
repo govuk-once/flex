@@ -23,7 +23,7 @@ export default $config({
     api.addAuthorizer({
       name: 'basicJWTAuthorizer',
       lambda: {
-        function: 'src/handlers/auth/example.handler',
+        function: 'modules/udp/adapters/auth-validation/example.handler',
       },
       // jwt: {
       //   issuer: "https://example.com/",
@@ -32,7 +32,25 @@ export default $config({
       // }
     });
 
-    api.route('GET /user/topics', 'src/handlers/user/topics/get.handler');
-    api.route('POST /user/topics', 'src/handlers/user/topics/post.handler');
+    api.route(
+      'GET /user/{userId}/topics',
+      'modules/udp/lambdas/topics/get.handler',
+    );
+    api.route(
+      'POST /user/{userId}/topics',
+      'modules/udp/lambdas/topics/post.handler',
+    );
+    api.route(
+      'PUT /user/{userId}/settings',
+      'modules/udp/lambdas/createSettings/handler.handler',
+    );
+    api.route(
+      'DELETE /user/{userId}/settings',
+      'modules/udp/lambdas/deleteSettings/handler.handler',
+    );
+    api.route(
+      'GET /user/{userId}/settings',
+      'modules/udp/lambdas/deleteSettings/handler.handler',
+    );
   },
 });
