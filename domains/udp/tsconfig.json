@@ -2,10 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "declaration": true,
     "outDir": "../../dist/modules/udp"
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": [{ "path": "../../libs/utils/tsconfig.json" }]
+  "exclude": ["node_modules"]
 }
