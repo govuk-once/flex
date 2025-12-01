@@ -4,7 +4,12 @@
 /* deno-fmt-ignore-file */
 
 declare module 'sst' {
-  export interface Resource {}
+  export interface Resource {
+    FlexApiGateway: {
+      type: 'sst.aws.ApiGatewayV2';
+      url: string;
+    };
+  }
 }
 /// <reference path="sst-env.d.ts" />
 

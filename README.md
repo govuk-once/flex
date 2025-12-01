@@ -21,6 +21,10 @@ pnpm install --frozen-lockfile
 pre-commit install
 ```
 
+### 2. Developing
+
+This project uses SST to allow for quick developer feedback. To deploy to your developer environment, use the command `pnpm run sst:dev`. In order to utilise breakpoints, please follow the guide found [here](https://sst.dev/docs/live/#breakpoints).
+
 ## Useful commands to use
 
 To see a list of available commands you can check `package.json` scripts

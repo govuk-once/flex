@@ -29,7 +29,7 @@ export default $config({
 
     api.route(
       'GET /user/{userId}/topics',
-      'domains/udp/handlers/getTopics/handler.handler',
+      'domains/udp/src/handlers/getTopics/handler.handler',
     );
     api.route(
       'POST /user/{userId}/topics',
