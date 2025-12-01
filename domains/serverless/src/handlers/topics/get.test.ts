@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { getHandler, type GetTopicsLambdaDependencies } from './handler';
+import { getHandler, type GetTopicsLambdaDependencies } from '../getTopics/get';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,

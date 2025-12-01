@@ -3,8 +3,8 @@ import { GetTopicsUseCase } from '../../application/use-cases/getTopics/GetTopic
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import middy, { MiddyfiedHandler } from '@middy/core';
-import { ResponseError } from '../../../common/errors/ResponseError';
 import { STATUS_CODES } from 'http';
+import {  } from '@libs/utils';
 
 /**
  * Lambda handler for GET /users/{userId}/topics

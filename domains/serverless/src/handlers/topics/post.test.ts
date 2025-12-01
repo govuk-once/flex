@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { createHandler, CreateTopicsLambdaDependencies } from './handler';
+import { createHandler, CreateTopicsLambdaDependencies } from './post';
 import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
 import { UserDataResponse } from 'modules/udp/domain/models/UserData';
 import { AuthTokenProviderPort } from 'modules/udp/domain/ports/AuthTokenProviderPort';

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { deleteHandler, type DeleteTopicsLambdaDependencies } from './handler';
+import { deleteHandler, type DeleteTopicsLambdaDependencies } from './delete';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
