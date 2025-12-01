@@ -1,18 +1,22 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { GetTopicsUseCase } from '../../application/use-cases/getTopics/GetTopicsUseCase';
+import { DeleteTopicsUseCase } from '../../application/use-cases/deleteTopics/DeleteTopicsUseCase';
 import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
-import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
+import { UserDataPlatformPort } from '../../domain/ports/UserDataPlatformPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
 
-export interface GetTopicsLambdaDependencies {
+export interface DeleteTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
 }
 
-export const createHandler = (
-  dependencies: GetTopicsLambdaDependencies,
+/**
+ * Lambda handler for DELETE /users/{userId}/topics
+ * Deletes user topics from the User Data Platform
+ */
+export const deleteHandler = (
+  dependencies: DeleteTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
-  middy().handler(
+  middy<APIGatewayProxyEvent, APIGatewayProxyResult>().handler(
     async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
       try {
         const userId = event.pathParameters?.userId;
@@ -24,15 +28,15 @@ export const createHandler = (
           };
         }
 
-        const useCase = new GetTopicsUseCase(dependencies.udpClient);
-        const result = await useCase.execute(userId);
+        const useCase = new DeleteTopicsUseCase(dependencies.udpClient);
+        await useCase.execute(userId);
 
         return {
-          statusCode: 200,
-          body: JSON.stringify(result),
+          statusCode: 204,
+          body: '',
         };
       } catch (error) {
-        console.error('Error retrieving topics:', error);
+        console.error('Error deleting topics:', error);
 
         if (error instanceof Error) {
           if (
@@ -54,16 +58,16 @@ export const createHandler = (
     },
   );
 
-const authProvider = new ClientCredentialsProvider({
+const deleteAuthProvider = new ClientCredentialsProvider({
   tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',
   clientId: process.env.UDP_CLIENT_ID || '',
   clientSecret: process.env.UDP_CLIENT_SECRET || '',
-  scope: process.env.UDP_SCOPE || 'udp:read',
+  scope: process.env.UDP_SCOPE || 'udp:write',
 });
 
-export const handler = createHandler({
+export const handler = deleteHandler({
   udpClient: new UdpHttpClient({
     baseUrl: process.env.UDP_BASE_URL || '',
-    authTokenProvider: authProvider,
+    authTokenProvider: deleteAuthProvider,
   }),
 });

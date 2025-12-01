@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { createHandler, type DeleteTopicsLambdaDependencies } from './handler';
+import { deleteHandler, type DeleteTopicsLambdaDependencies } from './handler';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
@@ -10,7 +10,7 @@ describe('deleteTopics handler', () => {
   let dependencies: DeleteTopicsLambdaDependencies & {
     udpClient: MockUserDataPlatform;
   };
-  let deleteTopicsHandler: ReturnType<typeof createHandler>;
+  let deleteTopicsHandler: ReturnType<typeof deleteHandler>;
 
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
@@ -20,7 +20,7 @@ describe('deleteTopics handler', () => {
     dependencies = {
       udpClient: createMockUserDataPlatform(),
     };
-    deleteTopicsHandler = createHandler(dependencies);
+    deleteTopicsHandler = deleteHandler(dependencies);
   });
 
   it('should delete user topics successfully', async () => {

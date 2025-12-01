@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { createHandler, type GetTopicsLambdaDependencies } from './handler';
+import { getHandler, type GetTopicsLambdaDependencies } from './handler';
 import {
   createMockUserDataPlatform,
   type MockUserDataPlatform,
@@ -10,7 +10,7 @@ describe('getTopics handler', () => {
   let dependencies: GetTopicsLambdaDependencies & {
     udpClient: MockUserDataPlatform;
   };
-  let getTopicsHandler: ReturnType<typeof createHandler>;
+  let getTopicsHandler: ReturnType<typeof getHandler>;
 
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
@@ -20,7 +20,7 @@ describe('getTopics handler', () => {
     dependencies = {
       udpClient: createMockUserDataPlatform(),
     };
-    getTopicsHandler = createHandler(dependencies);
+    getTopicsHandler = getHandler(dependencies);
   });
 
   it('should return user topics successfully', async () => {
