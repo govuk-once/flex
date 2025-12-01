@@ -1,0 +1,26 @@
+{
+  "name": "serverless",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "domains/serverless/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx esbuild domains/serverless/src/handlers/*/handler.ts --bundle --outdir=dist/domains/serverless --platform=node --minify=true --format=cjs"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["domains/serverless/src/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run domains/serverless/src/"
+      }
+    }
+  }
+}
