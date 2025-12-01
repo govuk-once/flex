@@ -19,17 +19,12 @@ export default $config({
     };
   },
   async run() {
-    const api = new sst.aws.ApiGatewayV2('TestAPI');
+    const api = new sst.aws.ApiGatewayV2('FlexApiGateway');
     api.addAuthorizer({
       name: 'basicJWTAuthorizer',
       lambda: {
         function: 'modules/udp/adapters/auth-validation/example.handler',
       },
-      // jwt: {
-      //   issuer: "https://example.com/",
-      //   audiences: ["https://api.example.com/"],
-      //   identitySource: "$request.header.AccessToken"
-      // }
     });
 
     api.route(
