@@ -19,25 +19,17 @@ repos:
   - repo: local
     hooks:
       - id: format_check
-        entry: make format-check
+        entry: pnpm format:check
         language: system
-        name: format_check
+        name: format check affected
         pass_filenames: false
         stages:
           - 'pre-commit'
 
       - id: linting_check
-        entry: make lint-affected
+        entry: pnpm lint:affected
         language: system
-        name: linting_check
-        pass_filenames: false
-        stages:
-          - 'pre-commit'
-
-      - id: run_unit_test
-        entry: make test-affected
-        language: system
-        name: run_unit_test
+        name: lint check affected
         pass_filenames: false
         stages:
           - 'pre-commit'
@@ -46,8 +38,8 @@ repos:
     rev: v1.89.0
     hooks:
       - id: semgrep
+        name: semgrep
         args: ['--config', 'auto']
         language_version: python3.13
         pass_filenames: false # This forces it to scan all files in repo
         always_run: true # Run even if no files match
-        verbose: true

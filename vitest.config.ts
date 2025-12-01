@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['**/*.test.ts'],
+    include: ['domains/*/**/*.test.ts', 'libs/*/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',

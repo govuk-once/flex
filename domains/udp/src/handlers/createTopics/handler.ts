@@ -1,0 +1,78 @@
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { CreateTopicsUseCase } from '../../application/use-cases/createTopics/CreateTopicsUseCase';
+import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
+import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
+import { UserDataPlatformPort } from '../../domain/ports/UserDataPlatformPort';
+import { AuthTokenProviderPort } from '../../domain/ports/AuthTokenProviderPort';
+import middy, { MiddyfiedHandler } from '@middy/core';
+
+export interface CreateTopicsLambdaDependencies {
+  udpClient: UserDataPlatformPort;
+  authProvider: AuthTokenProviderPort;
+}
+
+/**
+ * Lambda handler for CREATE /users/{userId}/topics
+ * Creates user topics from the User Data Platform
+ */
+export const createHandler = (
+  dependencies: CreateTopicsLambdaDependencies,
+): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
+  middy<APIGatewayProxyEvent, APIGatewayProxyResult>().handler(
+    async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+      try {
+        const userId = event.pathParameters?.userId;
+
+        if (!userId) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'UserId is required in path' }),
+          };
+        }
+
+        if (!event.body) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Event.body is required' }),
+          };
+        }
+
+        // Initialise dependencies
+        const useCase = new CreateTopicsUseCase(dependencies.udpClient);
+        const result = await useCase.execute(userId, JSON.parse(event.body));
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify(result),
+        };
+      } catch (error) {
+        console.error('Error creating topics:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Internal server error' }),
+        };
+      }
+    },
+  );
+
+/**
+ * Lambda handler for PUT /topics/{userId}
+ * Creates or updates user topics in the User Data Platform
+ */
+export const handler = createHandler({
+  udpClient: new UdpHttpClient({
+    baseUrl: process.env.UDP_BASE_URL || '',
+    authTokenProvider: new ClientCredentialsProvider({
+      tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',
+      clientId: process.env.UDP_CLIENT_ID || '',
+      clientSecret: process.env.UDP_CLIENT_SECRET || '',
+      scope: process.env.UDP_SCOPE || 'udp:write',
+    }),
+  }),
+  authProvider: new ClientCredentialsProvider({
+    tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',
+    clientId: process.env.UDP_CLIENT_ID || '',
+    clientSecret: process.env.UDP_CLIENT_SECRET || '',
+    scope: process.env.UDP_SCOPE || 'udp:write',
+  }),
+});

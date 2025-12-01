@@ -10,14 +10,31 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@b3498302c5c423fa896b97a26bb183df735d08f8 # v4.3.0
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Setup node
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install --frozen-lockfile
+
+      - name: NX - set SHAs
+        uses: nrwl/nx-set-shas@v4
+
       - name: Lint & format check
-        run: echo 'TODO implement linting and format check'
+        run: |
+          pnpm lint:affected
+          pnpm format:check
 
       - name: Build
-        run: echo 'TODO implement build'
+        run: pnpm build:affected
 
       - name: Unit Tests
-        run: echo 'TODO implement unit tests'
-
-      - name: Run Semgrep
-        run: echo 'TODO implement semgrep'
+        run: pnpm test:affected

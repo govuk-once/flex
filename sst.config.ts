@@ -34,23 +34,15 @@ export default $config({
 
     api.route(
       'GET /user/{userId}/topics',
-      'modules/udp/lambdas/topics/get.handler',
+      'domains/udp/handlers/getTopics/handler.handler',
     );
     api.route(
       'POST /user/{userId}/topics',
-      'modules/udp/lambdas/topics/post.handler',
+      'domains/udp/handlers/createTopics/handler.handler',
     );
     api.route(
-      'PUT /user/{userId}/settings',
-      'modules/udp/lambdas/createSettings/handler.handler',
-    );
-    api.route(
-      'DELETE /user/{userId}/settings',
-      'modules/udp/lambdas/deleteSettings/handler.handler',
-    );
-    api.route(
-      'GET /user/{userId}/settings',
-      'modules/udp/lambdas/deleteSettings/handler.handler',
+      'DELETE /user/{userId}/topics',
+      'domains/udp/handlers/deleteTopics/handler.handler',
     );
   },
 });

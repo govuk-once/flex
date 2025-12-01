@@ -4,14 +4,6 @@
   "sourceRoot": "libs/utils/src",
   "projectType": "library",
   "targets": {
-    "build": {
-      "executor": "@nx/esbuild:esbuild",
-      "options": {
-        "outputPath": "dist/libs/utils",
-        "main": "libs/utils/src/index.ts",
-        "tsConfig": "libs/utils/tsconfig.json"
-      }
-    },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
@@ -19,10 +11,9 @@
       }
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "nx:run-commands",
       "options": {
-        "config": "vitest.config.ts",
-        "passWithNoTests": true
+        "command": "vitest run libs/utils/src/ --passWithNoTests"
       }
     }
   }

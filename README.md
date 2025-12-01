@@ -1,5 +1,7 @@
 # FLEX (Federated Logic and Events eXchange System)
 
+![linting](https://github.com/govuk-once/flex/actions/workflows/ci.yml/badge.svg)
+
 > Monorepo for the business layer known as FLEX internally
 
 ## Installation
@@ -8,43 +10,27 @@
 
 1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
 2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
-3. **Nx** install globally: `npm add --global nx@latest`
+3. **PNPM**: [install](https://pnpm.io/installation)
 
 ### 2. Installation
 
 Run the following `make` command to install dependencies and setup pre-commit:
 
 ```bash
-make init
+pnpm install --frozen-lockfile
+pre-commit install
 ```
 
-## List of available commands
+## Useful commands to use
 
-To see a list of available commands you can run `make` or see below:
+To see a list of available commands you can check `package.json` scripts
+here are a few useful commands below:
 
 ```bash
-FLEX (Federated Logic and Events eXchange System)
-
-Usage:
-  init                  Initialise the project: install dependencies, setup pre-commit
-  pre-commit            Run pre-commit against all files
-  build                 Build a specific project: make build PROJECT=<project-name>
-  build-all             Build all projects
-  build-affected        Build only affected projects
-  lint                  Lint a specific project: make lint PROJECT=<project-name>
-  lint-all              Lint all projects
-  lint-affected         Lint only affected projects
-  test                  Test a specific project: make test PROJECT=<project-name>
-  test-all              Test all unit tests
-  test-affected         Test only affected projects
-  format                Format all files with Prettier
-  format-check          Format check
-  graph                 Show dependency graph
-  graph-affected        Show affected dependency graph
-  projects              List all projects
-  projects-libs         List only libraries
-  projects-modules      List only modules
-  clean                 Remove build output and Nx cache
+pnpm test:affected
+pnpm build:affected
+pnpm lint:affected
+pnpm format:check
 ```
 
 ## Repo Overview
@@ -53,13 +39,13 @@ Usage:
 flex/
 ├── libs/        # Shared libraries directory
 │   └── utils/   # Shared utils for modules to use
-└── modules/     # Module directory
+└── domains/     # Domains directory (application code)
 ```
 
-| Repo             | Overview                               | README                              |
-| ---------------- | -------------------------------------- | ----------------------------------- |
-| @modules/example | Example module repo                    | [Link](./modules/example/README.md) |
-| @libs/utils      | Shared utils to be used across modules | [Link](./libs/utils/README.md)      |
+| Repo        | Overview                               | README                         |
+| ----------- | -------------------------------------- | ------------------------------ |
+| @domains    | Domains - application code             | [Link](./domains/README.md)    |
+| @libs/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
 
 ## Committing work
 
@@ -73,7 +59,8 @@ Get the current number of commits on your branch:
 git rev-list --count HEAD ^main
 ```
 
-Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
+Supposing this returns 3 then you have made 3 commits since creating your
+branch and you want to squash them down into one:
 
 ```bash
 git rebase -i HEAD~3

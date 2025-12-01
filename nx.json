@@ -1,4 +1,5 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "plugins": ["@nx/vite"]
+  "plugins": ["@nx/eslint"],
+  "packageManager": "pnpm"
 }
