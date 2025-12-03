@@ -27,12 +27,15 @@
     "jiti": "2.4.2",
     "nx": "22.0.3",
     "prettier": "3.6.2",
+    "prettier-eslint": "16.4.2",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.47.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.8"
   },
   "dependencies": {
-    "@middy/core": "6.4.5"
+    "@middy/core": "6.4.5",
+    "sst": "3.17.23"
   }
 }
