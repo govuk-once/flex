@@ -20,12 +20,6 @@ export default $config({
   },
   async run() {
     const api = new sst.aws.ApiGatewayV2('FlexApiGateway');
-    api.addAuthorizer({
-      name: 'basicJWTAuthorizer',
-      lambda: {
-        function: 'modules/udp/adapters/auth-validation/example.handler',
-      },
-    });
 
     api.route(
       'GET /user/{userId}/topics',
