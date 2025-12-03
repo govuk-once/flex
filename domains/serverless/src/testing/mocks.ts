@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { AuthTokenProviderPort } from '../domain/ports/AuthTokenProviderPort';
 import type { UserDataPlatformPort } from '../domain/ports/UserDataPlatformPort';
-import type { UserDataResponse } from '../domain/models/UserData';
+import type { UserDataResponse } from '../services/udp/UserData';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MockFn<T extends (...args: any[]) => any> = ReturnType<typeof vi.fn<T>>;
