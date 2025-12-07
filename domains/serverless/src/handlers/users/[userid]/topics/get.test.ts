@@ -45,7 +45,13 @@ describe('getTopics handler', () => {
       { pathParameters: { userId: '' } },
       { pathParameters: { userId: '     ' } },
     ])('returns 400 when userId is missing or empty', async (event) => {
-      getTopicsHandler(event as unknown as APIGatewayProxyEvent, mockContext);
+      const result = await getTopicsHandler(
+        event as unknown as APIGatewayProxyEvent,
+        mockContext,
+      );
+
+      expect(result.statusCode).toBe(400);
+      expect(JSON.parse(result.body).error).toBe('UserId is required in path');
     });
 
     it.each([

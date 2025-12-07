@@ -1,7 +1,7 @@
 import { STATUS_CODES } from 'http';
 
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import middy, { MiddyfiedHandler } from '@middy/core';
+import middy from '@middy/core';
 
 import { ResponseError } from '@libs/utils';
 
