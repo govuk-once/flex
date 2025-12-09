@@ -1,0 +1,6 @@
+--config p/javascript
+--config p/typescript
+--config p/nodejs
+--config p/owasp-top-ten
+--config p/cwe-top-25
+--config p/secrets
