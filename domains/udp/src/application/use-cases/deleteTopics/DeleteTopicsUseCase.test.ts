@@ -33,8 +33,4 @@ describe('DeleteTopicsUseCase', () => {
 
     await expect(useCase.execute(userId)).rejects.toThrow('Delete failed');
   });
-
-  it('should validate userId is provided', async () => {
-    await expect(useCase.execute('')).rejects.toThrow('UserId is required');
-  });
 });

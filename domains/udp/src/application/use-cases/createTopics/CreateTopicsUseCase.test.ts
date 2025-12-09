@@ -47,14 +47,4 @@ describe('CreateTopicsUseCase', () => {
       'Write failed',
     );
   });
-
-  it('should validate userId is provided', async () => {
-    await expect(useCase.execute('', {})).rejects.toThrow('UserId is required');
-  });
-
-  it('should validate data is provided', async () => {
-    await expect(useCase.execute('user-123', {})).rejects.toThrow(
-      'Data is required and cannot be empty',
-    );
-  });
 });

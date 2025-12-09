@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 import { createHandler, CreateTopicsLambdaDependencies } from './handler';
-import { UserDataPlatformPort } from 'modules/udp/domain/ports/UserDataPlatformPort';
-import { UserDataResponse } from 'modules/udp/domain/models/UserData';
-import { AuthTokenProviderPort } from 'modules/udp/domain/ports/AuthTokenProviderPort';
+import { UserDataPlatformPort } from '../../domain/ports/UserDataPlatformPort';
+import { UserDataResponse } from '../../domain/models/UserData';
+import { AuthTokenProviderPort } from '../../domain/ports/AuthTokenProviderPort';
+import { StatusCodes } from 'http-status-codes';
 
 describe('createTopics handler', () => {
   class MockUdpHttpClient implements UserDataPlatformPort {
@@ -58,10 +59,21 @@ describe('createTopics handler', () => {
 
     const result = await mockHandler(event, mockContext);
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(StatusCodes.CREATED);
     expect(JSON.parse(result.body)).toEqual({
-      userId: 'user-123',
       data: { topic1: 'value1', topic2: 'value2' },
     });
+  });
+
+  it('should create handle invalid user id', async () => {
+    const event: APIGatewayProxyEvent = {
+      pathParameters: { userId: ' ' },
+      body: JSON.stringify({ topic1: 'value1', topic2: 'value2' }),
+    } as unknown as APIGatewayProxyEvent;
+
+    const result = await mockHandler(event, mockContext);
+
+    expect(result.statusCode).toBe(StatusCodes.BAD_REQUEST);
+    expect(JSON.parse(result.body)).toEqual({ message: 'Bad Request' });
   });
 });

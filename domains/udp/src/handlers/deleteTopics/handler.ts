@@ -4,6 +4,13 @@ import { UdpHttpClient } from '../../adapters/http/UdpHttpClient';
 import { ClientCredentialsProvider } from '../../adapters/auth/ClientCredentialsProvider';
 import { UserDataPlatformPort } from '../../domain/ports/UserDataPlatformPort';
 import middy, { MiddyfiedHandler } from '@middy/core';
+import {
+  generateResponse,
+  gobalErrorMiddleware,
+  logger,
+  MissingUserIdError,
+} from '@libs/utils';
+import { StatusCodes } from 'http-status-codes';
 
 export interface DeleteTopicsLambdaDependencies {
   udpClient: UserDataPlatformPort;
@@ -16,47 +23,25 @@ export interface DeleteTopicsLambdaDependencies {
 export const deleteHandler = (
   dependencies: DeleteTopicsLambdaDependencies,
 ): MiddyfiedHandler<APIGatewayProxyEvent, APIGatewayProxyResult> =>
-  middy<APIGatewayProxyEvent, APIGatewayProxyResult>().handler(
-    async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-      try {
+  middy<APIGatewayProxyEvent, APIGatewayProxyResult>()
+    .use(gobalErrorMiddleware(logger)) /** ERROR handling via middy **/
+    .handler(
+      async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
         const userId = event.pathParameters?.userId;
 
-        if (!userId) {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ error: 'UserId is required in path' }),
-          };
-        }
+        // Handle errors
+        if (!userId || userId.trim() === '') throw new MissingUserIdError();
 
+        // Initialise dependencies
         const useCase = new DeleteTopicsUseCase(dependencies.udpClient);
         await useCase.execute(userId);
 
-        return {
-          statusCode: 204,
-          body: '',
-        };
-      } catch (error) {
-        console.error('Error deleting topics:', error);
-
-        if (error instanceof Error) {
-          if (
-            error.message.includes('404') ||
-            error.message.includes('Not Found')
-          ) {
-            return {
-              statusCode: 404,
-              body: JSON.stringify({ error: 'User topics not found' }),
-            };
-          }
-        }
-
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: 'Internal server error' }),
-        };
-      }
-    },
-  );
+        return generateResponse({
+          status: StatusCodes.NO_CONTENT,
+          data: '',
+        });
+      },
+    );
 
 const deleteAuthProvider = new ClientCredentialsProvider({
   tokenEndpoint: process.env.UDP_TOKEN_ENDPOINT || '',
