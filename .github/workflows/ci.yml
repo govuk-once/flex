@@ -11,24 +11,28 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@b3498302c5c423fa896b97a26bb183df735d08f8 # v4.3.0
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Setup node
-        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 
       - name: Install dependencies
         run: |
+          python3 -m pip install semgrep pre-commit
           npm install -g pnpm
           pnpm install --frozen-lockfile
+
+      - name: Run Hygiene & Security Checks
+        run: SKIP=format_check,linting_check,semgrep pre-commit run --all-files --show-diff-on-failure
 
       - name: NX - set SHAs
         uses: nrwl/nx-set-shas@v4
 
-      - name: Lint & format check
+      - name: Lint & format checks
         run: |
           pnpm lint:affected
           pnpm format:check
@@ -38,3 +42,6 @@ jobs:
 
       - name: Unit Tests
         run: pnpm test:affected
+
+      - name: Run semgrep checks
+        run: semgrep scan $(cat semgrep-args.txt) --error
