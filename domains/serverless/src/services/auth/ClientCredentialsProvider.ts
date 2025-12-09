@@ -1,5 +1,3 @@
-import type { AuthTokenProviderPort } from '../../domain/ports/AuthTokenProviderPort';
-
 export interface ClientCredentialsConfig {
   tokenEndpoint: string;
   clientId: string;
@@ -22,7 +20,7 @@ interface CachedToken {
  * Adapter implementing OAuth2 client credentials flow
  * Handles token caching and automatic refresh
  */
-export class ClientCredentialsProvider implements AuthTokenProviderPort {
+export class ClientCredentialsProvider {
   private config: ClientCredentialsConfig;
   private cachedToken: CachedToken | null = null;
 

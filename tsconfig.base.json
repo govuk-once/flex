@@ -17,6 +17,9 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2022"
-  }
+    "target": "es2022",
+    "rootDir": ".",
+    "baseUrl": "."
+  },
+  "exclude": ["node_modules"]
 }
