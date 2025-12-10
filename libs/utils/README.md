@@ -12,4 +12,4 @@ npx nx lint utils
 
 ## Utilities
 
-> OVERVIEW of utilities will be added here once we add some within to the repo
+> OVERVIEW of utils will be added here

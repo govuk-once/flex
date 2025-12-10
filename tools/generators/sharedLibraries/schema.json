@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "NewModule",
+  "cli": "nx",
+  "title": "Create new shared library",
+  "type": "object",
+  "properties": {
+    "libName": {
+      "type": "string"
+    }
+  },
+  "required": ["libName"]
+}
