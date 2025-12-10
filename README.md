@@ -50,7 +50,7 @@ flex/
 ## How to generate a new shared library
 
 ```bash
-npx nx g ./tools/generators:newSharedLib --libName=example
+pnpm gen:lib --libName=example
 ```
 
 > The above command will create a project called `example`
