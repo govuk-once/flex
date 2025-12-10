@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/modules/udp"
+    "outDir": "../../dist/libs/<%= projectName %>"
   },
   "include": ["./**/*.ts"],
   "exclude": ["node_modules"]

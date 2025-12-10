@@ -15,13 +15,14 @@ export default async function (tree: Tree, schema: ILibGeneratorSchema) {
     `${projectRoot}/project.json`,
     JSON.stringify({
       name: `@flex/${projectName}`,
+      $schema: '../../node_modules/nx/schemas/project-schema.json',
       sourceRoot: `${projectRoot}/src`,
       projectType: 'library',
       targets: {
         lint: {
           executor: '@nx/eslint:lint',
           options: {
-            lintFilePatterns: [`${projectRoot}/**/*.ts`],
+            lintFilePatterns: [`${projectRoot}/src/**/*.ts`],
           },
         },
         test: {
