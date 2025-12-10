@@ -45,7 +45,25 @@ flex/
 | Repo        | Overview                               | README                         |
 | ----------- | -------------------------------------- | ------------------------------ |
 | @domains    | Domains - application code             | [Link](./domains/README.md)    |
-| @libs/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
+| @flex/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
+
+## How to generate a new shared library
+
+```bash
+pnpm gen:lib --libName=example
+```
+
+> The above command will create a project called `example`
+
+Then you will need to append the new project into the `tsconfig.base.json`
+in the case of the example project you would add:
+
+```
+"paths": {
+  "@flex/utils": ["libs/utils/src/index.ts"]
+  "@flex/example": ["libs/example/src/index.ts"]
+}
+```
 
 ## Committing work
 

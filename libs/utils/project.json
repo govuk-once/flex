@@ -1,20 +1,16 @@
 {
-  "name": "@libs/utils",
+  "name": "@flex/utils",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/utils/src",
   "projectType": "library",
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["libs/utils/**/*.ts"]
-      }
+      "options": { "lintFilePatterns": ["libs/utils/src/**/*.ts"] }
     },
     "test": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run libs/utils/src/ --passWithNoTests"
-      }
+      "options": { "command": "vitest run libs/utils/src/ --passWithNoTests" }
     }
   }
 }

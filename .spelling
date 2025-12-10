@@ -12,6 +12,7 @@ changelog
 ci
 nvm
 pre-commit
+projectName
 rebase
 repo
 udp

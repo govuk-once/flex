@@ -1,0 +1,5 @@
+{
+  "name": "@flex/generators",
+  "projectType": "library",
+  "sourceRoot": "tools/generators"
+}

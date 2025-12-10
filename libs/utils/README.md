@@ -1,6 +1,6 @@
-# Utils
+# utils
 
-> Utils project which is a shared library to be used across the domains in the
+> utils project which is a shared library to be used across the domains in the
 > FLEX project
 
 ## Available Commands
@@ -10,6 +10,6 @@ npx nx test utils
 npx nx lint utils
 ```
 
-## Utilities
+## utils Overview
 
-> OVERVIEW of utilities will be added here once we add some within to the repo
+> OVERVIEW of utils will be added here
