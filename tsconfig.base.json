@@ -21,9 +21,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2022",
-    "paths": {
-      "@flex/utils": ["libs/utils/src/index.ts"]
-    }
+    "target": "es2022"
   }
 }
