@@ -1,0 +1,21 @@
+# CDK
+cdk.out
+cdk.context.json
+
+# Build output
+dist/
+*.js
+*.d.ts
+!jest.config.js
+
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,37 @@
+{
+  "name": "flex-infrastructure",
+  "version": "1.0.0",
+  "description": "CDK infrastructure for Flex API",
+  "type": "commonjs",
+  "main": "bin/app.js",
+  "scripts": {
+    "build": "tsc",
+    "build:lambda": "esbuild lambda/hello/handler.ts --bundle --outdir=dist/lambda --platform=node --format=cjs --sourcemap",
+    "build:lambda:watch": "esbuild lambda/hello/handler.ts --bundle --outdir=dist/lambda --platform=node --format=cjs --sourcemap --watch",
+    "synth": "cdk synth",
+    "synth:local": "npm run build:lambda && npm run build && cdk synth",
+    "dev": "npm run build:lambda:watch",
+    "dev:sam": "./scripts/start-sam-local.sh",
+    "dev:sam:watch": "nodemon",
+    "bootstrap": "cdk bootstrap",
+    "deploy": "cdk deploy --require-approval never",
+    "deploy:hotswap": "cdk deploy --hotswap --require-approval never",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.159",
+    "@types/node": "^24.10.1",
+    "aws-cdk": "^2.1033.0",
+    "aws-cdk-lib": "^2.232.1",
+    "constructs": "^10.4.4",
+    "esbuild": "^0.27.0",
+    "lambda-live-debugger": "^1.11.1",
+    "nodemon": "^3.1.11",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

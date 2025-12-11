@@ -1,0 +1,94 @@
+{
+  "name": "infrastructure",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "infrastructure",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run infrastructure:build:lambda",
+          "nx run infrastructure:build:cdk"
+        ],
+        "parallel": true
+      }
+    },
+    "build:lambda": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx esbuild infrastructure/lambda/hello/handler.ts --bundle --outdir=dist/infrastructure/lambda --platform=node --format=cjs --sourcemap"
+      }
+    },
+    "build:lambda:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx esbuild infrastructure/lambda/hello/handler.ts --bundle --outdir=dist/infrastructure/lambda --platform=node --format=cjs --sourcemap --watch"
+      }
+    },
+    "build:cdk": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p infrastructure/tsconfig.json"
+      }
+    },
+    "synth": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run infrastructure:build:cdk",
+          "cd infrastructure && cdk synth"
+        ],
+        "parallel": false
+      }
+    },
+    "synth:local": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx run infrastructure:build:lambda",
+          "nx run infrastructure:build:cdk",
+          "cd infrastructure && cdk synth"
+        ],
+        "parallel": false
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd infrastructure && cdk deploy --require-approval never"
+      }
+    },
+    "deploy:hotswap": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd infrastructure && cdk deploy --hotswap --require-approval never"
+      }
+    },
+    "destroy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd infrastructure && cdk destroy"
+      }
+    },
+    "diff": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd infrastructure && cdk diff"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run infrastructure/"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["infrastructure/**/*.ts"]
+      }
+    }
+  }
+}
+
