@@ -13,13 +13,14 @@
     "moduleDetection": "force",
     "moduleResolution": "bundler",
     "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@libs/utils": ["libs/utils/src/index.ts"],
+      "@libs/handlers": ["libs/handlers/src/index.ts"]
+    },
     "outDir": "dist",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2022",
-    "paths": {
-      "@flex/utils": ["libs/utils/src/index.ts"]
-    }
+    "target": "es2022"
   }
 }

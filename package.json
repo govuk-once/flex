@@ -14,8 +14,8 @@
     "gen:lib": "npx nx g ./tools/generators:newSharedLib"
   },
   "devDependencies": {
-    "@nx/eslint": "22.1.3",
-    "@nx/eslint-plugin": "22.1.3",
+    "@nx/eslint": "22.2.0",
+    "@nx/eslint-plugin": "22.2.0",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "24.10.1",
     "@typescript-eslint/eslint-plugin": "8.46.4",
@@ -26,7 +26,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "jiti": "2.4.2",
-    "nx": "22.0.3",
+    "nx": "22.2.0",
     "prettier": "3.6.2",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
