@@ -1,5 +1,5 @@
 {
-  "name": "@domains/udp",
+  "name": "@domains/example",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "domains/udp/src",
   "projectType": "application",
@@ -7,19 +7,19 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx esbuild domains/udp/src/handlers/*/handler.ts --bundle --outdir=dist/domains/udp --platform=node --minify=true --format=cjs"
+        "command": "npx esbuild domains/example/src/handlers/*/**.ts --bundle --outdir=dist/domains/example --platform=node --minify=true --format=cjs"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
       "options": {
-        "lintFilePatterns": ["domains/udp/src/**/*.ts"]
+        "lintFilePatterns": ["domains/example/src/**/*.ts"]
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vitest run domains/udp/src/"
+        "command": "vitest run domains/example/src/"
       }
     }
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@libs/handlers",
+  "name": "@flex/handlers",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/handlers/src",
   "projectType": "library",
