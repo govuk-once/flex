@@ -13,6 +13,9 @@ const handler = createLambdaHandler(
       body: JSON.stringify({ message: 'Hello, World!' }),
     };
   },
+  {
+    loggerOptions: { level: 'INFO', serviceName: 'example-service' },
+  },
 );
 
 export { handler };

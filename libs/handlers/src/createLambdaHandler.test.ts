@@ -7,6 +7,11 @@ import type {
 import { createLambdaHandler } from './createLambdaHandler';
 import type { MiddlewareObj } from '@middy/core';
 
+const baseLoggerOptions = {
+  level: 'INFO' as const,
+  serviceName: 'test-service',
+};
+
 describe('createLambdaHandler', () => {
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
@@ -25,7 +30,9 @@ describe('createLambdaHandler', () => {
         };
       };
 
-      const handler = createLambdaHandler(handlerFn);
+      const handler = createLambdaHandler(handlerFn, {
+        loggerOptions: baseLoggerOptions,
+      });
       const event = {} as APIGatewayProxyEvent;
 
       const result = await handler(event, mockContext);
@@ -61,6 +68,7 @@ describe('createLambdaHandler', () => {
 
       const handler = createLambdaHandler(handlerFn, {
         middlewares: [middleware],
+        loggerOptions: baseLoggerOptions,
       });
 
       const event = { path: '/test' } as APIGatewayProxyEvent;
@@ -111,6 +119,7 @@ describe('createLambdaHandler', () => {
 
       const handler = createLambdaHandler(handlerFn, {
         middlewares: [middleware1, middleware2],
+        loggerOptions: baseLoggerOptions,
       });
 
       const event = {} as APIGatewayProxyEvent;
@@ -138,7 +147,9 @@ describe('createLambdaHandler', () => {
         };
       };
 
-      const handler = createLambdaHandler(handlerFn);
+      const handler = createLambdaHandler(handlerFn, {
+        loggerOptions: baseLoggerOptions,
+      });
       const event = {
         pathParameters: { userId: 'user-123' },
         body: null,
@@ -177,7 +188,9 @@ describe('createLambdaHandler', () => {
         };
       };
 
-      const handler = createLambdaHandler(handlerFn);
+      const handler = createLambdaHandler(handlerFn, {
+        loggerOptions: baseLoggerOptions,
+      });
       const event = {} as APIGatewayProxyEvent;
 
       const result = await handler(event, mockContext);

@@ -14,24 +14,37 @@
   "devDependencies": {
     "@nx/eslint": "22.2.0",
     "@nx/eslint-plugin": "22.2.0",
+    "@nx/js": "22.2.0",
+    "@nx/vite": "22.2.0",
+    "@nx/vitest": "22.2.0",
+    "@nx/web": "22.2.0",
+    "@swc-node/register": "~1.9.1",
+    "@swc/core": "~1.5.7",
+    "@swc/helpers": "~0.5.11",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "24.10.1",
     "@typescript-eslint/eslint-plugin": "8.46.4",
     "@typescript-eslint/parser": "8.46.4",
     "@vitest/coverage-v8": "4.0.8",
+    "@vitest/ui": "^4.0.0",
     "esbuild": "0.27.0",
     "eslint": "9.39.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "jiti": "2.4.2",
-    "nx": "22.2.0",
+    "jsdom": "~22.1.0",
+    "jsonc-eslint-parser": "^2.1.0",
+    "nx": "22.2.6",
     "prettier": "3.6.2",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
+    "vite": "^7.0.0",
+    "vite-plugin-dts": "~4.5.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.8"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.30.0",
     "@middy/core": "6.4.5"
   }
 }

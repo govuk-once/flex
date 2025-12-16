@@ -15,3 +15,8 @@ vitest.config.*.timestamp*
 
 # Coverage
 coverage/
+
+
+
+.nx/cache
+.nx/workspace-data
