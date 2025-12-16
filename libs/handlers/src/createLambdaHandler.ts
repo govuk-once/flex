@@ -12,11 +12,7 @@ export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
    * Array of middy middlewares to apply to the handler
    */
   middlewares?: Array<MiddlewareObj<TEvent, TResult>>;
-  /**
-   * Logger options (required)
-   */
-  loggerOptions: LoggerOptions;
-};
+} & LoggerOptions;
 
 /**
  * Creates a generic Lambda handler wrapped with middy middleware framework
@@ -46,7 +42,7 @@ export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
 ): MiddyfiedHandler<TEvent, TResult, Error, Context> {
   const middyHandler = middy<TEvent, TResult, Error, Context>(handler);
 
-  middyHandler.use(injectLambdaContext(getLogger(config.loggerOptions)));
+  middyHandler.use(injectLambdaContext(getLogger(config)));
 
   if (config.middlewares && config.middlewares.length > 0) {
     config.middlewares.forEach((middleware) => {

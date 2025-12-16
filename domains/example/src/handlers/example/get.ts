@@ -14,7 +14,7 @@ const handler = createLambdaHandler(
     };
   },
   {
-    loggerOptions: { level: 'INFO', serviceName: 'example-service' },
+    loggerOptions: { logLevel: 'INFO', serviceName: 'example-service' },
   },
 );
 

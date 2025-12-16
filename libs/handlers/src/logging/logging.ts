@@ -4,7 +4,7 @@ import { LogLevel } from '@aws-lambda-powertools/logger/types';
 let loggerInstance: Logger | null = null;
 
 export interface LoggerOptions {
-  level: LogLevel;
+  logLevel: LogLevel;
   serviceName?: string;
 }
 
@@ -27,7 +27,7 @@ export function getLogger(options?: LoggerOptions): Logger {
     return loggerInstance;
   }
 
-  return (loggerInstance = new Logger({ ...options, logLevel: options.level }));
+  return (loggerInstance = new Logger(options));
 }
 
 /**

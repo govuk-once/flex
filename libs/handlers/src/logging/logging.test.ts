@@ -18,13 +18,13 @@ describe('logging', () => {
   });
 
   it('returns the same logger instance when created with options', () => {
-    const logger = getLogger({ level: 'INFO', serviceName: 'test-service' });
+    const logger = getLogger({ logLevel: 'INFO', serviceName: 'test-service' });
     expect(logger).toBeInstanceOf(Logger);
     expect(getLogger()).toBe(logger);
   });
 
   it('creates a child logger from the cached logger', () => {
-    const logger = getLogger({ level: 'INFO', serviceName: 'test-service' });
+    const logger = getLogger({ logLevel: 'INFO', serviceName: 'test-service' });
     const child = getChildLogger({ foo: 'bar' });
     expect(child).toBeInstanceOf(Logger);
     expect(child).not.toBe(logger);
