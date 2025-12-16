@@ -14,8 +14,8 @@
     "moduleResolution": "bundler",
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "@libs/utils": ["libs/utils/src/index.ts"],
-      "@libs/handlers": ["libs/handlers/src/index.ts"]
+      "@flex/utils": ["libs/utils/src/index.ts"],
+      "@flex/handlers": ["libs/handlers/src/index.ts"]
     },
     "outDir": "dist",
     "resolveJsonModule": true,

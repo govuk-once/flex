@@ -11,7 +11,7 @@ This library provides a factory function to simplify the creation of AWS Lambda 
 Create a simple Lambda handler without middleware:
 
 ```typescript
-import { createLambdaHandler } from '@libs/handlers';
+import { createLambdaHandler } from '@flex/handlers';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const handler = createLambdaHandler(
