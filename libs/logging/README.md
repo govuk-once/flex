@@ -11,16 +11,6 @@ This package provides a simple, cached logger utility for use across the FLEX pr
 
 ## Usage
 
-### Installation
-
-Install the package and its peer dependency:
-
-```bash
-pnpm add @flex/logging @aws-lambda-powertools/logger
-# or
-npm install @flex/logging @aws-lambda-powertools/logger
-```
-
 ### Basic Example
 
 ```typescript
