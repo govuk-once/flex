@@ -12,7 +12,6 @@ export interface LoggerOptions {
  * Returns a cached logger instance, or creates one if it doesn't exist.
  * If context is provided and different from the last used, injects context.
  */
-
 export function getLogger(): Logger;
 export function getLogger(options: LoggerOptions): Logger;
 export function getLogger(options?: LoggerOptions): Logger {
