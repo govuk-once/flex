@@ -1,8 +1,9 @@
-import middy, { MiddyfiedHandler, MiddlewareObj } from '@middy/core';
 import type { Handler, Context } from 'aws-lambda';
 
-import { getLogger, LoggerOptions } from './logging/logging';
+import middy, { MiddyfiedHandler, MiddlewareObj } from '@middy/core';
 import { injectLambdaContext } from '@aws-lambda-powertools/logger/middleware';
+
+import { getLogger, LoggerOptions } from '@flex/logging';
 
 /**
  * Configuration options for creating a Lambda handler with middy
@@ -12,6 +13,7 @@ export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
    * Array of middy middlewares to apply to the handler
    */
   middlewares?: Array<MiddlewareObj<TEvent, TResult>>;
+  developerMode?: boolean;
 } & LoggerOptions;
 
 /**
@@ -42,7 +44,11 @@ export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
 ): MiddyfiedHandler<TEvent, TResult, Error, Context> {
   const middyHandler = middy<TEvent, TResult, Error, Context>(handler);
 
-  middyHandler.use(injectLambdaContext(getLogger(config)));
+  middyHandler.use(
+    injectLambdaContext(getLogger(config), {
+      logEvent: config.developerMode,
+    }),
+  );
 
   if (config.middlewares && config.middlewares.length > 0) {
     config.middlewares.forEach((middleware) => {

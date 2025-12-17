@@ -6,11 +6,16 @@ import type {
 } from 'aws-lambda';
 import { createLambdaHandler } from './createLambdaHandler';
 import type { MiddlewareObj } from '@middy/core';
+import * as logger from '@flex/logging';
+import * as awsLogger from '@aws-lambda-powertools/logger/middleware';
 
 const baseLoggerOptions = {
   logLevel: 'INFO' as const,
   serviceName: 'test-service',
 };
+
+vi.spyOn(logger, 'getLogger');
+vi.mock('@aws-lambda-powertools/logger/middleware', { spy: true });
 
 describe('createLambdaHandler', () => {
   const mockContext = {
@@ -40,7 +45,7 @@ describe('createLambdaHandler', () => {
     });
   });
 
-  describe('middleware support', () => {
+  describe('arbitrary middleware support', () => {
     it('applies middleware to the handler', async () => {
       const beforeMiddleware = vi.fn();
       const afterMiddleware = vi.fn();
@@ -130,6 +135,57 @@ describe('createLambdaHandler', () => {
         'middleware2-after',
         'middleware1-after',
       ]);
+    });
+  });
+
+  describe('logging integration', () => {
+    it('injects logger context into the handler', async () => {
+      const handlerFn = async (
+        _: APIGatewayProxyEvent,
+      ): Promise<APIGatewayProxyResult> => {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: 'logged' }),
+        };
+      };
+
+      const handler = createLambdaHandler(handlerFn, {
+        ...baseLoggerOptions,
+      });
+      const event = { path: '/log-test' } as APIGatewayProxyEvent;
+      await handler(event, mockContext);
+
+      expect(logger.getLogger).toHaveBeenCalled();
+      expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+        logger.getLogger(),
+        expect.anything(),
+      );
+    });
+
+    it('sets the logger integration to log out the event if developerMode is true', async () => {
+      const handlerFn = async (
+        _: APIGatewayProxyEvent,
+      ): Promise<APIGatewayProxyResult> => {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ message: 'logged' }),
+        };
+      };
+
+      const handler = createLambdaHandler(handlerFn, {
+        ...baseLoggerOptions,
+        developerMode: true,
+      });
+      const event = { path: '/log-test' } as APIGatewayProxyEvent;
+      await handler(event, mockContext);
+
+      expect(logger.getLogger).toHaveBeenCalled();
+      expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+        expect.anything(),
+        {
+          logEvent: true,
+        },
+      );
     });
   });
 
