@@ -26,7 +26,7 @@ npm install @flex/logging @aws-lambda-powertools/logger
 ```typescript
 import { getLogger, getChildLogger } from '@flex/logging';
 
-// Initialize the logger (once per runtime)
+// Initialise the logger (once per runtime)
 const logger = getLogger({ logLevel: 'INFO', serviceName: 'my-service' });
 
 // Use the logger
@@ -41,14 +41,14 @@ childLogger.debug('This is a child logger');
 
 #### `getLogger(options?: LoggerOptions): Logger`
 
-- Returns a cached logger instance. Throws if called without options before initialization.
+- Returns a cached logger instance. Throws if called without options before initialisation.
 - `LoggerOptions`:
   - `logLevel` (optional): Log level (e.g., 'INFO', 'DEBUG'). Defaults to 'INFO'.
   - `serviceName` (required): Name of the service for log context.
 
 #### `getChildLogger(context: Record<string, unknown>): Logger`
 
-- Returns a child logger with additional context. Throws if logger is not initialized.
+- Returns a child logger with additional context. Throws if logger is not initialised.
 
 ## Testing & Linting
 
