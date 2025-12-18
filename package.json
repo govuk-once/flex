@@ -12,16 +12,20 @@
     "gen:lib": "npx nx g ./tools/generators:newSharedLib",
     "gen:oas": "nx run @flex/utils:generate-oas",
     "docs:serve": "nx run @flex/docs:serve",
-    "docs:serve:swagger": "nx run @flex/docs:serve:swagger"
+    "docs:serve:swagger": "nx run @flex/docs:serve:swagger",
+    "commit": "cz"
   },
   "devDependencies": {
     "@nx/eslint": "22.2.0",
     "@nx/eslint-plugin": "22.2.0",
+    "@swc/core": "1.15.7",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "24.10.1",
     "@typescript-eslint/eslint-plugin": "8.46.4",
     "@typescript-eslint/parser": "8.46.4",
     "@vitest/coverage-v8": "4.0.8",
+    "commitizen": "4.3.1",
+    "cz-conventional-changelog": "3.3.0",
     "esbuild": "0.27.0",
     "eslint": "9.39.1",
     "eslint-config-prettier": "10.1.8",
@@ -32,14 +36,19 @@
     "prettier": "3.6.2",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
-    "vite": "^7.0.0",
+    "vite": "7.0.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.8",
     "zod-openapi": "5.4.5"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "^2.30.0",
+    "@aws-lambda-powertools/logger": "2.30.0",
     "@middy/core": "6.4.5",
     "zod": "4.2.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./tools/commitizen/nx-conventional.js"
+    }
   }
 }
