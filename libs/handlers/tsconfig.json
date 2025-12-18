@@ -1,8 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../build/libs/handlers",
-    "rootDir": "./src"
+    "outDir": "../../build/libs/handlers"
   },
   "include": ["src/**/*"]
 }

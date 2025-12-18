@@ -1,15 +1,19 @@
-import middy, { MiddyfiedHandler, MiddlewareObj } from '@middy/core';
 import type { Handler, Context } from 'aws-lambda';
+
+import middy, { MiddyfiedHandler, MiddlewareObj } from '@middy/core';
+import { injectLambdaContext } from '@aws-lambda-powertools/logger/middleware';
+
+import { getLogger, LoggerOptions } from '@flex/logging';
 
 /**
  * Configuration options for creating a Lambda handler with middy
  */
-export interface LambdaHandlerConfig<TEvent = unknown, TResult = unknown> {
+export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
   /**
    * Array of middy middlewares to apply to the handler
    */
   middlewares?: Array<MiddlewareObj<TEvent, TResult>>;
-}
+} & LoggerOptions;
 
 /**
  * Creates a generic Lambda handler wrapped with middy middleware framework
@@ -28,22 +32,28 @@ export interface LambdaHandlerConfig<TEvent = unknown, TResult = unknown> {
  *   },
  *   {
  *     middlewares: [customMiddleware()],
+ *     loggerOptions: { level: 'INFO', serviceName: 'my-service' },
  *   }
  * );
  * ```
  */
 export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
   handler: Handler<TEvent, TResult>,
-  config?: LambdaHandlerConfig<TEvent, TResult>,
+  config: LambdaHandlerConfig<TEvent, TResult>,
 ): MiddyfiedHandler<TEvent, TResult, Error, Context> {
   const middyHandler = middy<TEvent, TResult, Error, Context>(handler);
+  const logLevel = config.logLevel?.toUpperCase();
 
-  // Apply custom middlewares
-  if (config?.middlewares && config.middlewares.length > 0) {
-    config.middlewares.forEach((middleware) => {
-      middyHandler.use(middleware);
-    });
-  }
+  middyHandler.use(
+    injectLambdaContext(getLogger(config), {
+      logEvent: logLevel === 'DEBUG' || logLevel === 'TRACE',
+      correlationIdPath: 'requestContext.requestId',
+    }),
+  );
+
+  config.middlewares?.forEach((middleware) => {
+    middyHandler.use(middleware);
+  });
 
   return middyHandler;
 }

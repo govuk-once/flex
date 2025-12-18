@@ -15,7 +15,8 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@flex/utils": ["libs/utils/src/index.ts"],
-      "@flex/handlers": ["libs/handlers/src/index.ts"]
+      "@flex/handlers": ["libs/handlers/src/index.ts"],
+      "@flex/logging": ["libs/logging/src/index.ts"]
     },
     "outDir": "dist",
     "resolveJsonModule": true,
