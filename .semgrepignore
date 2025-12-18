@@ -13,3 +13,7 @@ coverage/
 reports/
 
 libs/test-utils/**
+
+# Ignore static OpenAPI docs
+apps/docs/index.html
+apps/docs/swagger.html
