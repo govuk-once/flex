@@ -27,7 +27,7 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["bin/**/*", "lib/**/*"],
+  "include": ["bin/**/*", "lib/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "cdk.out", "dist", "lambda", "**/*.test.ts", "**/*.spec.ts"]
 }
 

@@ -21,6 +21,19 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
     });
 
+    // hello lambda 2
+    const helloLambda2 = new lambda.Function(this, 'HelloLambda2', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'hello2/handler.handler',
+      code: lambda.Code.fromAsset(
+        path.join(__dirname, '../dist/lambda'),
+      ),
+      environment: {
+        NODE_ENV: 'production',
+      },
+      timeout: cdk.Duration.seconds(30),
+    });
+
     // Create API Gateway REST API
     const api = new apigateway.RestApi(this, 'FlexApi', {
       restApiName: 'Flex API',
