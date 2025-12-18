@@ -28,15 +28,17 @@
     "eslint-plugin-prettier": "5.5.4",
     "http-server": "14.1.1",
     "jiti": "2.4.2",
-    "nx": "22.2.0",
+    "nx": "22.2.6",
     "prettier": "3.6.2",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
+    "vite": "^7.0.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.8",
     "zod-openapi": "5.4.5"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.30.0",
     "@middy/core": "6.4.5",
     "zod": "4.2.0"
   }
