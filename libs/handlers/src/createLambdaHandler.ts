@@ -13,7 +13,6 @@ export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
    * Array of middy middlewares to apply to the handler
    */
   middlewares?: Array<MiddlewareObj<TEvent, TResult>>;
-  developerMode?: boolean;
 } & LoggerOptions;
 
 /**
@@ -43,18 +42,18 @@ export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
   config: LambdaHandlerConfig<TEvent, TResult>,
 ): MiddyfiedHandler<TEvent, TResult, Error, Context> {
   const middyHandler = middy<TEvent, TResult, Error, Context>(handler);
+  const logLevel = config.logLevel?.toUpperCase();
 
   middyHandler.use(
     injectLambdaContext(getLogger(config), {
-      logEvent: config.developerMode,
+      logEvent: logLevel === 'DEBUG' || logLevel === 'TRACE',
+      correlationIdPath: 'requestContext.requestId',
     }),
   );
 
-  if (config.middlewares && config.middlewares.length > 0) {
-    config.middlewares.forEach((middleware) => {
-      middyHandler.use(middleware);
-    });
-  }
+  config.middlewares?.forEach((middleware) => {
+    middyHandler.use(middleware);
+  });
 
   return middyHandler;
 }

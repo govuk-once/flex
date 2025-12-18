@@ -162,7 +162,43 @@ describe('createLambdaHandler', () => {
       );
     });
 
-    it('sets the logger integration to log out the event if developerMode is true', async () => {
+    it.each([
+      { logLevel: 'DEBUG' as const, expected: true },
+      { logLevel: 'debug' as const, expected: true },
+      { logLevel: 'TRACE' as const, expected: true },
+      { logLevel: 'trace' as const, expected: true },
+      { logLevel: 'INFO' as const, expected: false },
+      { logLevel: 'info' as const, expected: false },
+    ])(
+      'sets the logger integration logEvent parmeter to $expected if log level is $logLevel',
+      async ({ expected, logLevel }) => {
+        const handlerFn = async (
+          _: APIGatewayProxyEvent,
+        ): Promise<APIGatewayProxyResult> => {
+          return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'logged' }),
+          };
+        };
+
+        const handler = createLambdaHandler(handlerFn, {
+          ...baseLoggerOptions,
+          logLevel: logLevel,
+        });
+        const event = { path: '/log-test' } as APIGatewayProxyEvent;
+        await handler(event, mockContext);
+
+        expect(logger.getLogger).toHaveBeenCalled();
+        expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            logEvent: expected,
+          }),
+        );
+      },
+    );
+
+    it('passes correlationIdPath to logger middleware', async () => {
       const handlerFn = async (
         _: APIGatewayProxyEvent,
       ): Promise<APIGatewayProxyResult> => {
@@ -174,7 +210,6 @@ describe('createLambdaHandler', () => {
 
       const handler = createLambdaHandler(handlerFn, {
         ...baseLoggerOptions,
-        developerMode: true,
       });
       const event = { path: '/log-test' } as APIGatewayProxyEvent;
       await handler(event, mockContext);
@@ -182,9 +217,9 @@ describe('createLambdaHandler', () => {
       expect(logger.getLogger).toHaveBeenCalled();
       expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
         expect.anything(),
-        {
-          logEvent: true,
-        },
+        expect.objectContaining({
+          correlationIdPath: 'requestContext.requestId',
+        }),
       );
     });
   });
