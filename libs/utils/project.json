@@ -11,6 +11,17 @@
     "test": {
       "executor": "nx:run-commands",
       "options": { "command": "vitest run libs/utils/src/ --passWithNoTests" }
+    },
+    "generate-oas": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "{projectRoot}/src/openapi/**",
+        "{projectRoot}/src/schemas/**"
+      ],
+      "outputs": ["{workspaceRoot}/apps/docs/api.json"],
+      "options": {
+        "command": "npx tsx libs/utils/src/openapi/generate-docs.ts"
+      }
     }
   }
 }
