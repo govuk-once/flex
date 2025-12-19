@@ -1,5 +1,10 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "plugins": ["@nx/eslint"],
-  "packageManager": "pnpm"
+  "packageManager": "pnpm",
+  "release": {
+    "version": {
+      "conventionalCommits": true
+    }
+  }
 }

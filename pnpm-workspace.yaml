@@ -1,3 +1,8 @@
 packages:
-  - 'domains/*'
-  - 'libs/*'
+  - domains/*
+  - libs/*
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - nx

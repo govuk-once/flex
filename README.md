@@ -67,7 +67,7 @@ in the case of the example project you would add:
 
 ## Committing work
 
-When wanting to commit changes please first squash your commits.
+This repository uses Nx with conventional commits to automatically generate changelogs. When committing work the command `pnpm commit` is available to help format commit messages. Please squash any commits that are related into a single commit following the above convention.
 
 ### Simple command line procedure
 
