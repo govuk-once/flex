@@ -6,3 +6,5 @@ onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
   - nx
+
+minimumReleaseAge: 2880
