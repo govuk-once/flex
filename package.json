@@ -17,43 +17,44 @@
     "infra:deploy": "nx run @flex/infra:deploy"
   },
   "devDependencies": {
-    "@nx/eslint": "22.2.0",
-    "@nx/eslint-plugin": "22.2.0",
+    "@nx/eslint": "22.3.3",
+    "@nx/eslint-plugin": "22.3.3",
     "@swc/core": "1.15.7",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "24.10.1",
-    "@typescript-eslint/eslint-plugin": "8.46.4",
-    "@typescript-eslint/parser": "8.46.4",
-    "@vitest/coverage-v8": "4.0.8",
-    "aws-cdk": "2.1034.0",
-    "aws-cdk-lib": "2.232.2",
+    "@typescript-eslint/eslint-plugin": "8.50.0",
+    "@typescript-eslint/parser": "8.50.0",
+    "@vitest/coverage-v8": "4.0.16",
+    "aws-cdk": "2.1100.1",
+    "aws-cdk-lib": "2.233.0",
     "commitizen": "4.3.1",
     "constructs": "10.4.4",
     "cz-conventional-changelog": "3.3.0",
-    "esbuild": "0.27.0",
-    "eslint": "9.39.1",
+    "esbuild": "0.27.2",
+    "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.4",
     "http-server": "14.1.1",
-    "jiti": "2.4.2",
-    "nx": "22.2.6",
-    "prettier": "3.6.2",
+    "jiti": "2.6.1",
+    "nx": "22.3.3",
+    "prettier": "3.7.4",
     "ts-node": "10.9.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "vite": "7.0.0",
-    "vite-tsconfig-paths": "5.1.4",
-    "vitest": "4.0.8",
+    "vite": "7.3.0",
+    "vite-tsconfig-paths": "6.0.3",
+    "vitest": "4.0.16",
     "zod-openapi": "5.4.5"
   },
   "dependencies": {
     "@aws-lambda-powertools/logger": "2.30.0",
     "@middy/core": "6.4.5",
-    "zod": "4.2.0"
+    "zod": "4.2.1"
   },
   "config": {
     "commitizen": {
       "path": "./tools/commitizen/nx-conventional.js"
     }
-  }
+  },
+  "packageManager": "pnpm@10.26.1+sha512.664074abc367d2c9324fdc18037097ce0a8f126034160f709928e9e9f95d98714347044e5c3164d65bd5da6c59c6be362b107546292a8eecb7999196e5ce58fa"
 }
