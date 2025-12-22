@@ -1,0 +1,28 @@
+{
+  "name": "@flex/infra",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "platform/infra/src",
+  "projectType": "application",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": { "lintFilePatterns": ["platform/infra/src/**/*.ts"] }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run platform/infra/src/ --passWithNoTests"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsx platform/infra/src/index.ts" }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cdk deploy --app 'tsx platform/infra/src/index.ts'"
+      }
+    }
+  }
+}
