@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/modules/example"
+    "outDir": "../../dist/libs/infra"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

@@ -6,3 +6,6 @@ export * from './openapi/domain/topics';
 export * from './schemas/common';
 export * from './schemas/domain/topics';
 export * from './schemas/domain/users';
+export * from './schemas/infra';
+
+export * from './strings/create-joiner';

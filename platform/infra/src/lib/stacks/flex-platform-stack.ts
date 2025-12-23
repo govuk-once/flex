@@ -1,14 +1,19 @@
 import type { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import {
+  type FlexEnvironmentConfig,
+  toSsmParameterName,
+  toCfnExportName,
+} from '@flex/utils';
 
-import type { Environment } from '../types';
-import { DEFAULT_CORS_OPTIONS, DEFAULT_DEPLOY_OPTIONS } from '../utils';
+import { DEFAULT_CORS_OPTIONS, createDeployOptions } from '../utils';
 
-interface FlexPlatformStackProps extends cdk.StackProps {
-  readonly environment: Environment;
-}
+interface FlexPlatformStackProps
+  extends cdk.StackProps,
+    Pick<FlexEnvironmentConfig, 'stack' | 'stage'> {}
 
 export class FlexPlatformStack extends cdk.Stack {
   public readonly apiUrl: string;
@@ -16,20 +21,19 @@ export class FlexPlatformStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: FlexPlatformStackProps) {
     super(scope, id, props);
 
-    const { environment } = props;
+    const { stack, stage } = props;
 
     const api = new apigw.RestApi(this, 'FlexPlatformApi', {
       restApiName: 'Flex Platform API',
       description: 'Central API Gateway for the Flex Platform',
       defaultCorsPreflightOptions: DEFAULT_CORS_OPTIONS,
-      deployOptions: DEFAULT_DEPLOY_OPTIONS,
+      deployOptions: createDeployOptions(stage),
       endpointTypes: [apigw.EndpointType.REGIONAL],
     });
 
     this.apiUrl = api.url;
     this.addHealthEndpoint(api);
-
-    const ssmBasePath = `/${environment}/flex/platform`;
+    this.addHttpsOnlyPolicy(api);
 
     [
       {
@@ -37,7 +41,7 @@ export class FlexPlatformStack extends cdk.Stack {
         props: {
           stringValue: api.restApiId,
           description: 'The REST API ID of the Flex API Gateway',
-          parameterName: `${ssmBasePath}/api-id`,
+          parameterName: toSsmParameterName(stage, stack, 'platform', 'api-id'),
         },
       },
       {
@@ -45,15 +49,47 @@ export class FlexPlatformStack extends cdk.Stack {
         props: {
           stringValue: api.restApiRootResourceId,
           description: 'The Root Resource ID of the Flex API Gateway',
-          parameterName: `${ssmBasePath}/api-root-id`,
+          parameterName: toSsmParameterName(
+            stage,
+            stack,
+            'platform',
+            'api-root-id',
+          ),
+        },
+      },
+      {
+        id: 'FlexPlatformApiUrlParam',
+        props: {
+          stringValue: api.url,
+          description: 'The base URL of the Flex Platform API Gateway',
+          parameterName: toSsmParameterName(
+            stage,
+            stack,
+            'platform',
+            'api-url',
+          ),
+        },
+      },
+      {
+        id: 'FlexPlatformApiStageNameParam',
+        props: {
+          stringValue: api.deploymentStage.stageName,
+          description:
+            'The deployment stage name of the Flex Platform API Gateway',
+          parameterName: toSsmParameterName(
+            stage,
+            stack,
+            'platform',
+            'api-stage-name',
+          ),
         },
       },
     ].forEach(({ id, props }) => new ssm.StringParameter(this, id, props));
 
     new cdk.CfnOutput(this, 'FlexPlatformApiUrl', {
       value: api.url,
-      description: 'The base URL of the Flex Platform API',
-      exportName: `${environment}-flex-platform-api-url`,
+      description: 'The base URL of the Flex Platform API Gateway',
+      exportName: toCfnExportName(stage, stack, 'api-url'),
     });
   }
 
@@ -78,6 +114,20 @@ export class FlexPlatformStack extends cdk.Stack {
         },
       }),
       { methodResponses: [{ statusCode: '200' }] },
+    );
+  }
+
+  private addHttpsOnlyPolicy(api: apigw.RestApi) {
+    api.addToResourcePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.DENY,
+        principals: [new iam.AnyPrincipal()],
+        actions: ['execute-api:Invoke'],
+        resources: [
+          api.arnForExecuteApi('*', '/*', api.deploymentStage.stageName),
+        ],
+        conditions: { Bool: { 'aws:SecureTransport': 'false' } },
+      }),
     );
   }
 }
