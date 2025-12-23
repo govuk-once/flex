@@ -1,6 +1,7 @@
 packages:
   - domains/*
   - libs/*
+  - platform/*
 
 onlyBuiltDependencies:
   - '@swc/core'

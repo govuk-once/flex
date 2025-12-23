@@ -1,13 +1,15 @@
 import type { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import {
+  createSsmParameters,
+  CORS_OPTIONS_DEFAULTS,
+  DEPLOY_OPTIONS_DEFAULTS,
+  FLEX_CONFIG,
+} from '@flex/utils';
 
-import type { Environment } from '../types';
-import { DEFAULT_CORS_OPTIONS, DEFAULT_DEPLOY_OPTIONS } from '../utils';
-
-interface FlexPlatformStackProps extends cdk.StackProps {
-  readonly environment: Environment;
+export interface FlexPlatformStackProps extends cdk.StackProps {
+  readonly stage: string;
 }
 
 export class FlexPlatformStack extends cdk.Stack {
@@ -16,44 +18,62 @@ export class FlexPlatformStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: FlexPlatformStackProps) {
     super(scope, id, props);
 
-    const { environment } = props;
+    const { stage } = props;
 
-    const api = new apigw.RestApi(this, 'FlexPlatformApi', {
-      restApiName: 'Flex Platform API',
-      description: 'Central API Gateway for the Flex Platform',
-      defaultCorsPreflightOptions: DEFAULT_CORS_OPTIONS,
-      deployOptions: DEFAULT_DEPLOY_OPTIONS,
+    const ssmNamespace = FLEX_CONFIG.platform.getSsmNamespace(stage);
+
+    const { API_ID, API_ROOT_ID, API_STAGE, API_URL } = FLEX_CONFIG.platform.ssm;
+
+    const api = new apigw.RestApi(this, 'Api', {
+      restApiName: 'Flex API',
+      description: 'Central API Gateway for the Flex platform',
+      defaultCorsPreflightOptions: CORS_OPTIONS_DEFAULTS,
+      deployOptions: {
+        ...DEPLOY_OPTIONS_DEFAULTS,
+        stageName: stage,
+      },
       endpointTypes: [apigw.EndpointType.REGIONAL],
     });
 
     this.apiUrl = api.url;
     this.addHealthEndpoint(api);
 
-    const ssmBasePath = `/${environment}/flex/platform`;
-
-    [
+    createSsmParameters(this, [
       {
-        id: 'FlexPlatformApiIdParam',
-        props: {
-          stringValue: api.restApiId,
-          description: 'The REST API ID of the Flex API Gateway',
-          parameterName: `${ssmBasePath}/api-id`,
-        },
+        id: 'ApiIdParam',
+        key: `${ssmNamespace}/${API_ID}`,
+        value: api.restApiId,
+        description: 'Flex Platform API Gateway REST API ID',
       },
       {
-        id: 'FlexPlatformApiRootIdParam',
-        props: {
-          stringValue: api.restApiRootResourceId,
-          description: 'The Root Resource ID of the Flex API Gateway',
-          parameterName: `${ssmBasePath}/api-root-id`,
-        },
+        id: 'ApiRootIdParam',
+        key: `${ssmNamespace}/${API_ROOT_ID}`,
+        value: api.restApiRootResourceId,
+        description: 'Flex Platform API Gateway root resource ID',
       },
-    ].forEach(({ id, props }) => new ssm.StringParameter(this, id, props));
+      {
+        id: 'ApiUrlParam',
+        key: `${ssmNamespace}/${API_URL}`,
+        value: api.url,
+        description: 'Flex Platform API Gateway base URL',
+      },
+      {
+        id: 'ApiStageParam',
+        key: `${ssmNamespace}/${API_STAGE}`,
+        value: api.deploymentStage.stageName,
+        description: 'Flex Platform API Gateway deployment stage',
+      },
+    ]);
 
-    new cdk.CfnOutput(this, 'FlexPlatformApiUrl', {
+    new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
-      description: 'The base URL of the Flex Platform API',
-      exportName: `${environment}-flex-platform-api-url`,
+      description: 'Flex API Gateway base URL',
+      exportName: `${this.stackName}-api-url`,
+    });
+
+    new cdk.CfnOutput(this, 'ApiHealthEndpoint', {
+      value: `${api.url}health`,
+      description: 'Flex API Gateway health check endpoint',
     });
   }
 

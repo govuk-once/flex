@@ -1,5 +1,5 @@
 {
-  "name": "@flex/infra",
+  "name": "@flex/platform-infra",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "platform/infra/src",
   "projectType": "application",
@@ -16,24 +16,27 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "options": { "command": "tsx platform/infra/src/index.ts" }
+      "options": {
+        "command": "tsx --tsconfig tsconfig.base.json platform/infra/src/index.ts"
+      }
     },
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cdk deploy --app 'tsx platform/infra/src/index.ts'"
+        "command": "cdk deploy --app 'tsx --tsconfig tsconfig.base.json platform/infra/src/index.ts'"
       }
     },
     "synth": {
       "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/cdk.out/**"],
       "options": {
-        "command": "cdk synth"
+        "command": "cdk synth --app 'tsx --tsconfig tsconfig.base.json platform/infra/src/index.ts'"
       }
     },
     "checkov": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cdk synth && checkov -f cdk.out --framework cloudformation",
+        "command": "cdk synth --app 'tsx --tsconfig tsconfig.base.json platform/infra/src/index.ts' && checkov -f cdk.out --framework cloudformation",
         "cwd": "platform/infra"
       }
     }

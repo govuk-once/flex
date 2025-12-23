@@ -1,24 +1,38 @@
 import * as cdk from 'aws-cdk-lib';
+import { getEnvironmentConfig, ResourceTaggingAspect } from '@flex/utils';
 
+import { ExampleDomainStack } from 'domains/example/infra/stack';
 import { FlexPlatformStack } from './lib/stacks/flex-platform-stack';
-import { getEnvironmentConfig, ResourceTaggingAspect } from './lib/utils';
 
 const app = new cdk.App();
 
-const { environment, environmentTag, stackName } = getEnvironmentConfig();
+const { stage, environment } = getEnvironmentConfig();
 
-const stack = new FlexPlatformStack(app, `FlexPlatformStack${stackName}`, {
-  environment,
+const TAGS = {
+  Product: 'GOV.UK Once',
+  System: 'Flex',
+  Environment: environment,
+  Owner: 'test@digital.cabinet-office.gov.uk',
+};
+
+const flexPlatformStack = new FlexPlatformStack(
+  app,
+  `FlexPlatformStack-${stage}`,
+  { stage },
+);
+
+cdk.Aspects.of(flexPlatformStack).add(new ResourceTaggingAspect(TAGS), {
+  priority: 100, // Priority: lower number = higher priority, must be < 200 (default Tag priority)
 });
 
-cdk.Aspects.of(stack).add(
-  new ResourceTaggingAspect({
-    Product: 'GOV.UK Once',
-    System: 'Flex',
-    Environment: environmentTag,
-    Owner: '',
-  }),
-  {
-    priority: 100,
-  }, // Priority: lower number = higher priority, must be < 200 (default Tag priority)
+const exampleDomainStack = new ExampleDomainStack(
+  app,
+  `ExampleDomainStack-${stage}`,
+  { stage },
 );
+
+cdk.Aspects.of(exampleDomainStack).add(new ResourceTaggingAspect(TAGS), {
+  priority: 100,
+});
+
+exampleDomainStack.addDependency(flexPlatformStack);
