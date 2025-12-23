@@ -1,7 +1,7 @@
 {
   "name": "@domains/example",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "domains/udp/src",
+  "sourceRoot": "domains/example/src",
   "projectType": "application",
   "targets": {
     "build": {

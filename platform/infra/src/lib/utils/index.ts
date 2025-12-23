@@ -6,12 +6,13 @@ import {
   Cors,
   MethodLoggingLevel,
 } from 'aws-cdk-lib/aws-apigateway';
-
-import type {
-  EnvironmentConfig,
-  ResourceTagEnvironment,
-  ResourceTagOptions,
-} from '../types';
+import {
+  type FlexEnvironmentConfig,
+  type ResourceTags,
+  FlexEnvironment,
+  FlexStage,
+  ResourceTagsSchema,
+} from '@flex/utils';
 
 export const DEFAULT_CORS_OPTIONS: CorsOptions = {
   allowOrigins: Cors.ALL_ORIGINS,
@@ -19,29 +20,32 @@ export const DEFAULT_CORS_OPTIONS: CorsOptions = {
   allowHeaders: Cors.DEFAULT_HEADERS,
 };
 
-export const DEFAULT_DEPLOY_OPTIONS = {
-  stageName: 'dev',
-  tracingEnabled: true,
-  metricsEnabled: true,
-  loggingLevel: MethodLoggingLevel.INFO,
-} as const satisfies StageOptions;
+export function createDeployOptions(stage: FlexStage = 'dev'): StageOptions {
+  return {
+    stageName: stage,
+    tracingEnabled: true,
+    metricsEnabled: true,
+    loggingLevel: MethodLoggingLevel.INFO,
+  };
+}
 
 // TODO: Decide what we want to include here
-export function getEnvironmentConfig(): EnvironmentConfig {
-  const environment = process.env.DEV_ENV || 'dev';
-  const environmentTag =
-    (process.env.ENV_TAG as ResourceTagEnvironment) || 'development';
-  const stackName = process.env.DEV_STACK_NAME || environment;
+export function getFlexEnvironmentConfig(): FlexEnvironmentConfig {
+  const { FLEX_ENV_TAG, FLEX_STAGE, FLEX_STACK } = FlexEnvironment.parse(
+    process.env,
+  );
 
   return {
-    environment,
-    environmentTag,
-    stackName,
+    envTag: FLEX_ENV_TAG,
+    stage: FLEX_STAGE,
+    stack: FLEX_STACK,
   };
 }
 
 export class ResourceTaggingAspect implements IAspect {
-  constructor(private readonly tags: ResourceTagOptions) {}
+  constructor(private readonly tags: ResourceTags) {
+    this.tags = ResourceTagsSchema.parse(tags);
+  }
 
   public visit(node: Construct) {
     Object.entries(this.tags).forEach(([k, v]) => Tags.of(node).add(k, v));
