@@ -48,6 +48,15 @@ repos:
         stages:
           - 'pre-commit'
 
+      - id: checkov
+        entry: pnpm infra:checkov
+        language: system
+        name: checkov IaC linting
+        pass_filenames: false
+        stages:
+          - 'pre-commit'
+        files: ^platform/infra/
+
   - repo: https://github.com/semgrep/semgrep
     rev: v1.89.0
     hooks:

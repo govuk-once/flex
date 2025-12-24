@@ -23,6 +23,19 @@
       "options": {
         "command": "cdk deploy --app 'tsx platform/infra/src/index.ts'"
       }
+    },
+    "synth": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cdk synth"
+      }
+    },
+    "checkov": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cdk synth && checkov -f cdk.out --framework cloudformation",
+        "cwd": "platform/infra"
+      }
     }
   }
 }

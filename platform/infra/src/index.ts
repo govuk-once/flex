@@ -18,4 +18,7 @@ cdk.Aspects.of(stack).add(
     Environment: environmentTag,
     Owner: '',
   }),
+  {
+    priority: 100,
+  }, // Priority: lower number = higher priority, must be < 200 (default Tag priority)
 );

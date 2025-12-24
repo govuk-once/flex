@@ -14,7 +14,9 @@
     "docs:serve": "nx run @flex/docs:serve",
     "docs:serve:swagger": "nx run @flex/docs:serve:swagger",
     "commit": "cz",
-    "infra:deploy": "nx run @flex/infra:deploy"
+    "infra:deploy": "nx run @flex/infra:deploy",
+    "infra:synth": "nx run @flex/infra:synth",
+    "infra:checkov": "nx run @flex/infra:checkov"
   },
   "devDependencies": {
     "@nx/eslint": "22.3.3",
