@@ -11,6 +11,10 @@
 1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
 2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
 3. **PNPM**: [install](https://pnpm.io/installation)
+4. **checkov**: Required for Infrastructure as Code (IaC) linting. Install via one of:
+   - **pipx** (recommended): `pipx install checkov`
+   - **pip**: `pip install checkov`
+   - **homebrew** (macOS): `brew install checkov`
 
 ### 2. Installation
 

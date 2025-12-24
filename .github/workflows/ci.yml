@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install semgrep pre-commit
+          python3 -m pip install semgrep pre-commit checkov
           npm install -g pnpm
           pnpm install --frozen-lockfile
 
@@ -42,6 +42,9 @@ jobs:
 
       - name: Unit Tests
         run: pnpm test:affected
+
+      - name: Infrastructure as Code (IaC) Linting with checkov
+        run: pnpm infra:checkov
 
       - name: Run semgrep checks
         run: semgrep scan $(cat semgrep-args.txt) --error
