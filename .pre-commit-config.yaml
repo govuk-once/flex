@@ -49,7 +49,7 @@ repos:
           - 'pre-commit'
 
       - id: checkov
-        entry: nx run @flex/infra:checkov
+        entry: pnpm infra:checkov
         language: system
         name: checkov IaC linting
         pass_filenames: false
