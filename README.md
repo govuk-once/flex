@@ -18,23 +18,11 @@
 
 ### 2. Installation
 
-Run the following `make` command to install dependencies and setup pre-commit:
+Run the following commands to install dependencies and setup pre-commit:
 
 ```bash
 pnpm install --frozen-lockfile
 pre-commit install
-```
-
-## Useful commands to use
-
-To see a list of available commands you can check `package.json` scripts
-here are a few useful commands below:
-
-```bash
-pnpm test:affected
-pnpm build:affected
-pnpm lint:affected
-pnpm format:check
 ```
 
 ## Repo Overview
@@ -50,24 +38,6 @@ flex/
 | ----------- | -------------------------------------- | ------------------------------ |
 | @domains    | Domains - application code             | [Link](./domains/README.md)    |
 | @flex/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
-
-## How to generate a new shared library
-
-```bash
-pnpm gen:lib --libName=example
-```
-
-> The above command will create a project called `example`
-
-Then you will need to append the new project into the `tsconfig.base.json`
-in the case of the example project you would add:
-
-```
-"paths": {
-  "@flex/utils": ["libs/utils/src/index.ts"]
-  "@flex/example": ["libs/example/src/index.ts"]
-}
-```
 
 ## Committing work
 

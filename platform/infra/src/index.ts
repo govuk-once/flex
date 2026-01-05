@@ -8,8 +8,17 @@ const app = new cdk.App();
 
 const envConfig = getEnvConfig();
 
+let coreStack: FlexCoreStack | undefined;
 if (envConfig.persistent) {
-  new FlexCoreStack(app, { id: getStackName("FlexCore"), enableNat: false });
+  coreStack = new FlexCoreStack(app, {
+    id: getStackName("FlexCore"),
+    enableNat: false,
+  });
 }
 
-new FlexPlatformStack(app, getStackName("FlexPlatform"));
+const platformStack = new FlexPlatformStack(app, getStackName("FlexPlatform"));
+
+// Ensure the network stack is deployed first via the pipeline
+if (coreStack) {
+  platformStack.addDependency(coreStack);
+}
