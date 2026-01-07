@@ -1,24 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 
-import { FlexPlatformStack } from './lib/stacks/flex-platform-stack';
-import { getEnvironmentConfig, ResourceTaggingAspect } from './lib/utils';
+import { FlexCoreStack } from './stacks/flex-core-stack';
+import { FlexPlatformStack } from './stacks/flex-platform-stack';
+import { getEnvConfig, getStackName } from './stacks/gov-uk-once-stack';
 
 const app = new cdk.App();
 
-const { environment, environmentTag, stackName } = getEnvironmentConfig();
+const envConfig = getEnvConfig();
 
-const stack = new FlexPlatformStack(app, `FlexPlatformStack${stackName}`, {
-  environment,
-});
+if (envConfig.persistent) {
+  new FlexCoreStack(app, { id: getStackName('FlexCore'), enableNat: false });
+}
 
-cdk.Aspects.of(stack).add(
-  new ResourceTaggingAspect({
-    Product: 'GOV.UK Once',
-    System: 'Flex',
-    Environment: environmentTag,
-    Owner: '',
-  }),
-  {
-    priority: 100,
-  }, // Priority: lower number = higher priority, must be < 200 (default Tag priority)
-);
+new FlexPlatformStack(app, getStackName('FlexPlatform'));

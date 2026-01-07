@@ -103,6 +103,24 @@ importers:
         specifier: 5.4.5
         version: 5.4.5(zod@4.2.1)
 
+  platform/infra:
+    devDependencies:
+      aws-cdk:
+        specifier: 2.1100.1
+        version: 2.1100.1
+      aws-cdk-lib:
+        specifier: 2.233.0
+        version: 2.233.0(constructs@10.4.4)
+      constructs:
+        specifier: 10.4.4
+        version: 10.4.4
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
 packages:
 
   '@aws-cdk/asset-awscli-v1@2.2.242':
