@@ -2,6 +2,8 @@
   "name": "@flex/infra",
   "type": "module",
   "scripts": {
+    "destroy": "cdk destroy",
+    "deploy": "cdk deploy",
     "synth": "cdk synth"
   },
   "devDependencies": {

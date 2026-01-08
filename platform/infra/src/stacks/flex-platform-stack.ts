@@ -1,5 +1,9 @@
 import type { Construct } from 'constructs';
+
+import { Code } from 'aws-cdk-lib/aws-lambda';
 import { AccessLogFormat } from 'aws-cdk-lib/aws-apigateway';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import {
   CorsHttpMethod,
   HttpApi,
@@ -7,11 +11,9 @@ import {
   HttpStage,
   LogGroupLogDestination,
 } from 'aws-cdk-lib/aws-apigatewayv2';
-import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
-import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 import { GovUkOnceStack } from './gov-uk-once-stack';
-import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { FlexFunction } from '../constructs/flex-function';
 
 export class FlexPlatformStack extends GovUkOnceStack {
   constructor(scope: Construct, id: string) {
@@ -42,7 +44,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
       createDefaultStage: false,
     });
 
-    const httpApiStage = new HttpStage(this, 'ApiStage', {
+    new HttpStage(this, 'ApiStage', {
       httpApi,
       stageName: '$default',
       autoDeploy: true,
@@ -63,18 +65,21 @@ export class FlexPlatformStack extends GovUkOnceStack {
       detailedMetricsEnabled: true,
     });
 
+    const helloFunction = new FlexFunction(this, 'HelloFunction', {
+      handler: {
+        name: 'index.handler',
+        code: Code.fromInline(
+          `exports.handler = (event) => ({ statusCode: 200, body: "Hello World" });`,
+        ),
+      },
+    });
+
     httpApi.addRoutes({
       path: '/hello',
       methods: [HttpMethod.GET],
       integration: new HttpLambdaIntegration(
         'HelloIntegration',
-        new Function(this, 'HelloLambda', {
-          runtime: Runtime.NODEJS_24_X,
-          handler: 'index.handler',
-          code: Code.fromInline(
-            `exports.handler = (event) => ({ statusCode: 200, body: "Hello World" });`,
-          ),
-        }),
+        helloFunction.handler,
       ),
     });
   }

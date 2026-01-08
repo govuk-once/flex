@@ -15,6 +15,7 @@
     "docs:serve:swagger": "nx run @flex/docs:serve:swagger",
     "commit": "cz",
     "infra:deploy": "nx run @flex/infra:deploy",
+    "infra:destroy": "nx run @flex/infra:destroy",
     "infra:synth": "nx run @flex/infra:synth",
     "infra:checkov": "nx run @flex/infra:checkov"
   },

@@ -131,6 +131,8 @@ export class FlexCoreStack extends GovUkOnceStack {
       },
     });
 
+    this.terminationProtection = true;
+
     const vpc = this.createVpc({ enableNat });
     const sgs = this.createSecurityGroups(vpc);
     this.addVpcEndpoints(vpc, sgs.privateIsolated);
