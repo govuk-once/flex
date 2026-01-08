@@ -20,15 +20,15 @@
     },
     "deploy": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "cdk deploy --app 'tsx platform/infra/src/index.ts'"
-      }
+      "options": { "command": "cdk deploy", "cwd": "platform/infra" }
+    },
+    "destroy": {
+      "executor": "nx:run-commands",
+      "options": { "command": "cdk destroy", "cwd": "platform/infra" }
     },
     "synth": {
       "executor": "nx:run-commands",
-      "options": {
-        "command": "cdk synth"
-      }
+      "options": { "command": "cdk synth", "cwd": "platform/infra" }
     },
     "checkov": {
       "executor": "nx:run-commands",
