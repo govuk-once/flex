@@ -1,0 +1,31 @@
+{
+  "name": "@flex/utils",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate-oas": "tsx src/openapi/generate-docs.ts",
+    "scalar": "pnpm generate-oas && http-server src/openapi -p 4200 -o/scalar.html -c-1",
+    "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1",
+    "lint": "eslint --max-warnings=0 src",
+    "test": "vitest run src --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "4.3.5",
+    "zod-openapi": "5.4.6"
+  },
+  "devDependencies": {
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "@configs/vitest": "workspace:*",
+    "@types/node": "25.0.3",
+    "eslint": "9.39.2",
+    "http-server": "14.1.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  }
+}

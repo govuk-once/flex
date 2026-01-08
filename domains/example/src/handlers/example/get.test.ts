@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
-import { handler } from './get';
+import type { APIGatewayProxyEvent, Context } from "aws-lambda";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-describe('createLambdaHandler', () => {
+import { handler } from "./get";
+
+describe("createLambdaHandler", () => {
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
   } as unknown as Context;
@@ -11,14 +12,14 @@ describe('createLambdaHandler', () => {
     vi.clearAllMocks();
   });
 
-  describe('Hello World handler', () => {
-    it('GET /example returns Hello, World!', async () => {
+  describe("Hello World handler", () => {
+    it("GET /example returns Hello, World!", async () => {
       const event = {} as APIGatewayProxyEvent;
 
       const result = await handler(event, mockContext);
 
       expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toEqual({ message: 'Hello, World!' });
+      expect(JSON.parse(result.body)).toEqual({ message: "Hello, World!" });
     });
   });
 });

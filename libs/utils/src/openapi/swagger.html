@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Flex API</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"
+      integrity="sha512-franxM1vSpi8w0Ni4gQdyju6H2ZQLfVbHG48n4AU2icB8yTJ/WgBl9pxo9IcXjgKNlt+p7N1pdDER9P6ayGepA=="
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script
+      src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"
+      integrity="sha512-6WkepU6FmMMNE0LmwyAaYhXIE4VZ12qm8HrOOqzTiK0SJqoTqhdsTENV+Eq5bx3AGhYvN117cvHBDbTWQU1lYg=="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"
+      integrity="sha512-xlHi4BuPfAt2afGWeeIII/NlKlDRcQJH3OOKMjifEdh4UGnwOKWxOgTpNEYu390fURlsMK6uSJrEsuuoWx0Vtw=="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      window.onload = function () {
+        window.ui = SwaggerUIBundle({
+          url: "/api.json",
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        });
+      };
+    </script>
+  </body>
+</html>

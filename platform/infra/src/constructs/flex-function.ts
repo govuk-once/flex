@@ -1,10 +1,9 @@
-import type { LogGroupProps } from 'aws-cdk-lib/aws-logs';
-import type { AssetCode, InlineCode } from 'aws-cdk-lib/aws-lambda';
-
-import { Duration } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
-import { Function, Runtime, Tracing } from 'aws-cdk-lib/aws-lambda';
+import { Duration } from "aws-cdk-lib";
+import type { AssetCode, InlineCode } from "aws-cdk-lib/aws-lambda";
+import { Function, Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
+import type { LogGroupProps } from "aws-cdk-lib/aws-logs";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { Construct } from "constructs";
 
 interface FlexFunctionProps {
   readonly handler: {
@@ -33,7 +32,7 @@ export class FlexFunction extends Construct {
         description,
         environment,
         memorySize,
-        name = 'handler',
+        name = "handler",
         runtime = Runtime.NODEJS_24_X,
         timeout,
         tracing = Tracing.ACTIVE,
@@ -41,12 +40,12 @@ export class FlexFunction extends Construct {
       logGroup: logGroupProps,
     } = props;
 
-    this.logGroup = new LogGroup(this, 'LogGroup', {
+    this.logGroup = new LogGroup(this, "LogGroup", {
       retention: RetentionDays.ONE_WEEK,
       ...logGroupProps,
     });
 
-    this.handler = new Function(this, 'Handler', {
+    this.handler = new Function(this, "Handler", {
       code,
       description,
       environment,

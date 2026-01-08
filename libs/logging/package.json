@@ -1,0 +1,24 @@
+{
+  "name": "@flex/logging",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings=0 src",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "2.30.1"
+  },
+  "devDependencies": {
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "@configs/vitest": "workspace:*",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  }
+}

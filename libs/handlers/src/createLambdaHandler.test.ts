@@ -1,23 +1,23 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as logger from "@flex/logging";
+import type { MiddlewareObj } from "@middy/core";
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyResult,
   Context,
-} from 'aws-lambda';
-import { createLambdaHandler } from './createLambdaHandler';
-import type { MiddlewareObj } from '@middy/core';
-import * as logger from '@flex/logging';
-import * as awsLogger from '@aws-lambda-powertools/logger/middleware';
+} from "aws-lambda";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createLambdaHandler } from "./createLambdaHandler";
 
 const baseLoggerOptions = {
-  logLevel: 'INFO' as const,
-  serviceName: 'test-service',
+  logLevel: "INFO" as const,
+  serviceName: "test-service",
 };
 
-vi.spyOn(logger, 'getLogger');
-vi.mock('@aws-lambda-powertools/logger/middleware', { spy: true });
+vi.spyOn(logger, "getLogger");
+vi.spyOn(logger, "injectLambdaContext");
 
-describe('createLambdaHandler', () => {
+describe("createLambdaHandler", () => {
   const mockContext = {
     getRemainingTimeInMillis: () => 1000,
   } as unknown as Context;
@@ -26,13 +26,13 @@ describe('createLambdaHandler', () => {
     vi.clearAllMocks();
   });
 
-  describe('basic handler creation', () => {
-    it('creates a middy handler from a simple handler function', async () => {
+  describe("basic handler creation", () => {
+    it("creates a middy handler from a simple handler function", async () => {
       const handlerFn = async (): Promise<APIGatewayProxyResult> => {
-        return {
+        return Promise.resolve({
           statusCode: 200,
-          body: JSON.stringify({ message: 'success' }),
-        };
+          body: JSON.stringify({ message: "success" }),
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, baseLoggerOptions);
@@ -41,12 +41,12 @@ describe('createLambdaHandler', () => {
       const result = await handler(event, mockContext);
 
       expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toEqual({ message: 'success' });
+      expect(JSON.parse(result.body)).toEqual({ message: "success" });
     });
   });
 
-  describe('arbitrary middleware support', () => {
-    it('applies middleware to the handler', async () => {
+  describe("arbitrary middleware support", () => {
+    it("applies middleware to the handler", async () => {
       const beforeMiddleware = vi.fn();
       const afterMiddleware = vi.fn();
 
@@ -54,19 +54,19 @@ describe('createLambdaHandler', () => {
         APIGatewayProxyEvent,
         APIGatewayProxyResult
       > = {
-        before: async (request) => {
+        before: (request) => {
           beforeMiddleware(request.event);
         },
-        after: async (request) => {
+        after: (request) => {
           afterMiddleware(request.response);
         },
       };
 
       const handlerFn = async (): Promise<APIGatewayProxyResult> => {
-        return {
+        return Promise.resolve({
           statusCode: 200,
-          body: JSON.stringify({ message: 'success' }),
-        };
+          body: JSON.stringify({ message: "success" }),
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {
@@ -74,7 +74,7 @@ describe('createLambdaHandler', () => {
         ...baseLoggerOptions,
       });
 
-      const event = { path: '/test' } as APIGatewayProxyEvent;
+      const event = { path: "/test" } as APIGatewayProxyEvent;
       await handler(event, mockContext);
 
       expect(beforeMiddleware).toHaveBeenCalledWith(event);
@@ -85,18 +85,18 @@ describe('createLambdaHandler', () => {
       );
     });
 
-    it('applies multiple middlewares in order', async () => {
+    it("applies multiple middlewares in order", async () => {
       const callOrder: string[] = [];
 
       const middleware1: MiddlewareObj<
         APIGatewayProxyEvent,
         APIGatewayProxyResult
       > = {
-        before: async () => {
-          callOrder.push('middleware1-before');
+        before: () => {
+          callOrder.push("middleware1-before");
         },
-        after: async () => {
-          callOrder.push('middleware1-after');
+        after: () => {
+          callOrder.push("middleware1-after");
         },
       };
 
@@ -104,20 +104,20 @@ describe('createLambdaHandler', () => {
         APIGatewayProxyEvent,
         APIGatewayProxyResult
       > = {
-        before: async () => {
-          callOrder.push('middleware2-before');
+        before: () => {
+          callOrder.push("middleware2-before");
         },
-        after: async () => {
-          callOrder.push('middleware2-after');
+        after: () => {
+          callOrder.push("middleware2-after");
         },
       };
 
       const handlerFn = async (): Promise<APIGatewayProxyResult> => {
-        callOrder.push('handler');
-        return {
+        callOrder.push("handler");
+        return Promise.resolve({
           statusCode: 200,
-          body: JSON.stringify({ message: 'success' }),
-        };
+          body: JSON.stringify({ message: "success" }),
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {
@@ -129,67 +129,67 @@ describe('createLambdaHandler', () => {
       await handler(event, mockContext);
 
       expect(callOrder).toEqual([
-        'middleware1-before',
-        'middleware2-before',
-        'handler',
-        'middleware2-after',
-        'middleware1-after',
+        "middleware1-before",
+        "middleware2-before",
+        "handler",
+        "middleware2-after",
+        "middleware1-after",
       ]);
     });
   });
 
-  describe('logging integration', () => {
-    it('injects logger context into the handler', async () => {
+  describe("logging integration", () => {
+    it("injects logger context into the handler", async () => {
       const handlerFn = async (
         _: APIGatewayProxyEvent,
       ): Promise<APIGatewayProxyResult> => {
-        return {
+        return Promise.resolve({
           statusCode: 200,
-          body: JSON.stringify({ message: 'logged' }),
-        };
+          body: JSON.stringify({ message: "logged" }),
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {
         ...baseLoggerOptions,
       });
-      const event = { path: '/log-test' } as APIGatewayProxyEvent;
+      const event = { path: "/log-test" } as APIGatewayProxyEvent;
       await handler(event, mockContext);
 
       expect(logger.getLogger).toHaveBeenCalled();
-      expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+      expect(logger.injectLambdaContext).toHaveBeenCalledWith(
         logger.getLogger(),
         expect.anything(),
       );
     });
 
     it.each([
-      { logLevel: 'DEBUG' as const, expected: true },
-      { logLevel: 'debug' as const, expected: true },
-      { logLevel: 'TRACE' as const, expected: true },
-      { logLevel: 'trace' as const, expected: true },
-      { logLevel: 'INFO' as const, expected: false },
-      { logLevel: 'info' as const, expected: false },
+      { logLevel: "DEBUG" as const, expected: true },
+      { logLevel: "debug" as const, expected: true },
+      { logLevel: "TRACE" as const, expected: true },
+      { logLevel: "trace" as const, expected: true },
+      { logLevel: "INFO" as const, expected: false },
+      { logLevel: "info" as const, expected: false },
     ])(
-      'sets the logger integration logEvent parmeter to $expected if log level is $logLevel',
+      "sets the logger integration logEvent parmeter to $expected if log level is $logLevel",
       async ({ expected, logLevel }) => {
         const handlerFn = async (
           _: APIGatewayProxyEvent,
         ): Promise<APIGatewayProxyResult> => {
-          return {
+          return Promise.resolve({
             statusCode: 200,
-            body: JSON.stringify({ message: 'logged' }),
-          };
+            body: JSON.stringify({ message: "logged" }),
+          });
         };
 
         const handler = createLambdaHandler(handlerFn, {
           ...baseLoggerOptions,
           logLevel: logLevel,
         });
-        const event = { path: '/log-test' } as APIGatewayProxyEvent;
+        const event = { path: "/log-test" } as APIGatewayProxyEvent;
         await handler(event, mockContext);
 
         expect(logger.getLogger).toHaveBeenCalled();
-        expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+        expect(logger.injectLambdaContext).toHaveBeenCalledWith(
           expect.anything(),
           expect.objectContaining({
             logEvent: expected,
@@ -198,83 +198,83 @@ describe('createLambdaHandler', () => {
       },
     );
 
-    it('passes correlationIdPath to logger middleware', async () => {
+    it("passes correlationIdPath to logger middleware", async () => {
       const handlerFn = async (
         _: APIGatewayProxyEvent,
       ): Promise<APIGatewayProxyResult> => {
-        return {
+        return Promise.resolve({
           statusCode: 200,
-          body: JSON.stringify({ message: 'logged' }),
-        };
+          body: JSON.stringify({ message: "logged" }),
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {
         ...baseLoggerOptions,
       });
-      const event = { path: '/log-test' } as APIGatewayProxyEvent;
+      const event = { path: "/log-test" } as APIGatewayProxyEvent;
       await handler(event, mockContext);
 
       expect(logger.getLogger).toHaveBeenCalled();
-      expect(awsLogger.injectLambdaContext).toHaveBeenCalledWith(
+      expect(logger.injectLambdaContext).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          correlationIdPath: 'requestContext.requestId',
+          correlationIdPath: "requestContext.requestId",
         }),
       );
     });
   });
 
-  describe('type safety', () => {
-    it('maintains type safety for event and response types', async () => {
+  describe("type safety", () => {
+    it("maintains type safety for event and response types", async () => {
       const handlerFn = async (
         event: APIGatewayProxyEvent,
       ): Promise<APIGatewayProxyResult> => {
         const userId = event.pathParameters?.userId;
-        return {
+        return Promise.resolve({
           statusCode: 200,
           body: JSON.stringify({ userId }),
-        };
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {
         ...baseLoggerOptions,
       });
       const event = {
-        pathParameters: { userId: 'user-123' },
+        pathParameters: { userId: "user-123" },
         body: null,
         headers: {},
         multiValueHeaders: {},
-        httpMethod: 'GET',
+        httpMethod: "GET",
         isBase64Encoded: false,
-        path: '/test',
+        path: "/test",
         queryStringParameters: null,
         multiValueQueryStringParameters: null,
         stageVariables: null,
         requestContext: {
-          accountId: '1234567890',
-          apiId: '1234567890',
+          accountId: "1234567890",
+          apiId: "1234567890",
           authorizer: null,
-          path: '/test',
-          httpMethod: 'GET',
-          requestId: '1234567890',
-        } as unknown as APIGatewayProxyEvent['requestContext'],
-        resource: '/test',
+          path: "/test",
+          httpMethod: "GET",
+          requestId: "1234567890",
+        } as unknown as APIGatewayProxyEvent["requestContext"],
+        resource: "/test",
       } as APIGatewayProxyEvent;
 
       const result = await handler(event, mockContext);
 
       expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toEqual({ userId: 'user-123' });
+      expect(JSON.parse(result.body)).toEqual({ userId: "user-123" });
     });
   });
 
-  describe('handler without middlewares', () => {
-    it('creates a handler when no middlewares are provided', async () => {
+  describe("handler without middlewares", () => {
+    it("creates a handler when no middlewares are provided", async () => {
       const handlerFn = async (): Promise<APIGatewayProxyResult> => {
-        return {
+        return Promise.resolve({
           statusCode: 201,
           body: JSON.stringify({ created: true }),
-        };
+        });
       };
 
       const handler = createLambdaHandler(handlerFn, {

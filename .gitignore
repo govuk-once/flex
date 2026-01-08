@@ -17,7 +17,7 @@ vitest.config.*.timestamp*
 coverage/
 
 # OpenAPI auto generated files
-apps/docs/api.json
+**api.json
 
 # CDK
 **cdk.out/

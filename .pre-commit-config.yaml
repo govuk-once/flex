@@ -30,33 +30,6 @@ repos:
         stages:
           - 'pre-commit'
 
-  - repo: local
-    hooks:
-      - id: format_check
-        entry: pnpm format:write
-        language: system
-        name: format check affected
-        pass_filenames: false
-        stages:
-          - 'pre-commit'
-
-      - id: linting_check
-        entry: pnpm lint:affected
-        language: system
-        name: lint check affected
-        pass_filenames: false
-        stages:
-          - 'pre-commit'
-
-      - id: checkov
-        entry: pnpm infra:checkov
-        language: system
-        name: checkov IaC linting
-        pass_filenames: false
-        stages:
-          - 'pre-commit'
-        files: ^platform/infra/
-
   - repo: https://github.com/semgrep/semgrep
     rev: v1.89.0
     hooks:

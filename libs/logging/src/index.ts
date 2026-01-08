@@ -1,5 +1,6 @@
-import { Logger } from '@aws-lambda-powertools/logger';
-import { LogLevel } from '@aws-lambda-powertools/logger/types';
+import { Logger } from "@aws-lambda-powertools/logger";
+import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
+import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 let loggerInstance: Logger | null = null;
 
@@ -18,14 +19,14 @@ export function getLogger(options?: LoggerOptions): Logger {
   if (!options) {
     if (!loggerInstance) {
       throw new Error(
-        'Logger instance not initialized. Call getLogger with options first.',
+        "Logger instance not initialized. Call getLogger with options first.",
       );
     }
     return loggerInstance;
   }
 
   return (loggerInstance = new Logger({
-    logLevel: options.logLevel ?? 'INFO',
+    logLevel: options.logLevel ?? "INFO",
     serviceName: options.serviceName,
   }));
 }
@@ -35,7 +36,9 @@ export function getLogger(options?: LoggerOptions): Logger {
  */
 export function getChildLogger(childContext: Record<string, unknown>): Logger {
   if (!loggerInstance) {
-    throw new Error('Logger instance not initialized. Call getLogger first.');
+    throw new Error("Logger instance not initialized. Call getLogger first.");
   }
   return loggerInstance.createChild(childContext);
 }
+
+export { injectLambdaContext };

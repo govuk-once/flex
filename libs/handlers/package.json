@@ -1,0 +1,26 @@
+{
+  "name": "@flex/handlers",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings=0 src",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "@middy/core": "7.0.2"
+  },
+  "devDependencies": {
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "@configs/vitest": "workspace:*",
+    "@types/aws-lambda": "8.10.159",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  }
+}

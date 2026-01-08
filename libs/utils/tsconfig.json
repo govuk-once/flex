@@ -1,8 +1,4 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist/libs/utils"
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "extends": "@configs/typescript/base.json",
+  "include": ["src/**/*.ts", "eslint.config.mjs", "vitest.config.ts"]
 }

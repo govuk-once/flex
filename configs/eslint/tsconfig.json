@@ -1,0 +1,9 @@
+{
+  "extends": "@configs/typescript/base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.mjs", "eslint.config.mjs"],
+  "exclude": ["node_modules"]
+}

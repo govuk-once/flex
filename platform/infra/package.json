@@ -2,14 +2,19 @@
   "name": "@flex/infra",
   "type": "module",
   "scripts": {
-    "destroy": "cdk destroy",
-    "deploy": "cdk deploy",
-    "synth": "cdk synth"
+    "deploy": "cdk deploy --all",
+    "synth": "cdk synth",
+    "lint": "eslint --max-warnings=0 src",
+    "checkov": "cdk synth && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "devDependencies": {
-    "aws-cdk": "2.1100.1",
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "@types/node": "25.0.3",
+    "aws-cdk": "2.1100.3",
     "aws-cdk-lib": "2.233.0",
     "constructs": "10.4.4",
+    "eslint": "9.39.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3"
   }

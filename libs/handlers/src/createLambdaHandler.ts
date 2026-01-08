@@ -1,9 +1,6 @@
-import type { Handler, Context } from 'aws-lambda';
-
-import middy, { MiddyfiedHandler, MiddlewareObj } from '@middy/core';
-import { injectLambdaContext } from '@aws-lambda-powertools/logger/middleware';
-
-import { getLogger, LoggerOptions } from '@flex/logging';
+import { getLogger, injectLambdaContext, LoggerOptions } from "@flex/logging";
+import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
+import type { Context, Handler } from "aws-lambda";
 
 /**
  * Configuration options for creating a Lambda handler with middy
@@ -46,8 +43,8 @@ export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
 
   middyHandler.use(
     injectLambdaContext(getLogger(config), {
-      logEvent: logLevel === 'DEBUG' || logLevel === 'TRACE',
-      correlationIdPath: 'requestContext.requestId',
+      logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
+      correlationIdPath: "requestContext.requestId",
     }),
   );
 

@@ -1,9 +1,0 @@
-{
-  "generators": {
-    "newSharedLib": {
-      "factory": "./sharedLibraries/index.ts",
-      "schema": "./sharedLibraries/schema.json",
-      "description": "Generator new shared library"
-    }
-  }
-}

@@ -1,0 +1,31 @@
+{
+  "name": "@configs/eslint",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/config.mjs"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings=0 src"
+  },
+  "peerDependencies": {
+    "eslint": "^9.29.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@eslint/eslintrc": "3.3.3",
+    "@eslint/js": "9.39.2",
+    "@html-eslint/eslint-plugin": "0.52.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-only-warn": "1.1.0",
+    "eslint-plugin-prettier": "5.5.4",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "typescript-eslint": "8.52.0"
+  },
+  "devDependencies": {
+    "@configs/typescript": "workspace:*",
+    "eslint": "9.29.0",
+    "typescript": "5.9.3"
+  }
+}
