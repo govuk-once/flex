@@ -1,8 +1,20 @@
 import { createLambdaHandler } from "@flex/handlers";
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
+import { z } from "zod";
 
-export const handler = createLambdaHandler(
-  async (_event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handlerResponseSchema = z.object({
+  message: z.string(),
+});
+export type HandlerResponse = z.output<typeof handlerResponseSchema>;
+
+export const handler = createLambdaHandler<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2<HandlerResponse>
+>(
+  async (_event) => {
     return Promise.resolve({
       statusCode: 200,
       body: JSON.stringify({ message: "Hello private world!" }),

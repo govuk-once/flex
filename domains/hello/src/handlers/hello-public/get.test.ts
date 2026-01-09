@@ -1,27 +1,15 @@
-import type { APIGatewayProxyEvent, Context } from "aws-lambda";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { context, it } from "@flex/testing";
+import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
-describe("createLambdaHandler", () => {
-  const mockContext = {
-    getRemainingTimeInMillis: () => 1000,
-  } as unknown as Context;
+describe("Hello World handler (public)", () => {
+  it("GET /hello-public returns Hello public world!", async ({ event }) => {
+    const response = await handler(event.get("/hello-public"), context);
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe("Hello World handler", () => {
-    it("GET /hello-public returns Hello public world!", async () => {
-      const event = {} as APIGatewayProxyEvent;
-
-      const result = await handler(event, mockContext);
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toEqual({
-        message: "Hello public world!",
-      });
+    expect(response).toEqual({
+      statusCode: 200,
+      body: JSON.stringify({ message: "Hello public world!" }),
     });
   });
 });
