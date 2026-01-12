@@ -1,38 +1,38 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
-import { createDocument } from 'zod-openapi';
+import fs from "node:fs";
+import path from "node:path";
 
-import { getHelloWorld } from './domain/hello-world';
-import { getTopics } from './domain/topics';
+import { createDocument } from "zod-openapi";
+
+import { getHelloWorld } from "./domain/hello-world";
+import { getTopics } from "./domain/topics";
 
 const docs = createDocument({
-  openapi: '3.1.1',
+  openapi: "3.1.1",
   info: {
-    title: 'FLEX API',
-    version: '1.0.0',
+    title: "FLEX API",
+    version: "1.0.0",
   },
   components: {
     securitySchemes: {
       bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
       },
     },
   },
   paths: {
-    '/example': {
+    "/example": {
       get: getHelloWorld,
     },
-    '/topics': {
+    "/topics": {
       get: getTopics,
     },
   },
   security: [{ bearerAuth: [] }],
 });
 
-const outputPath = path.join(process.cwd(), 'apps/docs/api.json');
+const outputPath = path.join(import.meta.dirname, "./api.json");
 
 fs.writeFileSync(outputPath, JSON.stringify(docs, null, 2));
 

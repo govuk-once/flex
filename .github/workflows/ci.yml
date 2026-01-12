@@ -18,33 +18,28 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
         run: |
           python3 -m pip install semgrep pre-commit checkov
-          npm install -g pnpm
-          pnpm install --frozen-lockfile
+          npm install -g pnpm@latest-10
+          pnpm install
 
       - name: Run Hygiene & Security Checks
-        run: SKIP=format_check,linting_check,semgrep pre-commit run --all-files --show-diff-on-failure
+        run: SKIP=semgrep pre-commit run --all-files --show-diff-on-failure
 
-      - name: NX - set SHAs
-        uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4.4.0
-
-      - name: Lint & format checks
-        run: |
-          pnpm lint:affected
-          pnpm format:check
+      - name: Lint
+        run: pnpm lint
 
       - name: Build
-        run: pnpm build:affected
+        run: pnpm build
 
       - name: Unit Tests
-        run: pnpm test:affected
+        run: pnpm test
 
       - name: Infrastructure as Code (IaC) Linting with checkov
-        run: pnpm infra:checkov
+        run: pnpm checkov
 
       - name: Run semgrep checks
         run: semgrep scan $(cat semgrep-args.txt) --error

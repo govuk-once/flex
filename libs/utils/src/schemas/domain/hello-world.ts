@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { NonEmptyString } from '../common';
+import { NonEmptyString } from "../common";
 
 export const HelloWorldInput = z.object({
   // query: z.object({})

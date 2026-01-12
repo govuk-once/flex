@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist/libs/<%= projectName %>"
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
-}

@@ -1,8 +1,4 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist/modules/udp"
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "extends": "@configs/typescript/base.json",
+  "include": ["src/**/*.ts", "eslint.config.mjs", "tsup.config.ts", "vitest.config.ts"]
 }

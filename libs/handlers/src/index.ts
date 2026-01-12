@@ -1,4 +1,4 @@
 export {
   createLambdaHandler,
   type LambdaHandlerConfig,
-} from './createLambdaHandler';
+} from "./createLambdaHandler";

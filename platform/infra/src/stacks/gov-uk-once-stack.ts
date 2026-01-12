@@ -1,5 +1,5 @@
-import type { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from "aws-cdk-lib";
+import type { Construct } from "constructs";
 
 // https://gds-way.digital.cabinet-office.gov.uk/manuals/aws-tagging.html
 interface TagOptions {
@@ -17,22 +17,22 @@ interface TagOptions {
 interface GovUkOnceStackProps {
   env: {
     account?: string;
-    region: 'eu-west-2' | 'eu-west-1';
+    region: "eu-west-2" | "eu-west-1";
   };
   tags: TagOptions;
 }
 
 enum Environment {
-  DEVELOPMENT = 'development',
-  INTEGRATION = 'integration',
-  STAGING = 'staging',
-  PRODUCTION = 'production',
+  DEVELOPMENT = "development",
+  INTEGRATION = "integration",
+  STAGING = "staging",
+  PRODUCTION = "production",
 }
 
 function sanitizeUsername(username: string): string {
   return username
     .toLowerCase()
-    .replace(/[^a-z]/g, '')
+    .replace(/[^a-z]/g, "")
     .slice(0, 12);
 }
 
@@ -48,9 +48,10 @@ function getEnvironment() {
   if (!env) return null;
 
   const envs = Object.values(Environment);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
   if (envs.some((e) => e === env)) return env as Environment;
   throw new Error(
-    `ENVIRONMENT env var not recognised. Value: ${env}, Values: ${envs.join(', ')}`,
+    `ENVIRONMENT env var not recognised. Value: ${env}, Values: ${envs.join(", ")}`,
   );
 }
 
@@ -63,7 +64,7 @@ export function getEnvConfig() {
   const stage = environment ?? user;
 
   if (!stage) {
-    throw new Error('ENVIRONMENT or USER env var not set');
+    throw new Error("ENVIRONMENT or USER env var not set");
   }
 
   return {
@@ -90,11 +91,13 @@ export class GovUkOnceStack extends cdk.Stack {
   private addStackTags = (tags: TagOptions) => {
     // For developer stages we default to development environment
     const env = getEnvironment() ?? Environment.DEVELOPMENT;
-    cdk.Tags.of(this).add('Environment', env);
+    cdk.Tags.of(this).add("Environment", env);
 
-    Object.entries(tags).forEach(([k, v]) =>
-      cdk.Tags.of(this).add(k, v, { priority: 100 }),
-    );
+    Object.entries(tags).forEach(([k, v]) => {
+      if (typeof v === "string") {
+        cdk.Tags.of(this).add(k, v, { priority: 100 });
+      }
+    });
   };
 
   protected constructor(

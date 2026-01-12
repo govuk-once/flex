@@ -1,0 +1,24 @@
+{
+  "name": "@configs/vitest",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/config.ts"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings=0 src"
+  },
+  "peerDependencies": {
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "@vitest/coverage-v8": "4.0.16"
+  },
+  "devDependencies": {
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3"
+  }
+}
