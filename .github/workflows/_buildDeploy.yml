@@ -34,15 +34,12 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version: 22
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
         run: |
           npm install -g pnpm@latest-10
           pnpm install
-
-      - name: Build
-        run: pnpm build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@56d6a583f00f6bad6d19d91d53a7bc3b8143d0e9 # v5.1.1
@@ -51,5 +48,11 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
 
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy FLEX Core AWS infra
+        run: cd ./platform/infra/core && pnpm run deploy --require-approval never
+
       - name: Deploy FLEX AWS infra
-        run: cd ./platform/infra && pnpm run deploy --require-approval never
+        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never

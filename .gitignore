@@ -21,3 +21,5 @@ coverage/
 
 # CDK
 **cdk.out/
+# Potentially sensitive data
+cdk.context.json

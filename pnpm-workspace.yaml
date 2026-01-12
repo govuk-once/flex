@@ -3,6 +3,7 @@ packages:
   - domains/*
   - libs/*
   - platform/*
+  - platform/infra/*
 
 onlyBuiltDependencies:
   - '@swc/core'
