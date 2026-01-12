@@ -1,0 +1,32 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [main, feat/deployment_pipeline]
+
+jobs:
+  qualityChecks:
+    name: Quality Checks
+    secrets: inherit # pragma: allowlist secret
+    uses: ./.github/workflows/_qualityChecks.yml
+
+  deployDev:
+    name: Deploy to Development
+    needs: qualityChecks
+    uses: ./.github/workflows/_buildDeploy.yml
+    with:
+      ENVIRONMENT: 'development'
+      AWS_REGION: 'eu-west-2'
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  deployStaging:
+    name: Deploy to Staging
+    needs: deployDev
+    uses: ./.github/workflows/_buildDeploy.yml
+    with:
+    with:
+      ENVIRONMENT: 'staging'
+      AWS_REGION: 'eu-west-2'
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
