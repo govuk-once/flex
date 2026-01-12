@@ -2,7 +2,7 @@ name: Continuous Deployment
 
 on:
   push:
-    branches: [main, feat/deployment_pipeline]
+    branches: [main]
 
 jobs:
   qualityChecks:
@@ -24,7 +24,6 @@ jobs:
     name: Deploy to Staging
     needs: deployDev
     uses: ./.github/workflows/_buildDeploy.yml
-    with:
     with:
       ENVIRONMENT: 'staging'
       AWS_REGION: 'eu-west-2'
