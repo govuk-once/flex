@@ -15,13 +15,15 @@ import type { Construct } from "constructs";
 
 import { FlexAuthentication } from "../constructs/flex-authentication";
 import { FlexFunction } from "../constructs/flex-function";
-import { GovUkOnceStack } from "./gov-uk-once-stack";
+import { generateParamName, GovUkOnceStack } from "./gov-uk-once-stack";
+import { getAwsAccount } from "./gov-uk-once-stack";
 
 export class FlexPlatformStack extends GovUkOnceStack {
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       env: {
         region: "eu-west-2",
+        account: getAwsAccount(), // TODO: should this be set as parameter in construct?
       },
       tags: {
         Product: "GOV.UK",
@@ -35,8 +37,9 @@ export class FlexPlatformStack extends GovUkOnceStack {
       retention: RetentionDays.ONE_WEEK,
     });
 
+    const vpcId = generateParamName("-core/vpc/id");
     const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
-      vpcId: ssm.StringParameter.valueFromLookup(this, "/vpc/id"),
+      vpcId: ssm.StringParameter.valueFromLookup(this, vpcId),
     });
 
     const authentication = new FlexAuthentication(this, "Authentication", {

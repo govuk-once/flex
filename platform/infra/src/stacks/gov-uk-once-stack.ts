@@ -87,6 +87,10 @@ export function getStackName(stack: string): string {
   return `${stage}-${stack}`;
 }
 
+export function getAwsAccount() {
+  return process.env.CDK_DEFAULT_ACCOUNT;
+}
+
 export class GovUkOnceStack extends cdk.Stack {
   public getResourceName = (component: string) => {
     const { stackName } = cdk.Stack.of(this);
