@@ -6,27 +6,18 @@ import {
   HttpStage,
   LogGroupLogDestination,
 } from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 import { Code } from "aws-cdk-lib/aws-lambda";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
+import { FlexAuthentication } from "../constructs/flex-authentication";
 import { FlexFunction } from "../constructs/flex-function";
 import { GovUkOnceStack } from "./gov-uk-once-stack";
 
 export class FlexPlatformStack extends GovUkOnceStack {
-  private createAuthorizer(userPoolId: string, clientId: string) {
-    const issuer = `https://cognito-idp.${this.region}.amazonaws.com/${userPoolId}`;
-
-    const httpAuthorizer = new HttpJwtAuthorizer("Authorizer", issuer, {
-      jwtAudience: [clientId],
-      // API Gateway can cache the public key for two hours
-    });
-
-    return httpAuthorizer;
-  }
-
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       env: {
@@ -44,10 +35,13 @@ export class FlexPlatformStack extends GovUkOnceStack {
       retention: RetentionDays.ONE_WEEK,
     });
 
-    const authorizer = this.createAuthorizer(
-      "", // TODO: store in SSM
-      "", // TODO: store in SSM
-    );
+    const vpc = ec2.Vpc.fromLookup(this, "Vpc", {
+      vpcId: ssm.StringParameter.valueFromLookup(this, "/vpc/id"),
+    });
+
+    const authentication = new FlexAuthentication(this, "Authentication", {
+      vpc,
+    });
 
     const httpApi = new HttpApi(this, "Api", {
       apiName: `${this.stackName}-api`,
@@ -58,7 +52,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
         allowMethods: [CorsHttpMethod.ANY],
       },
       createDefaultStage: false,
-      defaultAuthorizer: authorizer,
+      defaultAuthorizer: authentication.authorizer,
     });
 
     new HttpStage(this, "ApiStage", {

@@ -74,6 +74,11 @@ export function getEnvConfig() {
   };
 }
 
+export function generateParamName(name: string) {
+  const { environment } = getEnvConfig();
+  return `/${environment}/flex${name}`;
+}
+
 /**
  * Returns the common stack name prefixed with the stage
  */
