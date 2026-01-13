@@ -5,7 +5,6 @@ Nx
 OAuth2
 README
 Repo
-UDP
 Utils
 adapters
 changelog
@@ -15,7 +14,7 @@ pre-commit
 projectName
 rebase
 repo
-udp
+UDP
 udp
 udp:read
 udp:write
@@ -31,4 +30,8 @@ homebrew
 pipx
 VPC
 subnets
+E2E
+e2e
+30s
+cdk
 CDK

@@ -21,3 +21,7 @@ coverage/
 
 # CDK
 **cdk.out/
+
+.env
+
+docs
