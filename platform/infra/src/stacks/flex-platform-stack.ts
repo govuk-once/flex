@@ -6,6 +6,7 @@ import {
   HttpStage,
   LogGroupLogDestination,
 } from "aws-cdk-lib/aws-apigatewayv2";
+import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Code } from "aws-cdk-lib/aws-lambda";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -15,6 +16,17 @@ import { FlexFunction } from "../constructs/flex-function";
 import { GovUkOnceStack } from "./gov-uk-once-stack";
 
 export class FlexPlatformStack extends GovUkOnceStack {
+  private createAuthorizer(userPoolId: string, clientId: string) {
+    const issuer = `https://cognito-idp.${this.region}.amazonaws.com/${userPoolId}`;
+
+    const httpAuthorizer = new HttpJwtAuthorizer("Authorizer", issuer, {
+      jwtAudience: [clientId],
+      // API Gateway can cache the public key for two hours
+    });
+
+    return httpAuthorizer;
+  }
+
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       env: {
@@ -32,15 +44,21 @@ export class FlexPlatformStack extends GovUkOnceStack {
       retention: RetentionDays.ONE_WEEK,
     });
 
+    const authorizer = this.createAuthorizer(
+      "", // TODO: store in SSM
+      "", // TODO: store in SSM
+    );
+
     const httpApi = new HttpApi(this, "Api", {
-      apiName: "Flex Platform API",
-      description: "Central API Gateway for the Flex Platform",
+      apiName: `${this.stackName}-api`,
+      description: `Central API Gateway for the Flex Platform.`,
       corsPreflight: {
         allowOrigins: ["*"],
         allowHeaders: ["Authorization", "Content-Type"],
         allowMethods: [CorsHttpMethod.ANY],
       },
       createDefaultStage: false,
+      defaultAuthorizer: authorizer,
     });
 
     new HttpStage(this, "ApiStage", {
