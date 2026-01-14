@@ -85,6 +85,9 @@ export class FlexAuthentication extends Construct {
       clusterMode: "enabled",
       multiAzEnabled: true,
       automaticFailoverEnabled: true,
+      transitEncryptionEnabled: true,
+      atRestEncryptionEnabled: true,
+      // TODO: add auth token CKV_AWS_31
     });
 
     return cluster;
@@ -125,9 +128,8 @@ export class FlexAuthentication extends Construct {
       {
         entry: getPlatformEntry("auth", "handler.ts"),
         environment: {
-          REDIS_ENDPOINT_PARAMETER_NAME: generateParamName(
-            "/cache/redis/endpoint",
-          ),
+          REDIS_ENDPOINT_PARAMETER_NAME:
+            this.redisEndpointParameter.parameterName,
           USER_POOL_ID_PARAMETER_NAME: this.userPoolId.parameterName,
           CLIENT_ID_PARAMETER_NAME: this.clientId.parameterName,
         },
