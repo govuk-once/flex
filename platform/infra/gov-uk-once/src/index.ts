@@ -82,6 +82,11 @@ export function getStackName(stack: string): string {
   return `${stage}-${stack}`;
 }
 
+export function generateParamName(name: string) {
+  const { environment } = getEnvConfig();
+  return `/${environment}${name}`;
+}
+
 export class GovUkOnceStack extends cdk.Stack {
   public getResourceName = (component: string) => {
     const { stackName } = cdk.Stack.of(this);

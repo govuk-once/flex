@@ -5,7 +5,7 @@ import { Construct } from "constructs";
 
 const envConfig = getEnvConfig();
 
-function generateParamName(name: string) {
+export function generateParamName(name: string) {
   // /development/flex-core/vpc/id
   return `/${envConfig.environment}/flex-core${name}`;
 }

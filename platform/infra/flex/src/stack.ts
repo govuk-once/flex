@@ -12,6 +12,7 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
+import { FlexAuthentication } from "./constructs/flex-authentication";
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
 import { FlexPublicFunction } from "./constructs/flex-public-function";
@@ -23,6 +24,8 @@ export class FlexPlatformStack extends GovUkOnceStack {
       retention: RetentionDays.ONE_WEEK,
     });
 
+    const authentication = new FlexAuthentication(this, "Authentication");
+
     const httpApi = new HttpApi(this, "Api", {
       apiName: "Flex Platform API",
       description: "Central API Gateway for the Flex Platform",
@@ -32,6 +35,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
         allowMethods: [CorsHttpMethod.ANY],
       },
       createDefaultStage: false,
+      defaultAuthorizer: authentication.authorizer,
     });
 
     const httpStage = new HttpStage(this, "ApiStage", {

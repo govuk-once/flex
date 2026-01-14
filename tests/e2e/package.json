@@ -1,0 +1,27 @@
+{
+  "name": "@flex/e2e",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --max-warnings=0 src",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@flex/handlers": "workspace:*",
+    "@flex/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@configs/eslint": "workspace:*",
+    "@configs/typescript": "workspace:*",
+    "@configs/vitest": "workspace:*",
+    "@types/aws-lambda": "8.10.159",
+    "@types/node": "25.0.3",
+    "dotenv": "^16.4.7",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16",
+    "zod": "^3.25.76"
+  }
+}

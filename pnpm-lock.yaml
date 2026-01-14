@@ -294,6 +294,9 @@ importers:
       '@platform/gov-uk-once':
         specifier: workspace:*
         version: link:../gov-uk-once
+      '@platform/parameter':
+        specifier: workspace:*
+        version: link:../parameter
       esbuild:
         specifier: 0.27.2
         version: 0.27.2
@@ -350,6 +353,80 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+
+  platform/infra/parameter:
+    dependencies:
+      '@platform/gov-uk-once':
+        specifier: workspace:*
+        version: link:../gov-uk-once
+    devDependencies:
+      '@configs/eslint':
+        specifier: workspace:*
+        version: link:../../../configs/eslint
+      '@configs/typescript':
+        specifier: workspace:*
+        version: link:../../../configs/typescript
+      '@types/node':
+        specifier: 25.0.3
+        version: 25.0.3
+      aws-cdk:
+        specifier: 2.1100.3
+        version: 2.1100.3
+      aws-cdk-lib:
+        specifier: 2.233.0
+        version: 2.233.0(constructs@10.4.4)
+      constructs:
+        specifier: 10.4.4
+        version: 10.4.4
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  tests/e2e:
+    dependencies:
+      '@flex/handlers':
+        specifier: workspace:*
+        version: link:../../libs/handlers
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+    devDependencies:
+      '@configs/eslint':
+        specifier: workspace:*
+        version: link:../../configs/eslint
+      '@configs/typescript':
+        specifier: workspace:*
+        version: link:../../configs/typescript
+      '@configs/vitest':
+        specifier: workspace:*
+        version: link:../../configs/vitest
+      '@types/aws-lambda':
+        specifier: 8.10.159
+        version: 8.10.159
+      '@types/node':
+        specifier: 25.0.3
+        version: 25.0.3
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.16
+        version: 4.0.16(@types/node@25.0.3)(jiti@2.6.1)(jsdom@22.1.0)(tsx@4.21.0)(yaml@2.8.2)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
 packages:
 
@@ -2488,6 +2565,9 @@ packages:
     peerDependencies:
       zod: ^3.25.74 || ^4.0.0
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.3.5:
     resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
 
@@ -4606,5 +4686,7 @@ snapshots:
   zod-openapi@5.4.6(zod@4.3.5):
     dependencies:
       zod: 4.3.5
+
+  zod@3.25.76: {}
 
   zod@4.3.5: {}
