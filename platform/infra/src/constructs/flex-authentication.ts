@@ -132,10 +132,11 @@ export class FlexAuthentication extends Construct {
       {
         entry: join(__dirname, "../../../domains/auth/src/handler.ts"),
         environment: {
-          //   TODO: add cognito client id and user pool id
           REDIS_ENDPOINT_PARAMETER_NAME: generateParamName(
             "/cache/redis/endpoint",
           ),
+          USER_POOL_ID_PARAMETER_NAME: generateParamName("/auth/user_pool_id"),
+          CLIENT_ID_PARAMETER_NAME: generateParamName("/auth/client_id"),
         },
         vpc: this.vpc,
         vpcSubnets,
@@ -143,7 +144,20 @@ export class FlexAuthentication extends Construct {
       },
     );
 
+    const userPoolId = ssm.StringParameter.fromStringParameterName(
+      this,
+      "UserPoolIdParam",
+      generateParamName("/auth/user_pool_id"),
+    );
+    const clientId = ssm.StringParameter.fromStringParameterName(
+      this,
+      "ClientIdParam",
+      generateParamName("/auth/client_id"),
+    );
+
     this.redisEndpointParameter.grantRead(authorizerFunction.function);
+    userPoolId.grantRead(authorizerFunction.function);
+    clientId.grantRead(authorizerFunction.function);
 
     return new HttpLambdaAuthorizer("Authorizer", authorizerFunction.function, {
       resultsCacheTtl: Duration.minutes(1), // see decision decision
