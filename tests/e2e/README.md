@@ -34,7 +34,7 @@ API_GATEWAY_URL=https://your-api-id.execute-api.eu-west-2.amazonaws.com pnpm --f
 E2E tests should:
 
 - Test complete user flows or system behaviours
-- Use real or mocked AWS services as appropriate
+- Use real AWS services as appropriate
 - Be independent and able to run in any order
 - Clean up after themselves
 

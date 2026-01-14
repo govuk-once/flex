@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
+
+import { e2eEnv } from "./setup";
 
 /**
  * E2E test for the API Gateway JWT authorizer
@@ -6,16 +8,16 @@ import { describe, expect, it } from 'vitest';
  * This test verifies that the API Gateway JWT authorizer correctly rejects
  * requests without a valid JWT token.
  */
-describe('API Gateway JWT Authorizer E2E', () => {
-  const apiGatewayUrl = process.env.API_GATEWAY_URL || "https://cnnkgvvdyc.execute-api.eu-west-2.amazonaws.com";
+describe("API Gateway JWT Authorizer E2E", () => {
+  const apiGatewayUrl = e2eEnv.API_GATEWAY_URL;
 
-  it('rejects request to /hello endpoint without a valid JWT token', async () => {
+  it("rejects request to /hello endpoint without a valid JWT token", async () => {
     const url = `${apiGatewayUrl}/hello`;
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         // Intentionally omitting Authorization header
       },
     });
@@ -26,20 +28,22 @@ describe('API Gateway JWT Authorizer E2E', () => {
 
     // Verify the response indicates authentication is required
     const responseText = await response.text();
-    expect(responseText).toEqual(JSON.stringify({
-      message: "Unauthorized",
-    }));
+    expect(responseText).toEqual(
+      JSON.stringify({
+        message: "Unauthorized",
+      }),
+    );
   });
 
-  it('allows request to /hello endpoint with valid authorization header', async () => {
+  it("allows request to /hello endpoint with valid authorization header", async () => {
     const url = `${apiGatewayUrl}/hello`;
-    const token = "eyJ8";
+    const token = "eyJ9";
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
 
