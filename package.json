@@ -6,7 +6,8 @@
     "checkov": "nx run-many --target=checkov",
     "commit": "cz",
     "lint": "nx run-many --target=lint",
-    "test": "nx run-many --target=test --run"
+    "test": "nx run-many --target=test --run",
+    "test:unit": "nx run-many --target=test --run --exclude=@flex/e2e"
   },
   "devDependencies": {
     "commitizen": "4.3.1",
