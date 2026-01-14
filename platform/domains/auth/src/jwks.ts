@@ -21,7 +21,7 @@ export async function callCognitoJwksEndpoint(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch JWKS from dummy endpoint: ${response.status} ${response.statusText}`,
+      `Failed to fetch JWKS from Cognito JWKS endpoint: ${response.status} ${response.statusText}`,
     );
   }
 

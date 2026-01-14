@@ -23,7 +23,7 @@ export interface RedisClient {
 export function createRedisClient(endpoint: string): RedisClient {
   // For cluster mode, we need to parse the endpoint and create cluster nodes
   // The configuration endpoint format is typically: <cluster-name>.xxxxx.cache.amazonaws.com:6379
-  const [host, port] = endpoint.split(":");
+  const [host, port] = endpoint.split(":"); // TODO: add validation
   const redisPort = port ? Number.parseInt(port, 10) : 6379;
 
   // Create a cluster client for ElastiCache cluster mode

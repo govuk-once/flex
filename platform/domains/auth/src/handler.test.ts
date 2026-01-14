@@ -113,6 +113,9 @@ describe("Authorizer Handler", () => {
     });
 
     it("throws when Redis endpoint parameter is missing or invalid (null)", async () => {
+      // Ensure clean state: reset Redis client singleton and mocks
+      resetRedisClient();
+      vi.mocked(getParameter).mockReset();
       vi.mocked(getParameter).mockImplementation((parameterName: string) => {
         if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
           return Promise.resolve("eu-west-2_testUserPoolId");
@@ -129,6 +132,9 @@ describe("Authorizer Handler", () => {
     });
 
     it("throws when Redis endpoint parameter is not a string", async () => {
+      // Ensure clean state: reset Redis client singleton and mocks
+      resetRedisClient();
+      vi.mocked(getParameter).mockReset();
       vi.mocked(getParameter).mockImplementation((parameterName: string) => {
         if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
           return Promise.resolve("eu-west-2_testUserPoolId");
@@ -177,6 +183,12 @@ describe("Authorizer Handler", () => {
     });
 
     it("reuses the same Redis client across multiple invocations", async () => {
+      // Reset call history to ensure accurate counting
+      vi.mocked(getParameter).mockClear();
+      vi.mocked(redisModule.createRedisClient).mockClear();
+      mockRedisClient.get.mockClear();
+      mockRedisClient.set.mockClear();
+
       mockRedisClient.get.mockResolvedValueOnce(null);
       mockRedisClient.set.mockResolvedValue("OK");
 

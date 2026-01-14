@@ -57,7 +57,7 @@ describe("JWKS integration", () => {
     globalThis.fetch = fetchMock;
 
     await expect(callCognitoJwksEndpoint(userPoolId, region)).rejects.toThrow(
-      "Failed to fetch JWKS from dummy endpoint: 500 Internal Server Error",
+      "Failed to fetch JWKS from Cognito JWKS endpoint: 500 Internal Server Error",
     );
   });
 

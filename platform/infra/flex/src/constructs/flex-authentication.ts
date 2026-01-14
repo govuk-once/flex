@@ -141,7 +141,7 @@ export class FlexAuthentication extends Construct {
     this.clientId.grantRead(authorizerFunction.function);
 
     return new HttpLambdaAuthorizer("Authorizer", authorizerFunction.function, {
-      resultsCacheTtl: Duration.minutes(1), // see decision decision
+      resultsCacheTtl: Duration.minutes(1), // see decision
     });
   }
 }
