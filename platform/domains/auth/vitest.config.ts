@@ -1,11 +1,3 @@
-import { defineConfig } from "vitest/config";
+import { config } from "@configs/vitest";
 
-export default defineConfig({
-  test: {
-    environment: "node",
-    coverage: {
-      provider: "v8",
-      reportsDirectory: "./coverage",
-    },
-  },
-});
+export default config;

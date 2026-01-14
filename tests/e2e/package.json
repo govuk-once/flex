@@ -5,8 +5,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint --max-warnings=0 src",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test:e2e": "vitest run"
   },
   "dependencies": {
     "@flex/handlers": "workspace:*",
