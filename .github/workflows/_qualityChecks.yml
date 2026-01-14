@@ -59,7 +59,7 @@ jobs:
         run: pnpm run build
 
       - name: Unit Tests
-        run: pnpm run test:unit
+        run: pnpm run test
 
       - name: Infrastructure as Code (IaC) Linting with checkov
         run: pnpm run checkov
