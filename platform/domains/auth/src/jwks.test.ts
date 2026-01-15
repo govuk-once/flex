@@ -20,6 +20,7 @@ describe("JWKS integration", () => {
     // Reset global fetch between scenarios
 
     if (globalThis.fetch) {
+      // @ts-expect-error - restore to undefined for test isolation
       globalThis.fetch = undefined;
     }
   });
@@ -63,6 +64,7 @@ describe("JWKS integration", () => {
 
   it("throws when fetch is not available in the runtime", async () => {
     // Ensure fetch is not defined
+    // @ts-expect-error - restore to undefined for test isolation
     globalThis.fetch = undefined;
 
     await expect(callCognitoJwksEndpoint(userPoolId, region)).rejects.toThrow(
