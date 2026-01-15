@@ -32,3 +32,5 @@ pipx
 VPC
 subnets
 CDK
+zod
+Zod
