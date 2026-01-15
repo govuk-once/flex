@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export function findRoot(startDir = process.cwd()) {
+function findRoot(startDir = process.cwd()) {
   let dir = startDir;
 
   while (dir !== path.parse(dir).root) {
