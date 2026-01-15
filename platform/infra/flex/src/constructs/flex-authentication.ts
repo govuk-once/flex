@@ -7,8 +7,9 @@ import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as elasticache from "aws-cdk-lib/aws-elasticache";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import path from "path";
 
-import { getPlatformEntry } from "../utils/getEntry";
+import { findRoot, getPlatformEntry } from "../utils/getEntry";
 import { FlexPrivateEgressFunction } from "./flex-private-egress-function";
 
 export class FlexAuthentication extends Construct {
@@ -135,6 +136,7 @@ export class FlexAuthentication extends Construct {
         },
         vpc: this.vpc,
         vpcSubnets,
+        depsLockFilePath: path.join(findRoot(), "pnpm-lock.yaml"),
       },
     );
 
