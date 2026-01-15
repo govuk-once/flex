@@ -23,3 +23,7 @@ coverage/
 **cdk.out/
 # Potentially sensitive data
 cdk.context.json
+
+.env
+
+docs

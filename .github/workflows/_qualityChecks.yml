@@ -4,16 +4,16 @@ on:
   workflow_call:
     inputs:
       ENVIRONMENT:
-        description: 'AWS Environment to deploy'
+        description: "AWS Environment to deploy"
         type: string
         required: true
-        default: 'development'
+        default: "development"
       AWS_REGION:
-        description: 'AWS Region to deploy to'
+        description: "AWS Region to deploy to"
         type: string
     secrets:
       ROLE_TO_ASSUME:
-        description: 'AWS deployment role to assume'
+        description: "AWS deployment role to assume"
         required: true
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Install dependencies
         run: |

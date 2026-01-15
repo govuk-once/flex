@@ -1,18 +1,17 @@
 {
-  "name": "@platform/flex",
+  "name": "@platform/parameter",
   "type": "module",
+  "exports": {
+    "./outputs": "./src/outputs.ts"
+  },
   "scripts": {
-    "dev": "cdk watch",
     "deploy": "cdk deploy --all",
     "synth": "cdk synth",
     "lint": "eslint --max-warnings=0 src",
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "dependencies": {
-    "@platform/core": "workspace:*",
-    "@platform/parameter": "workspace:*",
-    "@platform/gov-uk-once": "workspace:*",
-    "esbuild": "0.27.2"
+    "@platform/gov-uk-once": "workspace:*"
   },
   "devDependencies": {
     "@configs/eslint": "workspace:*",

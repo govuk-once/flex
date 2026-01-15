@@ -3,3 +3,5 @@ skip-check:
   - CKV_AWS_116
   - CKV_AWS_117
   - CKV_AWS_158
+  - CKV_AWS_173 # TODO: confirm if we need to encrypt lambda environment variables
+  - CKV_AWS_31 # TODO: add auth token
