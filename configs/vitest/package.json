@@ -4,13 +4,9 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": {
-      "types": "./dist/config.d.ts",
-      "default": "./dist/config.js"
-    }
+    ".": "./src/config.ts"
   },
   "scripts": {
-    "build": "tsc",
     "lint": "eslint --max-warnings=0 src"
   },
   "peerDependencies": {
