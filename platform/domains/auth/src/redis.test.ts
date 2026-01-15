@@ -59,10 +59,10 @@ describe("createRedisClient", () => {
           tls: undefined,
           connectTimeout: 10000,
           maxRetriesPerRequest: 3,
-        }),
+        }) as unknown,
         enableOfflineQueue: true,
         enableReadyCheck: true,
-      }),
+      }) as unknown,
     );
 
     // Sanity check that returned client has expected shape
@@ -97,9 +97,9 @@ describe("createRedisClient", () => {
       expect.any(Array),
       expect.objectContaining({
         redisOptions: expect.objectContaining({
-          tls: {},
-        }),
-      }),
+          tls: expect.objectContaining({}) as unknown,
+        }) as unknown,
+      }) as unknown,
     );
   });
 

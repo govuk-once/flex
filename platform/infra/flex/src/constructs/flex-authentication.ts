@@ -115,13 +115,6 @@ export class FlexAuthentication extends Construct {
   }
 
   private createAuthorizer() {
-    // Create subnet selection for private egress subnets
-    const vpcSubnets: ec2.SubnetSelection = {
-      subnets: this.vpc.selectSubnets({
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-      }).subnets,
-    };
-
     const authorizerFunction = new FlexPrivateEgressFunction(
       this,
       "AuthorizerFunction",
@@ -132,11 +125,6 @@ export class FlexAuthentication extends Construct {
             this.redisEndpointParameter.parameterName,
           USER_POOL_ID_PARAMETER_NAME: this.userPoolId.parameterName,
           CLIENT_ID_PARAMETER_NAME: this.clientId.parameterName,
-        },
-        vpc: this.vpc,
-        vpcSubnets,
-        bundling: {
-          nodeModules: ["@aws-lambda-powertools/parameters", "ioredis"],
         },
       },
     );
