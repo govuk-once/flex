@@ -138,6 +138,9 @@ export class FlexAuthentication extends Construct {
         vpcSubnets,
         // external packages are hoisted to the root of the workspace
         depsLockFilePath: path.join(findRoot(), "pnpm-lock.yaml"),
+        bundling: {
+          nodeModules: ["@aws-lambda-powertools/parameters", "ioredis"],
+        },
       },
     );
 
