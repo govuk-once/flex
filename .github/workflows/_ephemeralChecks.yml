@@ -1,0 +1,32 @@
+name: Ephemeral branch checks
+
+on:
+  workflow_call:
+    inputs:
+      AWS_REGION:
+        description: 'AWS Region to deploy to'
+        type: string
+    secrets:
+      ROLE_TO_ASSUME:
+        description: 'AWS deployment role to assume'
+        required: true
+
+jobs:
+  buildAndDeploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write # Required for OIDC authentication with AWS
+
+    steps:
+      - name: Setup Environment
+        uses: ./.github/actions/setup
+
+      # - name: Deploy to AWS
+      #   uses: ./.github/actions/deploy
+
+      # - name: Run E2E tests against ephemeral environment
+      #   run: echo 'TODO add tests here'
+
+      # - name: Destory ephemeral environment
+      #   run: echo 'TODO remove ephemeral environment'
