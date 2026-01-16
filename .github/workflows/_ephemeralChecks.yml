@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       id-token: write # Required for OIDC authentication with AWS
+    env:
+      EPHEMRAL_ENV: ${{ github.ref_name }}
 
     steps:
       - name: Checkout repo
@@ -41,13 +43,8 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-ephemeral
 
-      - name: test
-        run: |
-          aws sts get-caller-identity
-          printenv
-
-      # - name: Run E2E tests against ephemeral environment
-      #   run: echo 'TODO add tests here'
+      - name: Deploy FLEX Flex AWS infra
+        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
 
       # - name: Destory ephemeral environment
       #   run: echo 'TODO remove ephemeral environment'
