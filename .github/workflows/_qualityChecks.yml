@@ -59,7 +59,7 @@ jobs:
         run: pnpm run lint
 
       - name: Build
-        run: pnpm run build:affected
+        run: pnpm run build
 
       - name: Unit Tests
         run: pnpm run test
