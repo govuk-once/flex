@@ -48,9 +48,6 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
 
-      - name: Build
-        run: pnpm build
-
       - name: Deploy FLEX Core AWS infra
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never
 
