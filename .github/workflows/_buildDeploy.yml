@@ -48,19 +48,14 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
 
-      - name: Set CDK account and region
-        run: |
-          export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-          echo "CDK_DEFAULT_ACCOUNT=$CDK_DEFAULT_ACCOUNT" >> $GITHUB_ENV
-
       - name: Build
         run: pnpm build
 
       - name: Deploy FLEX Core AWS infra
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never
 
-      - name: Deploy FLEX AWS infra
-        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
-
       - name: Deploy FLEX Parameter AWS infra
         run: cd ./platform/infra/parameter && pnpm run deploy --require-approval never
+
+      - name: Deploy FLEX Flex AWS infra
+        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
