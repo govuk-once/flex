@@ -52,11 +52,14 @@ jobs:
       - name: Run Hygiene & Security Checks
         run: SKIP=semgrep pre-commit run --all-files --show-diff-on-failure
 
+      - name: NX - set SHAs
+        uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4.4.0
+
       - name: Lint
         run: pnpm run lint
 
       - name: Build
-        run: pnpm run build
+        run: pnpm run build:affected
 
       - name: Unit Tests
         run: pnpm run test
