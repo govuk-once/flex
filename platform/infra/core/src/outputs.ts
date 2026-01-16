@@ -1,6 +1,6 @@
 import { getEnvConfig } from "@platform/gov-uk-once";
 import { SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
-import { StringParameter } from "aws-cdk-lib/aws-ssm";
+import { IStringParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
 const envConfig = getEnvConfig();
@@ -20,6 +20,7 @@ const SsmKeys = {
       "/network/security-group/private-isolated",
     ),
   },
+  redisEndpoint: generateParamName("/cache/redis/endpoint"),
 } as const;
 
 export function exportVpcDetailsToSsm(
@@ -51,6 +52,16 @@ export function exportVpcDetailsToSsm(
   });
 }
 
+export function exportRedisEndpointToSsm(
+  scope: Construct,
+  { endpoint }: { endpoint: string },
+) {
+  new StringParameter(scope, "ElasticacheClusterEndpoint", {
+    parameterName: SsmKeys.redisEndpoint,
+    stringValue: endpoint,
+  });
+}
+
 export function importVpcDetailsFromSsm(scope: Construct) {
   const vpcId = StringParameter.valueFromLookup(scope, SsmKeys.vpcId);
   const securityGroups = {
@@ -79,4 +90,12 @@ export function importVpcDetailsFromSsm(scope: Construct) {
       ),
     },
   };
+}
+
+export function importRedisEndpointFromSsm(scope: Construct): IStringParameter {
+  return StringParameter.fromStringParameterName(
+    scope,
+    "RedisEndpoint",
+    SsmKeys.redisEndpoint,
+  );
 }
