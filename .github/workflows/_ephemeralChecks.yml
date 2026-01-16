@@ -44,7 +44,7 @@ jobs:
       - name: test
         run: |
           aws sts get-caller-identity
-          whoami
+          printenv
 
       # - name: Run E2E tests against ephemeral environment
       #   run: echo 'TODO add tests here'
