@@ -1,10 +1,12 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
-import type {
-  APIGatewayAuthorizerEvent,
-  APIGatewayAuthorizerResult,
-  Context,
-} from "aws-lambda";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  authorizerEvent,
+  authorizerResult,
+  config,
+  context,
+  it,
+} from "@flex/testing";
+import { describe, expect, vi } from "vitest";
 
 import { handler, resetRedisClient } from "./handler";
 import * as jwksModule from "./jwks";
@@ -15,227 +17,132 @@ vi.mock("@aws-lambda-powertools/parameters/ssm");
 vi.mock("./redis");
 vi.mock("./jwks");
 
-// Set environment variables for parameter names
-process.env.USER_POOL_ID_PARAMETER_NAME = "/test/auth/user_pool_id";
-process.env.REDIS_ENDPOINT_PARAMETER_NAME = "/test/cache/redis/endpoint";
-
 describe("Authorizer Handler", () => {
-  const mockContext = {
-    getRemainingTimeInMillis: () => 1000,
-  } as unknown as Context;
-
-  const mockRedisClient = {
-    get: vi.fn(),
-    set: vi.fn(),
-    del: vi.fn(),
-    disconnect: vi.fn(),
-  };
-
-  const baseEvent: APIGatewayAuthorizerEvent = {
-    version: "2.0",
-    type: "REQUEST",
-    routeArn:
-      "arn:aws:execute-api:eu-west-2:123456789012:abcdef123/test/GET/request",
-    identitySource: ["Bearer token123"],
-    routeKey: "GET /test",
-    rawPath: "/test",
-    rawQueryString: "",
-    headers: {
-      authorization: "Bearer token123",
-    },
-    requestContext: {
-      accountId: "123456789012",
-      requestId: "test-request-id",
-    },
-    stageVariables: null,
-  } as unknown as APIGatewayAuthorizerEvent;
-
-  const expectedPolicy: APIGatewayAuthorizerResult = {
-    principalId: "anonymous",
-    policyDocument: {
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Action: "execute-api:Invoke",
-          Effect: "Allow",
-          Resource: "*",
-        },
-      ],
-    },
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it.beforeEach(({ redis, ssm }) => {
     resetRedisClient(); // Reset singleton between tests
-    // Mock getParameter to return different values based on parameter name
-    vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-      if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-        return Promise.resolve("eu-west-2_testUserPoolId");
-      }
-      if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      }
-      return Promise.resolve("default-value");
-    });
-    vi.mocked(redisModule.createRedisClient).mockReturnValue(
-      mockRedisClient as unknown as redisModule.RedisClient,
-    );
+
+    vi.clearAllMocks();
+
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    vi.mocked(getParameter)
+      .mockReset()
+      .mockImplementation((param) => Promise.resolve(ssm.get(param)));
+    vi.mocked(redisModule.createRedisClient).mockReturnValue(redis.client);
     vi.mocked(jwksModule.callCognitoJwksEndpoint).mockResolvedValue({
       keys: [],
     });
   });
 
   describe("SSM parameter handling", () => {
-    it("throws when user pool ID parameter is missing or invalid (null)", async () => {
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve(null as unknown as string);
-        }
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      });
+    const invalidValues = [
+      { value: null, description: "null" },
+      { value: undefined, description: "undefined" },
+      { value: 1234, description: "number" },
+      { value: true, description: "boolean" },
+      { value: {}, description: "object" },
+      { value: [], description: "array" },
+      { value: "", description: "empty string" },
+    ];
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+    it("throws when user pool ID parameter is missing", async ({ ssm }) => {
+      ssm.delete(config.userPoolId.ssm);
+
+      await expect(handler(authorizerEvent, context)).rejects.toThrow(
         "User pool ID parameter not found or invalid",
       );
     });
 
-    it("throws when user pool ID parameter is not a string", async () => {
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve(1234 as unknown as string);
-        }
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      });
+    it.for(invalidValues)(
+      "throws when user pool ID parameter value is $description",
+      async ({ value }, { ssm }) => {
+        ssm.set({ [config.userPoolId.ssm]: value });
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "User pool ID parameter not found or invalid",
-      );
-    });
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          "User pool ID parameter not found or invalid",
+        );
+      },
+    );
 
-    it("throws when Redis endpoint parameter is missing or invalid (null)", async () => {
-      // Ensure clean state: reset Redis client singleton and mocks
-      resetRedisClient();
-      vi.mocked(getParameter).mockReset();
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve("eu-west-2_testUserPoolId");
-        }
-        if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-          return Promise.resolve(null as unknown as string);
-        }
-        return Promise.resolve("default-value");
-      });
+    it("throws when Redis endpoint parameter is missing", async ({ ssm }) => {
+      ssm.delete(config.redis.endpoint.ssm);
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+      await expect(handler(authorizerEvent, context)).rejects.toThrow(
         "Redis endpoint parameter not found or invalid",
       );
     });
 
-    it("throws when Redis endpoint parameter is not a string", async () => {
-      // Ensure clean state: reset Redis client singleton and mocks
-      resetRedisClient();
-      vi.mocked(getParameter).mockReset();
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve("eu-west-2_testUserPoolId");
-        }
-        if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-          return Promise.resolve(1234 as unknown as string);
-        }
-        return Promise.resolve("default-value");
-      });
+    it.for(invalidValues)(
+      "throws when Redis endpoint parameter value is $description",
+      async ({ value }, { ssm }) => {
+        ssm.set({ [config.redis.endpoint.ssm]: value });
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "Redis endpoint parameter not found or invalid",
-      );
-    });
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          "Redis endpoint parameter not found or invalid",
+        );
+      },
+    );
   });
 
   describe("Redis integration", () => {
-    it("reads from Redis when cache key exists", async () => {
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
-      mockRedisClient.get.mockResolvedValue(cachedData);
+    it("writes to Redis with TTL and reads the cached value", async ({
+      redis,
+    }) => {
+      const result = await handler(authorizerEvent, context);
 
-      const result = await handler(baseEvent, mockContext);
-
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
+      expect(redis.client.get).toHaveBeenCalledExactlyOnceWith("auth:1");
+      expect(redis.client.set).toHaveBeenCalledExactlyOnceWith(
         "auth:1",
-        expect.stringContaining('"timestamp"'),
+        expect.stringMatching(/timestamp/),
         300,
       );
-      expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
-      expect(result).toEqual(expectedPolicy);
+      expect(result).toEqual(authorizerResult.allow);
     });
 
-    it("writes to Redis when cache key does not exist", async () => {
-      mockRedisClient.get.mockResolvedValueOnce(null);
-      mockRedisClient.set.mockResolvedValue("OK");
-
-      const result = await handler(baseEvent, mockContext);
-
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        "auth:1",
-        expect.stringContaining('"timestamp"'),
-        300,
-      );
-      expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
-      expect(result).toEqual(expectedPolicy);
-    });
-
-    it("reuses the same Redis client across multiple invocations", async () => {
-      // Reset call history to ensure accurate counting
-      vi.mocked(getParameter).mockClear();
-      vi.mocked(redisModule.createRedisClient).mockClear();
-      mockRedisClient.get.mockClear();
-      mockRedisClient.set.mockClear();
-
-      mockRedisClient.get.mockResolvedValueOnce(null);
-      mockRedisClient.set.mockResolvedValue("OK");
-
-      const firstResult = await handler(baseEvent, mockContext);
-      const secondResult = await handler(baseEvent, mockContext);
+    it("reuses the same Redis client across multiple invocations", async ({
+      redis,
+    }) => {
+      await handler(authorizerEvent, context);
+      await handler(authorizerEvent, context);
 
       // First invocation: 2 calls (user pool ID + Redis endpoint)
       // Second invocation: 1 call (user pool ID only, Redis client is reused)
       expect(getParameter).toHaveBeenCalledTimes(3);
-      // Redis client is created once and reused
       expect(redisModule.createRedisClient).toHaveBeenCalledTimes(1);
-      expect(mockRedisClient.set).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
-      expect(firstResult).toEqual(expectedPolicy);
-      expect(secondResult).toEqual(expectedPolicy);
-    });
-
-    it("propagates errors when Redis set fails", async () => {
-      mockRedisClient.set.mockRejectedValueOnce(new Error("set failed"));
-
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "set failed",
+      expect(redis.client.get).toHaveBeenNthCalledWith(2, "auth:1");
+      expect(redis.client.set).toHaveBeenNthCalledWith(
+        2,
+        "auth:1",
+        expect.stringMatching(/timestamp/),
+        300,
       );
     });
 
-    it("propagates errors when Redis get fails", async () => {
-      mockRedisClient.set.mockResolvedValue("OK");
-      mockRedisClient.get.mockRejectedValueOnce(new Error("get failed"));
+    it.for<"get" | "set">(["get", "set"])(
+      'propagates errors when Redis "%s" fails',
+      async (method, { redis }) => {
+        const message = `${method} failed`;
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "get failed",
-      );
-    });
+        redis.client[method].mockRejectedValueOnce(new Error(message));
+
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          message,
+        );
+      },
+    );
   });
 
   describe("JWKS integration", () => {
     it("calls the Cognito JWKS endpoint during authorization", async () => {
-      const fetchJwksSpy = vi.mocked(jwksModule.callCognitoJwksEndpoint);
+      const fetchJwksSpy = vi.spyOn(jwksModule, "callCognitoJwksEndpoint");
 
-      const result = await handler(baseEvent, mockContext);
+      const result = await handler(authorizerEvent, context);
 
-      expect(fetchJwksSpy).toHaveBeenCalledTimes(1);
-      expect(fetchJwksSpy).toHaveBeenCalledWith(
-        "eu-west-2_testUserPoolId",
+      expect(fetchJwksSpy).toHaveBeenCalledExactlyOnceWith(
+        config.userPoolId.value,
         "eu-west-2",
       );
-      expect(result).toEqual(expectedPolicy);
+      expect(result).toEqual(authorizerResult.allow);
     });
   });
 });

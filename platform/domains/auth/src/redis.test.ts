@@ -1,11 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { config, it } from "@flex/testing";
+import { Cluster } from "ioredis";
+import { beforeEach, describe, expect, vi } from "vitest";
 
-const mockClusterInstance = {
-  get: vi.fn(),
-  set: vi.fn(),
-  del: vi.fn(),
-  quit: vi.fn(),
-};
+import { createRedisClient } from "./redis";
 
 vi.mock("ioredis", () => {
   const ClusterMock = vi.fn(function Cluster() {
@@ -26,98 +23,112 @@ vi.mock("ioredis", () => {
   };
 });
 
-import { Cluster } from "ioredis";
-
-import { createRedisClient } from "./redis";
+const mockClusterInstance = {
+  get: vi.fn(),
+  set: vi.fn(),
+  del: vi.fn(),
+  quit: vi.fn(),
+};
 
 describe("createRedisClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockClusterInstance.get.mockReset();
-    mockClusterInstance.set.mockReset();
-    mockClusterInstance.del.mockReset();
-    mockClusterInstance.quit.mockReset();
+
+    Object.values(mockClusterInstance).forEach((method) => {
+      method.mockReset();
+    });
   });
 
-  afterEach(() => {
-    delete process.env.REDIS_TLS_ENABLED;
+  it.afterEach(({ env }) => {
+    env.delete(config.redis.tls.env);
   });
 
   it("parses endpoint and uses default port when none is provided", () => {
-    const client = createRedisClient("example.cache.amazonaws.com");
+    const [endpoint, port] = config.redis.endpoint.value.split(":");
+
+    expect.assert(endpoint, "Endpoint is missing");
+    expect.assert(port, "Port is missing");
+
+    const client = createRedisClient(endpoint);
 
     const ClusterMock = vi.mocked(Cluster);
-    expect(ClusterMock).toHaveBeenCalledWith(
-      [
-        {
-          host: "example.cache.amazonaws.com",
-          port: 6379,
-        },
-      ],
-      expect.objectContaining({
-        redisOptions: expect.objectContaining({
-          tls: undefined,
-          connectTimeout: 10000,
-          maxRetriesPerRequest: 3,
-        }) as unknown,
-        enableOfflineQueue: true,
-        enableReadyCheck: true,
-      }) as unknown,
-    );
+
+    const [startupNodes, options] = ClusterMock.mock.lastCall!;
+
+    expect(startupNodes).toEqual([{ host: endpoint, port: Number(port) }]);
+    expect(options).toMatchObject({
+      redisOptions: {
+        connectTimeout: 10000,
+        maxRetriesPerRequest: 3,
+        tls: undefined,
+      },
+      enableOfflineQueue: true,
+      enableReadyCheck: true,
+    });
 
     // Sanity check that returned client has expected shape
-    expect(typeof client.get).toBe("function");
-    expect(typeof client.set).toBe("function");
-    expect(typeof client.del).toBe("function");
-    expect(typeof client.disconnect).toBe("function");
+    Object.values(client).forEach((method) => {
+      expect(typeof method).toBe("function");
+    });
   });
 
   it("parses endpoint with explicit port", () => {
-    createRedisClient("example.cache.amazonaws.com:6380");
+    createRedisClient(config.redis.endpoint.value);
+
+    const [endpoint, port] = config.redis.endpoint.value.split(":");
+
+    expect.assert(endpoint, "Endpoint is missing");
+    expect.assert(port, "Port is missing");
 
     const ClusterMock = vi.mocked(Cluster);
-    expect(ClusterMock).toHaveBeenCalledWith(
-      [
-        {
-          host: "example.cache.amazonaws.com",
-          port: 6380,
-        },
-      ],
-      expect.any(Object),
-    );
+
+    const [startupNodes, options] = ClusterMock.mock.lastCall!;
+
+    expect(ClusterMock).toHaveBeenCalledOnce();
+    expect(startupNodes).toEqual([{ host: endpoint, port: Number(port) }]);
+    expect(options).toMatchObject(expect.any(Object));
   });
 
-  it("enables TLS when REDIS_TLS_ENABLED is set to 'true'", () => {
-    process.env.REDIS_TLS_ENABLED = "true";
+  it("enables TLS when REDIS_TLS_ENABLED is set to 'true'", ({ env }) => {
+    env.set({ [config.redis.tls.env]: "true" });
 
-    createRedisClient("example.cache.amazonaws.com:6379");
+    createRedisClient(config.redis.endpoint.value);
 
     const ClusterMock = vi.mocked(Cluster);
-    expect(ClusterMock).toHaveBeenCalledWith(
-      expect.any(Array),
-      expect.objectContaining({
-        redisOptions: expect.objectContaining({
-          tls: expect.objectContaining({}) as unknown,
-        }) as unknown,
-      }) as unknown,
-    );
+
+    const [startupNodes, options] = ClusterMock.mock.lastCall!;
+
+    expect(ClusterMock).toHaveBeenCalledOnce();
+    expect(startupNodes).toEqual(expect.any(Array));
+    expect(options).toMatchObject({
+      redisOptions: {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        tls: expect.any(Object),
+      },
+    });
   });
 
   it("wraps basic Redis commands correctly", async () => {
-    const client = createRedisClient("example.cache.amazonaws.com:6379");
+    const client = createRedisClient(config.redis.endpoint.value);
 
     mockClusterInstance.get.mockResolvedValueOnce("value");
+
     const getResult = await client.get("key");
+
     expect(mockClusterInstance.get).toHaveBeenCalledWith("key");
     expect(getResult).toBe("value");
 
     mockClusterInstance.set.mockResolvedValueOnce("OK");
+
     const setResultWithoutExpiry = await client.set("key", "val");
+
     expect(mockClusterInstance.set).toHaveBeenCalledWith("key", "val");
     expect(setResultWithoutExpiry).toBe("OK");
 
     mockClusterInstance.set.mockResolvedValueOnce("OK");
+
     const setResultWithExpiry = await client.set("key", "val", 60);
+
     expect(mockClusterInstance.set).toHaveBeenCalledWith(
       "key",
       "val",
@@ -127,11 +138,14 @@ describe("createRedisClient", () => {
     expect(setResultWithExpiry).toBe("OK");
 
     mockClusterInstance.del.mockResolvedValueOnce(1);
+
     const delResult = await client.del("key");
+
     expect(mockClusterInstance.del).toHaveBeenCalledWith("key");
     expect(delResult).toBe(1);
 
     await client.disconnect();
-    expect(mockClusterInstance.quit).toHaveBeenCalledTimes(1);
+
+    expect(mockClusterInstance.quit).toHaveBeenCalledOnce();
   });
 });

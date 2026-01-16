@@ -1,8 +1,8 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { createLambdaHandler } from "@flex/handlers";
 import type {
-  APIGatewayAuthorizerEvent,
   APIGatewayAuthorizerResult,
+  APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
 
 import { callCognitoJwksEndpoint } from "./jwks";
@@ -46,7 +46,7 @@ export function resetRedisClient(): void {
  * Reads from and writes to ElastiCache Redis cluster for caching authorization data.
  */
 const handler = createLambdaHandler<
-  APIGatewayAuthorizerEvent,
+  APIGatewayRequestAuthorizerEventV2,
   APIGatewayAuthorizerResult
 >(
   async (): Promise<APIGatewayAuthorizerResult> => {
