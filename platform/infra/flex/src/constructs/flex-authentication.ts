@@ -101,7 +101,6 @@ export class FlexAuthentication extends Construct {
         vpc: this.vpc,
         description: "SecurityGroup with allow inbound from Redis",
         allowAllOutbound: false,
-        securityGroupName: "redis-access",
       },
     );
 
