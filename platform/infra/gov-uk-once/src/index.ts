@@ -43,6 +43,21 @@ function getUser() {
   return sanitizeUsername(user);
 }
 
+function sanitizeEphemeralEnv(branch: string): string {
+  return branch
+    .toLowerCase()
+    .replace(/[/_]/g, "-")
+    .replace(/[^a-z-]/g, "")
+    .slice(0, 26);
+}
+
+function getEphemeral() {
+  const ephemeral = process.env.EPHEMERAL_ENV;
+  if (!ephemeral) return null;
+
+  return sanitizeEphemeralEnv(ephemeral);
+}
+
 function getEnvironment() {
   const env = process.env.ENVIRONMENT;
   if (!env) return null;
@@ -59,6 +74,15 @@ function getEnvironment() {
  * Returns the environment config for this deployment.
  */
 export function getEnvConfig() {
+  // Ephemeral envs are used for the ci process
+  const ephemeral = getEphemeral();
+  if (ephemeral)
+    return {
+      environment: Environment.DEVELOPMENT,
+      stage: ephemeral,
+      persistent: false,
+    };
+
   const environment = getEnvironment();
   const user = getUser();
   const stage = environment ?? user;

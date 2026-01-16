@@ -13,3 +13,11 @@ jobs:
       AWS_REGION: 'eu-west-2'
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  ephemeralEnv:
+    name: Ephemeral Environment branch tests
+    uses: ./.github/workflows/_ephemeralChecks.yml
+    with:
+      AWS_REGION: 'eu-west-2'
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
