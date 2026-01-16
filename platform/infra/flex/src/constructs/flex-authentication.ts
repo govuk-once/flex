@@ -1,5 +1,4 @@
 import { importVpcDetailsFromSsm } from "@platform/core/outputs";
-import { generateParamName } from "@platform/gov-uk-once";
 import { importAuthParametersFromSsm } from "@platform/parameter/outputs";
 import { Duration } from "aws-cdk-lib";
 import { HttpLambdaAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
@@ -8,6 +7,7 @@ import * as elasticache from "aws-cdk-lib/aws-elasticache";
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
+import { SsmKeys } from "../outputs";
 import { getPlatformEntry } from "../utils/getEntry";
 import { FlexPrivateEgressFunction } from "./flex-private-egress-function";
 
@@ -52,7 +52,7 @@ export class FlexAuthentication extends Construct {
       this,
       "ElasticacheClusterEndpoint",
       {
-        parameterName: generateParamName("/cache/redis/endpoint"),
+        parameterName: SsmKeys.redisEndpoint,
         stringValue: cacheCluster.attrConfigurationEndPointAddress,
       },
     );
