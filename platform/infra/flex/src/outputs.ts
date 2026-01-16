@@ -4,7 +4,7 @@ const envConfig = getEnvConfig();
 
 export function generateParamName(name: string) {
   // /development/flex-platform/cache/redis/endpoint
-  return `/${envConfig.environment}/flex-platform${name}`;
+  return `/${envConfig.stage}/flex-platform${name}`;
 }
 
 export const SsmKeys = {

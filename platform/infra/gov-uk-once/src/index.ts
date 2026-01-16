@@ -44,7 +44,11 @@ function getUser() {
 }
 
 function sanitizeEphemeralEnv(branch: string): string {
-  return sanitizeUsername(branch).replace(/\//g, "-");
+  return branch
+    .toLowerCase()
+    .replace(/[\/_]/g, "-")
+    .replace(/[^a-z-]/g, "")
+    .slice(0, 26);
 }
 
 function getEphemeral() {
@@ -72,7 +76,11 @@ function getEnvironment() {
 export function getEnvConfig() {
   // Ephemeral envs are used for the ci process
   const ephemeral = getEphemeral();
-  if (ephemeral) return ephemeral;
+  if (ephemeral) return {
+    environment: Environment.DEVELOPMENT,
+    stage: ephemeral,
+    persistent: false,
+  }
 
   const environment = getEnvironment();
   const user = getUser();
