@@ -1,279 +1,195 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
-import type {
-  APIGatewayAuthorizerEvent,
-  APIGatewayAuthorizerResult,
-  Context,
-} from "aws-lambda";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  authorizerEvent,
+  authorizerResult,
+  config,
+  context,
+  it,
+} from "@flex/testing";
+import { describe, expect, vi } from "vitest";
 
 import { handler, resetRedisClient } from "./handler";
 import * as jwksModule from "./jwks";
 import * as redisModule from "./redis";
 
-// Mock dependencies
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 vi.mock("./redis");
 vi.mock("./jwks");
 
-// Set environment variables for parameter names
-process.env.USER_POOL_ID_PARAMETER_NAME = "/test/auth/user_pool_id";
-process.env.REDIS_ENDPOINT_PARAMETER_NAME = "/test/cache/redis/endpoint";
-
 describe("Authorizer Handler", () => {
-  const mockContext = {
-    getRemainingTimeInMillis: () => 1000,
-  } as unknown as Context;
-
-  const mockRedisClient = {
-    get: vi.fn(),
-    set: vi.fn(),
-    del: vi.fn(),
-    disconnect: vi.fn(),
-  };
-
-  const baseEvent: APIGatewayAuthorizerEvent = {
-    version: "2.0",
-    type: "REQUEST",
-    routeArn:
-      "arn:aws:execute-api:eu-west-2:123456789012:abcdef123/test/GET/request",
-    identitySource: ["Bearer token123"],
-    routeKey: "GET /test",
-    rawPath: "/test",
-    rawQueryString: "",
-    headers: {
-      authorization: "Bearer token123",
-    },
-    requestContext: {
-      accountId: "123456789012",
-      requestId: "test-request-id",
-    },
-    stageVariables: null,
-  } as unknown as APIGatewayAuthorizerEvent;
-
-  const expectedPolicy: APIGatewayAuthorizerResult = {
-    principalId: "anonymous",
-    policyDocument: {
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Action: "execute-api:Invoke",
-          Effect: "Allow",
-          Resource: "*",
-        },
-      ],
-    },
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it.beforeEach(({ redis, ssm }) => {
     resetRedisClient(); // Reset singleton between tests
-    // Mock getParameter to return different values based on parameter name
-    vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-      if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-        return Promise.resolve("eu-west-2_testUserPoolId");
-      }
-      if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      }
-      return Promise.resolve("default-value");
-    });
-    vi.mocked(redisModule.createRedisClient).mockReturnValue(
-      mockRedisClient as unknown as redisModule.RedisClient,
-    );
+
+    vi.clearAllMocks();
+
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    vi.mocked(getParameter)
+      .mockReset()
+      .mockImplementation((param) => Promise.resolve(ssm.get(param)));
+    vi.mocked(redisModule.createRedisClient).mockReturnValue(redis.client);
     vi.mocked(jwksModule.callCognitoJwksEndpoint).mockResolvedValue({
       keys: [],
     });
   });
 
   describe("SSM parameter handling", () => {
-    it("throws when user pool ID parameter is missing or invalid (null)", async () => {
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve(null as unknown as string);
-        }
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      });
+    const invalidValues = [
+      { value: null, description: "null" },
+      { value: undefined, description: "undefined" },
+      { value: 1234, description: "number" },
+      { value: true, description: "boolean" },
+      { value: {}, description: "object" },
+      { value: [], description: "array" },
+      { value: "", description: "empty string" },
+    ];
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+    it("throws when user pool ID parameter is missing", async ({ ssm }) => {
+      ssm.delete(config.userPoolId.ssm);
+
+      await expect(handler(authorizerEvent, context)).rejects.toThrow(
         "User pool ID parameter not found or invalid",
       );
     });
 
-    it("throws when user pool ID parameter is not a string", async () => {
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve(1234 as unknown as string);
-        }
-        return Promise.resolve("redis-endpoint.example.com:6379");
-      });
+    it.for(invalidValues)(
+      "throws when user pool ID parameter value is $description",
+      async ({ value }, { ssm }) => {
+        ssm.set({ [config.userPoolId.ssm]: value });
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "User pool ID parameter not found or invalid",
-      );
-    });
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          "User pool ID parameter not found or invalid",
+        );
+      },
+    );
 
-    it("throws when Redis endpoint parameter is missing or invalid (null)", async () => {
-      // Ensure clean state: reset Redis client singleton and mocks
-      resetRedisClient();
-      vi.mocked(getParameter).mockReset();
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve("eu-west-2_testUserPoolId");
-        }
-        if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-          return Promise.resolve(null as unknown as string);
-        }
-        return Promise.resolve("default-value");
-      });
+    it("throws when Redis endpoint parameter is missing", async ({ ssm }) => {
+      ssm.delete(config.redis.endpoint.ssm);
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+      await expect(handler(authorizerEvent, context)).rejects.toThrow(
         "Redis endpoint parameter not found or invalid",
       );
     });
 
-    it("throws when Redis endpoint parameter is not a string", async () => {
-      // Ensure clean state: reset Redis client singleton and mocks
-      resetRedisClient();
-      vi.mocked(getParameter).mockReset();
-      vi.mocked(getParameter).mockImplementation((parameterName: string) => {
-        if (parameterName === process.env.USER_POOL_ID_PARAMETER_NAME) {
-          return Promise.resolve("eu-west-2_testUserPoolId");
-        }
-        if (parameterName === process.env.REDIS_ENDPOINT_PARAMETER_NAME) {
-          return Promise.resolve(1234 as unknown as string);
-        }
-        return Promise.resolve("default-value");
-      });
+    it.for(invalidValues)(
+      "throws when Redis endpoint parameter value is $description",
+      async ({ value }, { ssm }) => {
+        ssm.set({ [config.redis.endpoint.ssm]: value });
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "Redis endpoint parameter not found or invalid",
-      );
-    });
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          "Redis endpoint parameter not found or invalid",
+        );
+      },
+    );
   });
 
   describe("Redis integration", () => {
-    it("reads from Redis when cache key exists", async () => {
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
-      // Handler calls get twice: once to check if key exists, once at the end
-      mockRedisClient.get
-        .mockResolvedValueOnce(cachedData) // First call: key exists
-        .mockResolvedValueOnce(cachedData); // Second call: get value
+    const cached = JSON.stringify({ timestamp: Date.now() });
 
-      const result = await handler(baseEvent, mockContext);
+    it("reads from Redis when cache key exists", async ({ redis }) => {
+      // redis `get` is called twice: once to check if key exists, once at the end
+      redis.client.get
+        .mockResolvedValueOnce(cached) // call #1: key exists
+        .mockResolvedValueOnce(cached); // call #2: get value
+
+      const result = await handler(authorizerEvent, context);
 
       // When cache key exists, set should NOT be called
-      expect(mockRedisClient.set).not.toHaveBeenCalled();
+      expect(redis.client.set).not.toHaveBeenCalled();
       // get is called twice: once to check, once to retrieve
-      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
-      expect(result).toEqual(expectedPolicy);
+      expect(redis.client.get).toHaveBeenNthCalledWith(2, "auth:1");
+      expect(result).toEqual(authorizerResult.allow);
     });
 
-    it("writes to Redis when cache key does not exist", async () => {
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
+    it("writes to Redis with TTL when cache key does not exist", async ({
+      redis,
+    }) => {
       // Handler calls get twice: once to check if key exists, once at the end
-      mockRedisClient.get
-        .mockResolvedValueOnce(null) // First call: key does not exist
-        .mockResolvedValueOnce(cachedData); // Second call: get value after set
-      mockRedisClient.set.mockResolvedValue("OK");
+      redis.client.get
+        .mockResolvedValueOnce(null) // call #1: key does not exist
+        .mockResolvedValueOnce(cached); // call #2: get value after set
+      redis.client.set.mockResolvedValue("OK");
 
-      const result = await handler(baseEvent, mockContext);
+      const result = await handler(authorizerEvent, context);
 
-      expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
+      expect(redis.client.set).toHaveBeenCalledExactlyOnceWith(
         "auth:1",
-        expect.stringContaining('"timestamp"'),
+        expect.stringMatching(/timestamp/),
         300,
       );
       // get is called twice: once to check, once to retrieve
-      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
-      expect(result).toEqual(expectedPolicy);
+      expect(redis.client.get).toHaveBeenNthCalledWith(2, "auth:1");
+      expect(result).toEqual(authorizerResult.allow);
     });
 
-    it("reuses the same Redis client across multiple invocations", async () => {
-      // Reset call history to ensure accurate counting
-      vi.mocked(getParameter).mockClear();
-      vi.mocked(redisModule.createRedisClient).mockClear();
-      mockRedisClient.get.mockClear();
-      mockRedisClient.set.mockClear();
+    it("reuses the same Redis client across multiple invocations", async ({
+      redis,
+    }) => {
+      // invocation #1: key doesn't exist, so set is called
+      redis.client.get
+        .mockResolvedValueOnce(null) // call #1: key doesn't exist
+        .mockResolvedValueOnce(cached) // call #2: after `set`
+        // invocation #2: key exists, no need to invoke `set`
+        .mockResolvedValueOnce(cached) // call #3: key exists
+        .mockResolvedValueOnce(cached); // call #4: get value
+      redis.client.set.mockResolvedValue("OK");
 
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
-      // First invocation: key doesn't exist, so set is called
-      mockRedisClient.get
-        .mockResolvedValueOnce(null) // First get: key doesn't exist
-        .mockResolvedValueOnce(cachedData) // Second get: after set
-        // Second invocation: key exists (from first invocation), so set is NOT called
-        .mockResolvedValueOnce(cachedData) // First get: key exists
-        .mockResolvedValueOnce(cachedData); // Second get: get value
-      mockRedisClient.set.mockResolvedValue("OK");
+      // invocation #1: 2 SSM calls (user pool ID + Redis endpoint, instance created for all subsequent calls)
+      const firstResult = await handler(authorizerEvent, context);
+      // invocation #2: 1 SSM call (user pool ID only, reuse existing Redis client)
+      const secondResult = await handler(authorizerEvent, context);
 
-      const firstResult = await handler(baseEvent, mockContext);
-      const secondResult = await handler(baseEvent, mockContext);
-
-      // First invocation: 2 calls (user pool ID + Redis endpoint)
-      // Second invocation: 1 call (user pool ID only, Redis client is reused)
       expect(getParameter).toHaveBeenCalledTimes(3);
-      // Redis client is created once and reused
-      expect(redisModule.createRedisClient).toHaveBeenCalledTimes(1);
-      // First invocation: set is called (key doesn't exist)
-      // Second invocation: set is NOT called (key exists from first invocation)
-      expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
-      // Each invocation calls get twice: once to check, once to retrieve
-      expect(mockRedisClient.get).toHaveBeenCalledTimes(4);
-      expect(firstResult).toEqual(expectedPolicy);
-      expect(secondResult).toEqual(expectedPolicy);
-    });
-
-    it("propagates errors when Redis set fails", async () => {
-      // First get returns null (key doesn't exist), so set is called
-      mockRedisClient.get.mockResolvedValueOnce(null);
-      mockRedisClient.set.mockRejectedValueOnce(new Error("set failed"));
-
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "set failed",
+      expect(redisModule.createRedisClient).toHaveBeenCalledOnce();
+      expect(redis.client.get).toHaveBeenCalledTimes(4);
+      expect(redis.client.get).toHaveBeenCalledWith("auth:1");
+      expect(redis.client.set).toHaveBeenCalledExactlyOnceWith(
+        "auth:1",
+        expect.stringMatching(/timestamp/),
+        300,
       );
+      expect(firstResult).toEqual(authorizerResult.allow);
+      expect(secondResult).toEqual(authorizerResult.allow);
     });
 
-    it("propagates errors when Redis get fails on first call", async () => {
-      mockRedisClient.get.mockRejectedValueOnce(new Error("get failed"));
+    it.for(["get", "set"] as const)(
+      'propagates errors when Redis "%s" fails',
+      async (method, { redis }) => {
+        const message = `${method} failed`;
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
-        "get failed",
-      );
-    });
+        if (method === "set") redis.client.get.mockResolvedValueOnce(null);
+        redis.client[method].mockRejectedValueOnce(new Error(message));
 
-    it("propagates errors when Redis get fails on second call", async () => {
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
-      // First get succeeds (key exists), second get fails
-      mockRedisClient.get
-        .mockResolvedValueOnce(cachedData)
+        await expect(handler(authorizerEvent, context)).rejects.toThrow(
+          message,
+        );
+      },
+    );
+
+    it("propagates errors when Redis get fails on second call", async ({
+      redis,
+    }) => {
+      redis.client.get
+        .mockResolvedValueOnce(cached)
         .mockRejectedValueOnce(new Error("get failed"));
 
-      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+      await expect(handler(authorizerEvent, context)).rejects.toThrow(
         "get failed",
       );
     });
   });
 
   describe("JWKS integration", () => {
-    it("calls the Cognito JWKS endpoint during authorization", async () => {
+    it("calls the Cognito JWKS endpoint when user pool ID is defined", async () => {
       const fetchJwksSpy = vi.mocked(jwksModule.callCognitoJwksEndpoint);
-      // Set up Redis mocks so handler can complete
-      const cachedData = JSON.stringify({ timestamp: Date.now() });
-      mockRedisClient.get
-        .mockResolvedValueOnce(null) // First get: key doesn't exist
-        .mockResolvedValueOnce(cachedData); // Second get: after set
-      mockRedisClient.set.mockResolvedValue("OK");
 
-      const result = await handler(baseEvent, mockContext);
+      await handler(authorizerEvent, context);
 
-      expect(fetchJwksSpy).toHaveBeenCalledTimes(1);
-      expect(fetchJwksSpy).toHaveBeenCalledWith(
-        "eu-west-2_testUserPoolId",
+      expect(fetchJwksSpy).toHaveBeenCalledExactlyOnceWith(
+        config.userPoolId.value,
         "eu-west-2",
       );
-      expect(result).toEqual(expectedPolicy);
     });
   });
 });

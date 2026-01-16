@@ -1,4 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { config, it } from "@flex/testing";
+import Redis from "ioredis";
+import { beforeEach, describe, expect, vi } from "vitest";
+
+import { createRedisClient } from "./redis";
 
 const mockRedisInstance = {
   get: vi.fn(),
@@ -28,138 +32,104 @@ vi.mock("ioredis", () => {
   };
 });
 
-import Redis from "ioredis";
-
-import { createRedisClient } from "./redis";
-
 describe("createRedisClient", () => {
+  const [endpoint, port] = config.redis.endpoint.value.split(":");
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRedisInstance.get.mockReset();
-    mockRedisInstance.set.mockReset();
-    mockRedisInstance.del.mockReset();
-    mockRedisInstance.quit.mockReset();
-    mockRedisInstance.on.mockReset();
-  });
 
-  afterEach(() => {
-    delete process.env.REDIS_TLS_ENABLED;
+    Object.values(mockRedisInstance).forEach((method) => {
+      method.mockReset();
+    });
   });
 
   it("creates Redis client with correct configuration", () => {
-    const client = createRedisClient("example.cache.amazonaws.com");
+    expect.assert(endpoint, "Redis endpoint is missing");
+    expect.assert(port, "Redis port is missing");
 
     const RedisMock = vi.mocked(Redis);
-    expect(RedisMock).toHaveBeenCalledTimes(1);
-    expect(RedisMock).toHaveBeenCalledWith(
+
+    const client = createRedisClient(endpoint);
+
+    expect(RedisMock).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
-        host: "example.cache.amazonaws.com",
-        port: 6379,
         connectTimeout: 5000,
         enableOfflineQueue: true,
+        host: endpoint,
+        port: Number(port),
+        tls: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          checkServerIdentity: expect.any(Function),
+        },
       }),
     );
 
-    // Verify TLS configuration
-    const calls = RedisMock.mock.calls as unknown as Array<
-      [
-        {
-          host: string;
-          port: number;
-          tls?: { checkServerIdentity?: () => undefined };
-          connectTimeout: number;
-          enableOfflineQueue: boolean;
-        },
-      ]
-    >;
-    expect(calls.length).toBeGreaterThan(0);
-    const config = calls[0]?.[0];
-    expect(config).toBeDefined();
-    if (config) {
-      expect(config.tls).toBeDefined();
-      expect(typeof config.tls?.checkServerIdentity).toBe("function");
-    }
+    ["connect", "ready", "error"].forEach((eventName, i) => {
+      expect(mockRedisInstance.on).toHaveBeenNthCalledWith(
+        ++i,
+        eventName,
+        expect.any(Function),
+      );
+    });
 
-    // Verify event listeners are set up
-    expect(mockRedisInstance.on).toHaveBeenCalledWith(
-      "connect",
-      expect.any(Function) as () => void,
-    );
-    expect(mockRedisInstance.on).toHaveBeenCalledWith(
-      "ready",
-      expect.any(Function) as () => void,
-    );
-    expect(mockRedisInstance.on).toHaveBeenCalledWith(
-      "error",
-      expect.any(Function) as (err: Error) => void,
-    );
-
-    // Sanity check that returned client has expected shape
-    expect(typeof client.get).toBe("function");
-    expect(typeof client.set).toBe("function");
-    expect(typeof client.del).toBe("function");
-    expect(typeof client.disconnect).toBe("function");
+    Object.values(client).forEach((method) => {
+      expect(typeof method).toBe("function");
+    });
   });
 
   it("creates Redis client with endpoint containing port (port is ignored, always uses 6379)", () => {
-    createRedisClient("example.cache.amazonaws.com:6380");
+    expect.assert(endpoint, "Redis endpoint is missing");
 
     const RedisMock = vi.mocked(Redis);
-    expect(RedisMock).toHaveBeenCalledTimes(1);
-    expect(RedisMock).toHaveBeenCalledWith(
+
+    createRedisClient(`${endpoint}:6380`);
+
+    expect(RedisMock).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
-        host: "example.cache.amazonaws.com:6380",
-        port: 6379,
         connectTimeout: 5000,
         enableOfflineQueue: true,
+        host: `${endpoint}:6380`,
+        port: 6379,
+        tls: {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          checkServerIdentity: expect.any(Function),
+        },
       }),
     );
-
-    // Verify TLS configuration
-    const calls = RedisMock.mock.calls as unknown as Array<
-      [
-        {
-          host: string;
-          port: number;
-          tls?: { checkServerIdentity?: () => undefined };
-          connectTimeout: number;
-          enableOfflineQueue: boolean;
-        },
-      ]
-    >;
-    expect(calls.length).toBeGreaterThan(0);
-    const config = calls[0]?.[0];
-    expect(config).toBeDefined();
-    if (config) {
-      expect(config.tls).toBeDefined();
-      expect(typeof config.tls?.checkServerIdentity).toBe("function");
-    }
   });
 
   it("wraps basic Redis commands correctly", async () => {
-    const client = createRedisClient("example.cache.amazonaws.com:6379");
+    const client = createRedisClient(config.redis.endpoint.value);
 
     mockRedisInstance.get.mockResolvedValueOnce("value");
+    mockRedisInstance.set
+      .mockResolvedValueOnce("OK")
+      .mockResolvedValueOnce("OK");
+    mockRedisInstance.del.mockResolvedValueOnce(1);
+
     const getResult = await client.get("key");
-    expect(mockRedisInstance.get).toHaveBeenCalledWith("key");
+    const setResultWithoutExpiry = await client.set("key", "val");
+    const setResultWithExpiry = await client.set("key", "val", 60);
+    const delResult = await client.del("key");
+    await client.disconnect();
+
+    expect(mockRedisInstance.get).toHaveBeenCalledExactlyOnceWith("key");
     expect(getResult).toBe("value");
 
-    mockRedisInstance.set.mockResolvedValueOnce("OK");
-    const setResultWithoutExpiry = await client.set("key", "val");
-    expect(mockRedisInstance.set).toHaveBeenCalledWith("key", "val");
+    expect(mockRedisInstance.set).toHaveBeenNthCalledWith(1, "key", "val");
     expect(setResultWithoutExpiry).toBe("OK");
-
-    mockRedisInstance.set.mockResolvedValueOnce("OK");
-    const setResultWithExpiry = await client.set("key", "val", 60);
-    expect(mockRedisInstance.set).toHaveBeenCalledWith("key", "val", "EX", 60);
+    expect(mockRedisInstance.set).toHaveBeenNthCalledWith(
+      2,
+      "key",
+      "val",
+      "EX",
+      60,
+    );
     expect(setResultWithExpiry).toBe("OK");
 
-    mockRedisInstance.del.mockResolvedValueOnce(1);
-    const delResult = await client.del("key");
     expect(mockRedisInstance.del).toHaveBeenCalledWith("key");
     expect(delResult).toBe(1);
 
-    await client.disconnect();
-    expect(mockRedisInstance.quit).toHaveBeenCalledTimes(1);
+    expect(mockRedisInstance.quit).toHaveBeenCalledOnce();
   });
 });
