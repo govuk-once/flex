@@ -59,8 +59,6 @@ const handler = createLambdaHandler<
         throw new Error("User pool ID parameter not found or invalid");
       }
 
-      const client = await getRedisClient();
-
       // Demonstrate the ability to call out to a public JWKS endpoint.
       // In a real implementation this would be a configurable JWKS URL
       // for the upstream identity provider.
@@ -68,12 +66,19 @@ const handler = createLambdaHandler<
       console.log("Fetched Cognito JWKS", { jwks });
 
       // Proof of data in Redis
+      const client = await getRedisClient();
+      console.log("Redis client", { client });
       const cacheKey = `auth:${1}`;
-      await client.set(
-        cacheKey,
-        JSON.stringify({ timestamp: Date.now() }),
-        300,
-      );
+      if (await client.get(cacheKey)) {
+        console.log("Cache key already exists", { cacheKey });
+      } else {
+        await client.set(
+          cacheKey,
+          JSON.stringify({ timestamp: Date.now() }),
+          300,
+        );
+      }
+      console.log("Set cache key", { cacheKey });
       const cachedValue = await client.get(cacheKey);
       console.log("Authorizer handler", { cachedValue });
 
@@ -88,6 +93,9 @@ const handler = createLambdaHandler<
               Resource: "*",
             },
           ],
+        },
+        context: {
+          pairwiseId: "test-pairwise-id",
         },
       });
     } catch (error) {
