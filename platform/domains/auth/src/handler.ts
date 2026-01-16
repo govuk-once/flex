@@ -67,7 +67,6 @@ const handler = createLambdaHandler<
 
       // Proof of data in Redis
       const client = await getRedisClient();
-      console.log("Redis client", { client });
       const cacheKey = `auth:${1}`;
       if (await client.get(cacheKey)) {
         console.log("Cache key already exists", { cacheKey });
@@ -93,9 +92,6 @@ const handler = createLambdaHandler<
               Resource: "*",
             },
           ],
-        },
-        context: {
-          pairwiseId: "test-pairwise-id",
         },
       });
     } catch (error) {
