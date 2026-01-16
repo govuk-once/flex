@@ -54,8 +54,8 @@ jobs:
       - name: Deploy FLEX Core AWS infra
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never
 
-      - name: Deploy FLEX AWS infra
-        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
-
       - name: Deploy FLEX Parameter AWS infra
         run: cd ./platform/infra/parameter && pnpm run deploy --require-approval never
+
+      - name: Deploy FLEX Flex AWS infra
+        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never

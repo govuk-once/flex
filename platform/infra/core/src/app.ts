@@ -1,7 +1,6 @@
 import { getEnvConfig, getStackName } from "@platform/gov-uk-once";
 import * as cdk from "aws-cdk-lib";
 
-import { FlexParameterStack } from "./parameter-stack";
 import { FlexCoreStack } from "./stack";
 
 const app = new cdk.App();
@@ -15,4 +14,3 @@ if (!envConfig.persistent) {
 }
 
 new FlexCoreStack(app, { id: getStackName("FlexCore"), enableNat: true });
-new FlexParameterStack(app, getStackName("FlexParameter"));

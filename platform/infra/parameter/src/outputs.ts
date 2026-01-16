@@ -1,6 +1,13 @@
-import { generateParamName } from "@platform/gov-uk-once";
+import { getEnvConfig } from "@platform/gov-uk-once";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+
+const envConfig = getEnvConfig();
+
+function generateParamName(name: string) {
+  // /development/flex-parameter/auth/user_pool_id
+  return `/${envConfig.environment}/flex-parameter${name}`;
+}
 
 const AuthKeys = {
   userPoolId: generateParamName("/auth/user_pool_id"),
