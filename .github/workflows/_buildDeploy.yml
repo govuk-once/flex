@@ -48,6 +48,11 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
 
+      - name: Set CDK account and region
+        run: |
+          export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          echo "CDK_DEFAULT_ACCOUNT=$CDK_DEFAULT_ACCOUNT" >> $GITHUB_ENV
+
       - name: Build
         run: pnpm build
 
