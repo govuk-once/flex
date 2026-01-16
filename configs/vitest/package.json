@@ -13,7 +13,7 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "@vitest/coverage-v8": "4.0.16"
+    "@vitest/coverage-v8": "4.0.17"
   },
   "devDependencies": {
     "@configs/eslint": "workspace:*",
