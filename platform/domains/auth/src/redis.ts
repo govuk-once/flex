@@ -93,10 +93,3 @@ export async function getRedisClient(endpoint: string): Promise<RedisClient> {
 
   return newRedisClient;
 }
-
-/**
- * Resets the Redis client singleton (for testing purposes)
- */
-export function resetRedisClient(endpoint: string): void {
-  redisClientCache.delete(endpoint);
-}
