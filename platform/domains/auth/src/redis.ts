@@ -1,5 +1,10 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { Cluster } from "ioredis";
+import z from "zod";
+
+export const DEFAULT_REDIS_PORT = 6379;
+export const DEFAULT_REDIS_CONNECT_TIMEOUT = 10000;
+export const DEFAULT_REDIS_MAX_RETRIES_PER_REQUEST = 3;
 
 /**
  * Redis client interface for dependency injection and testing
@@ -24,8 +29,18 @@ export interface RedisClient {
 function createRedisClient(endpoint: string): RedisClient {
   // For cluster mode, we need to parse the endpoint and create cluster nodes
   // The configuration endpoint format is typically: <cluster-name>.xxxxx.cache.amazonaws.com:6379
-  const [host, port] = endpoint.split(":"); // TODO: add validation
-  const redisPort = port ? Number.parseInt(port, 10) : 6379;
+  const [host, port] = endpoint.split(":");
+  const redisPort = port ? Number.parseInt(port, 10) : DEFAULT_REDIS_PORT;
+  if(
+    !z.url()
+      .safeParse(`redis://${host}`) ||
+    !z.number()
+      .max(65535)
+      .min(0)
+      .safeParse(redisPort)
+  ){
+    throw new Error(`Invalid Redis endpoint format: ${endpoint}`);
+  }
 
   const cluster = new Cluster(
     [
@@ -39,8 +54,8 @@ function createRedisClient(endpoint: string): RedisClient {
         // ElastiCache uses TLS in production, but we'll make it configurable
         // For now, we'll assume TLS is not required (can be configured via env var)
         tls: process.env.REDIS_TLS_ENABLED === "true" ? {} : undefined,
-        connectTimeout: 10000,
-        maxRetriesPerRequest: 3,
+        connectTimeout: DEFAULT_REDIS_CONNECT_TIMEOUT,
+        maxRetriesPerRequest: DEFAULT_REDIS_MAX_RETRIES_PER_REQUEST,
       },
       // Cluster-specific options
       enableOfflineQueue: true,
