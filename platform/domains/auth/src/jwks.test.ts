@@ -1,74 +1,91 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { getCognitoJwks, getIssuer } from "./jwks";
+import { getConfig } from "./config";
 
-import { callCognitoJwksEndpoint } from "./jwks";
+vi.mock("./config", async () => {
+  return {
+    getConfig: vi.fn(async () => ({
+      awsRegion: "eu-west-2",
+      userPoolId: "eu-west-2_testUserPoolId",
+      clientId: "testClientId",
+      redisEndpoint: "testRedisEndpoint",
+    })),
+  };
+});
 
-declare global {
-  // Allow overriding global fetch in tests
-
-  // @ts-expect-error - restore to undefined for test isolation
-  var fetch:
-    | ((input: string | URL | Request, init?: RequestInit) => Promise<Response>)
-    | undefined;
+const exampleJWKS = {
+  keys: [{
+    "kty": "RSA",
+    "kid": "d27874f4304835544c315b62d5a29c9c", // pragma: allowlist secret
+    "use": "sig",
+    "n": "raTGoq4v21v6IxSicuNViuZQkPKMabsI1qrLQygMi6l95Ylov86BxxUhkDAgeiyQv9C0MsphDA__AcOD7vjEedu9i-MYmde593pRhkfoCxm48WvsWB-Fw3mph7ODFGCVTDmI-H6ofsJB9cGUpbn6H3zvEEoRpu-kHRYY3jS-OSpYzdzebmAbryoFnuJNGnkHJAqbAjQF7WJdGhC081UAjagwZ9lvxdgjM1w-HVIRN26EmOq9mlch4csQ5eov3Z8rkqSV8wWvcTmD3yMXoM8jo2nE909t8jrq4SCXsGelGH3-iKPSpNbnth5J94LUEsR0tHqRRECYQfVCNdAClhQ4yFxH4_NqoGPbOyjeIa8bIizFlislkYLfIbG4rJjfxCvVukbA5jvecSaYQCb_JVSMCCp-PWwNiZJDEPzwOn3-kmCRHOhbUzUEa5OKn43nTMrPxd3RLcdi3QWjUOEC1Ker4qOdIdHfNi6U8xb3HfC0Y8QUSXlseP-VTPf15u1jEN0Z", // pragma: allowlist secret
+    "e": "AQAB",
+    "alg": "RS256",
+  }]
 }
 
-describe("JWKS integration", () => {
-  const userPoolId = "user-pool-id";
-  const region = "eu-west-2";
+const config = await getConfig();
 
-  afterEach(() => {
-    vi.resetAllMocks();
-    // Reset global fetch between scenarios
+const server = setupServer(http.get(getIssuer(config.AWS_REGION, config.USERPOOL_ID) + "/.well-known/jwks.json", () => {
+  return HttpResponse.json(exampleJWKS);
+}));
 
-    if (globalThis.fetch) {
-      // @ts-expect-error - restore to undefined for test isolation
-      globalThis.fetch = undefined;
-    }
+describe("JWKS", () => {
+  beforeAll(() => {
+    server.listen();
   });
 
-  it("calls the dummy JWKS endpoint and returns the parsed JWKS payload", async () => {
-    const jwksPayload = { keys: [{ kid: "dummy-key-id" }] };
+  afterEach(() => server.resetHandlers())
 
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => Promise.resolve(jwksPayload),
-    } as Response);
+  afterAll(() => server.close())
 
-    globalThis.fetch = fetchMock;
+  describe("getCognitoJwks", async () => {
+    const config = await getConfig();
+    const userPoolId = config.USERPOOL_ID;
+    const region = config.AWS_REGION;
 
-    const result = await callCognitoJwksEndpoint(userPoolId, region);
+    it("calls the dummy JWKS endpoint and returns the parsed JWKS payload", async () => {
+      const result = await getCognitoJwks(userPoolId, region);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`,
-      {
-        method: "GET",
-      },
-    );
-    expect(result).toEqual(jwksPayload);
+      expect(result).toEqual(exampleJWKS);
+    });
+
+    it("throws a descriptive error when the JWKS endpoint response is not ok", async () => {
+      server.use(http.get(getIssuer(region, userPoolId) + "/.well-known/jwks.json", () => {
+        return HttpResponse.json({}, { status: 500, statusText: "Internal Server Error" });
+      }));
+
+      await expect(getCognitoJwks(userPoolId, region)).rejects.toThrow(
+        "Failed to fetch JWKS from Cognito JWKS endpoint: 500 Internal Server Error",
+      );
+    });
+
+    it("throws an error when the JWK object is invalid", async () => {
+      const invalidJwksPayload = {
+        invalidKey: "invalidValue",
+      };
+
+      server.use(
+      http.get(getIssuer(region, userPoolId) + "/.well-known/jwks.json", () => {
+        return HttpResponse.json(invalidJwksPayload);
+      }))
+
+      await expect(getCognitoJwks(userPoolId, region)).rejects.toThrow(
+        /Invalid JWKS data:/,
+      );
+    });
   });
 
-  it("throws a descriptive error when the JWKS endpoint response is not ok", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: "Internal Server Error",
-      json: async () => Promise.resolve({}),
-    } as Response);
+  describe("getIssuer", () => {
+    it("constructs the correct issuer URL", () => {
+      const region = "us-east-1";
+      const userPoolId = "us-east-1_123456789";
 
-    globalThis.fetch = fetchMock;
+      const issuer = getIssuer(region, userPoolId);
 
-    await expect(callCognitoJwksEndpoint(userPoolId, region)).rejects.toThrow(
-      "Failed to fetch JWKS from Cognito JWKS endpoint: 500 Internal Server Error",
-    );
-  });
-
-  it("throws when fetch is not available in the runtime", async () => {
-    // Ensure fetch is not defined
-    // @ts-expect-error - restore to undefined for test isolation
-    globalThis.fetch = undefined;
-
-    await expect(callCognitoJwksEndpoint(userPoolId, region)).rejects.toThrow(
-      "Global fetch API is not available in this runtime",
-    );
+      expect(issuer).toBe("https://cognito-idp.us-east-1.amazonaws.com/us-east-1_123456789");
+    });
   });
 });

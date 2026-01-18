@@ -1,3 +1,4 @@
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { Cluster } from "ioredis";
 
 /**
@@ -20,13 +21,12 @@ export interface RedisClient {
  * @param endpoint - The Redis cluster configuration endpoint
  * @returns A Redis client instance configured for cluster mode
  */
-export function createRedisClient(endpoint: string): RedisClient {
+function createRedisClient(endpoint: string): RedisClient {
   // For cluster mode, we need to parse the endpoint and create cluster nodes
   // The configuration endpoint format is typically: <cluster-name>.xxxxx.cache.amazonaws.com:6379
   const [host, port] = endpoint.split(":"); // TODO: add validation
   const redisPort = port ? Number.parseInt(port, 10) : 6379;
 
-  // Create a cluster client for ElastiCache cluster mode
   const cluster = new Cluster(
     [
       {
@@ -43,8 +43,7 @@ export function createRedisClient(endpoint: string): RedisClient {
         maxRetriesPerRequest: 3,
       },
       // Cluster-specific options
-      enableOfflineQueue: true, // Changed from false to true
-      // Wait for cluster to be ready before allowing commands
+      enableOfflineQueue: true,
       enableReadyCheck: true,
     },
   );
@@ -73,4 +72,31 @@ export function createRedisClient(endpoint: string): RedisClient {
       await cluster.quit();
     },
   };
+}
+
+/**
+ * Redis clients - reused across Lambda invocations
+ */
+let redisClientCache: Map<string, RedisClient> = new Map();
+
+/**
+ * Gets or creates the Redis client instance
+ */
+export async function getRedisClient(endpoint: string): Promise<RedisClient> {
+  const redisClient = redisClientCache.get(endpoint);
+  if (redisClient) {
+    return redisClient;
+  }
+
+  const newRedisClient = createRedisClient(endpoint);
+  redisClientCache.set(endpoint, newRedisClient);
+
+  return newRedisClient;
+}
+
+/**
+ * Resets the Redis client singleton (for testing purposes)
+ */
+export function resetRedisClient(endpoint: string): void {
+  redisClientCache.delete(endpoint);
 }
