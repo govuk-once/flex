@@ -15,10 +15,8 @@
     "ioredis": "5.9.2"
   },
   "devDependencies": {
-    "@flex/eslint-config": "workspace:*",
+    "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@flex/typescript-config": "workspace:*",
-    "@flex/vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",

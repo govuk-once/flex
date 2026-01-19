@@ -15,8 +15,7 @@
     "@platform/gov-uk-once": "workspace:*"
   },
   "devDependencies": {
-    "@flex/eslint-config": "workspace:*",
-    "@flex/typescript-config": "workspace:*",
+    "@flex/config": "workspace:*",
     "@types/node": "25.0.9",
     "aws-cdk": "2.1101.0",
     "aws-cdk-lib": "2.235.0",

@@ -17,9 +17,7 @@
     "zod-openapi": "5.4.6"
   },
   "devDependencies": {
-    "@flex/eslint-config": "workspace:*",
-    "@flex/typescript-config": "workspace:*",
-    "@flex/vitest-config": "workspace:*",
+    "@flex/config": "workspace:*",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "http-server": "14.1.1",

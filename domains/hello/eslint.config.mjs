@@ -1,3 +1,3 @@
-import { config } from "@flex/eslint-config";
+import { config } from "@flex/config/eslint";
 
 export default config;
