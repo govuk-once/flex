@@ -1,5 +1,5 @@
 {
-  "name": "@configs/vitest",
+  "name": "@flex/vitest-config",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -7,17 +7,17 @@
     ".": "./src/config.ts"
   },
   "scripts": {
-    "lint": "eslint --max-warnings=0 src"
+    "lint": "eslint --max-warnings=0 ."
   },
   "peerDependencies": {
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "@vitest/coverage-v8": "4.0.16"
+    "@vitest/coverage-v8": "4.0.17"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
     "eslint": "9.39.2",
     "typescript": "5.9.3"
   }

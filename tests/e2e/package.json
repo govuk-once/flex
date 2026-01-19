@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint --max-warnings=0 src",
+    "lint": "eslint --max-warnings=0 .",
     "test:e2e": "vitest run"
   },
   "dependencies": {
@@ -12,15 +12,15 @@
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@configs/vitest": "workspace:*",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@flex/vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.159",
-    "@types/node": "25.0.3",
-    "dotenv": "^16.4.7",
+    "@types/node": "25.0.9",
+    "dotenv": "17.2.3",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.16",
-    "zod": "^3.25.76"
+    "vitest": "4.0.17",
+    "zod": "4.3.5"
   }
 }

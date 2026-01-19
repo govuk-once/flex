@@ -14,17 +14,17 @@ This package provides a simple, cached logger utility for use across the FLEX pr
 ### Basic Example
 
 ```typescript
-import { getLogger, getChildLogger } from '@flex/logging';
+import { getLogger, getChildLogger } from "@flex/logging";
 
 // Initialise the logger (once per runtime)
-const logger = getLogger({ logLevel: 'INFO', serviceName: 'my-service' });
+const logger = getLogger({ logLevel: "INFO", serviceName: "my-service" });
 
 // Use the logger
-logger.info('Hello from my-service!');
+logger.info("Hello from my-service!");
 
 // Create a child logger for additional context
-const childLogger = getChildLogger({ requestId: 'abc-123' });
-childLogger.debug('This is a child logger');
+const childLogger = getChildLogger({ requestId: "abc-123" });
+childLogger.debug("This is a child logger");
 ```
 
 ### API

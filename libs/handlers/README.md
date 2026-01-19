@@ -17,10 +17,10 @@ All handlers created with `createLambdaHandler` automatically include logging mi
 You can access the logger instance in your handler or middleware by importing it from the logging package:
 
 ```typescript
-import { getLogger } from '@flex/logging';
+import { getLogger } from "@flex/logging";
 
 const logger = getLogger();
-logger.info('This will be logged with context!');
+logger.info("This will be logged with context!");
 ```
 
 The logger is automatically configured and context-aware for each Lambda invocation.
@@ -32,17 +32,17 @@ The logger is automatically configured and context-aware for each Lambda invocat
 Create a simple Lambda handler (logging is available automatically):
 
 ```typescript
-import { createLambdaHandler } from '@flex/handlers';
-import { getLogger } from '@flex/logging';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { createLambdaHandler } from "@flex/handlers";
+import { getLogger } from "@flex/logging";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 const handler = createLambdaHandler(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const logger = getLogger();
-    logger.info('Handling request', { path: event.path });
+    logger.info("Handling request", { path: event.path });
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Hello, World!' }),
+      body: JSON.stringify({ message: "Hello, World!" }),
     };
   },
 );
@@ -55,9 +55,9 @@ export { handler };
 You can also create and use custom middleware:
 
 ```typescript
-import { createLambdaHandler } from '@libs/handlers';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import type { MiddlewareObj } from '@middy/core';
+import { createLambdaHandler } from "@libs/handlers";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import type { MiddlewareObj } from "@middy/core";
 
 // Custom logging middleware
 const loggingMiddleware: MiddlewareObj<
@@ -65,13 +65,13 @@ const loggingMiddleware: MiddlewareObj<
   APIGatewayProxyResult
 > = {
   before: async (request) => {
-    console.log('Request received:', {
+    console.log("Request received:", {
       path: request.event.path,
       method: request.event.httpMethod,
     });
   },
   after: async (request) => {
-    console.log('Response sent:', {
+    console.log("Response sent:", {
       statusCode: request.response.statusCode,
     });
   },
@@ -81,7 +81,7 @@ const handler = createLambdaHandler(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Success' }),
+      body: JSON.stringify({ message: "Success" }),
     };
   },
   {

@@ -5,16 +5,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint --max-warnings=0 src"
+    "lint": "eslint --max-warnings=0 ."
   },
   "peerDependencies": {
     "aws-cdk-lib": "^2.233.0",
     "constructs": "^10.4.4"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@types/node": "25.0.3",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "typescript": "5.9.3"
   }

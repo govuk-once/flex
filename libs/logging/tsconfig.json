@@ -1,4 +1,4 @@
 {
-  "extends": "@configs/typescript/base.json",
+  "extends": "@flex/typescript-config/base.json",
   "include": ["src/**/*.ts", "eslint.config.mjs", "vitest.config.ts"]
 }

@@ -2,7 +2,6 @@
 
 > Shared test utilities and fixtures for testing AWS Lambda handlers with HTTP API events
 
-
 ## Available Commands
 
 ```bash
@@ -58,7 +57,7 @@ import { it } from "@flex/testing";
 it("using fixtures", async ({ event, context }) => {
   const response = await handler(
     event.get("/example"),
-    context.create({ functionName: "custom-name" })
+    context.create({ functionName: "custom-name" }),
   );
 
   // ...
@@ -71,14 +70,14 @@ it("using fixtures", async ({ event, context }) => {
 
 HTTP request builder for `APIGatewayProxyEventV2`. Supports all standard HTTP methods:
 
-| Method | Signature | Body Required |
-|--------|-----------|---------------|
-| `create` | `(overrides?) => APIGatewayProxyEventV2` | No |
-| `get` | `(path, options?) => APIGatewayProxyEventV2` | No |
-| `post` | `(path, options) => APIGatewayProxyEventV2` | Yes |
-| `put` | `(path, options) => APIGatewayProxyEventV2` | Yes |
-| `patch` | `(path, options) => APIGatewayProxyEventV2` | Yes |
-| `delete` | `(path, options?) => APIGatewayProxyEventV2` | No |
+| Method   | Signature                                    | Body Required |
+| -------- | -------------------------------------------- | ------------- |
+| `create` | `(overrides?) => APIGatewayProxyEventV2`     | No            |
+| `get`    | `(path, options?) => APIGatewayProxyEventV2` | No            |
+| `post`   | `(path, options) => APIGatewayProxyEventV2`  | Yes           |
+| `put`    | `(path, options) => APIGatewayProxyEventV2`  | Yes           |
+| `patch`  | `(path, options) => APIGatewayProxyEventV2`  | Yes           |
+| `delete` | `(path, options?) => APIGatewayProxyEventV2` | No            |
 
 #### `event.create`
 
