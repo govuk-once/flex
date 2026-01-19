@@ -1,48 +1,91 @@
-# @flex/logging
+# @flex/middlewares
 
-This package provides a simple, cached logger utility for use across the FLEX project, built on top of [AWS Lambda Powertools Logger](https://awslabs.github.io/aws-lambda-powertools-typescript/latest/core/logger/).
+This package provides common middlewares, for use across the FLEX project, built on top of [middy.js](https://middy.js.org).
 
 ## Features
 
-- Singleton logger instance per runtime (cached)
-- Type-safe logger options
-- Child logger creation for contextual logging
-- Simple API for consistent logging across services
+- **Extract User Middleware**: Extracts the pairwise ID from the Lambda authorizer context and makes it available in the handler context
 
 ## Usage
 
 ### Basic Example
 
 ```typescript
-import { getLogger, getChildLogger } from '@flex/logging';
+import { createLambdaHandler } from "@flex/handlers";
+import {
+  type ContextWithPairwiseId,
+  extractUser,
+  type V2Authorizer,
+} from "@flex/middlewares";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyEventV2WithLambdaAuthorizer,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
-// Initialise the logger (once per runtime)
-const logger = getLogger({ logLevel: 'INFO', serviceName: 'my-service' });
+export const handler = createLambdaHandler<
+  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
+  APIGatewayProxyResultV2,
+  ContextWithPairwiseId
+>(
+  async (_event: APIGatewayProxyEventV2, context: ContextWithPairwiseId) => {
+    // Access the pairwise ID from the context
+    const pairwiseId = context.pairwiseId;
 
-// Use the logger
-logger.info('Hello from my-service!');
-
-// Create a child logger for additional context
-const childLogger = getChildLogger({ requestId: 'abc-123' });
-childLogger.debug('This is a child logger');
+    return Promise.resolve({
+      statusCode: 200,
+      body: JSON.stringify({ userId: pairwiseId }),
+    });
+  },
+  {
+    logLevel: "INFO",
+    serviceName: "my-service",
+    middlewares: [extractUser],
+  },
+);
 ```
 
 ### API
 
-#### `getLogger(options?: LoggerOptions): Logger`
+#### `extractUser`
 
-- Returns a cached logger instance. Throws if called without options before initialisation.
-- `LoggerOptions`:
-  - `logLevel` (optional): Log level (e.g., 'INFO', 'DEBUG'). Defaults to 'INFO'.
-  - `serviceName` (required): Name of the service for log context.
+A middy middleware that extracts the pairwise ID from the Lambda authorizer context.
 
-#### `getChildLogger(context: Record<string, unknown>): Logger`
+**Type**: `MiddlewareObj<APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>, unknown, Error, ContextWithPairwiseId>`
 
-- Returns a child logger with additional context. Throws if logger is not initialised.
+**Behavior**:
+- Extracts `pairwiseId` from `event.requestContext.authorizer.lambda.pairwiseId`
+- Sets it on `context.pairwiseId` for use in the handler
+- Throws an error if the pairwise ID is not found
+
+**Usage**:
+- Add to the `middlewares` array when creating a Lambda handler with `createLambdaHandler`
+- Ensure your handler uses `APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>` as the event type
+- Ensure your handler context type is `ContextWithPairwiseId`
+
+#### `ContextWithPairwiseId`
+
+Extended AWS Lambda Context type that includes the `pairwiseId` property.
+
+```typescript
+interface ContextWithPairwiseId extends Context {
+  pairwiseId?: string;
+}
+```
+
+#### `V2Authorizer`
+
+Type definition for the Lambda authorizer context in API Gateway V2.
+
+```typescript
+interface V2Authorizer {
+  pairwiseId?: string;
+}
+```
 
 ## Testing & Linting
 
 ```bash
-npx nx test logging
-npx nx lint logging
+npx nx test middlewares
+npx nx lint middlewares
 ```

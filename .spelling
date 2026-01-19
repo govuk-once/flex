@@ -38,3 +38,6 @@ cdk
 E2E
 e2e
 30s
+authorizer
+V2
+codebase
