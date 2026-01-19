@@ -10,8 +10,6 @@ permissions:
 
 jobs:
   destroy:
-    # Only run if the PR was actually merged (not just closed/declined)
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       EPHEMERAL_ENV: ${{ github.head_ref }}
@@ -33,7 +31,7 @@ jobs:
           pnpm install
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@56d6a583f00f6bad6d19d91d53a7bc3b8143d0e9 # v5.1.1
         with:
           role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
           aws-region: eu-west-2
