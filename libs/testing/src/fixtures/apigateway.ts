@@ -1,11 +1,12 @@
+import { V2Authorizer } from "@flex/middlewares";
 import type { DeepPartial } from "@flex/utils";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayProxyEventV2,
+  APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
-
 // ----------------------------------------------------------------------------
 // Shared
 // ----------------------------------------------------------------------------
@@ -87,9 +88,7 @@ function buildEventRequest<T>(
     headers,
     rawPath,
     rawQueryString,
-    requestContext: {
-      http: { method, path: rawPath },
-    },
+    requestContext: { http: { method, path: rawPath } },
     queryStringParameters,
   });
 }
@@ -222,3 +221,39 @@ export const authorizerResult = {
   allow: buildAuthorizerResult(baseAuthorizerAllowResult),
   deny: buildAuthorizerResult(baseAuthorizerDenyResult),
 };
+
+// ----------------------------------------------------------------------------
+// API Gateway Request with Lambda Authorizer V2
+// ----------------------------------------------------------------------------
+
+type APIGatewayRequestWithAuthorizerOverrides = DeepPartial<
+  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>
+>;
+
+const baseAPIGatewayRequestWithAuthorizer: APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer> =
+  {
+    ...baseEvent,
+    requestContext: {
+      ...baseEvent.requestContext,
+      authorizer: { lambda: { pairwiseId: "test-pairwise-id" } },
+    },
+  };
+
+function buildAPIGatewayRequestWithAuthorizer(
+  overrides: APIGatewayRequestWithAuthorizerOverrides = {},
+) {
+  return mergeDeepLeft(
+    overrides,
+    baseAPIGatewayRequestWithAuthorizer,
+  ) as APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>;
+}
+
+export function createAPIGatewayRequestWithAuthorizer() {
+  return {
+    create: (overrides?: APIGatewayRequestWithAuthorizerOverrides) =>
+      buildAPIGatewayRequestWithAuthorizer(overrides),
+  };
+}
+
+export const apiGatewayRequestWithAuthorizer =
+  buildAPIGatewayRequestWithAuthorizer();

@@ -15,6 +15,7 @@
     "@configs/eslint": "workspace:*",
     "@configs/typescript": "workspace:*",
     "@configs/vitest": "workspace:*",
+    "@flex/middlewares": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.0.2",
     "@types/aws-lambda": "8.10.159",

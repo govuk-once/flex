@@ -264,6 +264,9 @@ importers:
       '@configs/vitest':
         specifier: workspace:*
         version: link:../../configs/vitest
+      '@flex/middlewares':
+        specifier: workspace:*
+        version: link:../middlewares
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
