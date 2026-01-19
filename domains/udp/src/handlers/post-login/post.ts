@@ -13,6 +13,7 @@ import { z } from "zod";
 
 export const handlerResponseSchema = z.object({
   message: z.string(),
+  userId: z.string(),
 });
 
 export type HandlerResponse = z.output<typeof handlerResponseSchema>;
