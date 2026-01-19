@@ -18,7 +18,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
-      EPHEMERAL_ENV: ${{ github.head_ref || github.ref_name }}
+      EPHEMERAL_ENV: ${{ github.head_ref }}
 
     steps:
       - name: Checkout repo
@@ -48,6 +48,3 @@ jobs:
 
       - name: E2E tests
         run: echo "TODO add E2E tests here for the flex platform stack"
-
-      - name: Destroy ephemeral environment
-        run: cd ./platform/infra/flex && pnpm run destroy --force
