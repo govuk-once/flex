@@ -12,8 +12,9 @@ const baseMiddyRequest = <
   overrides?: Partial<Request<TEvent, TResult, TError, TContext>>,
 ): Request<TEvent, TResult, TError, TContext> =>
   ({
+    event: {} as unknown as TEvent,
+    context: {} as unknown as TContext,
     ...overrides,
-    event: overrides?.event as unknown as TEvent,
   }) as Request<TEvent, TResult, TError, TContext>;
 
 export const createMiddyRequest = baseMiddyRequest;

@@ -83,6 +83,9 @@ const handler = createLambdaHandler<
 
       return Promise.resolve({
         principalId: "anonymous",
+        context: {
+          pairwiseId: "test-pairwise-id",
+        },
         policyDocument: {
           Version: "2012-10-17",
           Statement: [

@@ -37,7 +37,7 @@ describe("API Gateway JWT Authorizer E2E", () => {
 
   it("allows request to /hello-public endpoint with valid authorization header", async () => {
     const url = `${apiGatewayUrl}/hello-public`;
-    const token = "eyJe111111111111";
+    const token = "eyJ2";
 
     const response = await fetch(url, {
       method: "GET",

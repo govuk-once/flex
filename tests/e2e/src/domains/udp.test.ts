@@ -9,7 +9,7 @@ describe("UDP domain", () => {
   describe("POST /post-login", () => {
     it("returns a 201 and creates a user", async () => {
       const url = `${apiGatewayUrl}/post-login`;
-      const token = "eyJy11111111111";
+      const token = "eyJy1";
       const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify({ name: "John Doe" }),
