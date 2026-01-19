@@ -10,9 +10,10 @@ import {
   SubnetType,
   Vpc,
 } from "aws-cdk-lib/aws-ec2";
+import * as elasticache from "aws-cdk-lib/aws-elasticache";
 import type { Construct } from "constructs";
 
-import { exportVpcDetailsToSsm } from "./outputs";
+import { exportRedisEndpointToSsm, exportVpcDetailsToSsm } from "./outputs";
 
 export class FlexCoreStack extends GovUkOnceStack {
   private createVpc({ enableNat }: { enableNat: boolean }) {
@@ -80,6 +81,85 @@ export class FlexCoreStack extends GovUkOnceStack {
     }
   }
 
+  private createElasticacheSecurityGroup({
+    vpc,
+    lambdaSecurityGroup,
+  }: {
+    vpc: IVpc;
+    lambdaSecurityGroup: ISecurityGroup;
+  }) {
+    const securityGroup = new SecurityGroup(this, "ElasticacheSecurityGroup", {
+      vpc,
+      description: "SecurityGroup with allow inbound from Redis",
+      allowAllOutbound: false,
+    });
+
+    // INBOUND: Allow Lambda to talk to Cache
+    securityGroup.addIngressRule(
+      Peer.securityGroupId(lambdaSecurityGroup.securityGroupId),
+      Port.tcp(6379),
+      "Allow inbound from Authorizer Lambda",
+    );
+
+    // INBOUND: Allow nodes to RECEIVE traffic from each other
+    securityGroup.connections.allowFrom(
+      securityGroup,
+      Port.allTcp(),
+      "Allow Redis nodes to talk to each other (Cluster Bus)",
+    );
+
+    // OUTBOUND: Allow nodes to SEND traffic to each other
+    // (This is the rule you must add if allowAllOutbound is false)
+    securityGroup.connections.allowTo(
+      securityGroup,
+      Port.allTcp(),
+      "Allow Outbound to Self (Cluster Gossip)",
+    );
+
+    return securityGroup;
+  }
+
+  private createElasticacheCluster({
+    vpc,
+    securityGroupIds,
+  }: {
+    vpc: IVpc;
+    securityGroupIds: string[];
+  }) {
+    const cacheSubnetGroup = new elasticache.CfnSubnetGroup(
+      this,
+      "CacheSubnetGroup",
+      {
+        description: "Subnet group for ElastiCache Redis cluster",
+        subnetIds: vpc.selectSubnets({
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        }).subnetIds,
+      },
+    );
+
+    const cluster = new elasticache.CfnReplicationGroup(this, "AuthCluster", {
+      engine: "redis",
+      cacheNodeType: "cache.t3.micro",
+
+      // CLUSTER MODE CONFIG
+      replicationGroupDescription: "Flex authentication cache",
+      numCacheClusters: 3,
+
+      // HIGH AVAILABILITY SETTINGS
+      multiAzEnabled: true, // Required for SLA and automatic failover
+      automaticFailoverEnabled: true, // AWS promotes a replica if primary dies
+
+      // NETWORKING & SECURITY
+      cacheSubnetGroupName: cacheSubnetGroup.ref, // MUST contain subnets in 3 AZs
+      securityGroupIds,
+      transitEncryptionEnabled: true,
+      atRestEncryptionEnabled: true,
+      // TODO: add auth token CKV_AWS_31
+    });
+
+    return cluster;
+  }
+
   constructor(
     scope: Construct,
     { id, enableNat }: { id: string; enableNat: boolean },
@@ -112,6 +192,21 @@ export class FlexCoreStack extends GovUkOnceStack {
         privateEgressId: securityGroups.privateEgress.securityGroupId,
         privateIsolatedId: securityGroups.privateIsolated.securityGroupId,
       },
+    });
+
+    // Create ElastiCache cluster for authentication
+    const elasticacheSecurityGroup = this.createElasticacheSecurityGroup({
+      vpc,
+      lambdaSecurityGroup: securityGroups.privateEgress,
+    });
+
+    const cacheCluster = this.createElasticacheCluster({
+      vpc,
+      securityGroupIds: [elasticacheSecurityGroup.securityGroupId],
+    });
+
+    exportRedisEndpointToSsm(this, {
+      endpoint: cacheCluster.attrPrimaryEndPointAddress,
     });
   }
 }

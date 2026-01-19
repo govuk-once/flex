@@ -154,30 +154,39 @@ describe("Authorizer Handler", () => {
   describe("Redis integration", () => {
     it("reads from Redis when cache key exists", async () => {
       const cachedData = JSON.stringify({ timestamp: Date.now() });
-      mockRedisClient.get.mockResolvedValue(cachedData);
+      // Handler calls get twice: once to check if key exists, once at the end
+      mockRedisClient.get
+        .mockResolvedValueOnce(cachedData) // First call: key exists
+        .mockResolvedValueOnce(cachedData); // Second call: get value
 
       const result = await handler(baseEvent, mockContext);
 
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        "auth:1",
-        expect.stringContaining('"timestamp"'),
-        300,
-      );
+      // When cache key exists, set should NOT be called
+      expect(mockRedisClient.set).not.toHaveBeenCalled();
+      // get is called twice: once to check, once to retrieve
+      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
       expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
       expect(result).toEqual(expectedPolicy);
     });
 
     it("writes to Redis when cache key does not exist", async () => {
-      mockRedisClient.get.mockResolvedValueOnce(null);
+      const cachedData = JSON.stringify({ timestamp: Date.now() });
+      // Handler calls get twice: once to check if key exists, once at the end
+      mockRedisClient.get
+        .mockResolvedValueOnce(null) // First call: key does not exist
+        .mockResolvedValueOnce(cachedData); // Second call: get value after set
       mockRedisClient.set.mockResolvedValue("OK");
 
       const result = await handler(baseEvent, mockContext);
 
+      expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
       expect(mockRedisClient.set).toHaveBeenCalledWith(
         "auth:1",
         expect.stringContaining('"timestamp"'),
         300,
       );
+      // get is called twice: once to check, once to retrieve
+      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
       expect(mockRedisClient.get).toHaveBeenCalledWith("auth:1");
       expect(result).toEqual(expectedPolicy);
     });
@@ -189,7 +198,14 @@ describe("Authorizer Handler", () => {
       mockRedisClient.get.mockClear();
       mockRedisClient.set.mockClear();
 
-      mockRedisClient.get.mockResolvedValueOnce(null);
+      const cachedData = JSON.stringify({ timestamp: Date.now() });
+      // First invocation: key doesn't exist, so set is called
+      mockRedisClient.get
+        .mockResolvedValueOnce(null) // First get: key doesn't exist
+        .mockResolvedValueOnce(cachedData) // Second get: after set
+        // Second invocation: key exists (from first invocation), so set is NOT called
+        .mockResolvedValueOnce(cachedData) // First get: key exists
+        .mockResolvedValueOnce(cachedData); // Second get: get value
       mockRedisClient.set.mockResolvedValue("OK");
 
       const firstResult = await handler(baseEvent, mockContext);
@@ -200,13 +216,18 @@ describe("Authorizer Handler", () => {
       expect(getParameter).toHaveBeenCalledTimes(3);
       // Redis client is created once and reused
       expect(redisModule.createRedisClient).toHaveBeenCalledTimes(1);
-      expect(mockRedisClient.set).toHaveBeenCalledTimes(2);
-      expect(mockRedisClient.get).toHaveBeenCalledTimes(2);
+      // First invocation: set is called (key doesn't exist)
+      // Second invocation: set is NOT called (key exists from first invocation)
+      expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
+      // Each invocation calls get twice: once to check, once to retrieve
+      expect(mockRedisClient.get).toHaveBeenCalledTimes(4);
       expect(firstResult).toEqual(expectedPolicy);
       expect(secondResult).toEqual(expectedPolicy);
     });
 
     it("propagates errors when Redis set fails", async () => {
+      // First get returns null (key doesn't exist), so set is called
+      mockRedisClient.get.mockResolvedValueOnce(null);
       mockRedisClient.set.mockRejectedValueOnce(new Error("set failed"));
 
       await expect(handler(baseEvent, mockContext)).rejects.toThrow(
@@ -214,9 +235,20 @@ describe("Authorizer Handler", () => {
       );
     });
 
-    it("propagates errors when Redis get fails", async () => {
-      mockRedisClient.set.mockResolvedValue("OK");
+    it("propagates errors when Redis get fails on first call", async () => {
       mockRedisClient.get.mockRejectedValueOnce(new Error("get failed"));
+
+      await expect(handler(baseEvent, mockContext)).rejects.toThrow(
+        "get failed",
+      );
+    });
+
+    it("propagates errors when Redis get fails on second call", async () => {
+      const cachedData = JSON.stringify({ timestamp: Date.now() });
+      // First get succeeds (key exists), second get fails
+      mockRedisClient.get
+        .mockResolvedValueOnce(cachedData)
+        .mockRejectedValueOnce(new Error("get failed"));
 
       await expect(handler(baseEvent, mockContext)).rejects.toThrow(
         "get failed",
@@ -227,6 +259,12 @@ describe("Authorizer Handler", () => {
   describe("JWKS integration", () => {
     it("calls the Cognito JWKS endpoint during authorization", async () => {
       const fetchJwksSpy = vi.mocked(jwksModule.callCognitoJwksEndpoint);
+      // Set up Redis mocks so handler can complete
+      const cachedData = JSON.stringify({ timestamp: Date.now() });
+      mockRedisClient.get
+        .mockResolvedValueOnce(null) // First get: key doesn't exist
+        .mockResolvedValueOnce(cachedData); // Second get: after set
+      mockRedisClient.set.mockResolvedValue("OK");
 
       const result = await handler(baseEvent, mockContext);
 
