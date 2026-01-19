@@ -1,7 +1,7 @@
 import { it, middyRequests } from "@flex/testing";
 import { describe, expect } from "vitest";
 
-import { extractUser } from "./extract-user";
+import { extractUser } from ".";
 
 describe("extractUser middleware", () => {
   it("extracts the user from the request context", () => {
