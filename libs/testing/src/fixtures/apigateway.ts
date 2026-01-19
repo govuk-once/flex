@@ -1,4 +1,3 @@
-import { V2Authorizer } from "@flex/middlewares";
 import type { DeepPartial } from "@flex/utils";
 import type {
   APIGatewayAuthorizerResult,
@@ -175,6 +174,9 @@ type AuthorizerResultOverrides = DeepPartial<APIGatewayAuthorizerResult>;
 
 const baseAuthorizerAllowResult: APIGatewayAuthorizerResult = {
   principalId: "anonymous",
+  context: {
+    pairwiseId: "test-pairwise-id",
+  },
   policyDocument: {
     Version: "2012-10-17",
     Statement: [
@@ -226,11 +228,15 @@ export const authorizerResult = {
 // API Gateway Request with Lambda Authorizer V2
 // ----------------------------------------------------------------------------
 
+interface TAuthorizerContext {
+  pairwiseId?: string;
+}
+
 type APIGatewayRequestWithAuthorizerOverrides = DeepPartial<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>
+  APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext>
 >;
 
-const baseAPIGatewayRequestWithAuthorizer: APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer> =
+const baseAPIGatewayRequestWithAuthorizer: APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext> =
   {
     ...baseEvent,
     requestContext: {
@@ -245,7 +251,7 @@ function buildAPIGatewayRequestWithAuthorizer(
   return mergeDeepLeft(
     overrides,
     baseAPIGatewayRequestWithAuthorizer,
-  ) as APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>;
+  ) as APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext>;
 }
 
 export function createAPIGatewayRequestWithAuthorizer() {
