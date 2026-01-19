@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { e2eEnv } from "./setup";
+import { e2eEnv } from "../setup";
 
 /**
  * E2E test for the API Gateway JWT authorizer
@@ -37,7 +37,7 @@ describe("API Gateway JWT Authorizer E2E", () => {
 
   it("allows request to /hello-public endpoint with valid authorization header", async () => {
     const url = `${apiGatewayUrl}/hello-public`;
-    const token = "eyJ9";
+    const token = "eyJe111111111111";
 
     const response = await fetch(url, {
       method: "GET",
@@ -47,9 +47,8 @@ describe("API Gateway JWT Authorizer E2E", () => {
       },
     });
 
-    // API Gateway with JWT authorizer should return 401 Unauthorized
-    // when an invalid token is provided
     const responseText = await response.text();
+
     expect(response.status).toBe(200);
     expect(responseText).toEqual(
       JSON.stringify({ message: "Hello public world!" }),

@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "cdk watch",
+    "diff": "cdk diff",
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",

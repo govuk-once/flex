@@ -16,6 +16,7 @@ import { FlexAuthentication } from "./constructs/flex-authentication";
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
 import { FlexPublicFunction } from "./constructs/flex-public-function";
+import { UdpDomain } from "./constructs/udp";
 import { getEntry } from "./utils/getEntry";
 
 export class FlexPlatformStack extends GovUkOnceStack {
@@ -121,6 +122,8 @@ export class FlexPlatformStack extends GovUkOnceStack {
         helloIsolatedFunction.function,
       ),
     });
+
+    new UdpDomain(this, "UdpDomain", httpApi);
 
     new CfnOutput(this, "HttpApiUrl", { value: httpApiUrl });
   }

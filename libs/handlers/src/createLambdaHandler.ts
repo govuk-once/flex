@@ -34,11 +34,15 @@ export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
  * );
  * ```
  */
-export function createLambdaHandler<TEvent = unknown, TResult = unknown>(
+export function createLambdaHandler<
+  TEvent = unknown,
+  TResult = unknown,
+  TContext = unknown,
+>(
   handler: Handler<TEvent, TResult>,
   config: LambdaHandlerConfig<TEvent, TResult>,
-): MiddyfiedHandler<TEvent, TResult, Error, Context> {
-  const middyHandler = middy<TEvent, TResult, Error, Context>(handler);
+): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
+  const middyHandler = middy<TEvent, TResult, Error, TContext>(handler);
   const logLevel = config.logLevel?.toUpperCase();
 
   middyHandler.use(

@@ -87,7 +87,10 @@ function buildEventRequest<T>(
     headers,
     rawPath,
     rawQueryString,
-    requestContext: { http: { method, path: rawPath } },
+    requestContext: {
+      http: { method, path: rawPath },
+      authorizer: { lambda: { pairwise_id: "test-pairwise-id" } },
+    },
     queryStringParameters,
   });
 }
