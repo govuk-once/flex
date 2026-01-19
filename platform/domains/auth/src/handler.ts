@@ -4,57 +4,9 @@ import type {
   APIGatewayRequestAuthorizerEvent,
 } from "aws-lambda";
 
-import { getCognitoJwks, getIssuer, Jwks, parseJwks } from "./jwks";
-import { getRedisClient, RedisClient } from "./redis";
 import { getLogger } from "@flex/logging";
-import { verifyJwtSync } from "aws-jwt-verify/jwt-verifier";
 import { getConfig } from "./config";
-
-export const COGNITO_JWKS_AUTH_PREFIX = "cognito-auth:";
-
-async function getJwksFromCognitoAndSaveToCache(cache: RedisClient, userPoolId: string, region: string): Promise<Jwks> {
-  const logger = getLogger();
-  logger.info("Fetching JWKS from Cognito", { userPoolId });
-  const jwks = await getCognitoJwks(userPoolId, region);
-  try {
-    await cache.set(
-    `${COGNITO_JWKS_AUTH_PREFIX}${userPoolId}`,
-    JSON.stringify(jwks),
-    300, // Cache for 5 minutes
-  );
-    logger.info("JWKS saved to cache", { userPoolId });
-  } catch (error) {
-    logger.error("Failed to save JWKS to cache", { userPoolId, error });
-  }
-
-  return jwks;
-}
-
-async function getJwksFromCache(cache: RedisClient, userPoolId: string): Promise<Jwks | null> {
-  const logger = getLogger();
-  try {
-    const cachedJwksString = await cache.get(`${COGNITO_JWKS_AUTH_PREFIX}${userPoolId}`) ?? '';
-    if (cachedJwksString) {
-      logger.info("JWKS found in cache", { userPoolId });
-      const jwk = parseJwks(JSON.parse(cachedJwksString));
-      return jwk;
-    }
-  } catch (error) {
-    logger.error("Failed to retrieve JWKS from cache", { userPoolId, error });
-  }
-
-  logger.info("JWKS not found in cache", { userPoolId });
-  return null;
-}
-
-async function getJwks(cache: RedisClient, userPoolId: string, region: string): Promise<Jwks> {
-  const cachedJwks = await getJwksFromCache(cache, userPoolId);
-  if (cachedJwks) {
-    return cachedJwks;
-  }
-
-  return getJwksFromCognitoAndSaveToCache(cache, userPoolId, region);
-}
+import { CognitoJwtVerifier } from "aws-jwt-verify";
 
 /**
  * Lambda authorizer handler for API Gateway HTTP API
@@ -67,7 +19,6 @@ const handler = createLambdaHandler<
 >(
   async (event: APIGatewayRequestAuthorizerEvent): Promise<APIGatewayAuthorizerResult> => {
     const logger = getLogger();
-    logger.debug("calling auth handler");
 
     const jwt = event.headers?.authorization?.split(" ")[1];
     if (!jwt) {
@@ -77,13 +28,20 @@ const handler = createLambdaHandler<
 
     const config = await getConfig();
 
-    const redisClient = await getRedisClient(config.REDIS_ENDPOINT);
-    const jwks = await getJwks(redisClient, config.USERPOOL_ID, config.AWS_REGION);
-
-    verifyJwtSync(jwt, jwks, {
-      audience: config.CLIENT_ID,
-      issuer: getIssuer(config.AWS_REGION, config.USERPOOL_ID)
+    const verifier = CognitoJwtVerifier.create({
+      userPoolId: config.USERPOOL_ID,
+      tokenUse: "access",
+      clientId: config.CLIENT_ID,
     });
+
+    try {
+      await verifier.verify(jwt);
+      logger.info("JWT verification successful");
+
+    } catch (error) {
+      logger.error("JWT verification failed", { error });
+      throw new Error(`Invalid JWT: ${(error as Error).message}`);
+    }
 
     return Promise.resolve({
       principalId: "anonymous",

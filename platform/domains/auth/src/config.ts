@@ -1,6 +1,6 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
-import {z} from "zod";
+import { z } from "zod";
 
 export const rawConfigSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
