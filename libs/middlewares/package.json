@@ -17,6 +17,7 @@
     "@configs/eslint": "workspace:*",
     "@configs/typescript": "workspace:*",
     "@configs/vitest": "workspace:*",
+    "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "eslint": "9.39.2",
     "typescript": "5.9.3",

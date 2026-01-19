@@ -234,6 +234,9 @@ importers:
       '@configs/vitest':
         specifier: workspace:*
         version: link:../../configs/vitest
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../testing
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -264,6 +267,9 @@ importers:
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
+      '@middy/core':
+        specifier: 7.0.2
+        version: 7.0.2
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159

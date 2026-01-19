@@ -1,3 +1,7 @@
-import { extractUser } from "./extract-user";
+import {
+  type ContextWithPairwiseId,
+  extractUser,
+  type V2Authorizer,
+} from "./extract-user";
 
-export { extractUser };
+export { ContextWithPairwiseId, extractUser, type V2Authorizer };

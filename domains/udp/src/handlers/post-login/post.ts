@@ -1,26 +1,28 @@
 import { createLambdaHandler } from "@flex/handlers";
-import { extractUser } from "@flex/middlewares";
+import {
+  type ContextWithPairwiseId,
+  extractUser,
+  type V2Authorizer,
+} from "@flex/middlewares";
 import type {
   APIGatewayProxyEventV2,
+  APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import { z } from "zod";
 
-import { ContextWithPairwiseId } from "../../../../../libs/middlewares/src/extract-user";
-
-// const logger = getLogger();
-
 export const handlerResponseSchema = z.object({
   message: z.string(),
 });
+
 export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
+  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
   APIGatewayProxyResultV2<HandlerResponse>,
   ContextWithPairwiseId
 >(
-  async (event: APIGatewayProxyEventV2, context: ContextWithPairwiseId) => {
+  async (_event: APIGatewayProxyEventV2, context: ContextWithPairwiseId) => {
     return Promise.resolve({
       statusCode: 201,
       body: JSON.stringify({

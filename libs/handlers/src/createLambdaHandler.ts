@@ -1,6 +1,6 @@
 import { getLogger, injectLambdaContext, LoggerOptions } from "@flex/logging";
 import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
-import type { Context, Handler } from "aws-lambda";
+import type { Handler } from "aws-lambda";
 
 /**
  * Configuration options for creating a Lambda handler with middy
