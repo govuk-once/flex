@@ -17,10 +17,10 @@ vitest.config.*.timestamp*
 coverage/
 
 # OpenAPI auto generated files
-**api.json
+**/*api.json
 
 # CDK
-**cdk.out/
+**/cdk.out/
 # Potentially sensitive data
 cdk.context.json
 

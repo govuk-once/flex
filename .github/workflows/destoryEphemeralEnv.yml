@@ -1,0 +1,41 @@
+name: Destroy Ephemeral Environment
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  id-token: write # Required for AWS OIDC
+  contents: read
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    env:
+      EPHEMERAL_ENV: ${{ github.head_ref }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Setup node
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm@latest-10
+          pnpm install
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@56d6a583f00f6bad6d19d91d53a7bc3b8143d0e9 # v5.1.1
+        with:
+          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+          aws-region: eu-west-2
+          role-session-name: ${{ github.event.repository.name }}-ephemeral-delete
+
+      - name: Destroy Stack
+        run: cd ./platform/infra/flex && pnpm run destroy --force

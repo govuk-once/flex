@@ -1,42 +1,47 @@
 import js from "@eslint/js";
+import json from "@eslint/json";
+import markdown from "@eslint/markdown";
 import html from "@html-eslint/eslint-plugin";
-import onlyWarn from "eslint-plugin-only-warn";
+import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
+import { findUpSync } from "find-up";
 import tseslint from "typescript-eslint";
 
-const codeFiles = ["**/*.ts", "**/*.js", "**/*.mjs"];
-const htmlFiles = ["**/*.html"];
+const flattenedTsConfigRules = tseslint.configs.recommendedTypeChecked.reduce(
+  (acc, obj) => Object.assign(acc, obj.rules),
+  {},
+);
 
 /**
- * A shared ESLint configuration for the repository.
- *
- * @type {import("eslint").Linter.Config}
+ * @param {string} f - The filename to search for.
+ * @returns {string | undefined} The directory path containing the file.
+ */
+const findUpFileDir = (f) => findUpSync(f).slice(0, -f.length);
+const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
+
+/**
+ * @type {import("eslint").Linter.Config[]}
  * */
 export const config = [
   {
-    files: codeFiles,
-    ...js.configs.recommended,
+    ignores: gitignoreFiles,
   },
-  ...tseslint.configs.recommendedTypeChecked.map((conf) => ({
-    files: codeFiles,
-    ...conf,
-  })),
   {
-    files: codeFiles,
+    files: ["**/*.ts", "**/*.js", "**/*.mjs"],
     languageOptions: {
+      parser: tseslint.parser,
       parserOptions: {
-        project: true,
+        project: "./tsconfig.json",
       },
     },
     plugins: {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      onlyWarn,
+      "@typescript-eslint": tseslint.plugin,
       "simple-import-sort": simpleImportSort,
     },
     rules: {
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
+      ...js.configs.recommended.rules,
+      ...flattenedTsConfigRules,
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -46,17 +51,38 @@ export const config = [
         },
       ],
       "@typescript-eslint/no-floating-promises": ["error"],
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
     },
-    ignores: ["dist/**", "**/*.html"],
   },
   {
-    files: htmlFiles,
+    files: ["**/*.html"],
     plugins: {
       html,
     },
     language: "html/html",
     rules: {
       "no-irregular-whitespace": "off",
+    },
+  },
+  {
+    files: ["**/*.json"],
+    language: "json/json",
+    plugins: {
+      json,
+    },
+    rules: {
+      "json/no-duplicate-keys": "error",
+    },
+  },
+  {
+    files: ["**/*.md"],
+    plugins: {
+      markdown,
+    },
+    language: "markdown/commonmark",
+    rules: {
+      "markdown/no-html": "error",
     },
   },
   eslintPluginPrettierRecommended,

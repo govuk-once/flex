@@ -1,12 +1,12 @@
+import { CognitoJwtVerifier } from "aws-jwt-verify";
 import { createLambdaHandler } from "@flex/handlers";
 import type {
   APIGatewayAuthorizerResult,
-  APIGatewayRequestAuthorizerEvent,
+  APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
-
 import { getLogger } from "@flex/logging";
+
 import { getConfig } from "./config";
-import { CognitoJwtVerifier } from "aws-jwt-verify";
 
 /**
  * Lambda authorizer handler for API Gateway HTTP API
@@ -14,10 +14,10 @@ import { CognitoJwtVerifier } from "aws-jwt-verify";
  * Reads from and writes to ElastiCache Redis cluster for caching authorization data.
  */
 const handler = createLambdaHandler<
-  APIGatewayRequestAuthorizerEvent,
+  APIGatewayRequestAuthorizerEventV2,
   APIGatewayAuthorizerResult
 >(
-  async (event: APIGatewayRequestAuthorizerEvent): Promise<APIGatewayAuthorizerResult> => {
+  async (event: APIGatewayRequestAuthorizerEventV2): Promise<APIGatewayAuthorizerResult> => {
     const logger = getLogger();
 
     const jwt = event.headers?.authorization?.split(" ")[1];
@@ -62,6 +62,7 @@ const handler = createLambdaHandler<
           pairwiseId
         },
       });
+
     } catch (error) {
       logger.error("JWT verification failed", { error });
       throw new Error(`Invalid JWT: ${(error as Error).message}`);

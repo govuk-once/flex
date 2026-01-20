@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "tsc",
-    "lint": "eslint --max-warnings=0 src",
+    "lint": "eslint --max-warnings=0 .",
     "test": "NODE_OPTIONS=--import=nock vitest"
   },
   "dependencies": {
@@ -14,20 +14,19 @@
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
     "aws-jwt-verify": "5.1.1",
-    "ioredis": "5.9.1",
-    "jose": "^6.1.3",
     "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@configs/vitest": "workspace:*",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@flex/vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.159",
-    "@types/node": "25.0.3",
+    "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "msw": "2.12.7",
     "nock": "^14.0.10",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   }
 }

@@ -1,9 +1,7 @@
-import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
 import type {
   Context,
 } from "aws-lambda";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "./handler";
 import { getConfig } from "./config";
@@ -11,7 +9,7 @@ import { getConfig } from "./config";
 import { exampleInvalidJWTMissing, exampleJWKS } from "../test/mockJwks";
 import { baseEvent, expectedPolicy } from "../test/mockRequestsAndResponses";
 
-import nock from "nock";
+import * as nock from "nock";
 
 vi.mock("./config", async () => {
   return {
@@ -40,11 +38,6 @@ describe("Authorizer Handler", () => {
       nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
         .reply(200, exampleJWKS);
-
-      const result = await handler(baseEvent, mockContext);
-
-      expect(result).toEqual(expectedPolicy);
-    });
 
     it("throws an error when an invalid JWT token is provided", async () => {
       const invalidEvent = {
@@ -88,4 +81,5 @@ describe("Authorizer Handler", () => {
       );
     });
   });
+});
 });

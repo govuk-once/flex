@@ -3,11 +3,11 @@
   "type": "module",
   "scripts": {
     "dev": "nx run @platform/flex:dev",
-    "build": "nx run-many --target=build",
-    "checkov": "nx run-many --target=checkov",
+    "build": "nx affected --target=build",
+    "checkov": "nx affected --target=checkov",
     "commit": "cz",
-    "lint": "nx run-many --target=lint",
-    "test": "nx run-many --target=test --run",
+    "lint": "nx affected --target=lint",
+    "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run"
   },
   "devDependencies": {

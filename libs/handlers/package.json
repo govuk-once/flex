@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint --max-warnings=0 src",
+    "lint": "eslint --max-warnings=0 .",
     "test": "vitest"
   },
   "dependencies": {
@@ -15,12 +15,13 @@
     "@middy/core": "7.0.2"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@configs/vitest": "workspace:*",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@flex/vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   }
 }

@@ -19,7 +19,7 @@ on:
 jobs:
   buildAndDeploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
@@ -47,9 +47,6 @@ jobs:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
-
-      - name: Build
-        run: pnpm build
 
       - name: Deploy FLEX Core AWS infra
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never

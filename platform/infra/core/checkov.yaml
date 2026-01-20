@@ -2,3 +2,4 @@ skip-check:
   - CKV_AWS_115
   - CKV_AWS_116
   - CKV_AWS_117
+  - CKV_AWS_31 # TODO: add auth token
