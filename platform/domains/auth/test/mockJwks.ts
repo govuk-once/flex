@@ -24,21 +24,55 @@ export const exampleJWKS = {
 }
 
 /**
- *  JWT contents. JWT generated using https://www.scottbrady.io/tools/jwt with the above JWKS:
+ *  JWT contents. JWT generated using https://www.jwt.io with the above JWKS:
  *  header: {
       "typ": "at+jwt",
       "alg": "RS256",
       "kid": "d27874f4304835544c315b62d5a29c9c" // pragma: allowlist secret
     }
  *  payload: {
+      "sub": "d6a2b234-e011-7084-f347-912225bd2861",
+      "cognito:groups": [
+        "eu-west-2_testUserPoolId_onelogin"
+      ],
       "iss": "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId",
-      "aud": "testClientId",
-      "sub": "5be86359073c434bad2da3932222dabe", // pragma: allowlist secret
-      "client_id": "my_client_app",
-      "exp": 4072434877,
-      "iat": 1768744550,
-      "jti": "4bc0f0ca2bb8d878b9919f0b81228c1f" // pragma: allowlist secret
+      "version": 2,
+      "client_id": "testClientId",
+      "origin_jti": "358bd56a-5bc8-42ef-91a4-c2b158848419",
+      "token_use": "access",
+      "scope": "openid email",
+      "auth_time": 1768233127,
+      "exp": 4768233427,
+      "iat": 1768233127,
+      "jti": "af6aa38a-83cf-43c0-8b4c-1beaca770184"
+      "username": "onelogin_urn:fdc:gov.uk:2022:SwProvIeT-P_oLN2JHRrJvV2yaC2mM3vRI_NrlW2yt0"
     }
  */
 export const exampleValidJWT = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzZmNhZmE2YWFkNTFmZGRkM2MzNGFkMWU5ZGY5MGQ4IiwidHlwIjoiSldUIn0.eyJzdWIiOiJkNmEyYjIzNC1lMDExLTcwODQtZjM0Ny05MTIyMjViZDI4NjEiLCJjb2duaXRvOmdyb3VwcyI6WyJldS13ZXN0LTJfdGVzdFVzZXJQb29sSWRfb25lbG9naW4iXSwiaXNzIjoiaHR0cHM6Ly9jb2duaXRvLWlkcC5ldS13ZXN0LTIuYW1hem9uYXdzLmNvbS9ldS13ZXN0LTJfdGVzdFVzZXJQb29sSWQiLCJ2ZXJzaW9uIjoyLCJjbGllbnRfaWQiOiJ0ZXN0Q2xpZW50SWQiLCJvcmlnaW5fanRpIjoiMzU4YmQ1NmEtNWJjOC00MmVmLTkxYTQtYzJiMTU4ODQ4NDE5IiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJvcGVuaWQgZW1haWwiLCJhdXRoX3RpbWUiOjE3NjgyMzMxMjcsImV4cCI6NDc2ODIzMzQyNywiaWF0IjoxNzY4MjMzMTI3LCJqdGkiOiJhZjZhYTM4YS04M2NmLTQzYzAtOGI0Yy0xYmVhY2E3NzAxODQiLCJ1c2VybmFtZSI6Im9uZWxvZ2luX3VybjpmZGM6Z292LnVrOjIwMjI6U3dQcm92SWVULVBfb0xOMkpIUnJKdlYyeWFDMm1NM3ZSSV9OcmxXMnl0MCJ9.ry0ss0fb-vOcZeLMdLX1gEtt3xOSvmLulzkNvLKkB6sTZo9pKbPE7ZeRSQn9W4p0QtjDC9rk6zkBNxtZk6aOgBWIhBPYjfgDBer-j-Pi9PmxpYQsWePukqNMHzzofhdHxuy9_abo1lLU4LFWSijx5rmLEeEaC8CZd1W060e2iCeUwhjdMKI0TcaV6ALBo4iohMaD6nEJk_bq2UC5tl6mybAoKjWaSL0eXtmLbP7xZLjlV9gPufhA6LTN1uHFkVgNdZba-4mRmihhR-VHkbPzn0OR9gjsrDrlogjV0YhlaWbzvnBM5FsG6lkDBwkXmpVYXE8W12bQ-utmxuZPYCoVW5H1Hf5VWFuZyEjdRtJxW8M7e3BsiJBxX7yfZ4-4TEqYuXYDZkJHAMVRzB9j5Z0W4VKidAT6c9zxxl0Go5mJaYiYZEGT3C-X3-2fWBCmA7Wc7NgzkHl9oty0iMtPuRr1BfyV4XvUSv8_tuBiGxj_76eTg1XwsUIjCyiuV13TDSrM"; // pragma: allowlist secret
+
+/**
+ *  JWT contents. JWT generated using https://www.jwt.io with the above JWKS:
+ *  header: {
+      "typ": "at+jwt",
+      "alg": "RS256",
+      "kid": "d27874f4304835544c315b62d5a29c9c" // pragma: allowlist secret
+    }
+ *  payload: {
+      "sub": "d6a2b234-e011-7084-f347-912225bd2861",
+      "cognito:groups": [
+        "eu-west-2_testUserPoolId_onelogin"
+      ],
+      "iss": "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId",
+      "version": 2,
+      "client_id": "testClientId",
+      "origin_jti": "358bd56a-5bc8-42ef-91a4-c2b158848419",
+      "token_use": "access",
+      "scope": "openid email",
+      "auth_time": 1768233127,
+      "exp": 4768233427,
+      "iat": 1768233127,
+      "jti": "af6aa38a-83cf-43c0-8b4c-1beaca770184"
+      // Missing username field <------------------------------
+    }
+*/
 export const exampleInvalidJWTMissing = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzZmNhZmE2YWFkNTFmZGRkM2MzNGFkMWU5ZGY5MGQ4IiwidHlwIjoiSldUIn0.eyJzdWIiOiJkNmEyYjIzNC1lMDExLTcwODQtZjM0Ny05MTIyMjViZDI4NjEiLCJjb2duaXRvOmdyb3VwcyI6WyJldS13ZXN0LTJfdGVzdFVzZXJQb29sSWRfb25lbG9naW4iXSwiaXNzIjoiaHR0cHM6Ly9jb2duaXRvLWlkcC5ldS13ZXN0LTIuYW1hem9uYXdzLmNvbS9ldS13ZXN0LTJfdGVzdFVzZXJQb29sSWQiLCJ2ZXJzaW9uIjoyLCJjbGllbnRfaWQiOiJ0ZXN0Q2xpZW50SWQiLCJvcmlnaW5fanRpIjoiMzU4YmQ1NmEtNWJjOC00MmVmLTkxYTQtYzJiMTU4ODQ4NDE5IiwidG9rZW5fdXNlIjoiYWNjZXNzIiwic2NvcGUiOiJvcGVuaWQgZW1haWwiLCJhdXRoX3RpbWUiOjE3NjgyMzMxMjcsImV4cCI6NDc2ODIzMzQyNywiaWF0IjoxNzY4MjMzMTI3LCJqdGkiOiJhZjZhYTM4YS04M2NmLTQzYzAtOGI0Yy0xYmVhY2E3NzAxODQifQ.TCnobLK59tXof1x_W1lQLYVYrrdEMCFr9BnWK0odcAT2xr4kw_-DRj_c0UGmonYZBPm2bBT01p8omXdZEeyeomEQTOy6N6HT_5VcMUsd76kDiScVPgeAEAmNFFx9ZVmuIeQIz52M-nq0hqX-pFYjBtF96CNQwEuAyEWdNEWvJg3jUnSyNEY9p0sDolzziHyLXIMs8TSDl1ZXBbUFPKW4sEHdULq4RuC6zAmA4g-DxNu1fLUk_9tKjFMBEhJK-Ym9HD2lGXnyeSddELBNpaffBFSqa_mZPUtUsoXFd51C_Egyh1_ubTz7XxqDQpsFvJx_9ge95K-DKz0EgP8HJYT3jstqsfr0DfM0KBCWfIYtdoVHe8NCn7VaeSZmwFoR0hlLDfgVLN8DvHOf0oscyGPZ4tvYAUDhQ5ipiXIDgeDA_sXJHcr0G-0ja6e_HV_4OOZLDZYXx0u48GoTxm_kYpXiyj8BYZ6RbOuIfAzmiPdLrMcTROaRm-0Pt_IzPWTcU9gb";  // pragma: allowlist secret
