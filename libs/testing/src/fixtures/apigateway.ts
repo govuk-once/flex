@@ -2,10 +2,10 @@ import type { DeepPartial } from "@flex/utils";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayProxyEventV2,
+  APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
-
 // ----------------------------------------------------------------------------
 // Shared
 // ----------------------------------------------------------------------------
@@ -174,6 +174,9 @@ type AuthorizerResultOverrides = DeepPartial<APIGatewayAuthorizerResult>;
 
 const baseAuthorizerAllowResult: APIGatewayAuthorizerResult = {
   principalId: "anonymous",
+  context: {
+    pairwiseId: "test-pairwise-id",
+  },
   policyDocument: {
     Version: "2012-10-17",
     Statement: [
@@ -220,3 +223,43 @@ export const authorizerResult = {
   allow: buildAuthorizerResult(baseAuthorizerAllowResult),
   deny: buildAuthorizerResult(baseAuthorizerDenyResult),
 };
+
+// ----------------------------------------------------------------------------
+// API Gateway Request with Lambda Authorizer V2
+// ----------------------------------------------------------------------------
+
+interface TAuthorizerContext {
+  pairwiseId?: string;
+}
+
+type APIGatewayRequestWithAuthorizerOverrides = DeepPartial<
+  APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext>
+>;
+
+const baseAPIGatewayRequestWithAuthorizer: APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext> =
+  {
+    ...baseEvent,
+    requestContext: {
+      ...baseEvent.requestContext,
+      authorizer: { lambda: { pairwiseId: "test-pairwise-id" } },
+    },
+  };
+
+function buildAPIGatewayRequestWithAuthorizer(
+  overrides: APIGatewayRequestWithAuthorizerOverrides = {},
+) {
+  return mergeDeepLeft(
+    overrides,
+    baseAPIGatewayRequestWithAuthorizer,
+  ) as APIGatewayProxyEventV2WithLambdaAuthorizer<TAuthorizerContext>;
+}
+
+export function createAPIGatewayRequestWithAuthorizer() {
+  return {
+    create: (overrides?: APIGatewayRequestWithAuthorizerOverrides) =>
+      buildAPIGatewayRequestWithAuthorizer(overrides),
+  };
+}
+
+export const apiGatewayRequestWithAuthorizer =
+  buildAPIGatewayRequestWithAuthorizer();
