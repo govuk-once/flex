@@ -1,4 +1,3 @@
-import { config } from '@configs/eslint';
+import { config } from "@flex/eslint-config";
 
-/** @type {import("eslint").Linter.Config} */
 export default config;

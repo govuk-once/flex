@@ -10,22 +10,21 @@
     "generate-oas": "tsx src/openapi/generate-docs.ts",
     "scalar": "pnpm generate-oas && http-server src/openapi -p 4200 -o/scalar.html -c-1",
     "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1",
-    "lint": "eslint --max-warnings=0 src",
-    "test": "vitest run src --passWithNoTests"
+    "lint": "eslint --max-warnings=0 ."
   },
   "dependencies": {
     "zod": "4.3.5",
     "zod-openapi": "5.4.6"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@configs/vitest": "workspace:*",
-    "@types/node": "25.0.3",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@flex/vitest-config": "workspace:*",
+    "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "http-server": "14.1.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   }
 }

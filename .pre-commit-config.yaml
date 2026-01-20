@@ -19,17 +19,6 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: pnpm-lock.yaml
 
-  - repo: https://github.com/tbroadley/spellchecker-cli
-    rev: v6.2.0
-    hooks:
-      - id: spellchecker-cli
-        args: ['-l', 'en-GB', '-d', '.spelling', '-f', './**/*.md']
-        name: spellcheck
-        language_version: 18.19.1
-        types: [markdown]
-        stages:
-          - 'pre-commit'
-
   - repo: https://github.com/semgrep/semgrep
     rev: v1.89.0
     hooks:

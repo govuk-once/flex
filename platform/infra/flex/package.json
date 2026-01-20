@@ -7,22 +7,22 @@
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
-    "lint": "eslint --max-warnings=0 src",
+    "lint": "eslint --max-warnings=0 .",
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "dependencies": {
     "@platform/core": "workspace:*",
-    "@platform/parameter": "workspace:*",
     "@platform/gov-uk-once": "workspace:*",
+    "@platform/parameter": "workspace:*",
     "esbuild": "0.27.2"
   },
   "devDependencies": {
-    "@configs/eslint": "workspace:*",
-    "@configs/typescript": "workspace:*",
-    "@types/node": "25.0.3",
-    "aws-cdk": "2.1100.3",
-    "aws-cdk-lib": "2.233.0",
-    "constructs": "10.4.4",
+    "@flex/eslint-config": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@types/node": "25.0.9",
+    "aws-cdk": "2.1101.0",
+    "aws-cdk-lib": "2.235.0",
+    "constructs": "10.4.5",
     "eslint": "9.39.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3"

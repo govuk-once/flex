@@ -1,5 +1,4 @@
 {
-  "extends": "@configs/typescript/base.json",
-  "include": ["src/**/*.ts", "eslint.config.mjs"],
-  "exclude": ["node_modules"]
+  "extends": "@flex/typescript-config/base.json",
+  "include": ["src/**/*.ts", "eslint.config.mjs"]
 }
