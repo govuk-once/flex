@@ -12,10 +12,8 @@
     "zod": "4.3.5"
   },
   "devDependencies": {
-    "@flex/eslint-config": "workspace:*",
+    "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@flex/typescript-config": "workspace:*",
-    "@flex/vitest-config": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "eslint": "9.39.2",
     "typescript": "5.9.3",

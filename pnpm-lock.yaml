@@ -21,89 +21,6 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  configs/eslint:
-    dependencies:
-      '@eslint/eslintrc':
-        specifier: 3.3.3
-        version: 3.3.3
-      '@eslint/js':
-        specifier: 9.39.2
-        version: 9.39.2
-      '@html-eslint/eslint-plugin':
-        specifier: 0.53.0
-        version: 0.53.0(eslint@9.39.2(jiti@2.6.1))(jiti@2.6.1)
-      eslint-gitignore:
-        specifier: ^0.1.0
-        version: 0.1.0(eslint@9.39.2(jiti@2.6.1))
-      eslint-plugin-prettier:
-        specifier: 5.5.5
-        version: 5.5.5(eslint-config-prettier@10.1.8(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))(prettier@3.7.4)
-      eslint-plugin-simple-import-sort:
-        specifier: 12.1.1
-        version: 12.1.1(eslint@9.39.2(jiti@2.6.1))
-      find-up:
-        specifier: ^8.0.0
-        version: 8.0.0
-      typescript-eslint:
-        specifier: 8.53.0
-        version: 8.53.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
-    devDependencies:
-      '@eslint/json':
-        specifier: 0.14.0
-        version: 0.14.0
-      '@eslint/markdown':
-        specifier: 7.5.1
-        version: 7.5.1
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript
-      '@types/node':
-        specifier: 25.0.9
-        version: 25.0.9
-      eslint:
-        specifier: 9.39.2
-        version: 9.39.2(jiti@2.6.1)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-
-  configs/typescript:
-    devDependencies:
-      '@flex/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: 'link:'
-      eslint:
-        specifier: 9.39.2
-        version: 9.39.2(jiti@2.6.1)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-
-  configs/vitest:
-    dependencies:
-      '@vitest/coverage-v8':
-        specifier: 4.0.17
-        version: 4.0.17(vitest@4.0.17(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
-      vitest:
-        specifier: ^4.0.16
-        version: 4.0.17(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
-    devDependencies:
-      '@flex/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript
-      eslint:
-        specifier: 9.39.2
-        version: 9.39.2(jiti@2.6.1)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-
   domains/hello:
     dependencies:
       '@flex/handlers':
@@ -113,18 +30,12 @@ importers:
         specifier: 4.3.5
         version: 4.3.5
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
+        version: link:../../libs/config
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -153,18 +64,12 @@ importers:
         specifier: 4.3.5
         version: 4.3.5
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
+        version: link:../../libs/config
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -178,6 +83,55 @@ importers:
         specifier: 4.0.16
         version: 4.0.16(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  libs/config:
+    dependencies:
+      '@eslint/eslintrc':
+        specifier: 3.3.3
+        version: 3.3.3
+      '@eslint/js':
+        specifier: 9.39.2
+        version: 9.39.2
+      '@eslint/json':
+        specifier: 0.14.0
+        version: 0.14.0
+      '@eslint/markdown':
+        specifier: 7.5.1
+        version: 7.5.1
+      '@html-eslint/eslint-plugin':
+        specifier: 0.53.0
+        version: 0.53.0(eslint@9.39.2(jiti@2.6.1))(jiti@2.6.1)
+      '@vitest/coverage-v8':
+        specifier: 4.0.17
+        version: 4.0.17(vitest@4.0.17(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
+      eslint-gitignore:
+        specifier: 0.1.0
+        version: 0.1.0(eslint@9.39.2(jiti@2.6.1))
+      eslint-plugin-prettier:
+        specifier: 5.5.5
+        version: 5.5.5(eslint-config-prettier@10.1.8(eslint@9.39.2(jiti@2.6.1)))(eslint@9.39.2(jiti@2.6.1))(prettier@3.7.4)
+      eslint-plugin-simple-import-sort:
+        specifier: 12.1.1
+        version: 12.1.1(eslint@9.39.2(jiti@2.6.1))
+      find-up:
+        specifier: 8.0.0
+        version: 8.0.0
+      typescript-eslint:
+        specifier: 8.53.0
+        version: 8.53.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      vitest:
+        specifier: ^4.0.16
+        version: 4.0.17(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+    devDependencies:
+      '@types/node':
+        specifier: 25.0.9
+        version: 25.0.9
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   libs/handlers:
     dependencies:
       '@flex/logging':
@@ -187,18 +141,12 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
+        version: link:../config
       '@flex/testing':
         specifier: workspace:*
         version: link:../testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -218,15 +166,9 @@ importers:
         specifier: 2.30.2
         version: 2.30.2(@middy/core@7.0.2)
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
+        version: link:../config
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
@@ -243,18 +185,12 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
+        version: link:../config
       '@flex/testing':
         specifier: workspace:*
         version: link:../testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -273,12 +209,9 @@ importers:
       '@aws-lambda-powertools/parameters':
         specifier: 2.30.1
         version: 2.30.1(@aws-sdk/client-ssm@3.971.0)(@middy/core@7.0.2)
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
+        version: link:../config
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
@@ -319,15 +252,9 @@ importers:
         specifier: 5.4.6
         version: 5.4.6(zod@4.3.5)
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
+        version: link:../config
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -365,18 +292,12 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
+        version: link:../../../libs/config
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
@@ -399,12 +320,9 @@ importers:
         specifier: workspace:*
         version: link:../gov-uk-once
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
+        version: link:../../../libs/config
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -442,12 +360,9 @@ importers:
         specifier: 0.27.2
         version: 0.27.2
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
+        version: link:../../../libs/config
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -479,12 +394,9 @@ importers:
         specifier: ^10.4.4
         version: 10.4.4
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
+        version: link:../../../libs/config
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -501,12 +413,9 @@ importers:
         specifier: workspace:*
         version: link:../gov-uk-once
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
+        version: link:../../../libs/config
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -538,15 +447,9 @@ importers:
         specifier: workspace:*
         version: link:../../libs/utils
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../configs/eslint
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../configs/vitest
+        version: link:../../libs/config
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159

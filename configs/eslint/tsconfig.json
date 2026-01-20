@@ -1,4 +1,0 @@
-{
-  "extends": "@flex/typescript-config/base.json",
-  "include": ["src/**/*.mjs", "eslint.config.mjs"]
-}
