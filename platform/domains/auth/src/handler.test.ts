@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { handler } from "./handler";
 import { getConfig } from "./config";
 
-import { exampleJWKS } from "../test/mockJwks";
+import { exampleInvalidJWTMissing, exampleJWKS } from "../test/mockJwks";
 import { baseEvent, expectedPolicy } from "../test/mockRequestsAndResponses";
 
 import nock from "nock";
@@ -28,31 +28,18 @@ const mockContext = {
   getRemainingTimeInMillis: () => 1000,
 } as unknown as Context;
 
-const config = await getConfig();
-
-// const server = setupServer(http.get("https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId/.well-known/jwks.json", () => {
-//   return HttpResponse.json(exampleJWKS);
-// }));
-
-const scope = nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`).get(`/${config.USERPOOL_ID}/.well-known/jwks.json`).reply(200, exampleJWKS);
-
 describe("Authorizer Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // beforeAll(() => {
-  //   server.listen();
-  // });
-  // afterEach(() => server.resetHandlers())
-  // afterAll(() => server.close())
-
   describe("JWT validation", () => {
     it("sucessfully validates a valid JWT token against JWKS", async () => {
       const config = await getConfig();
-      // http.get(`https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId/.well-known/jwks.json`, () => {
-      //   return HttpResponse.json(exampleJWKS);
-      // });
+
+      nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
+        .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
+        .reply(200, exampleJWKS);
 
       const result = await handler(baseEvent, mockContext);
 
@@ -79,6 +66,25 @@ describe("Authorizer Handler", () => {
       };
       await expect(handler(noTokenEvent, mockContext)).rejects.toThrow(
         "No authorization token provided",
+      );
+    });
+
+    it("throws an error when JWT does not contain a pairwise ID", async () => {
+      const config = await getConfig();
+
+      nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
+        .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
+        .reply(200, exampleJWKS);
+
+      const eventWithoutPairwiseId = {
+        ...baseEvent,
+        headers: {
+          authorization: `Bearer ${exampleInvalidJWTMissing}`
+        },
+      };
+
+      await expect(handler(eventWithoutPairwiseId, mockContext)).rejects.toThrow(
+        "Pairwise ID (username) not found in JWT",
       );
     });
   });

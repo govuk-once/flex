@@ -20,6 +20,13 @@ export const parsedConfigSchema = z.looseObject({
 
 export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
 
+/**
+ * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.
+ * Renames the fields to remove the _PARAM_NAME suffix in the returned parsed configuration.
+ *
+ * @param rawConfig The raw configuration object containing parameter names.
+ * @returns The parsed configuration object with parameter values populated.
+ */
 async function populateParameterFields(rawConfig: RawConfig) {
   const logger = getLogger();
 

@@ -35,27 +35,37 @@ const handler = createLambdaHandler<
     });
 
     try {
-      await verifier.verify(jwt);
+      const decodedJwt = await verifier.verify(jwt);
       logger.info("JWT verification successful");
 
+      const pairwiseId = decodedJwt.username;
+      if (!pairwiseId) {
+        const message = "Pairwise ID (username) not found in JWT";
+        logger.error(message);
+        throw new Error(message);
+      }
+      logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
+
+      return Promise.resolve({
+        principalId: "anonymous",
+        policyDocument: {
+          Version: "2012-10-17",
+          Statement: [
+            {
+              Action: "execute-api:Invoke",
+              Effect: "Allow",
+              Resource: "*",
+            },
+          ],
+        },
+        context: {
+          pairwiseId
+        },
+      });
     } catch (error) {
       logger.error("JWT verification failed", { error });
       throw new Error(`Invalid JWT: ${(error as Error).message}`);
     }
-
-    return Promise.resolve({
-      principalId: "anonymous",
-      policyDocument: {
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Action: "execute-api:Invoke",
-            Effect: "Allow",
-            Resource: "*",
-          },
-        ],
-      },
-    });
   },
   {
     serviceName: "auth-authorizer",

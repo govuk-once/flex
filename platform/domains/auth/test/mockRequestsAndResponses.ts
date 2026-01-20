@@ -32,4 +32,7 @@ export const expectedPolicy: APIGatewayAuthorizerResult = {
       },
     ],
   },
+  context: {
+    pairwiseId: "onelogin_urn:fdc:gov.uk:2022:SwProvIeT-P_oLN2JHRrJvV2yaC2mM3vRI_NrlW2yt0",
+  },
 };
