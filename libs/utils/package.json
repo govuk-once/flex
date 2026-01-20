@@ -21,11 +21,11 @@
     "@configs/eslint": "workspace:*",
     "@configs/typescript": "workspace:*",
     "@configs/vitest": "workspace:*",
-    "@types/node": "25.0.3",
+    "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "http-server": "14.1.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   }
 }

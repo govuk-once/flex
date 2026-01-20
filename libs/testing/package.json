@@ -11,19 +11,19 @@
     "test": "vitest run src --passWithNoTests"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/parameters": "2.30.1",
+    "@aws-lambda-powertools/parameters": "2.30.2",
     "@configs/eslint": "workspace:*",
     "@configs/typescript": "workspace:*",
     "@configs/vitest": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.0.2",
     "@types/aws-lambda": "8.10.159",
-    "@types/node": "25.0.3",
+    "@types/node": "25.0.9",
     "@types/ramda": "0.31.1",
     "eslint": "9.39.2",
     "ramda": "0.32.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.16",
+    "vitest": "4.0.17",
     "zod": "4.3.5"
   }
 }
