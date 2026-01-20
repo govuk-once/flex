@@ -1,19 +1,14 @@
-name: Build & Deploy
+name: Ephemeral branch checks
 
 on:
   workflow_call:
     inputs:
-      ENVIRONMENT:
-        description: "AWS Environment to deploy"
-        type: string
-        required: true
-        default: "development"
       AWS_REGION:
-        description: "AWS Region to deploy to"
+        description: 'AWS Region to deploy to'
         type: string
     secrets:
       ROLE_TO_ASSUME:
-        description: "AWS deployment role to assume"
+        description: 'AWS deployment role to assume'
         required: true
 
 jobs:
@@ -23,7 +18,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
-      ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      EPHEMERAL_ENV: ${{ github.head_ref }}
 
     steps:
       - name: Checkout repo
@@ -34,7 +29,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies
         run: |
@@ -46,13 +41,10 @@ jobs:
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.AWS_REGION }}
-          role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
-
-      - name: Deploy FLEX Core AWS infra
-        run: cd ./platform/infra/core && pnpm run deploy --require-approval never
-
-      - name: Deploy FLEX Parameter AWS infra
-        run: cd ./platform/infra/parameter && pnpm run deploy --require-approval never
+          role-session-name: ${{ github.event.repository.name }}-ephemeral
 
       - name: Deploy FLEX Flex AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
+
+      - name: E2E tests
+        run: echo "TODO add E2E tests here for the flex platform stack"

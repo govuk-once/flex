@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "cdk watch",
     "deploy": "cdk deploy --all",
+    "destroy": "cdk destroy --all",
     "synth": "cdk synth",
     "lint": "eslint --max-warnings=0 src",
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
