@@ -1,7 +1,7 @@
-import { APIGatewayAuthorizerResult, APIGatewayRequestAuthorizerEvent } from "aws-lambda";
+import { APIGatewayAuthorizerResult, APIGatewayRequestAuthorizerEventV2 } from "aws-lambda";
 import { exampleValidJWT } from "./mockJwks";
 
-export const baseEvent: APIGatewayRequestAuthorizerEvent = {
+export const baseEvent: APIGatewayRequestAuthorizerEventV2 = {
   version: "2.0",
   type: "REQUEST",
   routeArn:
@@ -18,7 +18,7 @@ export const baseEvent: APIGatewayRequestAuthorizerEvent = {
     requestId: "test-request-id",
   },
   stageVariables: null,
-} as unknown as APIGatewayRequestAuthorizerEvent;
+} as unknown as APIGatewayRequestAuthorizerEventV2;
 
 export const expectedPolicy: APIGatewayAuthorizerResult = {
   principalId: "anonymous",
