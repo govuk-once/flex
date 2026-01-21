@@ -9,6 +9,13 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import {
+  BlockPublicAccess,
+  Bucket,
+  BucketAccessControl,
+  CfnBucket,
+  ObjectOwnership,
+} from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
@@ -28,6 +35,37 @@ export class FlexCloudfrontDistribution extends Construct {
     props: FlexCloudfrontDistributionProps,
   ) {
     super(scope, id);
+
+    // required for CKV_AWS_18 - all s3 buckets should have logging enabled
+    const accessLogArchiveBucket = new Bucket(this, "AccessLogArchiveBucket", {
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      versioned: true,
+    });
+
+    const cfnBucket = accessLogArchiveBucket.node.defaultChild as CfnBucket;
+
+    cfnBucket.cfnOptions.metadata = {
+      checkov: {
+        skip: [
+          {
+            id: "CKV_AWS_18",
+            comment:
+              "Archive bucket intentionally doesn't log to avoid circular dependency",
+          },
+        ],
+      },
+    };
+
+    // required for CKV_AWS_86 all cloudfront distributions should have logging enabled
+    const accessLogBucket = new Bucket(this, "AccessLogBucket", {
+      publicReadAccess: false,
+      versioned: true,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      objectOwnership: ObjectOwnership.OBJECT_WRITER,
+      accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
+      serverAccessLogsBucket: accessLogArchiveBucket,
+      serverAccessLogsPrefix: "cloudfront-access/",
+    });
 
     // Construct API Gateway domain name from HttpApi object
     // Domain format: {api-id}.execute-api.{region}.amazonaws.com
@@ -65,8 +103,19 @@ export class FlexCloudfrontDistribution extends Construct {
           },
         ],
       },
-      // Enable logging for debugging (optional)
-      enableLogging: false,
+      logBucket: accessLogBucket,
     });
+
+    // Ensure CloudFront viewer certificate explicitly enforces TLS v1.2+ for Checkov CKV_AWS_174
+    const cfnDistribution = this.distribution.node
+      .defaultChild as cdk.aws_cloudfront.CfnDistribution;
+    cfnDistribution.addPropertyOverride(
+      "DistributionConfig.ViewerCertificate.CloudFrontDefaultCertificate",
+      true,
+    );
+    cfnDistribution.addPropertyOverride(
+      "DistributionConfig.ViewerCertificate.MinimumProtocolVersion",
+      "TLSv1.2_2021",
+    );
   }
 }
