@@ -1,7 +1,6 @@
+import type { DeepPartial } from "@flex/utils";
 import { CloudFrontFunctionsEvent } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
-
-import { DeepPartial } from "../../../utils/src/types";
 
 const baseCloudFrontEvent: CloudFrontFunctionsEvent = {
   version: "1.0",
