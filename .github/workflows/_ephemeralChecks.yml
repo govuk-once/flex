@@ -18,7 +18,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
-      EPHEMERAL_ENV: ${{ github.head_ref }}
+      STAGE: pr-${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout repo
