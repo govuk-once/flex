@@ -315,26 +315,13 @@ importers:
         version: 4.0.17(@types/node@25.0.9)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   platform/domains/fail-fast:
-    dependencies:
-      '@flex/handlers':
-        specifier: workspace:*
-        version: link:../../../libs/handlers
-      '@flex/logging':
-        specifier: workspace:*
-        version: link:../../../libs/logging
     devDependencies:
-      '@flex/eslint-config':
+      '@flex/config':
         specifier: workspace:*
-        version: link:../../../configs/eslint
+        version: link:../../../libs/config
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
-      '@flex/typescript-config':
-        specifier: workspace:*
-        version: link:../../../configs/typescript
-      '@flex/vitest-config':
-        specifier: workspace:*
-        version: link:../../../configs/vitest
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
