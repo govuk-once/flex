@@ -1,32 +1,35 @@
 {
-  "name": "@flex/eslint-config",
+  "name": "@flex/config",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/config.mjs"
+    "./eslint": "./src/eslint.mjs",
+    "./vitest": "./src/vitest.ts",
+    "./tsconfig.json": "./src/tsconfig.json"
   },
   "scripts": {
     "lint": "eslint --max-warnings=0 ."
   },
   "peerDependencies": {
     "eslint": "^9.29.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.2",
+    "@eslint/json": "0.14.0",
+    "@eslint/markdown": "7.5.1",
     "@html-eslint/eslint-plugin": "0.53.0",
-    "eslint-gitignore": "^0.1.0",
+    "@vitest/coverage-v8": "4.0.17",
+    "eslint-gitignore": "0.1.0",
     "eslint-plugin-prettier": "5.5.5",
     "eslint-plugin-simple-import-sort": "12.1.1",
-    "find-up": "^8.0.0",
+    "find-up": "8.0.0",
     "typescript-eslint": "8.53.0"
   },
   "devDependencies": {
-    "@eslint/json": "0.14.0",
-    "@eslint/markdown": "7.5.1",
-    "@flex/typescript-config": "workspace:*",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "typescript": "5.9.3"
