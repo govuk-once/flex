@@ -3,15 +3,21 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import { Construct } from "constructs";
 import * as esbuild from "esbuild";
 
-import { getPlatformEntry } from "../utils/getEntry";
+interface FlexCloudfrontFunctionProps {
+  functionSourcePath: string;
+}
 
 export class FlexCloudfrontFunction extends Construct {
   public readonly function: Function;
 
-  constructor(scope: Construct, id: string) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: FlexCloudfrontFunctionProps,
+  ) {
     super(scope, id);
 
-    const functionSourcePath = getPlatformEntry("fail-fast", "handler.ts");
+    const functionSourcePath = props.functionSourcePath;
 
     const buildResult = esbuild.buildSync({
       entryPoints: [functionSourcePath],

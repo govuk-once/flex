@@ -23,7 +23,6 @@ import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 export interface FlexCloudfrontDistributionProps {
   cloudfrontFunction: FlexCloudfrontFunction;
   httpApi: HttpApi;
-  httpApiUrl: string;
 }
 
 export class FlexCloudfrontDistribution extends Construct {
@@ -67,9 +66,6 @@ export class FlexCloudfrontDistribution extends Construct {
       serverAccessLogsPrefix: "cloudfront-access/",
     });
 
-    // Construct API Gateway domain name from HttpApi object
-    // Domain format: {api-id}.execute-api.{region}.amazonaws.com
-    // We use CDK tokens here since apiId and region are resolved at deployment time
     const stack = cdk.Stack.of(this);
     const apiDomainName = cdk.Fn.join(".", [
       props.httpApi.apiId,

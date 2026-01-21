@@ -1,6 +1,7 @@
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import { Construct } from "constructs";
 
+import { getPlatformEntry } from "../utils/getEntry";
 import { FlexCloudfrontDistribution } from "./flex-cloudfront-distribution";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 
@@ -13,6 +14,9 @@ export class FlexFailFast extends Construct {
     const cloudfrontFunction = new FlexCloudfrontFunction(
       this,
       "CloudfrontFunction",
+      {
+        functionSourcePath: getPlatformEntry("fail-fast", "handler.ts"),
+      },
     );
 
     this.distribution = new FlexCloudfrontDistribution(
@@ -20,7 +24,6 @@ export class FlexFailFast extends Construct {
       "CloudfrontDistribution",
       {
         cloudfrontFunction,
-        httpApiUrl: httpApi.url!,
         httpApi,
       },
     );
