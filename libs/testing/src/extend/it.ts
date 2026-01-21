@@ -3,15 +3,27 @@ import type { Mock } from "vitest";
 import { it as vitestIt, vi } from "vitest";
 
 import { ENV_DEFAULTS, SSM_DEFAULTS } from "../config";
-import { createContext, createEvent } from "../fixtures";
+import {
+  createAuthorizerEvent,
+  createAuthorizerResult,
+  createContext,
+  createEvent,
+  createEventWithAuthorizer,
+  createResponse,
+} from "../fixtures";
+import { createMiddyRequest } from "../fixtures/middy";
 
 interface Fixtures {
+  authorizerEvent: ReturnType<typeof createAuthorizerEvent>;
+  authorizerResult: ReturnType<typeof createAuthorizerResult>;
   context: ReturnType<typeof createContext>;
   env: {
     set: (env: Record<string, string | undefined>) => void;
     delete: (...keys: string[]) => void;
   };
   event: ReturnType<typeof createEvent>;
+  eventWithAuthorizer: ReturnType<typeof createEventWithAuthorizer>;
+  middy: ReturnType<typeof createMiddyRequest>;
   redis: {
     client: {
       get: Mock<(key: string) => Promise<string | null>>;
@@ -27,6 +39,7 @@ interface Fixtures {
     };
     store: Map<string, string>;
   };
+  response: ReturnType<typeof createResponse>;
   ssm: {
     get: <T = string | undefined>(path: string) => T;
     set: (params: Record<string, unknown>) => void;
@@ -35,6 +48,8 @@ interface Fixtures {
 }
 
 export const it = vitestIt.extend<Fixtures>({
+  authorizerEvent: async ({}, use) => use(createAuthorizerEvent()),
+  authorizerResult: async ({}, use) => use(createAuthorizerResult()),
   context: async ({}, use) => use(createContext()),
   env: [
     async ({}, use) => {
@@ -64,6 +79,8 @@ export const it = vitestIt.extend<Fixtures>({
     { auto: true },
   ],
   event: async ({}, use) => use(createEvent()),
+  eventWithAuthorizer: async ({}, use) => use(createEventWithAuthorizer()),
+  middy: async ({}, use) => use(createMiddyRequest()),
   redis: [
     async ({}, use) => {
       const store = new Map<string, string>();
@@ -85,6 +102,7 @@ export const it = vitestIt.extend<Fixtures>({
     },
     { auto: true },
   ],
+  response: async ({}, use) => use(createResponse()),
   ssm: [
     async ({}, use) => {
       const store = new Map<string, unknown>(Object.entries(SSM_DEFAULTS));
