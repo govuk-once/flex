@@ -18,6 +18,11 @@ export {
   event,
   eventWithAuthorizer,
 } from "./apigateway";
+export {
+  buildCloudFrontEvent,
+  buildCloudFrontEventWithAuthorizationHeader,
+  buildCloudFrontFunctionErrorResponse,
+} from "./cloudfront";
 export type { ContextOverrides } from "./lambda";
 export { context, createContext } from "./lambda";
 export type { MiddyRequest, MiddyRequestOverrides } from "./middy";
