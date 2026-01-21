@@ -17,31 +17,33 @@ const baseLoggerOptions = {
   serviceName: "test-service",
 } as const;
 
-const mockResponse = {
-  OK: { statusCode: 200, body: JSON.stringify({ message: "success" }) },
-  CREATED: { statusCode: 201, body: JSON.stringify({ created: true }) },
-} as const;
-
 describe("createLambdaHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("basic handler creation", () => {
-    it("creates a middy handler from a simple handler function", async () => {
+    it("creates a middy handler from a simple handler function", async ({
+      response,
+    }) => {
+      const expectedResponse = response.ok({ message: "success" });
+
       const handler = createLambdaHandler(
-        async () => Promise.resolve(mockResponse.OK),
+        async () => Promise.resolve(expectedResponse),
         baseLoggerOptions,
       );
 
       const result = await handler(event, context);
 
-      expect(result).toEqual(mockResponse.OK);
+      expect(result).toEqual(expectedResponse);
     });
   });
 
   describe("arbitrary middleware support", () => {
-    it("applies middleware to the handler", async ({ event: customEvent }) => {
+    it("applies middleware to the handler", async ({
+      event: customEvent,
+      response,
+    }) => {
       const beforeMiddleware = vi.fn();
       const afterMiddleware = vi.fn();
 
@@ -58,9 +60,10 @@ describe("createLambdaHandler", () => {
       };
 
       const testEvent = customEvent.get("/test");
+      const expectedResponse = response.ok({ message: "success" });
 
       const handler = createLambdaHandler(
-        async () => Promise.resolve(mockResponse.OK),
+        async () => Promise.resolve(expectedResponse),
         {
           middlewares: [middleware],
           ...baseLoggerOptions,
@@ -70,10 +73,10 @@ describe("createLambdaHandler", () => {
       await handler(testEvent, context);
 
       expect(beforeMiddleware).toHaveBeenCalledExactlyOnceWith(testEvent);
-      expect(afterMiddleware).toHaveBeenCalledExactlyOnceWith(mockResponse.OK);
+      expect(afterMiddleware).toHaveBeenCalledExactlyOnceWith(expectedResponse);
     });
 
-    it("applies multiple middlewares in order", async () => {
+    it("applies multiple middlewares in order", async ({ response }) => {
       const callOrder: string[] = [];
 
       const middleware1: MiddlewareObj<
@@ -100,10 +103,11 @@ describe("createLambdaHandler", () => {
         },
       };
 
+      const expectedResponse = response.ok({ message: "success" });
       const handler = createLambdaHandler(
         async () => {
           callOrder.push("handler");
-          return Promise.resolve(mockResponse.OK);
+          return Promise.resolve(expectedResponse);
         },
         {
           middlewares: [middleware1, middleware2],
@@ -124,9 +128,10 @@ describe("createLambdaHandler", () => {
   });
 
   describe("logging integration", () => {
-    it("injects logger context into the handler", async () => {
+    it("injects logger context into the handler", async ({ response }) => {
+      const expectedResponse = response.ok({ message: "success" });
       const handler = createLambdaHandler(
-        async () => Promise.resolve(mockResponse.OK),
+        async () => Promise.resolve(expectedResponse),
         { ...baseLoggerOptions },
       );
 
@@ -139,18 +144,19 @@ describe("createLambdaHandler", () => {
       );
     });
 
-    it.each([
-      { logLevel: "DEBUG" as const, expected: true },
-      { logLevel: "debug" as const, expected: true },
-      { logLevel: "TRACE" as const, expected: true },
-      { logLevel: "trace" as const, expected: true },
-      { logLevel: "INFO" as const, expected: false },
-      { logLevel: "info" as const, expected: false },
-    ])(
+    it.for([
+      { logLevel: "DEBUG", expected: true },
+      { logLevel: "debug", expected: true },
+      { logLevel: "TRACE", expected: true },
+      { logLevel: "trace", expected: true },
+      { logLevel: "INFO", expected: false },
+      { logLevel: "info", expected: false },
+    ] as const)(
       "sets the logger integration logEvent parmeter to $expected if log level is $logLevel",
-      async ({ expected, logLevel }) => {
+      async ({ expected, logLevel }, { response }) => {
+        const expectedResponse = response.ok({ message: "success" });
         const handler = createLambdaHandler(
-          async () => Promise.resolve(mockResponse.OK),
+          async () => Promise.resolve(expectedResponse),
           { ...baseLoggerOptions, logLevel },
         );
 
@@ -164,9 +170,12 @@ describe("createLambdaHandler", () => {
       },
     );
 
-    it("passes correlationIdPath to logger middleware", async () => {
+    it("passes correlationIdPath to logger middleware", async ({
+      response,
+    }) => {
+      const expectedResponse = response.ok({ message: "success" });
       const handler = createLambdaHandler(
-        async () => Promise.resolve(mockResponse.OK),
+        async () => Promise.resolve(expectedResponse),
         { ...baseLoggerOptions },
       );
 
@@ -185,17 +194,19 @@ describe("createLambdaHandler", () => {
   describe("type safety", () => {
     it("maintains type safety for event and response types", async ({
       event: customEvent,
+      response,
     }) => {
       const handler = createLambdaHandler<
         APIGatewayProxyEventV2,
         APIGatewayProxyResultV2
       >(
         async (event) =>
-          Promise.resolve({
-            statusCode: 200,
-            body: JSON.stringify({ userId: event.pathParameters?.userId }),
-          }),
-        { ...baseLoggerOptions },
+          Promise.resolve(
+            response.ok({ userId: event.pathParameters?.userId }),
+          ),
+        {
+          ...baseLoggerOptions,
+        },
       );
 
       const userId = "user-123";
@@ -213,15 +224,18 @@ describe("createLambdaHandler", () => {
   });
 
   describe("handler without middlewares", () => {
-    it("creates a handler when no middlewares are provided", async () => {
+    it("creates a handler when no middlewares are provided", async ({
+      response,
+    }) => {
+      const expectedResponse = response.created({ created: true });
       const handler = createLambdaHandler(
-        async () => Promise.resolve(mockResponse.CREATED),
+        async () => Promise.resolve(expectedResponse),
         { ...baseLoggerOptions },
       );
 
       const result = await handler(event, context);
 
-      expect(result).toBe(mockResponse.CREATED);
+      expect(result).toBe(expectedResponse);
     });
   });
 });

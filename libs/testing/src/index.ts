@@ -1,5 +1,33 @@
-export * from "./config";
-export * from "./extend/it";
-export * from "./fixtures/apigateway";
-export * from "./fixtures/lambda";
-export * from "./fixtures/middy";
+export { config, ENV_DEFAULTS, SSM_DEFAULTS } from "./config";
+export { it } from "./extend/it";
+export type {
+  AuthorizerContext,
+  AuthorizerEventOverrides,
+  AuthorizerResultContext,
+  AuthorizerResultOverrides,
+  ContextOverrides,
+  EventOverrides,
+  EventWithAuthorizer,
+  EventWithAuthorizerOverrides,
+  MiddyRequest,
+  MiddyRequestOverrides,
+  RequestOptions,
+  ResponseOptions,
+  StructuredResponse,
+} from "./fixtures";
+export {
+  authorizerEvent,
+  authorizerResult,
+  context,
+  createAuthorizerEvent,
+  createAuthorizerResult,
+  createContext,
+  createEvent,
+  createEventWithAuthorizer,
+  createMiddyRequest,
+  createResponse,
+  event,
+  eventWithAuthorizer,
+  middyRequest,
+  response,
+} from "./fixtures";
