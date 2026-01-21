@@ -12,7 +12,7 @@ jobs:
   destroy:
     runs-on: ubuntu-latest
     env:
-      EPHEMERAL_ENV: ${{ github.head_ref }}
+      STAGE: pr-${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout repo

@@ -29,44 +29,29 @@ enum Environment {
   PRODUCTION = "production",
 }
 
-function sanitizeUsername(username: string): string {
-  return username
-    .toLowerCase()
-    .replace(/[^a-z]/g, "")
-    .slice(0, 12);
+function sanitizeStageName(branch?: string): string | undefined {
+  if (branch) {
+    return branch
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "")
+      .slice(0, 12);
+  }
 }
 
-function getUser() {
-  const user = process.env.USER;
-  if (!user) return null;
-
-  return sanitizeUsername(user);
-}
-
-function sanitizeEphemeralEnv(branch: string): string {
-  return branch
-    .toLowerCase()
-    .replace(/[/_]/g, "-")
-    .replace(/[^a-z-]/g, "")
-    .slice(0, 26);
-}
-
-function getEphemeral() {
-  const ephemeral = process.env.EPHEMERAL_ENV;
-  if (!ephemeral) return null;
-
-  return sanitizeEphemeralEnv(ephemeral);
-}
-
-function getEnvironment() {
-  const env = process.env.ENVIRONMENT;
+function getEnvironment(): Environment | string | null {
+  const env = process.env.STAGE;
   if (!env) return null;
 
-  const envs = Object.values(Environment);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
-  if (envs.some((e) => e === env)) return env as Environment;
+  // Check strict Enum matches (Development, Production, etc.)
+  const envs = Object.values(Environment) as string[];
+  if (envs.includes(env)) return env as Environment;
+
+  // Check for PR pattern (e.g. "pr-123")
+  const prRegex = /^pr-\d+$/;
+  if (prRegex.test(env)) return env;
+
   throw new Error(
-    `ENVIRONMENT env var not recognised. Value: ${env}, Values: ${envs.join(", ")}`,
+    `ENVIRONMENT env var not recognised. Value: "${env}". Expected standard Environment or 'pr-{number}' pattern.`,
   );
 }
 
@@ -74,27 +59,19 @@ function getEnvironment() {
  * Returns the environment config for this deployment.
  */
 export function getEnvConfig() {
-  // Ephemeral envs are used for the ci process
-  const ephemeral = getEphemeral();
-  if (ephemeral)
-    return {
-      environment: Environment.DEVELOPMENT,
-      stage: ephemeral,
-      persistent: false,
-    };
-
-  const environment = getEnvironment();
-  const user = getUser();
-  const stage = environment ?? user;
+  const stage = sanitizeStageName(process.env.STAGE ?? process.env.USER);
 
   if (!stage) {
-    throw new Error("ENVIRONMENT or USER env var not set");
+    throw new Error("STAGE or USER env var not set");
   }
 
+  // Returns true if stage exists in Environment, false otherwise
+  const persistent = (Object.values(Environment) as string[]).includes(stage);
+
   return {
-    environment: environment ?? Environment.DEVELOPMENT,
+    environment: persistent ? stage : Environment.DEVELOPMENT,
     stage,
-    persistent: environment !== null,
+    persistent: true,
   };
 }
 
