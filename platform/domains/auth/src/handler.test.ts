@@ -1,11 +1,5 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
-import {
-  authorizerEvent,
-  authorizerResult,
-  config,
-  context,
-  it,
-} from "@flex/testing";
+import { authorizerEvent, config, context, it } from "@flex/testing";
 import { describe, expect, vi } from "vitest";
 
 import { handler, resetRedisClient } from "./handler";
@@ -85,9 +79,13 @@ describe("Authorizer Handler", () => {
   });
 
   describe("Redis integration", () => {
+    const pairwiseId = "test-pairwise-id";
     const cached = JSON.stringify({ timestamp: Date.now() });
 
-    it("reads from Redis when cache key exists", async ({ redis }) => {
+    it("reads from Redis when cache key exists", async ({
+      authorizerResult,
+      redis,
+    }) => {
       // redis `get` is called twice: once to check if key exists, once at the end
       redis.client.get
         .mockResolvedValueOnce(cached) // call #1: key exists
@@ -99,10 +97,11 @@ describe("Authorizer Handler", () => {
       expect(redis.client.set).not.toHaveBeenCalled();
       // get is called twice: once to check, once to retrieve
       expect(redis.client.get).toHaveBeenNthCalledWith(2, "auth:1");
-      expect(result).toEqual(authorizerResult.allow);
+      expect(result).toEqual(authorizerResult.allowWithPairwiseId(pairwiseId));
     });
 
     it("writes to Redis with TTL when cache key does not exist", async ({
+      authorizerResult,
       redis,
     }) => {
       // Handler calls get twice: once to check if key exists, once at the end
@@ -120,10 +119,11 @@ describe("Authorizer Handler", () => {
       );
       // get is called twice: once to check, once to retrieve
       expect(redis.client.get).toHaveBeenNthCalledWith(2, "auth:1");
-      expect(result).toEqual(authorizerResult.allow);
+      expect(result).toEqual(authorizerResult.allowWithPairwiseId(pairwiseId));
     });
 
     it("reuses the same Redis client across multiple invocations", async ({
+      authorizerResult,
       redis,
     }) => {
       // invocation #1: key doesn't exist, so set is called
@@ -149,8 +149,12 @@ describe("Authorizer Handler", () => {
         expect.stringMatching(/timestamp/),
         300,
       );
-      expect(firstResult).toEqual(authorizerResult.allow);
-      expect(secondResult).toEqual(authorizerResult.allow);
+      expect(firstResult).toEqual(
+        authorizerResult.allowWithPairwiseId(pairwiseId),
+      );
+      expect(secondResult).toEqual(
+        authorizerResult.allowWithPairwiseId(pairwiseId),
+      );
     });
 
     it.for(["get", "set"] as const)(
