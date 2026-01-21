@@ -1,4 +1,5 @@
 import * as cdk from "aws-cdk-lib";
+import type { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import {
   AllowedMethods,
   Distribution,
@@ -8,7 +9,6 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
-import type { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import { Construct } from "constructs";
 
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
