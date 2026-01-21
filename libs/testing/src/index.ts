@@ -30,4 +30,7 @@ export {
   eventWithAuthorizer,
   middyRequest,
   response,
+  examplePublicJWKS,
+  exampleValidJWT,
+  exampleInvalidJWTMissingUsername
 } from "./fixtures";

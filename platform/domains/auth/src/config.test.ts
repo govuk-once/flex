@@ -1,7 +1,8 @@
+import { beforeEach, describe, expect, vi } from "vitest";
 import { getLogger } from "@flex/logging";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getConfig } from "./config";
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
+import { it } from "@flex/testing";
+import { getConfig } from "./config";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
@@ -14,11 +15,12 @@ describe("Config", () => {
 
   describe("getConfig", () => {
     describe("raw environment variable validation", () => {
-      it("throws an error if a required environment variable is missing", async () => {
-        process.env.AWS_REGION = "us-east-1";
-        process.env.USERPOOL_ID_PARAM_NAME = "userpool_id_param";
-        delete process.env.CLIENT_ID_PARAM_NAME; // Intentionally left blank to simulate missing variable;
-        process.env.REDIS_ENDPOINT_PARAM_NAME = "redis_endpoint_param";
+      it("throws an error if a required environment variable is missing", async ({ env }) => {
+        env.set({
+          AWS_REGION: "us-east-1",
+          USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+          // CLIENT_ID_PARAM_NAME is intentionally left blank to simulate missing variable
+        });
 
         await expect(getConfig()).rejects.toThrow(/Invalid raw configuration:/);
       });
@@ -29,19 +31,19 @@ describe("Config", () => {
     const resolvedParamValues = {
       "userpool_id_param": "us-east-1_123456789",
       "client_id_param": "example-client-id-123",
-      "redis_endpoint_param": "example.redis.cache.amazonaws.com:6379",
     };
 
     beforeEach(() => {
-      process.env.AWS_REGION = "us-east-1";
-      process.env.USERPOOL_ID_PARAM_NAME = "userpool_id_param";
-      process.env.CLIENT_ID_PARAM_NAME = "client_id_param";
-      process.env.REDIS_ENDPOINT_PARAM_NAME = "redis_endpoint_param";
-
       vi.resetAllMocks();
     });
 
-    it("returns the parsed configuration when all environment variables and parameters are valid", async () => {
+    it("returns the parsed configuration when all environment variables and parameters are valid", async ({ env }) => {
+      env.set({
+        AWS_REGION: "us-east-1",
+        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+        CLIENT_ID_PARAM_NAME: "client_id_param",
+      });
+
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
       const config = await getConfig();
@@ -50,20 +52,23 @@ describe("Config", () => {
         AWS_REGION: "us-east-1",
         USERPOOL_ID: "us-east-1_123456789",
         CLIENT_ID: "example-client-id-123",
-        REDIS_ENDPOINT: "example.redis.cache.amazonaws.com:6379",
       }));
     });
 
-    it("throws an error if a fetched parameter is missing", async () => {
+    it("throws an error if a fetched parameter is missing", async ({ env }) => {
       vi.resetModules();
       const config = await import("./config");
       const logging = await import("@flex/logging");
 
+      env.set({
+        AWS_REGION: "us-east-1",
+        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+        CLIENT_ID_PARAM_NAME: "client_id_param",
+      });
 
       vi.mocked(getParametersByName).mockResolvedValueOnce({
         "userpool_id_param": "us-east-1_123456789",
         // "client_id_param" is intentionally missing to simulate the error
-        "redis_endpoint_param": "example.redis.cache.amazonaws.com:6379",
       });
 
       logging.getLogger({serviceName: "config_test"});
@@ -79,15 +84,16 @@ describe("Config", () => {
     };
 
     beforeEach(() => {
-      process.env.AWS_REGION = "us-east-1";
-      process.env.USERPOOL_ID_PARAM_NAME = "userpool_id_param";
-      process.env.CLIENT_ID_PARAM_NAME = "client_id_param";
-      process.env.REDIS_ENDPOINT_PARAM_NAME = "redis_endpoint_param";
-
       vi.resetAllMocks();
     });
 
-    it("caches the configuration after the first fetch", async () => {
+    it("caches the configuration after the first fetch", async ({ env }) => {
+      env.set({
+        AWS_REGION: "us-east-1",
+        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+        CLIENT_ID_PARAM_NAME: "client_id_param",
+      });
+
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
 
       vi.resetModules();

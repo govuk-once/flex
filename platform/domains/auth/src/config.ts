@@ -6,7 +6,6 @@ export const rawConfigSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),
-  REDIS_ENDPOINT_PARAM_NAME: z.string().min(1),
 });
 
 export type RawConfig = z.infer<typeof rawConfigSchema>;
@@ -15,7 +14,6 @@ export const parsedConfigSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID: z.string().min(1),
   CLIENT_ID: z.string().min(1),
-  REDIS_ENDPOINT: z.string().min(1),
 });
 
 export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
