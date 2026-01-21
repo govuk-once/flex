@@ -1,4 +1,8 @@
 {
-  "extends": "@flex/config/tsconfig.json",
-  "include": ["src/**/*.ts", "eslint.config.mjs"]
+  "extends": "@flex/typescript-config/base.json",
+  "include": [
+    "src/**/*.ts",
+    "eslint.config.mjs",
+    "../../domains/fail-fast/src/handler.ts"
+  ]
 }

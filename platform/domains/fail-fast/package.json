@@ -1,0 +1,21 @@
+{
+  "name": "@platform/fail-fast",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@flex/eslint-config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@flex/typescript-config": "workspace:*",
+    "@flex/vitest-config": "workspace:*",
+    "@types/aws-lambda": "8.10.159",
+    "@types/node": "25.0.9",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.17"
+  }
+}
