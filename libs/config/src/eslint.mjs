@@ -28,7 +28,18 @@ export const config = [
     ignores: gitignoreFiles,
   },
   {
-    files: ["**/*.ts", "**/*.js", "**/*.mjs"],
+    files: ["**/*.js", "**/*.mjs"],
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+    },
+  },
+  {
+    files: ["**/*.ts"],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
