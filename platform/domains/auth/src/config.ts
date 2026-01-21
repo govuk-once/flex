@@ -20,6 +20,14 @@ export const parsedConfigSchema = z.looseObject({
 
 export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
 
+type WithoutSuffix<T, SUFFIX extends string> = T extends `${infer P}${SUFFIX}` ? P : T;
+
+type RemoveParamNameSuffix<T> = {
+  [K in keyof T as WithoutSuffix<K, "_PARAM_NAME">]: T[K];
+};
+
+type Test = RemoveParamNameSuffix<RawConfig>;
+
 /**
  * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.
  * Renames the fields to remove the _PARAM_NAME suffix in the returned parsed configuration.

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handler } from "./handler";
 import { getConfig } from "./config";
 
-import { exampleInvalidJWTMissing, exampleJWKS } from "../test/mockJwks";
+import { exampleInvalidJWTMissing, examplePublicJWKS } from "../test/mockJwks";
 import { baseEvent, expectedPolicy } from "../test/mockRequestsAndResponses";
 
 import nock from "nock";
@@ -37,7 +37,7 @@ describe("Authorizer Handler", () => {
 
       nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
-        .reply(200, exampleJWKS);
+        .reply(200, examplePublicJWKS);
 
       const result = await handler(baseEvent, mockContext);
 
@@ -72,7 +72,7 @@ describe("Authorizer Handler", () => {
 
       nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
-        .reply(200, exampleJWKS);
+        .reply(200, examplePublicJWKS);
 
       const eventWithoutPairwiseId = {
         ...baseEvent,
