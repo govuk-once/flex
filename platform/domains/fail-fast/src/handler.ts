@@ -62,7 +62,12 @@ function tryParseJson(jsonString: string): Record<string, unknown> | null {
 function decodeJwt(token: string) {
   logger.debug("Decoding JWT token", token);
 
-  const [header, body, signature, ...rest] = token.split('.');
+  // destructuring is not supported in CloudFront Functions, so we have to do it manually
+  const tokenParts = token.split('.');
+  const header = tokenParts[0];
+  const body = tokenParts[1];
+  const signature = tokenParts[2];
+  const rest = tokenParts.slice(3);
 
   if(rest.length > 0) {
     const message = 'Invalid JWT: too many segments';
@@ -124,9 +129,13 @@ export function handler(event: CloudFrontFunctionsEvent) {
     );
   }
 
-  const [bearerText, jwt, ...rest] = authorizationHeader.value.split(" ");
+  // destructuring is not supported in CloudFront Functions
+  const headerParts = authorizationHeader.value.split(" ");
+  const bearerLabel = headerParts[0];
+  const token = headerParts[1];
+  const rest = headerParts.slice(2);
 
-  if (bearerText !== "Bearer") {
+  if (bearerLabel !== "Bearer") {
     logger.error("Authorization header does not start with 'Bearer'");
     return generateErrorResponse(401, "Unauthorized: authentication header invalid");
   }
@@ -136,13 +145,13 @@ export function handler(event: CloudFrontFunctionsEvent) {
     return generateErrorResponse(401, "Unauthorized: authentication header invalid");
   }
 
-  if (!jwt) {
+  if (!token) {
     logger.error("No JWT token provided in authorization header");
     return generateErrorResponse(401, "Unauthorized: authentication header invalid");
   }
 
   try {
-    decodeJwt(jwt);
+    decodeJwt(token);
   } catch (e) {
     logger.error("Failed to decode JWT token", (e as Error).message);
     return generateErrorResponse(401, "Unauthorized: token invalid");
