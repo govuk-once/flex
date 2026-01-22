@@ -46,6 +46,3 @@ function handler(event: CloudFrontFunctionsEvent) {
 
   return event.request;
 }
-
-// Manually expose the handler to the global scope
-(globalThis as unknown as { handler: typeof handler }).handler = handler;
