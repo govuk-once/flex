@@ -29,7 +29,6 @@ const generateErrorResponse = (
   };
 };
 
-// cloudfront function expects no export keyword
 export function handler(event: CloudFrontFunctionsEvent) {
   const authorizationHeader = event.request.headers.authorization;
   if (!authorizationHeader) {
