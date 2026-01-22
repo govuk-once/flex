@@ -9,8 +9,9 @@
  * The handler function must be at the top level and will be transpiled to plain JavaScript.
  */
 import { CloudFrontFunctionsEvent } from "aws-lambda";
-import { CloudFrontFunctionResponse } from "./types";
+
 import { getLogger } from "@flex/logging";
+import { CloudFrontFunctionResponse } from "./types";
 
 const FAIL_FAST_SERVICE_NAME = "fail-fast-cloudfront-function";
 const logger = getLogger({

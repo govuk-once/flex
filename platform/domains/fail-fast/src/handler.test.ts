@@ -1,9 +1,9 @@
+import { describe, expect, it } from "vitest";
 import {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
   buildCloudFrontFunctionErrorResponse,
 } from "@flex/testing";
-import { describe, expect, it } from "vitest";
 import { handler } from "./handler";
 
 const validHeader = "eyJoZWxsbyI6ICJ3b3JsZCJ9";
