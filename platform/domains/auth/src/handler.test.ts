@@ -5,16 +5,15 @@ import {
   examplePublicJWKS,
   it,
 } from "@flex/testing";
-import type { Context } from "aws-lambda";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { getConfig } from "./config";
 import { handler } from "./handler";
 
-vi.mock("./config", async () => {
+vi.mock("./config", () => {
   return {
-    getConfig: vi.fn(async () => ({
+    getConfig: vi.fn(() => ({
       AWS_REGION: "eu-west-2",
       USERPOOL_ID: "eu-west-2_testUserPoolId",
       CLIENT_ID: "testClientId",
@@ -45,7 +44,6 @@ describe("Authorizer Handler", () => {
 
     it("throws an error when an invalid JWT token is provided", async ({
       authorizerEvent,
-      authorizerResult,
     }) => {
       await expect(
         handler(authorizerEvent.withToken("invalid.jwt.token"), context),

@@ -6,6 +6,7 @@ import type {
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
+
 import { exampleValidJWT, exampleValidJWTUsername } from "./authorisation";
 
 // ----------------------------------------------------------------------------
