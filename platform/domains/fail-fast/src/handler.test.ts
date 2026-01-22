@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
   buildCloudFrontFunctionErrorResponse,
 } from "@flex/testing";
+import { describe, expect, it } from "vitest";
+
 import { handler } from "./handler";
 
 const validHeader = "eyJoZWxsbyI6ICJ3b3JsZCJ9";
@@ -43,51 +44,60 @@ describe("CloudFront Function Handler", () => {
     },
     {
       description: "fails with too many segments in auth header",
-      event: buildCloudFrontEventWithAuthorizationHeader("Bearer invalidtoken multipart"),
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        "Bearer invalidtoken multipart",
+      ),
       expected: buildCloudFrontFunctionErrorResponse(
         "Unauthorized: authentication header invalid",
       ),
     },
     {
       description: "fails with invalid JWT header",
-      event: buildCloudFrontEventWithAuthorizationHeader(`Bearer invalidHealder.${validBody}.${validSignature}`),
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        `Bearer invalidHealder.${validBody}.${validSignature}`,
+      ),
       expected: buildCloudFrontFunctionErrorResponse(
         "Unauthorized: token invalid",
       ),
     },
     {
       description: "fails with invalid JWT body",
-      event: buildCloudFrontEventWithAuthorizationHeader(`Bearer ${validHeader}.invalidBody.${validSignature}`),
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        `Bearer ${validHeader}.invalidBody.${validSignature}`,
+      ),
       expected: buildCloudFrontFunctionErrorResponse(
         "Unauthorized: token invalid",
       ),
     },
     {
-      description: "fails with authorization header with missing signature part",
-      event: buildCloudFrontEventWithAuthorizationHeader(`Bearer ${validHeader}.${validBody}`),
+      description:
+        "fails with authorization header with missing signature part",
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        `Bearer ${validHeader}.${validBody}`,
+      ),
       expected: buildCloudFrontFunctionErrorResponse(
         "Unauthorized: token invalid",
       ),
     },
     {
       description: "fails with authorization header with missing body",
-      event: buildCloudFrontEventWithAuthorizationHeader(`Bearer ${validHeader}`),
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        `Bearer ${validHeader}`,
+      ),
       expected: buildCloudFrontFunctionErrorResponse(
         "Unauthorized: token invalid",
       ),
     },
-  ])(
-    "$description",
-    ({ event, expected }) => {
-      const result = handler(event);
+  ])("$description", ({ event, expected }) => {
+    const result = handler(event);
 
-      expect(result).toEqual(expected);
-    },
-  );
+    expect(result).toEqual(expected);
+  });
 
   it("returns the original request when authorization header is present", () => {
-    const event =
-      buildCloudFrontEventWithAuthorizationHeader(`Bearer ${validToken}`);
+    const event = buildCloudFrontEventWithAuthorizationHeader(
+      `Bearer ${validToken}`,
+    );
     const result = handler(event);
 
     expect(result).toBe(event.request);

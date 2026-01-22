@@ -8,9 +8,9 @@
  * This TypeScript file will be compiled to plain JavaScript compatible with CloudFront Functions.
  * The handler function must be at the top level and will be transpiled to plain JavaScript.
  */
+import { getLogger } from "@flex/logging";
 import { CloudFrontFunctionsEvent } from "aws-lambda";
 
-import { getLogger } from "@flex/logging";
 import { CloudFrontFunctionResponse } from "./types";
 
 const FAIL_FAST_SERVICE_NAME = "fail-fast-cloudfront-function";
@@ -52,7 +52,6 @@ function tryParseJson(jsonString: string): Record<string, unknown> | null {
   }
 }
 
-
 /**
  * Decodes a JWT token into its constituent parts: header, body, and signature.
  *
@@ -63,45 +62,45 @@ function decodeJwt(token: string) {
   logger.debug("Decoding JWT token", token);
 
   // destructuring is not supported in CloudFront Functions, so we have to do it manually
-  const tokenParts = token.split('.');
+  const tokenParts = token.split(".");
   const header = tokenParts[0];
   const body = tokenParts[1];
   const signature = tokenParts[2];
   const rest = tokenParts.slice(3);
 
-  if(rest.length > 0) {
-    const message = 'Invalid JWT: too many segments';
+  if (rest.length > 0) {
+    const message = "Invalid JWT: too many segments";
     logger.error(message, JSON.stringify(rest));
     throw new Error(message);
   }
 
-  if(!header) {
-    const message = 'Invalid JWT: missing header';
+  if (!header) {
+    const message = "Invalid JWT: missing header";
     logger.error(message);
     throw new Error(message);
   }
 
-  if(!body) {
-    const message = 'Invalid JWT: missing body';
+  if (!body) {
+    const message = "Invalid JWT: missing body";
     logger.error(message);
     throw new Error(message);
   }
 
-  if(!signature) {
-    const message = 'Invalid JWT: missing signature';
+  if (!signature) {
+    const message = "Invalid JWT: missing signature";
     logger.error(message);
     throw new Error(message);
   }
 
-  const parsedHeader = tryParseJson(Buffer.from(header, 'base64').toString());
-  const parsedBody = tryParseJson(Buffer.from(body, 'base64').toString());
+  const parsedHeader = tryParseJson(Buffer.from(header, "base64").toString());
+  const parsedBody = tryParseJson(Buffer.from(body, "base64").toString());
 
-  if(!parsedHeader) {
-    throw new Error('Invalid JWT: header is not valid JSON');
+  if (!parsedHeader) {
+    throw new Error("Invalid JWT: header is not valid JSON");
   }
 
-  if(!parsedBody) {
-    throw new Error('Invalid JWT: body is not valid JSON');
+  if (!parsedBody) {
+    throw new Error("Invalid JWT: body is not valid JSON");
   }
 
   return {
@@ -137,17 +136,26 @@ export function handler(event: CloudFrontFunctionsEvent) {
 
   if (bearerLabel !== "Bearer") {
     logger.error("Authorization header does not start with 'Bearer'");
-    return generateErrorResponse(401, "Unauthorized: authentication header invalid");
+    return generateErrorResponse(
+      401,
+      "Unauthorized: authentication header invalid",
+    );
   }
 
   if (rest.length > 0) {
     logger.error("Authorization header has too many segments");
-    return generateErrorResponse(401, "Unauthorized: authentication header invalid");
+    return generateErrorResponse(
+      401,
+      "Unauthorized: authentication header invalid",
+    );
   }
 
   if (!token) {
     logger.error("No JWT token provided in authorization header");
-    return generateErrorResponse(401, "Unauthorized: authentication header invalid");
+    return generateErrorResponse(
+      401,
+      "Unauthorized: authentication header invalid",
+    );
   }
 
   try {
