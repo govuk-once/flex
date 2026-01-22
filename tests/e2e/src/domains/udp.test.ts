@@ -3,12 +3,13 @@ import { describe, expect, it } from "vitest";
 import { e2eEnv } from "../setup";
 
 describe("UDP domain", () => {
-  const apiGatewayUrl = e2eEnv.API_GATEWAY_URL;
+  const ingressUrl = e2eEnv.CLOUDFRONT_DISTRIBUTION_URL;
+  const ingressPath = "/1.0/app";
   const pairwiseId = "test-pairwise-id";
 
   describe("POST /post-login", () => {
     it("returns a 201 and creates a user", async () => {
-      const url = `${apiGatewayUrl}/post-login`;
+      const url = `${ingressUrl}${ingressPath}/post-login`;
       const token = "eyJy1";
       const response = await fetch(url, {
         method: "POST",
