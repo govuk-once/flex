@@ -34,7 +34,6 @@ const generateErrorResponse = (
   };
 };
 
-
 /**
  * Attempts to parse a JSON string and returns the resulting object or null if parsing fails.
  *
