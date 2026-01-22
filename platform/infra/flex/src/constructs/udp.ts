@@ -17,7 +17,7 @@ export class UdpDomain extends Construct {
     );
 
     routeGroup.addRoute(
-      "/post-login",
+      "/user",
       HttpMethod.POST,
       new HttpLambdaIntegration("PostLogin", postLoginFunction.function),
     );
