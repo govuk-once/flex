@@ -1,22 +1,13 @@
-import "./handler";
-
 import {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
   buildCloudFrontFunctionErrorResponse,
 } from "@flex/testing";
-import { CloudFrontFunctionsEvent } from "aws-lambda";
 import { describe, expect, it } from "vitest";
 
-import { CloudFrontFunctionResponse } from "./types";
+import { handler } from "./handler";
 
 describe("CloudFront Function Handler", () => {
-  const handler = (
-    globalThis as unknown as {
-      handler: (event: CloudFrontFunctionsEvent) => CloudFrontFunctionResponse;
-    }
-  ).handler;
-
   it.each([
     {
       event: buildCloudFrontEvent(),

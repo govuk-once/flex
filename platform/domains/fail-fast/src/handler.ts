@@ -30,7 +30,7 @@ const generateErrorResponse = (
 };
 
 // cloudfront function expects no export keyword
-function handler(event: CloudFrontFunctionsEvent) {
+export function handler(event: CloudFrontFunctionsEvent) {
   const authorizationHeader = event.request.headers.authorization;
   if (!authorizationHeader) {
     return generateErrorResponse(
