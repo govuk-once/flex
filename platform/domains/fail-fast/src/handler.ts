@@ -29,6 +29,51 @@ const generateErrorResponse = (
   };
 };
 
+function tryParseJson(jsonString: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(jsonString) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwt(token: string) {
+  const [header, body, signature, ...rest] = token.split('.');
+
+  if(rest.length > 0) {
+    throw new Error('Invalid JWT: too many segments');
+  }
+  
+  if(!header) {
+    throw new Error('Invalid JWT: missing header');
+  }
+
+  if(!body) {
+    throw new Error('Invalid JWT: missing body');
+  }
+
+  if(!signature) {
+    throw new Error('Invalid JWT: missing signature');
+  }
+
+  const parsedHeader = tryParseJson(Buffer.from(header, 'base64').toString());
+  const parsedBody = tryParseJson(Buffer.from(body, 'base64').toString());
+
+  if(!parsedHeader) {
+    throw new Error('Invalid JWT: header is not valid JSON');
+  }
+
+  if(!parsedBody) {
+    throw new Error('Invalid JWT: body is not valid JSON');
+  }
+
+  return {
+    header: JSON.parse(Buffer.from(header, 'base64').toString()) as Record<string, unknown>,
+    body: JSON.parse(Buffer.from(body, 'base64').toString()) as Record<string, unknown>,
+    signaturePresent: Boolean(signature),
+  };
+}
+
 export function handler(event: CloudFrontFunctionsEvent) {
   const authorizationHeader = event.request.headers.authorization;
   if (!authorizationHeader) {
@@ -38,10 +83,26 @@ export function handler(event: CloudFrontFunctionsEvent) {
     );
   }
 
-  const jwt = authorizationHeader.value.split(" ")[1];
+  const [bearerText, jwt, ...rest] = authorizationHeader.value.split(" ");
+
+  if (bearerText !== "Bearer") {
+    return generateErrorResponse(401, "Unauthorized: structural check failed");
+  }
+
+  if (rest.length > 0) {
+    return generateErrorResponse(401, "Unauthorized: structural check failed");
+  }
+
   if (!jwt) {
     return generateErrorResponse(401, "Unauthorized: structural check failed");
   }
+
+  try {
+    decodeJwt(jwt);
+  } catch (e) {
+    return generateErrorResponse(401, "Unauthorized: structural check failed");
+  }
+
 
   return event.request;
 }
