@@ -12,6 +12,10 @@ const e2eEnvSchema = z.object({
     .string()
     .url("API_GATEWAY_URL must be a valid URL")
     .describe("The base URL of the deployed API Gateway"),
+  CLOUDFRONT_DISTRIBUTION_URL: z
+    .string()
+    .url("CLOUDFRONT_DISTRIBUTION_URL must be a valid URL")
+    .describe("The base URL of the deployed Cloudfront Distribution"),
 });
 
 /**

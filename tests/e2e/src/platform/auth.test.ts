@@ -8,50 +8,61 @@ import { e2eEnv } from "../setup";
  * This test verifies that the API Gateway JWT authorizer correctly rejects
  * requests without a valid JWT token.
  */
-describe("API Gateway JWT Authorizer E2E", () => {
-  const apiGatewayUrl = e2eEnv.API_GATEWAY_URL;
+describe("authentication", () => {
+  const ingressUrl = e2eEnv.CLOUDFRONT_DISTRIBUTION_URL;
 
-  it("rejects request to /hello-public endpoint without a valid JWT token", async () => {
-    const url = `${apiGatewayUrl}/hello-public`;
+  describe("fail-fast", () => {
+    it("rejects request to cloudfront distribution without a structurally valid JWT token", async () => {
+      const response = await fetch(`${ingressUrl}/hello-public`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const responseText = await response.text();
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        // Intentionally omitting Authorization header
-      },
+      expect(response.status).toBe(401);
+      expect(responseText).toEqual(
+        "Unauthorized: no authorization header provided",
+      );
+      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
     });
 
-    // API Gateway with JWT authorizer should return 401 Unauthorized
-    // when no Authorization header is provided
-    expect(response.status).toBe(401);
+    it("rejects request to cloudfront distribution with a structurally invalid JWT token", async () => {
+      const response = await fetch(`${ingressUrl}/hello-public`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer `,
+        },
+      });
+      const responseText = await response.text();
 
-    // Verify the response indicates authentication is required
-    const responseText = await response.text();
-    expect(responseText).toEqual(
-      JSON.stringify({
-        message: "Unauthorized",
-      }),
-    );
+      expect(response.status).toBe(401);
+      expect(responseText).toEqual("Unauthorized: structural check failed");
+      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
+    });
   });
 
-  it("allows request to /hello-public endpoint with valid authorization header", async () => {
-    const url = `${apiGatewayUrl}/hello-public`;
-    const token = "eyJ2";
+  describe("authorizer", () => {
+    it("allows request to /hello-public endpoint with valid authorization header", async () => {
+      const url = `${ingressUrl}/hello-public`;
+      const token = "eyJ2";
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const responseText = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(responseText).toEqual(
+        JSON.stringify({ message: "Hello public world!" }),
+      );
     });
-
-    const responseText = await response.text();
-
-    expect(response.status).toBe(200);
-    expect(responseText).toEqual(
-      JSON.stringify({ message: "Hello public world!" }),
-    );
   });
 });
