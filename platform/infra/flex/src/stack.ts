@@ -13,6 +13,7 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { FlexAuthentication } from "./constructs/flex-authentication";
+import { FlexFailFast } from "./constructs/flex-fail-fast";
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
 import { FlexPublicFunction } from "./constructs/flex-public-function";
@@ -125,6 +126,11 @@ export class FlexPlatformStack extends GovUkOnceStack {
 
     new UdpDomain(this, "UdpDomain", httpApi);
 
+    const failFast = new FlexFailFast(this, "FailFast", httpApi);
+
     new CfnOutput(this, "HttpApiUrl", { value: httpApiUrl });
+    new CfnOutput(this, "CloudfrontDistributionUrl", {
+      value: `https://${failFast.distribution.distribution.distributionDomainName}`,
+    });
   }
 }

@@ -18,6 +18,9 @@ export type {
 export {
   authorizerEvent,
   authorizerResult,
+  buildCloudFrontEvent,
+  buildCloudFrontEventWithAuthorizationHeader,
+  buildCloudFrontFunctionErrorResponse,
   context,
   createAuthorizerEvent,
   createAuthorizerResult,
