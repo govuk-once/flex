@@ -8,8 +8,8 @@
     "lint": "eslint --max-warnings=0 ."
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.233.0",
-    "constructs": "^10.4.4"
+    "aws-cdk-lib": "2.233.0",
+    "constructs": "10.4.5"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
