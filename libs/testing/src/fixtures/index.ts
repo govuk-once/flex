@@ -18,10 +18,10 @@ export {
   event,
   eventWithAuthorizer,
 } from "./apigateway";
+export * from "./authorisation";
 export type { ContextOverrides } from "./lambda";
 export { context, createContext } from "./lambda";
 export type { MiddyRequest, MiddyRequestOverrides } from "./middy";
 export { createMiddyRequest, middyRequest } from "./middy";
 export type { ResponseOptions, StructuredResponse } from "./response";
 export { createResponse, response } from "./response";
-export * from "./authorisation";

@@ -10,9 +10,15 @@ export interface LoggerOptions {
 }
 
 function isValidLogLevel(level: string = ""): level is LogLevel {
-  return ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "SILENT", "CRITICAL"].includes(
-    level.toUpperCase(),
-  );
+  return [
+    "TRACE",
+    "DEBUG",
+    "INFO",
+    "WARN",
+    "ERROR",
+    "SILENT",
+    "CRITICAL",
+  ].includes(level.toUpperCase());
 }
 
 /**
@@ -31,7 +37,10 @@ export function getLogger(options?: LoggerOptions): Logger {
     return loggerInstance;
   }
 
-  const logLevel = options.logLevel?.toUpperCase() ?? process.env.LOG_LEVEL?.toUpperCase() ?? "INFO";
+  const logLevel =
+    options.logLevel?.toUpperCase() ??
+    process.env.LOG_LEVEL?.toUpperCase() ??
+    "INFO";
 
   return (loggerInstance = new Logger({
     logLevel: isValidLogLevel(logLevel) ? logLevel : "INFO",

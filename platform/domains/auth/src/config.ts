@@ -18,14 +18,6 @@ export const parsedConfigSchema = z.looseObject({
 
 export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
 
-type WithoutSuffix<T, SUFFIX extends string> = T extends `${infer P}${SUFFIX}` ? P : T;
-
-type RemoveParamNameSuffix<T> = {
-  [K in keyof T as WithoutSuffix<K, "_PARAM_NAME">]: T[K];
-};
-
-type Test = RemoveParamNameSuffix<RawConfig>;
-
 /**
  * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.
  * Renames the fields to remove the _PARAM_NAME suffix in the returned parsed configuration.
@@ -36,49 +28,59 @@ type Test = RemoveParamNameSuffix<RawConfig>;
 async function populateParameterFields(rawConfig: RawConfig) {
   const logger = getLogger();
 
-  const [parameterNames, nonParameterNames] = Object.entries(rawConfig).reduce<[Array<[string, string]>, Array<[string, string]>]>((acc, entry) => {
-    if (entry[0].endsWith('PARAM_NAME')) {
-      acc[0].push(entry as [string, string]);
-    } else {
-      acc[1].push(entry as [string, string]);
-    }
-    return acc;
-  }, [[], []]);
-
+  const [parameterNames, nonParameterNames] = Object.entries(rawConfig).reduce<
+    [Array<[string, string]>, Array<[string, string]>]
+  >(
+    (acc, entry) => {
+      if (entry[0].endsWith("PARAM_NAME")) {
+        acc[0].push(entry as [string, string]);
+      } else {
+        acc[1].push(entry as [string, string]);
+      }
+      return acc;
+    },
+    [[], []],
+  );
 
   const parameterStoreKeys = parameterNames.map(([_, value]) => value);
-  logger.debug("Fetching SSM parameters", { parameterNames: parameterStoreKeys });
+  logger.debug("Fetching SSM parameters", {
+    parameterNames: parameterStoreKeys,
+  });
 
-  const populatedParameters = await getParametersByName(Object.fromEntries(parameterStoreKeys.map(value => [value as string, {}])), { decrypt: true });
+  const populatedParameters = await getParametersByName(
+    Object.fromEntries(parameterStoreKeys.map((value) => [value, {}])),
+    { decrypt: true },
+  );
 
   const populatedConfigEntries = parameterNames.map(([key, parameterName]) => {
-    const parameterValue = populatedParameters[parameterName as string];
+    const parameterValue = populatedParameters[parameterName];
 
-    if (typeof parameterValue !== 'string') {
+    if (typeof parameterValue !== "string") {
       const message = `Parameter ${parameterName} not found or is not a string`;
       logger.error(message);
       throw new Error(message);
     }
 
-    return [key.replace('_PARAM_NAME', ''), parameterValue] as [string, string];
+    return [key.replace("_PARAM_NAME", ""), parameterValue] as [string, string];
   });
 
-  const parsedConfig = Object.fromEntries([...populatedConfigEntries, ...nonParameterNames]);
+  const parsedConfig = Object.fromEntries([
+    ...populatedConfigEntries,
+    ...nonParameterNames,
+  ]);
   const parsedConfigSchemaCheck = parsedConfigSchema.safeParse(parsedConfig);
 
   if (!parsedConfigSchemaCheck.success) {
     // Note: it should be impossible to get here if the schemas are correct, but we include this for type narrowing and belt-and-braces safety.
-    const message = `Invalid parsed configuration: ${z.treeifyError(parsedConfigSchemaCheck.error)}`;
+    const message = `Invalid parsed configuration: ${JSON.stringify(z.treeifyError(parsedConfigSchemaCheck.error))}`;
     logger.error(message);
-    throw new Error(
-      message,
-    );
-  };
+    throw new Error(message);
+  }
 
   return parsedConfigSchemaCheck.data;
 }
 
-let cachedConfig : ParsedConfig | null = null;
+let cachedConfig: ParsedConfig | null = null;
 
 /**
  * Retrieves the parsed configuration, using a cached version if available. Replaces any parameter name fields with their actual values from SSM.
@@ -93,16 +95,18 @@ export async function getConfig(): Promise<ParsedConfig> {
     return cachedConfig;
   }
 
-  logger.info("cachedConfig not found, building configuration from process.env and SSM");
+  logger.info(
+    "cachedConfig not found, building configuration from process.env and SSM",
+  );
   const rawConfigSchemaCheck = rawConfigSchema.safeParse(process.env);
 
   if (!rawConfigSchemaCheck.success) {
     const message = `Invalid raw configuration: ${JSON.stringify(z.treeifyError(rawConfigSchemaCheck.error))}`;
     logger.error(message);
-    throw new Error(
-      message,
-    );
+    throw new Error(message);
   }
 
-  return cachedConfig = await populateParameterFields(rawConfigSchemaCheck.data);
+  return (cachedConfig = await populateParameterFields(
+    rawConfigSchemaCheck.data,
+  ));
 }

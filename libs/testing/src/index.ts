@@ -28,9 +28,9 @@ export {
   createResponse,
   event,
   eventWithAuthorizer,
-  middyRequest,
-  response,
+  exampleInvalidJWTMissingUsername,
   examplePublicJWKS,
   exampleValidJWT,
-  exampleInvalidJWTMissingUsername
+  middyRequest,
+  response,
 } from "./fixtures";

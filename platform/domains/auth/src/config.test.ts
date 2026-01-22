@@ -1,12 +1,13 @@
-import { beforeEach, describe, expect, vi } from "vitest";
-import { getLogger } from "@flex/logging";
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
+import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
+import { beforeEach, describe, expect, vi } from "vitest";
+
 import { getConfig } from "./config";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
-getLogger({serviceName: "config_test"});
+getLogger({ serviceName: "config_test" });
 
 describe("Config", () => {
   beforeEach(() => {
@@ -15,7 +16,9 @@ describe("Config", () => {
 
   describe("getConfig", () => {
     describe("raw environment variable validation", () => {
-      it("throws an error if a required environment variable is missing", async ({ env }) => {
+      it("throws an error if a required environment variable is missing", async ({
+        env,
+      }) => {
         env.set({
           AWS_REGION: "us-east-1",
           USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -29,15 +32,17 @@ describe("Config", () => {
 
   describe("parameter fetching and parsed configuration validation", () => {
     const resolvedParamValues = {
-      "userpool_id_param": "us-east-1_123456789",
-      "client_id_param": "example-client-id-123",
+      userpool_id_param: "us-east-1_123456789",
+      client_id_param: "example-client-id-123",
     };
 
     beforeEach(() => {
       vi.resetAllMocks();
     });
 
-    it("returns the parsed configuration when all environment variables and parameters are valid", async ({ env }) => {
+    it("returns the parsed configuration when all environment variables and parameters are valid", async ({
+      env,
+    }) => {
       env.set({
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -48,11 +53,13 @@ describe("Config", () => {
 
       const config = await getConfig();
 
-      expect(config).toEqual(expect.objectContaining({
-        AWS_REGION: "us-east-1",
-        USERPOOL_ID: "us-east-1_123456789",
-        CLIENT_ID: "example-client-id-123",
-      }));
+      expect(config).toEqual(
+        expect.objectContaining({
+          AWS_REGION: "us-east-1",
+          USERPOOL_ID: "us-east-1_123456789",
+          CLIENT_ID: "example-client-id-123",
+        }),
+      );
     });
 
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
@@ -67,20 +74,22 @@ describe("Config", () => {
       });
 
       vi.mocked(getParametersByName).mockResolvedValueOnce({
-        "userpool_id_param": "us-east-1_123456789",
+        userpool_id_param: "us-east-1_123456789",
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      logging.getLogger({serviceName: "config_test"});
-      await expect(config.getConfig()).rejects.toThrow("Parameter client_id_param not found or is not a string");
+      logging.getLogger({ serviceName: "config_test" });
+      await expect(config.getConfig()).rejects.toThrow(
+        "Parameter client_id_param not found or is not a string",
+      );
     });
   });
 
   describe("caching behavior", () => {
     const resolvedParamValues = {
-      "userpool_id_param": "us-east-1_123456789",
-      "client_id_param": "example-client-id-123",
-      "redis_endpoint_param": "example.redis.cache.amazonaws.com:6379",
+      userpool_id_param: "us-east-1_123456789",
+      client_id_param: "example-client-id-123",
+      redis_endpoint_param: "example.redis.cache.amazonaws.com:6379",
     };
 
     beforeEach(() => {
@@ -100,7 +109,7 @@ describe("Config", () => {
       const config = await import("./config");
       const logging = await import("@flex/logging");
 
-      logging.getLogger({serviceName: "config_test"});
+      logging.getLogger({ serviceName: "config_test" });
 
       const firstConfig = await config.getConfig();
       const secondConfig = await config.getConfig();
