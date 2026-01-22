@@ -17,7 +17,7 @@ const flattenedTsConfigRules = tseslint.configs.recommendedTypeChecked.reduce(
  * @param {string} f - The filename to search for.
  * @returns {string | undefined} The directory path containing the file.
  */
-const findUpFileDir = (f) => findUpSync(f).slice(0, -f.length);
+const findUpFileDir = (f) => findUpSync(f)?.slice(0, -f.length);
 const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
 
 /**

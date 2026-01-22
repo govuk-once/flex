@@ -18,6 +18,7 @@ export {
   event,
   eventWithAuthorizer,
 } from "./apigateway";
+export * from "./authorisation";
 export {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
