@@ -31,7 +31,7 @@ export default config;
 ```json
 {
   "extends": "@flex/config/tsconfig.json",
-  "include": ["src/**/*.ts", "eslint.config.mjs", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "vitest.config.ts"]
 }
 ```
 

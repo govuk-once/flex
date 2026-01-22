@@ -1,44 +1,12 @@
-import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { createLambdaHandler } from "@flex/handlers";
+import { getLogger } from "@flex/logging";
+import { CognitoJwtVerifier } from "aws-jwt-verify";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
 
-import { callCognitoJwksEndpoint } from "./jwks";
-import { createRedisClient, type RedisClient } from "./redis";
-
-/**
- * Redis client singleton - reused across Lambda invocations
- */
-let redisClient: RedisClient | null = null;
-
-/**
- * Gets or creates the Redis client instance
- */
-async function getRedisClient(): Promise<RedisClient> {
-  if (redisClient) {
-    return redisClient;
-  }
-
-  const endpoint = await getParameter(
-    process.env.REDIS_ENDPOINT_PARAMETER_NAME!, // TODO: add type guard
-  );
-
-  if (!endpoint || typeof endpoint !== "string") {
-    throw new Error("Redis endpoint parameter not found or invalid");
-  }
-
-  redisClient = createRedisClient(endpoint);
-  return redisClient;
-}
-
-/**
- * Resets the Redis client singleton (for testing purposes)
- */
-export function resetRedisClient(): void {
-  redisClient = null;
-}
+import { getConfig } from "./config";
 
 /**
  * Lambda authorizer handler for API Gateway HTTP API
@@ -49,43 +17,39 @@ const handler = createLambdaHandler<
   APIGatewayRequestAuthorizerEventV2,
   APIGatewayAuthorizerResult
 >(
-  async (): Promise<APIGatewayAuthorizerResult> => {
+  async (
+    event: APIGatewayRequestAuthorizerEventV2,
+  ): Promise<APIGatewayAuthorizerResult> => {
+    const logger = getLogger();
+
+    const jwt = event.headers?.authorization?.split(" ")[1];
+    if (!jwt) {
+      logger.error("No authorization token provided");
+      throw new Error("No authorization token provided");
+    }
+
+    const config = await getConfig();
+
+    const verifier = CognitoJwtVerifier.create({
+      userPoolId: config.USERPOOL_ID,
+      tokenUse: "access",
+      clientId: config.CLIENT_ID,
+    });
+
     try {
-      const userPoolId = await getParameter(
-        process.env.USER_POOL_ID_PARAMETER_NAME!, // TODO: add type guard
-      );
+      const decodedJwt = await verifier.verify(jwt);
+      logger.info("JWT verification successful");
 
-      if (!userPoolId || typeof userPoolId !== "string") {
-        throw new Error("User pool ID parameter not found or invalid");
+      const pairwiseId = decodedJwt.username;
+      if (!pairwiseId) {
+        const message = "Pairwise ID (username) not found in JWT";
+        logger.error(message);
+        throw new Error(message);
       }
-
-      // Demonstrate the ability to call out to a public JWKS endpoint.
-      // In a real implementation this would be a configurable JWKS URL
-      // for the upstream identity provider.
-      const jwks = await callCognitoJwksEndpoint(userPoolId, "eu-west-2");
-      console.log("Fetched Cognito JWKS", { jwks });
-
-      // Proof of data in Redis
-      const client = await getRedisClient();
-      const cacheKey = `auth:${1}`;
-      if (await client.get(cacheKey)) {
-        console.log("Cache key already exists", { cacheKey });
-      } else {
-        await client.set(
-          cacheKey,
-          JSON.stringify({ timestamp: Date.now() }),
-          300,
-        );
-      }
-      console.log("Set cache key", { cacheKey });
-      const cachedValue = await client.get(cacheKey);
-      console.log("Authorizer handler", { cachedValue });
+      logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
       return Promise.resolve({
         principalId: "anonymous",
-        context: {
-          pairwiseId: "test-pairwise-id",
-        },
         policyDocument: {
           Version: "2012-10-17",
           Statement: [
@@ -96,14 +60,16 @@ const handler = createLambdaHandler<
             },
           ],
         },
+        context: {
+          pairwiseId,
+        },
       });
     } catch (error) {
-      console.error("Authorizer handler error", { error });
-      throw error;
+      logger.error("JWT verification failed", { error });
+      throw new Error(`Invalid JWT: ${(error as Error).message}`);
     }
   },
   {
-    logLevel: "INFO",
     serviceName: "auth-authorizer",
   },
 );

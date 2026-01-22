@@ -17,7 +17,7 @@ const flattenedTsConfigRules = tseslint.configs.recommendedTypeChecked.reduce(
  * @param {string} f - The filename to search for.
  * @returns {string | undefined} The directory path containing the file.
  */
-const findUpFileDir = (f) => findUpSync(f).slice(0, -f.length);
+const findUpFileDir = (f) => findUpSync(f)?.slice(0, -f.length);
 const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
 
 /**
@@ -28,7 +28,18 @@ export const config = [
     ignores: gitignoreFiles,
   },
   {
-    files: ["**/*.ts", "**/*.js", "**/*.mjs"],
+    files: ["**/*.js", "**/*.mjs"],
+    plugins: {
+      "simple-import-sort": simpleImportSort,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+    },
+  },
+  {
+    files: ["**/*.ts"],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {

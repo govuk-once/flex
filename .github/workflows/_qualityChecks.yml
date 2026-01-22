@@ -23,7 +23,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
-      ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      STAGE: ${{ inputs.ENVIRONMENT }}
 
     steps:
       - name: Checkout repo
