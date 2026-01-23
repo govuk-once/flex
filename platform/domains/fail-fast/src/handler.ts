@@ -35,6 +35,10 @@ const generateErrorResponse = (
   };
 };
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 /**
  * Attempts to parse a JSON string and returns the resulting object or null if parsing fails.
  *
@@ -42,10 +46,14 @@ const generateErrorResponse = (
  * @returns The parsed object or null if parsing fails.
  */
 function tryParseJson(jsonString: string): Record<string, unknown> | null {
-  logger.debug("Attempting to parse JSON string", jsonString);
-
   try {
-    return JSON.parse(jsonString) as Record<string, unknown>;
+    const obj: unknown = JSON.parse(jsonString);
+    if (!isObject(obj)) {
+      logger.debug("Parsed JSON is not an object");
+      return null;
+    }
+
+    return obj;
   } catch {
     logger.debug("Failed to parse JSON string");
     return null;
@@ -59,8 +67,6 @@ function tryParseJson(jsonString: string): Record<string, unknown> | null {
  * @returns An object containing the decoded header, body, and a flag indicating if the signature is present.
  */
 function decodeJwt(token: string) {
-  logger.debug("Decoding JWT token", token);
-
   // destructuring is not supported in CloudFront Functions, so we have to do it manually
   const tokenParts = token.split(".");
   const header = tokenParts[0];
@@ -117,9 +123,8 @@ function decodeJwt(token: string) {
  * @returns either the original request if checks pass or an error response if checks fail
  */
 export function handler(event: CloudFrontFunctionsEvent) {
-  logger.debug("Received event", JSON.stringify(event));
-
   const authorizationHeader = event.request.headers.authorization;
+
   if (!authorizationHeader) {
     logger.error("No authorization header provided");
     return generateErrorResponse(
@@ -165,6 +170,5 @@ export function handler(event: CloudFrontFunctionsEvent) {
     return generateErrorResponse(401, "Unauthorized: token invalid");
   }
 
-  logger.info("Request passed fail-fast checks");
   return event.request;
 }

@@ -88,6 +88,16 @@ describe("CloudFront Function Handler", () => {
         "Unauthorized: token invalid",
       ),
     },
+    {
+      description:
+        "fails when payload is valid JSON but not an object (e.g. a number)",
+      event: buildCloudFrontEventWithAuthorizationHeader(
+        `Bearer ${validHeader}.MTIzNDU=.${validSignature}`,
+      ),
+      expected: buildCloudFrontFunctionErrorResponse(
+        "Unauthorized: token invalid",
+      ),
+    },
   ])("$description", ({ event, expected }) => {
     const result = handler(event);
 
