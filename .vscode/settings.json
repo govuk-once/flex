@@ -6,7 +6,7 @@
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
   "[html]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
