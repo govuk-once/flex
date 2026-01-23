@@ -9,8 +9,8 @@ jobs:
     name: Quality Checks
     uses: ./.github/workflows/_qualityChecks.yml
     with:
-      ENVIRONMENT: 'development'
       AWS_REGION: 'eu-west-2'
+      STAGE: 'development'
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
@@ -19,8 +19,8 @@ jobs:
     needs: qualityChecks
     uses: ./.github/workflows/_buildDeploy.yml
     with:
-      ENVIRONMENT: 'development'
       AWS_REGION: 'eu-west-2'
+      STAGE: 'development'
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
@@ -29,7 +29,7 @@ jobs:
     needs: deployDev
     uses: ./.github/workflows/_buildDeploy.yml
     with:
-      ENVIRONMENT: 'staging'
       AWS_REGION: 'eu-west-2'
+      STAGE: 'staging'
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}

@@ -24,7 +24,6 @@ interface GovUkOnceStackProps {
 
 enum Environment {
   DEVELOPMENT = "development",
-  INTEGRATION = "integration",
   STAGING = "staging",
   PRODUCTION = "production",
 }
@@ -38,21 +37,9 @@ function sanitizeStageName(branch?: string): string | undefined {
   }
 }
 
-function getEnvironment(): Environment | string | null {
-  const env = process.env.STAGE;
-  if (!env) return null;
-
-  // Check strict Enum matches (Development, Production, etc.)
-  const envs = Object.values(Environment) as string[];
-  if (envs.includes(env)) return env as Environment;
-
-  // Check for PR pattern (e.g. "pr-123")
-  const prRegex = /^pr-\d+$/;
-  if (prRegex.test(env)) return env;
-
-  throw new Error(
-    `ENVIRONMENT env var not recognised. Value: "${env}". Expected standard Environment or 'pr-{number}' pattern.`,
-  );
+function isEnvironment(value?: string): value is Environment {
+  if (!value) return false;
+  return Object.values(Environment).includes(value as Environment);
 }
 
 /**
@@ -65,13 +52,13 @@ export function getEnvConfig() {
     throw new Error("STAGE or USER env var not set");
   }
 
-  // Returns true if stage exists in Environment, false otherwise
-  const persistent = (Object.values(Environment) as string[]).includes(stage);
+  const persistent = isEnvironment(stage);
 
   return {
+    // For non persistent stages we default to development environment
     environment: persistent ? stage : Environment.DEVELOPMENT,
     stage,
-    persistent: true,
+    persistent,
   };
 }
 
@@ -84,15 +71,9 @@ export function getStackName(stack: string): string {
 }
 
 export class GovUkOnceStack extends cdk.Stack {
-  public getResourceName = (component: string) => {
-    const { stackName } = cdk.Stack.of(this);
-    return `${stackName}-${component}`; // Stack name should include stage
-  };
-
   private addStackTags = (tags: TagOptions) => {
-    // For developer stages we default to development environment
-    const env = getEnvironment() ?? Environment.DEVELOPMENT;
-    cdk.Tags.of(this).add("Environment", env);
+    const { environment } = getEnvConfig();
+    cdk.Tags.of(this).add("Environment", environment, { priority: 100 });
 
     Object.entries(tags).forEach(([k, v]) => {
       if (typeof v === "string") {

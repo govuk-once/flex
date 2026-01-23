@@ -3,14 +3,13 @@ name: Quality Checks
 on:
   workflow_call:
     inputs:
-      ENVIRONMENT:
-        description: "AWS Environment to deploy"
-        type: string
-        required: true
-        default: "development"
       AWS_REGION:
         description: "AWS Region to deploy to"
         type: string
+      STAGE:
+        description: "Development stage"
+        type: string
+        required: true
     secrets:
       ROLE_TO_ASSUME:
         description: "AWS deployment role to assume"
@@ -23,7 +22,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with AWS
     env:
-      STAGE: ${{ inputs.ENVIRONMENT }}
+      STAGE: ${{ inputs.STAGE }}
 
     steps:
       - name: Checkout repo
@@ -47,7 +46,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.AWS_REGION }}
-          role-session-name: ${{ github.event.repository.name }}-${{ inputs.ENVIRONMENT }}
+          role-session-name: ${{ github.run_id }}
 
       - name: Run Hygiene & Security Checks
         run: SKIP=semgrep pre-commit run --all-files --show-diff-on-failure

@@ -2,7 +2,7 @@ import {
   importRedisEndpointFromSsm,
   importVpcDetailsFromSsm,
 } from "@platform/core/outputs";
-import { importAuthParametersFromSsm } from "@platform/parameter/outputs";
+import { getEnvConfig } from "@platform/gov-uk-once";
 import { Duration } from "aws-cdk-lib";
 import { HttpLambdaAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
@@ -11,6 +11,8 @@ import { Construct } from "constructs";
 
 import { getPlatformEntry } from "../utils/getEntry";
 import { FlexPrivateEgressFunction } from "./flex-private-egress-function";
+
+const { environment } = getEnvConfig();
 
 export class FlexAuthentication extends Construct {
   public readonly authorizer: HttpLambdaAuthorizer;
@@ -26,16 +28,15 @@ export class FlexAuthentication extends Construct {
     const vpcDetails = importVpcDetailsFromSsm(this);
     this.lambdaSecurityGroup = vpcDetails.securityGroups.privateEgress;
 
-    const authParameters = importAuthParametersFromSsm();
     this.userPoolId = ssm.StringParameter.fromStringParameterName(
       this,
       "UserPoolId",
-      authParameters.userPoolId,
+      `/${environment}/flex-param/auth/user-pool-id`,
     );
     this.clientId = ssm.StringParameter.fromStringParameterName(
       this,
       "ClientId",
-      authParameters.clientId,
+      `/${environment}/flex-param/auth/client-id`,
     );
 
     // Import Redis endpoint from core stack
