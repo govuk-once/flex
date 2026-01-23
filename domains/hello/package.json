@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@flex/handlers": "workspace:*",
+    "aws-sigv4-fetch": "4.4.1",
     "zod": "4.3.5"
   },
   "devDependencies": {

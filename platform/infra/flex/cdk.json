@@ -2,10 +2,10 @@
   "app": "tsx src/app.ts",
   "watch": {
     "include": [
-      "../../domains/*/src/**/get.ts",
-      "../../domains/*/src/**/post.ts",
-      "../../domains/*/src/**/put.ts",
-      "../../domains/*/src/**/delete.ts"
+      "../../../domains/*/src/**/get.ts",
+      "../../../domains/*/src/**/post.ts",
+      "../../../domains/*/src/**/put.ts",
+      "../../../domains/*/src/**/delete.ts"
     ]
   },
   "quiet": true,

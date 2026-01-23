@@ -5,11 +5,9 @@
     "./outputs": "./src/outputs.ts"
   },
   "scripts": {
-    "deploy": "cdk deploy --all",
-    "synth": "cdk synth",
-    "diff": "cdk diff",
     "lint": "eslint --max-warnings=0 .",
-    "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
+    "deploy": "scripts/stage_guard.sh cdk deploy --all",
+    "checkov": "STAGE=development cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "dependencies": {
     "@platform/gov-uk-once": "workspace:*",

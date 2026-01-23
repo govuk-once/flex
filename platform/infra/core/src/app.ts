@@ -3,14 +3,14 @@ import * as cdk from "aws-cdk-lib";
 
 import { FlexCoreStack } from "./stack";
 
-const app = new cdk.App();
+const { persistent } = getEnvConfig();
 
-const envConfig = getEnvConfig();
-
-if (!envConfig.persistent) {
+if (!persistent) {
   throw new Error(
-    "This is a persistent env and must be deployed with an approved ENVIRONMENT",
+    "Skipping deployment: This is a persistent stack and will only be deployed when STAGE is set to an approved stack",
   );
 }
 
-new FlexCoreStack(app, { id: getStackName("FlexCore"), enableNat: true });
+const app = new cdk.App();
+
+new FlexCoreStack(app, getStackName("FlexCore"));

@@ -1,4 +1,7 @@
-import { importVpcDetailsFromSsm } from "@platform/core/outputs";
+import {
+  importSecurityGroupFromSsm,
+  importVpcFromSsm,
+} from "@platform/core/outputs";
 import { Tags } from "aws-cdk-lib";
 import { SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
@@ -18,14 +21,18 @@ export class FlexPrivateEgressFunction extends Construct {
       retention: RetentionDays.ONE_WEEK,
     });
 
-    const { securityGroups, vpc } = importVpcDetailsFromSsm(this);
+    const vpc = importVpcFromSsm(this, "/flex-core/vpc");
+    const privateEgressSg = importSecurityGroupFromSsm(
+      this,
+      "/flex-core/security-group/private-egress",
+    );
 
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       ...functionProps,
       logGroup,
-      securityGroups: [securityGroups.privateEgress],
+      securityGroups: [privateEgressSg],
       vpc,
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_WITH_EGRESS,

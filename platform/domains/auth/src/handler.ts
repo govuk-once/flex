@@ -6,6 +6,7 @@ import type {
   APIGatewayAuthorizerResult,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
+import createHttpError from "http-errors";
 import z from "zod";
 
 export const configSchema = z.looseObject({

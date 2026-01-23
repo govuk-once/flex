@@ -31,12 +31,12 @@ There are two types of stages:
 
 ### 1. Persistent Environments (for CI/CD)
 
-These are long-running environments like `development`, `staging`, or `production`. The stage name is determined by the `ENVIRONMENT` environment variable.
+These are long-running environments like `development`, `staging`, or `production`. The stage name is determined by the `STAGE` environment variable.
 
 **Example: Deploy all stacks to the `development` environment**
 
 ```bash
-ENVIRONMENT=development pnpm run deploy
+STAGE=development pnpm run deploy
 ```
 
 ### 2. Ephemeral Environments (for Developers)
