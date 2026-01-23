@@ -75,3 +75,26 @@ export const AuthenticatedHeaders = TracingHeaders.extend({
     authorization: "Bearer [token]",
   },
 });
+
+// ============================================================================
+// AWS
+// ============================================================================
+
+export const ApiGatewayUrlSchema = z.url({
+  protocol: /^https$/,
+  hostname: /^[a-z0-9]+\.execute-api\.[a-z0-9-]+\.amazonaws\.com$/,
+  message:
+    "Must be a valid API Gateway URL (https://{id}.execute-api.{region}.amazonaws.com)",
+});
+
+export type ApiGatewayUrl = z.output<typeof ApiGatewayUrlSchema>;
+
+export const CloudfrontDistributionUrlSchema = z.url({
+  protocol: /^https$/,
+  hostname: /^[a-z0-9]+\.cloudfront\.net$/,
+  message: "Must be a valid CloudFront URL (https://{id}.cloudfront.net)",
+});
+
+export type CloudfrontDistributionUrl = z.output<
+  typeof CloudfrontDistributionUrlSchema
+>;

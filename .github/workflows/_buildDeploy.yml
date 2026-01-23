@@ -56,3 +56,8 @@ jobs:
 
       - name: Deploy FLEX Flex AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
+
+      - name: E2E tests
+        env:
+          STAGE: ${{ env.STAGE }}
+        run: pnpm --filter @flex/e2e test:e2e

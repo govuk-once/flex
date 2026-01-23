@@ -8,7 +8,7 @@ export const rawConfigSchema = z.looseObject({
   CLIENT_ID_PARAM_NAME: z.string().min(1),
 });
 
-export type RawConfig = z.infer<typeof rawConfigSchema>;
+export type RawConfig = z.output<typeof rawConfigSchema>;
 
 export const parsedConfigSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
@@ -16,7 +16,7 @@ export const parsedConfigSchema = z.looseObject({
   CLIENT_ID: z.string().min(1),
 });
 
-export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
+export type ParsedConfig = z.output<typeof parsedConfigSchema>;
 
 /**
  * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.

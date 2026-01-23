@@ -1,4 +1,5 @@
-import type { DeepPartial } from "@flex/utils";
+import type { DeepPartial, QueryParams } from "@flex/utils";
+import { extractQueryParams } from "@flex/utils";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayProxyEventV2,
@@ -10,39 +11,15 @@ import { mergeDeepLeft } from "ramda";
 import { exampleValidJWT, exampleValidJWTUsername } from "./authorisation";
 
 // ----------------------------------------------------------------------------
-// Shared
-// ----------------------------------------------------------------------------
-
-type QueryParams = Record<
-  string,
-  string | number | boolean | Array<string | number | boolean>
->;
-
-interface BaseRequestOptions {
-  headers?: Record<string, string>;
-  params?: QueryParams;
-}
-
-export type RequestOptions<TBody = never> = BaseRequestOptions &
-  ([TBody] extends [never] ? { body?: never } : { body: TBody });
-
-function extractQueryParams(params: QueryParams = {}) {
-  const searchParams = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) =>
-    (Array.isArray(value) ? value : [value]).forEach((v) =>
-      searchParams.append(key, String(v)),
-    ),
-  );
-
-  return [searchParams.toString(), Object.fromEntries(searchParams)] as const;
-}
-
-// ----------------------------------------------------------------------------
 // Event (HTTP API V2)
 // ----------------------------------------------------------------------------
 
 export type EventOverrides = DeepPartial<APIGatewayProxyEventV2>;
+
+export type EventRequestOptions<TBody = never> = {
+  headers?: Record<string, string>;
+  params?: QueryParams;
+} & ([TBody] extends [never] ? { body?: never } : { body: TBody });
 
 const baseEvent: APIGatewayProxyEventV2 = {
   version: "2.0",
@@ -78,7 +55,7 @@ function buildEvent(overrides: EventOverrides = {}) {
 function buildEventRequest<T>(
   method: string,
   path: string,
-  options: RequestOptions<T>,
+  options: EventRequestOptions<T>,
 ) {
   const { body, headers, params } = options;
 
@@ -103,15 +80,15 @@ function buildEventRequest<T>(
 export function createEvent() {
   return {
     create: (overrides?: EventOverrides) => buildEvent(overrides),
-    get: (path: string, options: RequestOptions = {}) =>
+    get: (path: string, options: EventRequestOptions = {}) =>
       buildEventRequest("GET", path, options),
-    post: <T>(path: string, options: RequestOptions<T>) =>
+    post: <T>(path: string, options: EventRequestOptions<T>) =>
       buildEventRequest("POST", path, options),
-    put: <T>(path: string, options: RequestOptions<T>) =>
+    put: <T>(path: string, options: EventRequestOptions<T>) =>
       buildEventRequest("PUT", path, options),
-    patch: <T>(path: string, options: RequestOptions<T>) =>
+    patch: <T>(path: string, options: EventRequestOptions<T>) =>
       buildEventRequest("PATCH", path, options),
-    delete: (path: string, options: RequestOptions = {}) =>
+    delete: (path: string, options: EventRequestOptions = {}) =>
       buildEventRequest("DELETE", path, options),
   } as const;
 }
@@ -134,14 +111,16 @@ export type EventWithAuthorizerOverrides<
   T extends AuthorizerContext = AuthorizerContext,
 > = DeepPartial<EventWithAuthorizer<T>>;
 
+const baseEventWithAuthorizer = buildEvent({
+  requestContext: { authorizer: { lambda: {} } },
+} as EventOverrides);
+
 function buildEventWithAuthorizer<
   T extends AuthorizerContext = AuthorizerContext,
 >(overrides: EventWithAuthorizerOverrides<T> = {}) {
   return mergeDeepLeft(
     overrides,
-    buildEvent({
-      requestContext: { authorizer: { lambda: {} as T } },
-    } as EventOverrides),
+    baseEventWithAuthorizer,
   ) as EventWithAuthorizer<T>;
 }
 
