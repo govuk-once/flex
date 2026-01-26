@@ -12,7 +12,9 @@
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "3.975.0",
     "@flex/config": "workspace:*",
+    "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "25.0.9",
     "dotenv": "17.2.3",

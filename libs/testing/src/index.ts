@@ -11,7 +11,6 @@ export type {
   EventWithAuthorizerOverrides,
   MiddyRequest,
   MiddyRequestOverrides,
-  RequestOptions,
   ResponseOptions,
   StructuredResponse,
 } from "./fixtures";
@@ -34,6 +33,7 @@ export {
   exampleInvalidJWTMissingUsername,
   examplePublicJWKS,
   exampleValidJWT,
+  exampleValidJWTUsername,
   middyRequest,
   response,
 } from "./fixtures";

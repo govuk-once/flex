@@ -1,3 +1,5 @@
+export type { ApiResponse } from "./api";
+export { createApi } from "./api";
 export type {
   AuthorizerContext,
   AuthorizerEventOverrides,
@@ -6,7 +8,6 @@ export type {
   EventOverrides,
   EventWithAuthorizer,
   EventWithAuthorizerOverrides,
-  RequestOptions,
 } from "./apigateway";
 export {
   authorizerEvent,

@@ -1,32 +1,60 @@
-import { describe, expect, it } from "vitest";
-
-import { e2eEnv } from "../setup";
+import { it } from "@flex/testing/e2e";
+import { describe, expect } from "vitest";
 
 describe("UDP domain", () => {
-  const ingressUrl = e2eEnv.CLOUDFRONT_DISTRIBUTION_URL;
   const ingressPath = "/1.0/app";
-  const pairwiseId = "test-pairwise-id";
+  const endpoint = `${ingressPath}/user`;
+  const user = { name: "John Doe" };
 
-  describe("POST /user", () => {
-    it("returns a 201 and creates a user", async () => {
-      const url = `${ingressUrl}${ingressPath}/user`;
-      const token = "eyJy1";
+  it("rejects request at CloudFront when unauthenticated", async ({
+    cloudfront,
+  }) => {
+    const response = await cloudfront.client.post(endpoint, {
+      body: user,
+    });
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    expect(response.headers.get("apigw-requestid")).toBeNull();
+    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
+    expect(response).toMatchObject({
+      status: 401,
+      statusText: "Unauthorized",
+      body: "Unauthorized: no authorization header provided",
+    });
+  });
 
-      const body = await response.json();
+  it("rejects request at CloudFront when Bearer token is empty", async ({
+    cloudfront,
+  }) => {
+    const response = await cloudfront.client.post(endpoint, {
+      body: user,
+      headers: { Authorization: "Bearer " },
+    });
 
-      expect(response.status).toBe(201);
-      expect(body).toEqual({
+    expect(response.headers.get("apigw-requestid")).toBeNull();
+    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
+    expect(response).toMatchObject({
+      status: 401,
+      statusText: "Unauthorized",
+      body: "Unauthorized: structural check failed",
+    });
+  });
+
+  it.todo("returns a 201 and creates a user", async ({ cloudfront }) => {
+    // TODO: Replace with expired test user token
+    const token = "todo.valid.token";
+    const pairwiseId = "todo.pairwise.id";
+
+    const response = await cloudfront.client.post(endpoint, {
+      body: user,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    expect(response).toMatchObject({
+      status: 201,
+      body: {
         message: "User created successfully!",
         userId: pairwiseId,
-      });
+      },
     });
   });
 });

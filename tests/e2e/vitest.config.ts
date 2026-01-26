@@ -1,12 +1,11 @@
-import { defineConfig } from "vitest/config";
+import { config } from "@flex/config/vitest";
+import { defineConfig, mergeConfig } from "vitest/config";
 
-export default defineConfig({
-  test: {
-    environment: "node",
-    setupFiles: ["./src/setup.ts"],
-    coverage: {
-      provider: "v8",
-      reportsDirectory: "./coverage",
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      globalSetup: "./src/setup.global.ts",
     },
-  },
-});
+  }),
+);
