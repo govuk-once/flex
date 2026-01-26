@@ -10,6 +10,7 @@ export class FlexParameterStack extends GovUkOnceStack {
         Product: "GOV.UK",
         System: "FLEX",
         Owner: "",
+        ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
     });

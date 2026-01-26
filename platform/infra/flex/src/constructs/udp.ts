@@ -12,7 +12,10 @@ export class UdpDomain extends Construct {
     const postLoginFunction = new FlexPrivateIsolatedFunction(
       this,
       "PostLoginFunction",
-      { entry: getEntry("udp", "handlers/post-login/post.ts") },
+      {
+        entry: getEntry("udp", "handlers/post-login/post.ts"),
+        domain: "udp",
+      },
     );
 
     httpApi.addRoutes({

@@ -73,6 +73,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
         Product: "GOV.UK",
         System: "FLEX",
         Owner: "",
+        ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
     });
@@ -82,7 +83,10 @@ export class FlexPlatformStack extends GovUkOnceStack {
     const helloPublicFunction = new FlexPublicFunction(
       this,
       "HelloPublicFunction",
-      { entry: getEntry("hello", "handlers/hello-public/get.ts") },
+      {
+        entry: getEntry("hello", "handlers/hello-public/get.ts"),
+        domain: "hello",
+      },
     );
 
     httpApi.addRoutes({
@@ -97,7 +101,10 @@ export class FlexPlatformStack extends GovUkOnceStack {
     const helloPrivateFunction = new FlexPrivateEgressFunction(
       this,
       "HelloPrivateFunction",
-      { entry: getEntry("hello", "handlers/hello-private/get.ts") },
+      {
+        entry: getEntry("hello", "handlers/hello-private/get.ts"),
+        domain: "hello",
+      },
     );
 
     httpApi.addRoutes({
@@ -112,7 +119,10 @@ export class FlexPlatformStack extends GovUkOnceStack {
     const helloIsolatedFunction = new FlexPrivateIsolatedFunction(
       this,
       "HelloIsolatedFunction",
-      { entry: getEntry("hello", "handlers/hello-isolated/get.ts") },
+      {
+        entry: getEntry("hello", "handlers/hello-isolated/get.ts"),
+        domain: "hello",
+      },
     );
 
     httpApi.addRoutes({
