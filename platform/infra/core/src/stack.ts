@@ -169,6 +169,7 @@ export class FlexCoreStack extends GovUkOnceStack {
         Product: "GOV.UK",
         System: "FLEX",
         Owner: "",
+        ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
     });

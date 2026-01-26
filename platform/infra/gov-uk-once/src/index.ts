@@ -6,6 +6,7 @@ interface TagOptions {
   readonly Product: string;
   readonly System: string;
   readonly Owner: string;
+  readonly ResourceOwner: string;
   readonly Service?: string;
   readonly Source?: string;
   readonly Exposure?: string;

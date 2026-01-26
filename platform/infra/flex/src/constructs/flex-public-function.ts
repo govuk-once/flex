@@ -1,3 +1,4 @@
+import { Tags } from "aws-cdk-lib";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -21,5 +22,11 @@ export class FlexPublicFunction extends Construct {
       ...functionProps,
       logGroup,
     });
+
+    if (functionProps.domain) {
+      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
+        priority: 200,
+      });
+    }
   }
 }
