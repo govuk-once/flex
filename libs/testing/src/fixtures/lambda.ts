@@ -20,14 +20,51 @@ const baseContext: Context = {
   succeed: () => {},
 };
 
-function buildContext(overrides: ContextOverrides = {}) {
-  return mergeDeepLeft(overrides, baseContext) as Context;
+function buildContext<T extends Context = Context>(
+  overrides: DeepPartial<T> = {} as DeepPartial<T>,
+): T {
+  return mergeDeepLeft(overrides, baseContext) as unknown as T;
 }
 
-export function createContext() {
+export interface ContextWithPairwiseId extends Context {
+  pairwiseId: string;
+}
+
+export interface ContextWithSecret extends Context {
+  secretKey: string;
+}
+
+export function createContext<T extends Context = Context>(
+  overrides: DeepPartial<T> = {} as DeepPartial<T>,
+) {
+  const withOverrides = <U extends Context>(next: DeepPartial<U>) =>
+    createContext<U>(next);
+
   return {
-    create: (overrides?: ContextOverrides) => buildContext(overrides),
+    create(extraOverrides?: DeepPartial<T>) {
+      // Final, accumulated overrides win over later `create`-time overrides
+      return buildContext({
+        ...overrides,
+        ...extraOverrides,
+      } as DeepPartial<T>);
+    },
+
+    withPairwiseId(pairwiseId = "test-pairwise-id") {
+      const next = {
+        ...overrides,
+        pairwiseId,
+      } as DeepPartial<T & ContextWithPairwiseId>;
+
+      return withOverrides<T & ContextWithPairwiseId>(next);
+    },
+
+    withSecret(secret: string) {
+      const next = {
+        ...overrides,
+        secretKey: secret,
+      } as DeepPartial<T & ContextWithSecret>;
+
+      return withOverrides<T & ContextWithSecret>(next);
+    },
   } as const;
 }
-
-export const context = buildContext();

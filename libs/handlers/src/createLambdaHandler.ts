@@ -1,15 +1,27 @@
 import { getLogger, injectLambdaContext, LoggerOptions } from "@flex/logging";
 import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
-import type { Handler } from "aws-lambda";
+import type { Context } from "aws-lambda";
+
+/**
+ * Custom handler type that allows custom context types extending Context
+ */
+type CustomHandler<TEvent, TResult, TContext extends Context = Context> = (
+  event: TEvent,
+  context: TContext,
+) => Promise<TResult>;
 
 /**
  * Configuration options for creating a Lambda handler with middy
  */
-export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
+export type LambdaHandlerConfig<
+  TEvent = unknown,
+  TResult = unknown,
+  TContext = unknown,
+> = {
   /**
    * Array of middy middlewares to apply to the handler
    */
-  middlewares?: Array<MiddlewareObj<TEvent, TResult>>;
+  middlewares?: Array<MiddlewareObj<TEvent, TResult, Error, TContext>>;
 } & LoggerOptions;
 
 /**
@@ -37,10 +49,10 @@ export type LambdaHandlerConfig<TEvent = unknown, TResult = unknown> = {
 export function createLambdaHandler<
   TEvent = unknown,
   TResult = unknown,
-  TContext = unknown,
+  TContext extends Context = Context,
 >(
-  handler: Handler<TEvent, TResult>,
-  config: LambdaHandlerConfig<TEvent, TResult>,
+  handler: CustomHandler<TEvent, TResult, TContext>,
+  config: LambdaHandlerConfig<TEvent, TResult, TContext>,
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
   const middyHandler = middy<TEvent, TResult, Error, TContext>(handler);
   const logLevel = config.logLevel?.toUpperCase();
