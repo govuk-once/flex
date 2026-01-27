@@ -13,8 +13,8 @@ vi.mock("@middy/secrets-manager", () => ({
 describe("createSecretsMiddleware", () => {
   it("creates a secrets manager middleware with the expected fetchData config", () => {
     const secrets = {
-      secretKey: "my-secret-id",
-      anotherSecret: "another-secret-id",
+      secretKey: "my-secret-id", // pragma: allowlist secret
+      anotherSecret: "another-secret-id", // pragma: allowlist secret
     };
 
     createSecretsMiddleware<typeof secrets>({ secrets });
@@ -38,7 +38,7 @@ describe("createSecretsMiddleware", () => {
 
   it("throws an error when a secret id is undefined", () => {
     const secrets: Record<string, string | undefined> = {
-      definedSecret: "defined-id",
+      definedSecret: "defined-id", // pragma: allowlist secret
       undefinedSecret: undefined,
     };
 
