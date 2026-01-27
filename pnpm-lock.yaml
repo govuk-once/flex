@@ -204,6 +204,40 @@ importers:
         specifier: 4.0.17
         version: 4.0.17(@types/node@25.0.9)(jiti@2.6.1)(msw@2.12.7(@types/node@25.0.9)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
+  libs/params:
+    dependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.30.1
+        version: 2.30.1(@aws-sdk/client-ssm@3.966.0)
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../logging
+      zod:
+        specifier: 4.3.5
+        version: 4.3.5
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../testing
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@types/node':
+        specifier: 25.0.9
+        version: 25.0.9
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.17
+        version: 4.0.17(@types/node@25.0.9)(jiti@2.6.1)(msw@2.12.7(@types/node@25.0.9)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+
   libs/testing:
     devDependencies:
       '@aws-lambda-powertools/parameters':
@@ -288,6 +322,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
+      '@flex/params':
+        specifier: workspace:*
+        version: link:../../../libs/params
       aws-jwt-verify:
         specifier: 5.1.1
         version: 5.1.1
@@ -533,6 +570,9 @@ packages:
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
 
+  '@aws-lambda-powertools/commons@2.30.1':
+    resolution: {integrity: sha512-EbbnqrQ1zB8EIFHClHuG0kQWAA7hfy9bcbhacoFAJcwm5dZFmla7buwwfOWElWhy4+bUtLa0N7W9+gNT5KsYHw==}
+
   '@aws-lambda-powertools/commons@2.30.2':
     resolution: {integrity: sha512-bhhrpUdCfpBGKllJfGyi5faf12mh6tjYmOf5DALgIym89NkidFphPdZtWl5l6IN1YhgO8HWPX4Yvmi4tPBE/uw==}
 
@@ -543,6 +583,29 @@ packages:
       '@middy/core': 4.x || 5.x || 6.x || 7.x
     peerDependenciesMeta:
       '@aws-lambda-powertools/jmespath':
+        optional: true
+      '@middy/core':
+        optional: true
+
+  '@aws-lambda-powertools/parameters@2.30.1':
+    resolution: {integrity: sha512-G/lSAvHayY7Vg8vZ8FXCevlP3W6LCzHgfJnJ7liYSE2DrvcHIBEURWb3KYclcRKgG3z+SCL72R2GIcbL7JixyA==}
+    peerDependencies:
+      '@aws-sdk/client-appconfigdata': '>=3.x'
+      '@aws-sdk/client-dynamodb': '>=3.x'
+      '@aws-sdk/client-secrets-manager': '>=3.x'
+      '@aws-sdk/client-ssm': '>=3.x'
+      '@aws-sdk/util-dynamodb': '>=3.x'
+      '@middy/core': 4.x || 5.x || 6.x
+    peerDependenciesMeta:
+      '@aws-sdk/client-appconfigdata':
+        optional: true
+      '@aws-sdk/client-dynamodb':
+        optional: true
+      '@aws-sdk/client-secrets-manager':
+        optional: true
+      '@aws-sdk/client-ssm':
+        optional: true
+      '@aws-sdk/util-dynamodb':
         optional: true
       '@middy/core':
         optional: true
@@ -668,6 +731,10 @@ packages:
 
   '@aws-sdk/xml-builder@3.965.0':
     resolution: {integrity: sha512-Tcod25/BTupraQwtb+Q+GX8bmEZfxIFjjJ/AvkhUZsZlkPeVluzq1uu3Oeqf145DCdMjzLIN6vab5MrykbDP+g==}
+    engines: {node: '>=18.0.0'}
+
+  '@aws/lambda-invoke-store@0.2.2':
+    resolution: {integrity: sha512-C0NBLsIqzDIae8HFw9YIrIBsbc0xTiOtt7fAukGPnqQ/+zZNaq+4jhuccltK0QuWHBnNm/a6kLIRA6GFiM10eg==}
     engines: {node: '>=18.0.0'}
 
   '@aws/lambda-invoke-store@0.2.3':
@@ -3702,6 +3769,10 @@ snapshots:
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
 
+  '@aws-lambda-powertools/commons@2.30.1':
+    dependencies:
+      '@aws/lambda-invoke-store': 0.2.2
+
   '@aws-lambda-powertools/commons@2.30.2':
     dependencies:
       '@aws/lambda-invoke-store': 0.2.3
@@ -3712,6 +3783,12 @@ snapshots:
       '@aws/lambda-invoke-store': 0.2.3
     optionalDependencies:
       '@middy/core': 7.0.2
+
+  '@aws-lambda-powertools/parameters@2.30.1(@aws-sdk/client-ssm@3.966.0)':
+    dependencies:
+      '@aws-lambda-powertools/commons': 2.30.1
+    optionalDependencies:
+      '@aws-sdk/client-ssm': 3.966.0
 
   '@aws-lambda-powertools/parameters@2.30.2(@aws-sdk/client-ssm@3.966.0)(@middy/core@7.0.2)':
     dependencies:
@@ -4059,6 +4136,8 @@ snapshots:
       '@smithy/types': 4.11.0
       fast-xml-parser: 5.2.5
       tslib: 2.8.1
+
+  '@aws/lambda-invoke-store@0.2.2': {}
 
   '@aws/lambda-invoke-store@0.2.3': {}
 

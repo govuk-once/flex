@@ -2,10 +2,17 @@ import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
+import z from "zod";
 
-import { getConfig } from "./config";
+import { getConfig } from ".";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
+
+export const rawConfigSchema = z.looseObject({
+  AWS_REGION: z.string().min(1),
+  USERPOOL_ID_PARAM_NAME: z.string().min(1),
+  CLIENT_ID_PARAM_NAME: z.string().min(1),
+});
 
 getLogger({ serviceName: "config_test" });
 
@@ -25,7 +32,9 @@ describe("Config", () => {
           // CLIENT_ID_PARAM_NAME is intentionally left blank to simulate missing variable
         });
 
-        await expect(getConfig()).rejects.toThrow(/Invalid raw configuration:/);
+        await expect(getConfig(rawConfigSchema)).rejects.toThrow(
+          /Invalid raw configuration:/,
+        );
       });
     });
   });
@@ -51,7 +60,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await getConfig();
+      const config = await getConfig(rawConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -64,7 +73,7 @@ describe("Config", () => {
 
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
       vi.resetModules();
-      const config = await import("./config");
+      const config = await import(".");
       const logging = await import("@flex/logging");
 
       env.set({
@@ -79,7 +88,7 @@ describe("Config", () => {
       });
 
       logging.getLogger({ serviceName: "config_test" });
-      await expect(config.getConfig()).rejects.toThrow(
+      await expect(config.getConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
     });
@@ -106,13 +115,13 @@ describe("Config", () => {
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
 
       vi.resetModules();
-      const config = await import("./config");
+      const config = await import(".");
       const logging = await import("@flex/logging");
 
       logging.getLogger({ serviceName: "config_test" });
 
-      const firstConfig = await config.getConfig();
-      const secondConfig = await config.getConfig();
+      const firstConfig = await config.getConfig(rawConfigSchema);
+      const secondConfig = await config.getConfig(rawConfigSchema);
 
       expect(vi.mocked(getParametersByName).mock.calls.length).toBe(1);
       expect(secondConfig).toBe(firstConfig);

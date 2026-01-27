@@ -1,22 +1,7 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
+import type { Simplify, WithoutPropSuffix } from "@flex/utils";
 import { z } from "zod";
-
-export const rawConfigSchema = z.looseObject({
-  AWS_REGION: z.string().min(1),
-  USERPOOL_ID_PARAM_NAME: z.string().min(1),
-  CLIENT_ID_PARAM_NAME: z.string().min(1),
-});
-
-export type RawConfig = z.infer<typeof rawConfigSchema>;
-
-export const parsedConfigSchema = z.looseObject({
-  AWS_REGION: z.string().min(1),
-  USERPOOL_ID: z.string().min(1),
-  CLIENT_ID: z.string().min(1),
-});
-
-export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
 
 /**
  * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.
@@ -25,7 +10,9 @@ export type ParsedConfig = z.infer<typeof parsedConfigSchema>;
  * @param rawConfig The raw configuration object containing parameter names.
  * @returns The parsed configuration object with parameter values populated.
  */
-async function populateParameterFields(rawConfig: RawConfig) {
+async function populateParameterFields<T extends object>(
+  rawConfig: T,
+): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
   const logger = getLogger();
 
   const [parameterNames, nonParameterNames] = Object.entries(rawConfig).reduce<
@@ -67,38 +54,36 @@ async function populateParameterFields(rawConfig: RawConfig) {
   const parsedConfig = Object.fromEntries([
     ...populatedConfigEntries,
     ...nonParameterNames,
-  ]);
-  const parsedConfigSchemaCheck = parsedConfigSchema.safeParse(parsedConfig);
+  ]) as Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>;
 
-  if (!parsedConfigSchemaCheck.success) {
-    // Note: it should be impossible to get here if the schemas are correct, but we include this for type narrowing and belt-and-braces safety.
-    const message = `Invalid parsed configuration: ${JSON.stringify(z.treeifyError(parsedConfigSchemaCheck.error))}`;
-    logger.error(message);
-    throw new Error(message);
-  }
-
-  return parsedConfigSchemaCheck.data;
+  return parsedConfig;
 }
 
-let cachedConfig: ParsedConfig | null = null;
+const cachedConfig: Map<z.ZodType, unknown> = new Map();
 
 /**
  * Retrieves the parsed configuration, using a cached version if available. Replaces any parameter name fields with their actual values from SSM.
  *
  * @returns The parsed, populated configuration object.
  */
-export async function getConfig(): Promise<ParsedConfig> {
+export async function getConfig<T extends object>(
+  validator: z.ZodType<T>,
+): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
   const logger = getLogger();
 
-  if (cachedConfig) {
+  if (cachedConfig.has(validator)) {
     logger.info("Returning cached configuration");
-    return cachedConfig;
+
+    // This is safe because we only set values of this type in the cache.
+    return cachedConfig.get(validator) as Simplify<
+      WithoutPropSuffix<T, "_PARAM_NAME">
+    >;
   }
 
   logger.info(
     "cachedConfig not found, building configuration from process.env and SSM",
   );
-  const rawConfigSchemaCheck = rawConfigSchema.safeParse(process.env);
+  const rawConfigSchemaCheck = validator.safeParse(process.env);
 
   if (!rawConfigSchemaCheck.success) {
     const message = `Invalid raw configuration: ${JSON.stringify(z.treeifyError(rawConfigSchemaCheck.error))}`;
@@ -106,7 +91,11 @@ export async function getConfig(): Promise<ParsedConfig> {
     throw new Error(message);
   }
 
-  return (cachedConfig = await populateParameterFields(
+  const populatedParams = await populateParameterFields(
     rawConfigSchemaCheck.data,
-  ));
+  );
+
+  cachedConfig.set(validator, populatedParams);
+
+  return populatedParams;
 }
