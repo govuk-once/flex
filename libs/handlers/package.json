@@ -17,9 +17,9 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.159",
+    "@types/aws-lambda": "8.10.160",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

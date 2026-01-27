@@ -13,17 +13,17 @@
     "lint": "eslint --max-warnings=0 ."
   },
   "dependencies": {
-    "zod": "4.3.5",
+    "zod": "4.3.6",
     "zod-openapi": "5.4.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/node": "25.0.9",
+    "@types/node": "25.0.10",
     "eslint": "9.39.2",
     "http-server": "14.1.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "undici-types": "7.18.2",
-    "vitest": "4.0.17"
+    "undici-types": "7.19.1",
+    "vitest": "4.0.18"
   }
 }

@@ -15,9 +15,9 @@
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/node": "25.0.9",
-    "aws-cdk": "2.1101.0",
-    "aws-cdk-lib": "2.235.0",
+    "@types/node": "25.0.10",
+    "aws-cdk": "2.1103.0",
+    "aws-cdk-lib": "2.236.0",
     "constructs": "10.4.5",
     "eslint": "9.39.2",
     "tsx": "4.21.0",
