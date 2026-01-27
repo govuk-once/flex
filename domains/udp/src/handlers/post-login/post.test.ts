@@ -10,7 +10,7 @@ vi.mock("../../service/derived-id", () => ({
 vi.mock("@flex/middlewares");
 
 describe("User Creation handler", () => {
-  const mockNotificationSecret = "mocked-notification-secret";
+  const mockNotificationSecret = "mocked-notification-secret"; // pragma: allowlist secret
   const testPairwiseId = "test-pairwise-id";
   beforeEach(() => {
     vi.clearAllMocks();
