@@ -1,6 +1,4 @@
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
 import {
   type ContextWithPairwiseId,
   createSecretsMiddleware,

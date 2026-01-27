@@ -6,7 +6,7 @@ import { mergeDeepLeft } from "ramda";
 import type { EventWithAuthorizer } from "./apigateway";
 import { createEventWithAuthorizer, eventWithAuthorizer } from "./apigateway";
 import type { ContextOverrides } from "./lambda";
-import { createContext } from "./lambda";
+import { context } from "./lambda";
 
 export type MiddyRequest<
   Event extends EventWithAuthorizer = EventWithAuthorizer,
@@ -30,7 +30,7 @@ function buildMiddyRequest<
 >(overrides: MiddyRequestOverrides<Event, Result> = {}) {
   return mergeDeepLeft(overrides, {
     event: eventWithAuthorizer,
-    context: createContext().create(),
+    context,
     response: null,
     error: null,
     internal: {},

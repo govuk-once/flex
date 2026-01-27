@@ -68,3 +68,5 @@ export function createContext<T extends Context = Context>(
     },
   } as const;
 }
+
+export const context = buildContext();

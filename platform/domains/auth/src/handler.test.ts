@@ -1,5 +1,6 @@
 import {
   authorizerEvent,
+  context,
   exampleInvalidJWTMissingUsername,
   examplePublicJWKS,
   it,
@@ -29,7 +30,6 @@ describe("Authorizer Handler", () => {
   describe("JWT validation", () => {
     it("sucessfully validates a valid JWT token against JWKS", async ({
       authorizerResult,
-      context,
     }) => {
       const config = await getConfig();
 
@@ -37,35 +37,29 @@ describe("Authorizer Handler", () => {
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
         .reply(200, examplePublicJWKS);
 
-      const result = await handler(authorizerEvent, context.create());
+      const result = await handler(authorizerEvent, context);
 
       expect(result).toEqual(authorizerResult.allowWithPairwiseId());
     });
 
     it("throws an error when an invalid JWT token is provided", async ({
       authorizerEvent,
-      context,
     }) => {
       await expect(
-        handler(
-          authorizerEvent.withToken("invalid.jwt.token"),
-          context.create(),
-        ),
+        handler(authorizerEvent.withToken("invalid.jwt.token"), context),
       ).rejects.toThrow(/Invalid JWT/);
     });
 
     it("throws an error when no JWT token is provided", async ({
       authorizerEvent,
-      context,
     }) => {
       await expect(
-        handler(authorizerEvent.missingToken(), context.create()),
+        handler(authorizerEvent.missingToken(), context),
       ).rejects.toThrow("No authorization token provided");
     });
 
     it("throws an error when JWT does not contain a pairwise ID", async ({
       authorizerEvent,
-      context,
     }) => {
       const config = await getConfig();
 
@@ -76,7 +70,7 @@ describe("Authorizer Handler", () => {
       await expect(
         handler(
           authorizerEvent.withToken(exampleInvalidJWTMissingUsername),
-          context.create(),
+          context,
         ),
       ).rejects.toThrow("Pairwise ID (username) not found in JWT");
     });
