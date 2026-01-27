@@ -56,7 +56,7 @@ export const handler = createLambdaHandler<
       extractUser,
       createSecretsMiddleware<NotificationSecretContext>({
         secrets: {
-          secretKey: "/development/flex-secret/udp/notification-hash-secret",
+          secretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
         },
       }),
     ],
