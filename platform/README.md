@@ -1,12 +1,20 @@
-# Flex Platform Infrastructure
+# Flex Platform
 
-This directory contains the AWS CDK code responsible for defining and deploying the core infrastructure for the FLEX platform.
+This directory contains the code responsible for defining and deploying the infrastructure for the FLEX platform.
 
 ## Overview
 
-The infrastructure is defined using the [CDK](https://aws.amazon.com/cdk/) and is organised into Stacks. The primary entry point for the CDK application is `./src/index.ts`.
+```txt
+platform/
+├── infra/           # Flex platform infrastructure code
+│   ├── core/        # Core infrastructure such as the VPC
+│   ├── flex/        # Flex platform infrastructure
+│   ├── gov-uk-once/ # Base class for stack to extend from
+│   └── parameter/   # Infrastructure to store parameters into AWS
+└── domains/         # Domains directory (application code for the platform)
+```
 
-A base stack, `GovUkOnceStack`, is used to enforce a consistent tagging policy across all resources, ensuring compliance and proper cost allocation.
+> A base stack, `GovUkOnceStack`, is used to enforce a consistent tagging policy across all resources, ensuring compliance and proper cost allocation.
 
 ## Stacks
 
@@ -28,13 +36,7 @@ These are long-running environments like `development`, `staging`, or `productio
 **Example: Deploy all stacks to the `development` environment**
 
 ```bash
-ENVIRONMENT=development pnpm run deploy --all
-```
-
-**Example: Deploy only the `FlexCore` stack to `development`**
-
-```bash
-ENVIRONMENT=development pnpm run deploy development-FlexCore
+ENVIRONMENT=development pnpm run deploy
 ```
 
 ### 2. Ephemeral Environments (for Developers)
@@ -44,13 +46,8 @@ To test changes without affecting a persistent environment, you can deploy a per
 **Example: Deploy all stacks to an ephemeral environment based on your username**
 
 ```bash
-pnpm run deploy --all
+cd platform/infra/flex
+pnpm run deploy
 ```
 
-_(This will create stacks like `<your-user-name>-FlexCore`, etc.)_
-
-**Example: Deploy only the `FlexPlatform` stack to your ephemeral environment**
-
-```bash
-pnpm run deploy $(whoami | tr -dc 'a-z')-FlexPlatform
-```
+_(This will create stacks like `<your-user-name>-FlexPlatform`, etc.)_

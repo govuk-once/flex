@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./e2e": "./src/index.e2e.ts"
   },
   "scripts": {
     "lint": "eslint --max-warnings=0 ."

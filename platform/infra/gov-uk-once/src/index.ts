@@ -1,3 +1,4 @@
+import { sanitiseStageName } from "@flex/utils";
 import * as cdk from "aws-cdk-lib";
 import type { Construct } from "constructs";
 
@@ -6,6 +7,7 @@ interface TagOptions {
   readonly Product: string;
   readonly System: string;
   readonly Owner: string;
+  readonly ResourceOwner: string;
   readonly Service?: string;
   readonly Source?: string;
   readonly Exposure?: string;
@@ -29,15 +31,6 @@ enum Environment {
   PRODUCTION = "production",
 }
 
-function sanitizeStageName(branch?: string): string | undefined {
-  if (branch) {
-    return branch
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "")
-      .slice(0, 12);
-  }
-}
-
 function getEnvironment(): Environment | string | null {
   const env = process.env.STAGE;
   if (!env) return null;
@@ -59,7 +52,7 @@ function getEnvironment(): Environment | string | null {
  * Returns the environment config for this deployment.
  */
 export function getEnvConfig() {
-  const stage = sanitizeStageName(process.env.STAGE ?? process.env.USER);
+  const stage = sanitiseStageName(process.env.STAGE ?? process.env.USER);
 
   if (!stage) {
     throw new Error("STAGE or USER env var not set");

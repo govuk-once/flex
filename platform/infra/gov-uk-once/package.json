@@ -7,6 +7,9 @@
   "scripts": {
     "lint": "eslint --max-warnings=0 ."
   },
+  "dependencies": {
+    "@flex/utils": "workspace:*"
+  },
   "peerDependencies": {
     "aws-cdk-lib": "2.233.0",
     "constructs": "10.4.5"

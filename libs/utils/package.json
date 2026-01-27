@@ -23,6 +23,7 @@
     "http-server": "14.1.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
+    "undici-types": "7.18.2",
     "vitest": "4.0.17"
   }
 }

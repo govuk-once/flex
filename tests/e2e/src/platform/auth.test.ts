@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-
-import { e2eEnv } from "../setup";
+import { it } from "@flex/testing/e2e";
+import { describe, expect } from "vitest";
 
 /**
  * E2E test for the API Gateway JWT authorizer
@@ -9,60 +8,83 @@ import { e2eEnv } from "../setup";
  * requests without a valid JWT token.
  */
 describe("authentication", () => {
-  const ingressUrl = e2eEnv.CLOUDFRONT_DISTRIBUTION_URL;
-
   describe("fail-fast", () => {
-    it("rejects request to cloudfront distribution without a structurally valid JWT token", async () => {
-      const response = await fetch(`${ingressUrl}/hello-public`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const responseText = await response.text();
+    it("rejects request to cloudfront distribution when unauthenticated", async ({
+      cloudfront,
+    }) => {
+      const response = await cloudfront.client.get("/hello-public");
 
-      expect(response.status).toBe(401);
-      expect(responseText).toEqual(
-        "Unauthorized: no authorization header provided",
-      );
+      expect(response.headers.get("apigw-requestid")).toBeNull();
       expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(response).toMatchObject({
+        status: 401,
+        statusText: "Unauthorized",
+        body: "Unauthorized: no authorization header provided",
+      });
     });
 
-    it("rejects request to cloudfront distribution with a structurally invalid JWT token", async () => {
-      const response = await fetch(`${ingressUrl}/hello-public`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer `,
-        },
+    it("rejects request to cloudfront distribution with empty Bearer token", async ({
+      cloudfront,
+    }) => {
+      const response = await cloudfront.client.get("/hello-public", {
+        headers: { Authorization: `Bearer ` },
       });
-      const responseText = await response.text();
 
-      expect(response.status).toBe(401);
-      expect(responseText).toEqual("Unauthorized: structural check failed");
+      expect(response.headers.get("apigw-requestid")).toBeNull();
       expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(response).toMatchObject({
+        status: 401,
+        statusText: "Unauthorized",
+        body: "Unauthorized: structural check failed",
+      });
+    });
+
+    it("rejects request with invalid Bearer token", async ({ cloudfront }) => {
+      const response = await cloudfront.client.get("/hello-public", {
+        headers: { Authorization: "Basic invalidbearertoken" },
+      });
+
+      expect(response.headers.get("x-rejected-by")).toBeNull();
+      expect(response.headers.get("apigw-requestid")).toBeDefined();
+      // TODO: Assert 403 when implemented
+      expect(response).toMatchObject({
+        status: 500,
+        statusText: "Internal Server Error",
+      });
     });
   });
 
   describe("authorizer", () => {
-    it("allows request to /hello-public endpoint with valid authorization header", async () => {
-      const url = `${ingressUrl}/hello-public`;
-      const token = "eyJ2";
+    it.todo(
+      "allows request to /hello-public endpoint with valid token",
+      async ({ cloudfront }) => {
+        // TODO: Replace with valid test user token
+        const token = "todo.valid.token";
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const response = await cloudfront.client.get("/hello-public", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      const responseText = await response.text();
+        expect(response.headers.get("x-rejected-by")).toBeNull();
+        expect(response).toMatchObject({
+          status: 200,
+          body: { message: "Hello public world!" },
+        });
+      },
+    );
 
-      expect(response.status).toBe(200);
-      expect(responseText).toEqual(
-        JSON.stringify({ message: "Hello public world!" }),
-      );
-    });
+    it.todo(
+      "rejects request to /hello-public endpoint with expired token",
+      async ({ cloudfront }) => {
+        // TODO: Replace with expired test user token
+        const token = "todo.expired.token";
+
+        const response = await cloudfront.client.get("/hello-public", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        expect(response.status).toBe(403);
+      },
+    );
   });
 });

@@ -1,3 +1,9 @@
+export type { QueryParams } from "./http/query-params";
+export { extractQueryParams } from "./http/query-params";
+export type { BuildRequestOptions, HttpRequestOptions } from "./http/request";
+export { buildRequest, parseResponseBody } from "./http/request";
+export { buildUrl } from "./http/url";
+export * from "./infra";
 export * from "./openapi/domain/hello-world";
 export * from "./openapi/domain/topics";
 export * from "./schemas/common";

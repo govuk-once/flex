@@ -1,4 +1,5 @@
 import { importVpcDetailsFromSsm } from "@platform/core/outputs";
+import { Tags } from "aws-cdk-lib";
 import { SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
@@ -30,5 +31,11 @@ export class FlexPrivateEgressFunction extends Construct {
         subnetType: SubnetType.PRIVATE_WITH_EGRESS,
       },
     });
+
+    if (functionProps.domain) {
+      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
+        priority: 200,
+      });
+    }
   }
 }

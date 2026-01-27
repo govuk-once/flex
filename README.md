@@ -1,8 +1,6 @@
 # FLEX (Federated Logic and Events eXchange System)
 
-![linting](https://github.com/govuk-once/flex/actions/workflows/ci.yml/badge.svg)
-
-> Monorepo for the business layer known as FLEX internally
+> Monorepo for the FLEX platform
 
 ## Installation
 
@@ -29,15 +27,12 @@ pre-commit install
 
 ```txt
 flex/
-├── libs/        # Shared libraries directory
-│   └── utils/   # Shared utils for modules to use
-└── domains/     # Domains directory (application code)
+├── platform/      # Code which is used to deploy the FLEX base platform
+│   ├── domains/   # Application code for the platform i.e. authenitcation
+│   └── infra/     # Infrastructure code for the FLEX platform
+├── libs/          # Shared libraries directory
+└── domains/       # Domains directory (application code)
 ```
-
-| Repo        | Overview                               | README                         |
-| ----------- | -------------------------------------- | ------------------------------ |
-| @domains    | Domains - application code             | [Link](./domains/README.md)    |
-| @flex/utils | Shared utils to be used across modules | [Link](./libs/utils/README.md) |
 
 ## Committing work
 
@@ -51,8 +46,7 @@ Get the current number of commits on your branch:
 git rev-list --count HEAD ^main
 ```
 
-Supposing this returns 3 then you have made 3 commits since creating your
-branch and you want to squash them down into one:
+Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
 
 ```bash
 git rebase -i HEAD~3

@@ -53,10 +53,8 @@ export class FlexAuthentication extends Construct {
       {
         entry: getPlatformEntry("auth", "handler.ts"),
         environment: {
-          REDIS_ENDPOINT_PARAMETER_NAME:
-            this.redisEndpointParameter.parameterName,
-          USER_POOL_ID_PARAMETER_NAME: this.userPoolId.parameterName,
-          CLIENT_ID_PARAMETER_NAME: this.clientId.parameterName,
+          USERPOOL_ID_PARAM_NAME: this.userPoolId.parameterName,
+          CLIENT_ID_PARAM_NAME: this.clientId.parameterName,
         },
       },
     );
