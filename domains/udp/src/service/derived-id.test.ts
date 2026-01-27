@@ -4,7 +4,7 @@ import { generateDerivedId } from "./derived-id";
 
 describe("generateDerivedId", () => {
   const pairwiseId = "test-pairwise-id";
-  const secretKey = "test-secret-key-32-chars-minimum";
+  const secretKey = "test-secret-key-32-chars-minimum"; // pragma: allowlist secret
 
   it("generates a deterministic ID for the same inputs", () => {
     const id1 = generateDerivedId({ pairwiseId, secretKey });
@@ -29,11 +29,11 @@ describe("generateDerivedId", () => {
   it("generates different IDs for different secret keys", () => {
     const id1 = generateDerivedId({
       pairwiseId,
-      secretKey: "secret-key-1-32-chars-minimum",
+      secretKey: "secret-key-1-32-chars-minimum", // pragma: allowlist secret
     });
     const id2 = generateDerivedId({
       pairwiseId,
-      secretKey: "secret-key-2-32-chars-minimum",
+      secretKey: "secret-key-2-32-chars-minimum", // pragma: allowlist secret
     });
 
     expect(id1).not.toBe(id2);
