@@ -30,49 +30,35 @@ export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
   APIGatewayProxyResultV2<HandlerResponse>,
-  ContextWithPairwiseId
+  ContextWithPairwiseId & NotificationSecretContext
 >(
   async (_event: APIGatewayProxyEventV2, context) => {
-    const logger = getLogger();
+    const { pairwiseId, secretKey } = context;
 
-    try {
-      const { pairwiseId } = context;
+    const notificationId = generateDerivedId({
+      pairwiseId,
+      secretKey,
+    });
 
-      // console.log(pairwiseId, secretKey);
-
-      const secret = await getSecret(
-        "/development/flex-secret/udp/notification-hash-secret",
-      );
-
-      logger.info("secret fetched");
-
-      const notificationId = generateDerivedId({
-        pairwiseId,
-        secretKey: "foo",
-      });
-
-      return Promise.resolve({
-        statusCode: 201,
-        body: JSON.stringify({
-          message: "User created successfully!",
-          userId: pairwiseId,
-          notificationId,
-        }),
-      });
-    } catch (error) {
-      logger.error(error as string);
-    }
+    return Promise.resolve({
+      statusCode: 201,
+      body: JSON.stringify({
+        message: "User created successfully!",
+        userId: pairwiseId,
+        notificationId,
+      }),
+    });
   },
   {
     logLevel: "INFO",
     serviceName: "udp-user-creation-service",
     middlewares: [
       extractUser,
-      // createSecretsMiddleware<NotificationSecretContext>({
-      //   secrets: {
-      //     secretKey: "/development/flex-secret/udp/notification-hash-secret",
-      //   },
-      // }),
+      createSecretsMiddleware<NotificationSecretContext>({
+        secrets: {
+          secretKey: "/development/flex-secret/udp/notification-hash-secret",
+        },
+      }),
     ],
   },
 );
