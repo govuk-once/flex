@@ -62,4 +62,16 @@ describe("generateDerivedId", () => {
     expect(id1.length).toBe(43);
     expect(id2.length).toBe(43);
   });
+
+  it("throws an error if the pairwise ID is empty", () => {
+    expect(() => generateDerivedId({ pairwiseId: "", secretKey })).toThrow(
+      "Pairwise ID and secret key cannot be empty",
+    );
+  });
+
+  it("throws an error if the secret key is empty", () => {
+    expect(() => generateDerivedId({ pairwiseId, secretKey: "" })).toThrow(
+      "Pairwise ID and secret key cannot be empty",
+    );
+  });
 });

@@ -18,7 +18,6 @@ export function createSecretsMiddleware<
     fetchData: Object.fromEntries(
       Object.entries(opts.secrets).map(([key, secretId]) => {
         if (!secretId) {
-          console.error(`Secret id for "${key}" is not defined`);
           throw new Error(`Secret id for "${key}" is not defined`);
         }
         return [key, secret(secretId)];

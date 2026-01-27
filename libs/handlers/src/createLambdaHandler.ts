@@ -4,6 +4,22 @@ import type { Context } from "aws-lambda";
 
 /**
  * Custom handler type that allows custom context types extending Context
+ *
+ * @template TEvent - The type of the Lambda event
+ * @template TResult - The type of the Lambda response
+ * @template TContext - The type of the Lambda context
+ * @example
+ * ```typescript
+ * const handler = createLambdaHandler<
+ *   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
+ *   APIGatewayProxyResultV2<HandlerResponse>,
+ *   ContextWithPairwiseId & NotificationSecretContext
+ * >(
+ *   async (event: APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>, context: ContextWithPairwiseId & NotificationSecretContext) => {
+ *     return { statusCode: 200, body: JSON.stringify({ message: "Hello, World!" }) };
+ *   }
+ * );
+ * ```
  */
 type CustomHandler<TEvent, TResult, TContext extends Context = Context> = (
   event: TEvent,

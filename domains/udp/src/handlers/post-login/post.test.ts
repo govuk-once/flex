@@ -10,7 +10,9 @@ vi.mock("../../service/derived-id", () => ({
 vi.mock("@flex/middlewares");
 
 describe("User Creation handler", () => {
-  const mockNotificationSecret = "mocked-notification-secret"; // pragma: allowlist secret
+  const mockNotificationSecret = {
+    notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
+  };
   const testPairwiseId = "test-pairwise-id";
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,7 +55,7 @@ describe("User Creation handler", () => {
 
       expect(generateDerivedId).toHaveBeenCalledWith({
         pairwiseId: testPairwiseId,
-        secretKey: mockNotificationSecret,
+        secretKey: mockNotificationSecret.notificationSecretKey,
       });
     });
 
@@ -83,7 +85,7 @@ describe("User Creation handler", () => {
       );
       expect(generateDerivedId).toHaveBeenCalledWith({
         pairwiseId: customPairwiseId,
-        secretKey: mockNotificationSecret,
+        secretKey: mockNotificationSecret.notificationSecretKey,
       });
     });
 
@@ -146,6 +148,23 @@ describe("User Creation handler", () => {
       );
 
       expect(generateDerivedId).toHaveBeenCalledTimes(1);
+    });
+
+    it("bubbles errors from generateDerivedId", async ({
+      eventWithAuthorizer,
+      context,
+    }) => {
+      const error = new Error("generateDerivedId failed");
+      vi.mocked(generateDerivedId).mockImplementation(() => {
+        throw error;
+      });
+
+      await expect(
+        handler(
+          eventWithAuthorizer.authenticated(),
+          context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        ),
+      ).rejects.toThrow(error);
     });
   });
 });

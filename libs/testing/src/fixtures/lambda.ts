@@ -34,13 +34,39 @@ export interface ContextWithSecret extends Context {
   secretKey: string;
 }
 
+/**
+ * Creates a context builder with a fluent API for constructing test Lambda contexts.
+ *
+ * The builder uses a recursive pattern where:
+ * - Each `withX` method (e.g., `withPairwiseId`, `withSecret`) returns a new builder
+ *   instance with accumulated overrides, allowing method chaining.
+ * - The `create()` method resolves the final context by merging all accumulated
+ *   overrides with the base context.
+ *
+ * Example usage:
+ * ```typescript
+ * const ctx = createContext()
+ *   .withPairwiseId("user-123")
+ *   .withSecret("my-secret")
+ *   .create();
+ * ```
+ */
 export function createContext<T extends Context = Context>(
   overrides: DeepPartial<T> = {} as DeepPartial<T>,
 ) {
+  /**
+   * Helper function that creates a new context builder with accumulated overrides.
+   * This enables the recursive pattern where each `withX` method returns a new builder
+   * with the previous overrides plus the new property.
+   */
   const withOverrides = <U extends Context>(next: DeepPartial<U>) =>
     createContext<U>(next);
 
   return {
+    /**
+     * Resolves the final context by merging all accumulated overrides with the base context.
+     * Any extra overrides passed here will be merged with the accumulated ones.
+     */
     create(extraOverrides?: DeepPartial<T>) {
       // Final, accumulated overrides win over later `create`-time overrides
       return buildContext({
@@ -49,6 +75,9 @@ export function createContext<T extends Context = Context>(
       } as DeepPartial<T>);
     },
 
+    /**
+     * Returns a new builder with the pairwiseId added to the accumulated overrides.
+     */
     withPairwiseId(pairwiseId = "test-pairwise-id") {
       const next = {
         ...overrides,
@@ -58,13 +87,16 @@ export function createContext<T extends Context = Context>(
       return withOverrides<T & ContextWithPairwiseId>(next);
     },
 
-    withSecret(secret: string) {
+    /**
+     * Returns a new builder with the secretKey added to the accumulated overrides.
+     */
+    withSecret(secrets: Record<string, string>) {
       const next = {
         ...overrides,
-        secretKey: secret,
-      } as DeepPartial<T & ContextWithSecret>;
+        ...secrets,
+      } as DeepPartial<T & Record<string, string>>;
 
-      return withOverrides<T & ContextWithSecret>(next);
+      return withOverrides<T & Record<string, string>>(next);
     },
   } as const;
 }

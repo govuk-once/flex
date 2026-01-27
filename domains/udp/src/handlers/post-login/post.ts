@@ -20,7 +20,7 @@ export const handlerResponseSchema = z.object({
 });
 
 type NotificationSecretContext = {
-  secretKey: string;
+  notificationSecretKey: string;
 };
 
 export type HandlerResponse = z.output<typeof handlerResponseSchema>;
@@ -31,11 +31,11 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId & NotificationSecretContext
 >(
   async (_event: APIGatewayProxyEventV2, context) => {
-    const { pairwiseId, secretKey } = context;
+    const { pairwiseId, notificationSecretKey } = context;
 
     const notificationId = generateDerivedId({
       pairwiseId,
-      secretKey,
+      secretKey: notificationSecretKey,
     });
 
     return Promise.resolve({
@@ -54,7 +54,7 @@ export const handler = createLambdaHandler<
       extractUser,
       createSecretsMiddleware<NotificationSecretContext>({
         secrets: {
-          secretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
+          notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
         },
       }),
     ],
