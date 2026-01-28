@@ -19,7 +19,7 @@ export const handlerResponseSchema = z.object({
   userId: z.string(),
 });
 
-type NotificationSecretContext = {
+export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
 

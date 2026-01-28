@@ -153,6 +153,7 @@ describe("User Creation handler", () => {
     it("bubbles errors from generateDerivedId", async ({
       eventWithAuthorizer,
       context,
+      response,
     }) => {
       const error = new Error("generateDerivedId failed");
       vi.mocked(generateDerivedId).mockImplementation(() => {
@@ -164,7 +165,11 @@ describe("User Creation handler", () => {
           eventWithAuthorizer.authenticated(),
           context.withPairwiseId().withSecret(mockNotificationSecret).create(),
         ),
-      ).rejects.toThrow(error);
+      ).resolves.toEqual(
+        response.internalServerError(null, {
+          headers: {},
+        }),
+      );
     });
   });
 });
