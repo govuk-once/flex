@@ -30,10 +30,6 @@ export interface ContextWithPairwiseId extends Context {
   pairwiseId: string;
 }
 
-export interface ContextWithSecret extends Context {
-  secretKey: string;
-}
-
 /**
  * Creates a context builder with a fluent API for constructing test Lambda contexts.
  *
