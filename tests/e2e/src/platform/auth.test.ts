@@ -35,7 +35,7 @@ describe("authentication", () => {
       expect(response).toMatchObject({
         status: 401,
         statusText: "Unauthorized",
-        body: "Unauthorized: structural check failed",
+        body: "Unauthorized: authentication header invalid",
       });
     });
 
@@ -44,12 +44,12 @@ describe("authentication", () => {
         headers: { Authorization: "Basic invalidbearertoken" },
       });
 
-      expect(response.headers.get("x-rejected-by")).toBeNull();
+      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
       expect(response.headers.get("apigw-requestid")).toBeDefined();
-      // TODO: Assert 403 when implemented
       expect(response).toMatchObject({
-        status: 500,
-        statusText: "Internal Server Error",
+        status: 401,
+        statusText: "Unauthorized",
+        body: "Unauthorized: authentication header invalid",
       });
     });
   });

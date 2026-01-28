@@ -187,6 +187,13 @@ export class FlexCoreStack extends GovUkOnceStack {
       securityGroup: securityGroups.privateIsolated,
     });
 
+    this.addVpcEndpoint({
+      vpc,
+      name: "SecretsManager",
+      service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      securityGroup: securityGroups.privateIsolated,
+    });
+
     exportVpcDetailsToSsm(this, {
       vpcId: vpc.vpcId,
       securityGroups: {

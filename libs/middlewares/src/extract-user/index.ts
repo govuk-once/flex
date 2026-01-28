@@ -6,7 +6,7 @@ import type {
 } from "aws-lambda";
 
 export interface ContextWithPairwiseId extends Context {
-  pairwiseId?: string;
+  pairwiseId: string;
 }
 
 export interface V2Authorizer {

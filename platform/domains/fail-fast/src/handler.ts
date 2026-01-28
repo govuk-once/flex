@@ -8,15 +8,12 @@
  * This TypeScript file will be compiled to plain JavaScript compatible with CloudFront Functions.
  * The handler function must be at the top level and will be transpiled to plain JavaScript.
  */
-import { getLogger } from "@flex/logging";
 import { CloudFrontFunctionsEvent } from "aws-lambda";
 
 import { CloudFrontFunctionResponse } from "./types";
 
-const FAIL_FAST_SERVICE_NAME = "fail-fast-cloudfront-function";
-const logger = getLogger({
-  serviceName: FAIL_FAST_SERVICE_NAME,
-});
+// Cloudfront functions only reliably support console.log(...) for logging.
+const log = console.log;
 
 const generateErrorResponse = (
   statusCode: number,
@@ -49,13 +46,13 @@ function tryParseJson(jsonString: string): Record<string, unknown> | null {
   try {
     const obj: unknown = JSON.parse(jsonString);
     if (!isObject(obj)) {
-      logger.debug("Parsed JSON is not an object");
+      log("Parsed JSON is not an object");
       return null;
     }
 
     return obj;
   } catch {
-    logger.debug("Failed to parse JSON string");
+    log("Failed to parse JSON string");
     return null;
   }
 }
@@ -76,25 +73,25 @@ function decodeJwt(token: string) {
 
   if (rest.length > 0) {
     const message = "Invalid JWT: too many segments";
-    logger.error(message, JSON.stringify(rest));
+    log(message, JSON.stringify(rest));
     throw new Error(message);
   }
 
   if (!header) {
     const message = "Invalid JWT: missing header";
-    logger.error(message);
+    log(message);
     throw new Error(message);
   }
 
   if (!body) {
     const message = "Invalid JWT: missing body";
-    logger.error(message);
+    log(message);
     throw new Error(message);
   }
 
   if (!signature) {
     const message = "Invalid JWT: missing signature";
-    logger.error(message);
+    log(message);
     throw new Error(message);
   }
 
@@ -126,7 +123,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
   const authorizationHeader = event.request.headers.authorization;
 
   if (!authorizationHeader) {
-    logger.error("No authorization header provided");
+    log("No authorization header provided");
     return generateErrorResponse(
       401,
       "Unauthorized: no authorization header provided",
@@ -140,7 +137,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
   const rest = headerParts.slice(2);
 
   if (bearerLabel !== "Bearer") {
-    logger.error("Authorization header does not start with 'Bearer'");
+    log("Authorization header does not start with 'Bearer'");
     return generateErrorResponse(
       401,
       "Unauthorized: authentication header invalid",
@@ -148,7 +145,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
   }
 
   if (rest.length > 0) {
-    logger.error("Authorization header has too many segments");
+    log("Authorization header has too many segments");
     return generateErrorResponse(
       401,
       "Unauthorized: authentication header invalid",
@@ -156,7 +153,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
   }
 
   if (!token) {
-    logger.error("No JWT token provided in authorization header");
+    log("No JWT token provided in authorization header");
     return generateErrorResponse(
       401,
       "Unauthorized: authentication header invalid",
@@ -166,7 +163,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
   try {
     decodeJwt(token);
   } catch (e) {
-    logger.error("Failed to decode JWT token", (e as Error).message);
+    log("Failed to decode JWT token", (e as Error).message);
     return generateErrorResponse(401, "Unauthorized: token invalid");
   }
 
