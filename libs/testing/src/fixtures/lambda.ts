@@ -90,13 +90,13 @@ export function createContext<T extends Context = Context>(
     /**
      * Returns a new builder with the secretKey added to the accumulated overrides.
      */
-    withSecret(secrets: Record<string, string>) {
+    withSecret<S>(secrets: S) {
       const next = {
         ...overrides,
         ...secrets,
-      } as DeepPartial<T & Record<string, string>>;
+      } as DeepPartial<T & S>;
 
-      return withOverrides<T & Record<string, string>>(next);
+      return withOverrides<T & S>(next);
     },
   } as const;
 }

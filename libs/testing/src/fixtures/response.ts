@@ -22,19 +22,15 @@ function buildResponse<T>(
   body?: T,
   options: ResponseOptions = {},
 ): StructuredResponse {
-  const { cookies, headers, isBase64Encoded } = options;
-
   return {
     statusCode,
-    headers,
     body:
       body != null
         ? typeof body === "string"
           ? body
           : JSON.stringify(body)
         : undefined,
-    cookies,
-    isBase64Encoded,
+    ...options,
   };
 }
 
