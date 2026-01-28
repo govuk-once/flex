@@ -1,55 +1,80 @@
 # FLEX (Federated Logic and Events eXchange System)
 
-> Monorepo for the FLEX platform
+<!-- TODO: Brief description of what FLEX is and what it provides -->
 
-## Installation
+## Overview
 
-### 1. Prerequisites
+<!-- TODO: High-level explanation of the platform architecture -->
 
-1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
-2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
-3. **PNPM**: [install](https://pnpm.io/installation)
-4. **checkov**: Required for Infrastructure as Code (IaC) linting. Install via one of:
-   - **pipx** (recommended): `pipx install checkov`
-   - **pip**: `pip install checkov`
-   - **homebrew** (macOS): `brew install checkov`
+## Developer Roles
 
-### 2. Installation
+| Role | Access | Focus |
+|------|-------------|--------|
+| **Platform** | Full repository | Infrastructure, shared libraries |
+| **Domain** | `domains/<name>/*` | Domain-specific application code |
 
-Run the following commands to install dependencies and setup pre-commit:
+## Quick Start
+
+### Prerequisites
+
+1. **Node.js**: Install via [nvm](https://github.com/nvm-sh/nvm), then run `nvm use` in the repository root
+2. **PNPM (v10+)**: [Installation guide](https://pnpm.io/installation)
+3. **pre-commit**: `brew install pre-commit` (macOS) or see [pre-commit.com](https://pre-commit.com/)
+4. **checkov**: Required for Infrastructure as Code linting. Install via:
+   - pipx (recommended): `pipx install checkov`
+   - pip: `pip install checkov`
+   - Homebrew (macOS): `brew install checkov`
+5. **AWS CLI**: Configured with appropriate credentials
+
+### Setup
 
 ```bash
-pnpm install --frozen-lockfile
+# Install dependencies
+pnpm install
+
+# Install pre-commit hooks
 pre-commit install
+
+# Verify setup
+pnpm test
 ```
 
-## Repo Overview
+For detailed environment setup and configuration instructions, see [Environment Configuration](docs/environment-configuration.md).
 
-```txt
+## Repository Structure
+
+```text
 flex/
-├── platform/      # Code which is used to deploy the FLEX base platform
-│   ├── domains/   # Application code for the platform i.e. authenitcation
-│   └── infra/     # Infrastructure code for the FLEX platform
-├── libs/          # Shared libraries directory
-└── domains/       # Domains directory (application code)
+├── docs/            # Development guides and reference documentation
+├── domains/
+│   └── <domain>/    # Domain-specific handlers and application code
+├── libs/            # Shared packages (@flex/*)
+├── platform/
+│   ├── domains/     # Platform-level handlers
+│   └── infra/       # Platform Infrastructure as Code (CDK) stacks and constructs
+└── tests/
+    └── e2e/         # Tests against deployed infrastructure
 ```
 
-## Committing work
+## Packages
 
-This repository uses Nx with conventional commits to automatically generate changelogs. When committing work the command `pnpm commit` is available to help format commit messages. Please squash any commits that are related into a single commit following the above convention.
+| Package | Description |
+|---------|-------------|
+| [`@flex/config`](libs/config/README.md) | Shared ESLint, TypeScript and Vitest configuration |
+| [`@flex/handlers`](libs/handlers/README.md) | Lambda handler utilities and factories |
+| [`@flex/logging`](libs/logging/README.md) | Structured logging utilities |
+| [`@flex/middlewares`](libs/middlewares/README.md) | Shared handler middleware |
+| [`@flex/testing`](libs/testing/README.md) | Test fixtures, matchers and utilities |
+| [`@flex/utils`](libs/utils/README.md) | Shared types, Zod schemas, helpers and OpenAPI specifications |
 
-### Simple command line procedure
+## Developer Guides
 
-Get the current number of commits on your branch:
+- [Platform Development Guide](docs/platform-development.md): For platform developers maintaining infrastructure and shared libraries
+- [Domain Development Guide](docs/domain-development.md): For domain developers building application code
+- [Testing Guide](docs/testing.md): Testing patterns and best practices
+- [Deployment and CI/CD](docs/deployment.md): Pipeline stages, environments and configuration parameters
+- [Documentation Guide](docs/documentation-guide.md): Standards and templates for writing documentation
 
-```bash
-git rev-list --count HEAD ^main
-```
+## Contributing
 
-Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
-
-```bash
-git rebase -i HEAD~3
-```
-
-Which will launch an interactive rebase session in the terminal.
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for commit message conventions and pull request guidelines.
