@@ -10,7 +10,6 @@
   "devDependencies": {
     "@flex/testing": "workspace:*",
     "@flex/config": "workspace:*",
-    "@flex/logging": "workspace:*",
     "@types/aws-lambda": "8.10.159",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",

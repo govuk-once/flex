@@ -352,9 +352,6 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../../libs/config
-      '@flex/logging':
-        specifier: workspace:*
-        version: link:../../../libs/logging
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
