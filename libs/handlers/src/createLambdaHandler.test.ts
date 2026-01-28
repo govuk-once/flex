@@ -5,6 +5,7 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
+import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createLambdaHandler } from "./createLambdaHandler";
@@ -37,6 +38,20 @@ describe("createLambdaHandler", () => {
 
       expect(result).toEqual(expectedResponse);
     });
+  });
+
+  it("handles errors thrown by the handler", async ({ response }) => {
+    const handler = createLambdaHandler(() => {
+      throw new createHttpError.BadRequest("Test error");
+    }, baseLoggerOptions);
+
+    const result = await handler(event, context);
+
+    expect(result).toEqual(
+      response.badRequest("Test error", {
+        headers: { "Content-Type": "text/plain" },
+      }),
+    );
   });
 
   describe("arbitrary middleware support", () => {

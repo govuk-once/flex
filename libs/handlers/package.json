@@ -21,7 +21,9 @@
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.159",
+    "@types/http-errors": "^2.0.5",
     "eslint": "9.39.2",
+    "http-errors": "2.0.1",
     "typescript": "5.9.3",
     "vitest": "4.0.17"
   }
