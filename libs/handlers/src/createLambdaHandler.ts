@@ -57,8 +57,8 @@ export type LambdaHandlerConfig<
  *     return { result: 'success' };
  *   },
  *   {
- *     middlewares: [customMiddleware()],
  *     loggerOptions: { level: 'INFO', serviceName: 'my-service' },
+ *     middlewares: [customMiddleware],
  *   }
  * );
  * ```

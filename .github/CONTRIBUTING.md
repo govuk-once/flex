@@ -6,8 +6,7 @@ This document describes the process of contributing to FLEX.
 
 We use the Conventional Commits specification.
 
-This ensures our commit history is clean, readable, and allows for automated
-changelog generation and version bumping.
+This ensures our commit history is clean, readable, and allows for automated changelog generation and version bumping.
 
 Every commit message must be structured as follows:
 
@@ -49,3 +48,19 @@ This commit sets up the initial event handler structure and integrates basic err
 Closes #42
 BREAKING CHANGE: The old request structure is no longer supported.
 ```
+
+## Pull Request Guidelines
+
+When opening a pull request:
+
+1. Use the [pull request template](/.github/PULL_REQUEST_TEMPLATE.md) provided
+2. Ensure the PR title follows the commit message format above
+3. Link to the related JIRA ticket in the description
+4. Complete all checklist items before requesting review
+5. Keep PRs small and focused, where large changes should be broken into smaller PRs
+
+For more details on the review process, see [The GDS Way: Pull requests](https://gds-way.digital.cabinet-office.gov.uk/standards/pull-requests.html).
+
+## Documentation
+
+When adding or updating documentation, follow the [Documentation Guide](/docs/documentation-guide.md) for standards and templates.

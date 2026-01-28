@@ -7,7 +7,6 @@ import {
 } from "@flex/middlewares";
 import httpResponseSerializer from "@middy/http-response-serializer";
 import type {
-  APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
@@ -30,7 +29,7 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2<HandlerResponse>,
   ContextWithPairwiseId & NotificationSecretContext
 >(
-  async (_event: APIGatewayProxyEventV2, context) => {
+  async (_event, context) => {
     const { pairwiseId, notificationSecretKey } = context;
 
     const notificationId = generateDerivedId({
