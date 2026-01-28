@@ -20,6 +20,7 @@
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.159",
+    "@types/http-errors": "^2.0.5",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "nock": "^14.0.10",

@@ -152,6 +152,15 @@ importers:
       '@middy/core':
         specifier: 7.0.2
         version: 7.0.2
+      '@middy/http-error-handler':
+        specifier: ^7.0.2
+        version: 7.0.2
+      install:
+        specifier: ^0.13.0
+        version: 0.13.0
+      npm:
+        specifier: ^11.8.0
+        version: 11.8.0
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -331,6 +340,9 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.159
         version: 8.10.159
+      '@types/http-errors':
+        specifier: ^2.0.5
+        version: 2.0.5
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -1178,6 +1190,10 @@ packages:
       '@aws/durable-execution-sdk-js':
         optional: true
 
+  '@middy/http-error-handler@7.0.2':
+    resolution: {integrity: sha512-uEd6ctFWjgOGUUSSYdEOYst6bfSg2P6Kb/fRr23f1ys1ssA6qR8/ttKH8PzZCe+hpuFhz+XGhOS/2sHzSSBEFQ==}
+    engines: {node: '>=22'}
+
   '@middy/secrets-manager@7.0.2':
     resolution: {integrity: sha512-5Ebgp2B8yItJePXfm40byoqZ18eF/VX7rN3vSRtbocPk8UwYCroA3PHJYv74OnbkWclIfZfDHZ/pL8nbyB5lxQ==}
     engines: {node: '>=22'}
@@ -1763,6 +1779,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/http-errors@2.0.5':
+    resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -2767,6 +2786,10 @@ packages:
     resolution: {integrity: sha512-QAgPDQMEgrDssk1XiwwHoOGYF9BAbUcc1+j+FhEvaOt8/cKRqyLn0U5qA6F74fGhTMGxf92pOvPBeh29jQJDTQ==}
     engines: {node: '>=12.0.0'}
 
+  install@0.13.0:
+    resolution: {integrity: sha512-zDml/jzr2PKU9I8J/xyZBQn8rPCAY//UOYNmR01XwNwyfhEWObo2SWfSl1+0tm1u6PhxLwDnfsT/6jB7OUxqFA==}
+    engines: {node: '>= 0.10'}
+
   internal-slot@1.1.0:
     resolution: {integrity: sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw==}
     engines: {node: '>= 0.4'}
@@ -3256,6 +3279,78 @@ packages:
   npm-run-path@4.0.1:
     resolution: {integrity: sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==}
     engines: {node: '>=8'}
+
+  npm@11.8.0:
+    resolution: {integrity: sha512-n19sJeW+RGKdkHo8SCc5xhSwkKhQUFfZaFzSc+EsYXLjSqIV0tl72aDYQVuzVvfrbysGwdaQsNLNy58J10EBSQ==}
+    engines: {node: ^20.17.0 || >=22.9.0}
+    hasBin: true
+    bundledDependencies:
+      - '@isaacs/string-locale-compare'
+      - '@npmcli/arborist'
+      - '@npmcli/config'
+      - '@npmcli/fs'
+      - '@npmcli/map-workspaces'
+      - '@npmcli/metavuln-calculator'
+      - '@npmcli/package-json'
+      - '@npmcli/promise-spawn'
+      - '@npmcli/redact'
+      - '@npmcli/run-script'
+      - '@sigstore/tuf'
+      - abbrev
+      - archy
+      - cacache
+      - chalk
+      - ci-info
+      - cli-columns
+      - fastest-levenshtein
+      - fs-minipass
+      - glob
+      - graceful-fs
+      - hosted-git-info
+      - ini
+      - init-package-json
+      - is-cidr
+      - json-parse-even-better-errors
+      - libnpmaccess
+      - libnpmdiff
+      - libnpmexec
+      - libnpmfund
+      - libnpmorg
+      - libnpmpack
+      - libnpmpublish
+      - libnpmsearch
+      - libnpmteam
+      - libnpmversion
+      - make-fetch-happen
+      - minimatch
+      - minipass
+      - minipass-pipeline
+      - ms
+      - node-gyp
+      - nopt
+      - npm-audit-report
+      - npm-install-checks
+      - npm-package-arg
+      - npm-pick-manifest
+      - npm-profile
+      - npm-registry-fetch
+      - npm-user-validate
+      - p-map
+      - pacote
+      - parse-conflict-json
+      - proc-log
+      - qrcode-terminal
+      - read
+      - semver
+      - spdx-expression-parse
+      - ssri
+      - supports-color
+      - tar
+      - text-table
+      - tiny-relative-date
+      - treeverse
+      - validate-npm-package-name
+      - which
 
   nx@22.3.3:
     resolution: {integrity: sha512-pOxtKWUfvf0oD8Geqs8D89Q2xpstRTaSY+F6Ut/Wd0GnEjUjO32SS1ymAM6WggGPHDZN4qpNrd5cfIxQmAbRLg==}
@@ -5116,6 +5211,10 @@ snapshots:
 
   '@middy/core@7.0.2': {}
 
+  '@middy/http-error-handler@7.0.2':
+    dependencies:
+      '@middy/util': 7.0.2
+
   '@middy/secrets-manager@7.0.2(@aws-sdk/client-secrets-manager@3.975.0)':
     dependencies:
       '@middy/util': 7.0.2
@@ -5827,6 +5926,8 @@ snapshots:
   '@types/deep-eql@4.0.2': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/http-errors@2.0.5': {}
 
   '@types/json-schema@7.0.15': {}
 
@@ -6987,6 +7088,8 @@ snapshots:
       through: 2.3.8
       wrap-ansi: 7.0.0
 
+  install@0.13.0: {}
+
   internal-slot@1.1.0:
     dependencies:
       es-errors: 1.3.0
@@ -7655,6 +7758,8 @@ snapshots:
   npm-run-path@4.0.1:
     dependencies:
       path-key: 3.1.1
+
+  npm@11.8.0: {}
 
   nx@22.3.3:
     dependencies:
