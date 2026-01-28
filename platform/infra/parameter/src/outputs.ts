@@ -4,9 +4,13 @@ import { Construct } from "constructs";
 
 const envConfig = getEnvConfig();
 
-function generateParamName(name: string) {
+export function generateParamName(name: string) {
   // /development/flex-parameter/auth/user_pool_id
   return `/${envConfig.environment}/flex-parameter${name}`;
+}
+
+export function getFlexSecretNamePrefix(name: string) {
+  return `/${envConfig.environment}/flex-secret${name}`;
 }
 
 const AuthKeys = {

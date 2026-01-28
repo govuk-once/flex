@@ -37,7 +37,7 @@ describe("Domain: Hello", () => {
       expect(response).toMatchObject({
         status: 401,
         statusText: "Unauthorized",
-        body: "Unauthorized: structural check failed",
+        body: "Unauthorized: authentication header invalid",
       });
     },
   );

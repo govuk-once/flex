@@ -8,15 +8,19 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.975.0",
     "@flex/handlers": "workspace:*",
-    "@flex/middlewares": "workspace:*",
     "@flex/logging": "workspace:*",
+    "@flex/middlewares": "workspace:*",
+    "@middy/secrets-manager": "^7.0.2",
     "zod": "4.3.5"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
+    "@middy/core": "7.0.2",
     "@types/aws-lambda": "8.10.159",
+    "aws-sdk-client-mock": "^4.1.0",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
     "vitest": "4.0.17"
