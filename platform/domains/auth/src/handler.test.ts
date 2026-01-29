@@ -47,7 +47,13 @@ describe("Authorizer Handler", () => {
     }) => {
       await expect(
         handler(authorizerEvent.withToken("invalid.jwt.token"), context),
-      ).rejects.toThrow(/Invalid JWT/);
+      ).resolves.toEqual({
+        body: "Invalid JWT: Invalid JWT. Header is not a valid JSON object: SyntaxError: Unexpected token '�', \"�{ږ'\" is not valid JSON",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        statusCode: 401,
+      });
     });
 
     it("throws an error when no JWT token is provided", async ({
@@ -55,7 +61,13 @@ describe("Authorizer Handler", () => {
     }) => {
       await expect(
         handler(authorizerEvent.missingToken(), context),
-      ).rejects.toThrow("No authorization token provided");
+      ).resolves.toEqual({
+        body: "No authorization token provided",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        statusCode: 401,
+      });
     });
 
     it("throws an error when JWT does not contain a pairwise ID", async ({
@@ -72,7 +84,13 @@ describe("Authorizer Handler", () => {
           authorizerEvent.withToken(exampleInvalidJWTMissingUsername),
           context,
         ),
-      ).rejects.toThrow("Pairwise ID (username) not found in JWT");
+      ).resolves.toEqual({
+        body: "Invalid JWT: Pairwise ID (username) not found in JWT",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        statusCode: 401,
+      });
     });
   });
 });
