@@ -33,9 +33,16 @@ describe("GET /user handler", () => {
       );
 
       expect(request).toEqual(
-        response.ok({
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notificationId: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
 
@@ -75,9 +82,16 @@ describe("GET /user handler", () => {
       );
 
       expect(request).toEqual(
-        response.ok({
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notificationId: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
       expect(generateDerivedId).toHaveBeenCalledWith({
         pairwiseId: customPairwiseId,
@@ -99,9 +113,16 @@ describe("GET /user handler", () => {
       );
 
       expect(request).toEqual(
-        response.ok({
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notificationId: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
 
@@ -119,9 +140,16 @@ describe("GET /user handler", () => {
       );
 
       expect(request).toEqual(
-        response.ok({
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notificationId: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
   });

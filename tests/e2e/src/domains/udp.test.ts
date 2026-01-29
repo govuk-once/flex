@@ -50,7 +50,7 @@ describe("UDP domain", () => {
       expect(response).toMatchObject({
         status: 200,
         body: {
-          notificationId: expect.any(String),
+          notificationId: expect.any(String) as string,
         },
       });
     });
@@ -91,7 +91,7 @@ describe("UDP domain", () => {
       expect(response.body).toMatchObject({
         preferences: {
           notifications_consented: true,
-          updated_at: expect.any(String),
+          updated_at: expect.any(String) as string,
         },
       });
     });
