@@ -1,3 +1,4 @@
+import { getConfig } from "@flex/params";
 import {
   authorizerEvent,
   context,
@@ -8,10 +9,9 @@ import {
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { getConfig } from "./config";
-import { handler } from "./handler";
+import { configSchema, handler } from "./handler";
 
-vi.mock("./config", () => {
+vi.mock("@flex/params", () => {
   return {
     getConfig: vi.fn(() => ({
       AWS_REGION: "eu-west-2",
@@ -31,7 +31,7 @@ describe("Authorizer Handler", () => {
     it("sucessfully validates a valid JWT token against JWKS", async ({
       authorizerResult,
     }) => {
-      const config = await getConfig();
+      const config = await getConfig(configSchema);
 
       nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
@@ -73,7 +73,7 @@ describe("Authorizer Handler", () => {
     it("throws an error when JWT does not contain a pairwise ID", async ({
       authorizerEvent,
     }) => {
-      const config = await getConfig();
+      const config = await getConfig(configSchema);
 
       nock(`https://cognito-idp.${config.AWS_REGION}.amazonaws.com`)
         .get(`/${config.USERPOOL_ID}/.well-known/jwks.json`)
