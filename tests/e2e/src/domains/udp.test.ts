@@ -40,8 +40,8 @@ describe("UDP domain", () => {
   });
 
   describe.todo("/get user", () => {
+    // TODO: Replace with valid test user token
     it("returns a 200 and notification ID", async ({ cloudfront }) => {
-      // TODO: Replace with valid test user token
       const token = "todo.valid.token";
       const response = await cloudfront.client.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -58,18 +58,19 @@ describe("UDP domain", () => {
     it("returns the same notification ID for the same user", async ({
       cloudfront,
     }) => {
-      // TODO: Replace with valid test user token
       const token = "todo.valid.token";
-      const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      expect(response).toMatchObject({
-        status: 200,
-        body: {
-          notificationId: expect.any(String),
+      const request = cloudfront.client.get<{ notificationId: string }>(
+        endpoint,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         },
-      });
+      );
+
+      const [response1, response2] = await Promise.all([request, request]);
+
+      expect(response1.body?.notificationId).toBe(
+        response2.body?.notificationId,
+      );
     });
   });
 

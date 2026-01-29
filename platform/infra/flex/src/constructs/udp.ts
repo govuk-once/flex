@@ -1,4 +1,7 @@
-import { importFlexSecret } from "@platform/core/outputs";
+import {
+  importFlexKmsKeyAlias,
+  importFlexSecret,
+} from "@platform/core/outputs";
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Construct } from "constructs";
@@ -14,6 +17,11 @@ export class UdpDomain extends Construct {
     const hashingSecret = importFlexSecret(
       this,
       "/flex-secret/udp/notification-hash-secret",
+    );
+
+    const secretEncryptionKey = importFlexKmsKeyAlias(
+      this,
+      "/flex-secret/encryption-key",
     );
 
     const getUserFunction = new FlexPrivateIsolatedFunction(
@@ -38,6 +46,7 @@ export class UdpDomain extends Construct {
     );
 
     hashingSecret.grantRead(getUserFunction.function);
+    secretEncryptionKey.grantDecrypt(getUserFunction.function);
 
     routeGroup.addRoute(
       "/user",
