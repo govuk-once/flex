@@ -39,41 +39,73 @@ describe("UDP domain", () => {
     });
   });
 
-  it.todo("returns a 201 and creates a user", async ({ cloudfront }) => {
-    // TODO: Replace with expired test user token
-    const token = "todo.valid.token";
-    const pairwiseId = "todo.pairwise.id";
+  describe.todo("/get user", () => {
+    it("returns a 200 and notification ID", async ({ cloudfront }) => {
+      // TODO: Replace with valid test user token
+      const token = "todo.valid.token";
+      const response = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const response = await cloudfront.client.post(endpoint, {
-      body: user,
-      headers: { Authorization: `Bearer ${token}` },
+      expect(response).toMatchObject({
+        status: 200,
+        body: {
+          notificationId: expect.any(String),
+        },
+      });
     });
 
-    expect(response).toMatchObject({
-      status: 201,
-      body: {
-        message: "User created successfully!",
-        userId: pairwiseId,
-      },
+    it("returns the same notification ID for the same user", async ({
+      cloudfront,
+    }) => {
+      // TODO: Replace with valid test user token
+      const token = "todo.valid.token";
+      const response = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(response).toMatchObject({
+        status: 200,
+        body: {
+          notificationId: expect.any(String),
+        },
+      });
     });
   });
 
   describe.todo("/patch user", () => {
+    // TODO: pending valid tokens
     it("returns user preferences updated successfully", async ({
       cloudfront,
     }) => {
+      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
           notifications_consented: true,
         },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        preferences: {
+          notifications_consented: true,
+          updated_at: expect.any(String),
+        },
+      });
+    });
+
+    it("rejects invalid payloads", async ({ cloudfront }) => {
+      const token = "todo.valid.token";
+      const response = await cloudfront.client.patch(endpoint, {
+        body: { notifications_consented: "yes" },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       expect(response).toMatchObject({
-        status: 201,
+        status: 400,
         body: {
-          preferences: {
-            notifications_consented: true,
-          },
+          message: "Invalid input",
         },
       });
     });

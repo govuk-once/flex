@@ -3,11 +3,14 @@ import { createLambdaHandler } from "@flex/handlers";
 import { extractUser } from "@flex/middlewares";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
+import httpResponseSerializer from "@middy/http-response-serializer";
 import { z } from "zod";
 
-export const handlerRequestSchema = z.object({
-  notifications_consented: z.boolean(),
-});
+export const handlerRequestSchema = z
+  .object({
+    notifications_consented: z.boolean(),
+  })
+  .strict();
 
 export type HandlerRequest = z.input<typeof handlerRequestSchema>;
 
@@ -26,17 +29,30 @@ export const handler = createLambdaHandler(
 
     return Promise.resolve({
       statusCode: 200,
-      body: JSON.stringify({
+      body: {
         preferences: {
           notifications_consented: parsedEvent.notifications_consented,
           updated_at: new Date().toISOString(),
         },
-      }),
+      },
     });
   },
   {
     logLevel: "INFO",
-    serviceName: "udp-user-creation-service",
-    middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
+    serviceName: "udp-patch-user-service",
+    middlewares: [
+      extractUser,
+      httpHeaderNormalizer(),
+      httpJsonBodyParser(),
+      httpResponseSerializer({
+        defaultContentType: "application/json",
+        serializers: [
+          {
+            regex: /^application\/json(?:;.*)?$/,
+            serializer: ({ body }) => JSON.stringify(body),
+          },
+        ],
+      }),
+    ],
   },
 );

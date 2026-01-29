@@ -1,9 +1,17 @@
 import { it } from "@flex/testing";
-import { describe, expect } from "vitest";
+import { afterAll, beforeAll, describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /user handler", () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   it("returns user preferences updated successfully", async ({
     response,
     eventWithAuthorizer,
@@ -19,36 +27,72 @@ describe("PATCH /user handler", () => {
     );
 
     expect(request).toEqual(
-      response.ok({
-        preferences: {
-          notifications_consented: true,
-          updated_at: new Date().toISOString(),
+      response.ok(
+        {
+          preferences: {
+            notifications_consented: true,
+            updated_at: new Date().toISOString(),
+          },
         },
-      }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
     );
   });
 
-  it("validates the request against the schema", async ({
+  it.for([
+    {
+      body: { notifications_consented: "yes" },
+      desc: "string instead of boolean",
+    },
+    { body: { notifications_consented: 1 }, desc: "number instead of boolean" },
+    {
+      body: { notifications_consented: null },
+      desc: "null instead of boolean",
+    },
+    { body: {}, desc: "missing notifications_consented" },
+  ])(
+    "rejects invalid payload: $desc",
+    async ({ body }, { eventWithAuthorizer, context }) => {
+      await expect(
+        handler(
+          eventWithAuthorizer.authenticated({ body: JSON.stringify(body) }),
+          context.withPairwiseId().create(),
+        ),
+      ).rejects.toThrow(/Invalid input|expected boolean|Failed to parse/);
+    },
+  );
+
+  it("parses JSON body even with non-standard Content-Type casing", async ({
     response,
     eventWithAuthorizer,
     context,
   }) => {
-    const request = await handler(
+    const result = await handler(
       eventWithAuthorizer.authenticated({
-        body: JSON.stringify({
-          notifications_consented: true,
-        }),
+        headers: { "CoNtEnT-TyPe": "application/json" },
+        body: JSON.stringify({ notifications_consented: true }),
       }),
       context.withPairwiseId().create(),
     );
 
-    expect(request).toEqual(
-      response.ok({
-        preferences: {
-          notifications_consented: true,
-          updated_at: new Date().toISOString(),
+    expect(result).toEqual(
+      response.ok(
+        {
+          preferences: {
+            notifications_consented: true,
+            updated_at: new Date().toISOString(),
+          },
         },
-      }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
     );
   });
 });

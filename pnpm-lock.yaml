@@ -75,6 +75,9 @@ importers:
       '@middy/http-json-body-parser':
         specifier: ^7.0.2
         version: 7.0.2
+      '@middy/http-response-serializer':
+        specifier: ^7.0.2
+        version: 7.0.2
       '@middy/secrets-manager':
         specifier: ^7.0.2
         version: 7.0.2(@aws-sdk/client-secrets-manager@3.975.0)
@@ -1262,6 +1265,10 @@ packages:
 
   '@middy/http-json-body-parser@7.0.2':
     resolution: {integrity: sha512-yQo7GHSv7+94n4f1rW0bhAJQ4X1wUArcsD1CAVi30ajUmrlkNksUGORbxA91ytR3X1yqFDceX1bhyFNX/8y6UA==}
+    engines: {node: '>=22'}
+
+  '@middy/http-response-serializer@7.0.2':
+    resolution: {integrity: sha512-f/NPnJ8bKhkmLUJCiduCHYqpYvWmUiTVGLQv34KLEOYPyWPJhS8UB52IVnTVg5lWC6G4bLrAll0m0pVHz9r/UQ==}
     engines: {node: '>=22'}
 
   '@middy/secrets-manager@7.0.2':
@@ -5298,6 +5305,10 @@ snapshots:
   '@middy/http-header-normalizer@7.0.2': {}
 
   '@middy/http-json-body-parser@7.0.2':
+    dependencies:
+      '@middy/util': 7.0.2
+
+  '@middy/http-response-serializer@7.0.2':
     dependencies:
       '@middy/util': 7.0.2
 

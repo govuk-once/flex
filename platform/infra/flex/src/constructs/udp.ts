@@ -16,11 +16,11 @@ export class UdpDomain extends Construct {
       "/flex-secret/udp/notification-hash-secret",
     );
 
-    const postLoginFunction = new FlexPrivateIsolatedFunction(
+    const getUserFunction = new FlexPrivateIsolatedFunction(
       this,
-      "PostLoginFunction",
+      "GetUserFunction",
       {
-        entry: getEntry("udp", "handlers/post-login/post.ts"),
+        entry: getEntry("udp", "handlers/user/get.ts"),
         domain: "udp",
         environment: {
           FLEX_UDP_NOTIFICATION_SECRET: hashingSecret.secretName,
@@ -28,12 +28,26 @@ export class UdpDomain extends Construct {
       },
     );
 
-    hashingSecret.grantRead(postLoginFunction.function);
+    const patchFunction = new FlexPrivateIsolatedFunction(
+      this,
+      "PatchFunction",
+      {
+        entry: getEntry("udp", "handlers/user/patch.ts"),
+        domain: "udp",
+      },
+    );
+
+    hashingSecret.grantRead(getUserFunction.function);
 
     routeGroup.addRoute(
       "/user",
-      HttpMethod.POST,
-      new HttpLambdaIntegration("PostLogin", postLoginFunction.function),
+      HttpMethod.GET,
+      new HttpLambdaIntegration("GetUser", getUserFunction.function),
+    );
+    routeGroup.addRoute(
+      "/user",
+      HttpMethod.PATCH,
+      new HttpLambdaIntegration("Patch", patchFunction.function),
     );
   }
 }
