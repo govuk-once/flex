@@ -30,8 +30,9 @@ const handler = createLambdaHandler<
 
     const jwt = event.headers?.authorization?.split(" ")[1];
     if (!jwt) {
-      logger.error("No authorization token provided");
-      throw new Error("No authorization token provided");
+      const message = "No authorization token provided";
+      logger.error(message);
+      throw new createHttpError.Unauthorized(message);
     }
 
     const config = await getConfig(configSchema);
@@ -50,7 +51,7 @@ const handler = createLambdaHandler<
       if (!pairwiseId) {
         const message = "Pairwise ID (username) not found in JWT";
         logger.error(message);
-        throw new Error(message);
+        throw new createHttpError.Unauthorized(message);
       }
       logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
@@ -72,7 +73,9 @@ const handler = createLambdaHandler<
       });
     } catch (error) {
       logger.error("JWT verification failed", { error });
-      throw new Error(`Invalid JWT: ${(error as Error).message}`);
+      throw new createHttpError.Unauthorized(
+        `Invalid JWT: ${(error as Error).message}`,
+      );
     }
   },
   {

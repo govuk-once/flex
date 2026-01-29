@@ -30,10 +30,6 @@ export interface ContextWithPairwiseId extends Context {
   pairwiseId: string;
 }
 
-export interface ContextWithSecret extends Context {
-  secretKey: string;
-}
-
 /**
  * Creates a context builder with a fluent API for constructing test Lambda contexts.
  *
@@ -90,13 +86,13 @@ export function createContext<T extends Context = Context>(
     /**
      * Returns a new builder with the secretKey added to the accumulated overrides.
      */
-    withSecret(secrets: Record<string, string>) {
+    withSecret<S>(secrets: S) {
       const next = {
         ...overrides,
         ...secrets,
-      } as DeepPartial<T & Record<string, string>>;
+      } as DeepPartial<T & S>;
 
-      return withOverrides<T & Record<string, string>>(next);
+      return withOverrides<T & S>(next);
     },
   } as const;
 }
