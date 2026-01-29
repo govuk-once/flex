@@ -57,12 +57,12 @@ describe("PATCH /user handler", () => {
   ])(
     "rejects invalid payload: $desc",
     async ({ body }, { eventWithAuthorizer, context }) => {
-      await expect(
-        handler(
-          eventWithAuthorizer.authenticated({ body: JSON.stringify(body) }),
-          context.withPairwiseId().create(),
-        ),
-      ).rejects.toThrow(/Invalid input|expected boolean|Failed to parse/);
+      const result = await handler(
+        eventWithAuthorizer.authenticated({ body: JSON.stringify(body) }),
+        context.withPairwiseId().create(),
+      );
+
+      expect(result.statusCode).toBe(400);
     },
   );
 

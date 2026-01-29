@@ -4,6 +4,7 @@ import { extractUser } from "@flex/middlewares";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import httpResponseSerializer from "@middy/http-response-serializer";
+import createHttpError from "http-errors";
 import { z } from "zod";
 
 export const handlerRequestSchema = z
@@ -25,13 +26,24 @@ export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler(
   async (event) => {
-    const parsedEvent = ApiGatewayV2Envelope.parse(event, handlerRequestSchema);
+    const parsedEvent = ApiGatewayV2Envelope.safeParse(
+      event,
+      handlerRequestSchema,
+    );
+
+    if (!parsedEvent.success) {
+      // Note: it should be impossible to get here if the schemas are correct, but we include this for type narrowing and belt-and-braces safety.
+      const message = `Invalid parsed event: ${parsedEvent.error.message}`;
+      throw new createHttpError.BadRequest(message);
+    }
+
+    const { notifications_consented } = parsedEvent.data;
 
     return Promise.resolve({
       statusCode: 200,
       body: {
         preferences: {
-          notifications_consented: parsedEvent.notifications_consented,
+          notifications_consented,
           updated_at: new Date().toISOString(),
         },
       },

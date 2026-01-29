@@ -3,7 +3,10 @@ import type { Request } from "@middy/core";
 import type { Context } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
-import type { EventWithAuthorizer } from "./apigateway";
+import type {
+  EventWithAuthorizer,
+  EventWithAuthorizerOverrides,
+} from "./apigateway";
 import { createEventWithAuthorizer, eventWithAuthorizer } from "./apigateway";
 import type { ContextOverrides } from "./lambda";
 import { context } from "./lambda";
@@ -47,9 +50,12 @@ export function createMiddyRequest() {
     create: <Event extends EventWithAuthorizer, Result>(
       overrides?: MiddyRequestOverrides<Event, Result>,
     ) => buildMiddyRequest<Event, Result>(overrides),
-    authenticated: (pairwiseId = "test-pairwise-id") =>
+    authenticated: (
+      overrides?: EventWithAuthorizerOverrides,
+      pairwiseId = "test-pairwise-id",
+    ) =>
       buildMiddyRequest({
-        event: authenticatedEventWithAuthorizer(pairwiseId),
+        event: authenticatedEventWithAuthorizer(overrides, pairwiseId),
       }),
     unauthenticated: () =>
       buildMiddyRequest({ event: unauthenticatedEventWithAuthorizer() }),

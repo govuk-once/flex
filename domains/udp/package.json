@@ -17,6 +17,7 @@
     "@middy/http-json-body-parser": "^7.0.2",
     "@middy/http-response-serializer": "^7.0.2",
     "@middy/secrets-manager": "^7.0.2",
+    "http-errors": "2.0.1",
     "zod": "4.3.5"
   },
   "devDependencies": {
