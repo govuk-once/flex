@@ -57,4 +57,25 @@ describe("UDP domain", () => {
       },
     });
   });
+
+  describe.todo("/patch user", () => {
+    it("returns user preferences updated successfully", async ({
+      cloudfront,
+    }) => {
+      const response = await cloudfront.client.patch(endpoint, {
+        body: {
+          notifications_consented: true,
+        },
+      });
+
+      expect(response).toMatchObject({
+        status: 201,
+        body: {
+          preferences: {
+            notifications_consented: true,
+          },
+        },
+      });
+    });
+  });
 });

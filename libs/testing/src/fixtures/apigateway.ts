@@ -26,7 +26,9 @@ const baseEvent: APIGatewayProxyEventV2 = {
   routeKey: "$default",
   rawPath: "/",
   rawQueryString: "",
-  headers: {},
+  headers: {
+    "Content-Type": "application/json",
+  },
   requestContext: {
     accountId: "123456789012",
     apiId: "api-id",
@@ -130,12 +132,17 @@ export function createEventWithAuthorizer<
   return {
     create: (overrides?: EventWithAuthorizerOverrides<T>) =>
       buildEventWithAuthorizer<T>(overrides),
-    authenticated: (pairwiseId = "test-pairwise-id") =>
+    authenticated: (
+      overrides?: EventWithAuthorizerOverrides<T>,
+      pairwiseId = "test-pairwise-id",
+    ) =>
       buildEventWithAuthorizer({
+        ...overrides,
         requestContext: { authorizer: { lambda: { pairwiseId } } },
       }),
-    unauthenticated: () =>
+    unauthenticated: (overrides?: EventWithAuthorizerOverrides<T>) =>
       buildEventWithAuthorizer({
+        ...overrides,
         requestContext: { authorizer: { lambda: { pairwiseId: undefined } } },
       }),
   } as const;
