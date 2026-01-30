@@ -1,4 +1,7 @@
-import { importFlexSecret } from "@platform/core/outputs";
+import {
+  importFlexKmsKeyAlias,
+  importFlexSecret,
+} from "@platform/core/outputs";
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Construct } from "constructs";
@@ -16,11 +19,16 @@ export class UdpDomain extends Construct {
       "/flex-secret/udp/notification-hash-secret",
     );
 
-    const postLoginFunction = new FlexPrivateIsolatedFunction(
+    const secretEncryptionKey = importFlexKmsKeyAlias(
       this,
-      "PostLoginFunction",
+      "/flex-secret/encryption-key",
+    );
+
+    const getUserFunction = new FlexPrivateIsolatedFunction(
+      this,
+      "GetUserFunction",
       {
-        entry: getEntry("udp", "handlers/post-login/post.ts"),
+        entry: getEntry("udp", "handlers/user/get.ts"),
         domain: "udp",
         environment: {
           FLEX_UDP_NOTIFICATION_SECRET: hashingSecret.secretName,
@@ -28,12 +36,27 @@ export class UdpDomain extends Construct {
       },
     );
 
-    hashingSecret.grantRead(postLoginFunction.function);
+    const patchFunction = new FlexPrivateIsolatedFunction(
+      this,
+      "PatchFunction",
+      {
+        entry: getEntry("udp", "handlers/user/patch.ts"),
+        domain: "udp",
+      },
+    );
+
+    hashingSecret.grantRead(getUserFunction.function);
+    secretEncryptionKey.grantDecrypt(getUserFunction.function);
 
     routeGroup.addRoute(
       "/user",
-      HttpMethod.POST,
-      new HttpLambdaIntegration("PostLogin", postLoginFunction.function),
+      HttpMethod.GET,
+      new HttpLambdaIntegration("GetUser", getUserFunction.function),
+    );
+    routeGroup.addRoute(
+      "/user",
+      HttpMethod.PATCH,
+      new HttpLambdaIntegration("Patch", patchFunction.function),
     );
   }
 }

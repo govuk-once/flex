@@ -7,6 +7,7 @@ import {
   SecurityGroup,
   Vpc,
 } from "aws-cdk-lib/aws-ec2";
+import { Key } from "aws-cdk-lib/aws-kms";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
@@ -139,4 +140,16 @@ export function importFlexSecret(scope: Construct, secret: FlexSecret) {
     `FlexSecret${hash(secret)}`,
     getParamName(secret),
   );
+}
+
+/** Flex KMS Key Aliases */
+type FlexKmsKeyAlias = "/flex-secret/encryption-key";
+
+export function importFlexKmsKeyAlias(
+  scope: Construct,
+  kmsKeyAlias: FlexKmsKeyAlias,
+) {
+  return Key.fromLookup(scope, `FlexKmsKeyAlias${hash(kmsKeyAlias)}`, {
+    aliasName: `alias${getParamName("/flex-secret-encryption-key")}`,
+  });
 }

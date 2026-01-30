@@ -5,6 +5,7 @@ import {
   extractUser,
   type V2Authorizer,
 } from "@flex/middlewares";
+import httpResponseSerializer from "@middy/http-response-serializer";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
@@ -15,8 +16,7 @@ import { z } from "zod";
 import { generateDerivedId } from "../../service/derived-id";
 
 export const handlerResponseSchema = z.object({
-  message: z.string(),
-  userId: z.string(),
+  notificationId: z.string(),
 });
 
 export type NotificationSecretContext = {
@@ -39,23 +39,30 @@ export const handler = createLambdaHandler<
     });
 
     return Promise.resolve({
-      statusCode: 201,
-      body: JSON.stringify({
-        message: "User created successfully!",
-        userId: pairwiseId,
-        notificationId,
-      }),
+      statusCode: 200,
+      body: {
+        notification_id: notificationId,
+      },
     });
   },
   {
     logLevel: "INFO",
-    serviceName: "udp-user-creation-service",
+    serviceName: "udp-get-user-service",
     middlewares: [
       extractUser,
       createSecretsMiddleware<NotificationSecretContext>({
         secrets: {
           notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
         },
+      }),
+      httpResponseSerializer({
+        defaultContentType: "application/json",
+        serializers: [
+          {
+            regex: /^application\/json(?:;.*)?$/,
+            serializer: ({ body }) => JSON.stringify(body),
+          },
+        ],
       }),
     ],
   },

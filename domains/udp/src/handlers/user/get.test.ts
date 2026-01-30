@@ -2,14 +2,14 @@ import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { generateDerivedId } from "../../service/derived-id";
-import { handler } from "./post";
+import { handler } from "./get";
 
 vi.mock("../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
 
-describe("User Creation handler", () => {
+describe("GET /user handler", () => {
   const mockNotificationSecret = {
     notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
   };
@@ -18,8 +18,8 @@ describe("User Creation handler", () => {
     vi.clearAllMocks();
   });
 
-  describe("successful user creation", () => {
-    it("returns 201 with user created message and notification ID", async ({
+  describe("successful user get", () => {
+    it("returns 200 with notification ID", async ({
       response,
       eventWithAuthorizer,
       context,
@@ -33,11 +33,16 @@ describe("User Creation handler", () => {
       );
 
       expect(request).toEqual(
-        response.created({
-          message: "User created successfully!",
-          userId: testPairwiseId,
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notification_id: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
 
@@ -69,7 +74,7 @@ describe("User Creation handler", () => {
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
       const request = await handler(
-        eventWithAuthorizer.authenticated(customPairwiseId),
+        eventWithAuthorizer.authenticated({}, customPairwiseId),
         context
           .withPairwiseId(customPairwiseId)
           .withSecret(mockNotificationSecret)
@@ -77,11 +82,16 @@ describe("User Creation handler", () => {
       );
 
       expect(request).toEqual(
-        response.created({
-          message: "User created successfully!",
-          userId: customPairwiseId,
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notification_id: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
       expect(generateDerivedId).toHaveBeenCalledWith({
         pairwiseId: customPairwiseId,
@@ -103,11 +113,16 @@ describe("User Creation handler", () => {
       );
 
       expect(request).toEqual(
-        response.created({
-          message: "User created successfully!",
-          userId: testPairwiseId,
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notification_id: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
 
@@ -125,11 +140,16 @@ describe("User Creation handler", () => {
       );
 
       expect(request).toEqual(
-        response.created({
-          message: "User created successfully!",
-          userId: testPairwiseId,
-          notificationId: mockNotificationId,
-        }),
+        response.ok(
+          {
+            notification_id: mockNotificationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
   });
