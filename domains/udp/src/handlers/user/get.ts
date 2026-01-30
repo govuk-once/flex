@@ -41,7 +41,7 @@ export const handler = createLambdaHandler<
     return Promise.resolve({
       statusCode: 200,
       body: {
-        notification_id: notificationId,
+        notificationId,
       },
     });
   },

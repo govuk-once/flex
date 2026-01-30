@@ -82,7 +82,8 @@ describe("UDP domain", () => {
       const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
-          notifications_consented: true,
+          notificationsConsented: true,
+          analyticsConsented: true,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -90,8 +91,9 @@ describe("UDP domain", () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         preferences: {
-          notifications_consented: true,
-          updated_at: expect.any(String) as string,
+          notificationsConsented: true,
+          analyticsConsented: true,
+          updatedAt: expect.any(String) as string,
         },
       });
     });
@@ -99,14 +101,14 @@ describe("UDP domain", () => {
     it("rejects invalid payloads", async ({ cloudfront }) => {
       const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
-        body: { notifications_consented: "yes" },
+        body: { notificationsConsented: "yes", analyticsConsented: true },
         headers: { Authorization: `Bearer ${token}` },
       });
 
       expect(response).toMatchObject({
         status: 400,
         body: {
-          message: "Invalid input",
+          message: "Invalid payload",
         },
       });
     });
