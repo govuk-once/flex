@@ -74,7 +74,7 @@ describe("GET /user handler", () => {
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
       const request = await handler(
-        eventWithAuthorizer.authenticated(customPairwiseId),
+        eventWithAuthorizer.authenticated({}, customPairwiseId),
         context
           .withPairwiseId(customPairwiseId)
           .withSecret(mockNotificationSecret)
