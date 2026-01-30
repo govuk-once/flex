@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./domain": "./src/domain.ts",
     "./eslint": "./src/eslint.mjs",
-    "./vitest": "./src/vitest.ts",
-    "./tsconfig.json": "./src/tsconfig.json"
+    "./tsconfig.json": "./src/tsconfig.json",
+    "./vitest": "./src/vitest.ts"
   },
   "scripts": {
     "lint": "eslint --max-warnings=0 ."
@@ -20,8 +21,11 @@
     "@eslint/js": "9.39.2",
     "@eslint/json": "1.0.0",
     "@eslint/markdown": "7.5.1",
+    "@html-eslint/eslint-plugin": "0.53.0",
     "@html-eslint/eslint-plugin": "0.54.2",
+    "@vitest/coverage-v8": "4.0.17",
     "@vitest/coverage-v8": "4.0.18",
+    "aws-cdk-lib": "2.235.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-gitignore": "0.1.0",
     "eslint-plugin-prettier": "5.5.5",
@@ -30,7 +34,8 @@
     "eslint-plugin-simple-import-sort": "12.1.1",
     "find-up": "8.0.0",
     "globals": "17.3.0",
-    "typescript-eslint": "8.54.0"
+    "typescript-eslint": "8.53.0",
+    "zod": "4.3.5"
   },
   "devDependencies": {
     "@types/node": "25.2.0",
