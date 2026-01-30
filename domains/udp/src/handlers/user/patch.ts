@@ -9,8 +9,8 @@ import { z } from "zod";
 
 export const handlerRequestSchema = z
   .object({
-    notifications_consented: z.boolean(),
-    analytics_consented: z.boolean(),
+    notificationsConsented: z.boolean(),
+    analyticsConsented: z.boolean(),
   })
   .strict();
 
@@ -18,9 +18,9 @@ export type HandlerRequest = z.input<typeof handlerRequestSchema>;
 
 export const handlerResponseSchema = z.object({
   preferences: z.object({
-    notifications_consented: z.boolean(),
-    analytics_consented: z.boolean(),
-    updated_at: z.string(),
+    notificationsConsented: z.boolean(),
+    analyticsConsented: z.boolean(),
+    updatedAt: z.string(),
   }),
 });
 
@@ -39,15 +39,15 @@ export const handler = createLambdaHandler(
       throw new createHttpError.BadRequest(message);
     }
 
-    const { notifications_consented, analytics_consented } = parsedEvent.data;
+    const { notificationsConsented, analyticsConsented } = parsedEvent.data;
 
     return Promise.resolve({
       statusCode: 200,
       body: {
         preferences: {
-          notifications_consented,
-          analytics_consented,
-          updated_at: new Date().toISOString(),
+          notificationsConsented,
+          analyticsConsented,
+          updatedAt: new Date().toISOString(),
         },
       },
     });

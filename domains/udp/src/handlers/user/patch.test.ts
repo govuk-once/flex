@@ -20,8 +20,8 @@ describe("PATCH /user handler", () => {
     const request = await handler(
       eventWithAuthorizer.authenticated({
         body: JSON.stringify({
-          notifications_consented: true,
-          analytics_consented: true,
+          notificationsConsented: true,
+          analyticsConsented: true,
         }),
       }),
       context.withPairwiseId().create(),
@@ -31,9 +31,9 @@ describe("PATCH /user handler", () => {
       response.ok(
         {
           preferences: {
-            notifications_consented: true,
-            analytics_consented: true,
-            updated_at: new Date().toISOString(),
+            notificationsConsented: true,
+            analyticsConsented: true,
+            updatedAt: new Date().toISOString(),
           },
         },
         {
@@ -47,28 +47,28 @@ describe("PATCH /user handler", () => {
 
   it.for([
     {
-      body: { notifications_consented: "yes", analytics_consented: true },
+      body: { notificationsConsented: "yes", analyticsConsented: true },
       desc: "string instead of boolean",
     },
     {
-      body: { notifications_consented: 1, analytics_consented: true },
+      body: { notificationsConsented: 1, analyticsConsented: true },
       desc: "number instead of boolean",
     },
     {
-      body: { notifications_consented: null, analytics_consented: true },
+      body: { notificationsConsented: null, analyticsConsented: true },
       desc: "null instead of boolean",
     },
     {
-      body: { notifications_consented: true },
-      desc: "missing analytics_consented",
+      body: { notificationsConsented: true },
+      desc: "missing analyticsConsented",
     },
     {
-      body: { analytics_consented: true },
-      desc: "missing notifications_consented",
+      body: { analyticsConsented: true },
+      desc: "missing notificationsConsented",
     },
     {
       body: {},
-      desc: "missing notifications_consented and analytics_consented",
+      desc: "missing notificationsConsented and analyticsConsented",
     },
   ])(
     "rejects invalid payload: $desc",
@@ -91,8 +91,8 @@ describe("PATCH /user handler", () => {
       eventWithAuthorizer.authenticated({
         headers: { "CoNtEnT-TyPe": "application/json" },
         body: JSON.stringify({
-          notifications_consented: true,
-          analytics_consented: true,
+          notificationsConsented: true,
+          analyticsConsented: true,
         }),
       }),
       context.withPairwiseId().create(),
@@ -102,9 +102,9 @@ describe("PATCH /user handler", () => {
       response.ok(
         {
           preferences: {
-            notifications_consented: true,
-            analytics_consented: true,
-            updated_at: new Date().toISOString(),
+            notificationsConsented: true,
+            analyticsConsented: true,
+            updatedAt: new Date().toISOString(),
           },
         },
         {

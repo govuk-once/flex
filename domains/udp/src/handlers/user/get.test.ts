@@ -35,7 +35,7 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            notification_id: mockNotificationId,
+            notificationId: mockNotificationId,
           },
           {
             headers: {
@@ -84,7 +84,7 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            notification_id: mockNotificationId,
+            notificationId: mockNotificationId,
           },
           {
             headers: {
@@ -115,7 +115,7 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            notification_id: mockNotificationId,
+            notificationId: mockNotificationId,
           },
           {
             headers: {
@@ -142,7 +142,7 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            notification_id: mockNotificationId,
+            notificationId: mockNotificationId,
           },
           {
             headers: {
