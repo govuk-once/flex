@@ -131,7 +131,7 @@ export function importFlexParameter(scope: Construct, param: FlexParam) {
 }
 
 /** Flex Secrets */
-type FlexSecret = "/flex-secret/udp/notification-hash-secret";
+export type FlexSecret = "/flex-secret/udp/notification-hash-secret";
 
 export function importFlexSecret(scope: Construct, secret: FlexSecret) {
   return Secret.fromSecretNameV2(

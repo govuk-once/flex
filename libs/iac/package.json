@@ -13,9 +13,9 @@
     "lint": "eslint --max-warnings=0 ."
   },
   "dependencies": {
+    "aws-cdk-lib": "2.235.0",
     "zod": "4.3.5",
-    "zod-openapi": "5.4.6",
-    "aws-cdk-lib": "2.235.0"
+    "zod-openapi": "5.4.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

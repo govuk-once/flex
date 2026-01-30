@@ -9,9 +9,15 @@ const DomainEndpointSchema = z.object({
   envSecret: z.record(z.string(), z.string()).optional(),
 });
 
+const RouteVersionSchema = z.object({
+  id: z.string(),
+  prefix: z.string(),
+  routes: z.array(DomainEndpointSchema),
+});
+
 export const RoutesSchema = z.object({
   domain: z.string(),
-  routes: z.array(DomainEndpointSchema),
+  versions: z.array(RouteVersionSchema),
 });
 
 export type IRoutes = z.infer<typeof RoutesSchema>;

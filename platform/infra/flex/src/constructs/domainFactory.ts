@@ -1,7 +1,9 @@
 import { IDomainEndpoint, IRoutes } from "@flex/iac";
+import { FlexSecret, importFlexSecret } from "@platform/core/outputs";
 import { NestedStack } from "aws-cdk-lib";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { Construct } from "constructs";
 
 import { getEntry } from "../utils/getEntry";
@@ -10,6 +12,8 @@ import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-func
 import { FlexPublicFunction } from "./lambda/flex-public-function";
 
 export class domainFactory extends NestedStack {
+  private secretsCache = new Map<string, ISecret>();
+
   constructor(
     scope: Construct,
     id: string,
@@ -17,35 +21,68 @@ export class domainFactory extends NestedStack {
     httpApi: HttpApi,
   ) {
     super(scope, id);
-    const { routes, domain } = domainRoutes;
+    const { versions, domain } = domainRoutes;
 
-    routes.forEach((route) => {
-      const { envSecret } = route;
+    versions.forEach((version) => {
+      version.routes.forEach((route) => {
+        const { envSecret, method, path } = route;
+        const resolvedEnvVars: Record<string, string> = {};
+        const secretsToGrant: ISecret[] = [];
 
-      if (envSecret) {
-        // TODO need to use env secret
-      }
+        if (envSecret) {
+          Object.entries(envSecret).forEach(([envKey, secretPath]) => {
+            const secret = this._getOrImportSecret(secretPath as FlexSecret);
+            resolvedEnvVars[envKey] = secret.secretName;
+            secretsToGrant.push(secret);
+          });
+        }
 
-      const domainEndpointFn = this._getEndpointFnType(route, domain);
+        const domainEndpointFn = this._getEndpointFnType(
+          route,
+          domain,
+          version.id,
+          resolvedEnvVars,
+        );
 
-      httpApi.addRoutes({
-        path: route.path,
-        methods: [route.method],
-        integration: new HttpLambdaIntegration(
-          `${domain}${route.type}`,
-          domainEndpointFn.function,
-        ),
+        secretsToGrant.forEach((secret) => {
+          secret.grantRead(domainEndpointFn.function);
+        });
+
+        const fullPath = `${version.prefix}${path}`.replace(/\/\//g, "/");
+
+        const cleanPathId = path.replace(/\//g, "");
+        const integrationId = `${domain}-${version.id}-${method}-${cleanPathId}`;
+
+        httpApi.addRoutes({
+          path: fullPath,
+          methods: [route.method],
+          integration: new HttpLambdaIntegration(
+            integrationId,
+            domainEndpointFn.function,
+          ),
+        });
       });
     });
+  }
+
+  private _getOrImportSecret(secretPath: FlexSecret): ISecret {
+    if (this.secretsCache.has(secretPath)) {
+      return this.secretsCache.get(secretPath)!;
+    }
+
+    const secret = importFlexSecret(this, secretPath);
+    this.secretsCache.set(secretPath, secret);
+    return secret;
   }
 
   private _getEndpointFnType(
     route: IDomainEndpoint,
     domain: string,
+    versionId: string,
     environment?: Record<string, string>,
   ) {
     const { entry, type } = route;
-    const id = `${route.path}-${route.method}`;
+    const id = `${versionId}-${route.path}-${route.method}`;
     let domainEndpointFn;
 
     switch (type) {

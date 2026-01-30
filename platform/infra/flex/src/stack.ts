@@ -22,16 +22,6 @@ export class FlexPlatformStack extends GovUkOnceStack {
     const { httpApi, httpApiUrl } = new FlexHttpApi(this, "HttpApi");
     const { distribution } = new FlexFailFast(this, "FailFast", httpApi);
 
-    /**
-     * TODO:
-     * - UDP code needs to be implemented in the domain forEach loop
-     * const v1 = new RouteGroup(this, "V1", {
-     *   httpApi,
-     *   pathPrefix: "/1.0/app",
-     * });
-     * new UdpDomain(this, "UdpDomain", v1);
-     */
-
     domains.forEach((domain) => {
       new domainFactory(this, `${domain.domain}Domain`, domain, httpApi);
     });
