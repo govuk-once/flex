@@ -21,6 +21,7 @@ describe("PATCH /user handler", () => {
       eventWithAuthorizer.authenticated({
         body: JSON.stringify({
           notifications_consented: true,
+          analytics_consented: true,
         }),
       }),
       context.withPairwiseId().create(),
@@ -31,6 +32,7 @@ describe("PATCH /user handler", () => {
         {
           preferences: {
             notifications_consented: true,
+            analytics_consented: true,
             updated_at: new Date().toISOString(),
           },
         },
@@ -45,15 +47,29 @@ describe("PATCH /user handler", () => {
 
   it.for([
     {
-      body: { notifications_consented: "yes" },
+      body: { notifications_consented: "yes", analytics_consented: true },
       desc: "string instead of boolean",
     },
-    { body: { notifications_consented: 1 }, desc: "number instead of boolean" },
     {
-      body: { notifications_consented: null },
+      body: { notifications_consented: 1, analytics_consented: true },
+      desc: "number instead of boolean",
+    },
+    {
+      body: { notifications_consented: null, analytics_consented: true },
       desc: "null instead of boolean",
     },
-    { body: {}, desc: "missing notifications_consented" },
+    {
+      body: { notifications_consented: true },
+      desc: "missing analytics_consented",
+    },
+    {
+      body: { analytics_consented: true },
+      desc: "missing notifications_consented",
+    },
+    {
+      body: {},
+      desc: "missing notifications_consented and analytics_consented",
+    },
   ])(
     "rejects invalid payload: $desc",
     async ({ body }, { eventWithAuthorizer, context }) => {
@@ -74,7 +90,10 @@ describe("PATCH /user handler", () => {
     const result = await handler(
       eventWithAuthorizer.authenticated({
         headers: { "CoNtEnT-TyPe": "application/json" },
-        body: JSON.stringify({ notifications_consented: true }),
+        body: JSON.stringify({
+          notifications_consented: true,
+          analytics_consented: true,
+        }),
       }),
       context.withPairwiseId().create(),
     );
@@ -84,6 +103,7 @@ describe("PATCH /user handler", () => {
         {
           preferences: {
             notifications_consented: true,
+            analytics_consented: true,
             updated_at: new Date().toISOString(),
           },
         },
