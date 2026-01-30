@@ -6,7 +6,7 @@ const DomainEndpointSchema = z.object({
   method: z.nativeEnum(HttpMethod),
   path: z.string(),
   type: z.enum(["PUBLIC", "PRIVATE", "ISOLATED"]),
-  // environment: z.record(z.string(), z.any()).optional(),
+  envSecret: z.record(z.string(), z.string()).optional(),
 });
 
 export const RoutesSchema = z.object({

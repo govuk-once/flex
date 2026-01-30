@@ -9,7 +9,6 @@ import { FlexPrivateEgressFunction } from "./lambda/flex-private-egress-function
 import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "./lambda/flex-public-function";
 
-// Using NestedStack but would we want this to be its own stack perhaps?
 export class domainFactory extends NestedStack {
   constructor(
     scope: Construct,
@@ -21,7 +20,13 @@ export class domainFactory extends NestedStack {
     const { routes, domain } = domainRoutes;
 
     routes.forEach((route) => {
-      const domainEndpointFn = this.getEndpointFnType(route, domain);
+      const { envSecret } = route;
+
+      if (envSecret) {
+        // TODO need to use env secret
+      }
+
+      const domainEndpointFn = this._getEndpointFnType(route, domain);
 
       httpApi.addRoutes({
         path: route.path,
@@ -34,31 +39,35 @@ export class domainFactory extends NestedStack {
     });
   }
 
-  /**
-   * PRIVATE ~ helper functions
-   */
-  private getEndpointFnType(route: IDomainEndpoint, domain: string) {
+  private _getEndpointFnType(
+    route: IDomainEndpoint,
+    domain: string,
+    environment?: Record<string, string>,
+  ) {
     const { entry, type } = route;
+    const id = `${route.path}-${route.method}`;
     let domainEndpointFn;
 
-    // TODO update from "public", "private", etc for the fn class
     switch (type) {
       case "PUBLIC":
-        domainEndpointFn = new FlexPublicFunction(this, "public", {
+        domainEndpointFn = new FlexPublicFunction(this, id, {
           domain,
           entry: getEntry(domain, entry),
+          environment,
         });
         break;
       case "PRIVATE":
-        domainEndpointFn = new FlexPrivateEgressFunction(this, "private", {
+        domainEndpointFn = new FlexPrivateEgressFunction(this, id, {
           domain,
           entry: getEntry(domain, entry),
+          environment,
         });
         break;
       case "ISOLATED":
-        domainEndpointFn = new FlexPrivateIsolatedFunction(this, "isolated", {
+        domainEndpointFn = new FlexPrivateIsolatedFunction(this, id, {
           domain,
           entry: getEntry(domain, entry),
+          environment,
         });
         break;
     }
