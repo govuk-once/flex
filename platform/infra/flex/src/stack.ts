@@ -1,74 +1,16 @@
+import { IRoutes } from "@flex/iac";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
-import { AccessLogFormat } from "aws-cdk-lib/aws-apigateway";
-import {
-  CorsHttpMethod,
-  HttpApi,
-  HttpMethod,
-  HttpStage,
-  LogGroupLogDestination,
-} from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
-import { FlexAuthentication } from "./constructs/flex-authentication";
-import { FlexFailFast } from "./constructs/flex-fail-fast";
-import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
-import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
-import { FlexPublicFunction } from "./constructs/flex-public-function";
-import { RouteGroup } from "./constructs/flex-route-group";
-import { UdpDomain } from "./constructs/udp";
-import { getEntry } from "./utils/getEntry";
+import { FlexHttpApi } from "./constructs/apiGateway/flex-http-api";
+// import { RouteGroup } from "./constructs/apiGateway/flex-route-group";
+import { FlexFailFast } from "./constructs/cloudfront/flex-fail-fast";
+import { domainFactory } from "./constructs/domainFactory";
+// import { UdpDomain } from "./constructs/udp";
 
 export class FlexPlatformStack extends GovUkOnceStack {
-  private createHttpApi() {
-    const accessLogGroup = new LogGroup(this, "ApiAccessLogs", {
-      retention: RetentionDays.ONE_WEEK,
-    });
-
-    const authentication = new FlexAuthentication(this, "Authentication");
-
-    const httpApi = new HttpApi(this, "Api", {
-      apiName: "Flex Platform API",
-      description: "Central API Gateway for the Flex Platform",
-      corsPreflight: {
-        allowOrigins: ["*"],
-        allowHeaders: ["Authorization", "Content-Type"],
-        allowMethods: [CorsHttpMethod.ANY],
-      },
-      createDefaultStage: false,
-      defaultAuthorizer: authentication.authorizer,
-    });
-
-    const httpStage = new HttpStage(this, "ApiStage", {
-      httpApi,
-      stageName: "$default",
-      autoDeploy: true,
-      accessLogSettings: {
-        destination: new LogGroupLogDestination(accessLogGroup),
-        format: AccessLogFormat.jsonWithStandardFields({
-          httpMethod: true,
-          ip: true,
-          protocol: true,
-          requestTime: true,
-          resourcePath: true,
-          responseLength: true,
-          status: true,
-          user: true,
-          caller: true,
-        }),
-      },
-      detailedMetricsEnabled: true,
-    });
-
-    return {
-      httpApiUrl: httpStage.url ?? "",
-      httpApi,
-    };
-  }
-
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, domains: IRoutes[]) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -79,74 +21,30 @@ export class FlexPlatformStack extends GovUkOnceStack {
       },
     });
 
-    const { httpApi, httpApiUrl } = this.createHttpApi();
+    const { httpApi, httpApiUrl } = new FlexHttpApi(this, "HttpApi");
+    const { distribution } = new FlexFailFast(this, "FailFast", httpApi);
 
-    const helloPublicFunction = new FlexPublicFunction(
-      this,
-      "HelloPublicFunction",
-      {
-        entry: getEntry("hello", "handlers/hello-public/get.ts"),
-        domain: "hello",
-      },
-    );
-
-    httpApi.addRoutes({
-      path: "/hello-public",
-      methods: [HttpMethod.GET],
-      integration: new HttpLambdaIntegration(
-        "HelloPublic",
-        helloPublicFunction.function,
-      ),
+    /**
+     * TODO:
+     * - Get the domainFactory working first with the hello domain
+     * - Need to get the version to get created via the domain loop
+     *   - Think with will need to be in the domainFactory class though
+     * - Need to add the UdpDomain insot the domainFactory
+     */
+    domains.forEach((domain) => {
+      new domainFactory(this, `${domain.domain}Domain`, domain, httpApi);
     });
 
-    const helloPrivateFunction = new FlexPrivateEgressFunction(
-      this,
-      "HelloPrivateFunction",
-      {
-        entry: getEntry("hello", "handlers/hello-private/get.ts"),
-        domain: "hello",
-      },
-    );
-
-    httpApi.addRoutes({
-      path: "/hello-private",
-      methods: [HttpMethod.GET],
-      integration: new HttpLambdaIntegration(
-        "HelloPrivate",
-        helloPrivateFunction.function,
-      ),
-    });
-
-    const helloIsolatedFunction = new FlexPrivateIsolatedFunction(
-      this,
-      "HelloIsolatedFunction",
-      {
-        entry: getEntry("hello", "handlers/hello-isolated/get.ts"),
-        domain: "hello",
-      },
-    );
-
-    httpApi.addRoutes({
-      path: "/hello-isolated",
-      methods: [HttpMethod.GET],
-      integration: new HttpLambdaIntegration(
-        "HelloIsolated",
-        helloIsolatedFunction.function,
-      ),
-    });
-
-    const v1 = new RouteGroup(this, "V1", {
-      httpApi,
-      pathPrefix: "/1.0/app",
-    });
-
-    new UdpDomain(this, "UdpDomain", v1);
-
-    const failFast = new FlexFailFast(this, "FailFast", httpApi);
+    // UDP stuff needs updating to be encapulated within the above
+    // const v1 = new RouteGroup(this, "V1", {
+    //   httpApi,
+    //   pathPrefix: "/1.0/app",
+    // });
+    // new UdpDomain(this, "UdpDomain", v1);
 
     new CfnOutput(this, "HttpApiUrl", { value: httpApiUrl });
     new CfnOutput(this, "CloudfrontDistributionUrl", {
-      value: `https://${failFast.distribution.distribution.distributionDomainName}`,
+      value: `https://${distribution.distribution.distributionDomainName}`,
     });
   }
 }

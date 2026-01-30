@@ -12,7 +12,9 @@
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/middlewares": "workspace:*",
+    "@flex/iac": "workspace:*",
     "@middy/secrets-manager": "^7.0.2",
+    "aws-cdk-lib": "2.235.0",
     "zod": "4.3.5"
   },
   "devDependencies": {

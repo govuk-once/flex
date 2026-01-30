@@ -3,8 +3,8 @@ import { Duration } from "aws-cdk-lib";
 import { HttpLambdaAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import { Construct } from "constructs";
 
-import { getPlatformEntry } from "../utils/getEntry";
-import { FlexPrivateEgressFunction } from "./flex-private-egress-function";
+import { getPlatformEntry } from "../../utils/getEntry";
+import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
 export class FlexAuthentication extends Construct {
   public readonly authorizer: HttpLambdaAuthorizer;

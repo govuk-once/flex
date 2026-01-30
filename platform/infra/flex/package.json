@@ -12,12 +12,14 @@
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "dependencies": {
+    "@flex/iac": "workspace:*",
     "@platform/core": "workspace:*",
     "@platform/gov-uk-once": "workspace:*",
     "aws-cdk": "2.1101.0",
     "aws-cdk-lib": "2.235.0",
     "constructs": "10.4.5",
-    "esbuild": "0.27.2"
+    "esbuild": "0.27.2",
+    "jiti": "2.6.1"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

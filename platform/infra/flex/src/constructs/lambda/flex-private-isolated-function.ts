@@ -9,7 +9,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
-import { FlexFunctionProps } from "./types";
+import { FlexFunctionProps } from "../types";
 
 export class FlexPrivateIsolatedFunction extends Construct {
   public readonly function: NodejsFunction;

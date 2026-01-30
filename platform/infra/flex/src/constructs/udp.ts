@@ -4,8 +4,8 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import { Construct } from "constructs";
 
 import { getEntry } from "../utils/getEntry";
-import { FlexPrivateIsolatedFunction } from "./flex-private-isolated-function";
-import { RouteGroup } from "./flex-route-group";
+import { RouteGroup } from "./apiGateway/flex-route-group";
+import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-function";
 
 export class UdpDomain extends Construct {
   constructor(scope: Construct, id: string, routeGroup: RouteGroup) {
