@@ -61,5 +61,3 @@ export type NumberBetween<From extends number, To extends number> = Exclude<
   NumberUpTo<To>,
   NumberUpTo<From>
 >;
-
-type J = NumberBetween<3, 10>;
