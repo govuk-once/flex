@@ -239,7 +239,6 @@ describe("flex-fetch", () => {
 
   it("correctly logs the request URL when a Request object is provided", async () => {
     const err = new Error("network");
-    const okResponse = { ok: true, status: 200 } as unknown as Response;
     vi.stubGlobal(
       "fetch",
       createSequentialFetchMock([() => Promise.reject(err)]),
