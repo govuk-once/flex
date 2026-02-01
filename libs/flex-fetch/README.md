@@ -1,6 +1,6 @@
 # @flex/flex-fetch
 
-Lightweight wrapper around `fetch` that adds exponential backoff retries with jitter and a simple `AbortController` to cancel the in‑flight request and stop further retries.
+Lightweight wrapper around `fetch` that adds exponential backoff retries with jitter and a simple `AbortController` to cancel the in-flight request and stop further retries.
 
 ## Install
 
@@ -18,7 +18,7 @@ pnpm add @flex/flex-fetch
 ### Options (`FlexFetchRequestInit`)
 
 - **`retryAttempts`**: number of attempts, capped at 5. If omitted, no retries are performed.
-- **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10–1000 ms.
+- **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10-1000 ms.
 - **Other `RequestInit`**: any standard fetch options (`method`, `headers`, `body`, etc.).
 
 ### Behavior
