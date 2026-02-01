@@ -37,6 +37,9 @@ export function flexFetch(
   options?: FlexFetchRequestInit,
 ): { request: Promise<Response>; abort: () => void } {
   const logger = getLogger();
+  logger.info("flex-fetch called", { url });
+  logger.debug("flex-fetch options", { options });
+
   const { retryAttempts, maxRetryDelay, ...fetchOptions } = options ?? {};
 
   const controller = new AbortController();
@@ -58,7 +61,13 @@ export function flexFetch(
         numOfAttempts: retryAttemptsNormalised,
         maxDelay: retryDelayNormalised,
         jitter: "full",
-        retry() {
+        retry(error, attemptNumber) {
+          logger.warn("flex-fetch retrying request", {
+            url,
+            options: fetchOptions,
+            error,
+            attemptNumber,
+          });
           return !controller.signal.aborted;
         },
       },

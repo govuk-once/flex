@@ -10,8 +10,6 @@ Lightweight wrapper around `fetch` that adds exponential backoff retries with ji
 pnpm add @flex/flex-fetch
 ```
 
-Requires Node 18+ (global `fetch`) or a compatible `fetch` polyfill.
-
 ## API
 
 - **Function:** `flexFetch(url, options?)`
@@ -19,7 +17,7 @@ Requires Node 18+ (global `fetch`) or a compatible `fetch` polyfill.
 
 ### Options (`FlexFetchRequestInit`)
 
-- **`retryAttempts`**: number up to 5. Currently the implementation always retries up to 5 attempts (values < 5 are treated as 5).
+- **`retryAttempts`**: number of attempts, capped at 5. If omitted, no retries are performed.
 - **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10–1000 ms.
 - **Other `RequestInit`**: any standard fetch options (`method`, `headers`, `body`, etc.).
 
@@ -48,7 +46,7 @@ const json = await res.json();
 
 ```ts
 const { request } = flexFetch(new URL("https://api.example.com/data"), {
-  // Note: values < 5 are treated as 5 attempts in current implementation
+  // Values above 5 are capped at 5
   retryAttempts: 5,
   maxRetryDelay: 500,
   headers: { Accept: "application/json" },
@@ -77,9 +75,8 @@ try {
 
 ## Notes & Gotchas
 
-- **Retries count:** The current implementation enforces at least 5 attempts. If you need fewer attempts, change the clamp to use `Math.min(retryAttempts ?? 1, MAX_ATTEMPTS)` in `src/index.ts`.
+- **Retries count:** Retries are only enabled when `retryAttempts` is provided. Attempts are capped at 5.
 - **Logging on failure:** Async failures after all retries won’t be caught by the function’s `try/catch`. Log at the call site by attaching `.catch(...)` to the returned `request` Promise if you need error telemetry.
-- **Environment:** In Node < 18, install a `fetch` polyfill (e.g. `undici`).
 
 ## Under the Hood
 
