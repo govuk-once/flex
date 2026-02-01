@@ -35,3 +35,31 @@ export type Simplify<T> = T extends object
       [P in keyof T]: Simplify<T[P]>;
     }
   : T;
+
+/**
+ * Generate a union type of numbers from 0 up to (but not including) N.
+ * Does NOT work with negative numbers.
+ * Does not allow for arbitrarily large numbers due to limitations of type engine
+ *
+ * Good for limiting a number up to a certain point
+ */
+export type NumberUpTo<
+  End extends number,
+  Range extends number[] = [],
+> = Range["length"] extends End
+  ? Range[number]
+  : NumberUpTo<End, [...Range, Range["length"]]>;
+
+/**
+ * Generate a union type of numbers from F up to (but not including) T.
+ * Does NOT work with negative numbers.
+ * Does not allow for arbitrarily large numbers due to limitations of type engine
+ *
+ * Good for restricting literal number values
+ */
+export type NumberBetween<From extends number, To extends number> = Exclude<
+  NumberUpTo<To>,
+  NumberUpTo<From>
+>;
+
+type J = NumberBetween<3, 10>;
