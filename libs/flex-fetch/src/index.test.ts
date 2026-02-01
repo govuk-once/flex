@@ -39,7 +39,6 @@ vi.mock("exponential-backoff", () => {
   return { backOff };
 });
 
-// Helpers to create a controllable fetch mock
 function createAbortableFetchMock() {
   const fetchMock = vi.fn(
     (_: string | Request | URL, options?: { signal?: AbortSignal }) =>
@@ -134,11 +133,11 @@ describe("flex-fetch", () => {
       createSequentialFetchMock([() => Promise.reject(err)]),
     );
 
-    const { request: r1 } = flexFetch("https://example.com/data", {
+    const { request: request1 } = flexFetch("https://example.com/data", {
       retryAttempts: 1,
       maxRetryDelay: 5,
     });
-    await expect(r1).rejects.toThrow();
+    await expect(request1).rejects.toThrow();
 
     expect(backOff).toBeCalledWith(
       expect.any(Function),
@@ -149,11 +148,11 @@ describe("flex-fetch", () => {
 
     vi.clearAllMocks();
     globalThis.fetch = createSequentialFetchMock([() => Promise.reject(err)]);
-    const { request: r2 } = flexFetch("https://example.com/data", {
+    const { request: request2 } = flexFetch("https://example.com/data", {
       retryAttempts: 1,
       maxRetryDelay: 5000,
     });
-    await expect(r2).rejects.toThrow();
+    await expect(request2).rejects.toThrow();
 
     expect(backOff).toBeCalledWith(
       expect.any(Function),
