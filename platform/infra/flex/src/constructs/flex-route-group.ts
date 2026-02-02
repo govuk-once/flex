@@ -7,7 +7,7 @@ import { Construct } from "constructs";
 
 interface RouteGroupProps {
   readonly httpApi: HttpApi;
-  readonly version: "v1" | "v2";
+  readonly version: `v${bigint}`;
 }
 
 export class RouteGroup extends Construct {
