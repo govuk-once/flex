@@ -2,7 +2,7 @@ import { it } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("UDP domain", () => {
-  const ingressPath = "/1.0/app";
+  const ingressPath = "/v1/app";
   const endpoint = `${ingressPath}/user`;
   const user = { name: "John Doe" };
 

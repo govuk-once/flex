@@ -137,7 +137,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
 
     const v1 = new RouteGroup(this, "V1", {
       httpApi,
-      pathPrefix: "/1.0/app",
+      pathPrefix: "/v1/app",
     });
 
     new UdpDomain(this, "UdpDomain", v1);
