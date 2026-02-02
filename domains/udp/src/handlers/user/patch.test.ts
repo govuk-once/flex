@@ -45,6 +45,35 @@ describe("PATCH /user handler", () => {
     );
   });
 
+  it("allows updating one field at a time", async ({
+    response,
+    eventWithAuthorizer,
+    context,
+  }) => {
+    const request = await handler(
+      eventWithAuthorizer.authenticated({
+        body: JSON.stringify({ notificationsConsented: true }),
+      }),
+      context.withPairwiseId().create(),
+    );
+
+    expect(request).toEqual(
+      response.ok(
+        {
+          preferences: {
+            notificationsConsented: true,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+    );
+  });
+
   it.for([
     {
       body: { notificationsConsented: "yes", analyticsConsented: true },
@@ -57,14 +86,6 @@ describe("PATCH /user handler", () => {
     {
       body: { notificationsConsented: null, analyticsConsented: true },
       desc: "null instead of boolean",
-    },
-    {
-      body: { notificationsConsented: true },
-      desc: "missing analyticsConsented",
-    },
-    {
-      body: { analyticsConsented: true },
-      desc: "missing notificationsConsented",
     },
     {
       body: {},

@@ -102,7 +102,7 @@ describe("UDP domain", () => {
     it("rejects invalid payloads", async ({ cloudfront }) => {
       const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
-        body: { notificationsConsented: "yes", analyticsConsented: true },
+        body: { notificationsConsented: "yes" },
         headers: { Authorization: `Bearer ${token}` },
       });
 

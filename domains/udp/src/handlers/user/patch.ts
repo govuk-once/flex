@@ -10,17 +10,25 @@ import { z } from "zod";
 
 export const handlerRequestSchema = z
   .object({
-    notificationsConsented: z.boolean(),
-    analyticsConsented: z.boolean(),
+    notificationsConsented: z.boolean().optional(),
+    analyticsConsented: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => {
+      return Object.values(data).filter((v) => v !== undefined).length >= 1;
+    },
+    {
+      message: "At least one field must be provided",
+    },
+  );
 
 export type HandlerRequest = z.input<typeof handlerRequestSchema>;
 
 export const handlerResponseSchema = z.object({
   preferences: z.object({
-    notificationsConsented: z.boolean(),
-    analyticsConsented: z.boolean(),
+    notificationsConsented: z.boolean().optional(),
+    analyticsConsented: z.boolean().optional(),
     updatedAt: z.string(),
   }),
 });
@@ -35,18 +43,14 @@ export const handler = createLambdaHandler(
     );
 
     if (!parsedEvent.success) {
-      // Note: it should be impossible to get here if the schemas are correct, but we include this for type narrowing and belt-and-braces safety.
       const message = `Invalid parsed event: ${parsedEvent.error.message}`;
       throw new createHttpError.BadRequest(message);
     }
 
-    const { notificationsConsented, analyticsConsented } = parsedEvent.data;
-
     return Promise.resolve(
       jsonResponse<HandlerResponse>(status.OK, {
         preferences: {
-          notificationsConsented,
-          analyticsConsented,
+          ...parsedEvent.data,
           updatedAt: new Date().toISOString(),
         },
       }),
