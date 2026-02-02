@@ -1,10 +1,11 @@
 import { ApiGatewayV2Envelope } from "@aws-lambda-powertools/parser/envelopes/api-gatewayv2";
 import { createLambdaHandler } from "@flex/handlers";
 import { extractUser } from "@flex/middlewares";
+import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
-import httpResponseSerializer from "@middy/http-response-serializer";
 import createHttpError from "http-errors";
+import status from "http-status";
 import { z } from "zod";
 
 export const handlerRequestSchema = z
@@ -41,33 +42,19 @@ export const handler = createLambdaHandler(
 
     const { notificationsConsented, analyticsConsented } = parsedEvent.data;
 
-    return Promise.resolve({
-      statusCode: 200,
-      body: {
+    return Promise.resolve(
+      jsonResponse<HandlerResponse>(status.OK, {
         preferences: {
           notificationsConsented,
           analyticsConsented,
           updatedAt: new Date().toISOString(),
         },
-      },
-    });
+      }),
+    );
   },
   {
     logLevel: "INFO",
     serviceName: "udp-patch-user-service",
-    middlewares: [
-      extractUser,
-      httpHeaderNormalizer(),
-      httpJsonBodyParser(),
-      httpResponseSerializer({
-        defaultContentType: "application/json",
-        serializers: [
-          {
-            regex: /^application\/json(?:;.*)?$/,
-            serializer: ({ body }) => JSON.stringify(body),
-          },
-        ],
-      }),
-    ],
+    middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
   },
 );

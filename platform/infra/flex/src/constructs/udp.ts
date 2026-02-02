@@ -2,7 +2,7 @@ import {
   importFlexKmsKeyAlias,
   importFlexSecret,
 } from "@platform/core/outputs";
-import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
+import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Construct } from "constructs";
 
@@ -11,8 +11,16 @@ import { FlexPrivateIsolatedFunction } from "./flex-private-isolated-function";
 import { RouteGroup } from "./flex-route-group";
 
 export class UdpDomain extends Construct {
-  constructor(scope: Construct, id: string, routeGroup: RouteGroup) {
+  constructor(scope: Construct, id: string, httpApi: HttpApi) {
     super(scope, id);
+
+    const domain = "udp";
+    const domainPath = "user";
+
+    const v1RouteGroup = new RouteGroup(this, "V1RouteGroup", {
+      httpApi: httpApi,
+      version: "v1",
+    });
 
     const hashingSecret = importFlexSecret(
       this,
@@ -28,8 +36,8 @@ export class UdpDomain extends Construct {
       this,
       "GetUserFunction",
       {
-        entry: getEntry("udp", "handlers/user/get.ts"),
-        domain: "udp",
+        entry: getEntry(domain, "handlers/user/get.ts"),
+        domain,
         environment: {
           FLEX_UDP_NOTIFICATION_SECRET: hashingSecret.secretName,
         },
@@ -40,21 +48,21 @@ export class UdpDomain extends Construct {
       this,
       "PatchFunction",
       {
-        entry: getEntry("udp", "handlers/user/patch.ts"),
-        domain: "udp",
+        entry: getEntry(domain, "handlers/user/patch.ts"),
+        domain,
       },
     );
 
     hashingSecret.grantRead(getUserFunction.function);
     secretEncryptionKey.grantDecrypt(getUserFunction.function);
 
-    routeGroup.addRoute(
-      "/user",
+    v1RouteGroup.addRoute(
+      domainPath,
       HttpMethod.GET,
       new HttpLambdaIntegration("GetUser", getUserFunction.function),
     );
-    routeGroup.addRoute(
-      "/user",
+    v1RouteGroup.addRoute(
+      domainPath,
       HttpMethod.PATCH,
       new HttpLambdaIntegration("Patch", patchFunction.function),
     );

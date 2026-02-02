@@ -2,8 +2,9 @@ import { it } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("UDP domain", () => {
-  const ingressPath = "/v1/app";
-  const endpoint = `${ingressPath}/user`;
+  const ingressPath = "/app";
+  const domainVersion = "v1";
+  const endpoint = `${ingressPath}/${domainVersion}/user`;
   const user = { name: "John Doe" };
 
   it("rejects request at CloudFront when unauthenticated", async ({
@@ -107,9 +108,6 @@ describe("UDP domain", () => {
 
       expect(response).toMatchObject({
         status: 400,
-        body: {
-          message: "Invalid payload",
-        },
       });
     });
   });

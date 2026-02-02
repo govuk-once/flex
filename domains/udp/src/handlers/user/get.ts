@@ -5,12 +5,13 @@ import {
   extractUser,
   type V2Authorizer,
 } from "@flex/middlewares";
-import httpResponseSerializer from "@middy/http-response-serializer";
+import { jsonResponse } from "@flex/utils";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
+import status from "http-status";
 import { z } from "zod";
 
 import { generateDerivedId } from "../../service/derived-id";
@@ -27,7 +28,7 @@ export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
-  APIGatewayProxyResultV2<HandlerResponse>,
+  APIGatewayProxyResultV2,
   ContextWithPairwiseId & NotificationSecretContext
 >(
   async (_event: APIGatewayProxyEventV2, context) => {
@@ -38,12 +39,11 @@ export const handler = createLambdaHandler<
       secretKey: notificationSecretKey,
     });
 
-    return Promise.resolve({
-      statusCode: 200,
-      body: {
+    return Promise.resolve(
+      jsonResponse<HandlerResponse>(status.OK, {
         notificationId,
-      },
-    });
+      }),
+    );
   },
   {
     logLevel: "INFO",
@@ -54,15 +54,6 @@ export const handler = createLambdaHandler<
         secrets: {
           notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
         },
-      }),
-      httpResponseSerializer({
-        defaultContentType: "application/json",
-        serializers: [
-          {
-            regex: /^application\/json(?:;.*)?$/,
-            serializer: ({ body }) => JSON.stringify(body),
-          },
-        ],
       }),
     ],
   },
