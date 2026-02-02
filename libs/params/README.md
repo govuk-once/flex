@@ -8,10 +8,11 @@ Configuration utility for loading/validating environment variables and resolving
 
 Run these from the repository root:
 
-| Command                           | Description |
-| --------------------------------- | ----------- |
-| `pnpm --filter @flex/params lint` | Lint files  |
-| `pnpm --filter @flex/params test` | Run tests   |
+| Command                           | Description    |
+| --------------------------------- | -------------- |
+| `pnpm --filter @flex/params lint` | Lint files     |
+| `pnpm --filter @flex/params test` | Run tests      |
+| `pnpm --filter @flex/params tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/params/`.
 

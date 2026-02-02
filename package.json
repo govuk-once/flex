@@ -2,10 +2,9 @@
   "name": "flex",
   "type": "module",
   "scripts": {
-    "dev": "nx run @platform/flex:dev",
-    "build": "nx affected --target=build",
     "checkov": "nx affected --target=checkov",
     "commit": "cz",
+    "tsc": "nx affected --target=tsc",
     "lint": "nx affected --target=lint",
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run"
@@ -13,7 +12,7 @@
   "devDependencies": {
     "commitizen": "4.3.1",
     "cz-conventional-changelog": "3.3.0",
-    "nx": "22.3.3",
+    "nx": "22.4.4",
     "typescript": "5.9.3"
   },
   "config": {

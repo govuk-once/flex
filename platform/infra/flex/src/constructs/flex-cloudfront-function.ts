@@ -62,7 +62,7 @@ export class FlexCloudfrontFunction extends Construct {
     });
 
     if (buildResult.errors.length > 0 || !buildResult.outputFiles[0]) {
-      throw new Error(`Build failed: ${buildResult.errors[0]?.text}`);
+      throw new Error(`Build failed: ${buildResult.errors[0]?.text ?? ""}`);
     }
 
     const bundledCode = buildResult.outputFiles[0].text;

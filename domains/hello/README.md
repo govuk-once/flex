@@ -8,10 +8,11 @@ Example domain demonstrating the three Lambda deployment patterns: public, priva
 
 Run these from the repository root:
 
-| Command                                 | Description |
-| --------------------------------------- | ----------- |
-| `pnpm --filter @flex/hello-domain lint` | Lint files  |
-| `pnpm --filter @flex/hello-domain test` | Run tests   |
+| Command                                 | Description    |
+| --------------------------------------- | -------------- |
+| `pnpm --filter @flex/hello-domain lint` | Lint files     |
+| `pnpm --filter @flex/hello-domain test` | Run tests      |
+| `pnpm --filter @flex/hello-domain tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `domains/hello/`.
 

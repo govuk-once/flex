@@ -8,10 +8,11 @@ CloudFront Function that performs structural validation on incoming requests bef
 
 Run these from the repository root:
 
-| Command                                  | Description |
-| ---------------------------------------- | ----------- |
-| `pnpm --filter @platform/fail-fast lint` | Lint files  |
-| `pnpm --filter @platform/fail-fast test` | Run tests   |
+| Command                                  | Description    |
+| ---------------------------------------- | -------------- |
+| `pnpm --filter @platform/fail-fast lint` | Lint files     |
+| `pnpm --filter @platform/fail-fast test` | Run tests      |
+| `pnpm --filter @platform/fail-fast tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `platform/domains/fail-fast/`.
 

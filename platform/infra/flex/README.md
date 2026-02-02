@@ -18,6 +18,7 @@ Run these from the repository root:
 | `pnpm --filter @platform/flex hotswap` | Deploy with hotswap                  |
 | `pnpm --filter @platform/flex lint`    | Lint files                           |
 | `pnpm --filter @platform/flex synth`   | Synthesise CloudFormation            |
+| `pnpm --filter @platform/flex tsc`     | Run type check                       |
 
 > Alternatively, run `pnpm <command>` from within `platform/infra/flex/`.
 

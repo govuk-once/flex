@@ -4,16 +4,10 @@ import type {
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 // import { createSignedFetcher } from "aws-sigv4-fetch";
-import { z } from "zod";
-
-export const handlerResponseSchema = z.object({
-  message: z.string(),
-});
-export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2<HandlerResponse>
+  APIGatewayProxyResultV2
 >(
   async (_event) => {
     try {
@@ -26,7 +20,7 @@ export const handler = createLambdaHandler<
       //   "https://${UDP-Private-API}.execute-api.eu-west-2.amazonaws.com/v1/hello",
       // );
 
-      return Promise.resolve({
+      return await Promise.resolve({
         statusCode: 200,
         body: JSON.stringify({ message: "Hello isolated world!" }),
       });

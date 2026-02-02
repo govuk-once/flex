@@ -6,11 +6,11 @@ export type QueryParams = Record<
 export function extractQueryParams(params: QueryParams = {}) {
   const searchParams = new URLSearchParams();
 
-  Object.entries(params).forEach(([key, value]) =>
-    (Array.isArray(value) ? value : [value]).forEach((v) =>
-      searchParams.append(key, String(v)),
-    ),
-  );
+  Object.entries(params).forEach(([key, value]) => {
+    (Array.isArray(value) ? value : [value]).forEach((v) => {
+      searchParams.append(key, String(v));
+    });
+  });
 
   return [searchParams.toString(), Object.fromEntries(searchParams)] as const;
 }

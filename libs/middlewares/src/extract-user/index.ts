@@ -19,14 +19,13 @@ export const extractUser: MiddlewareObj<
   Error,
   ContextWithPairwiseId
 > = {
-  before: (request) => {
-    const authorizer = request.event.requestContext.authorizer;
-    const pairwiseId = authorizer?.lambda?.pairwiseId;
+  before: ({ event, context }) => {
+    const { pairwiseId } = event.requestContext.authorizer.lambda;
 
     if (!pairwiseId) {
       throw new Error("Pairwise ID not found");
     }
 
-    request.context.pairwiseId = pairwiseId;
+    context.pairwiseId = pairwiseId;
   },
 };

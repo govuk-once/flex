@@ -13,6 +13,7 @@ Run these from the repository root:
 | `pnpm --filter @flex/utils lint`    | Lint files                   |
 | `pnpm --filter @flex/utils scalar`  | Serve OpenAPI docs (Scalar)  |
 | `pnpm --filter @flex/utils swagger` | Serve OpenAPI docs (Swagger) |
+| `pnpm --filter @flex/utils tsc`     | Run type check               |
 
 Alternatively, run `pnpm <command>` from within `libs/utils/`.
 

@@ -56,7 +56,7 @@ const handler = createLambdaHandler<
       }
       logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
-      return Promise.resolve({
+      return await Promise.resolve({
         principalId: "anonymous",
         policyDocument: {
           Version: "2012-10-17",

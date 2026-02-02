@@ -3,16 +3,10 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
-import { z } from "zod";
-
-export const handlerResponseSchema = z.object({
-  message: z.string(),
-});
-export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2<HandlerResponse>
+  APIGatewayProxyResultV2
 >(
   async (_event) => {
     return Promise.resolve({

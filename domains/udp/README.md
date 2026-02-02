@@ -8,10 +8,11 @@ User Data Platform domain providing user settings management.
 
 Run these from the repository root:
 
-| Command                               | Description |
-| ------------------------------------- | ----------- |
-| `pnpm --filter @flex/udp-domain lint` | Lint files  |
-| `pnpm --filter @flex/udp-domain test` | Run tests   |
+| Command                               | Description    |
+| ------------------------------------- | -------------- |
+| `pnpm --filter @flex/udp-domain lint` | Lint files     |
+| `pnpm --filter @flex/udp-domain test` | Run tests      |
+| `pnpm --filter @flex/udp-domain tsc ` | Run type check |
 
 Alternatively, run `pnpm <command>` from within `domains/udp/`.
 
@@ -48,7 +49,7 @@ Returns a deterministic derived ID for the authenticated user.
 
 ```json
 {
-  "notification_id": "base64url-encoded-derived-id"
+  "notificationId": "base64url-encoded-derived-id"
 }
 ```
 

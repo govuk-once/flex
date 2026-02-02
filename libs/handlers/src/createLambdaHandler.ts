@@ -13,7 +13,7 @@ import type { Context } from "aws-lambda";
  * ```typescript
  * const handler = createLambdaHandler<
  *   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
- *   APIGatewayProxyResultV2<HandlerResponse>,
+ *   APIGatewayProxyResultV2,
  *   ContextWithPairwiseId & NotificationSecretContext
  * >(
  *   async (event: APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>, context: ContextWithPairwiseId & NotificationSecretContext) => {

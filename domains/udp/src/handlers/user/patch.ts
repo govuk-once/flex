@@ -16,14 +16,14 @@ export const handlerRequestSchema = z
   .strict()
   .refine(
     (data) => {
-      return Object.values(data).filter((v) => v !== undefined).length >= 1;
+      return (
+        Object.values(data).filter((v) => typeof v === "boolean").length >= 1
+      );
     },
     {
       message: "At least one field must be provided",
     },
   );
-
-export type HandlerRequest = z.input<typeof handlerRequestSchema>;
 
 export const handlerResponseSchema = z.object({
   preferences: z.object({
@@ -32,8 +32,6 @@ export const handlerResponseSchema = z.object({
     updatedAt: z.string(),
   }),
 });
-
-export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler(
   async (event) => {
@@ -48,7 +46,7 @@ export const handler = createLambdaHandler(
     }
 
     return Promise.resolve(
-      jsonResponse<HandlerResponse>(status.OK, {
+      jsonResponse(status.OK, {
         preferences: {
           ...parsedEvent.data,
           updatedAt: new Date().toISOString(),

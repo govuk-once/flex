@@ -10,9 +10,10 @@ This package ensures consistent linting rules, code style and type checking acro
 
 Run these from the repository root:
 
-| Command                           | Description |
-| --------------------------------- | ----------- |
-| `pnpm --filter @flex/config lint` | Lint files  |
+| Command                           | Description    |
+| --------------------------------- | -------------- |
+| `pnpm --filter @flex/config lint` | Lint files     |
+| `pnpm --filter @flex/config tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/config/`.
 

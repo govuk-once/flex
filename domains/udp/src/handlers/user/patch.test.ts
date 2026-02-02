@@ -99,7 +99,7 @@ describe("PATCH /user handler", () => {
         context.withPairwiseId().create(),
       );
 
-      expect(result.statusCode).toBe(400);
+      expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
     },
   );
 

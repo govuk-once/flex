@@ -1,6 +1,5 @@
 import type { DeepPartial } from "@flex/utils";
 import type { Request } from "@middy/core";
-import type { Context } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
 import type {
@@ -8,13 +7,13 @@ import type {
   EventWithAuthorizerOverrides,
 } from "./apigateway";
 import { createEventWithAuthorizer, eventWithAuthorizer } from "./apigateway";
-import type { ContextOverrides } from "./lambda";
+import type { ContextOverrides, ContextWithPairwiseId } from "./lambda";
 import { context } from "./lambda";
 
 export type MiddyRequest<
   Event extends EventWithAuthorizer = EventWithAuthorizer,
   Result = unknown,
-> = Request<Event, Result, Error, Context>;
+> = Request<Event, Result, Error, ContextWithPairwiseId>;
 
 export interface MiddyRequestOverrides<
   Event extends EventWithAuthorizer = EventWithAuthorizer,

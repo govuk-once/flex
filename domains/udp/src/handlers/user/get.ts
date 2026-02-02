@@ -23,8 +23,6 @@ export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
 
-export type HandlerResponse = z.output<typeof handlerResponseSchema>;
-
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
   APIGatewayProxyResultV2,
@@ -39,7 +37,7 @@ export const handler = createLambdaHandler<
     });
 
     return Promise.resolve(
-      jsonResponse<HandlerResponse>(status.OK, {
+      jsonResponse(status.OK, {
         notificationId,
       }),
     );

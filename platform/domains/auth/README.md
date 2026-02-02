@@ -8,11 +8,12 @@ Lambda authorizer for API Gateway that verifies Cognito JWT tokens and provides 
 
 Run these from the repository root:
 
-| Command                              | Description   |
-| ------------------------------------ | ------------- |
-| `pnpm --filter @platform/auth build` | Compile types |
-| `pnpm --filter @platform/auth lint`  | Lint files    |
-| `pnpm --filter @platform/auth test`  | Run tests     |
+| Command                              | Description    |
+| ------------------------------------ | -------------- |
+| `pnpm --filter @platform/auth build` | Compile types  |
+| `pnpm --filter @platform/auth lint`  | Lint files     |
+| `pnpm --filter @platform/auth test`  | Run tests      |
+| `pnpm --filter @platform/auth tsc`   | Run type check |
 
 Alternatively, run `pnpm <command>` from within `platform/domains/auth/`.
 

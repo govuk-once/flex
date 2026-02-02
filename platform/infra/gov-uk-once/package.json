@@ -5,6 +5,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 ."
   },
   "dependencies": {
@@ -16,7 +17,7 @@
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/node": "25.0.9",
+    "@types/node": "25.2.0",
     "eslint": "9.39.2",
     "typescript": "5.9.3"
   }

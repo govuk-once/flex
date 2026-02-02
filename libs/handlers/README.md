@@ -8,10 +8,11 @@ Lambda handler utilities and factories for FLEX.
 
 Run these from the repository root:
 
-| Command                             | Description |
-| ----------------------------------- | ----------- |
-| `pnpm --filter @flex/handlers lint` | Lint files  |
-| `pnpm --filter @flex/handlers test` | Run tests   |
+| Command                             | Description    |
+| ----------------------------------- | -------------- |
+| `pnpm --filter @flex/handlers lint` | Lint files     |
+| `pnpm --filter @flex/handlers test` | Run tests      |
+| `pnpm --filter @flex/handlers tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/handlers/`.
 

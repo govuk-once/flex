@@ -8,9 +8,10 @@ Base CDK stack with GDS-compliant tagging and environment utilities for all FLEX
 
 Run these from the repository root:
 
-| Command                                    | Description |
-| ------------------------------------------ | ----------- |
-| `pnpm --filter @platform/gov-uk-once lint` | Lint files  |
+| Command                                    | Description    |
+| ------------------------------------------ | -------------- |
+| `pnpm --filter @platform/gov-uk-once lint` | Lint files     |
+| `pnpm --filter @platform/gov-uk-once tsc`  | Run type check |
 
 > Alternatively, run `pnpm <command>` from within `platform/infra/gov-uk-once/`.
 

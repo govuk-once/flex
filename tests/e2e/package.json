@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "test:e2e": "vitest run"
   },
