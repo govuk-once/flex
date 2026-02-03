@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@platform/gov-uk-once": "workspace:*",
-    "aws-cdk": "2.1101.0",
+    "aws-cdk": "2.1104.0",
     "aws-cdk-lib": "2.235.0",
     "constructs": "10.4.5"
   },

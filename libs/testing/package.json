@@ -16,14 +16,14 @@
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.0.2",
-    "@types/aws-lambda": "8.10.159",
+    "@types/aws-lambda": "8.10.160",
     "@types/node": "25.0.9",
     "@types/ramda": "0.31.1",
     "aws-sdk-client-mock": "^4.1.0",
     "eslint": "9.39.2",
     "ramda": "0.32.0",
     "typescript": "5.9.3",
-    "vitest": "4.0.17",
-    "zod": "4.3.5"
+    "vitest": "4.0.18",
+    "zod": "4.3.6"
   }
 }
