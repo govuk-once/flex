@@ -69,13 +69,13 @@ importers:
       '@flex/middlewares':
         specifier: workspace:*
         version: link:../../libs/middlewares
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
       '@middy/http-header-normalizer':
         specifier: ^7.0.2
         version: 7.0.2
       '@middy/http-json-body-parser':
-        specifier: ^7.0.2
-        version: 7.0.2
-      '@middy/http-response-serializer':
         specifier: ^7.0.2
         version: 7.0.2
       '@middy/secrets-manager':
@@ -84,6 +84,9 @@ importers:
       http-errors:
         specifier: 2.0.1
         version: 2.0.1
+      http-status:
+        specifier: 2.1.0
+        version: 2.1.0
       zod:
         specifier: 4.3.5
         version: 4.3.5
@@ -343,6 +346,9 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../config
+      '@types/aws-lambda':
+        specifier: 8.10.159
+        version: 8.10.159
       '@types/node':
         specifier: 25.0.9
         version: 25.0.9
@@ -1271,10 +1277,6 @@ packages:
 
   '@middy/http-json-body-parser@7.0.2':
     resolution: {integrity: sha512-yQo7GHSv7+94n4f1rW0bhAJQ4X1wUArcsD1CAVi30ajUmrlkNksUGORbxA91ytR3X1yqFDceX1bhyFNX/8y6UA==}
-    engines: {node: '>=22'}
-
-  '@middy/http-response-serializer@7.0.2':
-    resolution: {integrity: sha512-f/NPnJ8bKhkmLUJCiduCHYqpYvWmUiTVGLQv34KLEOYPyWPJhS8UB52IVnTVg5lWC6G4bLrAll0m0pVHz9r/UQ==}
     engines: {node: '>=22'}
 
   '@middy/secrets-manager@7.0.2':
@@ -2872,6 +2874,10 @@ packages:
     resolution: {integrity: sha512-+cbxadF40UXd9T01zUHgA+rlo2Bg1Srer4+B4NwIHdaGxAGGv59nYRnGGDJ9LBk7alpS0US+J+bLLdQOOkJq4A==}
     engines: {node: '>=12'}
     hasBin: true
+
+  http-status@2.1.0:
+    resolution: {integrity: sha512-O5kPr7AW7wYd/BBiOezTwnVAnmSNFY+J7hlZD2X5IOxVBetjcHAiTXhzj0gMrnojQlwy+UT1/Y3H3vJ3UlmvLA==}
+    engines: {node: '>= 0.4.0'}
 
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
@@ -5314,10 +5320,6 @@ snapshots:
     dependencies:
       '@middy/util': 7.0.2
 
-  '@middy/http-response-serializer@7.0.2':
-    dependencies:
-      '@middy/util': 7.0.2
-
   '@middy/secrets-manager@7.0.2(@aws-sdk/client-secrets-manager@3.975.0)':
     dependencies:
       '@middy/util': 7.0.2
@@ -7207,6 +7209,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
+
+  http-status@2.1.0: {}
 
   iconv-lite@0.4.24:
     dependencies:

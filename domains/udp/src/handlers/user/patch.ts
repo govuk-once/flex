@@ -1,26 +1,35 @@
 import { ApiGatewayV2Envelope } from "@aws-lambda-powertools/parser/envelopes/api-gatewayv2";
 import { createLambdaHandler } from "@flex/handlers";
 import { extractUser } from "@flex/middlewares";
+import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
-import httpResponseSerializer from "@middy/http-response-serializer";
 import createHttpError from "http-errors";
+import status from "http-status";
 import { z } from "zod";
 
 export const handlerRequestSchema = z
   .object({
-    notifications_consented: z.boolean(),
-    analytics_consented: z.boolean(),
+    notificationsConsented: z.boolean().optional(),
+    analyticsConsented: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => {
+      return Object.values(data).filter((v) => v !== undefined).length >= 1;
+    },
+    {
+      message: "At least one field must be provided",
+    },
+  );
 
 export type HandlerRequest = z.input<typeof handlerRequestSchema>;
 
 export const handlerResponseSchema = z.object({
   preferences: z.object({
-    notifications_consented: z.boolean(),
-    analytics_consented: z.boolean(),
-    updated_at: z.string(),
+    notificationsConsented: z.boolean().optional(),
+    analyticsConsented: z.boolean().optional(),
+    updatedAt: z.string(),
   }),
 });
 
@@ -34,40 +43,22 @@ export const handler = createLambdaHandler(
     );
 
     if (!parsedEvent.success) {
-      // Note: it should be impossible to get here if the schemas are correct, but we include this for type narrowing and belt-and-braces safety.
       const message = `Invalid parsed event: ${parsedEvent.error.message}`;
       throw new createHttpError.BadRequest(message);
     }
 
-    const { notifications_consented, analytics_consented } = parsedEvent.data;
-
-    return Promise.resolve({
-      statusCode: 200,
-      body: {
+    return Promise.resolve(
+      jsonResponse<HandlerResponse>(status.OK, {
         preferences: {
-          notifications_consented,
-          analytics_consented,
-          updated_at: new Date().toISOString(),
+          ...parsedEvent.data,
+          updatedAt: new Date().toISOString(),
         },
-      },
-    });
+      }),
+    );
   },
   {
     logLevel: "INFO",
     serviceName: "udp-patch-user-service",
-    middlewares: [
-      extractUser,
-      httpHeaderNormalizer(),
-      httpJsonBodyParser(),
-      httpResponseSerializer({
-        defaultContentType: "application/json",
-        serializers: [
-          {
-            regex: /^application\/json(?:;.*)?$/,
-            serializer: ({ body }) => JSON.stringify(body),
-          },
-        ],
-      }),
-    ],
+    middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
   },
 );

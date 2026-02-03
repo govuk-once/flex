@@ -13,11 +13,12 @@
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/middlewares": "workspace:*",
+    "@flex/utils": "workspace:*",
     "@middy/http-header-normalizer": "^7.0.2",
     "@middy/http-json-body-parser": "^7.0.2",
-    "@middy/http-response-serializer": "^7.0.2",
     "@middy/secrets-manager": "^7.0.2",
     "http-errors": "2.0.1",
+    "http-status": "2.1.0",
     "zod": "4.3.5"
   },
   "devDependencies": {

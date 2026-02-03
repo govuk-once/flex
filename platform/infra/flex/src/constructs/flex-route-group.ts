@@ -7,7 +7,7 @@ import { Construct } from "constructs";
 
 interface RouteGroupProps {
   readonly httpApi: HttpApi;
-  readonly pathPrefix: string;
+  readonly version: `v${bigint}`;
 }
 
 export class RouteGroup extends Construct {
@@ -26,7 +26,7 @@ export class RouteGroup extends Construct {
   ) {
     // Combine prefix with path
     // logic handles missing or duplicate slashes for safety
-    const fullPath = `${this.props.pathPrefix}${path}`.replace("//", "/");
+    const fullPath = `/app/${this.props.version}/${path}`.replace("//", "/");
 
     this.props.httpApi.addRoutes({
       path: fullPath,

@@ -17,7 +17,6 @@ import { FlexFailFast } from "./constructs/flex-fail-fast";
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
 import { FlexPublicFunction } from "./constructs/flex-public-function";
-import { RouteGroup } from "./constructs/flex-route-group";
 import { UdpDomain } from "./constructs/udp";
 import { getEntry } from "./utils/getEntry";
 
@@ -135,12 +134,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
       ),
     });
 
-    const v1 = new RouteGroup(this, "V1", {
-      httpApi,
-      pathPrefix: "/1.0/app",
-    });
-
-    new UdpDomain(this, "UdpDomain", v1);
+    new UdpDomain(this, "UdpDomain", httpApi);
 
     const failFast = new FlexFailFast(this, "FailFast", httpApi);
 

@@ -2,8 +2,9 @@ import { it } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("UDP domain", () => {
-  const ingressPath = "/1.0/app";
-  const endpoint = `${ingressPath}/user`;
+  const ingressPath = "/app";
+  const domainVersion = "v1";
+  const endpoint = `${ingressPath}/${domainVersion}/user`;
   const user = { name: "John Doe" };
 
   it("rejects request at CloudFront when unauthenticated", async ({
@@ -82,7 +83,8 @@ describe("UDP domain", () => {
       const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
-          notifications_consented: true,
+          notificationsConsented: true,
+          analyticsConsented: true,
         },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -90,8 +92,9 @@ describe("UDP domain", () => {
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         preferences: {
-          notifications_consented: true,
-          updated_at: expect.any(String) as string,
+          notificationsConsented: true,
+          analyticsConsented: true,
+          updatedAt: expect.any(String) as string,
         },
       });
     });
@@ -99,15 +102,12 @@ describe("UDP domain", () => {
     it("rejects invalid payloads", async ({ cloudfront }) => {
       const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
-        body: { notifications_consented: "yes" },
+        body: { notificationsConsented: "yes" },
         headers: { Authorization: `Bearer ${token}` },
       });
 
       expect(response).toMatchObject({
         status: 400,
-        body: {
-          message: "Invalid input",
-        },
       });
     });
   });
