@@ -1,11 +1,9 @@
 packages:
-  - configs/*
   - domains/*
   - libs/*
-  - platform/*
   - platform/domains/*
   - platform/infra/*
-  - tests/*
+  - tests/e2e/*
 
 onlyBuiltDependencies:
   - '@swc/core'

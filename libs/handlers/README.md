@@ -1,124 +1,160 @@
-# @libs/handlers
+# @flex/handlers
 
-> A library for constructing Lambda handlers with middy middleware support
+Lambda handler utilities and factories for FLEX.
 
-This library provides a factory function to simplify the creation of AWS Lambda handlers using the [middy](https://middy.js.org/) middleware framework. It streamlines the process of developing Lambda functions by providing a consistent, type-safe way to wrap handlers with middleware.
+---
 
-## Automatic Logging Middleware
+## Commands
 
-All handlers created with `createLambdaHandler` automatically include logging middleware powered by [AWS Lambda Powertools Logger](https://awslabs.github.io/aws-lambda-powertools-typescript/latest/core/logger/). This means:
+Run these from the repository root:
 
-- A singleton logger instance is created and injected into the Lambda context for every invocation.
-- The logger is available for use in your handler and any custom middleware.
-- The logger instance is cached for the lifetime of the Lambda runtime, ensuring consistent logging and performance.
+| Command                             | Description |
+| ----------------------------------- | ----------- |
+| `pnpm --filter @flex/handlers lint` | Lint files  |
+| `pnpm --filter @flex/handlers test` | Run tests   |
 
-### Accessing the Logger
+Alternatively, run `pnpm <command>` from within `libs/handlers/`.
 
-You can access the logger instance in your handler or middleware by importing it from the logging package:
+## API
+
+| Name                                          | Description                                                | Code                                 |
+| --------------------------------------------- | ---------------------------------------------------------- | ------------------------------------ |
+| [`createLambdaHandler`](#createlambdahandler) | Factory for creating Lambda handlers with Middy middleware | [View](./src/createLambdaHandler.ts) |
+
+### Types
+
+| Name                  | Description                                                    | Code                                 |
+| --------------------- | -------------------------------------------------------------- | ------------------------------------ |
+| `LambdaHandlerConfig` | Configuration options for creating a Lambda handler with middy | [View](./src/createLambdaHandler.ts) |
+
+---
+
+## `createLambdaHandler`
+
+Creates a Lambda handler wrapped with Middy middleware for logging, error handling and request processing.
+
+All handlers automatically include the following middlewares:
+
+| Middleware | Purpose                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| Logging    | Injects a logger singleton instance via AWS Lambda Powertools that is cached for the Lambda runtime lifetime. |
+
+### Usage
 
 ```typescript
-import { getLogger } from "@flex/logging";
+import { createLambdaHandler } from "@flex/handlers";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
-const logger = getLogger();
-logger.info("This will be logged with context!");
+export const handler = createLambdaHandler<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2
+>(
+  async (event) => {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Hello" }),
+    };
+  },
+  {
+    logLevel: "INFO",
+    serviceName: "service-name",
+  },
+);
 ```
 
-The logger is automatically configured and context-aware for each Lambda invocation.
+#### With Logging
 
-## Usage
-
-### Basic Handler
-
-Create a simple Lambda handler (logging is available automatically):
+Access the logger via `@flex/logging`:
 
 ```typescript
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
-const handler = createLambdaHandler(
-  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = createLambdaHandler<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2
+>(
+  async (event) => {
     const logger = getLogger();
-    logger.info("Handling request", { path: event.path });
+
+    logger.info("Handling request", { path: event.rawPath });
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Hello, World!" }),
-    };
-  },
-);
-
-export { handler };
-```
-
-### Handler with Custom Middleware
-
-You can also create and use custom middleware:
-
-```typescript
-import { createLambdaHandler } from "@libs/handlers";
-import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import type { MiddlewareObj } from "@middy/core";
-
-// Custom logging middleware
-const loggingMiddleware: MiddlewareObj<
-  APIGatewayProxyEvent,
-  APIGatewayProxyResult
-> = {
-  before: async (request) => {
-    console.log("Request received:", {
-      path: request.event.path,
-      method: request.event.httpMethod,
-    });
-  },
-  after: async (request) => {
-    console.log("Response sent:", {
-      statusCode: request.response.statusCode,
-    });
-  },
-};
-
-const handler = createLambdaHandler(
-  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Success" }),
+      body: JSON.stringify({ message: "Hello" }),
     };
   },
   {
-    middlewares: [loggingMiddleware],
+    logLevel: "INFO",
+    serviceName: "service-name",
   },
 );
-
-export { handler };
 ```
 
-#### Parameters
+#### With Middleware
 
-- `handler` (required): The core Lambda handler function that processes events
-- `config` (optional): Configuration object with the following properties:
-  - `middlewares`: Array of middy middleware objects to apply to the handler
+Use middleware from `@flex/middlewares` or define your own custom middleware:
 
-#### Returns
+```typescript
+import { createLambdaHandler } from "@flex/handlers";
+import type { ContextWithPairwiseId } from "@flex/middlewares";
+import { extractUser } from "@flex/middlewares";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2,
+} from "aws-lambda";
 
-A `MiddyfiedHandler` that can be used as an AWS Lambda handler.
+const customMiddleware: MiddlewareObj<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2
+> = {
+  before: () => {
+    // middleware logic
+  },
+  after: () => {
+    // middleware logic
+  },
+};
 
-## Available Commands
-
-```bash
-# Run tests
-npx nx test handlers
-
-# Run linter
-npx nx lint handlers
+export const handler = createLambdaHandler<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2,
+  ContextWithPairwiseId
+>(
+  async (event, context) => {
+    return {
+      statusCode: 201,
+      body: JSON.stringify({
+        message: "User created successfully!",
+        userId: context.pairwiseId,
+      }),
+    };
+  },
+  {
+    logLevel: "INFO",
+    serviceName: "service-name",
+    middlewares: [extractUser, customMiddleware],
+  },
+);
 ```
 
-<!-- ## Examples -->
+---
 
-<!-- TODO: See the `domains/udp/src/handlers` directory for real-world examples of using this library. -->
+## Related
 
-## Middleware Resources
+**FLEX:**
 
-For more information about available middy middlewares, visit:
+- [@flex/logging](/libs/logging/README.md)
+- [@flex/middlewares](/libs/middlewares/README.md)
 
-- [Middy Documentation](https://middy.js.org/)
+**External:**
+
 - [Middy Middlewares](https://middy.js.org/docs/middlewares/)
+- [AWS Lambda Powertools Logger](https://awslabs.github.io/aws-lambda-powertools-typescript/latest/core/logger/)
