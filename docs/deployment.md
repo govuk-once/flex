@@ -269,6 +269,6 @@ aws cloudformation describe-stacks \
 
 **Guides:**
 
-- [Environment Configuration](/docs/environment-configuration.md)
+- [Environment Setup](/docs/environment-setup.md)
 - [Domain Development Guide](/docs/domain-development.md)
 - [Platform Development Guide](/docs/platform-development.md)

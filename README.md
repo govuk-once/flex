@@ -103,7 +103,7 @@ flex/
 
 | Guide                                                       | Description                                                           |
 | ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment configuration                     |
+| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                             |
 | [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
 | [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
 | [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
