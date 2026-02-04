@@ -19,7 +19,14 @@ export {
   event,
   eventWithAuthorizer,
 } from "./apigateway";
-export * from "./authorisation";
+export {
+  expiredJwt,
+  invalidJwt,
+  jwtMissingUsername,
+  publicJWKS,
+  validJwt,
+  validJwtUsername,
+} from "./auth";
 export {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,

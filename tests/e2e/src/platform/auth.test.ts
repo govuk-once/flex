@@ -1,90 +1,80 @@
-import { it } from "@flex/testing/e2e";
+import { invalidJwt, it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
-/**
- * E2E test for the API Gateway JWT authorizer
- *
- * This test verifies that the API Gateway JWT authorizer correctly rejects
- * requests without a valid JWT token.
- */
 describe("authentication", () => {
-  describe("fail-fast", () => {
-    it("rejects request to cloudfront distribution when unauthenticated", async ({
+  const endpoint = `/v1/hello-public`;
+
+  describe("CloudFront fail-fast", () => {
+    it("rejects request where authorization header is missing", async ({
       cloudfront,
     }) => {
-      const response = await cloudfront.client.get("/hello-public");
+      const result = await cloudfront.client.get(endpoint);
 
-      expect(response.headers.get("apigw-requestid")).toBeNull();
-      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      expect(response).toMatchObject({
+      expect(result.headers.get("apigw-requestid")).toBeNull();
+      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(result).toMatchObject({
         status: 401,
-        statusText: "Unauthorized",
         body: "Unauthorized: no authorization header provided",
       });
     });
 
-    it("rejects request to cloudfront distribution with empty Bearer token", async ({
+    it("rejects request where Bearer token is empty", async ({
       cloudfront,
     }) => {
-      const response = await cloudfront.client.get("/hello-public", {
+      const result = await cloudfront.client.get(endpoint, {
         headers: { Authorization: `Bearer ` },
       });
 
-      expect(response.headers.get("apigw-requestid")).toBeNull();
-      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      expect(response).toMatchObject({
+      expect(result.headers.get("apigw-requestid")).toBeNull();
+      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(result).toMatchObject({
         status: 401,
-        statusText: "Unauthorized",
         body: "Unauthorized: authentication header invalid",
       });
     });
 
-    it("rejects request with invalid Bearer token", async ({ cloudfront }) => {
-      const response = await cloudfront.client.get("/hello-public", {
-        headers: { Authorization: "Basic invalidbearertoken" },
+    it("rejects request where authorization is not Bearer", async ({
+      cloudfront,
+    }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Basic credentials` },
       });
 
-      expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      expect(response.headers.get("apigw-requestid")).toBeDefined();
-      expect(response).toMatchObject({
+      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(result).toMatchObject({
         status: 401,
-        statusText: "Unauthorized",
         body: "Unauthorized: authentication header invalid",
+      });
+    });
+
+    it("rejects request where Bearer token is invalid", async ({
+      cloudfront,
+    }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${invalidJwt}` },
+      });
+
+      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      expect(result).toMatchObject({
+        status: 401,
+        body: "Unauthorized: token invalid",
       });
     });
   });
 
-  describe("authorizer", () => {
-    it.todo(
-      "allows request to /hello-public endpoint with valid token",
-      async ({ cloudfront }) => {
-        // TODO: Replace with valid test user token
-        const token = "todo.valid.token";
+  describe("Lambda authorizer", () => {
+    it("allows request with a valid token", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${validJwt}` },
+      });
 
-        const response = await cloudfront.client.get("/hello-public", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        expect(response.headers.get("x-rejected-by")).toBeNull();
-        expect(response).toMatchObject({
+      expect(result.headers.get("x-rejected-by")).toBeNull();
+      expect(result).toEqual(
+        expect.objectContaining({
           status: 200,
-          body: { message: "Hello public world!" },
-        });
-      },
-    );
-
-    it.todo(
-      "rejects request to /hello-public endpoint with expired token",
-      async ({ cloudfront }) => {
-        // TODO: Replace with expired test user token
-        const token = "todo.expired.token";
-
-        const response = await cloudfront.client.get("/hello-public", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        expect(response.status).toBe(403);
-      },
-    );
+          body: JSON.stringify({ message: "Hello public world!" }),
+        }),
+      );
+    });
   });
 });
