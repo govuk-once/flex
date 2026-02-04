@@ -3,6 +3,7 @@ packages:
   - libs/*
   - platform/domains/*
   - platform/infra/*
+  - platform/internal/gateways/*
   - tests/*
 
 ignoredBuiltDependencies:

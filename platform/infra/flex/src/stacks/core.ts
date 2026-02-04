@@ -5,6 +5,12 @@ import type { Construct } from "constructs";
 
 import { FlexHttpApi } from "../constructs/api-gateway/flex-http-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { FlexHttpApi } from "./constructs/apiGateway/flex-http-api";
+import { FlexFailFast } from "./constructs/cloudfront/flex-fail-fast";
+import { PrivateRouteGroup } from "./constructs/private-route-group";
+import { UdpDomain } from "./constructs/udp";
+import { createPrivateGateway } from "./private-gateway";
+import { createServiceGateways } from "./service-gateway";
 
 interface FlexPlatformStackProps {
   certArn: string;
@@ -41,6 +47,23 @@ export class FlexPlatformStack extends GovUkOnceStack {
       httpApi,
     });
 
+    const { privateGateway, gateways, domains } = createPrivateGateway(this);
+
+    const udpPrivateRoutes = new PrivateRouteGroup(this, "UdpPrivateRoutes", {
+      domains,
+      gateways,
+      domainId: "udp",
+    });
+    createServiceGateways(this, { privateRoutes: udpPrivateRoutes });
+
+    new UdpDomain(this, "UdpDomain", httpApi, {
+      privateGateway,
+      privateRoutes: udpPrivateRoutes,
+    });
+
+    new CfnOutput(this, "CloudfrontDistributionUrl", {
+      value: `https://${distribution.distribution.distributionDomainName}`,
+    });
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });
