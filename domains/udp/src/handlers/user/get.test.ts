@@ -1,19 +1,23 @@
+import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { generateDerivedId } from "../../service/derived-id";
-import { handler } from "./get";
+import { handler, NotificationSecretContext } from "./get";
 
 vi.mock("../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
 
+type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
+
 describe("GET /user handler", () => {
   const mockNotificationSecret = {
     notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
   };
   const testPairwiseId = "test-pairwise-id";
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -29,7 +33,10 @@ describe("GET /user handler", () => {
 
       const request = await handler(
         eventWithAuthorizer.authenticated(),
-        context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
       );
 
       expect(request).toEqual(
@@ -55,7 +62,10 @@ describe("GET /user handler", () => {
 
       await handler(
         eventWithAuthorizer.authenticated(),
-        context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
       );
 
       expect(generateDerivedId).toHaveBeenCalledWith({
@@ -78,7 +88,7 @@ describe("GET /user handler", () => {
         context
           .withPairwiseId(customPairwiseId)
           .withSecret(mockNotificationSecret)
-          .create(),
+          .create() as UserGetContext,
       );
 
       expect(request).toEqual(
@@ -109,7 +119,10 @@ describe("GET /user handler", () => {
 
       const request = await handler(
         eventWithAuthorizer.authenticated(),
-        context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
       );
 
       expect(request).toEqual(
@@ -136,7 +149,10 @@ describe("GET /user handler", () => {
 
       const request = await handler(
         eventWithAuthorizer.authenticated(),
-        context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
       );
 
       expect(request).toEqual(
@@ -164,7 +180,10 @@ describe("GET /user handler", () => {
 
       await handler(
         eventWithAuthorizer.authenticated(),
-        context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
       );
 
       expect(generateDerivedId).toHaveBeenCalledTimes(1);
@@ -183,7 +202,10 @@ describe("GET /user handler", () => {
       await expect(
         handler(
           eventWithAuthorizer.authenticated(),
-          context.withPairwiseId().withSecret(mockNotificationSecret).create(),
+          context
+            .withPairwiseId()
+            .withSecret(mockNotificationSecret)
+            .create() as UserGetContext,
         ),
       ).resolves.toEqual(
         response.internalServerError(null, {

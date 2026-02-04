@@ -11,6 +11,7 @@ Run these from the repository root:
 | `pnpm --filter @flex/e2e lint`                       | Lint files                                                       |
 | `pnpm --filter @flex/e2e test:e2e`                   | Run tests (assumes you have set environment variables in `.env`) |
 | `STAGE=development pnpm --filter @flex/e2e test:e2e` | Run tests with manual environment variables                      |
+| `pnpm --filter @flex/e2e tsc`                        | Run type check                                                   |
 
 Alternatively, run `pnpm <command>` from within `tests/e2e/`.
 

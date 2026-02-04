@@ -4,32 +4,33 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parser": "^2.30.2",
-    "@aws-sdk/client-secrets-manager": "^3.975.0",
+    "@aws-lambda-powertools/parser": "2.30.2",
+    "@aws-sdk/client-secrets-manager": "3.980.0",
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/middlewares": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/http-header-normalizer": "^7.0.2",
-    "@middy/http-json-body-parser": "^7.0.2",
-    "@middy/secrets-manager": "^7.0.2",
+    "@middy/http-header-normalizer": "7.0.2",
+    "@middy/http-json-body-parser": "7.0.2",
+    "@middy/secrets-manager": "7.0.2",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
-    "zod": "4.3.5"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/http-errors": "2.0.5",
     "@middy/core": "7.0.2",
-    "@types/aws-lambda": "8.10.159",
-    "aws-sdk-client-mock": "^4.1.0",
+    "@types/aws-lambda": "8.10.160",
+    "@types/http-errors": "2.0.5",
+    "aws-sdk-client-mock": "4.1.0",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

@@ -8,10 +8,11 @@ Shared Middy middleware for FLEX Lambda handlers.
 
 Run these from the repository root:
 
-| Command                                | Description |
-| -------------------------------------- | ----------- |
-| `pnpm --filter @flex/middlewares lint` | Lint files  |
-| `pnpm --filter @flex/middlewares test` | Run tests   |
+| Command                                | Description    |
+| -------------------------------------- | -------------- |
+| `pnpm --filter @flex/middlewares lint` | Lint files     |
+| `pnpm --filter @flex/middlewares test` | Run tests      |
+| `pnpm --filter @flex/middlewares tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/middlewares/`.
 

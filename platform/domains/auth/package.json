@@ -4,29 +4,29 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "NODE_OPTIONS=--import=nock vitest"
+    "test": "NODE_OPTIONS=--import=nock vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "^2.30.1",
-    "@aws-sdk/client-ssm": "3.966.0",
-    "@flex/params": "workspace:*",
+    "@aws-lambda-powertools/parameters": "2.30.2",
+    "@aws-sdk/client-ssm": "3.980.0",
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
+    "@flex/params": "workspace:*",
     "aws-jwt-verify": "5.1.1",
     "http-errors": "2.0.1",
-    "zod": "4.3.5"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.159",
+    "@types/aws-lambda": "8.10.160",
     "@types/http-errors": "2.0.5",
-    "@types/node": "25.0.9",
+    "@types/node": "25.2.0",
     "eslint": "9.39.2",
-    "nock": "^14.0.10",
+    "nock": "14.0.10",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

@@ -11,10 +11,9 @@ export type ResponseOptions = Pick<
   "headers" | "cookies" | "isBase64Encoded"
 >;
 
-function buildResponse(statusCode: number): StructuredResponse;
-function buildResponse<T>(
+function buildResponse(
   statusCode: number,
-  body: T | null,
+  body?: unknown,
   options?: ResponseOptions,
 ): StructuredResponse;
 function buildResponse<T>(
@@ -36,40 +35,37 @@ function buildResponse<T>(
 
 export function createResponse() {
   return {
-    create: <T = null>(
-      statusCode: number,
-      body: T,
-      options?: ResponseOptions,
-    ) => buildResponse<T>(statusCode, body, options),
+    create: (statusCode: number, body: unknown, options?: ResponseOptions) =>
+      buildResponse(statusCode, body, options),
 
-    ok: <T>(body: T, options?: ResponseOptions) =>
+    ok: (body: unknown, options?: ResponseOptions) =>
       buildResponse(200, body, options),
-    created: <T>(body: T, options?: ResponseOptions) =>
+    created: (body: unknown, options?: ResponseOptions) =>
       buildResponse(201, body, options),
-    accepted: <T>(body: T, options?: ResponseOptions) =>
+    accepted: (body: unknown, options?: ResponseOptions) =>
       buildResponse(202, body, options),
     noContent: (options?: ResponseOptions) => buildResponse(204, null, options),
 
-    badRequest: <T>(body: T, options?: ResponseOptions) =>
+    badRequest: (body: unknown, options?: ResponseOptions) =>
       buildResponse(400, body, options),
-    unauthorized: <T>(body: T, options?: ResponseOptions) =>
+    unauthorized: (body: unknown, options?: ResponseOptions) =>
       buildResponse(401, body, options),
-    forbidden: <T>(body: T, options?: ResponseOptions) =>
+    forbidden: (body: unknown, options?: ResponseOptions) =>
       buildResponse(403, body, options),
-    notFound: <T>(body: T, options?: ResponseOptions) =>
+    notFound: (body: unknown, options?: ResponseOptions) =>
       buildResponse(404, body, options),
-    conflict: <T>(body: T, options?: ResponseOptions) =>
+    conflict: (body: unknown, options?: ResponseOptions) =>
       buildResponse(409, body, options),
-    tooManyRequests: <T>(body: T, options?: ResponseOptions) =>
+    tooManyRequests: (body: unknown, options?: ResponseOptions) =>
       buildResponse(429, body, options),
 
-    internalServerError: <T>(body: T, options?: ResponseOptions) =>
+    internalServerError: (body: unknown, options?: ResponseOptions) =>
       buildResponse(500, body, options),
-    badGateway: <T>(body: T, options?: ResponseOptions) =>
+    badGateway: (body: unknown, options?: ResponseOptions) =>
       buildResponse(502, body, options),
-    serviceUnavailable: <T>(body: T, options?: ResponseOptions) =>
+    serviceUnavailable: (body: unknown, options?: ResponseOptions) =>
       buildResponse(503, body, options),
-    gatewayTimeout: <T>(body: T, options?: ResponseOptions) =>
+    gatewayTimeout: (body: unknown, options?: ResponseOptions) =>
       buildResponse(504, body, options),
   } as const;
 }

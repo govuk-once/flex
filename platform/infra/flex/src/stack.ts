@@ -62,7 +62,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
     });
 
     return {
-      httpApiUrl: httpStage.url ?? "",
+      httpApiUrl: httpStage.url,
       httpApi,
     };
   }

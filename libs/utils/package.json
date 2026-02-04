@@ -7,24 +7,26 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
     "generate-oas": "tsx src/openapi/generate-docs.ts",
     "scalar": "pnpm generate-oas && http-server src/openapi -p 4200 -o/scalar.html -c-1",
-    "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1",
-    "lint": "eslint --max-warnings=0 ."
+    "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1"
   },
   "dependencies": {
-    "zod": "4.3.5",
+    "zod": "4.3.6",
     "zod-openapi": "5.4.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/aws-lambda": "8.10.159",
-    "@types/node": "25.0.9",
+    "@types/aws-lambda": "8.10.160",
+    "@types/node": "25.2.0",
     "eslint": "9.39.2",
     "http-server": "14.1.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "undici-types": "7.18.2",
-    "vitest": "4.0.17"
+    "undici-types": "7.20.0",
+    "vitest": "4.0.18"
   }
 }

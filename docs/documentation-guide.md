@@ -52,10 +52,11 @@ Brief description of what this package provides.
 
 Run these from the repository root:
 
-| Command                              | Description |
-| ------------------------------------ | ----------- |
-| `pnpm --filter @flex/<package> lint` | Lint files  |
-| `pnpm --filter @flex/<package> test` | Run tests   |
+| Command                              | Description    |
+| ------------------------------------ | -------------- |
+| `pnpm --filter @flex/<package> lint` | Lint files     |
+| `pnpm --filter @flex/<package> test` | Run tests      |
+| `pnpm --filter @flex/<package> tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/<package>/`.
 
@@ -123,10 +124,11 @@ Brief description of what this platform handler does.
 
 Run these from the repository root:
 
-| Command                                 | Description |
-| --------------------------------------- | ----------- |
-| `pnpm --filter @platform/<domain> lint` | Lint files  |
-| `pnpm --filter @platform/<domain> test` | Run tests   |
+| Command                                 | Description    |
+| --------------------------------------- | -------------- |
+| `pnpm --filter @platform/<domain> lint` | Lint files     |
+| `pnpm --filter @platform/<domain> test` | Run tests      |
+| `pnpm --filter @platform/<domain> tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `platform/domains/<domain>/`.
 
@@ -201,6 +203,7 @@ Run these from the repository root:
 | `pnpm --filter @platform/<package> destroy` | Destroy stack               |
 | `pnpm --filter @platform/<package> diff`    | Show deployment differences |
 | `pnpm --filter @platform/<package> synth`   | Synthesise CloudFormation   |
+| `pnpm --filter @platform/<package> tsc`     | Run type check              |
 
 > Alternatively, run `pnpm <command>` from within `platform/infra/<package>/`.
 
@@ -337,10 +340,11 @@ Brief description of the domain.
 
 Run these from the repository root:
 
-| Command                                    | Description |
-| ------------------------------------------ | ----------- |
-| `pnpm --filter @flex/<domain>-domain lint` | Lint files  |
-| `pnpm --filter @flex/<domain>-domain test` | Run tests   |
+| Command                                    | Description    |
+| ------------------------------------------ | -------------- |
+| `pnpm --filter @flex/<domain>-domain lint` | Lint files     |
+| `pnpm --filter @flex/<domain>-domain test` | Run tests      |
+| `pnpm --filter @flex/<domain>-domain tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `domains/<domain>/`.
 

@@ -15,6 +15,7 @@ Run these from the repository root:
 | `pnpm --filter @platform/core diff`    | Show deployment differences |
 | `pnpm --filter @platform/core lint`    | Lint files                  |
 | `pnpm --filter @platform/core synth`   | Synthesise CloudFormation   |
+| `pnpm --filter @platform/core tsc`     | Run type check              |
 
 > Alternatively, run `pnpm <command>` from within `platform/infra/core/`.
 

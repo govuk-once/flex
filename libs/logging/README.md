@@ -8,10 +8,11 @@ Structured logging utilities for FLEX Lambda handlers built on AWS Lambda Powert
 
 Run these from the repository root:
 
-| Command                            | Description |
-| ---------------------------------- | ----------- |
-| `pnpm --filter @flex/logging lint` | Lint files  |
-| `pnpm --filter @flex/logging test` | Run tests   |
+| Command                            | Description    |
+| ---------------------------------- | -------------- |
+| `pnpm --filter @flex/logging lint` | Lint files     |
+| `pnpm --filter @flex/logging test` | Run tests      |
+| `pnpm --filter @flex/logging tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/logging/`.
 

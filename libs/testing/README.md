@@ -13,9 +13,10 @@ This package provides two entry points:
 
 Run these from the repository root:
 
-| Command                            | Description |
-| ---------------------------------- | ----------- |
-| `pnpm --filter @flex/testing lint` | Lint files  |
+| Command                            | Description    |
+| ---------------------------------- | -------------- |
+| `pnpm --filter @flex/testing lint` | Lint files     |
+| `pnpm --filter @flex/testing tsc`  | Run type check |
 
 Alternatively, run `pnpm <command>` from within `libs/testing/`.
 

@@ -8,6 +8,9 @@
   "[typescript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
   "[html]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
