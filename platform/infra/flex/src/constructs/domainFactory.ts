@@ -43,8 +43,6 @@ export class DomainFactory extends Construct {
         for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
           const method = methodKey as HttpMethod;
 
-          if (!routeConfig) continue;
-
           const { resolvedVars, envGrantables } = this._resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
@@ -195,7 +193,8 @@ export class DomainFactory extends Construct {
     isSecret: boolean,
   ): ISecret | IStringParameter {
     if (this.envCache.has(path)) {
-      return this.envCache.get(path)!;
+      const cached = this.envCache.get(path);
+      if (cached !== undefined) return cached;
     }
 
     const resource = isSecret
@@ -208,7 +207,8 @@ export class DomainFactory extends Construct {
 
   private _getOrImportKey(aliasPath: string): IKey {
     if (this.keyCache.has(aliasPath)) {
-      return this.keyCache.get(aliasPath)!;
+      const cached = this.keyCache.get(aliasPath);
+      if (cached !== undefined) return cached;
     }
 
     const key = importFlexKmsKeyAlias(this, aliasPath as FlexKmsKeyAlias);

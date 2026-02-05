@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { IDomain } from "@flex/config/domain";
-import createJiti from "jiti";
+import { createJiti } from "jiti";
 
 interface IDomainEndpoints {
   endpoints: IDomain;
