@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, vi } from "vitest";
 import { generateDerivedId } from "../../../service/derived-id";
 import { handler, NotificationSecretContext } from "./get";
 
-vi.mock("../../service/derived-id", () => ({
+vi.mock("../../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
