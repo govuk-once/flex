@@ -13,13 +13,13 @@ import { Construct } from "constructs";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
- * service gateways and domain internal routes attach to the same /internal tree.
+ * service gateways and domain internal routes attach to the same tree.
  */
 export interface PrivateGatewayStructure {
   privateGateway: RestApi;
-  /** /internal/gateways – attach service gateway routes here */
+  /** /gateways – attach service gateway routes here */
   gateways: IResource;
-  /** /internal/domains – attach domain internal routes here (e.g. via PrivateRouteGroup) */
+  /** /domains – attach domain internal routes here (e.g. via PrivateRouteGroup) */
   domains: IResource;
 }
 
@@ -28,8 +28,8 @@ export interface PrivateGatewayStructure {
  * and restricted to specific IAM principals (Flex lambdas).
  *
  * Also creates the canonical path tree so all consumers attach to the same resources:
- * - /internal/gateways/* (service gateways)
- * - /internal/domains/* (domain internal routes)
+ * - /gateways/* (service gateways)
+ * - /domains/* (domain internal routes)
  *
  * Network isolation: Only accessible via VPC endpoint (no public internet access).
  * IAM isolation: Only designated Flex IAM roles can invoke the API.

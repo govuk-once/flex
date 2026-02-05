@@ -1,5 +1,6 @@
-import { context } from "@flex/testing";
-import { describe, expect, it, vi } from "vitest";
+import { it } from "@flex/testing";
+import { APIGatewayProxyEvent } from "aws-lambda";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
 
@@ -18,58 +19,26 @@ describe("UDP connector handler", () => {
     isBase64Encoded: false,
   };
 
-  it("returns 200 with connector response when body is valid", async () => {
+  it("returns 200 with the event body", async ({ response, context }) => {
     const event = {
       ...baseEvent,
-      body: JSON.stringify({ userId: "user-123" }),
+      body: JSON.stringify({ test: "test" }),
     };
 
-    const result = await handler(event, context);
+    const result = await handler(
+      event as unknown as APIGatewayProxyEvent,
+      context.create(),
+    );
 
-    expect(result.statusCode).toBe(200);
-    expect(result.headers?.["Content-Type"]).toBe("application/json");
-    const body = JSON.parse(result.body ?? "{}");
-    expect(body).toMatchObject({
-      ok: true,
-      gateway: "udp",
-      message: expect.stringContaining("user-123"),
-    });
-  });
-
-  it("returns 200 with default message when body is empty object", async () => {
-    const event = {
-      ...baseEvent,
-      body: JSON.stringify({}),
-    };
-
-    const result = await handler(event, context);
-
-    expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body ?? "{}");
-    expect(body).toMatchObject({ ok: true, gateway: "udp" });
-  });
-
-  it("returns 400 when body is invalid JSON", async () => {
-    const event = {
-      ...baseEvent,
-      body: "not json",
-    };
-
-    const result = await handler(event, context);
-
-    expect(result.statusCode).toBe(400);
-    expect(result.body).toContain("Invalid JSON");
-  });
-
-  it("returns 400 when body fails schema validation", async () => {
-    const event = {
-      ...baseEvent,
-      body: JSON.stringify({ userId: 123 }),
-    };
-
-    const result = await handler(event, context);
-
-    expect(result.statusCode).toBe(400);
-    expect(result.body).toContain("Validation failed");
+    expect(result).toEqual(
+      response.ok(
+        { test: "test" },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      ),
+    );
   });
 });

@@ -14,12 +14,14 @@
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "3.985.0",
     "@middy/core": "7.0.2",
-    "@middy/secrets-manager": "7.0.2"
+    "@middy/secrets-manager": "7.0.2",
+    "http-errors": "2.0.1"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.160",
+    "@types/http-errors": "2.0.5",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

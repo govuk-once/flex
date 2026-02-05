@@ -4,6 +4,7 @@ import type {
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   Context,
 } from "aws-lambda";
+import createHttpError from "http-errors";
 
 export interface ContextWithPairwiseId extends Context {
   pairwiseId: string;
@@ -23,8 +24,7 @@ export const extractUser: MiddlewareObj<
     const { pairwiseId } = event.requestContext.authorizer.lambda;
 
     if (!pairwiseId) {
-      console.log("Pairwise ID not found", authorizer);
-      throw new Error("Pairwise ID not found");
+      throw new createHttpError.Unauthorized("Pairwise ID not found");
     }
 
     context.pairwiseId = pairwiseId;

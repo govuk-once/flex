@@ -29,7 +29,7 @@ export interface PrivateRouteOptions {
  *
  * Callers that need to invoke these internal routes must be granted
  * execute-api:Invoke via grantPrivateApiAccess() with allowedRoutePrefixes
- * e.g. ["/internal/domains/udp/*" or "/internal/gateways/udp/*"].
+ * e.g. ["/domains/udp/*" or "/gateways/udp/*"].
  */
 export class PrivateRouteGroup extends Construct {
   private readonly domainResource: IResource;

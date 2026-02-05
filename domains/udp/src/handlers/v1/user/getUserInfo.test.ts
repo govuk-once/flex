@@ -1,31 +1,50 @@
 import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, vi } from "vitest";
 
-<<<<<<<< HEAD:domains/udp/src/handlers/v1/user/get.test.ts
 import { generateDerivedId } from "../../../service/derived-id";
-import { handler, NotificationSecretContext } from "./get";
-========
-import { generateDerivedId } from "../../service/derived-id";
-import { handler } from "./getUserInfo";
->>>>>>>> 7071b75 (feat: add get user info orchestrator):domains/udp/src/handlers/v1/user/getUserInfo.test.ts
+import { handler, NotificationSecretContext } from "./getUserInfo";
 
 vi.mock("../../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
+vi.mock("@flex/params", () => {
+  return {
+    getConfig: vi.fn(() => ({
+      AWS_REGION: "eu-west-2",
+      FLEX_PRIVATE_GATEWAY_URL:
+        "https://execute-api.eu-west-2.amazonaws.com/gateways/udp",
+    })),
+  };
+});
+vi.mock("aws-sigv4-fetch", () => {
+  return {
+    createSignedFetcher: vi.fn(() => {
+      return vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: "OK",
+        ok: true,
+      });
+    }),
+  };
+});
 
-<<<<<<<< HEAD:domains/udp/src/handlers/v1/user/get.test.ts
 type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
 
-describe("GET /user handler", () => {
-========
-describe("getUserInfo handler", () => {
->>>>>>>> 7071b75 (feat: add get user info orchestrator):domains/udp/src/handlers/v1/user/getUserInfo.test.ts
+describe("GetUserInfo handler", () => {
   const mockNotificationSecret = {
     notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
   };
   const testPairwiseId = "test-pairwise-id";
+
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -55,7 +74,7 @@ describe("getUserInfo handler", () => {
             preferences: {
               notificationsConsented: true,
               analyticsConsented: true,
-              updatedAt: expect.any(String) as string,
+              updatedAt: new Date().toISOString(),
             },
           },
           {
@@ -94,7 +113,7 @@ describe("getUserInfo handler", () => {
       context,
     }) => {
       const customPairwiseId = "custom-user-id-123";
-      const mockNotificationId = "mocked-notification-id";
+      const mockNotificationId = "generated-notification-id";
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
       const request = await handler(
@@ -109,6 +128,11 @@ describe("getUserInfo handler", () => {
         response.ok(
           {
             notificationId: mockNotificationId,
+            preferences: {
+              notificationsConsented: true,
+              analyticsConsented: true,
+              updatedAt: new Date().toISOString(),
+            },
           },
           {
             headers: {
@@ -121,66 +145,6 @@ describe("getUserInfo handler", () => {
         pairwiseId: customPairwiseId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
-    });
-
-    it("returns response with correct status code", async ({
-      eventWithAuthorizer,
-      response,
-      context,
-    }) => {
-      const mockNotificationId = "mocked-notification-id";
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
-
-      const request = await handler(
-        eventWithAuthorizer.authenticated(),
-        context
-          .withPairwiseId()
-          .withSecret(mockNotificationSecret)
-          .create() as UserGetContext,
-      );
-
-      expect(request).toEqual(
-        response.ok(
-          {
-            notificationId: mockNotificationId,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
-      );
-    });
-
-    it("returns properly formatted JSON body", async ({
-      eventWithAuthorizer,
-      context,
-      response,
-    }) => {
-      const mockNotificationId = "mocked-notification-id";
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
-
-      const request = await handler(
-        eventWithAuthorizer.authenticated(),
-        context
-          .withPairwiseId()
-          .withSecret(mockNotificationSecret)
-          .create() as UserGetContext,
-      );
-
-      expect(request).toEqual(
-        response.ok(
-          {
-            notificationId: mockNotificationId,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
-      );
     });
   });
 

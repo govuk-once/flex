@@ -19,7 +19,9 @@ const handler = createLambdaHandler<APIGatewayProxyEvent>(
   async (event) => {
     const logger = getLogger();
     try {
-      return Promise.resolve(jsonResponse(status.OK, event.body));
+      return Promise.resolve(
+        jsonResponse(status.OK, JSON.parse(event.body ?? "{}")),
+      );
     } catch (error) {
       logger.error("Failed to process request", { error });
       return Promise.resolve(
