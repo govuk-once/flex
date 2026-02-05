@@ -1,6 +1,6 @@
 # @flex/sdk
 
-Configuration for Domains which allows domains to define `domain.config.ts` at the root of their project, which will at the moment handle theIaC aspect of their project.
+Configuration for Domains which allows domains to define `domain.config.ts` at the root of their project, which will at the moment handle the IaC aspect of their project.
 
 ---
 
