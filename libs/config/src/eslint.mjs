@@ -90,9 +90,10 @@ export const config = [
         },
       },
     },
-    rules: {
-      ...reactHooks.configs.flat.recommended.rules,
-    },
+  },
+  {
+    files: ["**/*.tsx"],
+    ...reactHooks.configs.flat.recommended,
   },
   {
     files: ["**/*.html"],

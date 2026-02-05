@@ -1,0 +1,34 @@
+{
+  "name": "@flex/cli",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "flex": "./cli.js"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
+    "dev": "node cli.js"
+  },
+  "dependencies": {
+    "cli-spinners": "3.4.0",
+    "figlet": "1.10.0",
+    "ink": "6.6.0",
+    "ink-select-input": "6.2.0",
+    "ink-text-input": "6.0.0",
+    "react": "19.2.4",
+    "tsx": "4.21.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "@types/node": "25.2.0",
+    "@types/react": "19.2.10",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}
