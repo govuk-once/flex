@@ -5,8 +5,8 @@
   "type": "module",
   "exports": {
     "./eslint": "./src/eslint.mjs",
-    "./vitest": "./src/vitest.ts",
-    "./tsconfig.json": "./src/tsconfig.json"
+    "./tsconfig.json": "./src/tsconfig.json",
+    "./vitest": "./src/vitest.ts"
   },
   "scripts": {
     "lint": "eslint --max-warnings=0 ."

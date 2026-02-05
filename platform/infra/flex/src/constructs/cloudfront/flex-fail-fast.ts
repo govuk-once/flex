@@ -1,7 +1,7 @@
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import { Construct } from "constructs";
 
-import { getPlatformEntry } from "../utils/getEntry";
+import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexCloudfrontDistribution } from "./flex-cloudfront-distribution";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 

@@ -1,4 +1,4 @@
-# 📦 Pull Request
+# Pull Request
 
 ## Description
 
@@ -10,13 +10,13 @@ Please include a summary of the changes and the related issue. Please also inclu
 
 Please check options that are relevant.
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 🔧 Refactor (code change that does not add functionality or fix a bug)
-- [ ] 🧹 Code cleanup (formatting, renaming)
-- [ ] 🔨 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📝 Documentation update
-- [ ] ❔ Other (please explain)
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Refactor (code change that does not add functionality or fix a bug)
+- [ ] Code cleanup (formatting, renaming)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Other (please explain)
 
 ## How Has This Been Tested?
 
