@@ -1,4 +1,4 @@
-import { IDomain } from "@flex/config/domain";
+import { IDomain } from "@flex/sdk";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import type { Construct } from "constructs";

@@ -2,7 +2,7 @@ import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { generateDerivedId } from "../../service/derived-id";
+import { generateDerivedId } from "../../../service/derived-id";
 import { handler, NotificationSecretContext } from "./get";
 
 vi.mock("../../service/derived-id", () => ({

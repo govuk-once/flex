@@ -1,4 +1,4 @@
-import { defineDomain } from "@flex/config/domain";
+import { defineDomain } from "@flex/sdk";
 
 export const endpoints = defineDomain({
   domain: "hello",
@@ -7,19 +7,19 @@ export const endpoints = defineDomain({
       routes: {
         "/hello-public": {
           GET: {
-            entry: "handlers/hello-public/get.ts",
+            entry: "handlers/v1/hello-public/get.ts",
             type: "PUBLIC",
           },
         },
         "/hello-private": {
           GET: {
-            entry: "handlers/hello-private/get.ts",
+            entry: "handlers/v1/hello-private/get.ts",
             type: "PRIVATE",
           },
         },
         "/hello-isolated": {
           GET: {
-            entry: "handlers/hello-isolated/get.ts",
+            entry: "handlers/v1/hello-isolated/get.ts",
             type: "ISOLATED",
           },
         },

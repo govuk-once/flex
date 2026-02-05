@@ -1,4 +1,4 @@
-import { IDomain, IDomainEndpoint } from "@flex/config/domain";
+import { IDomain, IDomainEndpoint } from "@flex/sdk";
 import {
   FlexKmsKeyAlias,
   FlexParam,
@@ -26,8 +26,8 @@ import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-func
 import { FlexPublicFunction } from "./lambda/flex-public-function";
 
 export class DomainFactory extends Construct {
-  private envCache = new Map<string, ISecret | IStringParameter>();
-  private keyCache = new Map<string, IKey>();
+  #envCache = new Map<string, ISecret | IStringParameter>();
+  #keyCache = new Map<string, IKey>();
 
   constructor(
     scope: Construct,
@@ -43,14 +43,14 @@ export class DomainFactory extends Construct {
         for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
           const method = methodKey as HttpMethod;
 
-          const { resolvedVars, envGrantables } = this._resolveEnvironment(
+          const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
           );
 
-          const { kmsGrantables } = this._resolveKms(routeConfig.kmsKeys);
+          const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
 
-          const domainEndpointFn = this._createFunction(
+          const domainEndpointFn = this.#createFunction(
             routeConfig,
             domain,
             path,
@@ -67,7 +67,7 @@ export class DomainFactory extends Construct {
             key.grantDecrypt(domainEndpointFn.function);
           });
 
-          this._createApiRoute(
+          this.#createApiRoute(
             httpApi,
             domain,
             versionId,
@@ -84,7 +84,7 @@ export class DomainFactory extends Construct {
    * Resolves standard Env Vars and Secrets.
    * Returns a map of EnvKeys -> Values and a list of resources to grant permissions to.
    */
-  private _resolveEnvironment(
+  #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
   ) {
@@ -97,7 +97,7 @@ export class DomainFactory extends Construct {
     ) => {
       if (!map) return;
       Object.entries(map).forEach(([envKey, resourcePath]) => {
-        const resource = this._getOrImportEnv(resourcePath, isSecret);
+        const resource = this.#getOrImportEnv(resourcePath, isSecret);
 
         envGrantables.push(resource);
 
@@ -117,14 +117,14 @@ export class DomainFactory extends Construct {
    * Resolves KMS Keys.
    * Injects Key ARN as env var and prepares keys for permission granting.
    */
-  private _resolveKms(keys?: Record<string, string>) {
+  #resolveKms(keys?: Record<string, string>) {
     const kmsVars: Record<string, string> = {};
     const kmsGrantables: IKey[] = [];
 
     if (!keys) return { kmsVars, kmsGrantables };
 
     Object.entries(keys).forEach(([envKey, keyAlias]) => {
-      const key = this._getOrImportKey(keyAlias);
+      const key = this.#getOrImportKey(keyAlias);
 
       kmsGrantables.push(key);
       kmsVars[envKey] = key.keyArn;
@@ -136,7 +136,7 @@ export class DomainFactory extends Construct {
   /**
    * Factory method to instantiate the correct Lambda Construct based on type
    */
-  private _createFunction(
+  #createFunction(
     route: IDomainEndpoint,
     domain: string,
     path: string,
@@ -167,7 +167,7 @@ export class DomainFactory extends Construct {
   /**
    * Creates the API Gateway Route integration
    */
-  private _createApiRoute(
+  #createApiRoute(
     httpApi: HttpApi,
     domain: string,
     version: string,
@@ -188,12 +188,9 @@ export class DomainFactory extends Construct {
   }
 
   // --- Resource Importers ---
-  private _getOrImportEnv(
-    path: string,
-    isSecret: boolean,
-  ): ISecret | IStringParameter {
-    if (this.envCache.has(path)) {
-      const cached = this.envCache.get(path);
+  #getOrImportEnv(path: string, isSecret: boolean): ISecret | IStringParameter {
+    if (this.#envCache.has(path)) {
+      const cached = this.#envCache.get(path);
       if (cached !== undefined) return cached;
     }
 
@@ -201,19 +198,19 @@ export class DomainFactory extends Construct {
       ? importFlexSecret(this, path as FlexSecret)
       : importFlexParameter(this, path as FlexParam);
 
-    this.envCache.set(path, resource);
+    this.#envCache.set(path, resource);
     return resource;
   }
 
-  private _getOrImportKey(aliasPath: string): IKey {
-    if (this.keyCache.has(aliasPath)) {
-      const cached = this.keyCache.get(aliasPath);
+  #getOrImportKey(aliasPath: string): IKey {
+    if (this.#keyCache.has(aliasPath)) {
+      const cached = this.#keyCache.get(aliasPath);
       if (cached !== undefined) return cached;
     }
 
     const key = importFlexKmsKeyAlias(this, aliasPath as FlexKmsKeyAlias);
 
-    this.keyCache.set(aliasPath, key);
+    this.#keyCache.set(aliasPath, key);
     return key;
   }
 }

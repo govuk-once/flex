@@ -1,4 +1,4 @@
-import { defineDomain } from "@flex/config/domain";
+import { defineDomain } from "@flex/sdk";
 
 export const endpoints = defineDomain({
   domain: "udp",
@@ -8,7 +8,7 @@ export const endpoints = defineDomain({
         "/user": {
           GET: {
             type: "ISOLATED",
-            entry: "handlers/user/get.ts",
+            entry: "handlers/v1/user/get.ts",
             envSecret: {
               FLEX_UDP_NOTIFICATION_SECRET:
                 "/flex-secret/udp/notification-hash-secret",
@@ -16,7 +16,7 @@ export const endpoints = defineDomain({
           },
           PATCH: {
             type: "ISOLATED",
-            entry: "handlers/user/patch.ts",
+            entry: "handlers/v1/user/patch.ts",
             kmsKeys: {
               ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
             },

@@ -16,13 +16,13 @@ const versionRouteSchema = z.record(
   routeMethodsSchema,
 );
 
-const _domainSchema = z.object({
+const domainSchema = z.object({
   domain: z.string(),
   owner: z.string().optional(),
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),
 });
 
-type InferredDomain = z.infer<typeof _domainSchema>;
+type InferredDomain = z.infer<typeof domainSchema>;
 export type IDomainEndpoint = z.infer<typeof handlerConfigSchema>;
 
 export type IDomain = Omit<InferredDomain, "versions"> & {
