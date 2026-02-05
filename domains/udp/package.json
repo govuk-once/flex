@@ -15,6 +15,7 @@
     "@flex/logging": "workspace:*",
     "@flex/middlewares": "workspace:*",
     "@flex/sdk": "workspace:*",
+    "@flex/params": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/http-header-normalizer": "7.0.2",
     "@middy/http-json-body-parser": "7.0.2",

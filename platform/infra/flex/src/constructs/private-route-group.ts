@@ -17,7 +17,7 @@ export interface PrivateRouteOptions {
 
 /**
  * Mirror of RouteGroup for the private API: adds routes under
- * /internal/{gateways|domains}/{domainId}/...
+ * /{gateways|domains}/{domainId}/...
  *
  * Use this to attach Lambdas to the private API so they are only callable
  * from other Flex components (with execute-api:Invoke permission).
@@ -38,21 +38,21 @@ export class PrivateRouteGroup extends Construct {
     scope: Construct,
     id: string,
     private props: {
-      /** Pre-created /internal/domains resource from createPrivateGateway() */
+      /** Pre-created /domains resource from createPrivateGateway() */
       domains: IResource;
-      /** Pre-created /internal/gateways resource from createPrivateGateway() */
+      /** Pre-created /gateways resource from createPrivateGateway() */
       gateways: IResource;
-      /** Domain id, e.g. "udp" -> routes under /internal/domains/udp/... */
+      /** Domain id, e.g. "udp" -> routes under /domains/udp/... */
       domainId: string;
     },
   ) {
     super(scope, id);
-    this.domainResource = props.domains.addResource(props.domainId);
-    this.gatewayResource = props.gateways.addResource(props.domainId);
+    this.domainResource = props.domains;
+    this.gatewayResource = props.gateways;
   }
 
   /**
-   * Add a route under /internal/{gateways|domains}/{domainId}/{path}.
+   * Add a route under /{gateways|domains}/{domainId}/{path}.
    * Method is the HTTP method (GET, POST, PATCH, etc.); use "ANY" for all methods.
    */
   public addRoute(
@@ -76,7 +76,11 @@ export class PrivateRouteGroup extends Construct {
   }
 
   /** Full path prefix for this domain, for IAM and grantPrivateApiAccess. */
-  public get pathPrefix(): string {
-    return `/internal/domains/${this.props.domainId}`;
+  public get domainPathPrefix(): string {
+    return `/domains/${this.props.domainId}`;
+  }
+  /** Full path prefix for this gateway, for IAM and grantPrivateApiAccess. */
+  public get gatewayPathPrefix(): string {
+    return `/gateways/${this.props.domainId}`;
   }
 }

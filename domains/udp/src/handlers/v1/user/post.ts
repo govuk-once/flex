@@ -1,17 +1,13 @@
+import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
-import {
-  type ContextWithPairwiseId,
-  createSecretsMiddleware,
-  extractUser,
-  type V2Authorizer,
-} from "@flex/middlewares";
+import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
-import type {
-  APIGatewayProxyEventV2WithLambdaAuthorizer,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
+import httpHeaderNormalizer from "@middy/http-header-normalizer";
+import httpJsonBodyParser from "@middy/http-json-body-parser";
+import type { APIGatewayProxyEvent } from "aws-lambda";
 import { createSignedFetcher } from "aws-sigv4-fetch";
+import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
@@ -21,79 +17,72 @@ export const handlerResponseSchema = z.object({
   notificationId: z.string(),
 });
 
-export type NotificationSecretContext = {
-  notificationSecretKey: string;
-};
-
 const configSchema = z.object({
-  FLEX_PRIVATE_API_URL: z.string().url(),
+  FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
 
 export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
-  APIGatewayProxyResultV2,
-  ContextWithPairwiseId & NotificationSecretContext
->(
-  async (_event, context) => {
+const handlerRequestSchema = z.object({
+  notificationId: z.string(),
+});
+
+export const handler = createLambdaHandler<APIGatewayProxyEvent>(
+  async (event) => {
     const logger = getLogger();
 
-    const { pairwiseId, notificationSecretKey } = context;
+    try {
+      const parsedEvent = ApiGatewayEnvelope.safeParse(
+        event,
+        handlerRequestSchema,
+      );
 
-    const notificationId = generateDerivedId({
-      pairwiseId,
-      secretKey: notificationSecretKey,
-    });
+      if (!parsedEvent.success) {
+        const message = `Invalid parsed event: ${parsedEvent.error.message}`;
+        throw new createHttpError.BadRequest(message);
+      }
 
-    const config = configSchema.parse({
-      FLEX_PRIVATE_API_URL: process.env.FLEX_PRIVATE_API_URL,
-      AWS_REGION: process.env.AWS_REGION,
-    });
+      const config = await getConfig(configSchema);
 
-    const baseUrl = config.FLEX_PRIVATE_API_URL.replace(/\/$/, "");
-    const url = `${baseUrl}/internal/gateways/udp`;
+      const url = `${config.FLEX_PRIVATE_GATEWAY_URL}gateways/udp`;
 
-    const signedFetch = createSignedFetcher({
-      service: "execute-api",
-      region: config.AWS_REGION,
-    });
-    const response = await signedFetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        notificationId,
-      }),
-    });
-
-    if (!response.ok) {
-      logger.warn("Private API returned non-OK", {
-        status: response.status,
-        statusText: response.statusText,
+      const signedFetch = createSignedFetcher({
+        service: "execute-api",
+        region: config.AWS_REGION,
       });
-      return jsonResponse(status.BAD_GATEWAY, {
-        message: "Private API gateway returned error",
-        status: response.status,
+      const response = await signedFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notificationId: parsedEvent.data.notificationId,
+        }),
       });
+
+      if (!response.ok) {
+        logger.warn("Connector returned non-OK", {
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return jsonResponse(status.BAD_GATEWAY, {
+          message: "Connector returned error",
+          status: response.status,
+        });
+      }
+
+      return Promise.resolve(jsonResponse(status.CREATED, {}));
+    } catch (error) {
+      logger.debug("Failed to process request", { error });
+      return Promise.resolve(
+        jsonResponse(status.INTERNAL_SERVER_ERROR, {
+          message: "Failed to process request",
+        }),
+      );
     }
-
-    return Promise.resolve(
-      jsonResponse<HandlerResponse>(status.OK, {
-        notificationId,
-      }),
-    );
   },
   {
-    logLevel: "INFO",
+    logLevel: "DEBUG",
     serviceName: "udp-post-user-service",
-    middlewares: [
-      extractUser,
-      createSecretsMiddleware<NotificationSecretContext>({
-        secrets: {
-          notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
-        },
-      }),
-    ],
+    middlewares: [httpHeaderNormalizer(), httpJsonBodyParser()],
   },
 );

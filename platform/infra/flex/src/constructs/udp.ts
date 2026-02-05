@@ -2,11 +2,13 @@ import {
   importFlexKmsKeyAlias,
   importFlexSecret,
 } from "@platform/core/outputs";
-import { IResource, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Duration } from "aws-cdk-lib";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Construct } from "constructs";
 
+import { importFlexPrivateGatewayParameter } from "../private-gateway";
 import { grantPrivateApiAccess } from "../private-gateway-permissions";
 import { getEntry } from "../utils/getEntry";
 import { FlexPrivateIsolatedFunction } from "./flex-private-isolated-function";
@@ -16,7 +18,7 @@ import { PrivateRouteGroup } from "./private-route-group";
 export interface UdpDomainOptions {
   /** When set, enables POST /user which calls the private API (UDP connector). */
   privateGateway: RestApi;
-  /** Pre-created /internal/gateways resource from createPrivateGateway() */
+  /** Pre-created /gateways resource from createPrivateGateway() */
   privateRoutes: PrivateRouteGroup;
 }
 
@@ -30,7 +32,7 @@ export class UdpDomain extends Construct {
     super(scope, id);
 
     const domain = "udp";
-    const domainPath = "user";
+    const resourcePath = "user";
 
     const hashingSecret = importFlexSecret(
       this,
@@ -43,6 +45,7 @@ export class UdpDomain extends Construct {
     );
 
     // ---- Ingress Layer ---- //
+    const privateGatewayUrl = importFlexPrivateGatewayParameter(this);
 
     const v1RouteGroup = new RouteGroup(this, "V1RouteGroup", {
       httpApi: httpApi,
@@ -56,16 +59,18 @@ export class UdpDomain extends Construct {
         entry: getEntry(domain, "handlers/user/getUserInfo.ts"),
         domain,
         environment: {
-          FLEX_PRIVATE_API_URL: options.privateGateway.url,
+          FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: privateGatewayUrl.parameterName,
           FLEX_UDP_NOTIFICATION_SECRET: hashingSecret.secretName,
         },
+        timeout: Duration.seconds(30),
       },
     );
     hashingSecret.grantRead(getUserInfoFunction.function);
     secretEncryptionKey.grantDecrypt(getUserInfoFunction.function);
+    privateGatewayUrl.grantRead(getUserInfoFunction.function);
 
     v1RouteGroup.addRoute(
-      domainPath,
+      resourcePath,
       HttpMethod.GET,
       new HttpLambdaIntegration("GetUserInfo", getUserInfoFunction.function),
     );
@@ -78,52 +83,55 @@ export class UdpDomain extends Construct {
         entry: getEntry(domain, "handlers/user/patch.ts"),
         domain,
         environment: {
-          FLEX_PRIVATE_API_URL: options.privateGateway.url,
+          FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: privateGatewayUrl.parameterName,
         },
+        timeout: Duration.seconds(30),
       },
     );
-
+    privateGatewayUrl.grantRead(patchFunction.function);
     const postFunction = new FlexPrivateIsolatedFunction(this, "PostFunction", {
       entry: getEntry(domain, "handlers/user/post.ts"),
       domain,
       environment: {
-        FLEX_UDP_NOTIFICATION_SECRET: hashingSecret.secretName,
-        FLEX_PRIVATE_API_URL: options.privateGateway.url,
+        FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: privateGatewayUrl.parameterName,
       },
-      // bundling: {
-      //   nodeModules: ["aws-sigv4-fetch", "@smithy/util-utf8"],
-      // },
+      timeout: Duration.seconds(30),
     });
 
-    hashingSecret.grantRead(postFunction.function);
-    secretEncryptionKey.grantDecrypt(postFunction.function);
+    privateGatewayUrl.grantRead(postFunction.function);
 
     grantPrivateApiAccess(postFunction.function.role, options.privateGateway, {
       domainId: domain,
-      allowedRoutePrefixes: ["/internal/gateways/udp"],
+      allowedRoutePrefixes: [options.privateRoutes.gatewayPathPrefix],
     });
+
     grantPrivateApiAccess(patchFunction.function.role, options.privateGateway, {
       domainId: domain,
-      allowedRoutePrefixes: ["/internal/gateways/udp"],
+      allowedRoutePrefixes: [options.privateRoutes.gatewayPathPrefix],
     });
+
     grantPrivateApiAccess(
       getUserInfoFunction.function.role,
       options.privateGateway,
       {
         domainId: domain,
-        allowedRoutePrefixes: ["/internal/udp/user", "/internal/gateways/udp"],
-        allowedMethods: ["GET", "POST"],
+        allowedRoutePrefixes: [
+          `${options.privateRoutes.domainPathPrefix}/${resourcePath}`,
+          options.privateRoutes.gatewayPathPrefix,
+        ],
+        allowedMethods: ["*"],
       },
     );
+
     options.privateRoutes.addRoute(
       "domain",
-      domain,
+      `${domain}/${resourcePath}`,
       "POST",
       postFunction.function,
     );
     options.privateRoutes.addRoute(
       "domain",
-      domain,
+      `${domain}/${resourcePath}`,
       "PATCH",
       patchFunction.function,
     );

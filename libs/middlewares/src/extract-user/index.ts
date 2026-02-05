@@ -23,6 +23,7 @@ export const extractUser: MiddlewareObj<
     const { pairwiseId } = event.requestContext.authorizer.lambda;
 
     if (!pairwiseId) {
+      console.log("Pairwise ID not found", authorizer);
       throw new Error("Pairwise ID not found");
     }
 

@@ -69,6 +69,9 @@ importers:
       '@flex/middlewares':
         specifier: workspace:*
         version: link:../../libs/middlewares
+      '@flex/params':
+        specifier: workspace:*
+        version: link:../../libs/params
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk

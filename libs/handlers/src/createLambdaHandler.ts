@@ -71,17 +71,23 @@ export function createLambdaHandler<
   handler: CustomHandler<TEvent, TResult, TContext>,
   config: LambdaHandlerConfig<TEvent, TResult, TContext>,
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
-  const middyHandler = middy<TEvent, TResult, Error, TContext>()
-    .use(httpErrorHandler())
-    .handler(handler);
   const logLevel = config.logLevel?.toUpperCase();
 
-  middyHandler.use(
-    injectLambdaContext(getLogger(config), {
-      logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
-      correlationIdPath: "requestContext.requestId",
-    }),
-  );
+  const middyHandler = middy<TEvent, TResult, Error, TContext>()
+    .use(
+      injectLambdaContext(getLogger(config), {
+        logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
+        correlationIdPath: "requestContext.requestId",
+      }),
+    )
+    .use(
+      httpErrorHandler({
+        logger: (error) => {
+          console.error("Request failed", { error: error as Error });
+        },
+      }),
+    )
+    .handler(handler);
 
   config.middlewares?.forEach((middleware) => {
     middyHandler.use(middleware);

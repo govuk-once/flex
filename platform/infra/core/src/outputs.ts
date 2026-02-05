@@ -31,7 +31,7 @@ export function exportVpcToSsm(
   vpcKey: VpcKey,
   { vpcId }: IVpc,
 ) {
-  new StringParameter(scope, `Vpc${hash(vpcId)}`, {
+  new StringParameter(scope, `Vpc${hash(vpcKey)}`, {
     parameterName: getParamName(vpcKey),
     stringValue: vpcId,
   });
@@ -52,7 +52,7 @@ export function exportSecurityGroupToSsm(
   SecurityGroupKey: SecurityGroupKey,
   { securityGroupId }: ISecurityGroup,
 ) {
-  new StringParameter(scope, `SG${hash(securityGroupId)}`, {
+  new StringParameter(scope, `SG${hash(SecurityGroupKey)}`, {
     parameterName: getParamName(SecurityGroupKey),
     stringValue: securityGroupId,
   });
@@ -81,7 +81,7 @@ export function exportInterfaceVpcEndpointToSsm(
   vpcEndpointKey: VpcEndpointKey,
   { vpcEndpointId }: IVpcEndpoint,
 ) {
-  new StringParameter(scope, `VpcE${hash(vpcEndpointId)}`, {
+  new StringParameter(scope, `VpcE${hash(vpcEndpointKey)}`, {
     parameterName: getParamName(vpcEndpointKey),
     stringValue: vpcEndpointId,
   });
@@ -110,7 +110,7 @@ export function exportStringToSsm(
   stringKey: StringKey,
   string: string,
 ) {
-  new StringParameter(scope, `String${hash(string)}`, {
+  new StringParameter(scope, `String${hash(stringKey)}`, {
     parameterName: getParamName(stringKey),
     stringValue: string,
   });

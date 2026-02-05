@@ -39,8 +39,8 @@ export interface DomainRoutePermissions {
  * grantPrivateApiAccess(udpFunction.function.role!, privateGateway, {
  *   domainId: "udp",
  *   allowedRoutePrefixes: [
- *     "/internal/gateways/dvla/*",
- *     "/internal/domains/users/*"
+ *     "/gateways/dvla/*",
+ *     "/domains/users/*"
  *   ]
  * });
  * ```
@@ -61,7 +61,7 @@ export function grantPrivateApiAccess(
 
   role.addToPrincipalPolicy(
     new PolicyStatement({
-      sid: `AllowPrivateApiAccess-${permissions.domainId}`,
+      sid: `AllowPrivateApiAccess${permissions.domainId}`,
       effect: Effect.ALLOW,
       actions: ["execute-api:Invoke"],
       resources:

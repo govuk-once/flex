@@ -1,5 +1,14 @@
 import { importInterfaceVpcEndpointFromSsm } from "@platform/core/outputs";
-import { EndpointType, IResource, RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  AccessLogFormat,
+  EndpointType,
+  IResource,
+  LogGroupLogDestination,
+  MethodLoggingLevel,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
 /**
@@ -28,12 +37,35 @@ export interface PrivateGatewayStructure {
 export function createPrivateGateway(
   scope: Construct,
 ): PrivateGatewayStructure {
+  const accessLogGroup = new LogGroup(scope, "PrivateGatewayAccessLogGroup", {
+    retention: RetentionDays.ONE_WEEK,
+  });
+
   const privateGateway = new RestApi(scope, "PrivateGateway", {
     description:
       "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
     policy: undefined,
     endpointConfiguration: {
       types: [EndpointType.PRIVATE],
+    },
+    deployOptions: {
+      // send access logs here
+      accessLogDestination: new LogGroupLogDestination(accessLogGroup),
+      loggingLevel: MethodLoggingLevel.INFO,
+      dataTraceEnabled: true,
+      metricsEnabled: true,
+      accessLogFormat: AccessLogFormat.custom(
+        JSON.stringify({
+          requestId: "$context.requestId",
+          vpcEndpointId: "$context.identity.vpcEndpointId",
+          userArn: "$context.identity.userArn",
+          httpMethod: "$context.httpMethod",
+          resourcePath: "$context.resourcePath",
+          status: "$context.status",
+          errorMessage: "$context.error.message",
+          errorMessageString: "$context.error.messageString",
+        }),
+      ),
     },
   });
 
@@ -45,13 +77,25 @@ export function createPrivateGateway(
   privateGateway.grantInvokeFromVpcEndpointsOnly([apiGatewayEndpoint]);
 
   // Single place that owns the /internal tree so gateways and domains share it
-  const internal = privateGateway.root.addResource("internal");
-  const domains = internal.addResource("domains");
-  const gateways = internal.addResource("gateways");
+  const domains = privateGateway.root.addResource("domains");
+  const gateways = privateGateway.root.addResource("gateways");
+
+  new StringParameter(scope, "PrivateGatewayUrl", {
+    parameterName: "/flex-core/private-gateway/url",
+    stringValue: privateGateway.url,
+  });
 
   return {
     privateGateway,
     gateways,
     domains,
   };
+}
+
+export function importFlexPrivateGatewayParameter(scope: Construct) {
+  return StringParameter.fromStringParameterName(
+    scope,
+    `FlexParamPrivateGatewayUrl`,
+    "/flex-core/private-gateway/url",
+  );
 }

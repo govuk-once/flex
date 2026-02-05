@@ -2,17 +2,26 @@ import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
+<<<<<<<< HEAD:domains/udp/src/handlers/v1/user/get.test.ts
 import { generateDerivedId } from "../../../service/derived-id";
 import { handler, NotificationSecretContext } from "./get";
+========
+import { generateDerivedId } from "../../service/derived-id";
+import { handler } from "./getUserInfo";
+>>>>>>>> 7071b75 (feat: add get user info orchestrator):domains/udp/src/handlers/v1/user/getUserInfo.test.ts
 
 vi.mock("../../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
 
+<<<<<<<< HEAD:domains/udp/src/handlers/v1/user/get.test.ts
 type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
 
 describe("GET /user handler", () => {
+========
+describe("getUserInfo handler", () => {
+>>>>>>>> 7071b75 (feat: add get user info orchestrator):domains/udp/src/handlers/v1/user/getUserInfo.test.ts
   const mockNotificationSecret = {
     notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
   };
@@ -23,7 +32,7 @@ describe("GET /user handler", () => {
   });
 
   describe("successful user get", () => {
-    it("returns 200 with notification ID", async ({
+    it("returns 200 with notification ID and preferences", async ({
       response,
       eventWithAuthorizer,
       context,
@@ -43,6 +52,11 @@ describe("GET /user handler", () => {
         response.ok(
           {
             notificationId: mockNotificationId,
+            preferences: {
+              notificationsConsented: true,
+              analyticsConsented: true,
+              updatedAt: expect.any(String) as string,
+            },
           },
           {
             headers: {

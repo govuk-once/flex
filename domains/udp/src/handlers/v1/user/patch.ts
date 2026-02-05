@@ -8,7 +8,7 @@ import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-export const handlerRequestSchema = z
+const handlerRequestSchema = z
   .object({
     notificationsConsented: z.boolean().optional(),
     analyticsConsented: z.boolean().optional(),

@@ -1,9 +1,8 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
+import { jsonResponse } from "@flex/utils";
+import type { APIGatewayProxyEvent } from "aws-lambda";
+import status from "http-status";
 import { z } from "zod";
 
 const configSchema = z.object({
@@ -16,34 +15,18 @@ const configSchema = z.object({
  * Follows the plan: receives validated request body, (future: calls remote UDP API with
  * credentials/ACL), returns mapped response. No direct invocation from domain lambdas.
  */
-const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2
->(
-  async (): Promise<APIGatewayProxyResultV2> => {
+const handler = createLambdaHandler<APIGatewayProxyEvent>(
+  async (event) => {
     const logger = getLogger();
     try {
-      return Promise.resolve({
-        statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: "Hello world!",
-          gateway: "udp",
-        }),
-      });
+      return Promise.resolve(jsonResponse(status.OK, event.body));
     } catch (error) {
       logger.error("Failed to process request", { error });
-      return Promise.resolve({
-        statusCode: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      return Promise.resolve(
+        jsonResponse(status.INTERNAL_SERVER_ERROR, {
           message: "Failed to process request",
         }),
-      });
+      );
     }
   },
   {
