@@ -9,7 +9,10 @@ const handlerConfigSchema = z.object({
   kmsKeys: z.record(z.string(), z.string()).optional(),
 });
 
-const routeMethodsSchema = z.record(z.enum(HttpMethod), handlerConfigSchema);
+const routeMethodsSchema = z.record(
+  z.enum(HttpMethod),
+  handlerConfigSchema.optional(),
+);
 
 const versionRouteSchema = z.record(
   z.string().startsWith("/"),
@@ -35,5 +38,6 @@ export type IDomain = Omit<InferredDomain, "versions"> & {
 };
 
 export function defineDomain<const T extends IDomain>(config: T) {
+  domainSchema.parse(config);
   return config;
 }
