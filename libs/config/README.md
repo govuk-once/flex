@@ -19,11 +19,11 @@ Alternatively, run `pnpm <command>` from within `libs/config/`.
 
 ## API
 
-| Name                                                    | Description                               | Code                        |
-| ------------------------------------------------------- | ----------------------------------------- | --------------------------- |
-| [`@flex/config/eslint`](#flexconfigeslint)              | Shared ESLint configuration               | [View](./src/eslint.mjs)    |
-| [`@flex/config/tsconfig.json`](#flexconfigtsconfigjson) | Shared TypeScript configuration           | [View](./src/tsconfig.json) |
-| [`@flex/config/vitest`](#flexconfigvitest)              | Shared Vitest configuration               | [View](./src/vitest.ts)     |
+| Name                                                    | Description                     | Code                        |
+| ------------------------------------------------------- | ------------------------------- | --------------------------- |
+| [`@flex/config/eslint`](#flexconfigeslint)              | Shared ESLint configuration     | [View](./src/eslint.mjs)    |
+| [`@flex/config/tsconfig.json`](#flexconfigtsconfigjson) | Shared TypeScript configuration | [View](./src/tsconfig.json) |
+| [`@flex/config/vitest`](#flexconfigvitest)              | Shared Vitest configuration     | [View](./src/vitest.ts)     |
 
 ---
 
