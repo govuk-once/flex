@@ -1,0 +1,17 @@
+import { defineDomain } from "@flex/sdk";
+
+export const endpoints = defineDomain({
+  domain: "{{domain}}",
+  versions: {
+    v1: {
+      routes: {
+        "/hello": {
+          GET: {
+            entry: "handlers/v1/hello/get.ts",
+            type: "PUBLIC",
+          },
+        },
+      },
+    },
+  },
+});
