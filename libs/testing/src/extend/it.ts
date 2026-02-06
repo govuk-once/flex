@@ -9,9 +9,9 @@ import {
   createContext,
   createEvent,
   createEventWithAuthorizer,
+  createMiddyRequest,
   createResponse,
 } from "../fixtures";
-import { createMiddyRequest } from "../fixtures/middy";
 
 interface Fixtures {
   authorizerEvent: ReturnType<typeof createAuthorizerEvent>;

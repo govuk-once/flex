@@ -64,8 +64,9 @@ export function getStackName(stack: string): string {
 }
 
 export class GovUkOnceStack extends cdk.Stack {
-  private addStackTags = (tags: TagOptions) => {
-    const { environment } = getEnvConfig();
+  public readonly stage: string;
+
+  private addStackTags = (tags: TagOptions, environment: Environment) => {
     cdk.Tags.of(this).add("Environment", environment, { priority: 100 });
 
     Object.entries(tags).forEach(([k, v]) => {
@@ -86,6 +87,11 @@ export class GovUkOnceStack extends cdk.Stack {
         region: env.region ?? process.env.CDK_DEFAULT_REGION ?? "eu-west-2",
       },
     });
-    this.addStackTags(tags);
+
+    const { environment, stage } = getEnvConfig();
+
+    this.stage = stage;
+
+    this.addStackTags(tags, environment);
   }
 }

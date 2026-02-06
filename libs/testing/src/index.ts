@@ -1,6 +1,7 @@
 export { config, ENV_DEFAULTS, SSM_DEFAULTS } from "./config";
 export { it } from "./extend/it";
 export type {
+  ApiResponse,
   AuthorizerContext,
   AuthorizerEventOverrides,
   AuthorizerResultContext,
@@ -21,6 +22,7 @@ export {
   buildCloudFrontEventWithAuthorizationHeader,
   buildCloudFrontFunctionErrorResponse,
   context,
+  createApi,
   createAuthorizerEvent,
   createAuthorizerResult,
   createContext,
@@ -30,10 +32,12 @@ export {
   createResponse,
   event,
   eventWithAuthorizer,
-  exampleInvalidJWTMissingUsername,
-  examplePublicJWKS,
-  exampleValidJWT,
-  exampleValidJWTUsername,
+  expiredJwt,
+  invalidJwt,
+  jwtMissingUsername,
   middyRequest,
+  publicJWKS,
   response,
+  validJwt,
+  validJwtUsername,
 } from "./fixtures";

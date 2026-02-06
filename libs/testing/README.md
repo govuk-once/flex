@@ -538,7 +538,7 @@ import { createApi } from "@flex/testing/e2e";
 
 const api = createApi("https://api.example.com");
 
-const users = await api.get("/users");
+const users = await api.client.get("/app/{version}/users");
 ```
 
 ---

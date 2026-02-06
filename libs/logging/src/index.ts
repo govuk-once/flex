@@ -57,3 +57,4 @@ export function getChildLogger(childContext: Record<string, unknown>): Logger {
 }
 
 export { injectLambdaContext };
+export type { Logger };
