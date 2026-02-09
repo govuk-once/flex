@@ -129,7 +129,7 @@ Core infrastructure includes:
 4. Build all packages
 5. Run unit tests
 6. Run security scan using checkov
-7. Run semgrep static analysis
+7. Run sonarqube static analysis
 
 ### Build and Deploy
 
