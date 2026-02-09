@@ -75,6 +75,6 @@ jobs:
       - name: Run SonarQube Scan
       # nosemgrep
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
-        with:
+        env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
