@@ -14,6 +14,12 @@ on:
       ROLE_TO_ASSUME:
         description: "AWS deployment role to assume"
         required: true
+      SONAR_TOKEN_FLEX:
+        description: "SonarQube FLEX token"
+        required: true
+      SONAR_URL:
+        description: "SonarQube URL"
+        required: true
 
 jobs:
   qualityChecks:
@@ -69,6 +75,6 @@ jobs:
       - name: Run SonarQube Scan
       # nosemgrep
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
-        env:
+        with:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
