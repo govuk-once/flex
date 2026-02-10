@@ -25,8 +25,8 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "25.2.0",
-    "@types/react": "19.2.10",
+    "@types/node": "25.2.2",
+    "@types/react": "19.2.13",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
