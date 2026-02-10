@@ -19,8 +19,9 @@ interface TagOptions {
 interface GovUkOnceStackProps {
   env?: {
     account?: string;
-    region?: "eu-west-2" | "eu-west-1";
+    region?: "eu-west-2" | "eu-west-1" | "us-east-1";
   };
+  crossRegionReferences?: boolean;
   tags: TagOptions;
 }
 
@@ -78,9 +79,12 @@ export class GovUkOnceStack extends cdk.Stack {
   protected constructor(
     scope: Construct,
     id: string,
-    { env = {}, tags }: GovUkOnceStackProps,
+    props: GovUkOnceStackProps,
   ) {
+    const { env = {}, tags, crossRegionReferences } = props;
+
     super(scope, id, {
+      crossRegionReferences,
       env: {
         account: process.env.CDK_DEFAULT_ACCOUNT,
         region: env.region ?? process.env.CDK_DEFAULT_REGION ?? "eu-west-2",

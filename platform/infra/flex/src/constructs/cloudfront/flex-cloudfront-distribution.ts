@@ -1,5 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import type { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
+import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import {
   AllowedMethods,
   Distribution,
@@ -9,6 +10,8 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
+import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
   BlockPublicAccess,
   Bucket,
@@ -18,11 +21,13 @@ import {
 } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
+import { IDomainConfig } from "../../stack";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 
 export interface FlexCloudfrontDistributionProps {
   cloudfrontFunction: FlexCloudfrontFunction;
   httpApi: HttpApi;
+  domainConfig: IDomainConfig;
 }
 
 export class FlexCloudfrontDistribution extends Construct {
@@ -34,6 +39,14 @@ export class FlexCloudfrontDistribution extends Construct {
     props: FlexCloudfrontDistributionProps,
   ) {
     super(scope, id);
+
+    const { domainConfig } = props;
+
+    const cert = Certificate.fromCertificateArn(
+      this,
+      "flexDnsCert",
+      domainConfig.certArn,
+    );
 
     // required for CKV_AWS_18 - all s3 buckets should have logging enabled
     const accessLogArchiveBucket = new Bucket(this, "AccessLogArchiveBucket", {
@@ -100,6 +113,20 @@ export class FlexCloudfrontDistribution extends Construct {
         ],
       },
       logBucket: accessLogBucket,
+      domainNames: domainConfig.prefix
+        ? [`${domainConfig.prefix}.${domainConfig.domainName}`]
+        : [domainConfig.domainName],
+      certificate: cert,
+    });
+
+    const zone = HostedZone.fromLookup(this, "HostedZone", {
+      domainName: domainConfig.domainName,
+    });
+
+    new ARecord(this, "domainAliasRecord", {
+      zone,
+      recordName: domainConfig.prefix ? domainConfig.prefix : undefined,
+      target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
     });
 
     // TLS1.2+ is the default for CloudFront distributions
