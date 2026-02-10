@@ -3,12 +3,9 @@ import * as cdk from "aws-cdk-lib";
 
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
-import { FlexDomainStack } from "./stacks/domain";
+import { FlexDomainStack, FlexDomainStackPoC } from "./stacks/domain";
 import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
-import {
-  getDomainConfigs,
-  getPrivateDomainConfigs,
-} from "./utils/getDomainConfigs";
+import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
 const app = new cdk.App();
@@ -16,6 +13,7 @@ const app = new cdk.App();
 const { domainName, subdomainName } = await getDomainName();
 
 const certStackName = getStackName("FlexCertStack");
+
 const { certArnParamName } = new FlexCertStack(app, certStackName, {
   domainName,
   subdomainName,
@@ -32,32 +30,49 @@ const privateGateway = new FlexPrivateGatewayStack(
  */
 const targetDomain = process.env.domain;
 
-const allDomains = await getDomainConfigs();
-const privateDomains = await getPrivateDomainConfigs();
+// TODO: Reduce down to single list once PoC migration is complete
+const domains = await getDomainConfigs();
 
-const flexDomains = targetDomain
-  ? allDomains.filter((d) => d.domain === targetDomain)
-  : allDomains;
+const pocDomains = targetDomain
+  ? domains.poc.filter((d) => d.name === targetDomain)
+  : domains.poc;
 
-if (targetDomain && flexDomains.length === 0) {
-  const available = allDomains.map((d) => d.domain).join(", ");
-  throw new Error(
-    `Domain '${targetDomain}' not found. Available domains: ${available}`,
-  );
-}
-
-const domainStacks = flexDomains.map(
-  (domain) =>
-    new FlexDomainStack(app, getStackName(domain.domain), {
-      domain,
+const pocStacks = pocDomains.map(
+  (config) =>
+    new FlexDomainStackPoC(app, getStackName(config.name), {
+      config,
       privateApi: privateGateway.privateApiRef,
-      privateDomain: privateDomains.get(domain.domain),
     }),
 );
 
-const publicRouteBindings = domainStacks.flatMap(
-  (stack) => stack.publicRouteBindings,
+const legacyDomains = targetDomain
+  ? domains.endpoints.filter((d) => d.public.domain === targetDomain)
+  : domains.endpoints;
+
+const legacyStacks = legacyDomains.map(
+  (configs) =>
+    new FlexDomainStack(app, getStackName(configs.public.domain), {
+      domain: configs.public,
+      privateDomain: configs.private,
+      privateApi: privateGateway.privateApiRef,
+    }),
 );
+
+const publicRouteBindings = [
+  ...pocStacks.flatMap((s) => s.publicRouteBindings),
+  ...legacyStacks.flatMap((s) => s.publicRouteBindings),
+];
+
+if (targetDomain && pocDomains.length === 0 && legacyDomains.length === 0) {
+  const available = [
+    ...domains.poc.map((d) => d.name),
+    ...domains.endpoints.map((d) => d.public.domain),
+  ].join(", ");
+
+  throw new Error(
+    `Domain "${targetDomain}" not found. Available domains: ${available}`,
+  );
+}
 
 new FlexPlatformStack(app, getStackName("FlexPlatform"), {
   certArnParamName,
