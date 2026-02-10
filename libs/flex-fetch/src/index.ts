@@ -64,10 +64,10 @@ export function flexFetch(
         retry(error, attemptNumber) {
           logger.warn("flex-fetch retrying request", {
             url,
-            options: fetchOptions,
             error,
             attemptNumber,
           });
+          logger.debug("options", fetchOptions);
           return !controller.signal.aborted;
         },
       },
