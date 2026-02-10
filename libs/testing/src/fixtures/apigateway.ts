@@ -8,7 +8,7 @@ import type {
 } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
-import { exampleValidJWT, exampleValidJWTUsername } from "./authorisation";
+import { validJwt, validJwtUsername } from "./auth";
 
 // ----------------------------------------------------------------------------
 // Event (HTTP API V2)
@@ -165,10 +165,10 @@ const baseAuthorizerEvent: APIGatewayRequestAuthorizerEventV2 = {
   routeKey: "GET /test",
   rawPath: "/test",
   rawQueryString: "",
-  identitySource: [`Bearer ${exampleValidJWT}`],
+  identitySource: [`Bearer ${validJwt}`],
   cookies: [],
   headers: {
-    authorization: `Bearer ${exampleValidJWT}`,
+    authorization: `Bearer ${validJwt}`,
     "content-type": "application/json",
   },
   requestContext: {
@@ -289,7 +289,7 @@ export function createAuthorizerResult() {
     allow: (overrides?: AuthorizerResultOverrides) =>
       buildAuthorizerAllowResult(overrides),
     allowWithPairwiseId: (
-      pairwiseId: string = exampleValidJWTUsername,
+      pairwiseId = validJwtUsername,
       overrides?: AuthorizerResultOverrides,
     ) =>
       buildAuthorizerAllowResult({

@@ -1,0 +1,24 @@
+{
+  "name": "@flex/sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.235.0",
+    "zod": "4.3.5"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}

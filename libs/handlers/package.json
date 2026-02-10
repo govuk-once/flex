@@ -7,22 +7,23 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@flex/logging": "workspace:*",
     "@middy/core": "7.0.2",
-    "@middy/http-error-handler": "^7.0.2"
+    "@middy/http-error-handler": "7.0.2"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.159",
+    "@types/aws-lambda": "8.10.160",
     "@types/http-errors": "2.0.5",
     "eslint": "9.39.2",
     "http-errors": "2.0.1",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

@@ -7,20 +7,21 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "^3.975.0",
+    "@aws-sdk/client-secrets-manager": "3.980.0",
     "@middy/core": "7.0.2",
-    "@middy/secrets-manager": "^7.0.2"
+    "@middy/secrets-manager": "7.0.2"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.159",
+    "@types/aws-lambda": "8.10.160",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

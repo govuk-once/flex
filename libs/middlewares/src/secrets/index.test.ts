@@ -43,7 +43,7 @@ describe("createSecretsMiddleware", () => {
     };
 
     expect(() =>
-      createSecretsMiddleware<Record<string, string | undefined>>({
+      createSecretsMiddleware({
         secrets,
       }),
     ).toThrow('Secret id for "undefinedSecret" is not defined');

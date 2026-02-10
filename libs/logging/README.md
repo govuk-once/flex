@@ -1,48 +1,108 @@
 # @flex/logging
 
-This package provides a simple, cached logger utility for use across the FLEX project, built on top of [AWS Lambda Powertools Logger](https://awslabs.github.io/aws-lambda-powertools-typescript/latest/core/logger/).
+Structured logging utilities for FLEX Lambda handlers built on AWS Lambda Powertools.
 
-## Features
+---
 
-- Singleton logger instance per runtime (cached)
-- Type-safe logger options
-- Child logger creation for contextual logging
-- Simple API for consistent logging across services
+## Commands
 
-## Usage
+Run these from the repository root:
 
-### Basic Example
+| Command                            | Description    |
+| ---------------------------------- | -------------- |
+| `pnpm --filter @flex/logging lint` | Lint files     |
+| `pnpm --filter @flex/logging test` | Run tests      |
+| `pnpm --filter @flex/logging tsc`  | Run type check |
+
+Alternatively, run `pnpm <command>` from within `libs/logging/`.
+
+## API
+
+| Name                                          | Description                                   | Code                   |
+| --------------------------------------------- | --------------------------------------------- | ---------------------- |
+| [`getLogger`](#getlogger)                     | Returns a cached logger instance              | [View](./src/index.ts) |
+| [`getChildLogger`](#getchildlogger)           | Creates a child logger with extra context     | [View](./src/index.ts) |
+| [`injectLambdaContext`](#injectlambdacontext) | Middy middleware for Lambda context injection | [View](./src/index.ts) |
+
+### Types
+
+| Name            | Description                           | Code                   |
+| --------------- | ------------------------------------- | ---------------------- |
+| `LoggerOptions` | Configuration options for `getLogger` | [View](./src/index.ts) |
+
+---
+
+## `getLogger`
+
+Returns a cached singleton logger instance. Creates the logger on first call with options, then returns the cached instance on subsequent calls.
+
+Throws if called without required options before the logger has been initialised.
+
+### Usage
 
 ```typescript
-import { getLogger, getChildLogger } from "@flex/logging";
+import { getLogger } from "@flex/logging";
 
-// Initialise the logger (once per runtime)
-const logger = getLogger({ logLevel: "INFO", serviceName: "my-service" });
+const logger = getLogger({
+  logLevel: "INFO",
+  serviceName: "service-name",
+});
 
-// Use the logger
-logger.info("Hello from my-service!");
-
-// Create a child logger for additional context
-const childLogger = getChildLogger({ requestId: "abc-123" });
-childLogger.debug("This is a child logger");
+logger.info("Hello from service-name!");
+logger.debug("Debug message", { userId: "123" });
 ```
 
-### API
+#### Without Options
 
-#### `getLogger(options?: LoggerOptions): Logger`
+After initialisation, retrieve the cached logger without passing options:
 
-- Returns a cached logger instance. Throws if called without options before initialisation.
-- `LoggerOptions`:
-  - `logLevel` (optional): Log level (e.g., 'INFO', 'DEBUG'). Defaults to 'INFO'.
-  - `serviceName` (required): Name of the service for log context.
+```typescript
+import { getLogger } from "@flex/logging";
 
-#### `getChildLogger(context: Record<string, unknown>): Logger`
+const logger = getLogger();
 
-- Returns a child logger with additional context. Throws if logger is not initialised.
-
-## Testing & Linting
-
-```bash
-npx nx test logging
-npx nx lint logging
+logger.info("Using cached logger instance");
 ```
+
+---
+
+## `getChildLogger`
+
+Creates a child logger with additional context. Useful for adding request-specific metadata without modifying the parent logger.
+
+Throws if called before the logger has been initialised with `getLogger()`.
+
+### Usage
+
+```typescript
+import { getChildLogger, getLogger } from "@flex/logging";
+
+getLogger({ logLevel: "INFO", serviceName: "service-name" });
+
+const childLogger = getChildLogger({ requestId: "abc-123", userId: "456" });
+
+childLogger.info("Processing request");
+// Logs include: { requestId: "abc-123", userId: "456", ... }
+```
+
+---
+
+## `injectLambdaContext`
+
+Re-exported Middy middleware from AWS Lambda Powertools. Automatically adds Lambda context to all log entries.
+
+This middleware is applied automatically by `createLambdaHandler` from `@flex/handlers`.
+
+---
+
+## Related
+
+**FLEX:**
+
+- [@flex/handlers](/libs/handlers/README.md#with-logging)
+- [Auth Handler](/platform/domains/auth/README.md)
+- [Fail Fast Handler](/platform/domains/fail-fast/README.md)
+
+**External:**
+
+- [AWS Lambda Powertools Logger](https://docs.aws.amazon.com/powertools/typescript/latest/features/logger/)

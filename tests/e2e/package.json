@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "test:e2e": "vitest run"
   },
@@ -12,7 +13,6 @@
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "3.975.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.159",

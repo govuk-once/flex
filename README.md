@@ -1,55 +1,117 @@
 # FLEX (Federated Logic and Events eXchange System)
 
-> Monorepo for the FLEX platform
+Serverless platform for GOV.UK One services built on AWS CDK and TypeScript.
 
-## Installation
+---
 
-### 1. Prerequisites
-
-1. **Node.js:** Recommended install via [nvm](https://github.com/nvm-sh/nvm)
-2. **[pre-commit](https://pre-commit.com/)**: `brew install pre-commit`
-3. **PNPM**: [install](https://pnpm.io/installation)
-4. **checkov**: Required for Infrastructure as Code (IaC) linting. Install via one of:
-   - **pipx** (recommended): `pipx install checkov`
-   - **pip**: `pip install checkov`
-   - **homebrew** (macOS): `brew install checkov`
-
-### 2. Installation
-
-Run the following commands to install dependencies and setup pre-commit:
+## Quick Start
 
 ```bash
-pnpm install --frozen-lockfile
+# Configure Node.js version
+nvm use
+
+# Install dependencies
+pnpm install
+
+# Install pre commit hooks
 pre-commit install
+
+# Verify local setup
+pnpm test
 ```
 
-## Repo Overview
+See the [Environment Setup](/docs/environment-setup.md) for prerequisites and detailed configuration.
 
-```txt
+---
+
+## Developer Roles
+
+| Role         | Access             | Guide                                                       |
+| ------------ | ------------------ | ----------------------------------------------------------- |
+| **Platform** | Full repository    | [Platform Development Guide](/docs/platform-development.md) |
+| **Domain**   | `domains/<name>/*` | [Domain Development Guide](/docs/domain-development.md)     |
+
+---
+
+## Repository Structure
+
+```text
 flex/
-├── platform/      # Code which is used to deploy the FLEX base platform
-│   ├── domains/   # Application code for the platform i.e. authenitcation
-│   └── infra/     # Infrastructure code for the FLEX platform
-├── libs/          # Shared libraries directory
-└── domains/       # Domains directory (application code)
+├── docs/                # Development guides
+├── domains/             # Domain-specific handlers
+├── libs/                # Shared packages (@flex/*)
+├── platform/
+│   ├── domains/         # Platform-level handlers
+│   └── infra/           # CDK stacks and constructs
+└── tests/
+    └── e2e/             # E2E tests against deployed infrastructure
 ```
 
-## Committing work
+---
 
-This repository uses Nx with conventional commits to automatically generate changelogs. When committing work the command `pnpm commit` is available to help format commit messages. Please squash any commits that are related into a single commit following the above convention.
+## Packages
 
-### Simple command line procedure
+| Package                                            | Description                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| [`@flex/config`](/libs/config/README.md)           | Shared ESLint, TypeScript and Vitest configuration           |
+| [`@flex/handlers`](/libs/handlers/README.md)       | Lambda handler factory with Middy middleware                 |
+| [`@flex/logging`](/libs/logging/README.md)         | Structured logging via AWS Lambda Powertools                 |
+| [`@flex/middlewares`](/libs/middlewares/README.md) | Shared Middy middleware                                      |
+| [`@flex/params`](/libs/params/README.md)           | Environment variable validation and SSM parameter resolution |
+| [`@flex/testing`](/libs/testing/README.md)         | Test fixtures, helpers and extended test functions           |
+| [`@flex/utils`](/libs/utils/README.md)             | Shared schemas, types and HTTP utilities                     |
 
-Get the current number of commits on your branch:
+---
 
-```bash
-git rev-list --count HEAD ^main
-```
+## Domains
 
-Supposing this returns 3 then you have made 3 commits since creating your branch and you want to squash them down into one:
+| Domain                                           | Description                                             |
+| ------------------------------------------------ | ------------------------------------------------------- |
+| [`@flex/hello-domain`](/domains/hello/README.md) | Example domain demonstrating Lambda deployment patterns |
+| [`@flex/udp-domain`](/domains/udp/README.md)     | User Data Platform for user settings management         |
 
-```bash
-git rebase -i HEAD~3
-```
+---
 
-Which will launch an interactive rebase session in the terminal.
+## Platform
+
+### Domain Handlers
+
+| Handler                                                        | Description                                    |
+| -------------------------------------------------------------- | ---------------------------------------------- |
+| [`@platform/auth`](/platform/domains/auth/README.md)           | Lambda authorizer for Cognito JWT verification |
+| [`@platform/fail-fast`](/platform/domains/fail-fast/README.md) | CloudFront Function for structural validation  |
+
+### Infrastructure
+
+| Stack                                                            | Description                                               |
+| ---------------------------------------------------------------- | --------------------------------------------------------- |
+| [`@platform/core`](/platform/infra/core/README.md)               | VPC, subnets, security groups, VPC endpoints and cache    |
+| [`@platform/flex`](/platform/infra/flex/README.md)               | API Gateway, CloudFront, Lambda constructs and routes     |
+| [`@platform/gov-uk-once`](/platform/infra/gov-uk-once/README.md) | Base CDK stack with GDS tagging and environment utilities |
+
+---
+
+## Tests
+
+| Package                             | Description                               |
+| ----------------------------------- | ----------------------------------------- |
+| [`@flex/e2e`](/tests/e2e/README.md) | E2E tests against deployed infrastructure |
+
+---
+
+## Guides
+
+| Guide                                                       | Description                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                             |
+| [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
+| [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
+| [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
+| [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
+| [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](/.github/CONTRIBUTING.md) for commit message conventions and pull request guidelines.

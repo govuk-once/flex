@@ -20,14 +20,43 @@ const baseContext: Context = {
   succeed: () => {},
 };
 
-function buildContext<T extends Context = Context>(
-  overrides: DeepPartial<T> = {} as DeepPartial<T>,
-): T {
-  return mergeDeepLeft(overrides, baseContext) as unknown as T;
+function buildContext(overrides?: DeepPartial<ContextWithPairwiseId>) {
+  return mergeDeepLeft(overrides ?? {}, baseContext) as ContextWithPairwiseId;
 }
 
 export interface ContextWithPairwiseId extends Context {
   pairwiseId: string;
+}
+
+type Secrets = Record<string, unknown>;
+
+class BuildContext {
+  overrides?: DeepPartial<Context> & Partial<Secrets>;
+  pairwiseId?: string = undefined;
+  secrets?: Secrets = undefined;
+
+  constructor(overrides?: DeepPartial<Context> & Partial<Secrets>) {
+    this.overrides = overrides;
+  }
+
+  withPairwiseId(pairwiseId: string = "test-pairwise-id") {
+    this.pairwiseId = pairwiseId;
+    return this;
+  }
+
+  withSecret(secrets: Record<string, unknown>) {
+    this.secrets = secrets;
+    return this;
+  }
+
+  create(overrides?: DeepPartial<Context>) {
+    return buildContext({
+      ...this.overrides,
+      ...this.secrets,
+      pairwiseId: this.pairwiseId,
+      ...overrides,
+    });
+  }
 }
 
 /**
@@ -47,54 +76,9 @@ export interface ContextWithPairwiseId extends Context {
  *   .create();
  * ```
  */
-export function createContext<T extends Context = Context>(
-  overrides: DeepPartial<T> = {} as DeepPartial<T>,
-) {
-  /**
-   * Helper function that creates a new context builder with accumulated overrides.
-   * This enables the recursive pattern where each `withX` method returns a new builder
-   * with the previous overrides plus the new property.
-   */
-  const withOverrides = <U extends Context>(next: DeepPartial<U>) =>
-    createContext<U>(next);
-
-  return {
-    /**
-     * Resolves the final context by merging all accumulated overrides with the base context.
-     * Any extra overrides passed here will be merged with the accumulated ones.
-     */
-    create(extraOverrides?: DeepPartial<T>) {
-      // Final, accumulated overrides win over later `create`-time overrides
-      return buildContext({
-        ...overrides,
-        ...extraOverrides,
-      } as DeepPartial<T>);
-    },
-
-    /**
-     * Returns a new builder with the pairwiseId added to the accumulated overrides.
-     */
-    withPairwiseId(pairwiseId = "test-pairwise-id") {
-      const next = {
-        ...overrides,
-        pairwiseId,
-      } as DeepPartial<T & ContextWithPairwiseId>;
-
-      return withOverrides<T & ContextWithPairwiseId>(next);
-    },
-
-    /**
-     * Returns a new builder with the secretKey added to the accumulated overrides.
-     */
-    withSecret<S>(secrets: S) {
-      const next = {
-        ...overrides,
-        ...secrets,
-      } as DeepPartial<T & S>;
-
-      return withOverrides<T & S>(next);
-    },
-  } as const;
+export function createContext(overrides?: DeepPartial<Context>) {
+  const builder = new BuildContext(overrides);
+  return builder;
 }
 
 export const context = buildContext();

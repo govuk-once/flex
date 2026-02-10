@@ -1,51 +1,115 @@
-# E2E Tests
+# @flex/e2e
 
-This directory contains end-to-end tests for the FLEX platform.
+End-to-end tests for the FLEX platform running against deployed infrastructure.
 
-## Structure
+## Commands
 
-- `src/` - E2E test files
-  - `domains/` - Domain-specific e2e tests
-  - `integration/` - Cross-domain integration tests
-  - `fixtures/` - Test fixtures and helpers
-  - `utils/` - E2E test utilities
+Run these from the repository root:
 
-## Running Tests
+| Command                                              | Description                                                      |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm --filter @flex/e2e lint`                       | Lint files                                                       |
+| `pnpm --filter @flex/e2e test:e2e`                   | Run tests (assumes you have set environment variables in `.env`) |
+| `STAGE=development pnpm --filter @flex/e2e test:e2e` | Run tests with manual environment variables                      |
+| `pnpm --filter @flex/e2e tsc`                        | Run type check                                                   |
 
-```bash
-# Run all e2e tests (requires API_GATEWAY_URL environment variable)
-API_GATEWAY_URL=https://your-api-id.execute-api.eu-west-2.amazonaws.com pnpm --filter @flex/e2e test
+Alternatively, run `pnpm <command>` from within `tests/e2e/`.
 
-# Run in watch mode
-API_GATEWAY_URL=https://your-api-id.execute-api.eu-west-2.amazonaws.com pnpm --filter @flex/e2e test --watch
+---
 
-# Run specific test file
-API_GATEWAY_URL=https://your-api-id.execute-api.eu-west-2.amazonaws.com pnpm --filter @flex/e2e test src/hello.e2e.test.ts
-```
+## Setup
+
+E2E tests run against a deployed FLEX stack. Environment variables can be resolved automatically via CloudFormation or provided manually.
+
+### Prerequisites
+
+E2E tests require deployed infrastructure. Available environments:
+
+| Environment | Stage Name                             | Provisioned By |
+| ----------- | -------------------------------------- | -------------- |
+| Personal    | `$USER` (truncated to 12 chars)        | Developer      |
+| PR          | `pr-<number>`                          | CI/CD pipeline |
+| Persistent  | `development`, `staging`, `production` | CI/CD pipeline |
+
+For personal development, you must deploy your own stack before running E2E tests. See the [Deployment Guide](/docs/deployment.md) for instructions.
 
 ### Environment Variables
 
-- `API_GATEWAY_URL` (required): The base URL of your deployed API Gateway
-  - Example: `https://abc123xyz.execute-api.eu-west-2.amazonaws.com`
-  - Get this from your AWS Console or CDK stack outputs
+| Variable                      | Required | Description                                             |
+| ----------------------------- | -------- | ------------------------------------------------------- |
+| `STAGE`                       | No       | Deployment stage (defaults to `$USER` or `development`) |
+| `AWS_REGION`                  | No       | AWS region (automatically set by GDS CLI)               |
+| `CLOUDFRONT_DISTRIBUTION_URL` | No       | Manual override for CloudFront URL                      |
 
-## Writing E2E Tests
+> If not using GDS CLI to assume roles, set `AWS_REGION` manually (e.g., `eu-west-2`).
 
-E2E tests should:
+### Running Locally
 
-- Test complete user flows or system behaviours
-- Use real AWS services as appropriate
-- Be independent and able to run in any order
-- Clean up after themselves
+1. Assume a role via GDS CLI with access to the target AWS account
+2. Run tests using one of the options below
 
-Example:
+#### Option A: Automatic Resolution (Recommended)
 
-```typescript
-import { describe, it, expect } from "vitest";
+Environment variables are resolved from CloudFormation stack outputs based on `STAGE`. Defaults to `$USER` if no stage is set:
 
-describe("Example Domain E2E", () => {
-  it("should handle complete request flow", async () => {
-    // Your e2e test here
-  });
-});
+```bash
+pnpm --filter @flex/e2e test:e2e
 ```
+
+#### Option B: Manual Override
+
+Set environment variables directly to skip CloudFormation lookup:
+
+```bash
+CLOUDFRONT_DISTRIBUTION_URL=https://xxx.cloudfront.net pnpm --filter @flex/e2e test:e2e
+```
+
+> When manually overriding, all required variables must be provided together.
+
+#### Using a `.env` File
+
+Create a `.env` file in `tests/e2e/`:
+
+```bash
+STAGE=development
+CLOUDFRONT_DISTRIBUTION_URL=https://xxx.cloudfront.net
+```
+
+> E2E tests run automatically in CI after each deployment. See the [Deployment Guide](/docs/deployment.md) for details.
+
+---
+
+## Directory Structure
+
+```text
+tests/e2e/
+  src/
+    domains/          # Domain-specific E2E tests
+      <domain>.test.ts
+    platform/         # Platform E2E tests
+      <name>.test.ts
+    setup.global.ts   # Global test setup
+```
+
+---
+
+## Writing Tests
+
+Use the extended `it` function and fixtures from [@flex/testing/e2e](/libs/testing/README.md#it-e2e).
+
+### Guidelines
+
+- Tests run against real deployed infrastructure
+- Each test should be independent, idempotent and test complete user flows
+- Avoid tests that mutate shared state
+- Use descriptive names explaining the scenario being tested
+- Default test timeout is 30 seconds
+
+---
+
+## Related
+
+**FLEX:**
+
+- [@flex/testing](/libs/testing/README.md)
+- [Deployment Guide](/docs/deployment.md)

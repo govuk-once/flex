@@ -121,7 +121,9 @@ export function importStringFromSsm(scope: Construct, stringKey: StringKey) {
 }
 
 /** FLEX Params */
-type FlexParam = "/flex-param/auth/user-pool-id" | "/flex-param/auth/client-id";
+export type FlexParam =
+  | "/flex-param/auth/user-pool-id"
+  | "/flex-param/auth/client-id";
 
 export function importFlexParameter(scope: Construct, param: FlexParam) {
   return StringParameter.fromStringParameterName(
@@ -132,7 +134,7 @@ export function importFlexParameter(scope: Construct, param: FlexParam) {
 }
 
 /** Flex Secrets */
-type FlexSecret = "/flex-secret/udp/notification-hash-secret";
+export type FlexSecret = "/flex-secret/udp/notification-hash-secret";
 
 export function importFlexSecret(scope: Construct, secret: FlexSecret) {
   return Secret.fromSecretNameV2(
@@ -143,7 +145,7 @@ export function importFlexSecret(scope: Construct, secret: FlexSecret) {
 }
 
 /** Flex KMS Key Aliases */
-type FlexKmsKeyAlias = "/flex-secret/encryption-key";
+export type FlexKmsKeyAlias = "/flex-secret/encryption-key";
 
 export function importFlexKmsKeyAlias(
   scope: Construct,

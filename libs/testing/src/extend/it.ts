@@ -9,9 +9,9 @@ import {
   createContext,
   createEvent,
   createEventWithAuthorizer,
+  createMiddyRequest,
   createResponse,
 } from "../fixtures";
-import { createMiddyRequest } from "../fixtures/middy";
 
 interface Fixtures {
   authorizerEvent: ReturnType<typeof createAuthorizerEvent>;
@@ -41,7 +41,7 @@ interface Fixtures {
   };
   response: ReturnType<typeof createResponse>;
   ssm: {
-    get: <T = string | undefined>(path: string) => T;
+    get: (path: string) => unknown;
     set: (params: Record<string, unknown>) => void;
     delete: (...paths: string[]) => void;
   };
@@ -63,12 +63,14 @@ export const it = vitestIt.extend<Fixtures>({
             if (v) {
               vi.stubEnv(k, v);
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
               delete process.env[k];
             }
           });
         },
         delete: (...keys) => {
           keys.forEach((k) => {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete process.env[k];
           });
         },
@@ -87,10 +89,10 @@ export const it = vitestIt.extend<Fixtures>({
 
       const client: Fixtures["redis"]["client"] = {
         get: vi.fn((key) => Promise.resolve(store.get(key) ?? null)),
-        set: vi.fn(
-          (key, value, _expirySeconds) =>
-            store.set(key, value) && Promise.resolve("OK"),
-        ),
+        set: vi.fn((key, value, _expirySeconds) => {
+          store.set(key, value);
+          return Promise.resolve("OK");
+        }),
         del: vi.fn((key) => Promise.resolve(store.delete(key) ? 1 : 0)),
         disconnect: vi.fn(() => Promise.resolve()),
       };
@@ -108,7 +110,7 @@ export const it = vitestIt.extend<Fixtures>({
       const store = new Map<string, unknown>(Object.entries(SSM_DEFAULTS));
 
       await use({
-        get: <T>(path: string) => store.get(path) as T,
+        get: (path: string) => store.get(path),
         set: (params) => {
           Object.entries(params).forEach(([path, value]) => {
             store.set(path, value);

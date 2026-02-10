@@ -1,8 +1,6 @@
 packages:
-  - configs/*
   - domains/*
   - libs/*
-  - platform/*
   - platform/domains/*
   - platform/infra/*
   - tests/*
@@ -13,3 +11,5 @@ onlyBuiltDependencies:
   - nx
 
 minimumReleaseAge: 2880
+
+savePrefix: ''

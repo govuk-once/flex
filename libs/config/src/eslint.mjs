@@ -4,19 +4,18 @@ import markdown from "@eslint/markdown";
 import html from "@html-eslint/eslint-plugin";
 import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import reactPlugin from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import { findUpSync } from "find-up";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const flattenedTsConfigRules = tseslint.configs.recommendedTypeChecked.reduce(
+const flattenedTsConfigRules = tseslint.configs.strictTypeChecked.reduce(
   (acc, obj) => Object.assign(acc, obj.rules),
   {},
 );
 
-/**
- * @param {string} f - The filename to search for.
- * @returns {string | undefined} The directory path containing the file.
- */
 const findUpFileDir = (f) => findUpSync(f)?.slice(0, -f.length);
 const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
 
@@ -29,17 +28,30 @@ export const config = [
   },
   {
     files: ["**/*.js", "**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
+    },
     plugins: {
       "simple-import-sort": simpleImportSort,
     },
     rules: {
       ...js.configs.recommended.rules,
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
     },
   },
   {
-    files: ["**/*.ts"],
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -65,6 +77,23 @@ export const config = [
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
     },
+  },
+  {
+    files: ["**/*.tsx"],
+    plugins: {
+      react: reactPlugin,
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+  },
+  {
+    files: ["**/*.tsx"],
+    ...reactHooks.configs.flat.recommended,
   },
   {
     files: ["**/*.html"],
