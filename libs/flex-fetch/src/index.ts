@@ -71,7 +71,7 @@ export function flexFetch(
           return !controller.signal.aborted;
         },
       },
-    ).catch((error) => {
+    ).catch((error: unknown) => {
       const requestUrl = url instanceof Request ? url.url : url.toString();
       logger.error("flex-fetch failed", {
         url: requestUrl,
@@ -80,6 +80,8 @@ export function flexFetch(
       });
       throw error;
     }),
-    abort: () => controller.abort(),
+    abort: () => {
+      controller.abort();
+    },
   };
 }
