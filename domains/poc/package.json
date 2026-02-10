@@ -1,35 +1,25 @@
 {
-  "name": "@flex/sdk",
+  "name": "@flex/poc-domain",
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "exports": {
-    ".": "./src/index.ts"
-  },
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/logging": "workspace:*",
+    "@flex/handlers": "workspace:*",
+    "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/core": "7.0.2",
-    "@middy/http-error-handler": "7.0.2",
-    "@middy/http-header-normalizer": "7.0.2",
-    "@middy/http-json-body-parser": "7.0.2",
-    "@middy/secrets-manager": "7.0.2",
-    "@middy/ssm": "7.0.2",
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@aws-sdk/client-ssm": "3.990.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.160",
-    "@types/http-errors": "2.0.5",
     "eslint": "9.39.2",
-    "http-errors": "2.0.1",
+    "nock": "14.0.11",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }

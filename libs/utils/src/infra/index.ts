@@ -25,7 +25,7 @@ export function sanitiseStageName(value?: string) {
 
   return value
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "")
+    .replace(/[^a-z0-9]/g, "")
     .slice(0, 12);
 }
 

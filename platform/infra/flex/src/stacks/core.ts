@@ -1,9 +1,8 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
 import {
-  IResource,
+  AuthorizationType,
   LambdaIntegration,
-  RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
@@ -16,7 +15,9 @@ import type { Construct } from "constructs";
 
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
-import { PublicRouteBinding } from "./domain";
+import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { resolveApiResource } from "../utils/resources";
+import type { PublicRouteBinding } from "./domain";
 
 interface FlexPlatformStackProps {
   certArnParamName: string;
@@ -26,8 +27,6 @@ interface FlexPlatformStackProps {
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
-  public readonly restApi: RestApi;
-
   #getCertArn(certArnParamName: string) {
     const ssmCall = {
       service: "SSM",
@@ -80,7 +79,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
     });
 
     const { restApi } = new FlexRestApi(this, "RestApi");
-    this.restApi = restApi;
+
     const certArn = this.#getCertArn(certArnParamName);
 
     new FlexCloudfront(this, "Cloudfront", {
@@ -91,30 +90,20 @@ export class FlexPlatformStack extends GovUkOnceStack {
     });
 
     for (const route of publicRouteBindings) {
-      this.#addDeepResource(restApi.root, route.path).addMethod(
+      const resource = resolveApiResource(restApi.root, route.path);
+
+      const resourceMethod = resource.addMethod(
         route.method,
         new LambdaIntegration(route.handler),
       );
+
+      if (route.isPublicAccess) {
+        applyCheckovSkip(resourceMethod, "CKV_AWS_59", "Known public endpoint");
+      }
     }
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });
-  }
-
-  #addDeepResource(root: IResource, path: string): IResource {
-    const parts = path.split("/").filter(Boolean);
-    let current = root;
-
-    for (const part of parts) {
-      const existing = current.node.tryFindChild(part) as IResource | undefined;
-      if (existing) {
-        current = existing;
-      } else {
-        current = current.addResource(part);
-      }
-    }
-
-    return current;
   }
 }

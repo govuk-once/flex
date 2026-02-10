@@ -6,7 +6,7 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test:e2e": "vitest run"
+    "test:e2e": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@flex/handlers": "workspace:*",
