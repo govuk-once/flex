@@ -7,6 +7,7 @@ import {
 } from "@flex/middlewares";
 import httpResponseSerializer from "@middy/http-response-serializer";
 import type {
+  APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
@@ -26,10 +27,10 @@ export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
-  APIGatewayProxyResultV2,
+  APIGatewayProxyResultV2<HandlerResponse>,
   ContextWithPairwiseId & NotificationSecretContext
 >(
-  async (_, context) => {
+  async (_event: APIGatewayProxyEventV2, context) => {
     const { pairwiseId, notificationSecretKey } = context;
 
     const notificationId = generateDerivedId({
@@ -39,9 +40,9 @@ export const handler = createLambdaHandler<
 
     return Promise.resolve({
       statusCode: 200,
-      body: JSON.stringify({
-        notificationId: notificationId,
-      }),
+      body: {
+        notification_id: notificationId,
+      },
     });
   },
   {
