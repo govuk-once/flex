@@ -1,34 +1,31 @@
 import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
+import nock from "nock";
 import { afterAll, beforeAll, beforeEach, describe, expect, vi } from "vitest";
 
 import { generateDerivedId } from "../../../../service/derived-id";
 import { handler, NotificationSecretContext } from "./getUserInfo";
 
+const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
+const PRIVATE_GATEWAY_BASE_URL = `${PRIVATE_GATEWAY_ORIGIN}/gateways/udp`;
+const NOTIFICATIONS_PATH = "/gateways/udp/gateways/udp/v1/notifications";
+const USER_PATH = "/gateways/udp/domains/udp/v1/user";
+
 vi.mock("../../../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
-vi.mock("@flex/params", () => {
-  return {
-    getConfig: vi.fn(() => ({
+vi.mock("@flex/params", () => ({
+  getConfig: vi.fn(() =>
+    Promise.resolve({
       AWS_REGION: "eu-west-2",
-      FLEX_PRIVATE_GATEWAY_URL:
-        "https://execute-api.eu-west-2.amazonaws.com/gateways/udp",
-    })),
-  };
-});
-vi.mock("aws-sigv4-fetch", () => {
-  return {
-    createSignedFetcher: vi.fn(() => {
-      return vi.fn().mockResolvedValue({
-        status: 200,
-        statusText: "OK",
-        ok: true,
-      });
+      FLEX_PRIVATE_GATEWAY_URL: PRIVATE_GATEWAY_BASE_URL,
     }),
-  };
-});
+  ),
+}));
+vi.mock("aws-sigv4-fetch", () => ({
+  createSignedFetcher: vi.fn(() => fetch),
+}));
 
 type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
 
@@ -48,10 +45,11 @@ describe("GetUserInfo handler", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    nock.cleanAll();
   });
 
-  describe("successful user get", () => {
-    it("returns 200 with notification ID and preferences", async ({
+  describe("successful user creation", () => {
+    it("returns 200 with notification ID and preferences when GET returns 404 and POST succeeds", async ({
       response,
       eventWithAuthorizer,
       context,
@@ -59,7 +57,20 @@ describe("GetUserInfo handler", () => {
       const mockNotificationId = "mocked-notification-id";
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
-      const request = await handler(
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .matchHeader("requesting-service", "GOVUK-APP")
+        .matchHeader("requesting-service-user-id", testPairwiseId)
+        .reply(404);
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .post(USER_PATH, {
+          notificationId: mockNotificationId,
+          appId: testPairwiseId,
+        })
+        .reply(201, {});
+
+      const result = await handler(
         eventWithAuthorizer.authenticated(),
         context
           .withPairwiseId()
@@ -67,14 +78,70 @@ describe("GetUserInfo handler", () => {
           .create() as UserGetContext,
       );
 
-      expect(request).toEqual(
+      expect(result).toEqual(
         response.ok(
           {
             notificationId: mockNotificationId,
             preferences: {
-              notificationsConsented: true,
-              analyticsConsented: true,
-              updatedAt: new Date().toISOString(),
+              notifications: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
+              analytics: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
+
+    it("returns 200 when GET returns 200 and POST succeeds", async ({
+      response,
+      eventWithAuthorizer,
+      context,
+    }) => {
+      const mockNotificationId = "mocked-notification-id";
+      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .reply(200, { existing: "data" });
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .post(USER_PATH, {
+          notificationId: mockNotificationId,
+          appId: testPairwiseId,
+        })
+        .reply(201, {});
+
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.ok(
+          {
+            notificationId: mockNotificationId,
+            preferences: {
+              notifications: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
+              analytics: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
             },
           },
           {
@@ -93,6 +160,9 @@ describe("GetUserInfo handler", () => {
       const mockNotificationId = "mocked-notification-id";
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
+      nock(PRIVATE_GATEWAY_ORIGIN).get(NOTIFICATIONS_PATH).reply(404);
+      nock(PRIVATE_GATEWAY_ORIGIN).post(USER_PATH).reply(201, {});
+
       await handler(
         eventWithAuthorizer.authenticated(),
         context
@@ -107,7 +177,7 @@ describe("GetUserInfo handler", () => {
       });
     });
 
-    it("uses the pairwiseId from context in the response", async ({
+    it("uses the pairwiseId from context in requests and response", async ({
       response,
       eventWithAuthorizer,
       context,
@@ -116,7 +186,19 @@ describe("GetUserInfo handler", () => {
       const mockNotificationId = "generated-notification-id";
       vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
-      const request = await handler(
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .matchHeader("requesting-service-user-id", customPairwiseId)
+        .reply(404);
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .post(USER_PATH, {
+          notificationId: mockNotificationId,
+          appId: customPairwiseId,
+        })
+        .reply(201, {});
+
+      const result = await handler(
         eventWithAuthorizer.authenticated({}, customPairwiseId),
         context
           .withPairwiseId(customPairwiseId)
@@ -124,14 +206,19 @@ describe("GetUserInfo handler", () => {
           .create() as UserGetContext,
       );
 
-      expect(request).toEqual(
+      expect(result).toEqual(
         response.ok(
           {
             notificationId: mockNotificationId,
             preferences: {
-              notificationsConsented: true,
-              analyticsConsented: true,
-              updatedAt: new Date().toISOString(),
+              notifications: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
+              analytics: {
+                consentStatus: "unknown",
+                updatedAt: new Date().toISOString(),
+              },
             },
           },
           {
@@ -148,13 +235,121 @@ describe("GetUserInfo handler", () => {
     });
   });
 
+  describe("GET notifications API errors", () => {
+    it("returns 502 BAD_GATEWAY when GET notifications returns 500", async ({
+      response,
+      eventWithAuthorizer,
+      context,
+    }) => {
+      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .reply(500, { error: "Internal Server Error" });
+
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.badGateway(
+          {
+            message: "Private API gateway returned error",
+            status: 500,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
+
+    it("returns 502 BAD_GATEWAY when GET notifications returns 403", async ({
+      response,
+      eventWithAuthorizer,
+      context,
+    }) => {
+      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
+
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .reply(403, { error: "Forbidden" });
+
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.badGateway(
+          {
+            message: "Private API gateway returned error",
+            status: 403,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
+  });
+
+  describe("POST create user API errors", () => {
+    it("returns 502 BAD_GATEWAY when POST create user returns 500", async ({
+      response,
+      eventWithAuthorizer,
+      context,
+    }) => {
+      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
+
+      nock(PRIVATE_GATEWAY_ORIGIN).get(NOTIFICATIONS_PATH).reply(404);
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .post(USER_PATH)
+        .reply(500, { error: "Internal Server Error" });
+
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.badGateway(
+          {
+            message: "Private API gateway returned error",
+            status: 500,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
+  });
+
   describe("service integration", () => {
     it("calls generateDerivedId exactly once per request", async ({
       eventWithAuthorizer,
       context,
     }) => {
-      const mockNotificationId = "mocked-notification-id";
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
+      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
+      nock(PRIVATE_GATEWAY_ORIGIN).get(NOTIFICATIONS_PATH).reply(404);
+      nock(PRIVATE_GATEWAY_ORIGIN).post(USER_PATH).reply(201, {});
 
       await handler(
         eventWithAuthorizer.authenticated(),
@@ -167,7 +362,7 @@ describe("GetUserInfo handler", () => {
       expect(generateDerivedId).toHaveBeenCalledTimes(1);
     });
 
-    it("bubbles errors from generateDerivedId", async ({
+    it("returns 500 when generateDerivedId throws", async ({
       eventWithAuthorizer,
       context,
       response,
@@ -177,18 +372,53 @@ describe("GetUserInfo handler", () => {
         throw error;
       });
 
-      await expect(
-        handler(
-          eventWithAuthorizer.authenticated(),
-          context
-            .withPairwiseId()
-            .withSecret(mockNotificationSecret)
-            .create() as UserGetContext,
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.internalServerError(
+          { message: "Failed to get user info" },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
         ),
-      ).resolves.toEqual(
-        response.internalServerError(null, {
-          headers: {},
-        }),
+      );
+    });
+
+    it("returns 500 when network request fails", async ({
+      eventWithAuthorizer,
+      context,
+      response,
+    }) => {
+      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
+      nock(PRIVATE_GATEWAY_ORIGIN)
+        .get(NOTIFICATIONS_PATH)
+        .replyWithError("ECONNREFUSED");
+
+      const result = await handler(
+        eventWithAuthorizer.authenticated(),
+        context
+          .withPairwiseId()
+          .withSecret(mockNotificationSecret)
+          .create() as UserGetContext,
+      );
+
+      expect(result).toEqual(
+        response.internalServerError(
+          { message: "Failed to get user info" },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
   });

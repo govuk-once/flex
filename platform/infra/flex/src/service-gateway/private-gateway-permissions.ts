@@ -1,6 +1,5 @@
 import { IResource } from "aws-cdk-lib/aws-apigateway";
-import { Effect, IRole, PolicyStatement, Role } from "aws-cdk-lib/aws-iam";
-
+import { Effect, IRole, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 /**
  * Configuration for which routes a domain/service can call on the private API gateway.
@@ -9,7 +8,7 @@ interface DomainRoutePermissions {
   /**
    * Domain/service identifier (e.g. "udp", "hello", "payments")
    */
-  domainId: "udp" | "hello" | "dvla";
+  domainId: string;
 
   /**
    * Route prefixes this domain is allowed to call.
@@ -58,7 +57,7 @@ export function grantPrivateApiAccess(
   if (permissions.allowedRoutePrefixes.length === 0) {
     throw new Error(
       `grantPrivateApiAccess: domain "${permissions.domainId}" must specify at least one allowedRoutePrefix. ` +
-      `Use ["/*"] explicitly if you intend to allow all routes.`
+        `Use ["/*"] explicitly if you intend to allow all routes.`,
     );
   }
 

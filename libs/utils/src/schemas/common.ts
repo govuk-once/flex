@@ -88,3 +88,14 @@ export const ApiGatewayUrlSchema = z.url({
 });
 
 export type ApiGatewayUrl = z.output<typeof ApiGatewayUrlSchema>;
+
+export const CloudfrontDistributionUrlSchema = z.url({
+  protocol: /^https$/,
+  hostname:
+    /^[a-z0-9]+\.cloudfront\.net$|^[a-z0-9]+\.development\.bl\.once\.service\.gov\.uk$/,
+  message: "Must be a valid CloudFront URL (https://{id}.cloudfront.net)",
+});
+
+export type CloudfrontDistributionUrl = z.output<
+  typeof CloudfrontDistributionUrlSchema
+>;

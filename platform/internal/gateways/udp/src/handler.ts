@@ -10,10 +10,6 @@ import type {
 import { sigv4FetchWithCredentials } from "@flex/utils";
 import { z } from "zod";
 import { getConfig } from "@flex/params";
-import { SignatureV4 } from '@smithy/signature-v4';
-import { HttpRequest } from '@smithy/protocol-http';
-import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
-import { Sha256 } from '@aws-crypto/sha256-js';
 
 const configSchema = z.object({
   AWS_REGION: z.string().min(1),
@@ -45,6 +41,23 @@ const REMOTE_ROUTES = {
   // Add more as you integrate more remote endpoints
 } as const;
 
+const SERVICE_NAME = "GOVUK-APP";
+
+type RouteConfig = {
+  requiresRequestingServiceHeaders: boolean;
+};
+
+const ROUTES_REQUIRING_HEADERS: RegExp[] = [
+  /^(?:\/[^/]+)?\/v1\/notifications(\/.*)?$/,
+  /^(?:\/[^/]+)?\/v1\/analytics(\/.*)?$/,
+  /^(?:\/[^/]+)?\/v1\/preferences(\/.*)?$/,
+];
+
+function isRouteRequiringHeaders(path: string): boolean {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return ROUTES_REQUIRING_HEADERS.some((route) => route.test(normalized));
+}
+
 /**
  * UDP connector (service gateway) – internal-only, invoked via the private API gateway.
  *
@@ -61,10 +74,17 @@ const handler = createLambdaHandler<
     const stageSuffix = "/dev"
     const pathSuffix = event.pathParameters?.proxy;
     const remotePath = pathSuffix ? `${stageSuffix}/${pathSuffix}` : `${stageSuffix}`;
+    console.log("remotePath", remotePath);
     const body = event.body ? (typeof event.body === "string" ? JSON.parse(event.body as unknown as string) as unknown as unknown : event.body) : undefined;
+    logger.info("Request", { remotePath, body });
 
     const config = await getConfig(configSchema);
+
     const consumerConfig = await getConsumerConfig(config.FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN);
+
+    const requiresHeaders = isRouteRequiringHeaders(remotePath);
+    console.log("requiresHeaders", requiresHeaders);
+
     const response = await sigv4FetchWithCredentials({
       region: consumerConfig.region,
       baseUrl: consumerConfig.apiUrl,
@@ -73,23 +93,25 @@ const handler = createLambdaHandler<
       body,
       externalId: consumerConfig.externalId,
       roleArn: consumerConfig.consumerRoleArn,
+      headers: requiresHeaders ? {
+        "requesting-service": SERVICE_NAME,
+        "requesting-service-user-id": event.headers["requesting-service-user-id"],
+      } : undefined,
     });
-    const text = await response.text();
-    let responseBody: unknown = {};
-    if (text.trim()) {
-      try {
-        responseBody = JSON.parse(text);
-      } catch {
-        // Non-JSON response (e.g. HTML error page)
-        responseBody = { message: text };
-      }
+    let text = await response.text();
+    console.log("test", text);
+    let responseBody;
+    try {
+      responseBody = JSON.parse(text);
+    } catch (error) {
+      responseBody = { message: text };
     }
-    logger.info("Response", { text, status: response.status });
-    return jsonResponse(response.status, responseBody);
+    logger.info("Response", { body: responseBody, status: response.status });
+    return jsonResponse(response.status, responseBody as unknown as unknown);
   },
   {
     serviceName: "udp-service-gateway",
-    logLevel: "DEBUG",
+    logLevel: "DEBUG"
   },
 );
 

@@ -1,5 +1,6 @@
 import { IDomainConfig } from "@flex/sdk";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { IResource } from "aws-cdk-lib/aws-apigateway";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import type { Construct } from "constructs";
 
@@ -13,6 +14,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     id: string,
     domainProps: IDomainConfig,
     httpApi: HttpApi,
+    domainsResource: IResource,
   ) {
     super(scope, id, {
       tags: {
@@ -29,6 +31,7 @@ export class FlexDomainStack extends GovUkOnceStack {
       `${domainProps.domain}Domain`,
       domainProps.domain,
       httpApi,
+      domainsResource,
     );
     if (domainProps.public) {
       this.domainFactory.processRoutes(domainProps.public);

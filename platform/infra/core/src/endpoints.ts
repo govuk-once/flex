@@ -64,7 +64,7 @@ export function addVpcEndpoints({
     service: InterfaceVpcEndpointAwsService.APIGATEWAY,
     securityGroup,
     subnetType: SubnetType.PRIVATE_ISOLATED,
-    allowIngressFromIsolatedSubnets: true,  // only ApiGateway needs this
+    allowIngressFromIsolatedSubnets: true, // only ApiGateway needs this
   });
 
   const cloudwatchEndpoint = addVpcEndpoint({
@@ -101,6 +101,6 @@ export function addVpcEndpoints({
     cloudwatchEndpoint,
     secretsManagerEndpoint,
     ssmEndpoint,
-    stsEndpoint
+    stsEndpoint,
   };
 }

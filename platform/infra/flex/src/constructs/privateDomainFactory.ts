@@ -22,7 +22,7 @@ export class PrivateDomainFactory extends DomainFactory {
     httpApi: HttpApi, // Not used for private routes, but required by parent
     domainsResource: IResource,
   ) {
-    super(scope, id, domain, httpApi);
+    super(scope, id, domain, httpApi, domainsResource);
     this.domainsResource = domainsResource;
   }
 
@@ -52,47 +52,8 @@ export class PrivateDomainFactory extends DomainFactory {
     resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }));
 
     // Grant IAM permissions if configured
-    if (permissions && permissions.length > 0) {
-      this.grantPermissions(handler.role, permissions, domain);
-    }
-  }
-
-  /**
-   * Grants IAM permissions for private API access based on route permissions config
-   */
-  private grantPermissions(
-    role: IRole | undefined,
-    permissions: IPermission[],
-    domain: string,
-  ): void {
-    if (!role) return;
-    const routePrefixes: string[] = [];
-    const methods: string[] = [];
-
-    for (const perm of permissions) {
-      let base = "";
-      if (perm.type === "domain") {
-        const targetDomainId = perm.targetDomainId ?? domain;
-        base = `/domains/${targetDomainId}`;
-      } else {
-        // gateway permissions are only allowed intra-domain
-        base = `/gateways/${domain}`;
-      }
-
-      const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
-      routePrefixes.push(`${base}${suffix}`);
-
-      if (perm.method && !methods.includes(perm.method)) {
-        methods.push(perm.method);
-      }
-    }
-
-    if (routePrefixes.length > 0) {
-      grantPrivateApiAccess(role, this.domainsResource, {
-        domainId: domain,
-        allowedRoutePrefixes: routePrefixes,
-        allowedMethods: methods.length > 0 ? methods : undefined,
-      });
-    }
+    // if (permissions && permissions.length > 0) {
+    //   this.grantPermissions(handler.role, permissions, domain);
+    // }
   }
 }

@@ -16,14 +16,21 @@ function hash(string: string) {
 /** Flex Secrets */
 export type FlexPlatformParam = "/flex-core/private-gateway/url";
 
-export function exportFlexPlatformParam (scope: Construct, param: FlexPlatformParam, value: string) {
+export function exportFlexPlatformParam(
+  scope: Construct,
+  param: FlexPlatformParam,
+  value: string,
+) {
   new StringParameter(scope, `FlexParam${hash(param)}`, {
     parameterName: getParamName(param),
     stringValue: value,
   });
 }
 
-export function importFlexPlatformParam(scope: Construct, param: FlexPlatformParam) {
+export function importFlexPlatformParam(
+  scope: Construct,
+  param: FlexPlatformParam,
+) {
   return StringParameter.fromStringParameterName(
     scope,
     `FlexParam${hash(param)}`,

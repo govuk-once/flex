@@ -1,4 +1,4 @@
-import { IDomainEndpoint, IDomainRoutes } from "@flex/sdk";
+import { IDomainEndpoint, IDomainRoutes, IPermission } from "@flex/sdk";
 import {
   FlexKmsKeyAlias,
   FlexParam,
@@ -15,6 +15,7 @@ import {
   HttpRouteKey,
 } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
@@ -36,6 +37,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   #keyCache = new Map<string, IKey>();
   domain: string;
   #httpApi: HttpApi;
+  #domainsResource: IResource;
 
   constructor(
     scope: Construct,
@@ -92,6 +94,14 @@ export class FlexDomainStack extends GovUkOnceStack {
             method,
             domainEndpointFn.function,
           );
+
+          if (routeConfig.permissions && routeConfig.permissions.length > 0) {
+            this.#grantPermissions(
+              domainEndpointFn.function.role,
+              routeConfig.permissions,
+              this.domain,
+            );
+          }
         }
       }
     }
@@ -230,5 +240,44 @@ export class FlexDomainStack extends GovUkOnceStack {
 
     this.#keyCache.set(aliasPath, key);
     return key;
+  }
+
+  /**
+   * Grants IAM permissions for private API access based on route permissions config
+   */
+  #grantPermissions(
+    role: IRole | undefined,
+    permissions: IPermission[],
+    domain: string,
+  ): void {
+    if (!role) return;
+    const routePrefixes: string[] = [];
+    const methods: string[] = [];
+
+    for (const perm of permissions) {
+      let base = "";
+      if (perm.type === "domain") {
+        const targetDomainId = perm.targetDomainId ?? domain;
+        base = `/domains/${targetDomainId}`;
+      } else {
+        // gateway permissions are only allowed intra-domain
+        base = `/gateways/${domain}`;
+      }
+
+      const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
+      routePrefixes.push(`${base}${suffix}`);
+
+      if (perm.method && !methods.includes(perm.method)) {
+        methods.push(perm.method);
+      }
+    }
+
+    if (routePrefixes.length > 0) {
+      grantPrivateApiAccess(role, this.#domainsResource, {
+        domainId: domain,
+        allowedRoutePrefixes: routePrefixes,
+        allowedMethods: methods.length > 0 ? methods : undefined,
+      });
+    }
   }
 }

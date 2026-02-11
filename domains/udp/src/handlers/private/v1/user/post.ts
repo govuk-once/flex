@@ -44,7 +44,7 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
 
       const config = await getConfig(configSchema);
 
-      const url = `${config.FLEX_PRIVATE_GATEWAY_URL}gateways/udp`;
+      const url = `${config.FLEX_PRIVATE_GATEWAY_URL}/gateways/udp`;
 
       const signedFetch = createSignedFetcher({
         service: "execute-api",

@@ -39,6 +39,7 @@ flexDomains.forEach((domain) => {
 const flexPrivateGatewayStack = new FlexPrivateGatewayStack(
   app,
   getStackName("FlexPrivateGateway"),
+  { domains: flexDomains, httpApi },
 );
 
 flexDomains.forEach((domain) => {

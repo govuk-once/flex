@@ -24,10 +24,7 @@ export async function sigv4Fetch({
   body,
   host,
   credentials,
-  headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
+  headers,
 }: Options) {
   const url = new URL(path, baseUrl);
   const bodyString = body ? JSON.stringify(body) : undefined;
@@ -38,11 +35,17 @@ export async function sigv4Fetch({
     credentials,
   });
 
+  console.log("headers", headers);
+
+  console.log("bodyString", bodyString);
+
   const response = await signedFetch(url, {
     method,
     headers: {
       ...headers,
       Host: host ?? url.host,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
     body: bodyString,
   });

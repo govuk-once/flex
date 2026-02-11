@@ -40,9 +40,19 @@ const handler = createLambdaHandler<
 
       if (createHttpError.isHttpError(error)) throw error;
 
-      throw new createHttpError.Unauthorized(
-        `Invalid JWT: ${(error as Error).message}`,
-      );
+      return {
+        principalId: "anonymous",
+        policyDocument: {
+          Version: "2012-10-17",
+          Statement: [
+            {
+              Action: "execute-api:Invoke",
+              Effect: "Deny",
+              Resource: event.routeArn,
+            }, // deny only the current route
+          ],
+        },
+      };
     }
   },
   {

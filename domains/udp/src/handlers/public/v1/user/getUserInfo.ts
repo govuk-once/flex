@@ -12,7 +12,6 @@ import type {
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
-import { createSignedFetcher } from "aws-sigv4-fetch";
 import status from "http-status";
 import { z } from "zod";
 
@@ -32,6 +31,8 @@ export const handlerResponseSchema = z.object({
   }),
 });
 
+const SERVICE_NAME = "GOVUK-APP";
+
 export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
@@ -47,46 +48,62 @@ export const handler = createLambdaHandler<
     const logger = getLogger();
     const { pairwiseId, notificationSecretKey } = context;
 
-    const config = await getConfig(configSchema);
+    try {
+      const config = await getConfig(configSchema);
 
-    const notificationId = generateDerivedId({
-      pairwiseId,
-      secretKey: notificationSecretKey,
-    });
+      const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
 
-    const domainUrl = `${config.FLEX_PRIVATE_GATEWAY_URL}domains/udp/v1/user`;
-    const gatewayUrl = `${config.FLEX_PRIVATE_GATEWAY_URL}gateways/udp/v1/user`;
+      const notificationId = generateDerivedId({
+        pairwiseId,
+        secretKey: notificationSecretKey,
+      });
 
-    const signedFetch = createSignedFetcher({
-      service: "execute-api",
-      region: config.AWS_REGION,
-    });
-
-    const getUserResponse = await sigv4Fetch({
-      region: config.AWS_REGION,
-      path: `/v1/identity/app/${encodeURIComponent(pairwiseId)}`,
-      method: "GET",
-      baseUrl: gatewayUrl,
-    });
-
-    const text = await getUserResponse.text();
-    logger.info("Response", { text, status: getUserResponse.status });
-    const getUserResponseBody = text ? JSON.parse(text) : {};
-
-    logger.info("User info response", {
-      getUserResponseBody,
-      status: getUserResponse.status,
-    });
-
-    if (!getUserResponse.ok) {
-      logger.info("User not found, creating user");
-      const response = await signedFetch(domainUrl, {
+      const notificationsResponse = await sigv4Fetch({
+        region: config.AWS_REGION,
+        path: `${baseUrl.pathname}/gateways/udp/v1/notifications`,
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        baseUrl: baseUrl.toString(),
+        headers: {
+          "requesting-service": SERVICE_NAME,
+          "requesting-service-user-id": pairwiseId,
+        },
+        body: {
+          data: {
+            consentStatus: "unknown",
+          },
+        },
+      });
+
+      const responseBody = await notificationsResponse.json();
+      logger.info("User info response", {
+        body: responseBody,
+        status: notificationsResponse.status,
+      });
+
+      if (
+        !notificationsResponse.ok &&
+        notificationsResponse.status !== status.NOT_FOUND
+      ) {
+        logger.warn("Private API returned non-OK", {
+          status: notificationsResponse.status,
+          statusText: notificationsResponse.statusText,
+        });
+        return jsonResponse(status.BAD_GATEWAY, {
+          message: "Private API gateway returned error",
+          status: notificationsResponse.status,
+        });
+      }
+
+      logger.info("User not found, creating user");
+      const response = await sigv4Fetch({
+        region: config.AWS_REGION,
+        baseUrl: baseUrl.toString(),
+        path: `${baseUrl.pathname}/domains/udp/v1/user`,
+        method: "POST",
+        body: {
           notificationId,
           appId: pairwiseId,
-        }),
+        },
       });
 
       if (!response.ok) {
@@ -100,26 +117,25 @@ export const handler = createLambdaHandler<
         });
       }
 
-      return jsonResponse(status.CREATED, {
+      return jsonResponse(status.OK, {
         notificationId,
         preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: new Date().toISOString(),
+          notifications: {
+            consentStatus: "unknown",
+            updatedAt: new Date().toISOString(),
+          },
+          analytics: {
+            consentStatus: "unknown",
+            updatedAt: new Date().toISOString(),
+          },
         },
       });
+    } catch (error) {
+      logger.error("Failed to get user info", { error });
+      return jsonResponse(status.INTERNAL_SERVER_ERROR, {
+        message: "Failed to get user info",
+      });
     }
-
-    return Promise.resolve(
-      jsonResponse(status.OK, {
-        notificationId,
-        preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: new Date().toISOString(),
-        },
-      }),
-    );
   },
   {
     logLevel: "DEBUG",
