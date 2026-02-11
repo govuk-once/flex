@@ -232,9 +232,10 @@ describe("flex-fetch", () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledWith("flex-fetch failed", {
       url: "https://example.com/fail",
-      options: {},
       error: err,
     });
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(logger.debug).toBeCalledWith("options", expect.any(Object));
   });
 
   it("correctly logs the request URL when a Request object is provided", async () => {
@@ -257,6 +258,31 @@ describe("flex-fetch", () => {
       "flex-fetch failed",
       expect.objectContaining({
         url: "https://example.com/data",
+      }),
+    );
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(logger.debug).toBeCalledWith("options", expect.any(Object));
+  });
+
+  it("correctly logs options on error", async () => {
+    const err = new Error("network");
+    vi.stubGlobal(
+      "fetch",
+      createSequentialFetchMock([() => Promise.reject(err)]),
+    );
+    const { request } = flexFetch(new Request("https://example.com/data"), {
+      retryAttempts: 3,
+      maxRetryDelay: 500,
+      mode: "cors",
+    });
+
+    await expect(request).rejects.toThrow();
+    const logger = getLogger();
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(logger.debug).toBeCalledWith(
+      "options",
+      expect.objectContaining({
+        mode: "cors",
       }),
     );
   });
