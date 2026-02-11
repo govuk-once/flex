@@ -16,7 +16,7 @@ import { createSignedFetcher } from "aws-sigv4-fetch";
 import status from "http-status";
 import { z } from "zod";
 
-import { generateDerivedId } from "../../../service/derived-id";
+import { generateDerivedId } from "../../../../service/derived-id";
 
 export const configSchema = z.looseObject({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -44,67 +44,25 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId & NotificationSecretContext
 >(
   async (_event, context) => {
-    const logger = getLogger();
     const { pairwiseId, notificationSecretKey } = context;
-
-    const config = await getConfig(configSchema);
 
     const notificationId = generateDerivedId({
       pairwiseId,
       secretKey: notificationSecretKey,
     });
 
-    const domainUrl = `${config.FLEX_PRIVATE_GATEWAY_URL}domains/udp/user`;
-    const gatewayUrl = `${config.FLEX_PRIVATE_GATEWAY_URL}gateways/udp`;
-
-    const signedFetch = createSignedFetcher({
-      service: "execute-api",
-      region: config.AWS_REGION,
-    });
-
-    const getUserResponse = await signedFetch(gatewayUrl, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (getUserResponse.status === status.NOT_FOUND) {
-      logger.info("User not found, creating user");
-      const response = await signedFetch(domainUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          notificationId,
-        }),
-      });
-
-      if (!response.ok) {
-        logger.warn("Private API returned non-OK", {
-          status: response.status,
-          statusText: response.statusText,
-        });
-        return jsonResponse(status.BAD_GATEWAY, {
-          message: "Private API gateway returned error",
-          status: response.status,
-        });
-      }
-
-      return jsonResponse<HandlerResponse>(status.CREATED, {
-        notificationId,
-        preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: new Date().toISOString(),
-        },
-      });
-    }
-
     return Promise.resolve(
-      jsonResponse<HandlerResponse>(status.OK, {
+      jsonResponse(status.OK, {
         notificationId,
         preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: new Date().toISOString(),
+          notifications: {
+            consentStatus: "unknown",
+            updatedAt: new Date().toISOString(),
+          },
+          analytics: {
+            consentStatus: "unknown",
+            updatedAt: new Date().toISOString(),
+          },
         },
       }),
     );

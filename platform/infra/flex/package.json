@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "cdk watch",
-    "hotswap": "cdk deploy --hotswap",
+    "hotswap": "cdk deploy --hotswap --all",
     "diff": "cdk diff",
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all",

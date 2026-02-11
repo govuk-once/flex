@@ -11,8 +11,6 @@ import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-import { generateDerivedId } from "../../../service/derived-id";
-
 export const handlerResponseSchema = z.object({
   notificationId: z.string(),
 });
@@ -26,6 +24,7 @@ export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 const handlerRequestSchema = z.object({
   notificationId: z.string(),
+  appId: z.string(),
 });
 
 export const handler = createLambdaHandler<APIGatewayProxyEvent>(
@@ -51,11 +50,12 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
         service: "execute-api",
         region: config.AWS_REGION,
       });
-      const response = await signedFetch(url, {
+      const response = await signedFetch(`${url}/v1/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           notificationId: parsedEvent.data.notificationId,
+          appId: parsedEvent.data.appId,
         }),
       });
 

@@ -1,4 +1,4 @@
-import { IDomain, IDomainEndpoint } from "@flex/sdk";
+import { IDomainEndpoint, IDomainRoutes } from "@flex/sdk";
 import {
   FlexKmsKeyAlias,
   FlexParam,
@@ -34,6 +34,8 @@ interface FlexDomainStackProps {
 export class FlexDomainStack extends GovUkOnceStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
+  domain: string;
+  #httpApi: HttpApi;
 
   constructor(
     scope: Construct,
@@ -50,7 +52,10 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     });
 
-    for (const [versionId, versionConfig] of Object.entries(versions)) {
+  processRoutes(versionedRoutes: IDomainRoutes) {
+    for (const [versionId, versionConfig] of Object.entries(
+      versionedRoutes.versions,
+    )) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
         for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
           const method = methodKey as HttpMethod;
@@ -64,7 +69,7 @@ export class FlexDomainStack extends GovUkOnceStack {
 
           const domainEndpointFn = this.#createFunction(
             routeConfig,
-            domain,
+            this.domain,
             path,
             method,
             versionId,
@@ -79,9 +84,9 @@ export class FlexDomainStack extends GovUkOnceStack {
             key.grantDecrypt(domainEndpointFn.function);
           });
 
-          this.#createApiRoute(
-            httpApi,
-            domain,
+          this.createApiRoute(
+            this.#httpApi,
+            this.domain,
             versionId,
             path,
             method,
@@ -164,6 +169,7 @@ export class FlexDomainStack extends GovUkOnceStack {
       domain,
       entry: getDomainEntry(domain, entry),
       environment,
+      timeout: Duration.seconds(60),
     };
 
     switch (type) {
@@ -179,7 +185,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   /**
    * Creates the API Gateway Route integration
    */
-  #createApiRoute(
+  protected createApiRoute(
     httpApi: HttpApi,
     domain: string,
     version: string,

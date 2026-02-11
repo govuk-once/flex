@@ -79,9 +79,14 @@ describe("UDP domain", () => {
         body: {
           notificationId: expect.any(String) as string,
           preferences: {
-            notificationsConsented: true,
-            analyticsConsented: true,
-            updatedAt: expect.any(String) as string,
+            notifications: {
+              consentStatus: "unknown",
+              updatedAt: expect.any(String) as string,
+            },
+            analytics: {
+              consentStatus: "unknown",
+              updatedAt: expect.any(String) as string,
+            },
           },
         },
       });
@@ -104,14 +109,38 @@ describe("UDP domain", () => {
         response2.body?.notificationId,
       );
     });
+
+    it("returns a 200 and notification ID", async ({ cloudfront }) => {
+      // const token = "todo.valid.token";
+      const response = await cloudfront.client.get(`${endpoint}/info`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      expect(response).toMatchObject({
+        status: 200,
+        body: {
+          notificationId: expect.any(String) as string,
+          preferences: {
+            notifications: {
+              consentStatus: "unknown",
+              updatedAt: expect.any(String) as string,
+            },
+            analytics: {
+              consentStatus: "unknown",
+              updatedAt: expect.any(String) as string,
+            },
+          },
+        },
+      });
+    });
   });
 
-  describe.todo("/patch user", () => {
+
+  describe("/patch user", () => {
     // TODO: pending valid tokens
     it("returns user preferences updated successfully", async ({
       cloudfront,
     }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
           notificationsConsented: true,
@@ -131,7 +160,6 @@ describe("UDP domain", () => {
     });
 
     it("rejects invalid payloads", async ({ cloudfront }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: { notificationsConsented: "yes" },
         headers: { Authorization: `Bearer ${token}` },

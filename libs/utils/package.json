@@ -15,6 +15,8 @@
     "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1"
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "3.985.0",
+    "aws-sigv4-fetch": "4.4.1",
     "zod": "4.3.6",
     "zod-openapi": "5.4.6"
   },

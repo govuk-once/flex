@@ -9,8 +9,11 @@
     "test": "NODE_OPTIONS=--import=nock vitest"
   },
   "dependencies": {
+    "@aws-lambda-powertools/parameters": "2.30.2",
+    "@aws-sdk/client-secrets-manager": "3.980.0",
     "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
+    "@flex/middlewares": "workspace:*",
     "@flex/params": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
