@@ -46,7 +46,10 @@ export class FlexAuthentication extends Construct {
 
   private getAuthConfig() {
     const { stage } = getEnvConfig();
-    const userPoolId = importFlexParameter(this, "/flex-param/auth/user-pool-id")
+    const userPoolId = importFlexParameter(
+      this,
+      "/flex-param/auth/user-pool-id",
+    );
     const clientId = importFlexParameter(this, "/flex-param/auth/client-id");
     let jwksUri = `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId.stringValue}/.well-known/jwks.json`;
 
