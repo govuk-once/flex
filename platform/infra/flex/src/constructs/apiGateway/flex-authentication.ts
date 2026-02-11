@@ -72,7 +72,7 @@ export class FlexAuthentication extends Construct {
         parameterName: `/${stage}/stub/flex-param/auth/client-id`,
         stringValue: "testClientId",
       });
-      userPoolId = new StringParameter(this, "FlexParamClientId", {
+      userPoolId = new StringParameter(this, "FlexParamUserPoolId", {
         parameterName: `/${stage}/stub/flex-param/auth/user-pool-id`,
         stringValue: "eu-west-2_testUserPoolId",
       });
