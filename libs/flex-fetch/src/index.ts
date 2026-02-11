@@ -56,7 +56,9 @@ export function flexFetch(
 
   return {
     request: backOffWrapper(
-      () => fetch(url, { ...fetchOptions, signal: controller.signal }),
+      () => {
+        return fetch(url, { ...fetchOptions, signal: controller.signal });
+      },
       {
         numOfAttempts: retryAttemptsNormalised,
         maxDelay: retryDelayNormalised,

@@ -20,6 +20,7 @@
     "@flex/testing": "workspace:*",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",
+    "nock": "14.0.10",
     "typescript": "5.9.3",
     "vitest": "4.0.17"
   }
