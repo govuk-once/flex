@@ -36,21 +36,20 @@ Alternatively, run `pnpm <command>` from within `libs/utils/`.
 
 ### Schemas
 
-| Name                              | Description                            | Code                            |
-| --------------------------------- | -------------------------------------- | ------------------------------- |
-| `Uuid`                            | UUID string schema                     | [View](./src/schemas/common.ts) |
-| `Url`                             | URL string schema                      | [View](./src/schemas/common.ts) |
-| `IsoDateTime`                     | ISO 8601 datetime schema               | [View](./src/schemas/common.ts) |
-| `Jwt`                             | JWT string schema                      | [View](./src/schemas/common.ts) |
-| `NonEmptyString`                  | Non-empty string schema                | [View](./src/schemas/common.ts) |
-| `Slug`                            | Lowercase slug schema                  | [View](./src/schemas/common.ts) |
-| `TraceId`                         | UUID for distributed tracing           | [View](./src/schemas/common.ts) |
-| `RequestId`                       | UUID for request correlation           | [View](./src/schemas/common.ts) |
-| `Authorization`                   | Bearer JWT authorisation header schema | [View](./src/schemas/common.ts) |
-| `TracingHeaders`                  | Tracing headers object schema          | [View](./src/schemas/common.ts) |
-| `AuthenticatedHeaders`            | Tracing headers with authorisation     | [View](./src/schemas/common.ts) |
-| `ApiGatewayUrlSchema`             | AWS API Gateway URL schema             | [View](./src/schemas/common.ts) |
-| `CloudfrontDistributionUrlSchema` | AWS CloudFront distribution URL schema | [View](./src/schemas/common.ts) |
+| Name                   | Description                            | Code                            |
+| ---------------------- | -------------------------------------- | ------------------------------- |
+| `Uuid`                 | UUID string schema                     | [View](./src/schemas/common.ts) |
+| `Url`                  | URL string schema                      | [View](./src/schemas/common.ts) |
+| `IsoDateTime`          | ISO 8601 datetime schema               | [View](./src/schemas/common.ts) |
+| `Jwt`                  | JWT string schema                      | [View](./src/schemas/common.ts) |
+| `NonEmptyString`       | Non-empty string schema                | [View](./src/schemas/common.ts) |
+| `Slug`                 | Lowercase slug schema                  | [View](./src/schemas/common.ts) |
+| `TraceId`              | UUID for distributed tracing           | [View](./src/schemas/common.ts) |
+| `RequestId`            | UUID for request correlation           | [View](./src/schemas/common.ts) |
+| `Authorization`        | Bearer JWT authorisation header schema | [View](./src/schemas/common.ts) |
+| `TracingHeaders`       | Tracing headers object schema          | [View](./src/schemas/common.ts) |
+| `AuthenticatedHeaders` | Tracing headers with authorisation     | [View](./src/schemas/common.ts) |
+| `ApiGatewayUrlSchema`  | AWS API Gateway URL schema             | [View](./src/schemas/common.ts) |
 
 ### Types
 

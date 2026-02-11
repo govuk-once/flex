@@ -1,13 +1,8 @@
-import {
-  CloudfrontDistributionUrlSchema,
-  sanitiseStageName,
-} from "@flex/utils";
+import { sanitiseStageName } from "@flex/utils";
 import { z } from "zod";
 
 export const e2eEnvSchema = z.object({
-  CLOUDFRONT_DISTRIBUTION_URL: CloudfrontDistributionUrlSchema.describe(
-    "Base URL of the deployed CloudFront Distribution",
-  ),
+  FLEX_API_URL: z.url().describe("Base URL of the deployed API"),
   STAGE: z
     .string()
     .optional()
@@ -24,9 +19,7 @@ export const e2eEnvSchema = z.object({
 export type E2EEnv = z.output<typeof e2eEnvSchema>;
 
 export const flexStackOutputsSchema = z.object({
-  CloudfrontDistributionUrl: CloudfrontDistributionUrlSchema.describe(
-    "Flex Platform CloudFront Distribution URL",
-  ),
+  FlexApiUrl: z.url().describe("Flex Platform API URL"),
 });
 
 export type FlexStackOutputs = z.output<typeof flexStackOutputsSchema>;

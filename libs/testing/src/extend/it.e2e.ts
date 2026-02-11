@@ -15,7 +15,7 @@ interface Fixtures {
 
 export const it = vitestIt.extend<Fixtures>({
   cloudfront: async ({ signal }, use) => {
-    const { CLOUDFRONT_DISTRIBUTION_URL } = inject("e2eEnv");
-    await use(createApi(`${CLOUDFRONT_DISTRIBUTION_URL}/app`, { signal }));
+    const { FLEX_API_URL } = inject("e2eEnv");
+    await use(createApi(`${FLEX_API_URL}/app`, { signal }));
   },
 });

@@ -7,6 +7,7 @@ import {
   importFlexParameter,
   importFlexSecret,
 } from "@platform/core/outputs";
+import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   HttpApi,
   HttpMethod,
@@ -18,25 +19,36 @@ import { IKey } from "aws-cdk-lib/aws-kms";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
-import { Construct } from "constructs";
+import type { Construct } from "constructs";
 
-import { getEntry } from "../utils/getEntry";
-import { FlexPrivateEgressFunction } from "./lambda/flex-private-egress-function";
-import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-function";
-import { FlexPublicFunction } from "./lambda/flex-public-function";
+import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
+import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
+import { getDomainEntry } from "../utils/getEntry";
 
-export class DomainFactory extends Construct {
+interface FlexDomainStackProps {
+  domain: IDomain;
+  httpApi: HttpApi;
+}
+
+export class FlexDomainStack extends GovUkOnceStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
   constructor(
     scope: Construct,
     id: string,
-    domainRoutes: IDomain,
-    httpApi: HttpApi,
+    { domain: { domain, owner, versions }, httpApi }: FlexDomainStackProps,
   ) {
-    super(scope, id);
-    const { versions, domain } = domainRoutes;
+    super(scope, id, {
+      tags: {
+        Product: "GOV.UK",
+        System: "FLEX",
+        Owner: owner ?? "N/A",
+        ResourceOwner: domain,
+        Source: "https://github.com/govuk-once/flex",
+      },
+    });
 
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
@@ -150,7 +162,7 @@ export class DomainFactory extends Construct {
 
     const props = {
       domain,
-      entry: getEntry(domain, entry),
+      entry: getDomainEntry(domain, entry),
       environment,
     };
 
@@ -181,7 +193,7 @@ export class DomainFactory extends Construct {
     const integrationId = `${domain}-${version}-${method}-${cleanPathId}`;
 
     new HttpRoute(this, `Route-${integrationId}`, {
-      httpApi: httpApi,
+      httpApi,
       routeKey: HttpRouteKey.with(fullPath, method),
       integration: new HttpLambdaIntegration(integrationId, handler),
     });

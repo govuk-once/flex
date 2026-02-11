@@ -1,6 +1,5 @@
 import { AccessLogFormat } from "aws-cdk-lib/aws-apigateway";
 import {
-  CorsHttpMethod,
   HttpApi,
   HttpStage,
   LogGroupLogDestination,
@@ -25,11 +24,6 @@ export class FlexHttpApi extends Construct {
     this.httpApi = new HttpApi(this, "Api", {
       apiName: "Flex Platform API",
       description: "Central API Gateway for the Flex Platform",
-      corsPreflight: {
-        allowOrigins: ["*"],
-        allowHeaders: ["Authorization", "Content-Type"],
-        allowMethods: [CorsHttpMethod.ANY],
-      },
       createDefaultStage: false,
       defaultAuthorizer: authentication.authorizer,
     });

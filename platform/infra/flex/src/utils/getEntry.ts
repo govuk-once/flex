@@ -1,6 +1,6 @@
 import { findProjectRoot } from "@flex/utils";
 
-export function getEntry(domain: string, path: string) {
+export function getDomainEntry(domain: string, path: string) {
   // /domains/hello/src/handlers/hello/get.ts
   return `${findProjectRoot()}/domains/${domain}/src/${path}`;
 }

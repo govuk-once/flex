@@ -3,24 +3,23 @@ import { CfnOutput } from "aws-cdk-lib";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import type { Construct } from "constructs";
 
-import { FlexHttpApi } from "./constructs/apiGateway/flex-http-api";
-import { FlexFailFast } from "./constructs/cloudfront/flex-fail-fast";
+import { FlexHttpApi } from "../constructs/api-gateway/flex-http-api";
+import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 
-export interface IDomainConfig {
+interface FlexPlatformStackProps {
   certArn: string;
   domainName: string;
-  prefix?: string;
-}
-
-interface IFlexPlatformStack {
-  domainConfig: IDomainConfig;
+  subdomainName?: string;
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
   public readonly httpApi: HttpApi;
 
-  constructor(scope: Construct, id: string, props: IFlexPlatformStack) {
-    const { domainConfig } = props;
+  constructor(
+    scope: Construct,
+    id: string,
+    { certArn, domainName, subdomainName }: FlexPlatformStackProps,
+  ) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -33,17 +32,17 @@ export class FlexPlatformStack extends GovUkOnceStack {
     });
 
     const { httpApi } = new FlexHttpApi(this, "HttpApi");
-    const { distribution } = new FlexFailFast(
-      this,
-      "FailFast",
-      httpApi,
-      domainConfig,
-    );
-
     this.httpApi = httpApi;
 
-    new CfnOutput(this, "CloudfrontDistributionUrl", {
-      value: `https://${distribution.distribution.distributionDomainName}`,
+    new FlexCloudfront(this, "Cloudfront", {
+      certArn,
+      domainName,
+      subdomainName,
+      httpApi,
+    });
+
+    new CfnOutput(this, "FlexApiUrl", {
+      value: `https://${subdomainName ?? domainName}`,
     });
   }
 }
