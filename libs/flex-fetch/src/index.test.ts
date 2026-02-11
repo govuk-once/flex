@@ -118,36 +118,48 @@ describe("flex-fetch", () => {
 
   it("aborts an in-flight request and rejects with AbortError", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
-    const fetchSpy = vi.spyOn(global, "fetch");
 
     vi.unstubAllGlobals();
 
-    const { request, abort } = flexFetch("https://example.com/slow");
+    const err = new Error("network");
+    nock(EXAMPLE_BASE_URL)
+      .get(EXAMPLE_PATH)
+      .once()
+      .delay(1000)
+      .replyWithError(err);
+    const { request, abort } = flexFetch("https://example.com/data");
 
-    abort();
+    setTimeout(abort, 100);
 
     await expect(request).rejects.toThrowError("This operation was aborted");
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(nock.isDone()).toBe(true);
     expect(backoffSpy).not.toBeCalled();
   });
 
   it("stops retries when aborted during retry", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
-    const fetchSpy = vi.spyOn(global, "fetch");
 
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL)
+      .get(EXAMPLE_PATH)
+      .once()
+      .replyWithError(err)
+      .get(EXAMPLE_PATH)
+      .once()
+      .delay(200)
+      .replyWithError(err);
 
     const { request, abort } = flexFetch("https://example.com/data", {
       retryAttempts: 5,
       maxRetryDelay: 100,
     });
 
-    abort();
+    vi.unstubAllGlobals();
+    setTimeout(abort, 200);
 
     await expect(request).rejects.toThrowError();
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(nock.isDone()).toBe(true);
     expect(backoffSpy).toBeCalledWith(
       expect.any(Function),
       expect.objectContaining({
