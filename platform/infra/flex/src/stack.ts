@@ -6,10 +6,21 @@ import type { Construct } from "constructs";
 import { FlexHttpApi } from "./constructs/apiGateway/flex-http-api";
 import { FlexFailFast } from "./constructs/cloudfront/flex-fail-fast";
 
+export interface IDomainConfig {
+  certArn: string;
+  domainName: string;
+  prefix?: string;
+}
+
+interface IFlexPlatformStack {
+  domainConfig: IDomainConfig;
+}
+
 export class FlexPlatformStack extends GovUkOnceStack {
   public readonly httpApi: HttpApi;
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: IFlexPlatformStack) {
+    const { domainConfig } = props;
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -18,10 +29,16 @@ export class FlexPlatformStack extends GovUkOnceStack {
         ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
+      crossRegionReferences: true,
     });
 
     const { httpApi } = new FlexHttpApi(this, "HttpApi");
-    const { distribution } = new FlexFailFast(this, "FailFast", httpApi);
+    const { distribution } = new FlexFailFast(
+      this,
+      "FailFast",
+      httpApi,
+      domainConfig,
+    );
 
     this.httpApi = httpApi;
 
