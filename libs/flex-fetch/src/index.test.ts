@@ -34,24 +34,22 @@ describe("flex-fetch", () => {
 
   it("makes a single fetch request without retries when no retryAttempts provided", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
-    const fetchSpy = vi.spyOn(global, "fetch");
 
     const okResponse = { hello: "world" };
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).reply(200, okResponse);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().reply(200, okResponse);
 
     const { request } = flexFetch("https://example.com/data");
     const res = await request;
     const resBody = (await res.json()) as typeof okResponse;
 
     expect(resBody).toStrictEqual(okResponse);
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(nock.isDone()).toBe(true);
 
     expect(backoffSpy).not.toBeCalled();
   });
 
   it("uses backOff when retryAttempts is provided and eventually succeeds", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
-    const fetchSpy = vi.spyOn(global, "fetch");
 
     const err = new Error("network");
 
@@ -73,7 +71,7 @@ describe("flex-fetch", () => {
     const resBody = (await res.json()) as typeof okResponse;
     expect(resBody).toStrictEqual(okResponse);
 
-    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(nock.isDone()).toBe(true);
 
     expect(backoffSpy).toBeCalledTimes(1);
     expect(backoffSpy).toBeCalledWith(
@@ -89,7 +87,7 @@ describe("flex-fetch", () => {
   it("clamps maxRetryDelay between 10 and 1000", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request: request1 } = flexFetch("https://example.com/data", {
       retryAttempts: 1,
@@ -121,10 +119,13 @@ describe("flex-fetch", () => {
   it("aborts an in-flight request and rejects with AbortError", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
     const fetchSpy = vi.spyOn(global, "fetch");
+
     vi.unstubAllGlobals();
+
     const { request, abort } = flexFetch("https://example.com/slow");
 
     abort();
+
     await expect(request).rejects.toThrowError("This operation was aborted");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(backoffSpy).not.toBeCalled();
@@ -135,7 +136,7 @@ describe("flex-fetch", () => {
     const fetchSpy = vi.spyOn(global, "fetch");
 
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request, abort } = flexFetch("https://example.com/data", {
       retryAttempts: 5,
@@ -160,7 +161,7 @@ describe("flex-fetch", () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
 
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request } = flexFetch("https://example.com/data", {
       retryAttempts: 10 as never,
@@ -178,7 +179,7 @@ describe("flex-fetch", () => {
 
   it("logs errors on failure using getLogger.error", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request } = flexFetch(new URL("https://example.com/data"), {
       retryAttempts: 1,
@@ -200,7 +201,7 @@ describe("flex-fetch", () => {
 
   it("correctly logs the request URL when a Request object is provided", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request } = flexFetch(new Request("https://example.com/data"), {
       retryAttempts: 3,
@@ -223,7 +224,7 @@ describe("flex-fetch", () => {
 
   it("correctly logs options on error", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
     const { request } = flexFetch(new Request("https://example.com/data"), {
       retryAttempts: 3,
