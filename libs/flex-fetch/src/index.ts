@@ -75,9 +75,9 @@ export function flexFetch(
       const requestUrl = url instanceof Request ? url.url : url.toString();
       logger.error("flex-fetch failed", {
         url: requestUrl,
-        options: fetchOptions,
         error,
       });
+      logger.debug("options", fetchOptions);
       throw error;
     }),
     abort: () => {
