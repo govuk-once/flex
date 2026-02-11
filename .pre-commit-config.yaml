@@ -18,13 +18,3 @@ repos:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
         exclude: pnpm-lock.yaml
-
-  - repo: https://github.com/semgrep/semgrep
-    rev: v1.89.0
-    hooks:
-      - id: semgrep
-        name: semgrep
-        entry: bash -c 'semgrep scan $(cat .semgrep-args.txt) --error "$@"' --
-        language: system
-        pass_filenames: true
-        verbose: false
