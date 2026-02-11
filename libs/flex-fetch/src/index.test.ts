@@ -56,10 +56,10 @@ describe("flex-fetch", () => {
     const okResponse = { hello: "world" };
     nock(EXAMPLE_BASE_URL)
       .get(EXAMPLE_PATH)
+      .twice()
       .replyWithError(err)
       .get(EXAMPLE_PATH)
-      .replyWithError(err)
-      .get(EXAMPLE_PATH)
+      .once()
       .reply(200, okResponse);
 
     const { request } = flexFetch("https://example.com/data", {
