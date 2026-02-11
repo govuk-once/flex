@@ -5,6 +5,7 @@ import { HttpLambdaAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import type { CfnUrl } from "aws-cdk-lib/aws-lambda";
 import { FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
 import { getPlatformEntry } from "../../utils/getEntry";
@@ -46,11 +47,9 @@ export class FlexAuthentication extends Construct {
 
   private getAuthConfig() {
     const { stage } = getEnvConfig();
-    const userPoolId = importFlexParameter(
-      this,
-      "/flex-param/auth/user-pool-id",
-    );
-    const clientId = importFlexParameter(this, "/flex-param/auth/client-id");
+
+    let userPoolId = importFlexParameter(this, "/flex-param/auth/user-pool-id");
+    let clientId = importFlexParameter(this, "/flex-param/auth/client-id");
     let jwksUri = `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId.stringValue}/.well-known/jwks.json`;
 
     if (isJwksStubEnabled(stage)) {
@@ -68,8 +67,15 @@ export class FlexAuthentication extends Construct {
         jwksEndpointStubFunction.addFunctionUrl({
           authType: FunctionUrlAuthType.NONE,
         });
-
       jwksUri = jwksEndpointStubFunctionUrl.url;
+      clientId = new StringParameter(this, "FlexParamClientId", {
+        parameterName: `/${stage}/stub/flex-param/auth/client-id`,
+        stringValue: "testClientId",
+      });
+      userPoolId = new StringParameter(this, "FlexParamClientId", {
+        parameterName: `/${stage}/stub/flex-param/auth/user-pool-id`,
+        stringValue: "eu-west-2_testUserPoolId",
+      });
 
       (jwksEndpointStubFunctionUrl.node.defaultChild as CfnUrl).addMetadata(
         "checkov",
