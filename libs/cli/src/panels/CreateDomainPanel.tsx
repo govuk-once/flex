@@ -1,13 +1,18 @@
+import { findProjectRoot } from "@flex/utils";
 import { Box, Text, useInput } from "ink";
 import TextInput from "ink-text-input";
 import { useState } from "react";
 
 import { Panel } from "../components/Panel";
 import { SelectInput } from "../components/SelectInput";
+import { Spinner } from "../components/Spinner";
 import { useStdoutDimensions } from "../hooks/use-stdout-dimensions";
+import { createDomain } from "../templates/createDomain";
+import { findDomainPath } from "../utils/findDomainPath";
+import { runCommand } from "../utils/runCommand";
 
-async function createDomain(_domain: string) {
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function CreateDomainPanel({
@@ -18,12 +23,12 @@ export function CreateDomainPanel({
   domains: string[];
 }) {
   const [cols] = useStdoutDimensions();
-  const [loading, setLoading] = useState(false);
   const [domain, setDomain] = useState("");
+  const [domainMessage, setDomainMessage] = useState<string>();
   const [error, setError] = useState("");
 
   useInput((_, key) => {
-    if (!loading && key.escape) {
+    if (!domainMessage && key.escape) {
       close();
     }
   });
@@ -48,8 +53,37 @@ export function CreateDomainPanel({
         setError("Error: Domain exists");
         return;
       }
-      setLoading(true);
-      void createDomain(domain).then(close);
+
+      setDomainMessage("Creating domain file structure");
+      void createDomain(domain)
+        .then(() => sleep(3000))
+        .then(async () => {
+          setDomainMessage("Update dependencies");
+          await runCommand("pnpm", ["up", "--latest"], findDomainPath(domain));
+        })
+        .then(() => {
+          setDomainMessage("Updating pnpm-lock.yaml");
+          return runCommand("pnpm", ["install"], findProjectRoot());
+        })
+        .then(() => sleep(3000))
+        .then(async () => {
+          setDomainMessage("Running checks");
+          await runCommand("pnpm", ["run", "tsc"], findDomainPath(domain));
+          await runCommand("pnpm", ["run", "lint"], findDomainPath(domain));
+        })
+        .then(() => {
+          setDomainMessage("Domain created");
+        })
+        .then(() => sleep(3000))
+        .then(close)
+        .catch((error: unknown) => {
+          if (error instanceof Error) {
+            setError(error.message);
+          } else {
+            setError("An unknown error");
+          }
+          setDomainMessage(undefined);
+        });
     }
     if (item.value === "back") {
       close();
@@ -63,9 +97,10 @@ export function CreateDomainPanel({
       flexDirection="row"
       marginLeft={cols < 90 ? 2 : 0}
     >
-      {loading ? (
-        <Box>
-          <Text>Loading</Text>
+      {domainMessage ? (
+        <Box columnGap={1}>
+          <Spinner spinner="dots" />
+          <Text>{domainMessage}</Text>
         </Box>
       ) : (
         <>

@@ -18,6 +18,7 @@
     "ink": "6.6.0",
     "ink-select-input": "6.2.0",
     "ink-text-input": "6.0.0",
+    "mustache": "4.2.0",
     "react": "19.2.4",
     "tsx": "4.21.0",
     "zod": "4.3.6"
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
+    "@types/mustache": "4.2.6",
     "@types/node": "25.2.0",
     "@types/react": "19.2.10",
     "eslint": "9.39.2",
