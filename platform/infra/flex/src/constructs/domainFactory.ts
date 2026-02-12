@@ -7,6 +7,7 @@ import {
   importFlexParameter,
   importFlexSecret,
 } from "@platform/core/outputs";
+import { getEnvConfig } from "@platform/gov-uk-once";
 import {
   HttpApi,
   HttpMethod,
@@ -21,6 +22,7 @@ import { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
 import { getEntry } from "../utils/getEntry";
+import { AppConfigConstruct } from "./appConfig/appconfig-construct";
 import { FlexPrivateEgressFunction } from "./lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "./lambda/flex-public-function";
@@ -32,11 +34,22 @@ export class DomainFactory extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    domainRoutes: IDomain,
+    domainConfig: IDomain,
     httpApi: HttpApi,
   ) {
     super(scope, id);
-    const { versions, domain } = domainRoutes;
+    const { versions, domain, featureFlags } = domainConfig;
+
+    const { environment } = getEnvConfig();
+
+    const environmentFeatureFlags =
+      featureFlags?.[environment] ?? featureFlags?.default ?? {};
+
+    const appConfig = new AppConfigConstruct(this, `${domain}AppConfig`, {
+      environment,
+      applicationName: `${domain}-appconfig`,
+      featureFlags: environmentFeatureFlags,
+    });
 
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
@@ -46,6 +59,7 @@ export class DomainFactory extends Construct {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
+            appConfig,
           );
 
           const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
@@ -87,6 +101,7 @@ export class DomainFactory extends Construct {
   #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
+    appConfig?: AppConfigConstruct,
   ) {
     const resolvedVars: Record<string, string> = {};
     const envGrantables: (ISecret | IStringParameter)[] = [];
@@ -109,6 +124,11 @@ export class DomainFactory extends Construct {
 
     processMap(env, false);
     processMap(envSecret, true);
+
+    resolvedVars.APP_CONFIG_APPLICATION_ID = appConfig?.application.ref ?? "";
+    resolvedVars.APP_CONFIG_CONFIGURATION_PROFILE_ID =
+      appConfig?.configurationProfile.ref ?? "";
+    resolvedVars.APP_CONFIG_ENVIRONMENT_ID = appConfig?.environment.ref ?? "";
 
     return { resolvedVars, envGrantables };
   }

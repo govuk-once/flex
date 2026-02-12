@@ -1,3 +1,4 @@
+import { IFeatureFlags } from "@flex/sdk";
 import * as appconfig from "aws-cdk-lib/aws-appconfig";
 import { Construct } from "constructs";
 
@@ -20,13 +21,38 @@ export type AppConfigFeatureFlags = {
   >;
 };
 
+function transformFeatureFlags(
+  featureFlags: IFeatureFlags,
+): AppConfigFeatureFlags {
+  const [flags, values] = Object.entries(featureFlags).reduce(
+    ([flagsAcc, valuesAcc], [key, flag]) => {
+      flagsAcc[key] = {
+        name: flag.name,
+        description: flag.description,
+      };
+      valuesAcc[key] = { enabled: flag.enabled };
+      return [flagsAcc, valuesAcc];
+    },
+    [
+      {} as Record<string, { name: string; description?: string }>,
+      {} as Record<string, { enabled: boolean }>,
+    ],
+  );
+
+  return {
+    version: "1",
+    flags,
+    values,
+  };
+}
+
 export interface AppConfigConstructProps {
   readonly developerId?: string;
   readonly environment: string;
   readonly applicationName: string;
   readonly configurationProfileName?: string;
   readonly deploymentStrategyName?: string;
-  readonly featureFlags: AppConfigFeatureFlags;
+  readonly featureFlags: IFeatureFlags;
 }
 
 export class AppConfigConstruct extends Construct {
@@ -48,6 +74,8 @@ export class AppConfigConstruct extends Construct {
       deploymentStrategyName = "feature-flag-all-at-once",
       featureFlags,
     } = props;
+
+    const transformedFeatureFlags = transformFeatureFlags(featureFlags);
 
     const appName = developerId
       ? `${developerId}-${applicationName}`
@@ -79,7 +107,7 @@ export class AppConfigConstruct extends Construct {
       new appconfig.CfnHostedConfigurationVersion(this, "FeatureFlagsVersion", {
         applicationId: this.application.ref,
         configurationProfileId: this.configurationProfile.ref,
-        content: JSON.stringify(featureFlags, null, 2),
+        content: JSON.stringify(transformedFeatureFlags, null, 2),
         contentType: "application/json",
         description: `Feature flags for ${environment}`,
       });

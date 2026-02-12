@@ -1,5 +1,6 @@
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { z } from "zod";
+import { de } from "zod/locales";
 
 const handlerConfigSchema = z.object({
   entry: z.string(),
@@ -19,14 +20,32 @@ const versionRouteSchema = z.record(
   routeMethodsSchema,
 );
 
+const featureFlagsSchema = z.record(
+  z.string(),
+  z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    enabled: z.boolean(),
+  }),
+);
+
 const domainSchema = z.object({
   domain: z.string(),
   owner: z.string().optional(),
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),
+  featureFlags: z
+    .object({
+      staging: featureFlagsSchema,
+      production: featureFlagsSchema,
+      development: featureFlagsSchema,
+      default: featureFlagsSchema,
+    })
+    .optional(),
 });
 
 type InferredDomain = z.infer<typeof domainSchema>;
 export type IDomainEndpoint = z.infer<typeof handlerConfigSchema>;
+export type IFeatureFlags = z.infer<typeof featureFlagsSchema>;
 
 export type IDomain = Omit<InferredDomain, "versions"> & {
   versions: Record<
