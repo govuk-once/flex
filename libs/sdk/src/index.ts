@@ -1,6 +1,5 @@
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { z } from "zod";
-import { de } from "zod/locales";
 
 const handlerConfigSchema = z.object({
   entry: z.string(),
