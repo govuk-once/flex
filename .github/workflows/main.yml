@@ -13,6 +13,8 @@ jobs:
       STAGE: 'development'
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+      SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
+      SONAR_URL: ${{ secrets.SONAR_URL }}
 
   deployDev:
     name: Deploy to Development

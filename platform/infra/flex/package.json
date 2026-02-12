@@ -13,6 +13,7 @@
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "3.980.0",
     "@flex/sdk": "workspace:*",
     "@platform/core": "workspace:*",
     "@platform/gov-uk-once": "workspace:*",

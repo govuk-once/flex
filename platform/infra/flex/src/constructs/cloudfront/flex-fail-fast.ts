@@ -1,6 +1,7 @@
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
 import { Construct } from "constructs";
 
+import { IDomainConfig } from "../../stack";
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexCloudfrontDistribution } from "./flex-cloudfront-distribution";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
@@ -8,7 +9,12 @@ import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 export class FlexFailFast extends Construct {
   public readonly distribution: FlexCloudfrontDistribution;
 
-  constructor(scope: Construct, id: string, httpApi: HttpApi) {
+  constructor(
+    scope: Construct,
+    id: string,
+    httpApi: HttpApi,
+    domainConfig: IDomainConfig,
+  ) {
     super(scope, id);
     // CloudFront distribution and function for Structural Checks
     const cloudfrontFunction = new FlexCloudfrontFunction(
@@ -25,6 +31,7 @@ export class FlexFailFast extends Construct {
       {
         cloudfrontFunction,
         httpApi,
+        domainConfig,
       },
     );
   }
