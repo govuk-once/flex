@@ -43,13 +43,15 @@ export class DomainFactory extends Construct {
     const { environment } = getEnvConfig();
 
     const environmentFeatureFlags =
-      featureFlags?.[environment] ?? featureFlags?.default ?? {};
+      featureFlags?.[environment] ?? featureFlags?.default ?? null;
 
-    const appConfig = new AppConfigConstruct(this, `${domain}AppConfig`, {
-      environment,
-      applicationName: `${domain}-appconfig`,
-      featureFlags: environmentFeatureFlags,
-    });
+    const appConfig = environmentFeatureFlags
+      ? new AppConfigConstruct(this, `${domain}AppConfig`, {
+          environment,
+          applicationName: `${domain}-appconfig`,
+          featureFlags: environmentFeatureFlags,
+        })
+      : null;
 
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
@@ -101,7 +103,7 @@ export class DomainFactory extends Construct {
   #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
-    appConfig?: AppConfigConstruct,
+    appConfig: AppConfigConstruct | null = null,
   ) {
     const resolvedVars: Record<string, string> = {};
     const envGrantables: (ISecret | IStringParameter)[] = [];
