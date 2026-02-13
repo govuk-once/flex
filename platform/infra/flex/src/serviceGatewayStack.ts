@@ -46,16 +46,13 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
       },
     });
 
-    // Step 1: Create the private gateway
     const { privateGateway, domainsResource, gatewaysResource } =
       this.createPrivateGateway(this);
     this.privateGateway = privateGateway;
     this.domainsResource = domainsResource;
 
-    // Step 2: Create service gateways
     createServiceGateways(this, gatewaysResource);
 
-    // Step 3: Create private domain routes (same stack to avoid circular deps)
     for (const domainProps of props.domains) {
       if (domainProps.private) {
         const domainFactory = new PrivateDomainFactory(

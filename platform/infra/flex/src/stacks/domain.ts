@@ -179,7 +179,6 @@ export class FlexDomainStack extends GovUkOnceStack {
       domain,
       entry: getDomainEntry(domain, entry),
       environment,
-      timeout: Duration.seconds(60),
     };
 
     switch (type) {
