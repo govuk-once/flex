@@ -6,7 +6,7 @@ export const REMOTE_ROUTES = {
     method: "GET",
     requiresHeaders: false,
   },
-  "POST:v1/user": { remotePath: "/v1/user", method: "POST" },
+  "POST:v1/user": { remotePath: "/v1/user", method: "POST", requiresHeaders: false },
 
   // data routes
   "POST:v1/notifications": { remotePath: "/v1/notifications", method: "POST", requiresHeaders: true },
@@ -30,9 +30,11 @@ export const REMOTE_ROUTES = {
  */
 export function matchRemoteRoute(
   method: string,
-  path: string,
+  path: string | undefined,
   stageName: string,
 ): { remotePath: string; method: string; requiresHeaders: boolean } | undefined {
+  if (!path) return undefined;
+
   const key = `${method}:${path.replace(/^\//, "")}`;
   const config = REMOTE_ROUTES[key as keyof typeof REMOTE_ROUTES];
 

@@ -1,6 +1,6 @@
 # UDP connector (service gateway)
 
-Internal-only connector lambda for the UDP service gateway. Invoked via the **private API gateway** at `POST /internal/gateways/udp`.
+Internal-only connector lambda for the UDP service gateway. Invoked via the **private API gateway** at `ANY /gateways/udp/{proxy+}`.
 
 - **Not** callable directly by domain lambdas; all access goes through the private API.
 - Request body is validated with zod; extend `connectorRequestSchema` when integrating with a real remote UDP API.

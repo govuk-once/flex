@@ -69,10 +69,8 @@ const handler = createLambdaHandler<
       return jsonResponse(status.NOT_FOUND, { message: "Route not found" });
     }
 
-    const body = parseResponseBody(event);
-    logger.debug("Request", { remotePath: mapping.remotePath, body });
-
-    const requiresHeaders = isRouteRequiringHeaders(mapping.remotePath);
+    const body = event.body ? JSON.parse(event.body) : undefined;
+    logger.debug("Request", { remotePath: mapping.remotePath, body, headers: event.headers });
 
     const response = await sigv4FetchWithCredentials({
       region: consumerConfig.region,
@@ -82,7 +80,7 @@ const handler = createLambdaHandler<
       body,
       externalId: consumerConfig.externalId,
       roleArn: consumerConfig.consumerRoleArn,
-      headers: requiresHeaders
+      headers: mapping.requiresHeaders
         ? {
             "requesting-service": SERVICE_NAME,
             "requesting-service-user-id":
@@ -91,7 +89,7 @@ const handler = createLambdaHandler<
         : undefined,
     });
 
-    const responseBody = await response.json();
+    const responseBody = await parseResponseBody(response);
     logger.debug("Response", { body: responseBody, status: response.status });
     return jsonResponse(response.status, responseBody);
   },
