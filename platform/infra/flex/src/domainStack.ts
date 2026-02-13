@@ -1,4 +1,4 @@
-import { IDomainConfig } from "@flex/sdk";
+import { IDomain } from "@flex/sdk";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { IResource } from "aws-cdk-lib/aws-apigateway";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
@@ -12,7 +12,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    domainProps: IDomainConfig,
+    domainProps: IDomain,
     httpApi: HttpApi,
     domainsResource: IResource,
   ) {

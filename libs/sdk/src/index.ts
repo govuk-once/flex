@@ -48,9 +48,9 @@ const domainSchema = z.object({
 export type IDomainRoutes = z.infer<typeof versionSchema>;
 export type IDomainEndpoint = z.infer<typeof handlerConfigSchema>;
 export type IDomainVersion = z.infer<typeof versionRouteSchema>;
-export type IDomainConfig = z.infer<typeof domainSchema>;
+export type IDomain = z.infer<typeof domainSchema>;
 
-export function defineDomain<const T extends IDomainConfig>(config: T) {
+export function defineDomain<const T extends IDomain>(config: T) {
   domainSchema.parse(config);
   return config;
 }

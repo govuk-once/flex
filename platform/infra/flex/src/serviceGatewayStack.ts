@@ -1,4 +1,4 @@
-import { IDomainConfig } from "@flex/sdk";
+import { IDomain } from "@flex/sdk";
 import { importInterfaceVpcEndpointFromSsm } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { EndpointType, IResource, RestApi } from "aws-cdk-lib/aws-apigateway";
@@ -32,7 +32,7 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
     scope: Construct,
     id: string,
     props: {
-      domains: IDomainConfig[];
+      domains: IDomain[];
       httpApi: HttpApi;
     },
   ) {
