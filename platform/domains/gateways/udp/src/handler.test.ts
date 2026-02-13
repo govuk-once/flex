@@ -11,8 +11,8 @@ vi.mock("@flex/params", () => ({
 describe("UDP connector handler", () => {
   const baseEvent = {
     version: "2.0",
-    routeKey: "POST /internal/gateways/udp",
-    rawPath: "/internal/gateways/udp",
+    routeKey: "POST /gateways/udp",
+    rawPath: "/gateways/udp",
     rawQueryString: "",
     headers: {},
     requestContext: {} as unknown,

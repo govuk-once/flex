@@ -67,6 +67,22 @@ export const endpoints = defineDomain({
                 },
               ],
             },
+            PATCH: {
+              type: "ISOLATED",
+              // public/private domain module
+              entry: "handlers/public/v1/user/patch.ts",
+              env: {
+                FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                  "/flex-core/private-gateway/url",
+              },
+              permissions: [
+                {
+                  type: "gateway",
+                  path: "",
+                  method: "POST",
+                },
+              ],
+            },
           },
         },
       },

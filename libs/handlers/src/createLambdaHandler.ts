@@ -80,13 +80,7 @@ export function createLambdaHandler<
         correlationIdPath: "requestContext.requestId",
       }),
     )
-    .use(
-      httpErrorHandler({
-        logger: (error) => {
-          console.error("Request failed", { error: error as Error });
-        },
-      }),
-    )
+    .use(httpErrorHandler())
     .handler(handler);
 
   config.middlewares?.forEach((middleware) => {

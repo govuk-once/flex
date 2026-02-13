@@ -11,6 +11,6 @@ export function getPlatformEntry(domain: string, path: string) {
 }
 
 export function getGatewayEntry(gatewayId: string, filePath: string) {
-  // /platform/internal/gateways/udp/src/handler.ts
-  return `${findProjectRoot()}/platform/internal/gateways/${gatewayId}/src/${filePath}`;
+  // /platform/domains/gateways/udp/src/handler.ts
+  return `${findProjectRoot()}/platform/domains/gateways/${gatewayId}/src/${filePath}`;
 }

@@ -7,14 +7,16 @@ import {
   type V2Authorizer,
 } from "@flex/middlewares";
 import { getConfig } from "@flex/params";
-import { jsonResponse, sigv4Fetch } from "@flex/utils";
+import { jsonResponse } from "@flex/utils";
 import type {
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
+import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
+import { aggregateUserProfile } from "../../../../service/aggregateUserProfile";
 import { generateDerivedId } from "../../../../service/derived-id";
 
 export const configSchema = z.looseObject({
@@ -30,8 +32,6 @@ export const handlerResponseSchema = z.object({
     updatedAt: z.string(),
   }),
 });
-
-const SERVICE_NAME = "GOVUK-APP";
 
 export type NotificationSecretContext = {
   notificationSecretKey: string;
@@ -58,87 +58,27 @@ export const handler = createLambdaHandler<
         secretKey: notificationSecretKey,
       });
 
-      const notificationsResponse = await sigv4Fetch({
+      const userProfile = await aggregateUserProfile({
         region: config.AWS_REGION,
-        path: `${baseUrl.pathname}/gateways/udp/v1/notifications`,
-        method: "POST",
-        baseUrl: baseUrl.toString(),
-        headers: {
-          "requesting-service": SERVICE_NAME,
-          "requesting-service-user-id": pairwiseId,
-        },
-        body: {
-          data: {
-            consentStatus: "unknown",
-          },
-        },
+        baseUrl,
+        pairwiseId,
+        notificationId,
       });
-
-      const responseBody = await notificationsResponse.json();
-      logger.info("User info response", {
-        body: responseBody,
-        status: notificationsResponse.status,
-      });
-
-      if (
-        !notificationsResponse.ok &&
-        notificationsResponse.status !== status.NOT_FOUND
-      ) {
-        logger.warn("Private API returned non-OK", {
-          status: notificationsResponse.status,
-          statusText: notificationsResponse.statusText,
-        });
-        return jsonResponse(status.BAD_GATEWAY, {
-          message: "Private API gateway returned error",
-          status: notificationsResponse.status,
-        });
-      }
-
-      logger.info("User not found, creating user");
-      const response = await sigv4Fetch({
-        region: config.AWS_REGION,
-        baseUrl: baseUrl.toString(),
-        path: `${baseUrl.pathname}/domains/udp/v1/user`,
-        method: "POST",
-        body: {
-          notificationId,
-          appId: pairwiseId,
-        },
-      });
-
-      if (!response.ok) {
-        logger.warn("Private API returned non-OK", {
-          status: response.status,
-          statusText: response.statusText,
-        });
-        return jsonResponse(status.BAD_GATEWAY, {
-          message: "Private API gateway returned error",
-          status: response.status,
-        });
-      }
-
       return jsonResponse(status.OK, {
         notificationId,
-        preferences: {
-          notifications: {
-            consentStatus: "unknown",
-            updatedAt: new Date().toISOString(),
-          },
-          analytics: {
-            consentStatus: "unknown",
-            updatedAt: new Date().toISOString(),
-          },
-        },
+        preferences: userProfile,
       });
     } catch (error) {
       logger.error("Failed to get user info", { error });
+
+      if (error instanceof createHttpError.BadGateway) return error;
+
       return jsonResponse(status.INTERNAL_SERVER_ERROR, {
         message: "Failed to get user info",
       });
     }
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-get-user-service",
     middlewares: [
       extractUser,

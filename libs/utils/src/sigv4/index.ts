@@ -2,7 +2,7 @@ import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
 import type {
   AwsCredentialIdentity,
   AwsCredentialIdentityProvider,
-} from "@smithy/identity";
+} from "@smithy/types";
 import { createSignedFetcher } from "aws-sigv4-fetch";
 
 interface Options {
@@ -35,10 +35,6 @@ export async function sigv4Fetch({
     credentials,
   });
 
-  console.log("headers", headers);
-
-  console.log("bodyString", bodyString);
-
   const response = await signedFetch(url, {
     method,
     headers: {
@@ -58,18 +54,57 @@ export interface Sigv4CredentialsOptions {
   externalId?: string;
 }
 
+const cachedCredentialProviders: Map<string, AwsCredentialIdentityProvider> =
+  new Map();
+
+function getCredentialsCacheKey(roleArn: string, externalId?: string): string {
+  return `${roleArn}:${externalId ?? ""}`;
+}
+
 export function sigv4FetchWithCredentials(
   options: Options & Sigv4CredentialsOptions,
 ) {
-  const credentials = fromTemporaryCredentials({
-    params: {
-      RoleArn: options.roleArn,
-      RoleSessionName: "consumer-session",
-      ...(options.externalId && { ExternalId: options.externalId }),
-    },
-  });
+  const cacheKey = getCredentialsCacheKey(options.roleArn, options.externalId);
+
+  let credentials = cachedCredentialProviders.get(cacheKey);
+  if (!credentials) {
+    credentials = fromTemporaryCredentials({
+      params: {
+        RoleArn: options.roleArn,
+        RoleSessionName: "consumer-session",
+        ...(options.externalId && { ExternalId: options.externalId }),
+      },
+    });
+    cachedCredentialProviders.set(cacheKey, credentials);
+  }
+
   return sigv4Fetch({
     ...options,
     credentials,
   });
+}
+
+interface Sigv4BaseConfig {
+  region: string;
+  baseUrl: string;
+  headers?: Record<string, string>;
+  credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
+  host?: string;
+}
+
+interface Sigv4RequestOptions {
+  method: string;
+  path: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+export function createSigv4Fetch(baseConfig: Sigv4BaseConfig) {
+  return async (request: Sigv4RequestOptions) => {
+    return sigv4Fetch({
+      ...baseConfig,
+      ...request,
+      headers: { ...baseConfig.headers, ...request.headers },
+    });
+  };
 }

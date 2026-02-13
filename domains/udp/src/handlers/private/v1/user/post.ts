@@ -2,11 +2,10 @@ import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
-import { jsonResponse } from "@flex/utils";
+import { jsonResponse, sigv4Fetch } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import type { APIGatewayProxyEvent } from "aws-lambda";
-import { createSignedFetcher } from "aws-sigv4-fetch";
 import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
@@ -30,7 +29,6 @@ const handlerRequestSchema = z.object({
 export const handler = createLambdaHandler<APIGatewayProxyEvent>(
   async (event) => {
     const logger = getLogger();
-
     try {
       const parsedEvent = ApiGatewayEnvelope.safeParse(
         event,
@@ -46,33 +44,22 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
 
       const url = `${config.FLEX_PRIVATE_GATEWAY_URL}/gateways/udp`;
 
-      const signedFetch = createSignedFetcher({
-        service: "execute-api",
+      const response = await sigv4Fetch({
         region: config.AWS_REGION,
-      });
-      const response = await signedFetch(`${url}/v1/user`, {
+        path: `${url}/v1/user`,
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        baseUrl: url,
+        body: {
           notificationId: parsedEvent.data.notificationId,
           appId: parsedEvent.data.appId,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        logger.warn("Connector returned non-OK", {
-          status: response.status,
-          statusText: response.statusText,
-        });
-        return jsonResponse(status.BAD_GATEWAY, {
-          message: "Connector returned error",
-          status: response.status,
-        });
-      }
-
-      return Promise.resolve(jsonResponse(status.CREATED, {}));
+      const responseBody = await response.json();
+      return Promise.resolve(jsonResponse(response.status, responseBody));
     } catch (error) {
       logger.debug("Failed to process request", { error });
+      if (error instanceof createHttpError.BadRequest) return error;
       return Promise.resolve(
         jsonResponse(status.INTERNAL_SERVER_ERROR, {
           message: "Failed to process request",
@@ -81,7 +68,6 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
     }
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-post-user-service",
     middlewares: [httpHeaderNormalizer(), httpJsonBodyParser()],
   },

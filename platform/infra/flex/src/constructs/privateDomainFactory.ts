@@ -30,13 +30,12 @@ export class PrivateDomainFactory extends DomainFactory {
    * Override to create RestApi routes instead of HttpApi routes
    */
   protected override createApiRoute(
-    httpApi: HttpApi, // Keep signature matching parent
+    httpApi: HttpApi,
     domain: string,
     version: string,
     path: string,
     method: HttpMethod,
     handler: NodejsFunction,
-    permissions?: IPermission[],
   ): void {
     // Build the resource path: /domains/{domain}/{version}{path}
     const fullPath = `/${domain}/${version}${path}`.replace(/\/\//g, "/");
@@ -50,10 +49,5 @@ export class PrivateDomainFactory extends DomainFactory {
 
     // Add the method to RestApi
     resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }));
-
-    // Grant IAM permissions if configured
-    // if (permissions && permissions.length > 0) {
-    //   this.grantPermissions(handler.role, permissions, domain);
-    // }
   }
 }

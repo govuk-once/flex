@@ -15,7 +15,6 @@ import {
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import createHttpError from "http-errors";
-import status from "http-status";
 import { z } from "zod";
 
 const handlerRequestSchema = z
@@ -48,7 +47,7 @@ export const configSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
 });
 
-const SERVICE_NAME = "GOVUK-APP";
+const SERVICE_NAME = "app";
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
@@ -75,6 +74,7 @@ export const handler = createLambdaHandler<
       path: `${baseUrl.pathname}/gateways/udp/v1/notifications`,
       method: "POST",
       baseUrl: baseUrl.toString(),
+      body: parsedEvent,
       headers: {
         "requesting-service": SERVICE_NAME,
         "requesting-service-user-id": pairwiseId,
@@ -87,14 +87,7 @@ export const handler = createLambdaHandler<
       status: response.status,
     });
 
-    return Promise.resolve(
-      jsonResponse(status.OK, {
-        preferences: {
-          ...parsedEvent.data,
-          updatedAt: new Date().toISOString(),
-        },
-      }),
-    );
+    return Promise.resolve(jsonResponse(response.status, responseBody));
   },
   {
     logLevel: "INFO",

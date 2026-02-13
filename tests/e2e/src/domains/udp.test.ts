@@ -39,47 +39,6 @@ describe("UDP domain", () => {
   });
 
   describe("/get user", () => {
-    it.todo("returns a 200 and notification ID", async ({ cloudfront }) => {
-      const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${validJwt}` },
-      });
-
-      expect(response).toMatchObject({
-        status: 200,
-        body: {
-          notificationId: expect.any(String) as string,
-          preferences: {
-            notifications: {
-              consentStatus: "unknown",
-              updatedAt: expect.any(String) as string,
-            },
-            analytics: {
-              consentStatus: "unknown",
-              updatedAt: expect.any(String) as string,
-            },
-          },
-        },
-      });
-    });
-
-    it.todo(
-      "returns the same notification ID for the same user",
-      async ({ cloudfront }) => {
-        const request = cloudfront.client.get<{ notificationId: string }>(
-          endpoint,
-          {
-            headers: { Authorization: `Bearer ${validJwt}` },
-          },
-        );
-
-        const [response1, response2] = await Promise.all([request, request]);
-
-        expect(response1.body?.notificationId).toBe(
-          response2.body?.notificationId,
-        );
-      },
-    );
-
     it("returns a 200 and notification ID", async ({ cloudfront }) => {
       const response = await cloudfront.client.get(endpoint, {
         headers: { Authorization: `Bearer ${validJwt}` },
@@ -102,9 +61,52 @@ describe("UDP domain", () => {
         },
       });
     });
+
+    it("generation of notification ID is deterministic", async ({
+      cloudfront,
+    }) => {
+      const request = cloudfront.client.get<{ notificationId: string }>(
+        endpoint,
+        {
+          headers: { Authorization: `Bearer ${validJwt}` },
+        },
+      );
+
+      const [response1, response2] = await Promise.all([request, request]);
+
+      expect(response1.body?.notificationId).toBe(
+        response2.body?.notificationId,
+      );
+    });
+
+    it("returns a 200 and user settings", async ({ cloudfront }) => {
+      const response = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${validJwt}` },
+      });
+      expect(response).toMatchObject({
+        status: 200,
+        body: {
+          notificationId: expect.any(String),
+          preferences: {
+            notifications: {
+              consentStatus: "unknown",
+              updatedAt: expect.stringMatching(
+                /^\d{4}-\d{2}-\d{2}T[\d:T.-]+Z?$/,
+              ),
+            },
+            analytics: {
+              consentStatus: "unknown",
+              updatedAt: expect.stringMatching(
+                /^\d{4}-\d{2}-\d{2}T[\d:T.-]+Z?$/,
+              ),
+            },
+          },
+        },
+      });
+    });
   });
 
-  describe.todo("/patch user", () => {
+  describe("/patch user", () => {
     it("returns user preferences updated successfully", async ({
       cloudfront,
     }) => {
@@ -126,7 +128,7 @@ describe("UDP domain", () => {
       });
     });
 
-    it.todo("rejects invalid payloads", async ({ cloudfront }) => {
+    it("rejects invalid payloads", async ({ cloudfront }) => {
       const response = await cloudfront.client.patch(endpoint, {
         body: { notificationsConsented: "yes" },
         headers: { Authorization: `Bearer ${validJwt}` },
