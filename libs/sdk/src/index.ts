@@ -19,6 +19,7 @@ const handlerConfigSchema = z.object({
   envSecret: z.record(z.string(), z.string()).optional(),
   kmsKeys: z.record(z.string(), z.string()).optional(),
   permissions: z.array(permissionsSchema).optional(),
+  timeoutSeconds: z.number().optional(),
 });
 
 const routeMethodsSchema = z

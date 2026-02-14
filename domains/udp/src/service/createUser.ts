@@ -76,10 +76,10 @@ export const createUserOrchestrator = async ({
   notificationId,
 }: CreateUserOrchestratorOptions) => {
   const logger = getLogger();
-  logger.info("User not found, creating user");
+  const url = buildPrivateGatewayUrl(baseUrl, UDP_DOMAIN_BASE);
   const response = await sigv4Fetch({
     region,
-    baseUrl: buildPrivateGatewayUrl(baseUrl, UDP_DOMAIN_BASE),
+    baseUrl: url,
     method: "POST",
     path: UDP_DOMAIN_ROUTES.user,
     body: {
@@ -89,7 +89,7 @@ export const createUserOrchestrator = async ({
   });
 
   if (!response.ok) {
-    logger.warn("Private API returned non-OK", {
+    logger.error("Private API returned non-OK", {
       status: response.status,
       statusText: response.statusText,
     });

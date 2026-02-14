@@ -171,7 +171,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     versionId: string,
     environment?: Record<string, string>,
   ) {
-    const { entry, type } = route;
+    const { entry, type, timeoutSeconds } = route;
     const cleanPath = path.replace(/\//g, "-");
     const id = `${versionId}${cleanPath}-${method}`;
 
@@ -179,6 +179,7 @@ export class FlexDomainStack extends GovUkOnceStack {
       domain,
       entry: getDomainEntry(domain, entry),
       environment,
+      timeout: timeoutSeconds ? Duration.seconds(timeoutSeconds) : undefined,
     };
 
     switch (type) {

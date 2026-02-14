@@ -81,13 +81,7 @@ export const handler = createLambdaHandler<
       },
     });
 
-    const responseBody = await response.json();
-    logger.info("Notification response", {
-      body: responseBody,
-      status: response.status,
-    });
-
-    return Promise.resolve(jsonResponse(response.status, responseBody));
+    return jsonResponse(response.status, await response.json());
   },
   {
     logLevel: "INFO",

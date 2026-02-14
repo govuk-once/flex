@@ -71,7 +71,7 @@ export const handler = createLambdaHandler<
     } catch (error) {
       logger.error("Failed to get user info", { error });
 
-      if (error instanceof createHttpError.BadGateway) return error;
+      if (createHttpError.isHttpError(error)) return error;
 
       return jsonResponse(status.INTERNAL_SERVER_ERROR, {
         message: "Failed to get user info",

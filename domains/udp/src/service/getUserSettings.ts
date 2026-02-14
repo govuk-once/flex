@@ -2,6 +2,7 @@ import { getLogger } from "@flex/logging";
 import { createSigv4Fetch } from "@flex/utils";
 import createHttpError from "http-errors";
 import status from "http-status";
+import { parseJsonResponse, consentResponseSchema } from "../schemas";
 
 import { SERVICE_NAME } from "../constants";
 import {
@@ -50,6 +51,7 @@ export const getUserSettings = async ({
 
   if (!notificationsResponse.ok || notificationsResponse.status !== status.OK) {
     if (notificationsResponse.status === status.NOT_FOUND) {
+      logger.debug("User settings not found");
       return null;
     }
     logger.error("Failed to get user settings", {
@@ -65,18 +67,28 @@ export const getUserSettings = async ({
   });
 
   if (!analyticsResponse.ok || analyticsResponse.status !== status.OK) {
+    if (analyticsResponse.status === status.NOT_FOUND) {
+      logger.debug("Analytics settings not found");
+      return null;
+    }
     logger.error("Failed to get user settings", {
       status: analyticsResponse.status,
       statusText: analyticsResponse.statusText,
     });
     throw new createHttpError.BadGateway();
   }
+  // In getUserSettings:
+const notificationsData = await parseJsonResponse(
+  notificationsResponse,
+  consentResponseSchema,
+);
+const analyticsData = await parseJsonResponse(
+  analyticsResponse,
+  consentResponseSchema,
+);
 
-  const notificationsResponseBody = await notificationsResponse.json();
-  const analyticsResponseBody = await analyticsResponse.json();
-
-  return {
-    notifications: notificationsResponseBody.data,
-    analytics: analyticsResponseBody.data,
-  };
+return {
+  notifications: "data" in notificationsData ? notificationsData.data : notificationsData,
+  analytics: "data" in analyticsData ? analyticsData.data : analyticsData,
+};
 };

@@ -108,3 +108,18 @@ export function createSigv4Fetch(baseConfig: Sigv4BaseConfig) {
     });
   };
 }
+
+export async function sigv4FetchTyped<T>(
+  options: Options,
+  responseSchema: z.ZodType<T>,
+): Promise<{ data: T; response: Response }> {
+  const response = await sigv4Fetch(options);
+  const raw = await response.json();
+  const parsed = responseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new createHttpError.BadGateway(
+      `Invalid response from ${options.path}: ${parsed.error.message}`,
+    );
+  }
+  return { data: parsed.data, response };
+}

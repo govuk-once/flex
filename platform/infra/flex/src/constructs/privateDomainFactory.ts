@@ -1,11 +1,8 @@
-import { IPermission } from "@flex/sdk";
-import { IResource, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
+import { AuthorizationType, IResource, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
-import { IRole } from "aws-cdk-lib/aws-iam";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 
-import { grantPrivateApiAccess } from "../service-gateway/private-gateway-permissions";
 import { DomainFactory } from "./domainFactory";
 
 /**
@@ -48,6 +45,8 @@ export class PrivateDomainFactory extends DomainFactory {
     }
 
     // Add the method to RestApi
-    resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }));
+    resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }), {
+      authorizationType: AuthorizationType.IAM,
+    });
   }
 }

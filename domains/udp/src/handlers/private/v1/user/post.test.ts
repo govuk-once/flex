@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, vi } from "vitest";
 import { handler } from "./post";
 
 const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
-const PRIVATE_GATEWAY_BASE_URL = `${PRIVATE_GATEWAY_ORIGIN}/gateways/udp`;
 const USER_PATH = "/gateways/udp/v1/user";
 
 vi.mock("@flex/params", () => ({

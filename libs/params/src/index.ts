@@ -72,7 +72,7 @@ export async function getConfig<T extends object>(
   const logger = getLogger();
 
   if (cachedConfig.has(validator)) {
-    logger.info("Returning cached configuration");
+    logger.debug("Returning cached configuration");
 
     // This is safe because we only set values of this type in the cache.
     return cachedConfig.get(validator) as Simplify<
@@ -80,7 +80,7 @@ export async function getConfig<T extends object>(
     >;
   }
 
-  logger.info(
+  logger.debug(
     "cachedConfig not found, building configuration from process.env and SSM",
   );
   const rawConfigSchemaCheck = validator.safeParse(process.env);

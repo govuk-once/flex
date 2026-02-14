@@ -25,7 +25,7 @@ export const aggregateUserProfile = async ({
   const logger = getLogger();
   const userSettings = await getUserSettings({ region, baseUrl, pairwiseId });
   if (!userSettings) {
-    logger.info(
+    logger.debug(
       "User not found, creating user and setting default user settings",
     );
     await createUserOrchestrator({

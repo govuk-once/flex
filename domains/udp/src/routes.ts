@@ -23,5 +23,5 @@ export function buildPrivateGatewayUrl(
   const base = typeof baseUrl === "string" ? baseUrl : baseUrl.toString();
   const normalized = base.replace(/\/$/, "");
   const prefix = pathPrefix.replace(/^\//, "");
-  return `${normalized}/${prefix}`;
+  return `${normalized}/${prefix}/`;
 }

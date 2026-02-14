@@ -55,11 +55,10 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
         },
       });
 
-      const responseBody = await response.json();
-      return Promise.resolve(jsonResponse(response.status, responseBody));
+      return jsonResponse(response.status, await response.json());
     } catch (error) {
-      logger.debug("Failed to process request", { error });
-      if (error instanceof createHttpError.BadRequest) return error;
+      logger.error("Failed to process request", { error });
+      if (createHttpError.isHttpError(error)) return error;
       return Promise.resolve(
         jsonResponse(status.INTERNAL_SERVER_ERROR, {
           message: "Failed to process request",

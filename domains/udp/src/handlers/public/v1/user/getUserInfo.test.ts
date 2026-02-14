@@ -249,7 +249,6 @@ describe("GetUserInfo handler", () => {
 
   describe("gateway errors (502)", () => {
     it("returns 502 when GET notifications returns 500", async ({
-      response,
       eventWithAuthorizer,
       context,
     }) => {
@@ -271,7 +270,6 @@ describe("GetUserInfo handler", () => {
     });
 
     it("returns 502 when GET notifications returns 403", async ({
-      response,
       eventWithAuthorizer,
       context,
     }) => {
@@ -293,7 +291,6 @@ describe("GetUserInfo handler", () => {
     });
 
     it("returns 502 when POST create user returns 500", async ({
-      response,
       eventWithAuthorizer,
       context,
     }) => {

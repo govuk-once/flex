@@ -21,6 +21,7 @@ export const endpoints = defineDomain({
               kmsKeys: {
                 ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
               },
+              timeoutSeconds: 10,
               permissions: [
                 {
                   type: "domain",

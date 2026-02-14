@@ -95,6 +95,7 @@ const handler = createLambdaHandler<
   },
   {
     serviceName: "udp-service-gateway",
+    logLevel: "DEBUG",
   },
 );
 
