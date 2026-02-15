@@ -23,9 +23,15 @@ importers:
       '@flex/handlers':
         specifier: workspace:*
         version: link:../../libs/handlers
+      '@flex/params':
+        specifier: workspace:*
+        version: link:../../libs/params
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
       aws-sigv4-fetch:
         specifier: 4.4.1
         version: 4.4.1

@@ -1,15 +1,27 @@
 import { IDomain } from "@flex/sdk";
 import { importInterfaceVpcEndpointFromSsm } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
-import { AccessLogFormat, EndpointType, IResource, LogGroupLogDestination, MethodLoggingLevel, RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  AccessLogFormat,
+  EndpointType,
+  IResource,
+  LogGroupLogDestination,
+  MethodLoggingLevel,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
+import {
+  AnyPrincipal,
+  Effect,
+  PolicyDocument,
+  PolicyStatement,
+} from "aws-cdk-lib/aws-iam";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { PrivateDomainFactory } from "./constructs/privateDomainFactory";
 import { exportFlexPlatformParam } from "./outputs";
 import { createServiceGateways } from "./service-gateway/service-gateway";
-import { AnyPrincipal, Effect, PolicyDocument, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
@@ -87,15 +99,15 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
           new PolicyStatement({
             effect: Effect.ALLOW,
             principals: [new AnyPrincipal()],
-            actions: ['execute-api:Invoke'],
-            resources: ['execute-api:/*'],
+            actions: ["execute-api:Invoke"],
+            resources: ["execute-api:/*"],
             conditions: {
-              "StringEquals": {
-                "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId
-              }
-            }
-          })
-        ]
+              StringEquals: {
+                "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
+              },
+            },
+          }),
+        ],
       }),
       deployOptions: {
         accessLogDestination: new LogGroupLogDestination(accessLogGroup),

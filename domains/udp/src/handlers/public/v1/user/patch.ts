@@ -55,7 +55,6 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId
 >(
   async (event, context) => {
-    const logger = getLogger();
     const { pairwiseId } = context;
     const parsedEvent = ApiGatewayV2Envelope.safeParse(
       event,

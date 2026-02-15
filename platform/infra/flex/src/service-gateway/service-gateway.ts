@@ -1,6 +1,10 @@
 import { importFlexParameter } from "@platform/core/outputs";
 import { Duration } from "aws-cdk-lib";
-import { AuthorizationType, IResource, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
+import {
+  AuthorizationType,
+  IResource,
+  LambdaIntegration,
+} from "aws-cdk-lib/aws-apigateway";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { IFunction } from "aws-cdk-lib/aws-lambda";

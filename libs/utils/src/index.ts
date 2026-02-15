@@ -2,6 +2,7 @@ export type { QueryParams } from "./http/query-params";
 export { extractQueryParams } from "./http/query-params";
 export type { BuildRequestOptions, HttpRequestOptions } from "./http/request";
 export { buildRequest, parseResponseBody } from "./http/request";
+export { parseResponseBodyTyped } from "./http/response";
 export { buildUrl } from "./http/url";
 export { findProjectRoot, getStackOutputs, sanitiseStageName } from "./infra";
 export * from "./openapi/domain/hello-world";

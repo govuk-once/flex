@@ -1,4 +1,8 @@
-import { AuthorizationType, IResource, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
+import {
+  AuthorizationType,
+  IResource,
+  LambdaIntegration,
+} from "aws-cdk-lib/aws-apigateway";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
@@ -45,8 +49,12 @@ export class PrivateDomainFactory extends DomainFactory {
     }
 
     // Add the method to RestApi
-    resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }), {
-      authorizationType: AuthorizationType.IAM,
-    });
+    resource.addMethod(
+      method,
+      new LambdaIntegration(handler, { proxy: true }),
+      {
+        authorizationType: AuthorizationType.IAM,
+      },
+    );
   }
 }

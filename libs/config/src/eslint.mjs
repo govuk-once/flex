@@ -18,6 +18,10 @@ const flattenedTsConfigRules = tseslint.configs.strictTypeChecked.reduce(
 
 const findUpFileDir = (f) => findUpSync(f)?.slice(0, -f.length);
 const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
+const getDynamicParserOptions = () => ({
+  project: true,
+  tsconfigRootDir: process.cwd(), // ESLint sets cwd to the package being linted
+});
 
 /**
  * @type {import("eslint").Linter.Config[]}
@@ -54,9 +58,7 @@ export const config = [
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tseslint.parser,
-      parserOptions: {
-        project: "./tsconfig.json",
-      },
+      parserOptions: getDynamicParserOptions(),
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,

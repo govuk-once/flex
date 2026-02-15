@@ -70,7 +70,6 @@ const handler = createLambdaHandler<
     }
 
     const body = event.body ? JSON.parse(event.body) : undefined;
-    logger.debug("Request", { remotePath: mapping.remotePath, body, headers: event.headers });
 
     const response = await sigv4FetchWithCredentials({
       region: consumerConfig.region,

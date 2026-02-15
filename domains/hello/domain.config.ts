@@ -24,6 +24,31 @@ export const endpoints = defineDomain({
               type: "ISOLATED",
             },
           },
+          "/hello-call-internal": {
+            GET: {
+              entry: "handlers/v1/hello-call-internal/get.ts",
+              type: "ISOLATED",
+              env: {
+                FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                  "/flex-core/private-gateway/url",
+              },
+              // Intentionally no permissions - demonstrates private API gateway blocks access
+            },
+          },
+        },
+      },
+    },
+  },
+  private: {
+    versions: {
+      v1: {
+        routes: {
+          "/hello-internal": {
+            GET: {
+              entry: "handlers/v1/hello-internal/get.ts",
+              type: "ISOLATED",
+            },
+          },
         },
       },
     },

@@ -6,20 +6,64 @@ export const REMOTE_ROUTES = {
     method: "GET",
     requiresHeaders: false,
   },
-  "POST:v1/user": { remotePath: "/v1/user", method: "POST", requiresHeaders: false },
+  "POST:v1/user": {
+    remotePath: "/v1/user",
+    method: "POST",
+    requiresHeaders: false,
+  },
 
   // data routes
-  "POST:v1/notifications": { remotePath: "/v1/notifications", method: "POST", requiresHeaders: true },
-  "GET:v1/notifications": { remotePath: "/v1/notifications", method: "GET", requiresHeaders: true },
-  "POST:v1/analytics": { remotePath: "/v1/analytics", method: "POST", requiresHeaders: true },
-  "GET:v1/analytics": { remotePath: "/v1/analytics", method: "GET", requiresHeaders: true },
-  "POST:v1/preferences": { remotePath: "/v1/preferences", method: "POST", requiresHeaders: true },
+  "POST:v1/notifications": {
+    remotePath: "/v1/notifications",
+    method: "POST",
+    requiresHeaders: true,
+  },
+  "GET:v1/notifications": {
+    remotePath: "/v1/notifications",
+    method: "GET",
+    requiresHeaders: true,
+  },
+  "POST:v1/analytics": {
+    remotePath: "/v1/analytics",
+    method: "POST",
+    requiresHeaders: true,
+  },
+  "GET:v1/analytics": {
+    remotePath: "/v1/analytics",
+    method: "GET",
+    requiresHeaders: true,
+  },
+  "POST:v1/preferences": {
+    remotePath: "/v1/preferences",
+    method: "POST",
+    requiresHeaders: true,
+  },
   // Unversioned path format (when domain sends .../analytics - proxy = "analytics")
-  "GET:notifications": { remotePath: "/v1/notifications", method: "GET", requiresHeaders: true },
-  "POST:notifications": { remotePath: "/v1/notifications", method: "POST", requiresHeaders: true },
-  "GET:analytics": { remotePath: "/v1/analytics", method: "GET", requiresHeaders: true },
-  "POST:analytics": { remotePath: "/v1/analytics", method: "POST", requiresHeaders: true },
-  "POST:preferences": { remotePath: "/v1/preferences", method: "POST", requiresHeaders: true },
+  "GET:notifications": {
+    remotePath: "/v1/notifications",
+    method: "GET",
+    requiresHeaders: true,
+  },
+  "POST:notifications": {
+    remotePath: "/v1/notifications",
+    method: "POST",
+    requiresHeaders: true,
+  },
+  "GET:analytics": {
+    remotePath: "/v1/analytics",
+    method: "GET",
+    requiresHeaders: true,
+  },
+  "POST:analytics": {
+    remotePath: "/v1/analytics",
+    method: "POST",
+    requiresHeaders: true,
+  },
+  "POST:preferences": {
+    remotePath: "/v1/preferences",
+    method: "POST",
+    requiresHeaders: true,
+  },
 } as const;
 
 /**
@@ -32,7 +76,9 @@ export function matchRemoteRoute(
   method: string,
   path: string | undefined,
   stageName: string,
-): { remotePath: string; method: string; requiresHeaders: boolean } | undefined {
+):
+  | { remotePath: string; method: string; requiresHeaders: boolean }
+  | undefined {
   if (!path) return undefined;
 
   const key = `${method}:${path.replace(/^\//, "")}`;
@@ -44,5 +90,9 @@ export function matchRemoteRoute(
   const pathPart = config.remotePath.replace(/^\//, "");
   const remotePath = stage ? `/${stage}/${pathPart}` : `/${pathPart}`;
 
-  return { remotePath, method: config.method, requiresHeaders: config.requiresHeaders };
+  return {
+    remotePath,
+    method: config.method,
+    requiresHeaders: config.requiresHeaders,
+  };
 }

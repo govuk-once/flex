@@ -1,7 +1,6 @@
 import { getLogger } from "@flex/logging";
 import { createSigv4Fetch, sigv4Fetch } from "@flex/utils";
 import createHttpError from "http-errors";
-import status from "http-status";
 
 import { SERVICE_NAME } from "../constants";
 import {
