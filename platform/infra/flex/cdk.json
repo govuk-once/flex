@@ -1,12 +1,8 @@
 {
   "app": "tsx src/app.ts",
   "watch": {
-    "include": [
-      "../../../domains/*/src/**/get.ts",
-      "../../../domains/*/src/**/post.ts",
-      "../../../domains/*/src/**/put.ts",
-      "../../../domains/*/src/**/delete.ts"
-    ]
+    "include": ["../../../domains/*/src", "src"],
+    "exclude": ["node_modules", "cdk.out"]
   },
   "quiet": true,
   "context": {
@@ -89,6 +85,7 @@
     "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true,
     "@aws-cdk/aws-elasticloadbalancingv2:networkLoadBalancerWithSecurityGroupByDefault": true,
     "@aws-cdk/aws-ecs-patterns:uniqueTargetGroupId": true,
-    "@aws-cdk/aws-route53-patterns:useDistribution": true
+    "@aws-cdk/aws-route53-patterns:useDistribution": true,
+    "@aws-cdk/aws-eks:useNativeOidcProvider": true
   }
 }

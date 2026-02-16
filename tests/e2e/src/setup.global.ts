@@ -9,7 +9,7 @@ export default async function setup({
 }: {
   provide: (key: "e2eEnv", value: unknown) => void;
 }) {
-  if (process.env.CLOUDFRONT_DISTRIBUTION_URL) {
+  if (process.env.FLEX_API_URL) {
     provide("e2eEnv", e2eEnvSchema.parse(process.env));
     return;
   }
@@ -19,12 +19,12 @@ export default async function setup({
   const stack = `${stage}-FlexPlatform`;
   const outputs = await getStackOutputs(stack);
 
-  const { CloudfrontDistributionUrl } = flexStackOutputsSchema.parse(outputs);
+  const { FlexApiUrl } = flexStackOutputsSchema.parse(outputs);
 
   provide(
     "e2eEnv",
     e2eEnvSchema.parse({
-      CLOUDFRONT_DISTRIBUTION_URL: CloudfrontDistributionUrl,
+      FLEX_API_URL: FlexApiUrl,
       STAGE: stage,
     }),
   );

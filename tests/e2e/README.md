@@ -35,11 +35,11 @@ For personal development, you must deploy your own stack before running E2E test
 
 ### Environment Variables
 
-| Variable                      | Required | Description                                             |
-| ----------------------------- | -------- | ------------------------------------------------------- |
-| `STAGE`                       | No       | Deployment stage (defaults to `$USER` or `development`) |
-| `AWS_REGION`                  | No       | AWS region (automatically set by GDS CLI)               |
-| `CLOUDFRONT_DISTRIBUTION_URL` | No       | Manual override for CloudFront URL                      |
+| Variable       | Required | Description                                             |
+| -------------- | -------- | ------------------------------------------------------- |
+| `STAGE`        | No       | Deployment stage (defaults to `$USER` or `development`) |
+| `AWS_REGION`   | No       | AWS region (automatically set by GDS CLI)               |
+| `FLEX_API_URL` | No       | Manual override for API URL                             |
 
 > If not using GDS CLI to assume roles, set `AWS_REGION` manually (e.g., `eu-west-2`).
 
@@ -61,7 +61,7 @@ pnpm --filter @flex/e2e test:e2e
 Set environment variables directly to skip CloudFormation lookup:
 
 ```bash
-CLOUDFRONT_DISTRIBUTION_URL=https://xxx.cloudfront.net pnpm --filter @flex/e2e test:e2e
+FLEX_API_URL=https://xxx.cloudfront.net pnpm --filter @flex/e2e test:e2e
 ```
 
 > When manually overriding, all required variables must be provided together.
@@ -72,7 +72,7 @@ Create a `.env` file in `tests/e2e/`:
 
 ```bash
 STAGE=development
-CLOUDFRONT_DISTRIBUTION_URL=https://xxx.cloudfront.net
+FLEX_API_URL=https://xxx.cloudfront.net
 ```
 
 > E2E tests run automatically in CI after each deployment. See the [Deployment Guide](/docs/deployment.md) for details.

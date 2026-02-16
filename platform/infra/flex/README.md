@@ -69,10 +69,10 @@ new FlexPlatformStack(app, getStackName("FlexPlatform"));
 
 ### Outputs
 
-| Output                      | Description                 | Used By                       |
-| --------------------------- | --------------------------- | ----------------------------- |
-| `HttpApiUrl`                | API Gateway endpoint URL    | E2E tests, external clients   |
-| `CloudfrontDistributionUrl` | CloudFront distribution URL | E2E tests, production traffic |
+| Output       | Description              | Used By                       |
+| ------------ | ------------------------ | ----------------------------- |
+| `HttpApiUrl` | API Gateway endpoint URL | E2E tests, external clients   |
+| `FlexApiUrl` | API URL                  | E2E tests, production traffic |
 
 ---
 
@@ -83,7 +83,6 @@ new FlexPlatformStack(app, getStackName("FlexPlatform"));
 | [`FlexPublicFunction`](#flexpublicfunction)                   | Lambda without VPC attachment             | [View](./src/constructs/flex-public-function.ts)           |
 | [`FlexPrivateEgressFunction`](#flexprivateegressfunction)     | Lambda in private subnets with NAT access | [View](./src/constructs/flex-private-egress-function.ts)   |
 | [`FlexPrivateIsolatedFunction`](#flexprivateisolatedfunction) | Lambda in isolated subnets, no internet   | [View](./src/constructs/flex-private-isolated-function.ts) |
-| [`RouteGroup`](#routegroup)                                   | Group API routes under a path prefix      | [View](./src/constructs/flex-route-group.ts)               |
 
 All Lambda constructs use Node.js 24.x runtime, enable X-Ray tracing, create dedicated log groups, and tag with `ResourceOwner` when `domain` is provided.
 
@@ -108,10 +107,10 @@ import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 
 import { FlexPublicFunction } from "./constructs/flex-public-function";
-import { getEntry } from "./utils/getEntry";
+import { getDomainEntry } from "./utils/getEntry";
 
 const handler = new FlexPublicFunction(this, "ExampleFunction", {
-  entry: getEntry("domain", "handlers/handler/get.ts"),
+  entry: getDomainEntry("domain", "handlers/handler/get.ts"),
   domain: "domain",
 });
 
@@ -131,10 +130,10 @@ import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
-import { getEntry } from "./utils/getEntry";
+import { getDomainEntry } from "./utils/getEntry";
 
 const handler = new FlexPrivateEgressFunction(this, "ExampleFunction", {
-  entry: getEntry("domain", "handlers/handler/get.ts"),
+  entry: getDomainEntry("domain", "handlers/handler/get.ts"),
   domain: "domain",
 });
 
@@ -154,10 +153,10 @@ import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
-import { getEntry } from "./utils/getEntry";
+import { getDomainEntry } from "./utils/getEntry";
 
 const handler = new FlexPrivateIsolatedFunction(this, "ExampleFunction", {
-  entry: getEntry("domain", "handlers/handler/get.ts"),
+  entry: getDomainEntry("domain", "handlers/handler/get.ts"),
   domain: "domain",
 });
 
@@ -168,93 +167,23 @@ httpApi.addRoutes({
 });
 ```
 
-### `RouteGroup`
-
-Groups related API routes under a common path prefix.
-
-```typescript
-import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
-
-import { RouteGroup } from "./constructs/flex-route-group";
-
-const v1 = new RouteGroup(this, "V1", {
-  httpApi,
-  pathPrefix: "/1.0/app",
-});
-
-v1.addRoute(
-  "/example",
-  HttpMethod.GET,
-  new HttpLambdaIntegration("ExampleHandler", exampleHandler.function),
-);
-// Creates route: /1.0/app/example
-```
-
----
-
-## Domain Integration
-
-Domains can be integrated as constructs that encapsulate their routes:
-
-```typescript
-import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
-import { Construct } from "constructs";
-
-import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
-import { RouteGroup } from "./constructs/flex-route-group";
-import { getEntry } from "./utils/getEntry";
-
-export class ExampleDomain extends Construct {
-  constructor(scope: Construct, id: string, routeGroup: RouteGroup) {
-    super(scope, id);
-
-    const exampleFunction = new FlexPrivateIsolatedFunction(
-      this,
-      "ExampleIsolatedFunction",
-      {
-        entry: getEntry("domain", "handlers/service/post.ts"),
-        domain: "domain",
-      },
-    );
-
-    routeGroup.addRoute(
-      "/path",
-      HttpMethod.POST,
-      new HttpLambdaIntegration("ExampleHandler", exampleFunction.function),
-    );
-
-    // Define additional routes...
-  }
-}
-```
-
-Then instantiate in the stack:
-
-```typescript
-const v1 = new RouteGroup(this, "V1", { httpApi, pathPrefix: "/1.0/app" });
-
-new ExampleDomain(this, "ExampleDomain", v1);
-```
-
 ---
 
 ## Utilities
 
 | Name                                    | Description                       | Code                            |
 | --------------------------------------- | --------------------------------- | ------------------------------- |
-| [`getEntry`](#getentry)                 | Resolve handler path for domains  | [View](./src/utils/getEntry.ts) |
+| [`getDomainEntry`](#getdomainentry)     | Resolve handler path for domains  | [View](./src/utils/getEntry.ts) |
 | [`getPlatformEntry`](#getplatformentry) | Resolve handler path for platform | [View](./src/utils/getEntry.ts) |
 
-### `getEntry`
+### `getDomainEntry`
 
 Resolves handler paths for domain handlers in `domains/`.
 
 ```typescript
-import { getEntry } from "./utils/getEntry";
+import { getDomainEntry } from "./utils/getEntry";
 
-getEntry("hello", "handlers/hello-public/get.ts");
+getDomainEntry("hello", "handlers/hello-public/get.ts");
 // "/domains/hello/src/handlers/hello-public/get.ts"
 ```
 

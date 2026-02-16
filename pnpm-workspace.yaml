@@ -5,11 +5,14 @@ packages:
   - platform/infra/*
   - tests/*
 
+ignoredBuiltDependencies:
+  - msw
+
+minimumReleaseAge: 2880
+
 onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
   - nx
-
-minimumReleaseAge: 2880
 
 savePrefix: ''

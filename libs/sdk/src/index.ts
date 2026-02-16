@@ -9,17 +9,20 @@ const handlerConfigSchema = z.object({
   kmsKeys: z.record(z.string(), z.string()).optional(),
 });
 
-const routeMethodsSchema = z.record(
-  z.enum(HttpMethod),
-  handlerConfigSchema.optional(),
-);
+const routeMethodsSchema = z
+  .object(
+    Object.fromEntries(
+      Object.values(HttpMethod).map((m) => [m, handlerConfigSchema]),
+    ) as Record<HttpMethod, typeof handlerConfigSchema>,
+  )
+  .partial();
 
 const versionRouteSchema = z.record(
   z.string().startsWith("/"),
   routeMethodsSchema,
 );
 
-const domainSchema = z.object({
+export const domainSchema = z.object({
   domain: z.string(),
   owner: z.string().optional(),
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),

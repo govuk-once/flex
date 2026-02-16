@@ -153,15 +153,15 @@ Does your handler need to call external APIs?
 import { FlexPublicFunction } from "./constructs/flex-public-function";
 import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
-import { getEntry } from "./utils/getEntry";
+import { getDomainEntry } from "./utils/getEntry";
 
 const publicFunction = new FlexPublicFunction(this, "PublicFunction", {
-  entry: getEntry("domain", "handlers/public/get.ts"),
+  entry: getDomainEntry("domain", "handlers/public/get.ts"),
   domain: "domain",
 });
 
 const privateFunction = new FlexPrivateEgressFunction(this, "PrivateFunction", {
-  entry: getEntry("domain", "handlers/private/get.ts"),
+  entry: getDomainEntry("domain", "handlers/private/get.ts"),
   domain: "domain",
 });
 
@@ -169,7 +169,7 @@ const isolatedFunction = new FlexPrivateIsolatedFunction(
   this,
   "IsolatedFunction",
   {
-    entry: getEntry("domain", "handlers/isolated/get.ts"),
+    entry: getDomainEntry("domain", "handlers/isolated/get.ts"),
     domain: "domain",
   },
 );
@@ -177,72 +177,16 @@ const isolatedFunction = new FlexPrivateIsolatedFunction(
 
 ### Entry Point Helpers
 
-Use `getEntry` for domain handlers and `getPlatformEntry` for platform handlers:
+Use `getDomainEntry` for domain handlers and `getPlatformEntry` for platform handlers:
 
 ```typescript
-import { getEntry, getPlatformEntry } from "./utils/getEntry";
+import { getDomainEntry, getPlatformEntry } from "./utils/getEntry";
 
 // Domain handler: domains/domain/src/handlers/handler/method.ts
-getEntry("domain", "handlers/handler/method.ts");
+getDomainEntry("domain", "handlers/handler/method.ts");
 
 // Platform handler: platform/domains/domain/src/handler.ts
 getPlatformEntry("domain", "handler.ts");
-```
-
----
-
-## Route Provisioning
-
-### Domain Construct
-
-Each domain has a construct in `platform/infra/flex/src/constructs/` that defines its routes:
-
-```typescript
-// platform/infra/flex/src/constructs/<domain>.ts
-
-import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
-import { Construct } from "constructs";
-
-import { FlexPrivateIsolatedFunction } from "./flex-private-isolated-function";
-import { RouteGroup } from "./flex-route-group";
-import { getEntry } from "../utils/getEntry";
-
-export class ExampleDomain extends Construct {
-  constructor(scope: Construct, id: string, routeGroup: RouteGroup) {
-    super(scope, id);
-
-    const exampleHandler = new FlexPrivateIsolatedFunction(
-      this,
-      "ExampleFunction",
-      {
-        entry: getEntry("domain", "handlers/handler/get.ts"),
-        domain: "domain",
-      },
-    );
-
-    routeGroup.addRoute(
-      "/path",
-      HttpMethod.GET,
-      new HttpLambdaIntegration("ExampleFunction", exampleHandler.function),
-    );
-  }
-}
-```
-
-### Adding to Stack
-
-Instantiate the domain construct in `platform/infra/flex/src/stack.ts`:
-
-```typescript
-import { ExampleDomain } from "./constructs/<domain>";
-
-const v1 = new RouteGroup(this, "V1", {
-  httpApi,
-  pathPrefix: "/1.0/app",
-});
-
-new ExampleDomain(this, "ExampleDomain", v1);
 ```
 
 ---
