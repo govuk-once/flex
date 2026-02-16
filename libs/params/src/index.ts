@@ -1,6 +1,12 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
-import type { Simplify, WithoutPropSuffix } from "@flex/utils";
+import type {
+  FoldSuffixInto,
+  OmitPropsWithSuffix,
+  OnlyPropsWithSuffix,
+  Simplify,
+  WithoutPropSuffix,
+} from "@flex/utils";
 import { z } from "zod";
 
 /**
@@ -59,6 +65,49 @@ async function populateParameterFields<T extends object>(
   return parsedConfig;
 }
 
+/**
+ * Removes feature flag fields from the raw configuration.
+ *
+ * @param rawConfig The raw configuration object containing feature flags.
+ * @returns The configuration object without feature flag fields.
+ */
+function removeFeatureFlags<T extends object>(
+  rawConfig: T,
+): OmitPropsWithSuffix<T, "_FEATURE_FLAG"> {
+  const nonFeatureFlagEntries = Object.entries(rawConfig).filter(
+    ([key]) => !key.endsWith("_FEATURE_FLAG"),
+  ) as Array<[string, string]>;
+
+  return Object.fromEntries(nonFeatureFlagEntries) as OmitPropsWithSuffix<
+    T,
+    "_FEATURE_FLAG"
+  >;
+}
+
+/**
+ * Extracts feature flag fields from the raw configuration, renames them by removing the _FEATURE_FLAG suffix, and returns them in a structured format.
+ *
+ * @param rawConfig The raw configuration object containing feature flags.
+ * @returns The extracted feature flags in a structured format.
+ */
+function extractFeatureFlags<T extends object>(
+  rawConfig: T,
+): OnlyPropsWithSuffix<T, "_FEATURE_FLAG"> {
+  const featureFlagEntries = Object.entries(rawConfig).filter(([key]) =>
+    key.endsWith("_FEATURE_FLAG"),
+  ) as Array<[string, string]>;
+
+  const renamedFeatureFlagEntries = featureFlagEntries.map(([key, value]) => [
+    key.replace("_FEATURE_FLAG", ""),
+    value !== "false",
+  ]);
+
+  return Object.fromEntries(renamedFeatureFlagEntries) as OnlyPropsWithSuffix<
+    T,
+    "_FEATURE_FLAG"
+  >;
+}
+
 const cachedConfig: Map<z.ZodType, unknown> = new Map();
 
 /**
@@ -68,15 +117,23 @@ const cachedConfig: Map<z.ZodType, unknown> = new Map();
  */
 export async function getConfig<T extends object>(
   validator: z.ZodType<T>,
-): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
+): Promise<
+  FoldSuffixInto<
+    WithoutPropSuffix<T, "_PARAM_NAME">,
+    "_FEATURE_FLAG",
+    "featureFlags"
+  >
+> {
   const logger = getLogger();
 
   if (cachedConfig.has(validator)) {
     logger.info("Returning cached configuration");
 
     // This is safe because we only set values of this type in the cache.
-    return cachedConfig.get(validator) as Simplify<
-      WithoutPropSuffix<T, "_PARAM_NAME">
+    return cachedConfig.get(validator) as FoldSuffixInto<
+      WithoutPropSuffix<T, "_PARAM_NAME">,
+      "_FEATURE_FLAG",
+      "featureFlags"
     >;
   }
 
@@ -84,7 +141,7 @@ export async function getConfig<T extends object>(
     "cachedConfig not found, building configuration from process.env and SSM",
   );
   const rawConfigSchemaCheck = validator.safeParse(process.env);
-
+  console.log("Raw config validation result:", rawConfigSchemaCheck);
   if (!rawConfigSchemaCheck.success) {
     const message = `Invalid raw configuration: ${JSON.stringify(z.treeifyError(rawConfigSchemaCheck.error))}`;
     logger.error(message);
@@ -92,10 +149,21 @@ export async function getConfig<T extends object>(
   }
 
   const populatedParams = await populateParameterFields(
-    rawConfigSchemaCheck.data,
+    removeFeatureFlags(rawConfigSchemaCheck.data),
   );
 
-  cachedConfig.set(validator, populatedParams);
+  const featureFlags = extractFeatureFlags(rawConfigSchemaCheck.data);
 
-  return populatedParams;
+  const finalConfig = {
+    ...populatedParams,
+    featureFlags: featureFlags,
+  } as FoldSuffixInto<
+    WithoutPropSuffix<T, "_PARAM_NAME">,
+    "_FEATURE_FLAG",
+    "featureFlags"
+  >;
+
+  cachedConfig.set(validator, finalConfig);
+
+  return finalConfig;
 }

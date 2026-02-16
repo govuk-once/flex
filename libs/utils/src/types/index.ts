@@ -10,23 +10,6 @@ export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
       : T;
 
 /**
- * Remove a specific suffix from a string type.
- */
-export type WithoutSuffix<
-  T,
-  SUFFIX extends string,
-> = T extends `${infer P}${SUFFIX}` ? P : T;
-
-/**
- * Remove a specific suffix from all keys in an object type recursively.
- */
-export type WithoutPropSuffix<T, SUFFIX extends string> = {
-  [K in keyof T as WithoutSuffix<K, SUFFIX>]: T[K] extends object
-    ? WithoutPropSuffix<T[K], SUFFIX>
-    : T[K];
-};
-
-/**
  * Simplify a type by resolving intersections and flattening mapped types.
  * This is useful for improving readability of complex types in IDEs.
  */
@@ -60,4 +43,78 @@ export type NumberUpTo<
 export type NumberBetween<From extends number, To extends number> = Exclude<
   NumberUpTo<To>,
   NumberUpTo<From>
+>;
+
+/**
+ * Remove a specific suffix from a string type.
+ */
+export type WithoutSuffix<
+  T,
+  SUFFIX extends string,
+> = T extends `${infer P}${SUFFIX}` ? P : T;
+
+/**
+ * Remove a specific suffix from all keys in an object type recursively.
+ */
+export type WithoutPropSuffix<T, SUFFIX extends string> = {
+  [K in keyof T as WithoutSuffix<K, SUFFIX>]: T[K] extends object
+    ? WithoutPropSuffix<T[K], SUFFIX>
+    : T[K];
+};
+
+/**
+ * Omit properties whose key names end with a given suffix.
+ *
+ * Example:
+ * type T = { hello: string; world_X: string };
+ * type R = OmitPropsWithSuffix<T, "_X">; // { hello: string }
+ */
+export type OmitPropsWithSuffix<T, SUFFIX extends string> = {
+  [K in keyof T as K extends string
+    ? K extends `${string}${SUFFIX}`
+      ? never
+      : K
+    : K]: T[K];
+};
+
+/**
+ * Only include properties whose key names end with a given suffix,
+ *
+ * Example:
+ * type T = { hello: string; world_X: string };
+ * type R = OnlyPropsWithSuffix<T, "_X">; // { world: string }
+ */
+export type OnlyPropsWithSuffix<T, SUFFIX extends string> = {
+  [K in keyof T as K extends string
+    ? K extends `${string}${SUFFIX}`
+      ? K
+      : never
+    : K]: T[K];
+};
+
+/**
+ * Compose a type by:
+ * 1) Removing properties whose keys end with `SUFFIX` from `T`.
+ * 2) Adding a new property named `CONTAINER` whose value is an object
+ *    containing the removed properties with `SUFFIX` stripped from their keys.
+ *
+ * Example:
+ * type T = { hello: string; world_X: string; other: number };
+ * type R = FoldSuffixInto<T, "_X", "meta">;
+ * // {
+ * //   hello: string;
+ * //   other: number;
+ * //   meta: { world: string }
+ * // }
+ */
+export type FoldSuffixInto<
+  T,
+  SUFFIX extends string,
+  CONTAINER extends string,
+> = Simplify<
+  // Keep all non-suffixed properties and replace any existing `CONTAINER` key
+  // with our constructed container (via Omit<T, CONTAINER> & ...)
+  Omit<OmitPropsWithSuffix<T, SUFFIX>, CONTAINER> & {
+    [K in CONTAINER]: WithoutPropSuffix<OnlyPropsWithSuffix<T, SUFFIX>, SUFFIX>;
+  }
 >;

@@ -45,14 +45,6 @@ export class DomainFactory extends Construct {
     const environmentFeatureFlags =
       featureFlags?.[environment] ?? featureFlags?.default ?? null;
 
-    const appConfig = environmentFeatureFlags
-      ? new AppConfigConstruct(this, `${domain}AppConfig`, {
-          environment,
-          applicationName: `${domain}-appconfig`,
-          featureFlags: environmentFeatureFlags,
-        })
-      : null;
-
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
         for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
@@ -61,7 +53,7 @@ export class DomainFactory extends Construct {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
-            appConfig,
+            environmentFeatureFlags,
           );
 
           const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
@@ -103,7 +95,7 @@ export class DomainFactory extends Construct {
   #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
-    appConfig: AppConfigConstruct | null = null,
+    featureFlags: NonNullable<IDomain["featureFlags"]>["default"] | null = null,
   ) {
     const resolvedVars: Record<string, string> = {};
     const envGrantables: (ISecret | IStringParameter)[] = [];
@@ -127,10 +119,11 @@ export class DomainFactory extends Construct {
     processMap(env, false);
     processMap(envSecret, true);
 
-    resolvedVars.APP_CONFIG_APPLICATION_ID = appConfig?.application.ref ?? "";
-    resolvedVars.APP_CONFIG_CONFIGURATION_PROFILE_ID =
-      appConfig?.configurationProfile.ref ?? "";
-    resolvedVars.APP_CONFIG_ENVIRONMENT_ID = appConfig?.environment.ref ?? "";
+    if (featureFlags) {
+      Object.entries(featureFlags).forEach(([flagKey, flagValue]) => {
+        resolvedVars[`${flagKey}_FEATURE_FLAG`] = flagValue.name;
+      });
+    }
 
     return { resolvedVars, envGrantables };
   }

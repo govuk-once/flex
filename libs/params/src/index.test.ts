@@ -4,8 +4,6 @@ import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
 
-import { getConfig } from ".";
-
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
 export const rawConfigSchema = z.looseObject({
@@ -16,9 +14,21 @@ export const rawConfigSchema = z.looseObject({
 
 getLogger({ serviceName: "config_test" });
 
+async function resetConfigModule() {
+  vi.resetModules();
+  const config = await import(".");
+  const logging = await import("@flex/logging");
+
+  logging.getLogger({ serviceName: "config_test" });
+  return config;
+}
+
+let configModule: typeof import(".");
+
 describe("Config", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    configModule = await resetConfigModule();
   });
 
   describe("getConfig", () => {
@@ -32,7 +42,7 @@ describe("Config", () => {
           // CLIENT_ID_PARAM_NAME is intentionally left blank to simulate missing variable
         });
 
-        await expect(getConfig(rawConfigSchema)).rejects.toThrow(
+        await expect(configModule.getConfig(rawConfigSchema)).rejects.toThrow(
           /Invalid raw configuration:/,
         );
       });
@@ -60,7 +70,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await getConfig(rawConfigSchema);
+      const config = await configModule.getConfig(rawConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -125,6 +135,75 @@ describe("Config", () => {
 
       expect(vi.mocked(getParametersByName).mock.calls.length).toBe(1);
       expect(secondConfig).toBe(firstConfig);
+    });
+  });
+
+  describe("feature flag handling", () => {
+    const featureFlagConfigSchema = z.object({
+      AWS_REGION: z.string().min(1),
+      USERPOOL_ID_PARAM_NAME: z.string().min(1),
+      CLIENT_ID_PARAM_NAME: z.string().min(1),
+      NEW_FEATURE_FEATURE_FLAG: z.string().min(1),
+    });
+
+    const resolvedParamValues = {
+      userpool_id_param: "us-east-1_123456789",
+      client_id_param: "example-client-id-123",
+    };
+
+    beforeEach(() => {
+      vi.resetAllMocks();
+    });
+
+    it("parses feature flags into the featureFlags property", async ({
+      env,
+    }) => {
+      env.set({
+        AWS_REGION: "us-east-1",
+        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+        CLIENT_ID_PARAM_NAME: "client_id_param",
+        NEW_FEATURE_FEATURE_FLAG: "enabled",
+        JIM: "enabled",
+      });
+
+      vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
+
+      const config = await configModule.getConfig(featureFlagConfigSchema);
+
+      expect(config).toEqual(
+        expect.objectContaining({
+          AWS_REGION: "us-east-1",
+          USERPOOL_ID: "us-east-1_123456789",
+          CLIENT_ID: "example-client-id-123",
+          featureFlags: {
+            NEW_FEATURE: true,
+          },
+        }),
+      );
+    });
+
+    it('treats "false" feature flags values as false', async ({ env }) => {
+      env.set({
+        AWS_REGION: "us-east-1",
+        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+        CLIENT_ID_PARAM_NAME: "client_id_param",
+        NEW_FEATURE_FEATURE_FLAG: "false",
+      });
+
+      vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
+
+      const config = await configModule.getConfig(featureFlagConfigSchema);
+
+      expect(config).toEqual(
+        expect.objectContaining({
+          AWS_REGION: "us-east-1",
+          USERPOOL_ID: "us-east-1_123456789",
+          CLIENT_ID: "example-client-id-123",
+          featureFlags: {
+            NEW_FEATURE: false,
+          },
+        }),
+      );
     });
   });
 });
