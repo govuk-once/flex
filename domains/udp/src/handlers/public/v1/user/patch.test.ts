@@ -52,8 +52,7 @@ describe("PATCH /user handler", () => {
       const request = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
-            notificationsConsented: true,
-            analyticsConsented: true,
+            notificationsConsented: "consented",
           }),
         }),
         context.withPairwiseId().create(),
@@ -80,33 +79,7 @@ describe("PATCH /user handler", () => {
 
       const request = await handler(
         eventWithAuthorizer.authenticated({
-          body: JSON.stringify({ notificationsConsented: true }),
-        }),
-        context.withPairwiseId().create(),
-      );
-
-      expect(request).toEqual(
-        response.ok(
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
-      );
-    });
-
-    it("allows updating analyticsConsented only", async ({
-      response,
-      eventWithAuthorizer,
-      context,
-    }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN).post(NOTIFICATIONS_PATH).reply(200, {});
-
-      const request = await handler(
-        eventWithAuthorizer.authenticated({
-          body: JSON.stringify({ analyticsConsented: false }),
+          body: JSON.stringify({ notificationsConsented: "consented" }),
         }),
         context.withPairwiseId().create(),
       );
@@ -127,20 +100,20 @@ describe("PATCH /user handler", () => {
   describe("invalid payloads", () => {
     it.for([
       {
-        body: { notificationsConsented: "yes", analyticsConsented: true },
+        body: { notificationsConsented: "yes" },
         desc: "string instead of boolean",
       },
       {
-        body: { notificationsConsented: 1, analyticsConsented: true },
+        body: { notificationsConsented: 1 },
         desc: "number instead of boolean",
       },
       {
-        body: { notificationsConsented: null, analyticsConsented: true },
+        body: { notificationsConsented: null },
         desc: "null instead of boolean",
       },
       {
         body: {},
-        desc: "missing notificationsConsented and analyticsConsented",
+        desc: "missing notificationsConsented",
       },
     ])(
       "rejects invalid payload: $desc",
@@ -167,8 +140,7 @@ describe("PATCH /user handler", () => {
         eventWithAuthorizer.authenticated({
           headers: { "CoNtEnT-TyPe": "application/json" },
           body: JSON.stringify({
-            notificationsConsented: true,
-            analyticsConsented: true,
+            notificationsConsented: "consented",
           }),
         }),
         context.withPairwiseId().create(),
@@ -203,8 +175,7 @@ describe("PATCH /user handler", () => {
         eventWithAuthorizer.authenticated(
           {
             body: JSON.stringify({
-              notificationsConsented: true,
-              analyticsConsented: true,
+              notificationsConsented: "consented",
             }),
           },
           customPairwiseId,
@@ -227,8 +198,7 @@ describe("PATCH /user handler", () => {
       const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
-            notificationsConsented: false,
-            analyticsConsented: true,
+            notificationsConsented: "not_consented",
           }),
         }),
         context.withPairwiseId().create(),
@@ -251,8 +221,7 @@ describe("PATCH /user handler", () => {
       const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
-            notificationsConsented: true,
-            analyticsConsented: true,
+            notificationsConsented: "consented",
           }),
         }),
         context.withPairwiseId().create(),
@@ -277,8 +246,7 @@ describe("PATCH /user handler", () => {
       const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
-            notificationsConsented: true,
-            analyticsConsented: true,
+            notificationsConsented: "consented",
           }),
         }),
         context.withPairwiseId().create(),
@@ -302,8 +270,7 @@ describe("PATCH /user handler", () => {
       const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
-            notificationsConsented: true,
-            analyticsConsented: true,
+            notificationsConsented: "consented",
           }),
         }),
         context.withPairwiseId().create(),

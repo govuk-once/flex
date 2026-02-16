@@ -33,7 +33,9 @@ export const handler = createLambdaHandler<
     });
 
     const body = await response.text();
-    let parsedBody: Record<string, unknown> = { message: "Access denied by private API gateway" };
+    let parsedBody: Record<string, unknown> = {
+      message: "Access denied by private API gateway",
+    };
     if (body) {
       try {
         parsedBody = JSON.parse(body) as Record<string, unknown>;

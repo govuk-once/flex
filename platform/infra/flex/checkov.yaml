@@ -5,3 +5,4 @@ skip-check:
   - CKV_AWS_158
   - CKV_AWS_173 # TODO: confirm if we need to encrypt lambda environment variables
   - CKV_AWS_68 # TODO: awaiting WAF
+  - CKV_AWS_120 # TODO: confirm if rest api caching required

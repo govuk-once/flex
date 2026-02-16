@@ -12,9 +12,10 @@ describe("Domain: Hello", () => {
 
       expect(response).toMatchObject({
         status: 403,
-      });
-      expect(response.body).toMatchObject({
-        status: 403,
+        body: JSON.stringify({
+          message: "Forbidden",
+          status: 403,
+        }),
       });
     });
   });

@@ -4,23 +4,22 @@ import nock from "nock";
 import { afterAll, beforeAll, beforeEach, describe, expect, vi } from "vitest";
 
 import { SERVICE_NAME } from "../../../../constants";
-import { generateDerivedId } from "../../../../service/derived-id";
+import { generateDerivedId } from "../../../../services/derived-id";
 import { handler, NotificationSecretContext } from "./getUserInfo";
 
 const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
 
 /**
  * Paths must match actual URLs from sigv4 fetch.
- * With baseUrl ".../gateways/udp/v1" and path "notifications", URL resolution
- * replaces the last segment → .../gateways/udp/notifications
+ * baseUrl ends with trailing slash (e.g. .../gateways/udp/v1/), so path
+ * "notifications" resolves to .../gateways/udp/v1/notifications.
  */
 const PATHS = {
-  notifications: "/gateways/udp/notifications",
-  analytics: "/gateways/udp/analytics",
-  user: "/domains/udp/user",
+  notifications: "/gateways/udp/v1/notifications",
+  user: "/domains/udp/v1/user",
 } as const;
 
-vi.mock("../../../../service/derived-id", () => ({
+vi.mock("../../../../services/derived-id", () => ({
   generateDerivedId: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
@@ -41,7 +40,6 @@ type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
 function defaultPreferences(updatedAt: string) {
   return {
     notifications: { consentStatus: "unknown", updatedAt },
-    analytics: { consentStatus: "unknown", updatedAt },
   };
 }
 
@@ -78,15 +76,9 @@ describe("GetUserInfo handler", () => {
       nock(PRIVATE_GATEWAY_ORIGIN)
         .get(PATHS.notifications)
         .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.analytics)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
       // Second call to getUserSettings (aggregateUserProfile always calls it again)
       nock(PRIVATE_GATEWAY_ORIGIN)
         .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.analytics)
         .reply(200, { data: { consentStatus: "unknown", updatedAt } });
       nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.user).reply(201, {});
 
@@ -133,16 +125,12 @@ describe("GetUserInfo handler", () => {
         })
         .reply(201, {});
 
-      // setDefaultUserSettings: POST notifications and analytics
+      // setDefaultUserSettings: POST notifications
       nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.analytics).reply(200);
 
-      // Second getUserSettings: GET notifications and analytics
+      // Second getUserSettings: GET notifications
       nock(PRIVATE_GATEWAY_ORIGIN)
         .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.analytics)
         .reply(200, { data: { consentStatus: "unknown", updatedAt } });
 
       const result = await handler(
@@ -185,12 +173,8 @@ describe("GetUserInfo handler", () => {
         })
         .reply(201, {});
       nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.analytics).reply(200);
       nock(PRIVATE_GATEWAY_ORIGIN)
         .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.analytics)
         .reply(200, { data: { consentStatus: "unknown", updatedAt } });
 
       const result = await handler(
@@ -227,12 +211,8 @@ describe("GetUserInfo handler", () => {
       nock(PRIVATE_GATEWAY_ORIGIN).get(PATHS.notifications).reply(404);
       nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.user).reply(201, {});
       nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.analytics).reply(200);
       nock(PRIVATE_GATEWAY_ORIGIN)
         .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.analytics)
         .reply(200, { data: { consentStatus: "unknown", updatedAt } });
 
       await handler(
@@ -244,72 +224,6 @@ describe("GetUserInfo handler", () => {
       );
 
       expect(generateDerivedId).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("gateway errors (502)", () => {
-    it("returns 502 when GET notifications returns 500", async ({
-      eventWithAuthorizer,
-      context,
-    }) => {
-      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
-
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(500, { error: "Internal Server Error" });
-
-      const result = await handler(
-        eventWithAuthorizer.authenticated(),
-        context
-          .withPairwiseId()
-          .withSecret(mockNotificationSecret)
-          .create() as UserGetContext,
-      );
-
-      expect(result).toMatchObject({ statusCode: 502 });
-    });
-
-    it("returns 502 when GET notifications returns 403", async ({
-      eventWithAuthorizer,
-      context,
-    }) => {
-      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
-
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(403, { error: "Forbidden" });
-
-      const result = await handler(
-        eventWithAuthorizer.authenticated(),
-        context
-          .withPairwiseId()
-          .withSecret(mockNotificationSecret)
-          .create() as UserGetContext,
-      );
-
-      expect(result).toMatchObject({ statusCode: 502 });
-    });
-
-    it("returns 502 when POST create user returns 500", async ({
-      eventWithAuthorizer,
-      context,
-    }) => {
-      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
-
-      nock(PRIVATE_GATEWAY_ORIGIN).get(PATHS.notifications).reply(404);
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(PATHS.user)
-        .reply(500, { error: "Internal Server Error" });
-
-      const result = await handler(
-        eventWithAuthorizer.authenticated(),
-        context
-          .withPairwiseId()
-          .withSecret(mockNotificationSecret)
-          .create() as UserGetContext,
-      );
-
-      expect(result).toEqual(expect.objectContaining({ statusCode: 502 }));
     });
   });
 

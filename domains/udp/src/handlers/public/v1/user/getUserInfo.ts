@@ -16,28 +16,17 @@ import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-import { aggregateUserProfile } from "../../../../service/aggregateUserProfile";
-import { generateDerivedId } from "../../../../service/derived-id";
+import { aggregateUserProfile } from "../../../../services/aggregateUserProfile";
+import { generateDerivedId } from "../../../../services/derived-id";
 
 export const configSchema = z.looseObject({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
 
-export const handlerResponseSchema = z.object({
-  notificationId: z.string(),
-  preferences: z.object({
-    notificationsConsented: z.boolean().optional(),
-    analyticsConsented: z.boolean().optional(),
-    updatedAt: z.string(),
-  }),
-});
-
 export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
-
-export type HandlerResponse = z.output<typeof handlerResponseSchema>;
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,

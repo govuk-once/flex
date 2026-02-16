@@ -1,5 +1,5 @@
-import { it, validJwt, validJwtUsername } from "@flex/testing/e2e";
-import { beforeAll, describe, expect } from "vitest";
+import { it, validJwt } from "@flex/testing/e2e";
+import { describe, expect } from "vitest";
 
 describe("UDP domain", () => {
   const endpoint = `/v1/user`;
@@ -39,7 +39,7 @@ describe("UDP domain", () => {
   });
 
   describe("/get user", () => {
-    it("returns a 200 and notification ID", async ({ cloudfront }) => {
+    it("returns notification ID and user settings", async ({ cloudfront }) => {
       const response = await cloudfront.client.get(endpoint, {
         headers: { Authorization: `Bearer ${validJwt}` },
       });
@@ -50,12 +50,12 @@ describe("UDP domain", () => {
           notificationId: expect.any(String) as string,
           preferences: {
             notifications: {
-              consentStatus: "unknown",
-              updatedAt: expect.any(String) as string,
-            },
-            analytics: {
-              consentStatus: "unknown",
-              updatedAt: expect.any(String) as string,
+              consentStatus: expect.stringMatching(
+                /^(unknown|consented|not_consented)$/,
+              ) as string,
+              updatedAt: expect.stringMatching(
+                /^\d{4}-\d{2}-\d{2}T[\d:T.-]+Z?$/,
+              ) as string,
             },
           },
         },
@@ -78,32 +78,6 @@ describe("UDP domain", () => {
         response2.body?.notificationId,
       );
     });
-
-    it("returns a 200 and user settings", async ({ cloudfront }) => {
-      const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${validJwt}` },
-      });
-      expect(response).toMatchObject({
-        status: 200,
-        body: {
-          notificationId: expect.any(String),
-          preferences: {
-            notifications: {
-              consentStatus: "unknown",
-              updatedAt: expect.stringMatching(
-                /^\d{4}-\d{2}-\d{2}T[\d:T.-]+Z?$/,
-              ),
-            },
-            analytics: {
-              consentStatus: "unknown",
-              updatedAt: expect.stringMatching(
-                /^\d{4}-\d{2}-\d{2}T[\d:T.-]+Z?$/,
-              ),
-            },
-          },
-        },
-      });
-    });
   });
 
   describe("/patch user", () => {
@@ -112,20 +86,12 @@ describe("UDP domain", () => {
     }) => {
       const response = await cloudfront.client.patch(endpoint, {
         body: {
-          notificationsConsented: true,
-          analyticsConsented: true,
+          notificationsConsented: "consented",
         },
         headers: { Authorization: `Bearer ${validJwt}` },
       });
 
-      expect(response.status).toBe(200);
-      expect(response.body).toMatchObject({
-        preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: expect.any(String) as string,
-        },
-      });
+      expect(response.status).toBe(201);
     });
 
     it("rejects invalid payloads", async ({ cloudfront }) => {

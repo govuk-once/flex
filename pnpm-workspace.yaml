@@ -2,8 +2,8 @@ packages:
   - domains/*
   - libs/*
   - platform/domains/*
+  - platform/gateways/*
   - platform/infra/*
-  - platform/internal/gateways/*
   - tests/*
 
 ignoredBuiltDependencies:

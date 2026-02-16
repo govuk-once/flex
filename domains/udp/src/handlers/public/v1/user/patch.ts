@@ -7,7 +7,7 @@ import {
   V2Authorizer,
 } from "@flex/middlewares";
 import { getConfig } from "@flex/params";
-import { jsonResponse, sigv4Fetch } from "@flex/utils";
+import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import {
@@ -17,37 +17,19 @@ import {
 import createHttpError from "http-errors";
 import { z } from "zod";
 
+import { createUdpDomainClient } from "../../../../client";
+import { CONSENT_STATUS_SCHEMA } from "../../../../schemas";
+
 const handlerRequestSchema = z
   .object({
-    notificationsConsented: z.boolean().optional(),
-    analyticsConsented: z.boolean().optional(),
+    notificationsConsented: CONSENT_STATUS_SCHEMA,
   })
-  .strict()
-  .refine(
-    (data) => {
-      return (
-        Object.values(data).filter((v) => typeof v === "boolean").length >= 1
-      );
-    },
-    {
-      message: "At least one field must be provided",
-    },
-  );
-
-export const handlerResponseSchema = z.object({
-  preferences: z.object({
-    notificationsConsented: z.boolean().optional(),
-    analyticsConsented: z.boolean().optional(),
-    updatedAt: z.string(),
-  }),
-});
+  .strict();
 
 export const configSchema = z.looseObject({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
-
-const SERVICE_NAME = "app";
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
@@ -55,6 +37,7 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId
 >(
   async (event, context) => {
+    const logger = getLogger();
     const { pairwiseId } = context;
     const parsedEvent = ApiGatewayV2Envelope.safeParse(
       event,
@@ -63,27 +46,28 @@ export const handler = createLambdaHandler<
 
     if (!parsedEvent.success) {
       const message = `Invalid parsed event: ${parsedEvent.error.message}`;
-      throw new createHttpError.BadRequest(message);
+      logger.debug({ message });
+      throw new createHttpError.BadRequest();
     }
     const config = await getConfig(configSchema);
-    const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
 
-    const response = await sigv4Fetch({
+    const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
+    const client = createUdpDomainClient({
       region: config.AWS_REGION,
-      path: `${baseUrl.pathname}/gateways/udp/v1/notifications`,
-      method: "POST",
-      baseUrl: baseUrl.toString(),
-      body: parsedEvent,
-      headers: {
-        "requesting-service": SERVICE_NAME,
-        "requesting-service-user-id": pairwiseId,
+      baseUrl,
+      pairwiseId,
+    });
+
+    const response = await client.gateway.postNotifications({
+      data: {
+        consentStatus: parsedEvent.data.notificationsConsented,
+        updatedAt: new Date().toISOString(),
       },
     });
 
     return jsonResponse(response.status, await response.json());
   },
   {
-    logLevel: "INFO",
     serviceName: "udp-patch-user-service",
     middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
   },

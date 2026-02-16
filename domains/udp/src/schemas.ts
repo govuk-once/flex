@@ -1,7 +1,15 @@
 import { z } from "zod";
 
+export enum CONSENT_STATUS {
+  UNKNOWN = "unknown",
+  CONSENTED = "consented",
+  NOT_CONSENTED = "not_consented",
+}
+
+export const CONSENT_STATUS_SCHEMA = z.enum(CONSENT_STATUS);
+
 const consentDataSchema = z.object({
-  consentStatus: z.string(),
+  consentStatus: CONSENT_STATUS_SCHEMA,
   updatedAt: z.string(),
 });
 

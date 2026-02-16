@@ -38,6 +38,7 @@ export const endpoints = defineDomain({
             PATCH: {
               type: "ISOLATED",
               entry: "handlers/public/v1/user/patch.ts",
+              timeoutSeconds: 10,
               env: {
                 FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                   "/flex-core/private-gateway/url",
@@ -60,6 +61,7 @@ export const endpoints = defineDomain({
                 FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                   "/flex-core/private-gateway/url",
               },
+              timeoutSeconds: 10,
               permissions: [
                 {
                   type: "gateway",

@@ -2,13 +2,15 @@ import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
-import { jsonResponse, sigv4Fetch } from "@flex/utils";
+import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
+
+import { createUdpDomainClient } from "../../../../client";
 
 export const handlerResponseSchema = z.object({
   notificationId: z.string(),
@@ -42,17 +44,15 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
 
       const config = await getConfig(configSchema);
 
-      const url = `${config.FLEX_PRIVATE_GATEWAY_URL}/gateways/udp`;
-
-      const response = await sigv4Fetch({
+      const client = createUdpDomainClient({
         region: config.AWS_REGION,
-        path: `${url}/v1/user`,
-        method: "POST",
-        baseUrl: url,
-        body: {
-          notificationId: parsedEvent.data.notificationId,
-          appId: parsedEvent.data.appId,
-        },
+        baseUrl: new URL(config.FLEX_PRIVATE_GATEWAY_URL),
+        pairwiseId: parsedEvent.data.appId,
+      });
+
+      const response = await client.gateway.postUser({
+        notificationId: parsedEvent.data.notificationId,
+        appId: parsedEvent.data.appId,
       });
 
       return jsonResponse(response.status, await response.json());
