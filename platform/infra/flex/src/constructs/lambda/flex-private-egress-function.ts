@@ -2,7 +2,6 @@ import {
   importSecurityGroupFromSsm,
   importVpcFromSsm,
 } from "@platform/core/outputs";
-import { Tags } from "aws-cdk-lib";
 import { SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
@@ -18,7 +17,7 @@ export class FlexPrivateEgressFunction extends Construct {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const vpc = importVpcFromSsm(this, "/flex-core/vpc");
@@ -38,11 +37,5 @@ export class FlexPrivateEgressFunction extends Construct {
         subnetType: SubnetType.PRIVATE_WITH_EGRESS,
       },
     });
-
-    if (functionProps.domain) {
-      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
-        priority: 200,
-      });
-    }
   }
 }
