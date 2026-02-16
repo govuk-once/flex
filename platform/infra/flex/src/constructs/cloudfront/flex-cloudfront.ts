@@ -182,6 +182,13 @@ export class FlexCloudfront extends Construct {
         mode: ObjectLockMode.GOVERNANCE,
         duration: Duration.days(365),
       },
+      lifecycleRules: [
+        {
+          id: "deleteLogsAfter12Months",
+          expiration: Duration.days(365),
+          noncurrentVersionExpiration: Duration.days(365),
+        },
+      ],
     });
     applyCheckovSkip(
       accessLogBucket,

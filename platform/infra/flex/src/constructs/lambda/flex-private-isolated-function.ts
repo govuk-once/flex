@@ -2,7 +2,6 @@ import {
   importSecurityGroupFromSsm,
   importVpcFromSsm,
 } from "@platform/core/outputs";
-import { Tags } from "aws-cdk-lib";
 import { SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
@@ -18,7 +17,7 @@ export class FlexPrivateIsolatedFunction extends Construct {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const vpc = importVpcFromSsm(this, "/flex-core/vpc");
@@ -53,11 +52,5 @@ export class FlexPrivateIsolatedFunction extends Construct {
     //     resources: ["arn:aws:execute-api:eu-west-2:{UDP-Account}:*/*/*/*"],
     //   }),
     // );
-
-    if (functionProps.domain) {
-      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
-        priority: 200,
-      });
-    }
   }
 }

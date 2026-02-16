@@ -1,4 +1,3 @@
-import { Tags } from "aws-cdk-lib";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -13,7 +12,7 @@ export class FlexPublicFunction extends Construct {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     this.function = new NodejsFunction(this, "Function", {
@@ -22,11 +21,5 @@ export class FlexPublicFunction extends Construct {
       ...functionProps,
       logGroup,
     });
-
-    if (functionProps.domain) {
-      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
-        priority: 200,
-      });
-    }
   }
 }
