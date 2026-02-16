@@ -1,11 +1,11 @@
 {
-  "name": "@platform/gateways/udp",
+  "name": "@platform/udp",
   "version": "1.0.0",
   "type": "module",
   "private": true,
   "scripts": {
     "tsc": "tsc --noEmit",
-    "lint": "eslint --max-warnings=0 .",
+    "lint": "eslint --max-warnings=0 --cache --cache-location .eslintcache .",
     "test": "NODE_OPTIONS=--import=nock vitest"
   },
   "dependencies": {

@@ -10,6 +10,7 @@ import { RemoteConsentResponseSchema } from "./contracts/remote";
 export interface UdpRemoteClientConfig {
   region: string;
   apiUrl: string;
+  apiKey: string;
   consumerRoleArn: string;
   externalId?: string;
 }
@@ -76,13 +77,17 @@ async function validateResponse<T>(
   }
 
   if (!response.ok) {
+    const errBody =
+      json != null && typeof json === "object"
+        ? (json as { message?: string; code?: string })
+        : null;
     return {
       ok: false,
       status: response.status,
       error: {
         status: response.status,
-        message: (json as { message?: string })?.message ?? "Request failed",
-        code: (json as { code?: string })?.code,
+        message: errBody?.message ?? "Request failed",
+        code: errBody?.code,
       },
     };
   }
@@ -126,6 +131,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
         method: "GET",
         path: path("v1/notifications"),
         headers: {
+          "x-api-key": config.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
@@ -140,6 +146,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
         path: path("v1/notifications"),
         body,
         headers: {
+          "x-api-key": config.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
@@ -152,6 +159,9 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
         method: "POST",
         path: path("v1/user"),
         body,
+        headers: {
+          "x-api-key": config.apiKey,
+        },
       }).then((res) => validateResponse(res)),
 
     /** Generic call for untyped routes (e.g. identity). Returns raw Response. */
@@ -160,7 +170,13 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
       path: string;
       body?: unknown;
       headers?: Record<string, string>;
-    }) => fetchRemote(config, options),
+    }) => fetchRemote(config, {
+      ...options,
+      headers: {
+        ...options.headers,
+        "x-api-key": config.apiKey,
+      },
+    }),
   };
 }
 

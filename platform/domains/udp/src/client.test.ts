@@ -12,7 +12,7 @@ const mockSigv4Fetch = vi.fn();
 
 vi.mock("@flex/utils", () => ({
   sigv4FetchWithCredentials: (opts: Record<string, unknown>) =>
-    mockSigv4Fetch(opts),
+    mockSigv4Fetch(opts) as Promise<Response>,
 }));
 
 describe("createUdpRemoteClient", () => {
@@ -88,16 +88,17 @@ describe("createUdpRemoteClient", () => {
       const client = createUdpRemoteClient(BASE_CONFIG);
       await client.getNotifications("pairwise-abc");
 
-      expect(mockSigv4Fetch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: "GET",
-          path: expect.stringContaining("v1/notifications"),
-          headers: {
-            "requesting-service": "app",
-            "requesting-service-user-id": "pairwise-abc",
-          },
-        }),
-      );
+      const callArgs = mockSigv4Fetch.mock.calls[0][0] as {
+        method: string;
+        path: string;
+        headers?: Record<string, string>;
+      };
+      expect(callArgs.method).toBe("GET");
+      expect(callArgs.path).toContain("v1/notifications");
+      expect(callArgs.headers).toEqual({
+        "requesting-service": "app",
+        "requesting-service-user-id": "pairwise-abc",
+      });
     });
 
     it("postNotifications passes body and headers", async () => {
@@ -110,7 +111,7 @@ describe("createUdpRemoteClient", () => {
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
           method: "POST",
-          path: expect.stringContaining("v1/notifications"),
+          path: expect.stringContaining("v1/notifications") as string,
           body,
           headers: {
             "requesting-service": "app",
@@ -128,11 +129,13 @@ describe("createUdpRemoteClient", () => {
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
           method: "POST",
-          path: expect.stringContaining("v1/user"),
+          path: expect.stringContaining("v1/user") as string,
           body,
         }),
       );
-      expect(mockSigv4Fetch.mock.calls[0][0].headers).toBeUndefined();
+      expect(
+        (mockSigv4Fetch.mock.calls[0][0] as { headers?: unknown }).headers,
+      ).toBeUndefined();
     });
 
     it("call forwards options to fetchRemote", async () => {
@@ -226,15 +229,19 @@ describe("createUdpRemoteClient", () => {
 
     it("postNotifications accept simple success message response", async () => {
       mockSigv4Fetch.mockResolvedValue(
-        new Response(
-          JSON.stringify({ message: "Entity saved successfully" }),
-          { status: 200 },
-        ),
+        new Response(JSON.stringify({ message: "Entity saved successfully" }), {
+          status: 200,
+        }),
       );
 
       const client = createUdpRemoteClient(BASE_CONFIG);
       const result = await client.postNotifications(
-        { data: { consentStatus: "consented", updatedAt: "2025-01-01T00:00:00Z" } },
+        {
+          data: {
+            consentStatus: "consented",
+            updatedAt: "2025-01-01T00:00:00Z",
+          },
+        },
         "user-1",
       );
 

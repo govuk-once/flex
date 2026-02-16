@@ -603,7 +603,7 @@ importers:
         specifier: 4.0.18
         version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  platform/gateways/udp:
+  platform/domains/udp:
     dependencies:
       '@aws-lambda-powertools/parameters':
         specifier: 2.30.2

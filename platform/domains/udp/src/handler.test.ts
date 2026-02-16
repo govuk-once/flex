@@ -10,6 +10,7 @@ const MOCK_CONSUMER_CONFIG = {
   region: "eu-west-2",
   apiAccountId: "123456789",
   apiUrl: "https://abc123.execute-api.eu-west-2.amazonaws.com/gateways/udp",
+  apiKey: "1234567890",
   consumerRoleArn: "arn:aws:iam::123456789:role/test-consumer",
 };
 
@@ -23,9 +24,7 @@ vi.mock("@flex/params", () => ({
 }));
 
 vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
-  getSecret: vi.fn(() =>
-    Promise.resolve(JSON.stringify(MOCK_CONSUMER_CONFIG)),
-  ),
+  getSecret: vi.fn(() => Promise.resolve(JSON.stringify(MOCK_CONSUMER_CONFIG))),
 }));
 
 vi.mock("@flex/utils", async (importOriginal) => {

@@ -10,7 +10,9 @@ interface IDomainEndpoints {
 }
 
 export async function loadDomainConfigs(): Promise<IDomain[]> {
-  const jiti = createJiti(import.meta.url);
+  const jiti = createJiti(import.meta.url, {
+    rebuildFsCache: true,
+  });
   const domainsRoot = `${findProjectRoot()}/domains`;
 
   const results: IDomain[] = [];

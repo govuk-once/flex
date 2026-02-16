@@ -11,7 +11,7 @@ import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
-import { getGatewayEntry } from "../utils/getEntry";
+import { getPlatformEntry } from "../utils/getEntry";
 
 function createPrivateGatewayRoute(
   path: string,
@@ -45,7 +45,7 @@ export function createServiceGateways(
   );
   const udpCmk = Key.fromKeyArn(scope, "UdpCmk", udpCmkArn.stringValue);
   const udpConnector = new FlexPrivateIsolatedFunction(scope, "UdpConnector", {
-    entry: getGatewayEntry("udp", "handler.ts"),
+    entry: getPlatformEntry("udp", "handler.ts"),
     domain: "udp",
     environment: {
       FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:

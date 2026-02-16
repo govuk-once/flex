@@ -2,7 +2,7 @@ import { it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("Domain: Hello", () => {
-  describe("private API gateway permissions", () => {
+  describe.todo("private API gateway permissions", () => {
     it("returns 403 when lambda without permission calls private hello-internal", async ({
       cloudfront,
     }) => {

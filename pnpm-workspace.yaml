@@ -2,7 +2,6 @@ packages:
   - domains/*
   - libs/*
   - platform/domains/*
-  - platform/gateways/*
   - platform/infra/*
   - tests/*
 

@@ -4,13 +4,6 @@ export type UdpRemoteOperation = keyof UdpRemoteContract;
 
 // Canonical route mapping — maps incoming request to remote path + operation
 export const REMOTE_ROUTES = {
-  // identity routes
-  "GET:v1/identity/app/:appId": {
-    remotePath: "/v1/identity/app",
-    method: "GET",
-    requiresHeaders: false,
-    operation: "proxy" as const, // untyped route — pass-through
-  },
   "POST:v1/user": {
     remotePath: "/v1/user",
     method: "POST",

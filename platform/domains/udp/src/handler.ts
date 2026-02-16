@@ -20,6 +20,7 @@ const consumerConfigSchema = z.object({
   region: z.string().min(1),
   apiAccountId: z.string().min(1),
   apiUrl: z.string().min(1),
+  apiKey: z.string().min(1),
   consumerRoleArn: z.string().min(1),
   externalId: z.string().optional(),
 });
@@ -90,21 +91,25 @@ const handler = createLambdaHandler<
 
     const body = parseRequestBody(event.body);
     const requestingServiceUserId =
-      event.headers?.["requesting-service-user-id"] ?? "";
+      event.headers["requesting-service-user-id"] || "";
 
     const remoteClient = createUdpRemoteClient({
       region: consumerConfig.region,
       apiUrl: consumerConfig.apiUrl,
+      apiKey: consumerConfig.apiKey,
       consumerRoleArn: consumerConfig.consumerRoleArn,
       externalId: consumerConfig.externalId,
     });
 
     const result = await dispatch(
+      logger,
       remoteClient,
       mapping,
       body,
       requestingServiceUserId,
     );
+
+    logger.debug("Result", { result });
 
     if ("rawResponse" in result) {
       const responseBody = await parseResponseBody(result.rawResponse);
@@ -114,16 +119,19 @@ const handler = createLambdaHandler<
     return toHttpResponse(result);
   },
   {
+    logLevel: "DEBUG",
     serviceName: "udp-service-gateway",
   },
 );
 
 async function dispatch(
+  logger: ReturnType<typeof getLogger>,
   client: ReturnType<typeof createUdpRemoteClient>,
   mapping: RemoteRouteMapping,
   body: unknown,
   requestingServiceUserId: string,
 ): Promise<ApiResult<unknown> | { rawResponse: Response }> {
+  logger.debug("Dispatching", { mapping, body, requestingServiceUserId });
   if (mapping.operation === "proxy") {
     const rawResponse = await client.call({
       method: mapping.method,
@@ -151,8 +159,10 @@ async function dispatch(
       return await client.postUser(
         body as { notificationId: string; appId: string },
       );
-    default:
-      throw new Error(`Unknown operation: ${mapping.operation}`);
+    default: {
+      const _exhaustive: never = mapping.operation;
+      throw new Error(`Unknown operation: ${String(_exhaustive)}`);
+    }
   }
 }
 
