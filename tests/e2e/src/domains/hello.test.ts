@@ -16,7 +16,7 @@ describe("Domain: Hello", () => {
       expect(response).toMatchObject({
         status: 401,
         statusText: "Unauthorized",
-        body: "Unauthorized: no authorization header provided",
+        body: { message: "Unauthorized" },
       });
     },
   );
@@ -37,7 +37,7 @@ describe("Domain: Hello", () => {
       expect(response).toMatchObject({
         status: 401,
         statusText: "Unauthorized",
-        body: "Unauthorized: authentication header invalid",
+        body: { message: "Unauthorized" },
       });
     },
   );

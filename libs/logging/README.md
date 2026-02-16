@@ -101,7 +101,7 @@ This middleware is applied automatically by `createLambdaHandler` from `@flex/ha
 
 - [@flex/handlers](/libs/handlers/README.md#with-logging)
 - [Auth Handler](/platform/domains/auth/README.md)
-- [Fail Fast Handler](/platform/domains/fail-fast/README.md)
+- [Viewer Request Handler](/platform/domains/viewer-request-cff/README.md)
 
 **External:**
 

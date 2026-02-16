@@ -60,18 +60,18 @@ new FlexPlatformStack(app, getStackName("FlexPlatform"));
 
 ### Resources
 
-| Resource          | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| HTTP API          | API Gateway V2 with CORS and Lambda authorizer           |
-| CloudFront        | Distribution with fail-fast behaviour via `FlexFailFast` |
-| Lambda Authorizer | JWT validation using `FlexAuthentication`                |
-| Domain Routes     | Hello domain (public, private, isolated) and UDP domain  |
+| Resource          | Description                                                         |
+| ----------------- | ------------------------------------------------------------------- |
+| REST API          | API Gateway V2 with CORS and Lambda authorizer                      |
+| CloudFront        | Distribution with viewer request behaviour via `viewer-request-cff` |
+| Lambda Authorizer | JWT validation using `FlexAuthentication`                           |
+| Domain Routes     | Hello domain (public, private, isolated) and UDP domain             |
 
 ### Outputs
 
 | Output       | Description              | Used By                       |
 | ------------ | ------------------------ | ----------------------------- |
-| `HttpApiUrl` | API Gateway endpoint URL | E2E tests, external clients   |
+| `RestApiUrl` | API Gateway endpoint URL | E2E tests, external clients   |
 | `FlexApiUrl` | API URL                  | E2E tests, production traffic |
 
 ---
@@ -95,7 +95,6 @@ These constructs are used internally by the stack and generally don't need direc
 | `FlexAuthentication`         | Lambda authorizer with Cognito validation           | [View](./src/constructs/flex-authentication.ts)          |
 | `FlexCloudfrontDistribution` | CloudFront distribution wrapping API Gateway origin | [View](./src/constructs/flex-cloudfront-distribution.ts) |
 | `FlexCloudfrontFunction`     | CloudFront function for edge request validation     | [View](./src/constructs/flex-cloudfront-function.ts)     |
-| `FlexFailFast`               | CloudFront distribution with structural validation  | [View](./src/constructs/flex-fail-fast.ts)               |
 | `UdpDomain`                  | UDP domain routes construct                         | [View](./src/constructs/udp.ts)                          |
 
 ### `FlexPublicFunction`

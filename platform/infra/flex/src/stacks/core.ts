@@ -1,24 +1,62 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
-import { HttpApi } from "aws-cdk-lib/aws-apigatewayv2";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import {
+  AwsCustomResource,
+  AwsCustomResourcePolicy,
+  PhysicalResourceId,
+} from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
-import { FlexHttpApi } from "../constructs/api-gateway/flex-http-api";
+import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 
 interface FlexPlatformStackProps {
-  certArn: string;
+  certArnParamName: string;
   domainName: string;
   subdomainName?: string;
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
-  public readonly httpApi: HttpApi;
+  public readonly restApi: RestApi;
+
+  #getCertArn(certArnParamName: string) {
+    const ssmCall = {
+      service: "SSM",
+      action: "getParameter",
+      parameters: { Name: certArnParamName },
+      region: "us-east-1",
+      physicalResourceId: PhysicalResourceId.of("cert-arn-lookup"),
+    };
+
+    const certLookup = new AwsCustomResource(this, "GetCertArn", {
+      onCreate: ssmCall,
+      onUpdate: ssmCall,
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["ssm:GetParameter"],
+          resources: [
+            `arn:aws:ssm:us-east-1:${this.account}:parameter${certArnParamName}`,
+          ],
+        }),
+      ]),
+    });
+
+    const cert = Certificate.fromCertificateArn(
+      this,
+      "Cert",
+      certLookup.getResponseField("Parameter.Value"),
+    );
+
+    return cert.certificateArn;
+  }
 
   constructor(
     scope: Construct,
     id: string,
-    { certArn, domainName, subdomainName }: FlexPlatformStackProps,
+    { certArnParamName, domainName, subdomainName }: FlexPlatformStackProps,
   ) {
     super(scope, id, {
       tags: {
@@ -28,17 +66,17 @@ export class FlexPlatformStack extends GovUkOnceStack {
         ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
-      crossRegionReferences: true,
     });
 
-    const { httpApi } = new FlexHttpApi(this, "HttpApi");
-    this.httpApi = httpApi;
+    const { restApi } = new FlexRestApi(this, "RestApi");
+    this.restApi = restApi;
+    const certArn = this.#getCertArn(certArnParamName);
 
     new FlexCloudfront(this, "Cloudfront", {
       certArn,
       domainName,
       subdomainName,
-      httpApi,
+      restApi,
     });
 
     new CfnOutput(this, "FlexApiUrl", {

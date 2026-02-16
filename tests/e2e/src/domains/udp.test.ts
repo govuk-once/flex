@@ -19,7 +19,7 @@ describe("UDP domain", () => {
     expect(response).toMatchObject({
       status: 401,
       statusText: "Unauthorized",
-      body: "Unauthorized: no authorization header provided",
+      body: { message: "Unauthorized" },
     });
   });
 
@@ -36,7 +36,7 @@ describe("UDP domain", () => {
     expect(response).toMatchObject({
       status: 401,
       statusText: "Unauthorized",
-      body: "Unauthorized: authentication header invalid",
+      body: { message: "Unauthorized" },
     });
   });
 

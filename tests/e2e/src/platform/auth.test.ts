@@ -4,7 +4,7 @@ import { describe, expect } from "vitest";
 describe("authentication", () => {
   const endpoint = `/v1/hello-public`;
 
-  describe("CloudFront fail-fast", () => {
+  describe("CloudFront viewer-request", () => {
     it("rejects request where authorization header is missing", async ({
       cloudfront,
     }) => {
@@ -14,7 +14,7 @@ describe("authentication", () => {
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       expect(result).toMatchObject({
         status: 401,
-        body: "Unauthorized: no authorization header provided",
+        body: { message: "Unauthorized" },
       });
     });
 
@@ -29,7 +29,7 @@ describe("authentication", () => {
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       expect(result).toMatchObject({
         status: 401,
-        body: "Unauthorized: authentication header invalid",
+        body: { message: "Unauthorized" },
       });
     });
 
@@ -43,7 +43,7 @@ describe("authentication", () => {
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       expect(result).toMatchObject({
         status: 401,
-        body: "Unauthorized: authentication header invalid",
+        body: { message: "Unauthorized" },
       });
     });
 
@@ -57,7 +57,7 @@ describe("authentication", () => {
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       expect(result).toMatchObject({
         status: 401,
-        body: "Unauthorized: token invalid",
+        body: { message: "Unauthorized" },
       });
     });
   });

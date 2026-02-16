@@ -1,13 +1,16 @@
 import { importFlexParameter } from "@platform/core/outputs";
-import { Duration } from "aws-cdk-lib";
-import { HttpLambdaAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import {
+  IAuthorizer,
+  IdentitySource,
+  TokenAuthorizer,
+} from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
 
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
 export class FlexAuthentication extends Construct {
-  public readonly authorizer: HttpLambdaAuthorizer;
+  public readonly authorizer: IAuthorizer;
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
@@ -30,13 +33,10 @@ export class FlexAuthentication extends Construct {
     userPoolId.grantRead(authorizerFunction.function);
     clientId.grantRead(authorizerFunction.function);
 
-    this.authorizer = new HttpLambdaAuthorizer(
-      "Authorizer",
-      authorizerFunction.function,
-      {
-        resultsCacheTtl: Duration.minutes(1), // see decision
-      },
-    );
+    this.authorizer = new TokenAuthorizer(this, "LambdaAuthorizer", {
+      handler: authorizerFunction.function,
+      identitySource: IdentitySource.header("Authorization"),
+    });
   }
 
   private getAuthConfig() {

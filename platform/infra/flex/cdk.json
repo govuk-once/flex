@@ -1,7 +1,11 @@
 {
   "app": "tsx src/app.ts",
   "watch": {
-    "include": ["../../../domains/*/src", "src"],
+    "include": [
+      "../../../domains/*/src",
+      "../../../platform/domains/*/src",
+      "src"
+    ],
     "exclude": ["node_modules", "cdk.out"]
   },
   "quiet": true,

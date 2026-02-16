@@ -6,12 +6,12 @@ Guide for developers maintaining FLEX platform infrastructure and shared librari
 
 ## Overview
 
-| Area                     | Description                                                |
-| ------------------------ | ---------------------------------------------------------- |
-| Packages                 | Shared utilities consumed by developers working on FLEX    |
-| Platform Domain Handlers | Platform domain functions (Authentication, fail-fast, etc) |
-| Platform Infrastructure  | CDK stacks, constructs and deployment configuration        |
-| Developer Experience     | Tooling, utilities and documentation                       |
+| Area                     | Description                                                         |
+| ------------------------ | ------------------------------------------------------------------- |
+| Packages                 | Shared utilities consumed by developers working on FLEX             |
+| Platform Domain Handlers | Platform domain functions (Authentication, viewer-request-cff, etc) |
+| Platform Infrastructure  | CDK stacks, constructs and deployment configuration                 |
+| Developer Experience     | Tooling, utilities and documentation                                |
 
 ---
 
