@@ -23,6 +23,7 @@ import type { Construct } from "constructs";
 import { PrivateDomainFactory } from "../constructs/privateDomainFactory";
 import { exportFlexPlatformParam } from "../outputs";
 import { createServiceGateways } from "../service-gateway/service-gateway";
+import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
@@ -136,6 +137,11 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
         vpcEndpoints: [apiGatewayEndpoint],
       },
     });
+    applyCheckovSkip(
+      privateGateway.deploymentStage,
+      "CKV_AWS_120",
+      "Disabled for now and will renable when caching strategy is defined",
+    );
 
     privateGateway.grantInvokeFromVpcEndpointsOnly([apiGatewayEndpoint]);
 
