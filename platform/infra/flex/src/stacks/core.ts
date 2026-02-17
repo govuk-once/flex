@@ -41,9 +41,6 @@ export class FlexPlatformStack extends GovUkOnceStack {
       httpApi,
     });
 
-    new CfnOutput(this, "CloudfrontDistributionUrl", {
-      value: `https://${distribution.distribution.distributionDomainName}`,
-    });
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });

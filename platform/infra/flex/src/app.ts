@@ -6,8 +6,7 @@ import { FlexPlatformStack } from "./stacks/core";
 import { FlexDomainStack } from "./stacks/domain";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
-import { FlexPrivateDomainStack } from "./privateDomainStack";
-import { FlexPrivateGatewayStack } from "./serviceGatewayStack";
+import { FlexPrivateGatewayStack } from "./stacks/serviceGateway";
 
 const app = new cdk.App();
 
@@ -24,30 +23,23 @@ const { httpApi } = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
   subdomainName,
 });
 
-/**
- * Step 2: Dynamically create CloudFormation stack per domain (Lambdas only)
- */
 const flexDomains = await getDomainConfigs();
-flexDomains.forEach((domain) => {
-  new FlexDomainStack(app, getStackName(domain.domain), { domain, httpApi });
-});
 
-/**
- * Step 3: Create private gateway stack (depends on domain stacks)
- * This wires private routes to RestApi and grants IAM permissions
- */
 const flexPrivateGatewayStack = new FlexPrivateGatewayStack(
   app,
   getStackName("FlexPrivateGateway"),
   { domains: flexDomains, httpApi },
 );
 
+
 flexDomains.forEach((domain) => {
-    new FlexPrivateDomainStack(
-      app,
-      getStackName(`${domain.domain}Private`),
-      domain,
-      httpApi,
-      flexPrivateGatewayStack.domainsResource,
-    );
+  const stack = new FlexDomainStack(app, getStackName(domain.domain), {
+    domain,
+    httpApi,
+    domainsResource: flexPrivateGatewayStack.domainsResource,
+  });
+
+  if (domain.public) {
+    stack.processRoutes(domain.public);
+  }
 });

@@ -19,9 +19,9 @@ import {
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
-import { PrivateDomainFactory } from "./constructs/privateDomainFactory";
-import { exportFlexPlatformParam } from "./outputs";
-import { createServiceGateways } from "./service-gateway/service-gateway";
+import { PrivateDomainFactory } from "../constructs/privateDomainFactory";
+import { exportFlexPlatformParam } from "../outputs";
+import { createServiceGateways } from "../service-gateway/service-gateway";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
@@ -72,9 +72,11 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
         const domainFactory = new PrivateDomainFactory(
           this,
           `${domainProps.domain}PrivateDomain`,
-          domainProps.domain,
-          props.httpApi,
-          domainsResource,
+          {
+            domain: domainProps.domain,
+            httpApi: props.httpApi,
+            domainsResource,
+          },
         );
         domainFactory.processRoutes(domainProps.private);
       }

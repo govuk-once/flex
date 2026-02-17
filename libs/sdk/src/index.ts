@@ -39,7 +39,7 @@ const versionSchema = z.object({
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),
 });
 
-const domainSchema = z.object({
+export const domainSchema = z.object({
   domain: z.string(),
   owner: z.string().optional(),
   public: versionSchema.optional(),
