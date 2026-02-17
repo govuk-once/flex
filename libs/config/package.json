@@ -6,7 +6,8 @@
   "exports": {
     "./eslint": "./src/eslint.mjs",
     "./tsconfig.json": "./src/tsconfig.json",
-    "./vitest": "./src/vitest.ts"
+    "./vitest": "./src/vitest.ts",
+    "./vitestE2E": "./src/vitest.e2e.ts"
   },
   "scripts": {
     "lint": "eslint --max-warnings=0 ."
@@ -33,7 +34,10 @@
     "typescript-eslint": "8.54.0"
   },
   "devDependencies": {
+    "@flex/testing": "workspace:*",
+    "@flex/utils": "workspace:*",
     "@types/node": "25.2.2",
+    "dotenv": "17.2.4",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

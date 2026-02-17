@@ -6,7 +6,8 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest --passWithNoTests"
+    "test": "vitest src --passWithNoTests",
+    "test:e2e": "vitest tests run -c vitest.config.e2e.ts"
   },
   "dependencies": {
     "@flex/handlers": "workspace:*",

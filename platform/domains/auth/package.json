@@ -6,7 +6,8 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "NODE_OPTIONS=--import=nock vitest --passWithNoTests"
+    "test": "NODE_OPTIONS=--import=nock vitest src --passWithNoTests",
+    "test:e2e": "vitest tests run -c vitest.config.e2e.ts"
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.30.2",

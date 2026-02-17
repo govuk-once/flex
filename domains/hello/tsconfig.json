@@ -1,4 +1,10 @@
 {
   "extends": "@flex/config/tsconfig.json",
-  "include": ["src/**/*.ts", "vitest.config.ts", "domain.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "vitest.config.e2e.ts",
+    "domain.config.ts"
+  ]
 }

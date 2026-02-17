@@ -222,9 +222,18 @@ importers:
         specifier: 8.54.0
         version: 8.54.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
     devDependencies:
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../testing
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@types/node':
         specifier: 25.2.2
         version: 25.2.2
+      dotenv:
+        specifier: 17.2.4
+        version: 17.2.4
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
