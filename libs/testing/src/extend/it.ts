@@ -24,7 +24,7 @@ interface Fixtures {
   };
   event: ReturnType<typeof createEvent>;
   eventWithAuthorizer: ReturnType<typeof createEventWithAuthorizer>;
-  internalEvent: ReturnType<typeof createRestApiEvent>;
+  privateGatewayEvent: ReturnType<typeof createRestApiEvent>;
   middy: ReturnType<typeof createMiddyRequest>;
   redis: {
     client: {
@@ -84,7 +84,7 @@ export const it = vitestIt.extend<Fixtures>({
   ],
   event: async ({}, use) => use(createEvent()),
   eventWithAuthorizer: async ({}, use) => use(createEventWithAuthorizer()),
-  internalEvent: async ({}, use) => use(createRestApiEvent()),
+  privateGatewayEvent: async ({}, use) => use(createRestApiEvent()),
   middy: async ({}, use) => use(createMiddyRequest()),
   redis: [
     async ({}, use) => {

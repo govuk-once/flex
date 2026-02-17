@@ -28,7 +28,7 @@ describe("post handler", () => {
   describe("successful user creation", () => {
     it("returns 201 when user is created successfully", async ({
       response,
-      internalEvent,
+      privateGatewayEvent,
       context,
     }) => {
       nock(PRIVATE_GATEWAY_ORIGIN)
@@ -39,7 +39,7 @@ describe("post handler", () => {
         .reply(201, {});
 
       const result = await handler(
-        internalEvent.post("/user", {
+        privateGatewayEvent.post("/user", {
           body: {
             notificationId: "test-notification-id",
             appId: "test-app-id",
@@ -85,9 +85,9 @@ describe("post handler", () => {
       },
     ])(
       "rejects invalid payload: $desc",
-      async ({ body }, { internalEvent, context }) => {
+      async ({ body }, { privateGatewayEvent, context }) => {
         const result = await handler(
-          internalEvent.post("/user", { body }),
+          privateGatewayEvent.post("/user", { body }),
           context.withPairwiseId().create(),
         );
 
@@ -99,7 +99,7 @@ describe("post handler", () => {
   describe("API errors", () => {
     it("returns 500 when API returns non-OK", async ({
       response,
-      internalEvent,
+      privateGatewayEvent,
       context,
     }) => {
       nock(PRIVATE_GATEWAY_ORIGIN)
@@ -107,7 +107,7 @@ describe("post handler", () => {
         .reply(500, { message: "Internal Server Error" });
 
       const result = await handler(
-        internalEvent.post("/user", {
+        privateGatewayEvent.post("/user", {
           body: {
             notificationId: "test-notification-id",
             appId: "test-app-id",

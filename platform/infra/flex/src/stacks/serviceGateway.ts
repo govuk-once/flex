@@ -1,6 +1,7 @@
 import { IDomain } from "@flex/sdk";
 import { importInterfaceVpcEndpointFromSsm } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { CfnOutput } from "aws-cdk-lib";
 import {
   AccessLogFormat,
   EndpointType,
@@ -141,11 +142,17 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
     const domainsResource = privateGateway.root.addResource("domains");
     const gatewaysResource = privateGateway.root.addResource("gateways");
 
+    const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
     exportFlexPlatformParam(
       scope,
       "/flex-core/private-gateway/url",
-      privateGateway.url.replace(/\/$/, ""), // remove trailing slash
+      privateGatewayUrl,
     );
+
+    new CfnOutput(scope, "PrivateGatewayUrl", {
+      value: privateGatewayUrl,
+      description: "Private API Gateway URL (only reachable from within VPC)",
+    });
 
     return {
       privateGateway,
