@@ -7,7 +7,7 @@ import {
   importFlexParameter,
   importFlexSecret,
 } from "@platform/core/outputs";
-import { getEnvConfig } from "@platform/gov-uk-once";
+import { getEnvConfig, GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   HttpApi,
   HttpMethod,
@@ -19,26 +19,39 @@ import { IKey } from "aws-cdk-lib/aws-kms";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
-import { Construct } from "constructs";
+import type { Construct } from "constructs";
 
-import { getEntry } from "../utils/getEntry";
-import { AppConfigConstruct } from "./appConfig/appconfig-construct";
-import { FlexPrivateEgressFunction } from "./lambda/flex-private-egress-function";
-import { FlexPrivateIsolatedFunction } from "./lambda/flex-private-isolated-function";
-import { FlexPublicFunction } from "./lambda/flex-public-function";
+import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
+import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
+import { getDomainEntry } from "../utils/getEntry";
 
-export class DomainFactory extends Construct {
+interface FlexDomainStackProps {
+  domain: IDomain;
+  httpApi: HttpApi;
+}
+
+export class FlexDomainStack extends GovUkOnceStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
   constructor(
     scope: Construct,
     id: string,
-    domainConfig: IDomain,
-    httpApi: HttpApi,
+    {
+      domain: { domain, owner, versions, featureFlags },
+      httpApi,
+    }: FlexDomainStackProps,
   ) {
-    super(scope, id);
-    const { versions, domain, featureFlags } = domainConfig;
+    super(scope, id, {
+      tags: {
+        Product: "GOV.UK",
+        System: "FLEX",
+        Owner: owner ?? "N/A",
+        ResourceOwner: domain,
+        Source: "https://github.com/govuk-once/flex",
+      },
+    });
 
     const { environment } = getEnvConfig();
 
@@ -165,7 +178,7 @@ export class DomainFactory extends Construct {
 
     const props = {
       domain,
-      entry: getEntry(domain, entry),
+      entry: getDomainEntry(domain, entry),
       environment,
     };
 
@@ -196,7 +209,7 @@ export class DomainFactory extends Construct {
     const integrationId = `${domain}-${version}-${method}-${cleanPathId}`;
 
     new HttpRoute(this, `Route-${integrationId}`, {
-      httpApi: httpApi,
+      httpApi,
       routeKey: HttpRouteKey.with(fullPath, method),
       integration: new HttpLambdaIntegration(integrationId, handler),
     });

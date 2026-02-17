@@ -6,17 +6,19 @@ import {
 import { HostedZone } from "aws-cdk-lib/aws-route53";
 import { Construct } from "constructs";
 
-interface IFlexCertStackProps {
-  domainConfig: {
-    prefix?: string;
-    domainName: string;
-  };
+interface FlexCertStackProps {
+  domainName: string;
+  subdomainName?: string;
 }
 
 export class FlexCertStack extends GovUkOnceStack {
   certArn: string;
 
-  constructor(scope: Construct, id: string, props: IFlexCertStackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    { domainName, subdomainName }: FlexCertStackProps,
+  ) {
     super(scope, id, {
       crossRegionReferences: true,
       tags: {
@@ -30,20 +32,13 @@ export class FlexCertStack extends GovUkOnceStack {
         region: "us-east-1",
       },
     });
-    const { domainConfig } = props;
 
     const hostedZone = HostedZone.fromLookup(this, "HostedZone", {
-      domainName: domainConfig.domainName,
+      domainName,
     });
 
-    let subdomain: string | undefined;
-    if (domainConfig.prefix) {
-      subdomain = `${domainConfig.prefix}.${domainConfig.domainName}`;
-    }
-
     this.certArn = new Certificate(this, "FlexCert", {
-      domainName: domainConfig.domainName,
-      subjectAlternativeNames: subdomain ? [subdomain] : undefined,
+      domainName: subdomainName ?? domainName,
       validation: CertificateValidation.fromDns(hostedZone),
     }).certificateArn;
   }

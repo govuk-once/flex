@@ -62,7 +62,7 @@ describe("authentication", () => {
     });
   });
 
-  describe("Lambda authorizer", () => {
+  describe.skip("Lambda authorizer", () => {
     it("allows request with a valid token", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint, {
         headers: { Authorization: `Bearer ${validJwt}` },

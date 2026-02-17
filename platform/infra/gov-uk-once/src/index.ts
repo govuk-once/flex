@@ -13,6 +13,7 @@ interface TagOptions {
   readonly Exposure?: string;
   readonly DataClassification?: string;
   readonly CostCentre?: string;
+  // readonly Stage: string; Added automatically
   // readonly Environment: string; Added automatically
 }
 
@@ -65,10 +66,11 @@ export function getStackName(stack: string): string {
 }
 
 export class GovUkOnceStack extends cdk.Stack {
-  public readonly stage: string;
+  private addStackTags = (tags: TagOptions) => {
+    const { environment, stage } = getEnvConfig();
 
-  private addStackTags = (tags: TagOptions, environment: Environment) => {
     cdk.Tags.of(this).add("Environment", environment, { priority: 100 });
+    cdk.Tags.of(this).add("Stage", stage, { priority: 100 });
 
     Object.entries(tags).forEach(([k, v]) => {
       if (typeof v === "string") {
@@ -92,10 +94,6 @@ export class GovUkOnceStack extends cdk.Stack {
       },
     });
 
-    const { environment, stage } = getEnvConfig();
-
-    this.stage = stage;
-
-    this.addStackTags(tags, environment);
+    this.addStackTags(tags);
   }
 }

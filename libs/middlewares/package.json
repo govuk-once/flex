@@ -12,7 +12,7 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "3.980.0",
+    "@aws-sdk/client-secrets-manager": "3.985.0",
     "@middy/core": "7.0.2",
     "@middy/secrets-manager": "7.0.2"
   },

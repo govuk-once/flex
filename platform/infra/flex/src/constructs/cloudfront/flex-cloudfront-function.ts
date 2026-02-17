@@ -17,48 +17,32 @@ export class FlexCloudfrontFunction extends Construct {
   ) {
     super(scope, id);
 
-    const supportedV1 = {
-      // Note: The const and let statements are not supported.
-      "const-and-let": false,
-      // The ES 7 exponentiation operator (**) is supported.
-      "exponent-operator": true,
-      // ES 6 template literals are supported: multiline strings, expression interpolation, and nesting templates.
-      "template-literal": true,
-      // ES 6 arrow functions are supported, and ES 6 rest parameter syntax is supported.
-      arrow: true,
-      "rest-argument": true,
-      // ES 9 named capture groups are supported.
-      "regexp-named-capture-groups": true,
-    };
-
-    const supportedV2 = {
-      ...supportedV1,
-      // Const and let statements are supported in v2.
-      "const-and-let": true,
-      // ES 6 await expressions are supported in v2.
-      "async-await": true,
-    };
-
     const functionSourcePath = props.functionSourcePath;
 
     const buildResult = esbuild.buildSync({
       entryPoints: [functionSourcePath],
-      // If identifiers are minified `handler` will be renamed, and will break the function
-      minifyIdentifiers: false,
+      format: "esm",
+      target: "es5",
 
+      // If identifiers are minified `handler` will be renamed, and will break the function
       minify: false,
+      minifyIdentifiers: false,
       minifyWhitespace: true,
       minifySyntax: true,
 
       // Makes build output is available in outputFiles
       write: false,
 
-      format: "esm",
-      target: "es5",
-      // CloudFront Functions run on a platform that is neither 'node' or 'browser', so configuring your code to build for them is pointless
-      // platform: "neutral",
-
-      supported: supportedV2,
+      // https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/functions-javascript-runtime-features.html
+      supported: {
+        "const-and-let": true,
+        "exponent-operator": true,
+        "template-literal": true,
+        arrow: true,
+        "rest-argument": true,
+        "regexp-named-capture-groups": true,
+        "async-await": true,
+      },
     });
 
     if (buildResult.errors.length > 0 || !buildResult.outputFiles[0]) {
@@ -69,9 +53,9 @@ export class FlexCloudfrontFunction extends Construct {
     // Post-process to extract handler from ES module and expose as top-level function
     const finalCode = this.postProcessCloudFrontFunctionCode(bundledCode);
 
-    this.function = new Function(this, "StructuralCheckFunction", {
+    this.function = new Function(this, "CloudFrontFunction", {
       code: FunctionCode.fromInline(finalCode),
-      comment: "Flex Platform CloudFront Function for Structural Checks",
+      comment: "Flex Platform CloudFront Function",
       runtime: cloudfront.FunctionRuntime.JS_2_0,
     });
   }
