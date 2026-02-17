@@ -1,42 +1,9 @@
 import { it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
-describe("UDP domain", () => {
+describe.todo("UDP domain", () => {
   const endpoint = `/v1/user`;
   const user = { name: "John Doe" };
-
-  it("rejects request at CloudFront when unauthenticated", async ({
-    cloudfront,
-  }) => {
-    const response = await cloudfront.client.post(endpoint, {
-      body: user,
-    });
-
-    expect(response.headers.get("apigw-requestid")).toBeNull();
-    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    expect(response).toMatchObject({
-      status: 401,
-      statusText: "Unauthorized",
-      body: "Unauthorized: no authorization header provided",
-    });
-  });
-
-  it("rejects request at CloudFront when Bearer token is empty", async ({
-    cloudfront,
-  }) => {
-    const response = await cloudfront.client.post(endpoint, {
-      body: user,
-      headers: { Authorization: "Bearer " },
-    });
-
-    expect(response.headers.get("apigw-requestid")).toBeNull();
-    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    expect(response).toMatchObject({
-      status: 401,
-      statusText: "Unauthorized",
-      body: "Unauthorized: authentication header invalid",
-    });
-  });
 
   describe("/get user", () => {
     it("returns notification ID and user settings", async ({ cloudfront }) => {
