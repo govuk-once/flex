@@ -39,7 +39,7 @@ export const REMOTE_ROUTES = {
   },
 } as const;
 
-export type RouteOperation = UdpRemoteOperation | "proxy";
+export type RouteOperation = UdpRemoteOperation;
 
 export type RemoteRouteMapping = {
   operation: RouteOperation;

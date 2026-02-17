@@ -104,4 +104,47 @@ describe("UDP connector handler", () => {
       ),
     );
   });
+
+  it("returns 400 when requesting-service-user-id is missing for routes that require it", async ({
+    response,
+    context,
+  }) => {
+    const event = {
+      ...baseEvent,
+      httpMethod: "GET",
+      pathParameters: { proxy: "v1/notifications" },
+      headers: {},
+      body: null,
+    };
+
+    const result = await handler(
+      event as unknown as APIGatewayProxyEvent,
+      context.create(),
+    );
+
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body ?? "{}")).toMatchObject({
+      message: "requesting-service-user-id header is required for this route",
+    });
+  });
+
+  it("accepts requesting-service-user-id with different header casing", async ({
+    response,
+    context,
+  }) => {
+    const event = {
+      ...baseEvent,
+      httpMethod: "GET",
+      pathParameters: { proxy: "v1/notifications" },
+      headers: { "Requesting-Service-User-Id": "pairwise-123" },
+      body: null,
+    };
+
+    const result = await handler(
+      event as unknown as APIGatewayProxyEvent,
+      context.create(),
+    );
+
+    expect(result.statusCode).toBe(200);
+  });
 });

@@ -1,8 +1,6 @@
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
-import { jsonResponse, parseResponseBody } from "@flex/utils";
 import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import status from "http-status";
 import { z } from "zod";
@@ -10,32 +8,15 @@ import { z } from "zod";
 import { type ApiResult, createUdpRemoteClient } from "./client";
 import type { RemoteRouteMapping } from "./routes";
 import { matchRemoteRoute } from "./routes";
+import { toHttpResponse } from "./utils/toHttpResponse";
+import { getHeader } from "./utils/getHeader";
+import { getConsumerConfig } from "./utils/getConsumerConfig";
+import { jsonResponse } from "@flex/utils";
 
 const configSchema = z.object({
   AWS_REGION: z.string().min(1),
   FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME: z.string().min(1),
 });
-
-const consumerConfigSchema = z.object({
-  region: z.string().min(1),
-  apiAccountId: z.string().min(1),
-  apiUrl: z.string().min(1),
-  apiKey: z.string().min(1),
-  consumerRoleArn: z.string().min(1),
-  externalId: z.string().optional(),
-});
-
-type ConsumerConfig = z.output<typeof consumerConfigSchema>;
-
-async function getConsumerConfig(secretArn: string): Promise<ConsumerConfig> {
-  const config = await getSecret(secretArn);
-  if (!config) {
-    throw new Error("Consumer config not found");
-  }
-  return consumerConfigSchema.parse(JSON.parse(config));
-}
-
-const SERVICE_NAME = "app";
 
 function parseRequestBody(body: string | null): unknown {
   if (!body) return undefined;
@@ -46,18 +27,58 @@ function parseRequestBody(body: string | null): unknown {
   }
 }
 
+type ResolvedRequest = {
+  mapping: RemoteRouteMapping;
+  body: unknown;
+  requestingServiceUserId: string;
+};
+
+type ResolveResult =
+  | { ok: true; request: ResolvedRequest }
+  | { ok: false; response: APIGatewayProxyResultV2 };
+
 /**
- * Translates remote API result to internal response.
- * Maps ApiResult to HTTP response; identity translation when shapes match.
+ * Validates input (including headers) and matches the route in a single step.
+ * Returns resolved request or an error response.
  */
-function toHttpResponse<T>(result: ApiResult<T>): APIGatewayProxyResultV2 {
-  if (result.ok) {
-    return jsonResponse(result.status, result.data);
+function resolveRequest(
+  event: APIGatewayProxyEvent,
+  stageName: string,
+  logger: ReturnType<typeof getLogger>,
+): ResolveResult {
+  const mapping = matchRemoteRoute(
+    event.httpMethod,
+    event.pathParameters?.proxy,
+    stageName,
+  );
+  if (!mapping) {
+    logger.warn("Route not registered in route config", { event });
+    return {
+      ok: false,
+      response: jsonResponse(status.NOT_FOUND, { message: "Route not found" }),
+    };
   }
-  return jsonResponse(result.status, {
-    message: result.error.message,
-    ...(result.error.code && { code: result.error.code }),
-  });
+
+  const requestingServiceUserId =
+    getHeader(event, "requesting-service-user-id")?.trim() ?? "";
+
+  if (mapping.requiresHeaders && !requestingServiceUserId) {
+    logger.warn("Missing required requesting-service-user-id header", {
+      mapping,
+    });
+    return {
+      ok: false,
+      response: jsonResponse(status.BAD_REQUEST, {
+        message: "requesting-service-user-id header is required for this route",
+      }),
+    };
+  }
+
+  const body = parseRequestBody(event.body);
+  return {
+    ok: true,
+    request: { mapping, body, requestingServiceUserId },
+  };
 }
 
 /**
@@ -79,27 +100,13 @@ const handler = createLambdaHandler<
     const baseUrl = new URL(consumerConfig.apiUrl);
     const stageName = baseUrl.pathname;
 
-    const mapping = matchRemoteRoute(
-      event.httpMethod,
-      event.pathParameters?.proxy,
-      stageName,
-    );
-    if (!mapping) {
-      logger.warn("Route not registered in route config", { event });
-      return jsonResponse(status.NOT_FOUND, { message: "Route not found" });
+    const resolveResult = resolveRequest(event, stageName, logger);
+    if (!resolveResult.ok) {
+      return resolveResult.response;
     }
+    const { mapping, body, requestingServiceUserId } = resolveResult.request;
 
-    const body = parseRequestBody(event.body);
-    const requestingServiceUserId =
-      event.headers["requesting-service-user-id"] || "";
-
-    const remoteClient = createUdpRemoteClient({
-      region: consumerConfig.region,
-      apiUrl: consumerConfig.apiUrl,
-      apiKey: consumerConfig.apiKey,
-      consumerRoleArn: consumerConfig.consumerRoleArn,
-      externalId: consumerConfig.externalId,
-    });
+    const remoteClient = createUdpRemoteClient(consumerConfig);
 
     const result = await dispatch(
       logger,
@@ -109,17 +116,9 @@ const handler = createLambdaHandler<
       requestingServiceUserId,
     );
 
-    logger.debug("Result", { result });
-
-    if ("rawResponse" in result) {
-      const responseBody = await parseResponseBody(result.rawResponse);
-      return jsonResponse(result.rawResponse.status, responseBody);
-    }
-
     return toHttpResponse(result);
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-service-gateway",
   },
 );
@@ -130,23 +129,8 @@ async function dispatch(
   mapping: RemoteRouteMapping,
   body: unknown,
   requestingServiceUserId: string,
-): Promise<ApiResult<unknown> | { rawResponse: Response }> {
+): Promise<ApiResult<unknown>> {
   logger.debug("Dispatching", { mapping, body, requestingServiceUserId });
-  if (mapping.operation === "proxy") {
-    const rawResponse = await client.call({
-      method: mapping.method,
-      path: mapping.remotePath,
-      body,
-      headers: mapping.requiresHeaders
-        ? {
-            "requesting-service": SERVICE_NAME,
-            "requesting-service-user-id": requestingServiceUserId,
-          }
-        : undefined,
-    });
-    return { rawResponse };
-  }
-
   switch (mapping.operation) {
     case "getNotifications":
       return client.getNotifications(requestingServiceUserId);
