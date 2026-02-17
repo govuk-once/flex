@@ -19,6 +19,7 @@ pnpm add @flex/flex-fetch
 
 - **`retryAttempts`**: number of attempts, capped at 5. If omitted, no retries are performed.
 - **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10-1000 ms.
+- **`fetcher`**: custom fetch implementation (e.g. AWS SigV4 signed fetcher). When provided, used instead of global `fetch`. Enables retries, jitter, and abort for signed requests.
 - **Other `RequestInit`**: any standard fetch options (`method`, `headers`, `body`, etc.).
 
 ### Behavior

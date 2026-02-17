@@ -15,15 +15,12 @@
     "swagger": "pnpm generate-oas && http-server src/openapi -p 4200 -o/swagger.html -c-1"
   },
   "dependencies": {
-    "@aws-sdk/credential-providers": "3.985.0",
-    "aws-sigv4-fetch": "4.4.1",
     "zod": "4.3.6",
     "zod-openapi": "5.4.6"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudformation": "3.985.0",
     "@flex/config": "workspace:*",
-    "@smithy/types": "4.12.0",
     "@types/aws-lambda": "8.10.160",
     "@types/node": "25.2.2",
     "eslint": "9.39.2",

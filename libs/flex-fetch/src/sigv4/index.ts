@@ -5,6 +5,9 @@ import type {
 } from "@smithy/types";
 import { createSignedFetcher } from "aws-sigv4-fetch";
 
+import { flexFetch } from "../fetch/index.js";
+import { NumberUpTo } from "@flex/utils";
+
 interface Options {
   region: string;
   baseUrl: string;
@@ -14,6 +17,10 @@ interface Options {
   host?: string;
   headers?: Record<string, string>;
   credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
+  /** Retry attempts for transient failures. Default 3. Set to 0 to disable. */
+  retryAttempts?: number;
+  /** Max delay between retries in ms. */
+  maxRetryDelay?: number;
 }
 
 export async function sigv4Fetch({
@@ -25,8 +32,14 @@ export async function sigv4Fetch({
   host,
   credentials,
   headers,
+  retryAttempts = 3,
+  maxRetryDelay,
 }: Options) {
-  const url = new URL(path, baseUrl);
+  const base = new URL(baseUrl);
+  const basePath = base.pathname.endsWith("/") ? base.pathname : `${base.pathname}/`;
+  const pathSeg = path.startsWith("/") ? path.slice(1) : path;
+  const url = new URL(basePath + pathSeg, base.origin);
+
   const bodyString = body ? JSON.stringify(body) : undefined;
 
   const signedFetch = createSignedFetcher({
@@ -35,7 +48,13 @@ export async function sigv4Fetch({
     credentials,
   });
 
-  const response = await signedFetch(url, {
+  const { request } = flexFetch(url, {
+    fetcher: signedFetch,
+    retryAttempts:
+      retryAttempts > 0
+        ? Math.min(retryAttempts, 5) as NumberUpTo<typeof retryAttempts>
+        : undefined,
+    maxRetryDelay,
     method,
     headers: {
       ...headers,
@@ -46,7 +65,7 @@ export async function sigv4Fetch({
     body: bodyString,
   });
 
-  return response;
+  return request;
 }
 
 export interface Sigv4CredentialsOptions {
@@ -61,7 +80,7 @@ function getCredentialsCacheKey(roleArn: string, externalId?: string): string {
   return `${roleArn}:${externalId ?? ""}`;
 }
 
-export function sigv4FetchWithCredentials(
+export function createSigv4FetchWithCredentials(
   options: Options & Sigv4CredentialsOptions,
 ) {
   const cacheKey = getCredentialsCacheKey(options.roleArn, options.externalId);
@@ -78,7 +97,7 @@ export function sigv4FetchWithCredentials(
     cachedCredentialProviders.set(cacheKey, credentials);
   }
 
-  return sigv4Fetch({
+  return createSigv4Fetch({
     ...options,
     credentials,
   });
@@ -90,6 +109,8 @@ interface Sigv4BaseConfig {
   headers?: Record<string, string>;
   credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
   host?: string;
+  retryAttempts?: number;
+  maxRetryDelay?: number;
 }
 
 interface Sigv4RequestOptions {
@@ -97,6 +118,8 @@ interface Sigv4RequestOptions {
   path: string;
   body?: unknown;
   headers?: Record<string, string>;
+  retryAttempts?: number;
+  maxRetryDelay?: number;
 }
 
 export function createSigv4Fetch(baseConfig: Sigv4BaseConfig) {

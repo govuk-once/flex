@@ -15,10 +15,11 @@
     "@flex/logging": "workspace:*",
     "@flex/middlewares": "workspace:*",
     "@flex/params": "workspace:*",
+    "@flex/flex-fetch": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
-    "zod": "4.3.5"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

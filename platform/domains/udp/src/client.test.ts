@@ -5,14 +5,16 @@ import { createUdpRemoteClient, type UdpRemoteClientConfig } from "./client";
 const BASE_CONFIG: UdpRemoteClientConfig = {
   region: "eu-west-2",
   apiUrl: "https://api.example.com/gateways/udp",
+  apiKey: "test-api-key", // pragma: allowlist secret
   consumerRoleArn: "arn:aws:iam::123456789:role/test-consumer",
 };
 
 const mockSigv4Fetch = vi.fn();
 
-vi.mock("@flex/utils", () => ({
-  sigv4FetchWithCredentials: (opts: Record<string, unknown>) =>
-    mockSigv4Fetch(opts) as Promise<Response>,
+vi.mock("@flex/flex-fetch", () => ({
+  createSigv4FetchWithCredentials: (config: Record<string, unknown>) =>
+    (opts: Record<string, unknown>) =>
+      mockSigv4Fetch({ ...config, ...opts }) as Promise<Response>,
 }));
 
 describe("createUdpRemoteClient", () => {
@@ -30,14 +32,14 @@ describe("createUdpRemoteClient", () => {
   });
 
   describe("path building", () => {
-    it("prefixes paths with stage from apiUrl when pathname has segments", async () => {
+    it("passes path suffix when apiUrl has pathname", async () => {
       const client = createUdpRemoteClient(BASE_CONFIG);
       await client.getNotifications("user-123");
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
           baseUrl: "https://api.example.com/gateways/udp",
-          path: "/gateways/udp/v1/notifications",
+          path: "v1/notifications",
           method: "GET",
         }),
       );
@@ -52,7 +54,7 @@ describe("createUdpRemoteClient", () => {
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: "/gateways/udp/v1/notifications",
+          path: "v1/notifications",
         }),
       );
     });
@@ -66,7 +68,7 @@ describe("createUdpRemoteClient", () => {
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: "/v1/user",
+          path: "v1/user",
         }),
       );
     });
@@ -77,7 +79,7 @@ describe("createUdpRemoteClient", () => {
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: "/gateways/udp/v1/notifications",
+          path: "v1/notifications",
         }),
       );
     });
@@ -88,7 +90,7 @@ describe("createUdpRemoteClient", () => {
       const client = createUdpRemoteClient(BASE_CONFIG);
       await client.getNotifications("pairwise-abc");
 
-      const callArgs = mockSigv4Fetch.mock.calls[0][0] as {
+      const callArgs = mockSigv4Fetch.mock.calls[0]![0] as {
         method: string;
         path: string;
         headers?: Record<string, string>;
@@ -96,6 +98,7 @@ describe("createUdpRemoteClient", () => {
       expect(callArgs.method).toBe("GET");
       expect(callArgs.path).toContain("v1/notifications");
       expect(callArgs.headers).toEqual({
+        "x-api-key": "test-api-key",
         "requesting-service": "app",
         "requesting-service-user-id": "pairwise-abc",
       });
@@ -114,6 +117,7 @@ describe("createUdpRemoteClient", () => {
           path: expect.stringContaining("v1/notifications") as string,
           body,
           headers: {
+            "x-api-key": "test-api-key",
             "requesting-service": "app",
             "requesting-service-user-id": "user-xyz",
           },
@@ -133,29 +137,29 @@ describe("createUdpRemoteClient", () => {
           body,
         }),
       );
-      expect(
-        (mockSigv4Fetch.mock.calls[0][0] as { headers?: unknown }).headers,
-      ).toBeUndefined();
+      const headers = (mockSigv4Fetch.mock.calls[0]![0] as { headers?: Record<string, string> }).headers;
+      expect(headers?.["requesting-service"]).toBeUndefined();
+      expect(headers?.["requesting-service-user-id"]).toBeUndefined();
     });
 
     it("call forwards options to fetchRemote", async () => {
       const client = createUdpRemoteClient(BASE_CONFIG);
       await client.call({
         method: "GET",
-        path: "/custom/path",
+        path: "custom/path",
         headers: { "X-Custom": "value" },
       });
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
         expect.objectContaining({
           method: "GET",
-          path: "/custom/path",
+          path: "custom/path",
           headers: { "X-Custom": "value" },
         }),
       );
     });
 
-    it("passes config to sigv4FetchWithCredentials", async () => {
+    it("passes config to createSigv4FetchWithCredentials", async () => {
       const config: UdpRemoteClientConfig = {
         ...BASE_CONFIG,
         externalId: "external-123",

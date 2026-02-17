@@ -1,6 +1,6 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getConfig } from "@flex/params";
-import { sigv4Fetch } from "@flex/utils";
+import { sigv4Fetch } from "@flex/flex-fetch";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,

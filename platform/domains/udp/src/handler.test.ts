@@ -27,20 +27,21 @@ vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: vi.fn(() => Promise.resolve(JSON.stringify(MOCK_CONSUMER_CONFIG))),
 }));
 
-vi.mock("@flex/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@flex/utils")>();
-  return {
-    ...actual,
-    sigv4FetchWithCredentials: vi.fn(() =>
+const MOCK_CONSENT_RESPONSE = {
+  consentStatus: "consented",
+  updatedAt: "2025-01-01T00:00:00Z",
+};
+
+vi.mock("@flex/flex-fetch", () => ({
+  createSigv4FetchWithCredentials: () =>
+    () =>
       Promise.resolve(
-        new Response(JSON.stringify({ test: "test" }), {
+        new Response(JSON.stringify(MOCK_CONSENT_RESPONSE), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),
       ),
-    ),
-  };
-});
+}));
 
 describe("UDP connector handler", () => {
   const baseEvent: Partial<APIGatewayProxyEvent> = {
@@ -72,7 +73,7 @@ describe("UDP connector handler", () => {
 
     expect(result).toEqual(
       response.ok(
-        { test: "test" },
+        MOCK_CONSENT_RESPONSE,
         {
           headers: {
             "Content-Type": "application/json",
@@ -129,7 +130,6 @@ describe("UDP connector handler", () => {
   });
 
   it("accepts requesting-service-user-id with different header casing", async ({
-    response,
     context,
   }) => {
     const event = {
@@ -146,5 +146,6 @@ describe("UDP connector handler", () => {
     );
 
     expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body ?? "{}")).toMatchObject(MOCK_CONSENT_RESPONSE);
   });
 });

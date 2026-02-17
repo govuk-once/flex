@@ -1,4 +1,4 @@
-import { sigv4FetchWithCredentials } from "@flex/utils";
+import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
 import { z } from "zod";
 
 import type {
@@ -15,12 +15,12 @@ export interface UdpRemoteClientConfig {
   externalId?: string;
 }
 
-/** Derives path prefix (stage) from apiUrl for building remote paths.
- *  Returns path without leading/trailing slashes to avoid producing paths
- *  starting with // which URL constructor interprets as host (e.g. //dev -> host=dev). */
-function getPathPrefix(apiUrl: string): string {
-  const pathname = new URL(apiUrl).pathname;
-  return pathname.replace(/^\/|\/$/g, "").trim() || "";
+/**
+ * Returns the path suffix to append to baseUrl.
+ * baseUrl already contains the stage (e.g. /gateways/udp); we only append the API path (e.g. v1/notifications).
+ */
+function pathSuffix(suffix: string): string {
+  return suffix.replace(/^\//, "");
 }
 
 export type ApiError = {
@@ -44,16 +44,14 @@ async function fetchRemote(
     headers?: Record<string, string>;
   },
 ): Promise<Response> {
-  return sigv4FetchWithCredentials({
-    region: config.region,
+  const fetchFn = createSigv4FetchWithCredentials({
+    ...config,
+    ...options,
     baseUrl: config.apiUrl,
     roleArn: config.consumerRoleArn,
-    externalId: config.externalId,
-    method: options.method,
-    path: options.path,
-    body: options.body,
-    headers: options.headers,
   });
+
+  return fetchFn(options);
 }
 
 async function validateResponse<T>(
@@ -117,19 +115,13 @@ async function validateResponse<T>(
  * Private to the gateway package — domain services NEVER import from here.
  */
 export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
-  const prefix = getPathPrefix(config.apiUrl);
-  const path = (suffix: string) => {
-    const p = suffix.replace(/^\//, "");
-    return prefix ? `/${prefix}/${p}` : `/${p}`;
-  };
-
   return {
     getNotifications: (
       requestingServiceUserId: string,
     ): Promise<ApiResult<RemoteConsentResponse>> =>
       fetchRemote(config, {
         method: "GET",
-        path: path("v1/notifications"),
+        path: pathSuffix("v1/notifications"),
         headers: {
           "x-api-key": config.apiKey,
           "requesting-service": "app",
@@ -143,7 +135,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
     ): Promise<ApiResult<unknown>> =>
       fetchRemote(config, {
         method: "POST",
-        path: path("v1/notifications"),
+        path: pathSuffix("v1/notifications"),
         body,
         headers: {
           "x-api-key": config.apiKey,
@@ -157,26 +149,24 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
     ): Promise<ApiResult<unknown>> =>
       fetchRemote(config, {
         method: "POST",
-        path: path("v1/user"),
+        path: pathSuffix("v1/user"),
         body,
         headers: {
           "x-api-key": config.apiKey,
         },
       }).then((res) => validateResponse(res)),
 
-    /** Generic call for untyped routes (e.g. identity). Returns raw Response. */
+    /** Generic call for arbitrary method/path/headers. Path is relative to baseUrl (e.g. "v1/notifications"). */
     call: (options: {
       method: string;
       path: string;
       body?: unknown;
       headers?: Record<string, string>;
-    }) => fetchRemote(config, {
-      ...options,
-      headers: {
-        ...options.headers,
-        "x-api-key": config.apiKey,
-      },
-    }),
+    }): Promise<ApiResult<unknown>> =>
+      fetchRemote(config, {
+        ...options,
+        path: pathSuffix(options.path),
+      }).then((res) => validateResponse(res)),
   };
 }
 

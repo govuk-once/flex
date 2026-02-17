@@ -12,5 +12,4 @@ export * from "./schemas/common";
 export * from "./schemas/domain/hello-world";
 export * from "./schemas/domain/topics";
 export * from "./schemas/domain/users";
-export * from "./sigv4";
 export * from "./types";

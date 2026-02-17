@@ -1,9 +1,9 @@
 import {
   createSigv4Fetch,
-  parseResponseBodyTyped,
   sigv4Fetch,
-} from "@flex/utils";
+} from "@flex/flex-fetch";
 import createHttpError from "http-errors";
+import { parseResponseBodyTyped } from "@flex/utils";
 
 import { SERVICE_NAME } from "./constants";
 import {

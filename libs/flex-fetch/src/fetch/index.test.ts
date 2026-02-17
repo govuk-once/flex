@@ -254,4 +254,25 @@ describe("flex-fetch", () => {
       }),
     );
   });
+
+  it("uses custom fetcher when provided", async () => {
+    const customResponse = new Response(JSON.stringify({ from: "custom" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+    const customFetcher = vi.fn().mockResolvedValue(customResponse);
+
+    const { request } = flexFetch("https://example.com/data", {
+      fetcher: customFetcher,
+    });
+
+    const res = await request;
+    const body = (await res.json()) as { from: string };
+    expect(body).toStrictEqual({ from: "custom" });
+    expect(customFetcher).toHaveBeenCalledTimes(1);
+    expect(customFetcher).toHaveBeenCalledWith(
+      "https://example.com/data",
+      expect.any(Object),
+    );
+  });
 });
