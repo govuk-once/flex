@@ -4,6 +4,7 @@ import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
 import {
   AccessLogFormat,
+  AuthorizationType,
   EndpointType,
   IResource,
   LogGroupLogDestination,
@@ -130,6 +131,9 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
         dataTraceEnabled: false,
         metricsEnabled: true,
         tracingEnabled: true,
+      },
+      defaultMethodOptions: {
+        authorizationType: AuthorizationType.IAM,
       },
       disableExecuteApiEndpoint: false,
       endpointConfiguration: {

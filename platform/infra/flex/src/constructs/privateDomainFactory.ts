@@ -57,9 +57,6 @@ export class PrivateDomainFactory extends Construct {
     resource.addMethod(
       method,
       new LambdaIntegration(handler, { proxy: true }),
-      {
-        authorizationType: AuthorizationType.IAM,
-      },
     );
   }
 }

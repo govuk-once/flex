@@ -25,9 +25,7 @@ function createPrivateGatewayRoute(
       parent.getResource(segment) ?? parent.addResource(segment),
     gatewayResource,
   );
-  return resource.addMethod(method, new LambdaIntegration(handler), {
-    authorizationType: AuthorizationType.IAM,
-  });
+  return resource.addMethod(method, new LambdaIntegration(handler));
 }
 
 export function createServiceGateways(
