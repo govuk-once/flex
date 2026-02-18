@@ -31,7 +31,7 @@ const handler = createLambdaHandler<
       const pairwiseId = await authService.extractPairwiseId(event);
       logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
-      return createPolicy("Allow", event.routeArn, { pairwiseId });
+      return createPolicy("Allow", "*", { pairwiseId });
     } catch (error) {
       logger.error("JWT verification failed", { error });
 
