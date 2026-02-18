@@ -6,6 +6,7 @@ import type {
   OnlyPropsWithSuffix,
   Simplify,
   WithoutPropSuffix,
+  WithoutSuffix,
 } from "@flex/utils";
 import { z } from "zod";
 
@@ -92,7 +93,9 @@ function removeFeatureFlags<T extends object>(
  */
 function extractFeatureFlags<T extends object>(
   rawConfig: T,
-): OnlyPropsWithSuffix<T, "_FEATURE_FLAG"> {
+): Simplify<
+  WithoutSuffix<OnlyPropsWithSuffix<T, "_FEATURE_FLAG">, "_FEATURE_FLAG">
+> {
   const featureFlagEntries = Object.entries(rawConfig).filter(([key]) =>
     key.endsWith("_FEATURE_FLAG"),
   ) as Array<[string, string]>;
@@ -102,9 +105,8 @@ function extractFeatureFlags<T extends object>(
     value !== "false",
   ]);
 
-  return Object.fromEntries(renamedFeatureFlagEntries) as OnlyPropsWithSuffix<
-    T,
-    "_FEATURE_FLAG"
+  return Object.fromEntries(renamedFeatureFlagEntries) as Simplify<
+    WithoutSuffix<OnlyPropsWithSuffix<T, "_FEATURE_FLAG">, "_FEATURE_FLAG">
   >;
 }
 
