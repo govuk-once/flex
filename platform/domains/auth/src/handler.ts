@@ -59,6 +59,7 @@ const handler = createLambdaHandler<
     }
   },
   {
+    logLevel: "DEBUG",
     serviceName: "auth-authorizer",
   },
 );
