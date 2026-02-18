@@ -1,13 +1,13 @@
+import { sigv4Fetch } from "@flex/flex-fetch";
 import { createLambdaHandler } from "@flex/handlers";
 import { getConfig } from "@flex/params";
-import { sigv4Fetch } from "@flex/flex-fetch";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
 } from "aws-lambda";
 import { z } from "zod";
 
-const configSchema = z.looseObject({
+const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
@@ -32,21 +32,10 @@ export const handler = createLambdaHandler<
       path: "/domains/hello/v1/hello-internal",
     });
 
-    const body = await response.text();
-    let parsedBody: Record<string, unknown> = {
-      message: "Access denied by private API gateway",
-    };
-    if (body) {
-      try {
-        parsedBody = JSON.parse(body) as Record<string, unknown>;
-      } catch {
-        parsedBody = { message: body };
-      }
-    }
-
+    const body = (await response.json()) as Record<string, unknown>;
     return {
       statusCode: response.status,
-      body: JSON.stringify({ ...parsedBody, status: response.status }),
+      body: JSON.stringify({ ...body, status: response.status }),
     };
   },
   {
