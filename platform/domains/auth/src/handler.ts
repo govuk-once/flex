@@ -46,17 +46,11 @@ const handler = createLambdaHandler<
 
       switch (true) {
         case error instanceof JwtExpiredError:
-          return createPolicy("Deny", event.routeArn, {
-            error: "JWT expired",
-          });
+          return createPolicy("Deny", event.routeArn, "JWT expired");
         case error instanceof JwtNotBeforeError:
-          return createPolicy("Deny", event.routeArn, {
-            error: "JWT not yet valid",
-          });
+          return createPolicy("Deny", event.routeArn, "JWT not yet valid");
         case error instanceof FailedAssertionError:
-          return createPolicy("Deny", event.routeArn, {
-            error: error.message,
-          });
+          return createPolicy("Deny", event.routeArn, error.message);
         case error instanceof JwtBaseError:
           return createPolicy("Deny", event.routeArn);
         default:

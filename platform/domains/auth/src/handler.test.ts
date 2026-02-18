@@ -138,12 +138,12 @@ describe("Authorizer Handler", () => {
     {
       label: "JwtExpiredError",
       error: new JwtExpiredError("JWT expired", null, "exp"),
-      expectedContext: { error: "JWT expired" },
+      expectedContext: { errorMessage: "JWT expired" },
     },
     {
       label: "JwtNotBeforeError",
       error: new JwtNotBeforeError("JWT not yet valid", null, "nbf"),
-      expectedContext: { error: "JWT not yet valid" },
+      expectedContext: { errorMessage: "JWT not yet valid" },
     },
     {
       label: "FailedAssertionError",
@@ -152,7 +152,7 @@ describe("Authorizer Handler", () => {
         undefined,
         "authorization token",
       ),
-      expectedContext: { error: "Missing authorization token" },
+      expectedContext: { errorMessage: "Missing authorization token" },
     },
     {
       label: "generic JwtBaseError",
