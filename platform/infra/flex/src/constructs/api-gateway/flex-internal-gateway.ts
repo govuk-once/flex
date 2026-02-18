@@ -1,5 +1,4 @@
 import { importInterfaceVpcEndpointFromSsm } from "@platform/core/outputs";
-import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
 import {
   AccessLogFormat,
@@ -19,9 +18,9 @@ import {
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
-import type { Construct } from "constructs";
+import { Construct } from "constructs";
 
-import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
@@ -38,19 +37,13 @@ export interface PrivateGatewayStructure {
  * domain routes. Merged to avoid circular dependency between gateway (which
  * references Lambda integrations) and domain stacks (which need domainsResource).
  */
-export class FlexInternalGatewayStack extends GovUkOnceStack {
-  constructor(scope: Construct, id: string) {
-    super(scope, id, {
-      tags: {
-        Product: "GOV.UK",
-        System: "FLEX",
-        Owner: "N/A",
-        ResourceOwner: "flex-platform",
-        Source: "https://github.com/govuk-once/flex",
-      },
-    });
+export class FlexInternalGateway extends Construct {
+  public readonly privateGateway: RestApi;
 
-    this.createInternalGateway(this);
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    this.privateGateway = this.createInternalGateway(this);
   }
 
   createInternalGateway(scope: Construct) {
@@ -64,7 +57,8 @@ export class FlexInternalGatewayStack extends GovUkOnceStack {
     });
 
     const privateGateway = new RestApi(scope, "PrivateGateway", {
-      description: `Private API Gateway - Internal service-to-service and domain-to-gateway routing for stack ${this.stackName}`,
+      description:
+        "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
       policy: new PolicyDocument({
         statements: [
           new PolicyStatement({
@@ -131,8 +125,6 @@ export class FlexInternalGatewayStack extends GovUkOnceStack {
       description: "Private API Gateway URL (only reachable from within VPC)",
     });
 
-    return {
-      privateGateway,
-    };
+    return privateGateway;
   }
 }
