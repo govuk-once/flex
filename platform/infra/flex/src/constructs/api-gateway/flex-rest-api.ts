@@ -3,6 +3,7 @@ import {
   AuthorizationType,
   EndpointType,
   LogGroupLogDestination,
+  ResponseType,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -55,5 +56,21 @@ export class FlexRestApi extends Construct {
       "CKV_AWS_120",
       "Disabled for now and will renable when caching strategy is defined",
     );
+    this.addUnauthorizedResponseTemplate(this.restApi);
+  }
+
+  private addUnauthorizedResponseTemplate(restApi: RestApi) {
+    restApi.addGatewayResponse("Unauthorized", {
+      type: ResponseType.UNAUTHORIZED,
+      statusCode: "401",
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+      },
+      // This utilizes the context variable passed from your Lambda
+      templates: {
+        "application/json":
+          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+      },
+    });
   }
 }
