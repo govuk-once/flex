@@ -1,6 +1,11 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
-import { JwtBaseError } from "aws-jwt-verify/error";
+import {
+  FailedAssertionError,
+  JwtBaseError,
+  JwtExpiredError,
+  JwtNotBeforeError,
+} from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayRequestAuthorizerEventV2,
@@ -39,11 +44,24 @@ const handler = createLambdaHandler<
     } catch (error) {
       logger.error("JWT verification failed", { error });
 
-      if (error instanceof JwtBaseError) {
-        return createPolicy("Deny", event.routeArn);
+      switch (true) {
+        case error instanceof JwtExpiredError:
+          return createPolicy("Deny", event.routeArn, {
+            error: "JWT expired",
+          });
+        case error instanceof JwtNotBeforeError:
+          return createPolicy("Deny", event.routeArn, {
+            error: "JWT not yet valid",
+          });
+        case error instanceof FailedAssertionError:
+          return createPolicy("Deny", event.routeArn, {
+            error: error.message,
+          });
+        case error instanceof JwtBaseError:
+          return createPolicy("Deny", event.routeArn);
+        default:
+          throw error;
       }
-
-      throw error;
     }
   },
   {

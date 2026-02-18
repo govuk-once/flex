@@ -1,13 +1,20 @@
 import {
   authorizerEvent,
   context,
+  createAuthorizerEvent,
   invalidJwt,
   it,
   jwtMissingUsername,
   publicJWKS,
   validJwt,
 } from "@flex/testing";
-import { JwtBaseError } from "aws-jwt-verify/error";
+import {
+  FailedAssertionError,
+  JwtBaseError,
+  JwtExpiredError,
+  JwtNotBeforeError,
+  JwtParseError,
+} from "aws-jwt-verify/error";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -42,7 +49,7 @@ vi.mock("./services/auth-service", async () => {
   };
 });
 
-function expectDenyPolicy() {
+function expectDenyPolicy(context?: Record<string, string>) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return expect.objectContaining({
     principalId: "anonymous",
@@ -56,6 +63,7 @@ function expectDenyPolicy() {
         },
       ],
     },
+    ...(context && { context }),
   });
 }
 
@@ -75,49 +83,95 @@ describe("Authorizer Handler", () => {
     );
   });
 
-  it("returns explicit deny when the authorization header is missing", async ({
-    authorizerEvent,
-  }) => {
-    await expect(
-      handler(authorizerEvent.missingToken(), context),
-    ).resolves.toEqual(expectDenyPolicy());
-  });
+  it.each([
+    {
+      label: "the authorization header is missing",
+      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
+        evt.missingToken(),
+      nockStatus: undefined,
+      nockBody: undefined,
+    },
+    {
+      label: "the Bearer token is empty",
+      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
+        evt.withToken(""),
+      nockStatus: undefined,
+      nockBody: undefined,
+    },
+    {
+      label: "the JWT is invalid",
+      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
+        evt.withToken(invalidJwt),
+      nockStatus: undefined,
+      nockBody: undefined,
+    },
+    {
+      label: "the JWT is valid but missing the username claim",
+      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
+        evt.withToken(jwtMissingUsername),
+      nockStatus: 200,
+      nockBody: publicJWKS,
+    },
+    {
+      label: "the JWKS endpoint is unavailable",
+      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
+        evt.withToken(validJwt),
+      nockStatus: 500,
+      nockBody: "Internal Server Error",
+    },
+  ])(
+    "returns explicit deny when $label",
+    async ({ getEvent, nockStatus, nockBody }) => {
+      const evt = createAuthorizerEvent();
+      const event = getEvent(evt);
 
-  it("returns explicit deny when the Bearer token is empty", async ({
-    authorizerEvent,
-  }) => {
-    await expect(
-      handler(authorizerEvent.withToken(""), context),
-    ).resolves.toEqual(expectDenyPolicy());
-  });
+      if (typeof nockStatus === "number") {
+        nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(nockStatus, nockBody);
+      }
+      await expect(handler(event, context)).resolves.toEqual(
+        expectDenyPolicy(),
+      );
+    },
+  );
 
-  it("returns explicit deny when the JWT is invalid", async ({
-    authorizerEvent,
-  }) => {
-    await expect(
-      handler(authorizerEvent.withToken(invalidJwt), context),
-    ).resolves.toEqual(expectDenyPolicy());
-  });
+  it.each([
+    {
+      label: "JwtExpiredError",
+      error: new JwtExpiredError("JWT expired", null, "exp"),
+      expectedContext: { error: "JWT expired" },
+    },
+    {
+      label: "JwtNotBeforeError",
+      error: new JwtNotBeforeError("JWT not yet valid", null, "nbf"),
+      expectedContext: { error: "JWT not yet valid" },
+    },
+    {
+      label: "FailedAssertionError",
+      error: new FailedAssertionError(
+        "Missing authorization token",
+        undefined,
+        "authorization token",
+      ),
+      expectedContext: { error: "Missing authorization token" },
+    },
+    {
+      label: "generic JwtBaseError",
+      error: new JwtParseError("Invalid JWT header"),
+      expectedContext: undefined,
+    },
+  ])(
+    "returns Deny with expected context for $label",
+    async ({ error, expectedContext }) => {
+      vi.mocked(createAuthService).mockResolvedValueOnce({
+        extractPairwiseId: vi.fn().mockRejectedValue(error),
+      });
 
-  it("returns explicit deny when the JWT is valid but missing the username claim", async ({
-    authorizerEvent,
-  }) => {
-    nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(200, publicJWKS);
-
-    await expect(
-      handler(authorizerEvent.withToken(jwtMissingUsername), context),
-    ).resolves.toEqual(expectDenyPolicy());
-  });
-
-  it("returns explicit deny when the JWKS endpoint is unavailable", async ({
-    authorizerEvent,
-  }) => {
-    nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(500, "Internal Server Error");
-
-    await expect(
-      handler(authorizerEvent.withToken(validJwt), context),
-    ).resolves.toEqual(expectDenyPolicy());
-  });
+      const evt = createAuthorizerEvent();
+      await expect(handler(evt.withToken(validJwt), context)).resolves.toEqual(
+        expectDenyPolicy(expectedContext),
+      );
+    },
+  );
 
   it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async ({
     authorizerEvent,
