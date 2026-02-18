@@ -1,10 +1,13 @@
-import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { getEnvConfig, GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   Certificate,
   CertificateValidation,
 } from "aws-cdk-lib/aws-certificatemanager";
 import { HostedZone } from "aws-cdk-lib/aws-route53";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+
+const envConfig = getEnvConfig();
 
 interface FlexCertStackProps {
   domainName: string;
@@ -12,7 +15,7 @@ interface FlexCertStackProps {
 }
 
 export class FlexCertStack extends GovUkOnceStack {
-  certArn: string;
+  certArnParamName: string;
 
   constructor(
     scope: Construct,
@@ -20,7 +23,6 @@ export class FlexCertStack extends GovUkOnceStack {
     { domainName, subdomainName }: FlexCertStackProps,
   ) {
     super(scope, id, {
-      crossRegionReferences: true,
       tags: {
         Product: "GOV.UK",
         System: "FLEX",
@@ -37,9 +39,15 @@ export class FlexCertStack extends GovUkOnceStack {
       domainName,
     });
 
-    this.certArn = new Certificate(this, "FlexCert", {
+    const cert = new Certificate(this, "FlexCert", {
       domainName: subdomainName ?? domainName,
       validation: CertificateValidation.fromDns(hostedZone),
-    }).certificateArn;
+    });
+
+    this.certArnParamName = `/${envConfig.stage}/cert/domain-name`;
+    new StringParameter(this, "FlexCertArn", {
+      parameterName: this.certArnParamName,
+      stringValue: cert.certificateArn,
+    });
   }
 }

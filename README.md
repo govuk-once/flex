@@ -76,10 +76,10 @@ flex/
 
 ### Domain Handlers
 
-| Handler                                                        | Description                                    |
-| -------------------------------------------------------------- | ---------------------------------------------- |
-| [`@platform/auth`](/platform/domains/auth/README.md)           | Lambda authorizer for Cognito JWT verification |
-| [`@platform/fail-fast`](/platform/domains/fail-fast/README.md) | CloudFront Function for structural validation  |
+| Handler                                                                          | Description                                    |
+| -------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [`@platform/auth`](/platform/domains/auth/README.md)                             | Lambda authorizer for Cognito JWT verification |
+| [`@platform/viewer-request-cff`](/platform/domains/viewer-request-cff/README.md) | CloudFront Function for structural validation  |
 
 ### Infrastructure
 

@@ -18,28 +18,28 @@ describe("CloudFront Function Handler", () => {
       description: "fails with missing authorization header",
       event: buildCloudFrontEvent(),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: no authorization header provided",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
       description: "fails with empty authorization header",
       event: buildCloudFrontEventWithAuthorizationHeader(""),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: authentication header invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
       description: "fails with malformed authorization header",
       event: buildCloudFrontEventWithAuthorizationHeader("notabearertoken"),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: authentication header invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
       description: "fails with only 'Bearer' in authorization header",
       event: buildCloudFrontEventWithAuthorizationHeader("Bearer"),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: authentication header invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -48,7 +48,7 @@ describe("CloudFront Function Handler", () => {
         "Bearer invalidtoken multipart",
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: authentication header invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -57,7 +57,7 @@ describe("CloudFront Function Handler", () => {
         `Bearer invalidHealder.${validBody}.${validSignature}`,
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: token invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -66,7 +66,7 @@ describe("CloudFront Function Handler", () => {
         `Bearer ${validHeader}.invalidBody.${validSignature}`,
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: token invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -76,7 +76,7 @@ describe("CloudFront Function Handler", () => {
         `Bearer ${validHeader}.${validBody}`,
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: token invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -85,7 +85,7 @@ describe("CloudFront Function Handler", () => {
         `Bearer ${validHeader}`,
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: token invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
     {
@@ -95,7 +95,7 @@ describe("CloudFront Function Handler", () => {
         `Bearer ${validHeader}.MTIzNDU=.${validSignature}`,
       ),
       expected: buildCloudFrontFunctionErrorResponse(
-        "Unauthorized: token invalid",
+        '{"message":"Unauthorized"}',
       ),
     },
   ])("$description", ({ event, expected }) => {

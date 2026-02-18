@@ -1,5 +1,5 @@
 {
-  "name": "@platform/fail-fast",
+  "name": "@platform/viewer-request-cff",
   "version": "1.0.0",
   "type": "module",
   "private": true,
