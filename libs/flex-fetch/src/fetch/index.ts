@@ -6,7 +6,7 @@ const MAX_ATTEMPTS = 6;
 const MIN_DELAY_MS = 10;
 const MAX_DELAY_MS = 1000;
 
-interface FlexFetchRequestInit extends RequestInit {
+export interface FlexFetchRequestInit extends RequestInit {
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
   maxRetryDelay?: number;
 }
@@ -25,19 +25,22 @@ export function flexFetch(url: string | Request | URL): {
  * A fetch wrapper that adds retry logic with exponential backoff and abort capability.
  * @param url
  * @param options a FlexFetchRequestInit object with retryAttempts and maxRetryDelay options
+ * @param fetcher custom fetch implementation (e.g. signed fetch)
  * @returns An object containing the fetch request promise and an abort function.
  */
 export function flexFetch(
   url: string | Request | URL,
   options: FlexFetchRequestInit,
+  fetcher?: typeof fetch,
 ): { request: Promise<Response>; abort: () => void };
 
 export function flexFetch(
   url: string | Request | URL,
   options?: FlexFetchRequestInit,
+  fetcher: typeof fetch = fetch,
 ): { request: Promise<Response>; abort: () => void } {
   const logger = getLogger();
-  logger.info("flex-fetch called", { url });
+  logger.debug("flex-fetch called", { url });
   logger.debug("flex-fetch options", { options });
 
   const { retryAttempts, maxRetryDelay, ...fetchOptions } = options ?? {};
@@ -57,7 +60,7 @@ export function flexFetch(
   return {
     request: backOffWrapper(
       () => {
-        return fetch(url, { ...fetchOptions, signal: controller.signal });
+        return fetcher(url, { ...fetchOptions, signal: controller.signal });
       },
       {
         numOfAttempts: retryAttemptsNormalised,
