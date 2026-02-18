@@ -10,6 +10,7 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
+import { FlexInternalGateway } from "../constructs/api-gateway/flex-internal-gateway";
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 
@@ -78,6 +79,8 @@ export class FlexPlatformStack extends GovUkOnceStack {
       subdomainName,
       restApi,
     });
+
+    new FlexInternalGateway(this, "InternalGateway");
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
