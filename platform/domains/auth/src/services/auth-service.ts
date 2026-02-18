@@ -2,8 +2,8 @@ import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
 import { JwtVerifier } from "aws-jwt-verify";
 import { validateCognitoJwtFields } from "aws-jwt-verify/cognito-verifier";
+import { FailedAssertionError } from "aws-jwt-verify/error";
 import type { APIGatewayRequestAuthorizerEventV2 } from "aws-lambda";
-import createHttpError from "http-errors";
 
 import { configSchema } from "../config";
 
@@ -33,14 +33,22 @@ export async function createAuthService() {
       const token = extractToken(event);
 
       if (!token) {
-        throw new createHttpError.Unauthorized("Missing authorization token");
+        throw new FailedAssertionError(
+          "Missing authorization token",
+          token,
+          "authorization token",
+        );
       }
 
       const jwt = await verifier.verify(token);
       const username = jwt.username as string | undefined;
 
       if (!username) {
-        throw new createHttpError.Unauthorized("JWT missing username claim");
+        throw new FailedAssertionError(
+          "Missing username claim",
+          username,
+          "username",
+        );
       }
 
       logger.info("JWT verified", { pairwiseId: username });

@@ -1,11 +1,12 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
+import { JwtBaseError } from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
-import createHttpError from "http-errors";
 
+import { createPolicy } from "./createPolicy";
 import { createAuthService } from "./services/auth-service";
 
 /**
@@ -38,11 +39,11 @@ const handler = createLambdaHandler<
     } catch (error) {
       logger.error("JWT verification failed", { error });
 
-      if (createHttpError.isHttpError(error)) throw error;
+      if (error instanceof JwtBaseError) {
+        return createPolicy("Deny", event.routeArn);
+      }
 
-      throw new createHttpError.Unauthorized(
-        `Invalid JWT: ${(error as Error).message}`,
-      );
+      throw error;
     }
   },
   {
