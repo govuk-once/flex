@@ -1,4 +1,5 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
+import { NumberUpTo } from "@flex/utils";
 import type {
   AwsCredentialIdentity,
   AwsCredentialIdentityProvider,
@@ -6,7 +7,6 @@ import type {
 import { createSignedFetcher } from "aws-sigv4-fetch";
 
 import { flexFetch } from "../fetch/index.js";
-import { NumberUpTo } from "@flex/utils";
 
 interface Options {
   region: string;
@@ -36,7 +36,9 @@ export async function sigv4Fetch({
   maxRetryDelay,
 }: Options) {
   const base = new URL(baseUrl);
-  const basePath = base.pathname.endsWith("/") ? base.pathname : `${base.pathname}/`;
+  const basePath = base.pathname.endsWith("/")
+    ? base.pathname
+    : `${base.pathname}/`;
   const pathSeg = path.startsWith("/") ? path.slice(1) : path;
   const url = new URL(basePath + pathSeg, base.origin);
 
@@ -52,7 +54,7 @@ export async function sigv4Fetch({
     fetcher: signedFetch,
     retryAttempts:
       retryAttempts > 0
-        ? Math.min(retryAttempts, 5) as NumberUpTo<typeof retryAttempts>
+        ? (Math.min(retryAttempts, 5) as NumberUpTo<typeof retryAttempts>)
         : undefined,
     maxRetryDelay,
     method,

@@ -16,10 +16,10 @@ import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-import { aggregateUserProfile } from "../../../../services/aggregateUserProfile";
-import { generateDerivedId } from "../../../../services/derived-id";
+import { aggregateUserProfile } from "../../services/aggregateUserProfile";
+import { generateDerivedId } from "../../services/derived-id";
 
-export const configSchema = z.looseObject({
+export const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
@@ -53,10 +53,8 @@ export const handler = createLambdaHandler<
         pairwiseId,
         notificationId,
       });
-      return jsonResponse(status.OK, {
-        notificationId,
-        preferences: userProfile,
-      });
+
+      return jsonResponse(status.OK, userProfile);
     } catch (error) {
       logger.error("Failed to get user info", { error });
 

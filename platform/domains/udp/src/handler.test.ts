@@ -1,5 +1,8 @@
 import { it } from "@flex/testing";
-import { APIGatewayProxyEvent } from "aws-lambda";
+import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyStructuredResultV2,
+} from "aws-lambda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
@@ -33,14 +36,13 @@ const MOCK_CONSENT_RESPONSE = {
 };
 
 vi.mock("@flex/flex-fetch", () => ({
-  createSigv4FetchWithCredentials: () =>
-    () =>
-      Promise.resolve(
-        new Response(JSON.stringify(MOCK_CONSENT_RESPONSE), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      ),
+  createSigv4FetchWithCredentials: () => () =>
+    Promise.resolve(
+      new Response(JSON.stringify(MOCK_CONSENT_RESPONSE), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ),
 }));
 
 describe("UDP connector handler", () => {
@@ -72,14 +74,11 @@ describe("UDP connector handler", () => {
     );
 
     expect(result).toEqual(
-      response.ok(
-        MOCK_CONSENT_RESPONSE,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+      response.ok(MOCK_CONSENT_RESPONSE, {
+        headers: {
+          "Content-Type": "application/json",
         },
-      ),
+      }),
     );
   });
 
@@ -107,7 +106,6 @@ describe("UDP connector handler", () => {
   });
 
   it("returns 400 when requesting-service-user-id is missing for routes that require it", async ({
-    response,
     context,
   }) => {
     const event = {
@@ -118,13 +116,13 @@ describe("UDP connector handler", () => {
       body: null,
     };
 
-    const result = await handler(
+    const result = (await handler(
       event as unknown as APIGatewayProxyEvent,
       context.create(),
-    );
+    )) as APIGatewayProxyStructuredResultV2;
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body ?? "{}")).toMatchObject({
+    expect(JSON.parse(result.body as string)).toMatchObject({
       message: "requesting-service-user-id header is required for this route",
     });
   });
@@ -140,12 +138,14 @@ describe("UDP connector handler", () => {
       body: null,
     };
 
-    const result = await handler(
+    const result = (await handler(
       event as unknown as APIGatewayProxyEvent,
       context.create(),
-    );
+    )) as APIGatewayProxyStructuredResultV2;
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body ?? "{}")).toMatchObject(MOCK_CONSENT_RESPONSE);
+    expect(JSON.parse(result.body as string)).toMatchObject(
+      MOCK_CONSENT_RESPONSE,
+    );
   });
 });

@@ -10,7 +10,7 @@ import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-import { createUdpDomainClient } from "../../../../client";
+import { createUser } from "../../services/createUser";
 
 export const handlerResponseSchema = z.object({
   notificationId: z.string(),
@@ -44,15 +44,11 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
 
       const config = await getConfig(configSchema);
 
-      const client = createUdpDomainClient({
-        region: config.AWS_REGION,
-        baseUrl: new URL(config.FLEX_PRIVATE_GATEWAY_URL),
+      const response = await createUser({
+        privateGatewayUrl: config.FLEX_PRIVATE_GATEWAY_URL,
+        awsRegion: config.AWS_REGION,
         pairwiseId: parsedEvent.data.appId,
-      });
-
-      const response = await client.gateway.postUser({
         notificationId: parsedEvent.data.notificationId,
-        appId: parsedEvent.data.appId,
       });
 
       return jsonResponse(response.status, await response.json());

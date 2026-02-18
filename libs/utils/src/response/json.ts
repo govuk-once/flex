@@ -1,5 +1,3 @@
-import type { APIGatewayProxyResultV2 } from "aws-lambda";
-
 /**
  * Returns a JSON response with the given status code and body.
  *
@@ -7,10 +5,7 @@ import type { APIGatewayProxyResultV2 } from "aws-lambda";
  * @param body - The body of the response.
  * @returns The JSON response.
  */
-export function jsonResponse(
-  statusCode: number,
-  body: unknown,
-): APIGatewayProxyResultV2 {
+export function jsonResponse(statusCode: number, body: unknown) {
   return {
     statusCode,
     body: JSON.stringify(body),

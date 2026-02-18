@@ -183,7 +183,10 @@ describe("createUdpDomainClient", () => {
           request: expect.objectContaining({
             method: "POST",
             path: "user",
-            body,
+            body: {
+              notificationId: "test-notification-id",
+              appId: pairwiseId,
+            },
           }),
         }),
       );

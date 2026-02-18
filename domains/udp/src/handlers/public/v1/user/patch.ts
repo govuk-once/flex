@@ -17,8 +17,8 @@ import {
 import createHttpError from "http-errors";
 import { z } from "zod";
 
-import { createUdpDomainClient } from "../../../../client";
 import { CONSENT_STATUS_SCHEMA } from "../../../../schemas";
+import { updateNotificationPreferences } from "../../services/updateNotificationPreferences";
 
 const handlerRequestSchema = z
   .object({
@@ -26,7 +26,7 @@ const handlerRequestSchema = z
   })
   .strict();
 
-export const configSchema = z.looseObject({
+export const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
   AWS_REGION: z.string().min(1),
 });
@@ -51,18 +51,12 @@ export const handler = createLambdaHandler<
     }
     const config = await getConfig(configSchema);
 
-    const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
-    const client = createUdpDomainClient({
-      region: config.AWS_REGION,
-      baseUrl,
+    const response = await updateNotificationPreferences({
+      privateGatewayUrl: config.FLEX_PRIVATE_GATEWAY_URL,
+      awsRegion: config.AWS_REGION,
       pairwiseId,
-    });
-
-    const response = await client.gateway.postNotifications({
-      data: {
-        consentStatus: parsedEvent.data.notificationsConsented,
-        updatedAt: new Date().toISOString(),
-      },
+      consentStatus: parsedEvent.data.notificationsConsented,
+      updatedAt: new Date().toISOString(),
     });
 
     return jsonResponse(response.status, await response.json());

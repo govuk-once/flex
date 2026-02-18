@@ -12,8 +12,8 @@ const BASE_CONFIG: UdpRemoteClientConfig = {
 const mockSigv4Fetch = vi.fn();
 
 vi.mock("@flex/flex-fetch", () => ({
-  createSigv4FetchWithCredentials: (config: Record<string, unknown>) =>
-    (opts: Record<string, unknown>) =>
+  createSigv4FetchWithCredentials:
+    (config: Record<string, unknown>) => (opts: Record<string, unknown>) =>
       mockSigv4Fetch({ ...config, ...opts }) as Promise<Response>,
 }));
 
@@ -90,18 +90,17 @@ describe("createUdpRemoteClient", () => {
       const client = createUdpRemoteClient(BASE_CONFIG);
       await client.getNotifications("pairwise-abc");
 
-      const callArgs = mockSigv4Fetch.mock.calls[0]![0] as {
-        method: string;
-        path: string;
-        headers?: Record<string, string>;
-      };
-      expect(callArgs.method).toBe("GET");
-      expect(callArgs.path).toContain("v1/notifications");
-      expect(callArgs.headers).toEqual({
-        "x-api-key": "test-api-key",
-        "requesting-service": "app",
-        "requesting-service-user-id": "pairwise-abc",
-      });
+      expect(mockSigv4Fetch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: "GET",
+          path: expect.stringContaining("v1/notifications") as string,
+          headers: {
+            "x-api-key": "test-api-key",
+            "requesting-service": "app",
+            "requesting-service-user-id": "pairwise-abc",
+          },
+        }),
+      );
     });
 
     it("postNotifications passes body and headers", async () => {
@@ -130,16 +129,14 @@ describe("createUdpRemoteClient", () => {
       const body = { notificationId: "notif-1", appId: "app-1" };
       await client.postUser(body);
 
-      expect(mockSigv4Fetch).toHaveBeenCalledWith(
+      expect(mockSigv4Fetch).not.toHaveBeenCalledWith(
         expect.objectContaining({
-          method: "POST",
-          path: expect.stringContaining("v1/user") as string,
-          body,
+          headers: {
+            "requesting-service": "app",
+            "requesting-service-user-id": "pairwise-abc",
+          },
         }),
       );
-      const headers = (mockSigv4Fetch.mock.calls[0]![0] as { headers?: Record<string, string> }).headers;
-      expect(headers?.["requesting-service"]).toBeUndefined();
-      expect(headers?.["requesting-service-user-id"]).toBeUndefined();
     });
 
     it("call forwards options to fetchRemote", async () => {

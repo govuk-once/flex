@@ -1,45 +1,42 @@
 import { ContextWithPairwiseId } from "@flex/middlewares";
 import { it } from "@flex/testing";
-import nock from "nock";
-import { afterAll, beforeAll, beforeEach, describe, expect, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vitest";
 
-import { SERVICE_NAME } from "../../../../constants";
-import { generateDerivedId } from "../../../../services/derived-id";
+import { CONSENT_STATUS } from "../../../../schemas";
+import { aggregateUserProfile } from "../../services/aggregateUserProfile";
+import { generateDerivedId } from "../../services/derived-id";
 import { handler, NotificationSecretContext } from "./getUserInfo";
 
-const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
+const mockNotificationId = "mocked-notification-id";
 
-/**
- * Paths must match actual URLs from sigv4 fetch.
- * baseUrl ends with trailing slash (e.g. .../gateways/udp/v1/), so path
- * "notifications" resolves to .../gateways/udp/v1/notifications.
- */
-const PATHS = {
-  notifications: "/gateways/udp/v1/notifications",
-  user: "/domains/udp/v1/user",
-} as const;
-
-vi.mock("../../../../services/derived-id", () => ({
-  generateDerivedId: vi.fn(),
+vi.mock("../../services/derived-id", () => ({
+  generateDerivedId: vi.fn().mockReturnValue("mocked-notification-id"),
 }));
 vi.mock("@flex/middlewares");
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
     Promise.resolve({
       AWS_REGION: "eu-west-2",
-      FLEX_PRIVATE_GATEWAY_URL: PRIVATE_GATEWAY_ORIGIN,
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
     }),
   ),
 }));
-vi.mock("aws-sigv4-fetch", () => ({
-  createSignedFetcher: vi.fn(() => fetch),
+vi.mock("../../services/aggregateUserProfile", () => ({
+  aggregateUserProfile: vi.fn(),
 }));
 
 type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
 
 function defaultPreferences(updatedAt: string) {
   return {
-    notifications: { consentStatus: "unknown", updatedAt },
+    notifications: { consentStatus: CONSENT_STATUS.UNKNOWN, updatedAt },
+  };
+}
+
+function defaultUserProfile(notificationId: string, updatedAt: string) {
+  return {
+    notificationId,
+    preferences: defaultPreferences(updatedAt),
   };
 }
 
@@ -49,17 +46,8 @@ describe("GetUserInfo handler", () => {
   };
   const testPairwiseId = "test-pairwise-id";
 
-  beforeAll(() => {
-    vi.useFakeTimers();
-  });
-
-  afterAll(() => {
-    vi.useRealTimers();
-  });
-
   beforeEach(() => {
     vi.clearAllMocks();
-    nock.cleanAll();
   });
 
   describe("successful responses", () => {
@@ -68,19 +56,14 @@ describe("GetUserInfo handler", () => {
       eventWithAuthorizer,
       context,
     }) => {
-      const mockNotificationId = "mocked-notification-id";
       const updatedAt = new Date().toISOString();
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
-      // First call to getUserSettings
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      // Second call to getUserSettings (aggregateUserProfile always calls it again)
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.user).reply(201, {});
+      vi.mocked(aggregateUserProfile).mockResolvedValue({
+        notificationId: mockNotificationId,
+        preferences: {
+          notifications: { consentStatus: CONSENT_STATUS.CONSENTED, updatedAt },
+        },
+      });
 
       const result = await handler(
         eventWithAuthorizer.authenticated(),
@@ -94,44 +77,29 @@ describe("GetUserInfo handler", () => {
         response.ok(
           {
             notificationId: mockNotificationId,
-            preferences: defaultPreferences(updatedAt),
+            preferences: {
+              notifications: {
+                consentStatus: CONSENT_STATUS.CONSENTED,
+                updatedAt,
+              },
+            },
           },
           { headers: { "Content-Type": "application/json" } },
         ),
       );
     });
 
-    it("returns 200 with notification ID and preferences when user is created (GET 404 → POST create → set defaults → GET)", async ({
+    it("returns 200 with notification ID and preferences when user is created", async ({
       response,
       eventWithAuthorizer,
       context,
     }) => {
-      const mockNotificationId = "mocked-notification-id";
       const updatedAt = new Date().toISOString();
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
 
-      // First getUserSettings: GET notifications → 404
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .matchHeader("requesting-service", SERVICE_NAME)
-        .matchHeader("requesting-service-user-id", testPairwiseId)
-        .reply(404);
-
-      // createUserOrchestrator: POST create user
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(PATHS.user, {
-          notificationId: mockNotificationId,
-          appId: testPairwiseId,
-        })
-        .reply(201, {});
-
-      // setDefaultUserSettings: POST notifications
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-
-      // Second getUserSettings: GET notifications
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
+      vi.mocked(aggregateUserProfile).mockResolvedValue({
+        notificationId: mockNotificationId,
+        preferences: defaultPreferences(updatedAt),
+      });
 
       const result = await handler(
         eventWithAuthorizer.authenticated(),
@@ -142,13 +110,17 @@ describe("GetUserInfo handler", () => {
       );
 
       expect(result).toEqual(
-        response.ok(
-          {
-            notificationId: mockNotificationId,
-            preferences: defaultPreferences(updatedAt),
-          },
-          { headers: { "Content-Type": "application/json" } },
-        ),
+        response.ok(defaultUserProfile(mockNotificationId, updatedAt), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      expect(aggregateUserProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          region: "eu-west-2",
+          baseUrl: new URL("https://execute-api.eu-west-2.amazonaws.com"),
+          pairwiseId: testPairwiseId,
+          notificationId: mockNotificationId,
+        }),
       );
     });
 
@@ -158,24 +130,11 @@ describe("GetUserInfo handler", () => {
       context,
     }) => {
       const customPairwiseId = "custom-user-id-123";
-      const mockNotificationId = "generated-notification-id";
       const updatedAt = new Date().toISOString();
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
-
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .matchHeader("requesting-service-user-id", customPairwiseId)
-        .reply(404);
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(PATHS.user, {
-          notificationId: mockNotificationId,
-          appId: customPairwiseId,
-        })
-        .reply(201, {});
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
+      vi.mocked(aggregateUserProfile).mockResolvedValue({
+        notificationId: mockNotificationId,
+        preferences: defaultPreferences(updatedAt),
+      });
 
       const result = await handler(
         eventWithAuthorizer.authenticated({}, customPairwiseId),
@@ -186,13 +145,9 @@ describe("GetUserInfo handler", () => {
       );
 
       expect(result).toEqual(
-        response.ok(
-          {
-            notificationId: mockNotificationId,
-            preferences: defaultPreferences(updatedAt),
-          },
-          { headers: { "Content-Type": "application/json" } },
-        ),
+        response.ok(defaultUserProfile(mockNotificationId, updatedAt), {
+          headers: { "Content-Type": "application/json" },
+        }),
       );
       expect(generateDerivedId).toHaveBeenCalledWith({
         pairwiseId: customPairwiseId,
@@ -204,16 +159,11 @@ describe("GetUserInfo handler", () => {
       eventWithAuthorizer,
       context,
     }) => {
-      const mockNotificationId = "mocked-notification-id";
       const updatedAt = new Date().toISOString();
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
-
-      nock(PRIVATE_GATEWAY_ORIGIN).get(PATHS.notifications).reply(404);
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.user).reply(201, {});
-      nock(PRIVATE_GATEWAY_ORIGIN).post(PATHS.notifications).reply(200);
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .reply(200, { data: { consentStatus: "unknown", updatedAt } });
+      vi.mocked(aggregateUserProfile).mockResolvedValue({
+        notificationId: mockNotificationId,
+        preferences: defaultPreferences(updatedAt),
+      });
 
       await handler(
         eventWithAuthorizer.authenticated(),
@@ -258,10 +208,9 @@ describe("GetUserInfo handler", () => {
       context,
       response,
     }) => {
-      vi.mocked(generateDerivedId).mockReturnValue("mocked-notification-id");
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .get(PATHS.notifications)
-        .replyWithError("ECONNREFUSED");
+      vi.mocked(aggregateUserProfile).mockRejectedValue(
+        new Error("ECONNREFUSED"),
+      );
 
       const result = await handler(
         eventWithAuthorizer.authenticated(),

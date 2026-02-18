@@ -1,29 +1,24 @@
 import { it } from "@flex/testing";
-import nock from "nock";
 import { afterAll, beforeAll, beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
-
-const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
-const PRIVATE_GATEWAY_BASE_URL = `${PRIVATE_GATEWAY_ORIGIN}/gateways/udp`;
-const NOTIFICATIONS_PATH = "/gateways/udp/gateways/udp/v1/notifications";
 
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
     Promise.resolve({
       AWS_REGION: "eu-west-2",
-      FLEX_PRIVATE_GATEWAY_URL: PRIVATE_GATEWAY_BASE_URL,
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
     }),
   ),
 }));
 vi.mock("@flex/middlewares");
-vi.mock("aws-sigv4-fetch", () => ({
-  createSignedFetcher: vi.fn(() => fetch),
+vi.mock("../../services/updateNotificationPreferences", () => ({
+  updateNotificationPreferences: vi.fn(),
 }));
 
-describe("PATCH /user handler", () => {
-  const testPairwiseId = "test-pairwise-id";
+import { updateNotificationPreferences } from "../../services/updateNotificationPreferences";
 
+describe("PATCH /user handler", () => {
   beforeAll(() => {
     vi.useFakeTimers();
   });
@@ -34,7 +29,9 @@ describe("PATCH /user handler", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    nock.cleanAll();
+    vi.mocked(updateNotificationPreferences).mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 200 }),
+    );
   });
 
   describe("successful preference updates", () => {
@@ -43,13 +40,7 @@ describe("PATCH /user handler", () => {
       eventWithAuthorizer,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(NOTIFICATIONS_PATH)
-        .matchHeader("requesting-service", "app")
-        .matchHeader("requesting-service-user-id", testPairwiseId)
-        .reply(200, {});
-
-      const request = await handler(
+      const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({
             notificationsConsented: "consented",
@@ -58,7 +49,7 @@ describe("PATCH /user handler", () => {
         context.withPairwiseId().create(),
       );
 
-      expect(request).toEqual(
+      expect(result).toEqual(
         response.ok(
           {},
           {
@@ -68,31 +59,54 @@ describe("PATCH /user handler", () => {
           },
         ),
       );
+      expect(updateNotificationPreferences).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pairwiseId: "test-pairwise-id",
+          consentStatus: "consented",
+          awsRegion: "eu-west-2",
+        }),
+      );
     });
 
-    it("allows updating one field at a time", async ({
+    it("passes pairwiseId and consent status to updateNotificationPreferences", async ({
+      eventWithAuthorizer,
+      context,
+    }) => {
+      const customPairwiseId = "custom-user-456";
+      await handler(
+        eventWithAuthorizer.authenticated(
+          {
+            body: JSON.stringify({
+              notificationsConsented: "not_consented",
+            }),
+          },
+          customPairwiseId,
+        ),
+        context.withPairwiseId(customPairwiseId).create(),
+      );
+
+      expect(updateNotificationPreferences).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pairwiseId: customPairwiseId,
+          consentStatus: "not_consented",
+        }),
+      );
+    });
+
+    it("returns 200 when updateNotificationPreferences succeeds", async ({
       response,
       eventWithAuthorizer,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN).post(NOTIFICATIONS_PATH).reply(200, {});
-
-      const request = await handler(
+      const result = await handler(
         eventWithAuthorizer.authenticated({
           body: JSON.stringify({ notificationsConsented: "consented" }),
         }),
         context.withPairwiseId().create(),
       );
 
-      expect(request).toEqual(
-        response.ok(
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+      expect(result).toEqual(
+        response.ok({}, { headers: { "Content-Type": "application/json" } }),
       );
     });
   });
@@ -101,15 +115,15 @@ describe("PATCH /user handler", () => {
     it.for([
       {
         body: { notificationsConsented: "yes" },
-        desc: "string instead of boolean",
+        desc: "string instead of enum value",
       },
       {
         body: { notificationsConsented: 1 },
-        desc: "number instead of boolean",
+        desc: "number instead of string",
       },
       {
         body: { notificationsConsented: null },
-        desc: "null instead of boolean",
+        desc: "null instead of string",
       },
       {
         body: {},
@@ -124,6 +138,7 @@ describe("PATCH /user handler", () => {
         );
 
         expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
+        expect(updateNotificationPreferences).not.toHaveBeenCalled();
       },
     );
   });
@@ -134,8 +149,6 @@ describe("PATCH /user handler", () => {
       eventWithAuthorizer,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN).post(NOTIFICATIONS_PATH).reply(200, {});
-
       const result = await handler(
         eventWithAuthorizer.authenticated({
           headers: { "CoNtEnT-TyPe": "application/json" },
@@ -160,63 +173,16 @@ describe("PATCH /user handler", () => {
   });
 
   describe("API integration", () => {
-    it("uses pairwiseId from context in request headers", async ({
+    it("returns 500 when updateNotificationPreferences returns 500 with JSON body", async ({
       response,
       eventWithAuthorizer,
       context,
     }) => {
-      const customPairwiseId = "custom-user-456";
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(NOTIFICATIONS_PATH)
-        .matchHeader("requesting-service-user-id", customPairwiseId)
-        .reply(200, {});
-
-      const result = await handler(
-        eventWithAuthorizer.authenticated(
-          {
-            body: JSON.stringify({
-              notificationsConsented: "consented",
-            }),
-          },
-          customPairwiseId,
-        ),
-        context.withPairwiseId(customPairwiseId).create(),
-      );
-
-      expect(result).toEqual(
-        response.ok({}, { headers: { "Content-Type": "application/json" } }),
-      );
-    });
-
-    it("returns 200 with preferences when API returns 200", async ({
-      response,
-      eventWithAuthorizer,
-      context,
-    }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN).post(NOTIFICATIONS_PATH).reply(200, {});
-
-      const result = await handler(
-        eventWithAuthorizer.authenticated({
-          body: JSON.stringify({
-            notificationsConsented: "not_consented",
-          }),
+      vi.mocked(updateNotificationPreferences).mockResolvedValue(
+        new Response(JSON.stringify({ message: "Internal Server Error" }), {
+          status: 500,
         }),
-        context.withPairwiseId().create(),
       );
-
-      expect(result).toEqual(
-        response.ok({}, { headers: { "Content-Type": "application/json" } }),
-      );
-    });
-
-    it("handles API returning 500 with JSON body", async ({
-      response,
-      eventWithAuthorizer,
-      context,
-    }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(NOTIFICATIONS_PATH)
-        .reply(500, { message: "Internal Server Error" });
 
       const result = await handler(
         eventWithAuthorizer.authenticated({
@@ -235,13 +201,13 @@ describe("PATCH /user handler", () => {
       );
     });
 
-    it("returns 500 when API returns non-JSON response", async ({
+    it("returns 500 when updateNotificationPreferences returns non-JSON response", async ({
       eventWithAuthorizer,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(NOTIFICATIONS_PATH)
-        .reply(500, "Internal Server Error");
+      vi.mocked(updateNotificationPreferences).mockResolvedValue(
+        new Response("Internal Server Error", { status: 500 }),
+      );
 
       const result = await handler(
         eventWithAuthorizer.authenticated({
@@ -259,13 +225,13 @@ describe("PATCH /user handler", () => {
       );
     });
 
-    it("returns 500 when network request fails", async ({
+    it("returns 500 when updateNotificationPreferences throws", async ({
       eventWithAuthorizer,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(NOTIFICATIONS_PATH)
-        .replyWithError("ECONNREFUSED");
+      vi.mocked(updateNotificationPreferences).mockRejectedValue(
+        new Error("Network error"),
+      );
 
       const result = await handler(
         eventWithAuthorizer.authenticated({

@@ -1,11 +1,7 @@
-import {
-  createSigv4Fetch,
-  sigv4Fetch,
-} from "@flex/flex-fetch";
-import createHttpError from "http-errors";
+import { createSigv4Fetch, sigv4Fetch } from "@flex/flex-fetch";
 import { parseResponseBodyTyped } from "@flex/utils";
+import createHttpError from "http-errors";
 
-import { SERVICE_NAME } from "./constants";
 import {
   buildPrivateGatewayUrl,
   UDP_DOMAIN_BASE,
@@ -52,11 +48,12 @@ export function createUdpDomainClient({
   baseUrl,
   pairwiseId,
 }: UdpDomainClientOptions) {
+  const serviceName = "app";
   const gatewayFetch = createSigv4Fetch({
     region,
     baseUrl: buildPrivateGatewayUrl(baseUrl, UDP_GATEWAY_BASE),
     headers: {
-      "requesting-service": SERVICE_NAME,
+      "requesting-service": serviceName,
       "requesting-service-user-id": pairwiseId,
     },
   });
@@ -80,21 +77,27 @@ export function createUdpDomainClient({
           path: UDP_GATEWAY_ROUTES.notifications,
           body,
         }),
-      postUser: (body: { notificationId: string; appId: string }) =>
+      createUser: ({ notificationId }: { notificationId: string }) =>
         gatewayFetch({
           method: "POST",
           path: UDP_GATEWAY_ROUTES.user,
-          body,
+          body: {
+            notificationId,
+            appId: pairwiseId,
+          },
         }),
     },
     domain: {
-      postUser: (body: { notificationId: string; appId: string }) =>
+      createUser: ({ notificationId }: { notificationId: string }) =>
         sigv4Fetch({
           region,
           baseUrl: domainBaseUrl,
           method: "POST",
           path: UDP_DOMAIN_ROUTES.user,
-          body,
+          body: {
+            notificationId,
+            appId: pairwiseId,
+          },
         }),
     },
   };

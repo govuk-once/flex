@@ -1,28 +1,28 @@
 import { it } from "@flex/testing";
-import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
 
-const PRIVATE_GATEWAY_ORIGIN = "https://execute-api.eu-west-2.amazonaws.com";
-const USER_PATH = "/gateways/udp/v1/user";
+const mockCreateUser = vi.hoisted(() => vi.fn());
 
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
     Promise.resolve({
       AWS_REGION: "eu-west-2",
-      FLEX_PRIVATE_GATEWAY_URL: PRIVATE_GATEWAY_ORIGIN,
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
     }),
   ),
 }));
-vi.mock("aws-sigv4-fetch", () => ({
-  createSignedFetcher: vi.fn(() => fetch),
+vi.mock("../../services/createUser", () => ({
+  createUser: mockCreateUser,
 }));
 
 describe("post handler", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    nock.cleanAll();
+    mockCreateUser.mockReset();
+    mockCreateUser.mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 201 }),
+    );
   });
 
   describe("successful user creation", () => {
@@ -31,13 +31,6 @@ describe("post handler", () => {
       privateGatewayEvent,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(USER_PATH, {
-          notificationId: "test-notification-id",
-          appId: "test-app-id",
-        })
-        .reply(201, {});
-
       const result = await handler(
         privateGatewayEvent.post("/user", {
           body: {
@@ -58,6 +51,12 @@ describe("post handler", () => {
           },
         ),
       );
+      expect(mockCreateUser).toHaveBeenCalledWith({
+        privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
+        awsRegion: "eu-west-2",
+        pairwiseId: "test-app-id",
+        notificationId: "test-notification-id",
+      });
     });
   });
 
@@ -102,9 +101,11 @@ describe("post handler", () => {
       privateGatewayEvent,
       context,
     }) => {
-      nock(PRIVATE_GATEWAY_ORIGIN)
-        .post(USER_PATH)
-        .reply(500, { message: "Internal Server Error" });
+      mockCreateUser.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Internal Server Error" }), {
+          status: 500,
+        }),
+      );
 
       const result = await handler(
         privateGatewayEvent.post("/user", {

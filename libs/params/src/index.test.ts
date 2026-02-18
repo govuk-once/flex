@@ -8,7 +8,7 @@ import { getConfig } from ".";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
-export const rawConfigSchema = z.looseObject({
+export const rawConfigSchema = z.object({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),

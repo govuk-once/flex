@@ -6,9 +6,9 @@ import { z } from "zod";
 
 import { type ApiResult, createUdpRemoteClient } from "./client";
 import type { RemoteRouteMapping } from "./routes";
-import { toHttpResponse } from "./utils/toHttpResponse";
 import { getConsumerConfig } from "./utils/getConsumerConfig";
 import { resolveRequest } from "./utils/resolver";
+import { toHttpResponse } from "./utils/toHttpResponse";
 
 const configSchema = z.object({
   AWS_REGION: z.string().min(1),

@@ -2,8 +2,9 @@ import { getLogger } from "@flex/logging";
 import createHttpError from "http-errors";
 import status from "http-status";
 
-import { createUdpDomainClient, UdpDomainClient } from "../client";
-import { CONSENT_STATUS } from "../schemas";
+import { createUdpDomainClient, UdpDomainClient } from "../../../client";
+import { CONSENT_STATUS } from "../../../schemas";
+import { UserProfile } from "../types/user";
 
 interface AggregateUserProfileOptions {
   region: string;
@@ -20,18 +21,15 @@ const defaultConsentPayload = () => ({
 });
 
 const createUser = async ({
-  pairwiseId,
   notificationId,
   client,
 }: {
-  pairwiseId: string;
   notificationId: string;
   client: UdpDomainClient;
 }) => {
   const logger = getLogger();
-  const response = await client.domain.postUser({
+  const response = await client.domain.createUser({
     notificationId,
-    appId: pairwiseId,
   });
 
   if (!response.ok) {
@@ -45,12 +43,15 @@ const createUser = async ({
   await client.gateway.postNotifications(defaultConsentPayload());
 };
 
-export const getUserProfile = async (client: UdpDomainClient) => {
+export const getNotificationPreferences = async (client: UdpDomainClient) => {
   const logger = getLogger();
 
   const notificationsResponse = await client.gateway.getNotifications();
 
-  if (notificationsResponse.response.status === status.NOT_FOUND) {
+  if (
+    notificationsResponse.response.status === status.NOT_FOUND ||
+    !notificationsResponse.data
+  ) {
     logger.debug("User settings not found");
     return null;
   }
@@ -71,19 +72,30 @@ export const aggregateUserProfile = async ({
   baseUrl,
   pairwiseId,
   notificationId,
-}: AggregateUserProfileOptions) => {
+}: AggregateUserProfileOptions): Promise<UserProfile> => {
   const logger = getLogger();
   const client = createUdpDomainClient({ region, baseUrl, pairwiseId });
-  const userSettings = await getUserProfile(client);
-  if (!userSettings) {
+  const notificationPreferences = await getNotificationPreferences(client);
+
+  if (!notificationPreferences) {
     logger.debug(
       "User not found, creating user and setting default user settings",
     );
     await createUser({
-      pairwiseId,
       notificationId,
       client,
     });
+    const notificationPreferences = await getNotificationPreferences(client);
+    if (!notificationPreferences) {
+      throw new createHttpError.BadGateway();
+    }
+    return {
+      notificationId,
+      preferences: notificationPreferences,
+    };
   }
-  return await getUserProfile(client);
+  return {
+    notificationId,
+    preferences: notificationPreferences,
+  };
 };

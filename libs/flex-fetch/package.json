@@ -14,7 +14,6 @@
   "dependencies": {
     "@flex/logging": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@flex/flex-fetch": "workspace:*",
     "@aws-sdk/credential-providers": "3.985.0",
     "aws-sigv4-fetch": "4.4.1",
     "exponential-backoff": "3.1.3"

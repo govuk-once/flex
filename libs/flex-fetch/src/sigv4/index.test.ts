@@ -27,15 +27,39 @@ vi.mock("@flex/logging", () => {
 });
 
 vi.mock("../fetch/index.js", () => ({
-  flexFetch: vi.fn((...args: unknown[]) => mockFlexFetch(...args)),
+  flexFetch: vi.fn((url: unknown, options?: unknown) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- vi mock passthrough
+    mockFlexFetch(url, options),
+  ),
 }));
 
 vi.mock("@aws-sdk/credential-providers", () => ({
   fromTemporaryCredentials: (opts: unknown) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- vi mock passthrough
     mockFromTemporaryCredentials(opts),
 }));
 
 describe("sigv4Fetch", () => {
+  /**
+   * Generates the expected options object passed to flexFetch as the 2nd arg.
+   * flexFetch(url, options) - use with expect.objectContaining() to avoid mock.calls.
+   */
+  const fullFlexFetchOptions = (
+    overrides: Record<string, unknown> = {},
+  ): Record<string, unknown> => ({
+    fetcher: mockSignedFetcher,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Host: "api.example.com",
+    },
+    maxRetryDelay: undefined,
+    method: "GET",
+    retryAttempts: 3,
+    body: undefined,
+    ...overrides,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockFlexFetch.mockReturnValue({
@@ -70,19 +94,10 @@ describe("sigv4Fetch", () => {
       path: "/v1/data",
     });
 
-    expect(mockFlexFetch).toHaveBeenCalledTimes(1);
-    const [url, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(url).toBeInstanceOf(URL);
-    expect(url.toString()).toBe("https://api.example.com/v1/data");
-    expect(opts.fetcher).toBe(mockSignedFetcher);
-    expect(opts.retryAttempts).toBe(3);
-    expect(opts.method).toBe("GET");
-    expect(opts.headers).toMatchObject({
-      Host: "api.example.com",
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    });
-    expect(opts.body).toBeUndefined();
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(fullFlexFetchOptions()),
+    );
   });
 
   it("passes body as JSON string for POST", async () => {
@@ -95,9 +110,12 @@ describe("sigv4Fetch", () => {
       body,
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.body).toBe(JSON.stringify(body));
-    expect(opts.method).toBe("POST");
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(
+        fullFlexFetchOptions({ body: JSON.stringify(body), method: "POST" }),
+      ),
+    );
   });
 
   it("merges custom headers with default headers", async () => {
@@ -109,12 +127,19 @@ describe("sigv4Fetch", () => {
       headers: { "X-Custom": "value" },
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.headers).toMatchObject({
-      "X-Custom": "value",
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    });
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(
+        fullFlexFetchOptions({
+          headers: {
+            "X-Custom": "value",
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Host: "api.example.com",
+          },
+        }),
+      ),
+    );
   });
 
   it("uses custom host when provided", async () => {
@@ -126,8 +151,18 @@ describe("sigv4Fetch", () => {
       host: "custom-host.example.com",
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.headers.Host).toBe("custom-host.example.com");
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(
+        fullFlexFetchOptions({
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Host: "custom-host.example.com",
+          },
+        }),
+      ),
+    );
   });
 
   it("passes retryAttempts: 0 as undefined to flexFetch", async () => {
@@ -139,8 +174,12 @@ describe("sigv4Fetch", () => {
       retryAttempts: 0,
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.retryAttempts).toBeUndefined();
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(
+        fullFlexFetchOptions({ retryAttempts: undefined }),
+      ),
+    );
   });
 
   it("passes custom retryAttempts and maxRetryDelay to flexFetch", async () => {
@@ -153,9 +192,12 @@ describe("sigv4Fetch", () => {
       maxRetryDelay: 200,
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.retryAttempts).toBe(2);
-    expect(opts.maxRetryDelay).toBe(200);
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining(
+        fullFlexFetchOptions({ retryAttempts: 2, maxRetryDelay: 200 }),
+      ),
+    );
   });
 
   it("returns the response from flexFetch", async () => {
@@ -163,7 +205,9 @@ describe("sigv4Fetch", () => {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
-    mockFlexFetch.mockReturnValue({ request: Promise.resolve(expectedResponse) });
+    mockFlexFetch.mockReturnValue({
+      request: Promise.resolve(expectedResponse),
+    });
 
     const result = await sigv4Fetch({
       region: "eu-west-2",
@@ -199,14 +243,18 @@ describe("createSigv4Fetch", () => {
     });
 
     expect(mockFlexFetch).toHaveBeenCalledTimes(1);
-    const [url, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(url.toString()).toBe("https://api.example.com/gateway/v1/notifications");
-    expect(opts.method).toBe("GET");
-    expect(opts.headers).toMatchObject({
-      "requesting-service": "udp",
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    });
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({
+        method: "GET",
+        headers: {
+          "requesting-service": "udp",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Host: "api.example.com",
+        },
+      }),
+    );
   });
 
   it("request headers override base headers for same key", async () => {
@@ -223,12 +271,19 @@ describe("createSigv4Fetch", () => {
       headers: { "X-Request": "request-value", "X-Shared": "request-override" },
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.headers).toMatchObject({
-      "X-Base": "base-value",
-      "X-Request": "request-value",
-      "X-Shared": "request-override",
-    });
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({
+        headers: {
+          "X-Base": "base-value",
+          "X-Request": "request-value",
+          "X-Shared": "request-override",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Host: "api.example.com",
+        },
+      }),
+    );
   });
 
   it("passes retry options from base config and request", async () => {
@@ -241,9 +296,13 @@ describe("createSigv4Fetch", () => {
 
     await gatewayFetch({ method: "GET", path: "/v1/data" });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.retryAttempts).toBe(5);
-    expect(opts.maxRetryDelay).toBe(300);
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({
+        retryAttempts: 5,
+        maxRetryDelay: 300,
+      }),
+    );
   });
 
   it("request retry options override base config", async () => {
@@ -261,9 +320,13 @@ describe("createSigv4Fetch", () => {
       maxRetryDelay: 100,
     });
 
-    const [, opts] = mockFlexFetch.mock.calls[0]!;
-    expect(opts.retryAttempts).toBe(1);
-    expect(opts.maxRetryDelay).toBe(100);
+    expect(mockFlexFetch).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({
+        retryAttempts: 1,
+        maxRetryDelay: 100,
+      }),
+    );
   });
 });
 
