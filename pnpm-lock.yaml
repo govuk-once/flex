@@ -100,7 +100,7 @@ importers:
         specifier: 7.0.2
         version: 7.0.2(@aws-sdk/client-secrets-manager@3.985.0)
       '@smithy/util-utf8':
-        specifier: ^4.2.0
+        specifier: 4.2.0
         version: 4.2.0
       http-errors:
         specifier: 2.0.1
@@ -130,9 +130,6 @@ importers:
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
-      nock:
-        specifier: 14.0.11
-        version: 14.0.11
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -258,9 +255,6 @@ importers:
       '@aws-sdk/credential-providers':
         specifier: 3.985.0
         version: 3.985.0
-      '@flex/flex-fetch':
-        specifier: workspace:*
-        version: 'link:'
       '@flex/logging':
         specifier: workspace:*
         version: link:../logging
