@@ -146,7 +146,7 @@ export async function getConfig<T extends object>(
     "cachedConfig not found, building configuration from process.env and SSM",
   );
   const rawConfigSchemaCheck = validator.safeParse(process.env);
-  console.log("Raw config validation result:", rawConfigSchemaCheck);
+
   if (!rawConfigSchemaCheck.success) {
     const message = `Invalid raw configuration: ${JSON.stringify(z.treeifyError(rawConfigSchemaCheck.error))}`;
     logger.error(message);
