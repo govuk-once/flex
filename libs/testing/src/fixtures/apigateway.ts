@@ -5,6 +5,7 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayRequestAuthorizerEventV2,
+  APIGatewayTokenAuthorizerEvent,
 } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
@@ -305,3 +306,45 @@ export const authorizerResult = {
   allow: buildAuthorizerAllowResult(),
   deny: buildAuthorizerDenyResult(),
 };
+
+// ----------------------------------------------------------------------------
+// Token Authorizer Event (REST API)
+// ----------------------------------------------------------------------------
+
+export type TokenAuthorizerEventOverrides =
+  DeepPartial<APIGatewayTokenAuthorizerEvent>;
+
+const baseTokenAuthorizerEvent: APIGatewayTokenAuthorizerEvent = {
+  type: "TOKEN",
+  authorizationToken: `Bearer ${validJwt}`,
+  methodArn:
+    "arn:aws:execute-api:eu-west-2:123456789012:api-id/prod/GET/v1/test",
+};
+
+function buildTokenAuthorizerEvent(
+  overrides: TokenAuthorizerEventOverrides = {},
+) {
+  return mergeDeepLeft(
+    overrides,
+    baseTokenAuthorizerEvent,
+  ) as APIGatewayTokenAuthorizerEvent;
+}
+
+export function createTokenAuthorizerEvent() {
+  return {
+    create: (overrides?: TokenAuthorizerEventOverrides) =>
+      buildTokenAuthorizerEvent(overrides),
+    withToken: (token: string, overrides?: TokenAuthorizerEventOverrides) =>
+      buildTokenAuthorizerEvent({
+        ...overrides,
+        authorizationToken: `Bearer ${token}`,
+      }),
+    missingToken: (overrides?: TokenAuthorizerEventOverrides) =>
+      buildTokenAuthorizerEvent({
+        ...overrides,
+        authorizationToken: "",
+      }),
+  } as const;
+}
+
+export const tokenAuthorizerEvent = buildTokenAuthorizerEvent();

@@ -8,7 +8,7 @@ import {
 } from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
-  APIGatewayRequestAuthorizerEventV2,
+  APIGatewayTokenAuthorizerEvent,
 } from "aws-lambda";
 
 import { createPolicy } from "./createPolicy";
@@ -18,11 +18,11 @@ import { createAuthService } from "./services/auth-service";
  * Lambda authorizer handler for API Gateway HTTP API
  */
 const handler = createLambdaHandler<
-  APIGatewayRequestAuthorizerEventV2,
+  APIGatewayTokenAuthorizerEvent,
   APIGatewayAuthorizerResult
 >(
   async (
-    event: APIGatewayRequestAuthorizerEventV2,
+    event: APIGatewayTokenAuthorizerEvent,
   ): Promise<APIGatewayAuthorizerResult> => {
     const logger = getLogger();
     const authService = await createAuthService();
@@ -37,19 +37,19 @@ const handler = createLambdaHandler<
 
       switch (true) {
         case error instanceof JwtExpiredError:
-          return createPolicy("Deny", event.routeArn, {
+          return createPolicy("Deny", event.methodArn, {
             errorMessage: "JWT expired",
           });
         case error instanceof JwtNotBeforeError:
-          return createPolicy("Deny", event.routeArn, {
+          return createPolicy("Deny", event.methodArn, {
             errorMessage: "JWT not yet valid",
           });
         case error instanceof FailedAssertionError:
-          return createPolicy("Deny", event.routeArn, {
+          return createPolicy("Deny", event.methodArn, {
             errorMessage: error.message,
           });
         case error instanceof JwtBaseError:
-          return createPolicy("Deny", event.routeArn);
+          return createPolicy("Deny", event.methodArn);
         default:
           throw error;
       }

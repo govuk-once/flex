@@ -16,8 +16,10 @@ export {
   createAuthorizerResult,
   createEvent,
   createEventWithAuthorizer,
+  createTokenAuthorizerEvent,
   event,
   eventWithAuthorizer,
+  tokenAuthorizerEvent,
 } from "./apigateway";
 export {
   expiredJwt,

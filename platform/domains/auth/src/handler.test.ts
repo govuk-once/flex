@@ -1,11 +1,10 @@
 import {
-  authorizerEvent,
   context,
-  createAuthorizerEvent,
   invalidJwt,
   it,
   jwtMissingUsername,
   publicJWKS,
+  tokenAuthorizerEvent,
   validJwt,
 } from "@flex/testing";
 import {
@@ -18,6 +17,7 @@ import {
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
+import { createTokenAuthorizerEvent } from "../../../../libs/testing/src/fixtures/apigateway";
 import { handler } from "./handler";
 import { createAuthService } from "./services/auth-service";
 
@@ -26,7 +26,7 @@ const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
 const JWKS_PATH = `/${TEST_USERPOOL_ID}/.well-known/jwks.json`;
 
 const ROUTE_ARN =
-  "arn:aws:execute-api:eu-west-2:123456789012:api-id/$default/GET/test";
+  "arn:aws:execute-api:eu-west-2:123456789012:api-id/prod/GET/v1/test";
 
 vi.mock("@flex/params", () => {
   return {
@@ -78,7 +78,7 @@ describe("Authorizer Handler", () => {
   }) => {
     nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(200, publicJWKS);
 
-    expect(await handler(authorizerEvent, context)).toEqual(
+    expect(await handler(tokenAuthorizerEvent, context)).toEqual(
       authorizerResult.allowWithPairwiseId(),
     );
   });
@@ -86,45 +86,37 @@ describe("Authorizer Handler", () => {
   it.each([
     {
       label: "the authorization header is missing",
-      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
-        evt.missingToken(),
+      event: createTokenAuthorizerEvent().missingToken(),
       nockStatus: undefined,
       nockBody: undefined,
     },
     {
       label: "the Bearer token is empty",
-      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
-        evt.withToken(""),
+      event: createTokenAuthorizerEvent().withToken(""),
       nockStatus: undefined,
       nockBody: undefined,
     },
     {
       label: "the JWT is invalid",
-      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
-        evt.withToken(invalidJwt),
+      event: createTokenAuthorizerEvent().withToken(invalidJwt),
       nockStatus: undefined,
       nockBody: undefined,
     },
     {
       label: "the JWT is valid but missing the username claim",
-      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
-        evt.withToken(jwtMissingUsername),
+      event: createTokenAuthorizerEvent().withToken(jwtMissingUsername),
       nockStatus: 200,
       nockBody: publicJWKS,
     },
     {
       label: "the JWKS endpoint is unavailable",
-      getEvent: (evt: ReturnType<typeof createAuthorizerEvent>) =>
-        evt.withToken(validJwt),
+      event: createTokenAuthorizerEvent().withToken(validJwt),
       nockStatus: 500,
       nockBody: "Internal Server Error",
     },
   ])(
     "returns explicit deny when $label",
-    async ({ getEvent, nockStatus, nockBody }) => {
-      const evt = createAuthorizerEvent();
-      const event = getEvent(evt);
-
+    async ({ event, nockStatus, nockBody }) => {
       if (typeof nockStatus === "number") {
         nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(nockStatus, nockBody);
       }
@@ -166,16 +158,13 @@ describe("Authorizer Handler", () => {
         extractPairwiseId: vi.fn().mockRejectedValue(error),
       });
 
-      const evt = createAuthorizerEvent();
-      await expect(handler(evt.withToken(validJwt), context)).resolves.toEqual(
+      await expect(handler(tokenAuthorizerEvent, context)).resolves.toEqual(
         expectDenyPolicy(expectedContext),
       );
     },
   );
 
-  it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async ({
-    authorizerEvent,
-  }) => {
+  it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async () => {
     const unknownError = new Error("Unknown error");
     // Plain Error is NOT a JwtBaseError, so handler must rethrow, not return Deny
     expect(unknownError).not.toBeInstanceOf(JwtBaseError);
@@ -185,7 +174,7 @@ describe("Authorizer Handler", () => {
     });
 
     await expect(
-      handler(authorizerEvent.withToken(validJwt), context),
+      handler(createTokenAuthorizerEvent().withToken(validJwt), context),
     ).resolves.toEqual({
       statusCode: 500,
       headers: {},

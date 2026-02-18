@@ -3,12 +3,12 @@ import { getConfig } from "@flex/params";
 import { JwtVerifier } from "aws-jwt-verify";
 import { validateCognitoJwtFields } from "aws-jwt-verify/cognito-verifier";
 import { FailedAssertionError } from "aws-jwt-verify/error";
-import type { APIGatewayRequestAuthorizerEventV2 } from "aws-lambda";
+import type { APIGatewayTokenAuthorizerEvent } from "aws-lambda";
 
 import { configSchema } from "../config";
 
-function extractToken(event: APIGatewayRequestAuthorizerEventV2) {
-  return event.headers?.authorization?.split(" ")[1];
+function extractToken(event: APIGatewayTokenAuthorizerEvent) {
+  return event.authorizationToken.split(" ")[1];
 }
 
 export async function createAuthService() {
@@ -29,7 +29,7 @@ export async function createAuthService() {
   });
 
   return {
-    extractPairwiseId: async (event: APIGatewayRequestAuthorizerEventV2) => {
+    extractPairwiseId: async (event: APIGatewayTokenAuthorizerEvent) => {
       const token = extractToken(event);
 
       if (!token) {
