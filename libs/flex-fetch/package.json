@@ -12,13 +12,16 @@
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "3.990.0",
     "@flex/logging": "workspace:*",
     "@flex/utils": "workspace:*",
+    "aws-sigv4-fetch": "4.4.1",
     "exponential-backoff": "3.1.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
+    "@smithy/types": "4.12.0",
     "@types/node": "25.0.9",
     "eslint": "9.39.2",
     "nock": "14.0.10",
