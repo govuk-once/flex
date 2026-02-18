@@ -13,16 +13,16 @@ export class FlexCloudfrontFunction extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    props: FlexCloudfrontFunctionProps,
+    { functionSourcePath }: FlexCloudfrontFunctionProps,
   ) {
     super(scope, id);
-
-    const functionSourcePath = props.functionSourcePath;
 
     const buildResult = esbuild.buildSync({
       entryPoints: [functionSourcePath],
       format: "esm",
       target: "es5",
+
+      bundle: true,
 
       // If identifiers are minified `handler` will be renamed, and will break the function
       minify: false,

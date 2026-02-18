@@ -11,21 +11,22 @@ const app = new cdk.App();
 
 const { domainName, subdomainName } = await getDomainName();
 
-const { certArn } = new FlexCertStack(app, getStackName("FlexCertStack"), {
+const certStackName = getStackName("FlexCertStack");
+const { certArnParamName } = new FlexCertStack(app, certStackName, {
   domainName,
   subdomainName,
 });
 
-const { httpApi } = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-  certArn,
+const { restApi } = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
+  certArnParamName,
   domainName,
   subdomainName,
 });
 
 /**
- * Dynamical create CloudFormation stack per domain
+ * Dynamically create CloudFormation stack per domain
  */
 const flexDomains = await getDomainConfigs();
 flexDomains.forEach((domain) => {
-  new FlexDomainStack(app, getStackName(domain.domain), { domain, httpApi });
+  new FlexDomainStack(app, getStackName(domain.domain), { domain, restApi });
 });

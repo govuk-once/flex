@@ -9,14 +9,11 @@ import {
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
-  HttpApi,
-  HttpMethod,
-  HttpRoute,
-  HttpRouteKey,
-} from "aws-cdk-lib/aws-apigatewayv2";
-import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+  IResource,
+  LambdaIntegration,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import { IKey } from "aws-cdk-lib/aws-kms";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -28,7 +25,7 @@ import { getDomainEntry } from "../utils/getEntry";
 
 interface FlexDomainStackProps {
   domain: IDomain;
-  httpApi: HttpApi;
+  restApi: RestApi;
 }
 
 export class FlexDomainStack extends GovUkOnceStack {
@@ -38,7 +35,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    { domain: { domain, owner, versions }, httpApi }: FlexDomainStackProps,
+    { domain: { domain, owner, versions }, restApi }: FlexDomainStackProps,
   ) {
     super(scope, id, {
       tags: {
@@ -52,9 +49,7 @@ export class FlexDomainStack extends GovUkOnceStack {
 
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
-        for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
-          const method = methodKey as HttpMethod;
-
+        for (const [method, routeConfig] of Object.entries(methodMap)) {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
@@ -79,17 +74,31 @@ export class FlexDomainStack extends GovUkOnceStack {
             key.grantDecrypt(domainEndpointFn.function);
           });
 
-          this.#createApiRoute(
-            httpApi,
-            domain,
-            versionId,
-            path,
+          const newPath = `app/${versionId}${path}`;
+
+          this.#addDeepResource(restApi.root, newPath).addMethod(
             method,
-            domainEndpointFn.function,
+            new LambdaIntegration(domainEndpointFn.function),
           );
         }
       }
     }
+  }
+
+  #addDeepResource(root: IResource, path: string): IResource {
+    const parts = path.split("/").filter(Boolean);
+    let current = root;
+
+    for (const part of parts) {
+      const existing = current.node.tryFindChild(part) as IResource | undefined;
+      if (existing) {
+        current = existing;
+      } else {
+        current = current.addResource(part);
+      }
+    }
+
+    return current;
   }
 
   /**
@@ -152,7 +161,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     route: IDomainEndpoint,
     domain: string,
     path: string,
-    method: HttpMethod,
+    method: string,
     versionId: string,
     environment?: Record<string, string>,
   ) {
@@ -174,29 +183,6 @@ export class FlexDomainStack extends GovUkOnceStack {
       case "ISOLATED":
         return new FlexPrivateIsolatedFunction(this, id, props);
     }
-  }
-
-  /**
-   * Creates the API Gateway Route integration
-   */
-  #createApiRoute(
-    httpApi: HttpApi,
-    domain: string,
-    version: string,
-    path: string,
-    method: HttpMethod,
-    handler: NodejsFunction,
-  ) {
-    const fullPath = `/app/${version}${path}`.replace(/\/\//g, "/");
-
-    const cleanPathId = path.replace(/\//g, "");
-    const integrationId = `${domain}-${version}-${method}-${cleanPathId}`;
-
-    new HttpRoute(this, `Route-${integrationId}`, {
-      httpApi,
-      routeKey: HttpRouteKey.with(fullPath, method),
-      integration: new HttpLambdaIntegration(integrationId, handler),
-    });
   }
 
   // --- Resource Importers ---
