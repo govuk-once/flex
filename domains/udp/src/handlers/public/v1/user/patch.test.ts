@@ -19,14 +19,6 @@ vi.mock("../../services/updateNotificationPreferences", () => ({
 import { updateNotificationPreferences } from "../../services/updateNotificationPreferences";
 
 describe("PATCH /user handler", () => {
-  beforeAll(() => {
-    vi.useFakeTimers();
-  });
-
-  afterAll(() => {
-    vi.useRealTimers();
-  });
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(updateNotificationPreferences).mockResolvedValue(
