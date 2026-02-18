@@ -63,23 +63,15 @@ export class FlexRestApi extends Construct {
     restApi.addGatewayResponse("Unauthorized", {
       type: ResponseType.UNAUTHORIZED,
       statusCode: "401",
-      responseHeaders: {
-        "Access-Control-Allow-Origin": "'*'",
-      },
-      // This utilizes the context variable passed from your Lambda
       templates: {
         "application/json":
           '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
       },
     });
 
-    // For when authorizer returns Deny (expired JWT, invalid token, etc.)
     restApi.addGatewayResponse("AccessDenied", {
       type: ResponseType.ACCESS_DENIED,
       statusCode: "403",
-      responseHeaders: {
-        "Access-Control-Allow-Origin": "'*'",
-      },
       templates: {
         "application/json":
           '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',

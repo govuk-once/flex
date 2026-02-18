@@ -29,6 +29,7 @@ export {
   createEventWithAuthorizer,
   createMiddyRequest,
   createResponse,
+  createTokenAuthorizerEvent,
   event,
   eventWithAuthorizer,
   expiredJwt,

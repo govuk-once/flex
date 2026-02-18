@@ -1,5 +1,6 @@
 import {
   context,
+  createTokenAuthorizerEvent,
   invalidJwt,
   it,
   jwtMissingUsername,
@@ -17,7 +18,6 @@ import {
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { createTokenAuthorizerEvent } from "../../../../libs/testing/src/fixtures/apigateway";
 import { handler } from "./handler";
 import { createAuthService } from "./services/auth-service";
 
