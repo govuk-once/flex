@@ -72,5 +72,18 @@ export class FlexRestApi extends Construct {
           '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
       },
     });
+
+    // For when authorizer returns Deny (expired JWT, invalid token, etc.)
+    restApi.addGatewayResponse("AccessDenied", {
+      type: ResponseType.ACCESS_DENIED,
+      statusCode: "403",
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+      },
+      templates: {
+        "application/json":
+          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+      },
+    });
   }
 }
