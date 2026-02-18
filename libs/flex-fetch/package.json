@@ -19,10 +19,10 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/node": "25.0.9",
+    "@types/node": "25.2.3",
     "eslint": "9.39.2",
     "nock": "14.0.10",
     "typescript": "5.9.3",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

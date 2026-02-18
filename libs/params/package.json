@@ -12,7 +12,7 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.30.2",
+    "@aws-lambda-powertools/parameters": "2.31.0",
     "@flex/logging": "workspace:*",
     "zod": "4.3.6"
   },
@@ -20,7 +20,7 @@
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "25.2.2",
+    "@types/node": "25.2.3",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
