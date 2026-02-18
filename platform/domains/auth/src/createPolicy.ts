@@ -3,7 +3,7 @@ import { APIGatewayAuthorizerResult } from "aws-lambda";
 export function createPolicy(
   effect: "Allow" | "Deny",
   routeArn: string,
-  message?: string,
+  context?: Record<string, string>,
 ): APIGatewayAuthorizerResult {
   return {
     principalId: "anonymous",
@@ -13,8 +13,6 @@ export function createPolicy(
         { Action: "execute-api:Invoke", Effect: effect, Resource: routeArn },
       ],
     },
-    context: {
-      errorMessage: message,
-    },
+    context,
   };
 }

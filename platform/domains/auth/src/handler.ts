@@ -31,26 +31,23 @@ const handler = createLambdaHandler<
       const pairwiseId = await authService.extractPairwiseId(event);
       logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
-      return {
-        principalId: "anonymous",
-        policyDocument: {
-          Version: "2012-10-17",
-          Statement: [
-            { Action: "execute-api:Invoke", Effect: "Allow", Resource: "*" },
-          ],
-        },
-        context: { pairwiseId },
-      };
+      return createPolicy("Allow", event.routeArn, { pairwiseId });
     } catch (error) {
       logger.error("JWT verification failed", { error });
 
       switch (true) {
         case error instanceof JwtExpiredError:
-          return createPolicy("Deny", event.routeArn, "JWT expired");
+          return createPolicy("Deny", event.routeArn, {
+            errorMessage: "JWT expired",
+          });
         case error instanceof JwtNotBeforeError:
-          return createPolicy("Deny", event.routeArn, "JWT not yet valid");
+          return createPolicy("Deny", event.routeArn, {
+            errorMessage: "JWT not yet valid",
+          });
         case error instanceof FailedAssertionError:
-          return createPolicy("Deny", event.routeArn, error.message);
+          return createPolicy("Deny", event.routeArn, {
+            errorMessage: error.message,
+          });
         case error instanceof JwtBaseError:
           return createPolicy("Deny", event.routeArn);
         default:
