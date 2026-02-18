@@ -4,7 +4,6 @@ import {
   FailedAssertionError,
   JwtBaseError,
   JwtExpiredError,
-  JwtNotBeforeError,
 } from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
@@ -40,14 +39,8 @@ const handler = createLambdaHandler<
           return createPolicy("Deny", event.methodArn, {
             errorMessage: "JWT expired",
           });
-        case error instanceof JwtNotBeforeError:
-          return createPolicy("Deny", event.methodArn, {
-            errorMessage: "JWT not yet valid",
-          });
         case error instanceof FailedAssertionError:
-          return createPolicy("Deny", event.methodArn, {
-            errorMessage: error.message,
-          });
+          return createPolicy("Deny", event.methodArn);
         case error instanceof JwtBaseError:
           return createPolicy("Deny", event.methodArn);
         default:

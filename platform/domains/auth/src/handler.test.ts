@@ -10,9 +10,7 @@ import {
 } from "@flex/testing";
 import {
   FailedAssertionError,
-  JwtBaseError,
   JwtExpiredError,
-  JwtNotBeforeError,
   JwtParseError,
 } from "aws-jwt-verify/error";
 import nock from "nock";
@@ -24,9 +22,6 @@ import { createAuthService } from "./services/auth-service";
 const TEST_USERPOOL_ID = "eu-west-2_testUserPoolId";
 const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
 const JWKS_PATH = `/${TEST_USERPOOL_ID}/.well-known/jwks.json`;
-
-const ROUTE_ARN =
-  "arn:aws:execute-api:eu-west-2:123456789012:api-id/prod/GET/v1/test";
 
 vi.mock("@flex/params", () => {
   return {
@@ -59,7 +54,7 @@ function expectDenyPolicy(context?: Record<string, string>) {
         {
           Action: "execute-api:Invoke",
           Effect: "Deny",
-          Resource: ROUTE_ARN,
+          Resource: tokenAuthorizerEvent.methodArn,
         },
       ],
     },
@@ -87,38 +82,40 @@ describe("Authorizer Handler", () => {
     {
       label: "the authorization header is missing",
       event: createTokenAuthorizerEvent().missingToken(),
-      nockStatus: undefined,
-      nockBody: undefined,
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
     },
     {
       label: "the Bearer token is empty",
       event: createTokenAuthorizerEvent().withToken(""),
-      nockStatus: undefined,
-      nockBody: undefined,
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
     },
     {
       label: "the JWT is invalid",
       event: createTokenAuthorizerEvent().withToken(invalidJwt),
-      nockStatus: undefined,
-      nockBody: undefined,
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
     },
     {
       label: "the JWT is valid but missing the username claim",
       event: createTokenAuthorizerEvent().withToken(jwtMissingUsername),
-      nockStatus: 200,
-      nockBody: publicJWKS,
+      cognitoResponseStatus: 200,
+      cognitoResponseBody: publicJWKS,
     },
     {
       label: "the JWKS endpoint is unavailable",
       event: createTokenAuthorizerEvent().withToken(validJwt),
-      nockStatus: 500,
-      nockBody: "Internal Server Error",
+      cognitoResponseStatus: 500,
+      cognitoResponseBody: "Internal Server Error",
     },
   ])(
     "returns explicit deny when $label",
-    async ({ event, nockStatus, nockBody }) => {
-      if (typeof nockStatus === "number") {
-        nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(nockStatus, nockBody);
+    async ({ event, cognitoResponseStatus, cognitoResponseBody }) => {
+      if (typeof cognitoResponseStatus === "number") {
+        nock(COGNITO_BASE_URL)
+          .get(JWKS_PATH)
+          .reply(cognitoResponseStatus, cognitoResponseBody);
       }
       await expect(handler(event, context)).resolves.toEqual(
         expectDenyPolicy(),
@@ -133,18 +130,13 @@ describe("Authorizer Handler", () => {
       expectedContext: { errorMessage: "JWT expired" },
     },
     {
-      label: "JwtNotBeforeError",
-      error: new JwtNotBeforeError("JWT not yet valid", null, "nbf"),
-      expectedContext: { errorMessage: "JWT not yet valid" },
-    },
-    {
       label: "FailedAssertionError",
       error: new FailedAssertionError(
         "Missing authorization token",
         undefined,
         "authorization token",
       ),
-      expectedContext: { errorMessage: "Missing authorization token" },
+      expectedContext: undefined,
     },
     {
       label: "generic JwtBaseError",
@@ -166,8 +158,6 @@ describe("Authorizer Handler", () => {
 
   it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async () => {
     const unknownError = new Error("Unknown error");
-    // Plain Error is NOT a JwtBaseError, so handler must rethrow, not return Deny
-    expect(unknownError).not.toBeInstanceOf(JwtBaseError);
 
     vi.mocked(createAuthService).mockResolvedValueOnce({
       extractPairwiseId: vi.fn().mockRejectedValue(unknownError),
