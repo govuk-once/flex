@@ -63,7 +63,7 @@ describe("authentication", () => {
 
     it.skip("rejects expired tokens", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${validJwt}` },
+        headers: { Authorization: `Bearer ${expiredJwt}` },
       });
 
       expect(result).toMatchObject({
