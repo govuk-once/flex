@@ -118,6 +118,12 @@ interface Sigv4BaseConfig
 interface Sigv4RequestOptions
   extends Sigv4RequestParams, Sigv4Headers, FlexFetchRetryOptions {}
 
+/**
+ * Creates a function that can be used to make a signed request to the API Gateway.
+ *
+ * @param baseConfig - The base configuration for the request.
+ * @returns A function that can be used to make a signed request to the API Gateway.
+ */
 export function createSigv4Fetch(baseConfig: Sigv4BaseConfig) {
   return async (request: Sigv4RequestOptions) => {
     return sigv4Fetch({
