@@ -6,7 +6,7 @@ import z from "zod";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
-export const rawConfigSchema = z.looseObject({
+export const rawConfigSchema = z.object({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),
@@ -23,12 +23,18 @@ async function resetConfigModule() {
   return config;
 }
 
-let configModule: typeof import(".");
+function getConfig(rawConfigSchema: z.ZodType<object>, reset: boolean = true) {
+  if (reset) {
+    return resetConfigModule().then((config) =>
+      config.getConfig(rawConfigSchema),
+    );
+  }
+  return import(".").then((config) => config.getConfig(rawConfigSchema));
+}
 
 describe("Config", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    configModule = await resetConfigModule();
   });
 
   describe("getConfig", () => {
@@ -42,7 +48,7 @@ describe("Config", () => {
           // CLIENT_ID_PARAM_NAME is intentionally left blank to simulate missing variable
         });
 
-        await expect(configModule.getConfig(rawConfigSchema)).rejects.toThrow(
+        await expect(getConfig(rawConfigSchema)).rejects.toThrow(
           /Invalid raw configuration:/,
         );
       });
@@ -70,7 +76,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await configModule.getConfig(rawConfigSchema);
+      const config = await getConfig(rawConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -82,10 +88,6 @@ describe("Config", () => {
     });
 
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
-      vi.resetModules();
-      const config = await import(".");
-      const logging = await import("@flex/logging");
-
       env.set({
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -97,8 +99,7 @@ describe("Config", () => {
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      logging.getLogger({ serviceName: "config_test" });
-      await expect(config.getConfig(rawConfigSchema)).rejects.toThrow(
+      await expect(getConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
     });
@@ -124,14 +125,8 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
 
-      vi.resetModules();
-      const config = await import(".");
-      const logging = await import("@flex/logging");
-
-      logging.getLogger({ serviceName: "config_test" });
-
-      const firstConfig = await config.getConfig(rawConfigSchema);
-      const secondConfig = await config.getConfig(rawConfigSchema);
+      const firstConfig = await getConfig(rawConfigSchema);
+      const secondConfig = await getConfig(rawConfigSchema, false);
 
       expect(vi.mocked(getParametersByName).mock.calls.length).toBe(1);
       expect(secondConfig).toBe(firstConfig);
@@ -168,7 +163,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await configModule.getConfig(featureFlagConfigSchema);
+      const config = await getConfig(featureFlagConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -192,7 +187,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await configModule.getConfig(featureFlagConfigSchema);
+      const config = await getConfig(featureFlagConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({

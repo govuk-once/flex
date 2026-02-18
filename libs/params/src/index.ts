@@ -55,7 +55,10 @@ async function populateParameterFields<T extends object>(
       throw new Error(message);
     }
 
-    return [key.replace("_PARAM_NAME", ""), parameterValue] as [string, string];
+    return [key.replace(/_PARAM_NAME$/, ""), parameterValue] as [
+      string,
+      string,
+    ];
   });
 
   const parsedConfig = Object.fromEntries([
@@ -86,10 +89,10 @@ function removeFeatureFlags<T extends object>(
 }
 
 /**
- * Extracts feature flag fields from the raw configuration, renames them by removing the _FEATURE_FLAG suffix, and returns them in a structured format.
+ * Extracts feature flag fields from the raw configuration, renames them by removing the _FEATURE_FLAG suffix, and returns them in a new object.
  *
  * @param rawConfig The raw configuration object containing feature flags.
- * @returns The extracted feature flags in a structured format.
+ * @returns The extracted feature flags.
  */
 function extractFeatureFlags<T extends object>(
   rawConfig: T,
@@ -101,7 +104,7 @@ function extractFeatureFlags<T extends object>(
   ) as Array<[string, string]>;
 
   const renamedFeatureFlagEntries = featureFlagEntries.map(([key, value]) => [
-    key.replace("_FEATURE_FLAG", ""),
+    key.replace(/_FEATURE_FLAG$/, ""),
     value !== "false",
   ]);
 
