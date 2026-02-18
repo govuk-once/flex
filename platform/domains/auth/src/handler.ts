@@ -1,11 +1,12 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
+import { JwtBaseError, NonRetryableFetchError } from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayRequestAuthorizerEventV2,
 } from "aws-lambda";
+import createHttpError from "http-errors";
 
-import { JwtValidationError } from "./errors";
 import { createAuthService } from "./services/auth-service";
 
 function createPolicy(
@@ -44,13 +45,21 @@ const handler = createLambdaHandler<
 
       return createPolicy("Allow", "*", { pairwiseId });
     } catch (error) {
-      if (error instanceof JwtValidationError) {
-        logger.warn("JWT validation failed", { error: error.message });
-        return createPolicy("Deny", event.routeArn);
+      switch (true) {
+        case error instanceof NonRetryableFetchError:
+          logger.error("JWKS endpoint is unavailable", {
+            error: error.message,
+          });
+          throw new createHttpError.InternalServerError(
+            "JWKS endpoint is unavailable",
+          );
+        case error instanceof JwtBaseError:
+          logger.warn("JWT validation failed", { error: error.message });
+          return createPolicy("Deny", event.routeArn);
+        default:
+          logger.error("Authorizer error", { error });
+          throw error;
       }
-
-      logger.error("Authorizer error", { error });
-      throw error;
     }
   },
   {

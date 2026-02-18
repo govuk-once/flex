@@ -1,4 +1,4 @@
 {
   "extends": "@flex/config/tsconfig.json",
-  "include": ["src/**/*.ts", "../flex/src/private-gateway.ts"]
+  "include": ["src/**/*.ts"]
 }

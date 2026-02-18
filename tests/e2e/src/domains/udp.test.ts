@@ -3,7 +3,6 @@ import { describe, expect } from "vitest";
 
 describe.todo("UDP domain", () => {
   const endpoint = `/v1/user`;
-  const user = { name: "John Doe" };
 
   describe("/get user", () => {
     it("returns notification ID and user settings", async ({ cloudfront }) => {

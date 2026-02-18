@@ -11,9 +11,15 @@ export type Fetcher = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-interface FlexFetchRequestInit extends RequestInit {
+/** Retry options shared by flex-fetch and consumers (e.g. sigv4). Composed into FlexFetchRequestInit. */
+export interface FlexFetchRetryOptions {
+  /** Retry attempts for transient failures. Default 1. Set to 0 to disable. */
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
+  /** Max delay between retries in ms. */
   maxRetryDelay?: number;
+}
+
+interface FlexFetchRequestInit extends RequestInit, FlexFetchRetryOptions {
   /** Custom fetch implementation (e.g. aws-sigv4 signed fetcher). When provided, used instead of global fetch. */
   fetcher?: Fetcher;
 }

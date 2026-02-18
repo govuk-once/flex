@@ -139,29 +139,8 @@ describe("createUdpRemoteClient", () => {
       );
     });
 
-    it("call forwards options to fetchRemote", async () => {
-      const client = createUdpRemoteClient(BASE_CONFIG);
-      await client.call({
-        method: "GET",
-        path: "custom/path",
-        headers: { "X-Custom": "value" },
-      });
-
-      expect(mockSigv4Fetch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: "GET",
-          path: "custom/path",
-          headers: { "X-Custom": "value" },
-        }),
-      );
-    });
-
     it("passes config to createSigv4FetchWithCredentials", async () => {
-      const config: UdpRemoteClientConfig = {
-        ...BASE_CONFIG,
-        externalId: "external-123",
-      };
-      const client = createUdpRemoteClient(config);
+      const client = createUdpRemoteClient(BASE_CONFIG);
       await client.getNotifications("user");
 
       expect(mockSigv4Fetch).toHaveBeenCalledWith(
@@ -169,7 +148,6 @@ describe("createUdpRemoteClient", () => {
           region: "eu-west-2",
           baseUrl: "https://api.example.com/gateways/udp",
           roleArn: "arn:aws:iam::123456789:role/test-consumer",
-          externalId: "external-123",
         }),
       );
     });

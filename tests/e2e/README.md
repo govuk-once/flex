@@ -35,12 +35,12 @@ For personal development, you must deploy your own stack before running E2E test
 
 ### Environment Variables
 
-| Variable                  | Required | Description                                                                 |
-| ------------------------- | -------- | --------------------------------------------------------------------------- |
-| `STAGE`                   | No       | Deployment stage (defaults to `$USER` or `development`)                     |
-| `AWS_REGION`              | No       | AWS region (automatically set by GDS CLI)                                   |
-| `FLEX_API_URL`            | No       | Manual override for API URL                                                 |
-| `FLEX_PRIVATE_GATEWAY_URL` | No      | Manual override for private gateway URL (for unreachability e2e test)       |
+| Variable                   | Required | Description                                                           |
+| -------------------------- | -------- | --------------------------------------------------------------------- |
+| `STAGE`                    | No       | Deployment stage (defaults to `$USER` or `development`)               |
+| `AWS_REGION`               | No       | AWS region (automatically set by GDS CLI)                             |
+| `FLEX_API_URL`             | No       | Manual override for API URL                                           |
+| `FLEX_PRIVATE_GATEWAY_URL` | No       | Manual override for private gateway URL (for unreachability e2e test) |
 
 > If not using GDS CLI to assume roles, set `AWS_REGION` manually (e.g., `eu-west-2`).
 

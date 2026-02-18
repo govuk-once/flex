@@ -1,13 +1,10 @@
 import { IDomain, IDomainRoutes } from "@flex/sdk";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
-import {
-  HttpApi,
-  HttpRoute,
-  HttpRouteKey,
-} from "aws-cdk-lib/aws-apigatewayv2";
+import { IResource } from "aws-cdk-lib/aws-apigateway";
+import { HttpApi, HttpRoute, HttpRouteKey } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import type { Construct } from "constructs";
-import { IResource } from "aws-cdk-lib/aws-apigateway";
+
 import { processDomainRoutes } from "../utils/processDomainRoutes";
 
 interface FlexDomainStackProps {

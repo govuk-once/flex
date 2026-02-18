@@ -6,22 +6,29 @@ import type {
 } from "@smithy/types";
 import { createSignedFetcher } from "aws-sigv4-fetch";
 
-import { flexFetch } from "../fetch/index.js";
+import { flexFetch, type FlexFetchRetryOptions } from "../fetch/index";
 
-interface Options {
+interface Sigv4ConnectionParams {
   region: string;
   baseUrl: string;
+  host?: string;
+  credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
+}
+
+interface Sigv4RequestParams {
   method: string;
   path: string;
   body?: unknown;
-  host?: string;
-  headers?: Record<string, string>;
-  credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
-  /** Retry attempts for transient failures. Default 3. Set to 0 to disable. */
-  retryAttempts?: number;
-  /** Max delay between retries in ms. */
-  maxRetryDelay?: number;
 }
+
+interface Sigv4Headers {
+  headers?: Record<string, string>;
+}
+
+type Sigv4FetchOptions = Sigv4ConnectionParams &
+  Sigv4RequestParams &
+  Sigv4Headers &
+  FlexFetchRetryOptions;
 
 export async function sigv4Fetch({
   region,
@@ -34,7 +41,7 @@ export async function sigv4Fetch({
   headers,
   retryAttempts = 3,
   maxRetryDelay,
-}: Options) {
+}: Sigv4FetchOptions) {
   const base = new URL(baseUrl);
   const basePath = base.pathname.endsWith("/")
     ? base.pathname
@@ -83,7 +90,7 @@ function getCredentialsCacheKey(roleArn: string, externalId?: string): string {
 }
 
 export function createSigv4FetchWithCredentials(
-  options: Options & Sigv4CredentialsOptions,
+  options: Sigv4FetchOptions & Sigv4CredentialsOptions,
 ) {
   const cacheKey = getCredentialsCacheKey(options.roleArn, options.externalId);
 
@@ -105,24 +112,11 @@ export function createSigv4FetchWithCredentials(
   });
 }
 
-interface Sigv4BaseConfig {
-  region: string;
-  baseUrl: string;
-  headers?: Record<string, string>;
-  credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
-  host?: string;
-  retryAttempts?: number;
-  maxRetryDelay?: number;
-}
+interface Sigv4BaseConfig
+  extends Sigv4ConnectionParams, Sigv4Headers, FlexFetchRetryOptions {}
 
-interface Sigv4RequestOptions {
-  method: string;
-  path: string;
-  body?: unknown;
-  headers?: Record<string, string>;
-  retryAttempts?: number;
-  maxRetryDelay?: number;
-}
+interface Sigv4RequestOptions
+  extends Sigv4RequestParams, Sigv4Headers, FlexFetchRetryOptions {}
 
 export function createSigv4Fetch(baseConfig: Sigv4BaseConfig) {
   return async (request: Sigv4RequestOptions) => {

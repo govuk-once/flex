@@ -12,7 +12,6 @@ export interface UdpRemoteClientConfig {
   apiUrl: string;
   apiKey: string;
   consumerRoleArn: string;
-  externalId?: string;
 }
 
 /**
@@ -54,7 +53,7 @@ async function fetchRemote(
   return fetchFn(options);
 }
 
-async function validateResponse<T>(
+async function responseToApiResult<T>(
   response: Response,
   schema?: z.ZodType<T>,
 ): Promise<ApiResult<T>> {
@@ -127,7 +126,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
-      }).then((res) => validateResponse(res, RemoteConsentResponseSchema)),
+      }).then((res) => responseToApiResult(res, RemoteConsentResponseSchema)),
 
     postNotifications: (
       body: UdpRemoteContract["postNotifications"]["body"],
@@ -142,7 +141,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
-      }).then((res) => validateResponse(res)),
+      }).then((res) => responseToApiResult(res)),
 
     postUser: (
       body: UdpRemoteContract["postUser"]["body"],
@@ -154,19 +153,7 @@ export function createUdpRemoteClient(config: UdpRemoteClientConfig) {
         headers: {
           "x-api-key": config.apiKey,
         },
-      }).then((res) => validateResponse(res)),
-
-    /** Generic call for arbitrary method/path/headers. Path is relative to baseUrl (e.g. "v1/notifications"). */
-    call: (options: {
-      method: string;
-      path: string;
-      body?: unknown;
-      headers?: Record<string, string>;
-    }): Promise<ApiResult<unknown>> =>
-      fetchRemote(config, {
-        ...options,
-        path: pathSuffix(options.path),
-      }).then((res) => validateResponse(res)),
+      }).then((res) => responseToApiResult(res)),
   };
 }
 

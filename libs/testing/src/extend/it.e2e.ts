@@ -21,7 +21,6 @@ export const it = vitestIt.extend<Fixtures>({
   },
   privateGateway: async ({ signal }, use) => {
     const { FLEX_PRIVATE_GATEWAY_URL } = inject("e2eEnv");
-    await use(createApi(FLEX_PRIVATE_GATEWAY_URL, { signal })
-    );
+    await use(createApi(FLEX_PRIVATE_GATEWAY_URL, { signal }));
   },
 });

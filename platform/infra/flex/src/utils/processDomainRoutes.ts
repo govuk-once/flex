@@ -7,20 +7,21 @@ import {
   importFlexParameter,
   importFlexSecret,
 } from "@platform/core/outputs";
+import { Duration } from "aws-cdk-lib";
+import { IResource } from "aws-cdk-lib/aws-apigateway";
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
-import { IResource } from "aws-cdk-lib/aws-apigateway";
 import type { Construct } from "constructs";
+
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
-import { getDomainEntry } from "./getEntry";
 import { grantPrivateApiAccess } from "../service-gateway/private-gateway-permissions";
-import { Duration } from "aws-cdk-lib";
+import { getDomainEntry } from "./getEntry";
 
 export interface ProcessDomainRoutesConfig {
   domain: string;
@@ -47,7 +48,10 @@ export function processDomainRoutes(
   const envCache = new Map<string, ISecret | IStringParameter>();
   const keyCache = new Map<string, IKey>();
 
-  function getOrImportEnv(path: string, isSecret: boolean): ISecret | IStringParameter {
+  function getOrImportEnv(
+    path: string,
+    isSecret: boolean,
+  ): ISecret | IStringParameter {
     const cached = envCache.get(path);
     if (cached !== undefined) return cached;
 
@@ -174,9 +178,11 @@ export function processDomainRoutes(
     }
   }
 
-  const { domain, versionedRoutes, domainsResource, createApiRoute } = config;
+  const { domain, versionedRoutes, createApiRoute } = config;
 
-  for (const [versionId, versionConfig] of Object.entries(versionedRoutes.versions)) {
+  for (const [versionId, versionConfig] of Object.entries(
+    versionedRoutes.versions,
+  )) {
     for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
       for (const [methodKey, routeConfig] of Object.entries(methodMap)) {
         const method = methodKey as HttpMethod;
@@ -205,7 +211,13 @@ export function processDomainRoutes(
           key.grantDecrypt(domainEndpointFn.function);
         });
 
-        createApiRoute(domain, versionId, path, method, domainEndpointFn.function);
+        createApiRoute(
+          domain,
+          versionId,
+          path,
+          method,
+          domainEndpointFn.function,
+        );
 
         if (routeConfig.permissions && routeConfig.permissions.length > 0) {
           grantPermissions(

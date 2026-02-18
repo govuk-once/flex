@@ -1,9 +1,5 @@
 import { IDomainRoutes } from "@flex/sdk";
-import {
-  AuthorizationType,
-  IResource,
-  LambdaIntegration,
-} from "aws-cdk-lib/aws-apigateway";
+import { IResource, LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
 import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
@@ -54,9 +50,6 @@ export class PrivateDomainFactory extends Construct {
       resource = resource.getResource(segment) ?? resource.addResource(segment);
     }
 
-    resource.addMethod(
-      method,
-      new LambdaIntegration(handler, { proxy: true }),
-    );
+    resource.addMethod(method, new LambdaIntegration(handler, { proxy: true }));
   }
 }

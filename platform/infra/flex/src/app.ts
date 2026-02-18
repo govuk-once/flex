@@ -4,9 +4,9 @@ import * as cdk from "aws-cdk-lib";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
 import { FlexDomainStack } from "./stacks/domain";
+import { FlexPrivateGatewayStack } from "./stacks/serviceGateway";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
-import { FlexPrivateGatewayStack } from "./stacks/serviceGateway";
 
 const app = new cdk.App();
 
@@ -30,7 +30,6 @@ const flexPrivateGatewayStack = new FlexPrivateGatewayStack(
   getStackName("FlexPrivateGateway"),
   { domains: flexDomains, httpApi },
 );
-
 
 flexDomains.forEach((domain) => {
   const stack = new FlexDomainStack(app, getStackName(domain.domain), {
