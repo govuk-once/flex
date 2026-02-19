@@ -19,25 +19,25 @@ pnpm add @flex/flex-fetch
 
 ### Options (`FlexFetchRequestInit`)
 
-- **`retryAttempts`**: number of attempts, capped at 5. If omitted, no retries are performed.
+- **`retryAttempts`**: total number of attempts (including the first try), capped at 6. If omitted, no retries are performed.
 - **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10-1000 ms.
 - **Other `RequestInit`**: any standard fetch options (`method`, `headers`, `body`, etc.).
 
 ### createSigv4Fetcher
 
-Creates a signed fetch wrapper for AWS API Gateway (`execute-api`) and compatible endpoints. Use when you already have credentials (e.g. from the environment or explicit credentials).
+Creates a path-based signed fetch for AWS API Gateway (`execute-api`) and compatible endpoints. Use when you already have credentials (e.g. from the environment or explicit credentials). Returns a function that accepts a path and returns a `flexFetch` result.
 
 - **Function:** `createSigv4Fetcher(options)`
-- **Returns:** `{ request: Promise<Response>; abort: () => void }`
-- **Options:** `baseUrl` (string | URL), `region?`, `credentials?`, `fetchOptions?` (retry, headers, etc.)
+- **Returns:** `(path: string) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl` (string), `region?`, `credentials?`, `fetchOptions?` (retry, headers, etc.)
 
 ### createSigv4FetchWithCredentials
 
 Same as `createSigv4Fetcher` but assumes an IAM role via `STS AssumeRole` to obtain credentials. Credentials are cached per `roleArn` and `externalId`.
 
 - **Function:** `createSigv4FetchWithCredentials(options)`
-- **Returns:** `{ request: Promise<Response>; abort: () => void }`
-- **Options:** `baseUrl`, `region?`, `roleArn` (required), `roleName?`, `externalId?`, `fetchOptions?`
+- **Returns:** `(path: string) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl`, `region?`, `roleArn` (required), `roleName` (required), `externalId?`, `fetchOptions?`
 
 ### Behavior
 
@@ -107,7 +107,7 @@ const fetcher = createSigv4Fetcher({
   },
 });
 
-const { request } = fetcher;
+const { request } = fetcher("/users");
 const res = await request;
 const data = await res.json();
 ```
@@ -128,8 +128,9 @@ const fetcher = createSigv4FetchWithCredentials({
   fetchOptions: { retryAttempts: 3 },
 });
 
-const { request } = fetcher;
+const { request } = fetcher("/data");
 const res = await request;
+const data = await res.json();
 ```
 
 ## Notes & Gotchas
@@ -144,3 +145,9 @@ const res = await request;
 
 - Backoff powered by `exponential-backoff` with `numOfAttempts`, `maxDelay`, and `jitter: "full"`.
 - Abort is handled via `AbortController`; once aborted, the backoff `retry()` returns `false` to stop further attempts.
+- **SigV4 path format:** The fetcher takes a path string. Use a leading slash (e.g. `"/users"`) to avoid concatenation issues; `baseUrl` should not end with a trailing slash.
+
+### Exported types
+
+- **`FlexFetchRequestInit`** – options for `flexFetch` (extends `RequestInit` with `retryAttempts`, `maxRetryDelay`)
+- **`Sigv4FetcherOptions`** – options for `createSigv4Fetcher` and `createSigv4FetchWithCredentials`

@@ -42,33 +42,57 @@ vi.mock("../fetch", () => ({
 }));
 
 describe("createSigv4Fetcher", () => {
+  const baseUrl = "https://api.example.com";
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("returns flex fetch wrapper with signed fetch function", () => {
     const fetcher = createSigv4Fetcher({
-      baseUrl: "https://api.example.com",
+      baseUrl,
       region: "us-east-1",
     });
 
-    expect(fetcher).toBeDefined();
-    expect(fetcher.request).toBeInstanceOf(Promise);
-    expect(fetcher.abort).toBeInstanceOf(Function);
+    const { request, abort } = fetcher("");
+
+    expect(request).toBeInstanceOf(Promise);
+    expect(abort).toBeInstanceOf(Function);
   });
 
-  it("calls createSignedFetcher with baseUrl, region, and service", () => {
+  it("calls createSignedFetcher with region and service", () => {
     createSigv4Fetcher({
-      baseUrl: "https://api.example.com",
+      baseUrl,
       region: "us-east-1",
     });
 
     expect(createSignedFetcherMock).toHaveBeenCalledTimes(1);
     expect(createSignedFetcherMock).toHaveBeenCalledWith({
-      baseUrl: "https://api.example.com",
       region: "us-east-1",
       service: "execute-api",
     });
+  });
+
+  it("passes the path to flexFetch", () => {
+    const path = "/foo";
+    const fetcher = createSigv4Fetcher({
+      baseUrl,
+      region: "us-east-1",
+    });
+
+    fetcher(path);
+
+    expect(flexFetch).toHaveBeenCalledWith(
+      `${baseUrl}${path}`,
+      {},
+      expect.any(Function),
+    );
+
+    fetcher("/bar");
+    expect(flexFetch).toHaveBeenCalledWith(
+      `${baseUrl}/bar`,
+      {},
+      expect.any(Function),
+    );
   });
 
   it("passes options transparently to flexFetch", () => {
@@ -78,14 +102,17 @@ describe("createSigv4Fetcher", () => {
       headers: { "X-Custom": "value" },
     };
 
-    createSigv4Fetcher({
-      baseUrl: "https://api.example.com",
+    const path = "/foo";
+    const fetcher = createSigv4Fetcher({
+      baseUrl,
       region: "us-east-1",
       fetchOptions,
     });
 
+    fetcher(path);
+
     expect(flexFetch).toHaveBeenCalledWith(
-      "https://api.example.com",
+      `${baseUrl}${path}`,
       fetchOptions,
       expect.any(Function),
     );
@@ -98,7 +125,7 @@ describe("createSigv4Fetcher", () => {
     };
 
     createSigv4Fetcher({
-      baseUrl: "https://api.example.com",
+      baseUrl,
       region: "us-east-1",
       credentials,
     });
@@ -111,34 +138,14 @@ describe("createSigv4Fetcher", () => {
     );
   });
 
-  it("accepts URL object as baseUrl", () => {
-    const baseUrl = new URL("https://api.example.com");
-    const fetchOptions = { retryAttempts: 1 as const };
-
-    createSigv4Fetcher({
-      baseUrl,
-      region: "eu-west-2",
-      fetchOptions,
-    });
-
-    expect(flexFetch).toHaveBeenCalledWith(
-      baseUrl,
-      fetchOptions,
-      expect.any(Function),
-    );
-  });
-
   it("uses default fetch options when none are provided", () => {
-    createSigv4Fetcher({
-      baseUrl: "https://api.example.com",
+    const fetcher = createSigv4Fetcher({
+      baseUrl,
       region: "us-east-1",
     });
+    fetcher("");
 
-    expect(flexFetch).toHaveBeenCalledWith(
-      "https://api.example.com",
-      {},
-      expect.any(Function),
-    );
+    expect(flexFetch).toHaveBeenCalledWith(baseUrl, {}, expect.any(Function));
   });
 });
 
