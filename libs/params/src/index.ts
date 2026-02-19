@@ -2,7 +2,6 @@ import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
 import type {
   FoldSuffixInto,
-  Maybe,
   OmitPropsWithSuffix,
   OnlyPropsWithSuffix,
   Simplify,
