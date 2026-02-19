@@ -11,11 +11,10 @@ export interface Sigv4FetcherOptions {
   region?: string;
   baseUrl: string;
   credentials?: AwsCredentialIdentity | AwsCredentialIdentityProvider;
-  fetchOptions?: FlexFetchRequestInit;
 }
 
 export function createSigv4Fetcher(options: Sigv4FetcherOptions) {
-  const { baseUrl, region, credentials, fetchOptions } = options;
+  const { baseUrl, region, credentials } = options;
 
   const signedFetch = createSignedFetcher({
     region,
@@ -23,7 +22,7 @@ export function createSigv4Fetcher(options: Sigv4FetcherOptions) {
     service: "execute-api",
   });
 
-  return function (path: string) {
+  return function (path: string, fetchOptions?: FlexFetchRequestInit) {
     return flexFetch(`${baseUrl}${path}`, fetchOptions ?? {}, signedFetch);
   };
 }

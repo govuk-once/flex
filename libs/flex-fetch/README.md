@@ -26,18 +26,19 @@ pnpm add @flex/flex-fetch
 ### createSigv4Fetcher
 
 Creates a path-based signed fetch for AWS API Gateway (`execute-api`) and compatible endpoints. Use when you already have credentials (e.g. from the environment or explicit credentials). Returns a function that accepts a path and returns a `flexFetch` result.
+Fetch options (retry, headers, method, body, etc.) are passed per request in the second argument to the returned function.
 
 - **Function:** `createSigv4Fetcher(options)`
-- **Returns:** `(path: string) => { request: Promise<Response>; abort: () => void }`
-- **Options:** `baseUrl` (string), `region?`, `credentials?`, `fetchOptions?` (retry, headers, etc.)
+- **Returns:** `(path: string, fetchOptions?: FlexFetchRequestInit) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl` (string), `region?`, `credentials?`
 
 ### createSigv4FetchWithCredentials
 
 Same as `createSigv4Fetcher` but assumes an IAM role via `STS AssumeRole` to obtain credentials. Credentials are cached per `roleArn` and `externalId`.
 
 - **Function:** `createSigv4FetchWithCredentials(options)`
-- **Returns:** `(path: string) => { request: Promise<Response>; abort: () => void }`
-- **Options:** `baseUrl`, `region?`, `roleArn` (required), `roleName` (required), `externalId?`, `fetchOptions?`
+- **Returns:** `(path: string, fetchOptions?: FlexFetchRequestInit) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl`, `region?`, `roleArn` (required), `roleName` (required), `externalId?`
 
 ### Behavior
 
@@ -101,13 +102,12 @@ import { createSigv4Fetcher } from "@flex/flex-fetch";
 const fetcher = createSigv4Fetcher({
   baseUrl: "https://abc123.execute-api.eu-west-2.amazonaws.com/prod",
   region: "eu-west-2",
-  fetchOptions: {
-    retryAttempts: 3,
-    headers: { "Content-Type": "application/json" },
-  },
 });
 
-const { request } = fetcher("/users");
+const { request } = fetcher("/users", {
+  retryAttempts: 3,
+  headers: { "Content-Type": "application/json" },
+});
 const res = await request;
 const data = await res.json();
 ```
@@ -125,10 +125,9 @@ const fetcher = createSigv4FetchWithCredentials({
   roleArn: "arn:aws:iam::123456789012:role/api-gateway-invoker",
   roleName: "my-session",
   externalId: "optional-external-id",
-  fetchOptions: { retryAttempts: 3 },
 });
 
-const { request } = fetcher("/data");
+const { request } = fetcher("/data", { retryAttempts: 3 });
 const res = await request;
 const data = await res.json();
 ```

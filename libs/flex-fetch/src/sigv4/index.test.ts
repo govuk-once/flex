@@ -106,10 +106,9 @@ describe("createSigv4Fetcher", () => {
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
-      fetchOptions,
     });
 
-    fetcher(path);
+    fetcher(path, fetchOptions);
 
     expect(flexFetch).toHaveBeenCalledWith(
       `${baseUrl}${path}`,
