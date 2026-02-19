@@ -13,7 +13,7 @@
     "test": "vitest --passWithNoTests"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/parameters": "2.30.2",
+    "@aws-lambda-powertools/parameters": "2.31.0",
     "@aws-sdk/client-secrets-manager": "3.985.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
