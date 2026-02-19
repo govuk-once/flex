@@ -1,11 +1,30 @@
-import { it } from "@flex/testing/e2e";
+import { it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("Domain: Hello", () => {
+  describe.todo("private API gateway permissions", () => {
+    it("returns 403 when lambda without permission calls private hello-internal", async ({
+      cloudfront,
+    }) => {
+      const response = await cloudfront.client.get("/v1/hello-call-internal", {
+        headers: { Authorization: `Bearer ${validJwt}` },
+      });
+
+      expect(response).toMatchObject({
+        status: 403,
+        body: JSON.stringify({
+          message: "Forbidden",
+          status: 403,
+        }),
+      });
+    });
+  });
+
   it.for([
     { method: "GET", endpoint: "/hello-isolated" },
     { method: "GET", endpoint: "/hello-private" },
     { method: "GET", endpoint: "/hello-public" },
+    { method: "GET", endpoint: "/v1/hello-call-internal" },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when unauthenticated",
     async ({ endpoint }, { cloudfront }) => {
@@ -25,6 +44,7 @@ describe("Domain: Hello", () => {
     { method: "GET", endpoint: "/hello-isolated" },
     { method: "GET", endpoint: "/hello-private" },
     { method: "GET", endpoint: "/hello-public" },
+    { method: "GET", endpoint: "/v1/hello-call-internal" },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when Bearer token is empty",
     async ({ endpoint }, { cloudfront }) => {
