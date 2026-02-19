@@ -60,6 +60,9 @@ importers:
       '@aws-sdk/client-secrets-manager':
         specifier: 3.985.0
         version: 3.985.0
+      '@flex/flex-fetch':
+        specifier: workspace:*
+        version: link:../../libs/flex-fetch
       '@flex/handlers':
         specifier: workspace:*
         version: link:../../libs/handlers
@@ -69,6 +72,9 @@ importers:
       '@flex/middlewares':
         specifier: workspace:*
         version: link:../../libs/middlewares
+      '@flex/params':
+        specifier: workspace:*
+        version: link:../../libs/params
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
@@ -84,6 +90,9 @@ importers:
       '@middy/secrets-manager':
         specifier: 7.0.2
         version: 7.0.2(@aws-sdk/client-secrets-manager@3.985.0)
+      '@smithy/util-utf8':
+        specifier: ^4.2.0
+        version: 4.2.0
       http-errors:
         specifier: 2.0.1
         version: 2.0.1
@@ -109,12 +118,12 @@ importers:
       '@types/http-errors':
         specifier: 2.0.5
         version: 2.0.5
-      aws-sdk-client-mock:
-        specifier: 4.1.0
-        version: 4.1.0
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
+      nock:
+        specifier: 14.0.11
+        version: 14.0.11
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -1456,6 +1465,10 @@ packages:
 
   '@mswjs/interceptors@0.40.0':
     resolution: {integrity: sha512-EFd6cVbHsgLa6wa4RljGj6Wk75qoHxUSyc5asLyyPSyuhIcdS2Q3Phw6ImS1q+CkALthJRShiYfKANcQMuMqsQ==}
+    engines: {node: '>=18'}
+
+  '@mswjs/interceptors@0.41.3':
+    resolution: {integrity: sha512-cXu86tF4VQVfwz8W1SPbhoRyHJkti6mjH/XJIxp40jhO4j2k1m4KYrEykxqWPkFF3vrK4rgQppBh//AwyGSXPA==}
     engines: {node: '>=18'}
 
   '@napi-rs/wasm-runtime@0.2.4':
@@ -3503,6 +3516,10 @@ packages:
 
   nock@14.0.10:
     resolution: {integrity: sha512-Q7HjkpyPeLa0ZVZC5qpxBt5EyLczFJ91MEewQiIi9taWuA0KB/MDJlUWtON+7dGouVdADTQsf9RA7TZk6D8VMw==}
+    engines: {node: '>=18.20.0 <20 || >=20.12.1'}
+
+  nock@14.0.11:
+    resolution: {integrity: sha512-u5xUnYE+UOOBA6SpELJheMCtj2Laqx15Vl70QxKo43Wz/6nMHXS7PrEioXLjXAwhmawdEMNImwKCcPhBJWbKVw==}
     engines: {node: '>=18.20.0 <20 || >=20.12.1'}
 
   nock@15.0.0:
@@ -5702,6 +5719,15 @@ snapshots:
       outvariant: 1.4.3
       strict-event-emitter: 0.5.1
     optional: true
+
+  '@mswjs/interceptors@0.41.3':
+    dependencies:
+      '@open-draft/deferred-promise': 2.2.0
+      '@open-draft/logger': 0.3.0
+      '@open-draft/until': 2.1.0
+      is-node-process: 1.2.0
+      outvariant: 1.4.3
+      strict-event-emitter: 0.5.1
 
   '@napi-rs/wasm-runtime@0.2.4':
     dependencies:
@@ -8219,6 +8245,12 @@ snapshots:
   nock@14.0.10:
     dependencies:
       '@mswjs/interceptors': 0.39.8
+      json-stringify-safe: 5.0.1
+      propagate: 2.0.1
+
+  nock@14.0.11:
+    dependencies:
+      '@mswjs/interceptors': 0.41.3
       json-stringify-safe: 5.0.1
       propagate: 2.0.1
 
