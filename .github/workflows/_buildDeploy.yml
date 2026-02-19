@@ -47,9 +47,7 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
-        # This step will error if an approved env is not set, continue on other stages
       - name: Deploy FLEX Core AWS infra
-        continue-on-error: true
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never
 
       - name: Deploy FLEX Flex AWS infra
