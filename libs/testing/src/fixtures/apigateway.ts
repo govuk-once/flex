@@ -2,6 +2,7 @@ import type { DeepPartial, QueryParams } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 import type {
   APIGatewayAuthorizerResult,
+  APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayRequestAuthorizerEventV2,
@@ -348,3 +349,89 @@ export function createTokenAuthorizerEvent() {
 }
 
 export const tokenAuthorizerEvent = buildTokenAuthorizerEvent();
+
+// ----------------------------------------------------------------------------
+// Event (Rest API event)
+// ----------------------------------------------------------------------------
+
+export type RestApiEventOverrides = DeepPartial<APIGatewayProxyEvent>;
+
+export type RestApiEventRequestOptions<TBody = never> = {
+  headers?: Record<string, string>;
+  params?: QueryParams;
+} & ([TBody] extends [never] ? { body?: never } : { body: TBody });
+
+const baseRestApiEvent: APIGatewayProxyEvent = {
+  body: null,
+  multiValueQueryStringParameters: {},
+  pathParameters: {},
+  queryStringParameters: {},
+  stageVariables: {},
+  resource: "/",
+  path: "/",
+  httpMethod: "GET",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  multiValueHeaders: {},
+  requestContext: {
+    authorizer: undefined,
+    protocol: "HTTP/1.1",
+    httpMethod: "GET",
+    path: "/",
+    accountId: "123456789012",
+    apiId: "api-id",
+    domainName: "api-id.execute-api.eu-west-2.amazonaws.com",
+    domainPrefix: "api-id",
+    requestId: "test-request-id",
+    routeKey: "$default",
+    stage: "$default",
+    identity: {
+      accountId: "123456789012",
+      apiKey: null,
+      apiKeyId: null,
+      accessKey: null,
+      caller: "test-caller",
+      clientCert: null,
+      cognitoAuthenticationProvider: null,
+      cognitoAuthenticationType: null,
+      cognitoIdentityId: null,
+      cognitoIdentityPoolId: null,
+      principalOrgId: null,
+      sourceIp: "127.0.0.1",
+      user: null,
+      userAgent: "test-agent",
+      userArn: null,
+    },
+    requestTimeEpoch: 1735689600000,
+    resourceId: "test-resource-id",
+    resourcePath: "/",
+    requestTime: "01/Jan/2026:00:00:00 +0000",
+  },
+  isBase64Encoded: false,
+};
+
+function buildRestApiEvent(overrides: RestApiEventOverrides = {}) {
+  return mergeDeepLeft(overrides, baseRestApiEvent) as APIGatewayProxyEvent;
+}
+
+export function createRestApiEvent() {
+  return {
+    create: (overrides?: RestApiEventOverrides) => buildRestApiEvent(overrides),
+    get: (path: string, options: RestApiEventRequestOptions = {}) =>
+      buildRestApiEvent({
+        ...options,
+        httpMethod: "GET",
+        path,
+      }),
+    post: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
+      buildRestApiEvent({
+        ...options,
+        httpMethod: "POST",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
+  } as const;
+}
+
+export const restApiEvent = buildRestApiEvent();

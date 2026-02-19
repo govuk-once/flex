@@ -1,0 +1,22 @@
+{
+  "name": "@flex/udp/service-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@flex/handlers": "workspace:*"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@types/aws-lambda": "8.10.160",
+    "eslint": "9.39.2",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}

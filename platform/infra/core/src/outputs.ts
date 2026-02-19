@@ -123,7 +123,11 @@ export function importStringFromSsm(scope: Construct, stringKey: StringKey) {
 /** FLEX Params */
 export type FlexParam =
   | "/flex-param/auth/user-pool-id"
-  | "/flex-param/auth/client-id";
+  | "/flex-param/auth/client-id"
+  | "/flex-param/udp/consumer-config-secret-arn"
+  | "/flex-param/udp/cmk-arn"
+  | "/flex-core/vpc-endpoint/api-gateway"
+  | "/flex-param/udp/consumer-role-arn";
 
 export function importFlexParameter(scope: Construct, param: FlexParam) {
   return StringParameter.fromStringParameterName(
@@ -134,7 +138,9 @@ export function importFlexParameter(scope: Construct, param: FlexParam) {
 }
 
 /** Flex Secrets */
-export type FlexSecret = "/flex-secret/udp/notification-hash-secret";
+export type FlexSecret =
+  | "/flex-secret/udp/notification-hash-secret"
+  | "/flex-secret/udp/consumer-config-secret";
 
 export function importFlexSecret(scope: Construct, secret: FlexSecret) {
   return Secret.fromSecretNameV2(

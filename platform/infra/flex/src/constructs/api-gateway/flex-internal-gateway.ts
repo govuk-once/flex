@@ -7,10 +7,8 @@ import {
   IResource,
   LogGroupLogDestination,
   MethodLoggingLevel,
-  MockIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import {
   AnyPrincipal,
   Effect,
@@ -21,6 +19,7 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
+import { createUdpServiceGateway } from "../gateways/udp";
 
 /**
  * Structure of the private API path tree. Created once and shared so that
@@ -39,11 +38,19 @@ export interface PrivateGatewayStructure {
  */
 export class FlexInternalGateway extends Construct {
   public readonly privateGateway: RestApi;
+  public readonly domainsRoot: IResource;
+  public readonly gatewaysRoot: IResource;
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.privateGateway = this.createInternalGateway(this);
+    const { privateGateway, domainsRoot, gatewaysRoot } =
+      this.createInternalGateway(this);
+    this.privateGateway = privateGateway;
+    this.domainsRoot = domainsRoot;
+    this.gatewaysRoot = gatewaysRoot;
+
+    createUdpServiceGateway(this, gatewaysRoot);
   }
 
   createInternalGateway(scope: Construct) {
@@ -109,14 +116,8 @@ export class FlexInternalGateway extends Construct {
 
     privateGateway.grantInvokeFromVpcEndpointsOnly([apiGatewayEndpoint]);
 
-    privateGateway.root.addResource("hello").addMethod(
-      HttpMethod.GET,
-      new MockIntegration({
-        requestTemplates: {
-          "application/json": '{"statusCode": 200}',
-        },
-      }),
-    );
+    const domainsRoot = privateGateway.root.addResource("domains");
+    const gatewaysRoot = privateGateway.root.addResource("gateways");
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
@@ -125,6 +126,10 @@ export class FlexInternalGateway extends Construct {
       description: "Private API Gateway URL (only reachable from within VPC)",
     });
 
-    return privateGateway;
+    return {
+      privateGateway,
+      domainsRoot,
+      gatewaysRoot,
+    };
   }
 }
