@@ -5,7 +5,7 @@ import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
-import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRout";
+import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexPrivateIsolatedFunction } from "../lambda/flex-private-isolated-function";
 
