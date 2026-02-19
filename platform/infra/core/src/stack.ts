@@ -1,6 +1,7 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import type { Construct } from "constructs";
 
+import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createElastiCacheCluster } from "./cache";
 import { addVpcEndpoints } from "./endpoints";
 import {
@@ -60,5 +61,7 @@ export class FlexCoreStack extends GovUkOnceStack {
       "/flex-core/cache/endpoint",
       cacheCluster.attrPrimaryEndPointAddress,
     );
+
+    addApiGatewayCloudWatchRole(this);
   }
 }
