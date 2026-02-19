@@ -71,7 +71,7 @@ describe("createSigv4Fetcher", () => {
     });
   });
 
-  it("passes fetchOptions through to flexFetch", () => {
+  it("passes options transparently to flexFetch", () => {
     const fetchOptions = {
       retryAttempts: 3 as const,
       maxRetryDelay: 500,
@@ -128,7 +128,7 @@ describe("createSigv4Fetcher", () => {
     );
   });
 
-  it("passes empty object to flexFetch when fetchOptions not provided", () => {
+  it("uses default fetch options when none are provided", () => {
     createSigv4Fetcher({
       baseUrl: "https://api.example.com",
       region: "us-east-1",
@@ -147,6 +147,7 @@ describe("createSigv4FetchWithCredentials", () => {
     baseUrl: "https://api.example.com",
     region: "us-east-1",
     roleName: "test-role",
+    roleArn: "arn:aws:iam::111111111111:role/cache-role",
   };
 
   beforeEach(() => {
@@ -154,49 +155,42 @@ describe("createSigv4FetchWithCredentials", () => {
   });
 
   it("caches credentials on subsequent calls", () => {
-    const options = {
-      ...baseOptions,
-      roleArn: "arn:aws:iam::111111111111:role/cache-role",
-      externalId: "cache-ext",
-    };
-    createSigv4FetchWithCredentials(options);
-    createSigv4FetchWithCredentials(options);
+    createSigv4FetchWithCredentials(baseOptions);
+    createSigv4FetchWithCredentials(baseOptions);
 
     expect(fromTemporaryCredentials).toHaveBeenCalledTimes(1);
   });
 
-  it("passes RoleArn, RoleSessionName, and ExternalId to fromTemporaryCredentials", () => {
-    const options = {
-      ...baseOptions,
-      roleArn: "arn:aws:iam::222222222222:role/params-role",
-      externalId: "params-ext",
-      roleName: "params-session",
-    };
+  it.each([
+    {
+      name: "when externalId is omitted",
+      options: {
+        ...baseOptions,
+        roleArn: "arn:...:role/no-ext",
+        externalId: undefined,
+      },
+      expectedParams: {
+        RoleArn: "arn:...:role/no-ext",
+        RoleSessionName: "test-role",
+      },
+    },
+    {
+      name: "when externalId is provided",
+      options: {
+        ...baseOptions,
+        roleArn: "arn:...:role/ext",
+        externalId: "my-ext-id",
+      },
+      expectedParams: {
+        RoleArn: "arn:...:role/ext",
+        RoleSessionName: "test-role",
+        ExternalId: "my-ext-id",
+      },
+    },
+  ])("$name", ({ options, expectedParams }) => {
     createSigv4FetchWithCredentials(options);
-
     expect(fromTemporaryCredentials).toHaveBeenCalledWith({
-      params: {
-        RoleArn: options.roleArn,
-        RoleSessionName: options.roleName,
-        ExternalId: options.externalId,
-      },
-    });
-  });
-
-  it("does not include ExternalId when omitted", () => {
-    const optionsWithoutExternalId = {
-      ...baseOptions,
-      roleArn: "arn:aws:iam::333333333333:role/no-ext-role",
-      roleName: "other-role-session",
-    };
-
-    createSigv4FetchWithCredentials(optionsWithoutExternalId);
-
-    expect(fromTemporaryCredentials).toHaveBeenCalledWith({
-      params: {
-        RoleArn: optionsWithoutExternalId.roleArn,
-        RoleSessionName: optionsWithoutExternalId.roleName,
-      },
+      params: expectedParams,
     });
   });
 
@@ -204,17 +198,14 @@ describe("createSigv4FetchWithCredentials", () => {
     createSigv4FetchWithCredentials({
       ...baseOptions,
       roleArn: "arn:aws:iam::444444444444:role/role-a",
-      externalId: "ext-1",
     });
     createSigv4FetchWithCredentials({
       ...baseOptions,
       roleArn: "arn:aws:iam::555555555555:role/role-b",
-      externalId: "ext-2",
     });
     createSigv4FetchWithCredentials({
       ...baseOptions,
       roleArn: "arn:aws:iam::444444444444:role/role-a",
-      externalId: "ext-1",
     });
 
     expect(fromTemporaryCredentials).toHaveBeenCalledTimes(2);
