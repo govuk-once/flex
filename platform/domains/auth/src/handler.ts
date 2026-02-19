@@ -1,22 +1,27 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
+import {
+  FailedAssertionError,
+  JwtBaseError,
+  JwtExpiredError,
+} from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
-  APIGatewayRequestAuthorizerEventV2,
+  APIGatewayTokenAuthorizerEvent,
 } from "aws-lambda";
-import createHttpError from "http-errors";
 
+import { createPolicy } from "./createPolicy";
 import { createAuthService } from "./services/auth-service";
 
 /**
  * Lambda authorizer handler for API Gateway HTTP API
  */
 const handler = createLambdaHandler<
-  APIGatewayRequestAuthorizerEventV2,
+  APIGatewayTokenAuthorizerEvent,
   APIGatewayAuthorizerResult
 >(
   async (
-    event: APIGatewayRequestAuthorizerEventV2,
+    event: APIGatewayTokenAuthorizerEvent,
   ): Promise<APIGatewayAuthorizerResult> => {
     const logger = getLogger();
     const authService = await createAuthService();
@@ -25,24 +30,22 @@ const handler = createLambdaHandler<
       const pairwiseId = await authService.extractPairwiseId(event);
       logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
-      return {
-        principalId: "anonymous",
-        policyDocument: {
-          Version: "2012-10-17",
-          Statement: [
-            { Action: "execute-api:Invoke", Effect: "Allow", Resource: "*" },
-          ],
-        },
-        context: { pairwiseId },
-      };
+      return createPolicy("Allow", "*", { pairwiseId });
     } catch (error) {
       logger.error("JWT verification failed", { error });
 
-      if (createHttpError.isHttpError(error)) throw error;
-
-      throw new createHttpError.Unauthorized(
-        `Invalid JWT: ${(error as Error).message}`,
-      );
+      switch (true) {
+        case error instanceof JwtExpiredError:
+          return createPolicy("Deny", event.methodArn, {
+            errorMessage: "JWT expired",
+          });
+        case error instanceof FailedAssertionError:
+          return createPolicy("Deny", event.methodArn);
+        case error instanceof JwtBaseError:
+          return createPolicy("Deny", event.methodArn);
+        default:
+          throw error;
+      }
     }
   },
   {

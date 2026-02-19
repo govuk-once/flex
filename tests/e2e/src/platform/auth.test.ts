@@ -1,4 +1,4 @@
-import { invalidJwt, it, validJwt } from "@flex/testing/e2e";
+import { expiredJwt, invalidJwt, it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("authentication", () => {
@@ -58,6 +58,20 @@ describe("authentication", () => {
       expect(result).toMatchObject({
         status: 401,
         body: { message: "Unauthorized" },
+      });
+    });
+
+    it.skip("rejects expired tokens", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${expiredJwt}` },
+      });
+
+      expect(result).toMatchObject({
+        status: 403,
+        body: {
+          message: "JWT expired",
+          type: "auth_error",
+        },
       });
     });
   });
