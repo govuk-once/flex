@@ -118,3 +118,5 @@ export type FoldSuffixInto<
     [K in CONTAINER]: WithoutPropSuffix<OnlyPropsWithSuffix<T, SUFFIX>, SUFFIX>;
   }
 >;
+
+export type Maybe<T> = T | null | undefined;

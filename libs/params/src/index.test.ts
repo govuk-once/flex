@@ -23,12 +23,13 @@ async function resetConfigModule() {
   return config;
 }
 
-function getConfig(rawConfigSchema: z.ZodType<object>, reset: boolean = true) {
-  if (reset) {
-    return resetConfigModule().then((config) =>
-      config.getConfig(rawConfigSchema),
-    );
-  }
+function getCleanConfig(rawConfigSchema: z.ZodType<object>) {
+  return resetConfigModule().then((config) =>
+    config.getConfig(rawConfigSchema),
+  );
+}
+
+function getConfig(rawConfigSchema: z.ZodType<object>) {
   return import(".").then((config) => config.getConfig(rawConfigSchema));
 }
 
@@ -48,7 +49,7 @@ describe("Config", () => {
           // CLIENT_ID_PARAM_NAME is intentionally left blank to simulate missing variable
         });
 
-        await expect(getConfig(rawConfigSchema)).rejects.toThrow(
+        await expect(getCleanConfig(rawConfigSchema)).rejects.toThrow(
           /Invalid raw configuration:/,
         );
       });
@@ -76,7 +77,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await getConfig(rawConfigSchema);
+      const config = await getCleanConfig(rawConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -99,7 +100,7 @@ describe("Config", () => {
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      await expect(getConfig(rawConfigSchema)).rejects.toThrow(
+      await expect(getCleanConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
     });
@@ -125,8 +126,8 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
 
-      const firstConfig = await getConfig(rawConfigSchema);
-      const secondConfig = await getConfig(rawConfigSchema, false);
+      const firstConfig = await getCleanConfig(rawConfigSchema);
+      const secondConfig = await getConfig(rawConfigSchema);
 
       expect(vi.mocked(getParametersByName).mock.calls.length).toBe(1);
       expect(secondConfig).toBe(firstConfig);
@@ -163,7 +164,7 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
 
-      const config = await getConfig(featureFlagConfigSchema);
+      const config = await getCleanConfig(featureFlagConfigSchema);
 
       expect(config).toEqual(
         expect.objectContaining({
@@ -177,28 +178,65 @@ describe("Config", () => {
       );
     });
 
-    it('treats "false" feature flags values as false', async ({ env }) => {
-      env.set({
-        AWS_REGION: "us-east-1",
-        USERPOOL_ID_PARAM_NAME: "userpool_id_param",
-        CLIENT_ID_PARAM_NAME: "client_id_param",
-        NEW_FEATURE_FEATURE_FLAG: "false",
-      });
-
-      vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
-
-      const config = await getConfig(featureFlagConfigSchema);
-
-      expect(config).toEqual(
-        expect.objectContaining({
+    it.for([
+      {
+        expectedValue: false,
+        envValue: "false",
+      },
+      {
+        expectedValue: false,
+        envValue: "",
+      },
+      {
+        expectedValue: false,
+        envValue: "0",
+      },
+      {
+        expectedValue: false,
+        envValue: "null",
+      },
+      {
+        expectedValue: false,
+        envValue: "undefined",
+      },
+      {
+        expectedValue: false,
+        envValue: null,
+      },
+      {
+        expectedValue: false,
+        envValue: undefined,
+      },
+    ])(
+      'treats "$envValue" feature flags values as false',
+      async ({ envValue, expectedValue }, { env }) => {
+        const overlyPermissiveZodSchema = featureFlagConfigSchema.extend({
+          NEW_FEATURE_FEATURE_FLAG: z.string().nullable(),
+        });
+        env.set({
           AWS_REGION: "us-east-1",
-          USERPOOL_ID: "us-east-1_123456789",
-          CLIENT_ID: "example-client-id-123",
-          featureFlags: {
-            NEW_FEATURE: false,
-          },
-        }),
-      );
-    });
+          USERPOOL_ID_PARAM_NAME: "userpool_id_param",
+          CLIENT_ID_PARAM_NAME: "client_id_param",
+          NEW_FEATURE_FEATURE_FLAG: envValue,
+        });
+
+        vi.mocked(getParametersByName).mockResolvedValueOnce(
+          resolvedParamValues,
+        );
+
+        const config = await getCleanConfig(overlyPermissiveZodSchema);
+
+        expect(config).toEqual(
+          expect.objectContaining({
+            AWS_REGION: "us-east-1",
+            USERPOOL_ID: "us-east-1_123456789",
+            CLIENT_ID: "example-client-id-123",
+            featureFlags: {
+              NEW_FEATURE: expectedValue,
+            },
+          }),
+        );
+      },
+    );
   });
 });

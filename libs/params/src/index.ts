@@ -2,6 +2,7 @@ import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
 import type {
   FoldSuffixInto,
+  Maybe,
   OmitPropsWithSuffix,
   OnlyPropsWithSuffix,
   Simplify,
@@ -105,7 +106,15 @@ function extractFeatureFlags<T extends object>(
 
   const renamedFeatureFlagEntries = featureFlagEntries.map(([key, value]) => [
     key.replace(/_FEATURE_FLAG$/, ""),
-    value !== "false",
+
+    // note that this condition catches null and undefined just to be on the safe side.
+    // In practice, set environment variables can only be strings. null and undefined values
+    // seem to be converted to the strings "null" and "undefined" respectively.
+    Boolean(value) &&
+      value !== "false" &&
+      value !== "0" &&
+      value !== "null" &&
+      value !== "undefined",
   ]);
 
   return Object.fromEntries(renamedFeatureFlagEntries) as Simplify<

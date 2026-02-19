@@ -18,7 +18,7 @@ interface Fixtures {
   authorizerResult: ReturnType<typeof createAuthorizerResult>;
   context: ReturnType<typeof createContext>;
   env: {
-    set: (env: Record<string, string | undefined>) => void;
+    set: (env: Record<string, string | undefined | null>) => void;
     delete: (...keys: string[]) => void;
   };
   event: ReturnType<typeof createEvent>;
@@ -60,12 +60,7 @@ export const it = vitestIt.extend<Fixtures>({
       await use({
         set: (env) => {
           Object.entries(env).forEach(([k, v]) => {
-            if (v) {
-              vi.stubEnv(k, v);
-            } else {
-              // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-              delete process.env[k];
-            }
+            vi.stubEnv(k, String(v));
           });
         },
         delete: (...keys) => {
