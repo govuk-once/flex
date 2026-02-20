@@ -43,6 +43,8 @@ vi.mock("../fetch", () => ({
 
 describe("createSigv4Fetcher", () => {
   const baseUrl = "https://api.example.com";
+  const path = "/foo";
+  const fullUrl = `${baseUrl}${path}`;
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -53,7 +55,7 @@ describe("createSigv4Fetcher", () => {
       region: "us-east-1",
     });
 
-    const { request, abort } = fetcher("");
+    const { request, abort } = fetcher(path);
 
     expect(request).toBeInstanceOf(Promise);
     expect(abort).toBeInstanceOf(Function);
@@ -73,7 +75,6 @@ describe("createSigv4Fetcher", () => {
   });
 
   it("passes the path to flexFetch", () => {
-    const path = "/foo";
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -81,11 +82,7 @@ describe("createSigv4Fetcher", () => {
 
     fetcher(path);
 
-    expect(flexFetch).toHaveBeenCalledWith(
-      `${baseUrl}${path}`,
-      {},
-      expect.any(Function),
-    );
+    expect(flexFetch).toHaveBeenCalledWith(fullUrl, {}, expect.any(Function));
 
     fetcher("/bar");
     expect(flexFetch).toHaveBeenCalledWith(
@@ -102,7 +99,6 @@ describe("createSigv4Fetcher", () => {
       headers: { "X-Custom": "value" },
     };
 
-    const path = "/foo";
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -111,7 +107,7 @@ describe("createSigv4Fetcher", () => {
     fetcher(path, fetchOptions);
 
     expect(flexFetch).toHaveBeenCalledWith(
-      `${baseUrl}${path}`,
+      fullUrl,
       fetchOptions,
       expect.any(Function),
     );
@@ -142,9 +138,9 @@ describe("createSigv4Fetcher", () => {
       baseUrl,
       region: "us-east-1",
     });
-    fetcher("");
+    fetcher(path);
 
-    expect(flexFetch).toHaveBeenCalledWith(baseUrl, {}, expect.any(Function));
+    expect(flexFetch).toHaveBeenCalledWith(fullUrl, {}, expect.any(Function));
   });
 });
 
@@ -169,7 +165,7 @@ describe("createSigv4FetchWithCredentials", () => {
 
   it.each([
     {
-      name: "when externalId is omitted",
+      name: "externalId is undefined",
       options: {
         ...baseOptions,
         roleArn: "arn:...:role/no-ext",
@@ -181,7 +177,7 @@ describe("createSigv4FetchWithCredentials", () => {
       },
     },
     {
-      name: "when externalId is provided",
+      name: "externalId is provided",
       options: {
         ...baseOptions,
         roleArn: "arn:...:role/ext",
@@ -193,7 +189,7 @@ describe("createSigv4FetchWithCredentials", () => {
         ExternalId: "my-ext-id",
       },
     },
-  ])("$name", ({ options, expectedParams }) => {
+  ])("sets expected params when $name", ({ options, expectedParams }) => {
     createSigv4FetchWithCredentials(options);
     expect(fromTemporaryCredentials).toHaveBeenCalledWith({
       params: expectedParams,
@@ -201,17 +197,20 @@ describe("createSigv4FetchWithCredentials", () => {
   });
 
   it("creates separate credential providers for different roleArn or externalId", () => {
+    const roleA = "arn:aws:iam::444444444444:role/role-a";
+    const roleB = "arn:aws:iam::555555555555:role/role-b";
+
     createSigv4FetchWithCredentials({
       ...baseOptions,
-      roleArn: "arn:aws:iam::444444444444:role/role-a",
+      roleArn: roleA,
     });
     createSigv4FetchWithCredentials({
       ...baseOptions,
-      roleArn: "arn:aws:iam::555555555555:role/role-b",
+      roleArn: roleB,
     });
     createSigv4FetchWithCredentials({
       ...baseOptions,
-      roleArn: "arn:aws:iam::444444444444:role/role-a",
+      roleArn: roleA,
     });
 
     expect(fromTemporaryCredentials).toHaveBeenCalledTimes(2);
