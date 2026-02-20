@@ -1,4 +1,4 @@
-import { ApiGatewayV2Envelope } from "@aws-lambda-powertools/parser/envelopes/api-gatewayv2";
+import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
 import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
@@ -17,7 +17,7 @@ export const handlerRequestSchema = z.object({
 
 export const handler = createLambdaHandler(
   async (event) => {
-    const parsedEvent = ApiGatewayV2Envelope.safeParse(
+    const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
       handlerRequestSchema,
     );
@@ -30,8 +30,10 @@ export const handler = createLambdaHandler(
     return Promise.resolve(
       jsonResponse(status.OK, {
         preferences: {
-          ...parsedEvent.data,
-          updatedAt: new Date().toISOString(),
+          notifications: {
+            ...parsedEvent.data.preferences.notifications,
+            updatedAt: new Date().toISOString(),
+          },
         },
       }),
     );

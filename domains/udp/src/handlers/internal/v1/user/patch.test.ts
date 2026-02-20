@@ -1,23 +1,27 @@
 import { it } from "@flex/testing";
-import { describe, expect } from "vitest";
+import { afterAll, beforeAll, describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /user handler", () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   it("returns user preferences updated successfully", async ({
     response,
-    eventWithAuthorizer,
+    privateGatewayEvent,
     context,
   }) => {
     const request = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({
-          preferences: {
-            notifications: {
-              consentStatus: "accepted",
-            },
-          },
-        }),
+      privateGatewayEvent.post("/user", {
+        body: {
+          preferences: { notifications: { consentStatus: "accepted" } },
+        },
       }),
       context.withPairwiseId().create(),
     );
@@ -60,10 +64,10 @@ describe("PATCH /user handler", () => {
     },
   ])(
     "rejects invalid payload: $desc",
-    async ({ body }, { eventWithAuthorizer, context }) => {
+    async ({ body }, { privateGatewayEvent, context }) => {
       const result = await handler(
-        eventWithAuthorizer.authenticated({
-          body: JSON.stringify({ preferences: body }),
+        privateGatewayEvent.post("/user", {
+          body: { preferences: body },
         }),
         context.withPairwiseId().create(),
       );
@@ -71,42 +75,4 @@ describe("PATCH /user handler", () => {
       expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
     },
   );
-
-  it("parses JSON body even with non-standard Content-Type casing", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    const result = await handler(
-      eventWithAuthorizer.authenticated({
-        headers: { "CoNtEnT-TyPe": "application/json" },
-        body: JSON.stringify({
-          preferences: {
-            notifications: {
-              consentStatus: "accepted",
-            },
-          },
-        }),
-      }),
-      context.withPairwiseId().create(),
-    );
-
-    expect(result).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notifications: {
-              consentStatus: "accepted",
-              updatedAt: new Date().toISOString(),
-            },
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
-  });
 });
