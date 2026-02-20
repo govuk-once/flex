@@ -1,6 +1,10 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  IResource,
+  LambdaIntegration,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import {
@@ -10,35 +14,19 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
-import { FlexInternalGateway } from "../constructs/api-gateway/flex-internal-gateway";
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { PublicRouteBinding } from "./public-route-binding";
 
 interface FlexPlatformStackProps {
   certArnParamName: string;
   domainName: string;
   subdomainName?: string;
-}
-
-export interface PublicApiRef {
-  restApiId: string;
-  rootResourceId: string;
-  stageName: string;
-  authorizerId: string;
-}
-
-export interface PrivateApiRef {
-  restApiId: string;
-  stageName: string;
-  domainsRootResourceId: string;
-  gatewaysRootResourceId: string;
+  publicRouteBindings: PublicRouteBinding[];
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
   public readonly restApi: RestApi;
-  public readonly internalGateway: FlexInternalGateway;
-  public readonly restApiRef: PublicApiRef;
-  public readonly privateApiRef: PrivateApiRef;
 
   #getCertArn(certArnParamName: string) {
     const ssmCall = {
@@ -74,7 +62,12 @@ export class FlexPlatformStack extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    { certArnParamName, domainName, subdomainName }: FlexPlatformStackProps,
+    {
+      certArnParamName,
+      domainName,
+      subdomainName,
+      publicRouteBindings,
+    }: FlexPlatformStackProps,
   ) {
     super(scope, id, {
       tags: {
@@ -86,7 +79,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
       },
     });
 
-    const { restApi, authorizerId } = new FlexRestApi(this, "RestApi");
+    const { restApi } = new FlexRestApi(this, "RestApi");
     this.restApi = restApi;
     const certArn = this.#getCertArn(certArnParamName);
 
@@ -97,26 +90,31 @@ export class FlexPlatformStack extends GovUkOnceStack {
       restApi,
     });
 
-    const internalGateway = new FlexInternalGateway(this, "InternalGateway");
-    this.internalGateway = internalGateway;
-
-    // export api attrs/ids to avoid circular dependency between domain and platform stacks
-    this.restApiRef = {
-      restApiId: restApi.restApiId,
-      rootResourceId: restApi.restApiRootResourceId,
-      stageName: restApi.deploymentStage.stageName,
-      authorizerId: authorizerId,
-    };
-
-    this.privateApiRef = {
-      restApiId: internalGateway.privateGateway.restApiId,
-      stageName: internalGateway.privateGateway.deploymentStage.stageName,
-      domainsRootResourceId: internalGateway.domainsRoot.resourceId,
-      gatewaysRootResourceId: internalGateway.gatewaysRoot.resourceId,
-    };
+    for (const route of publicRouteBindings) {
+      this.#addDeepResource(restApi.root, route.path).addMethod(
+        route.method,
+        new LambdaIntegration(route.handler),
+      );
+    }
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });
+  }
+
+  #addDeepResource(root: IResource, path: string): IResource {
+    const parts = path.split("/").filter(Boolean);
+    let current = root;
+
+    for (const part of parts) {
+      const existing = current.node.tryFindChild(part) as IResource | undefined;
+      if (existing) {
+        current = existing;
+      } else {
+        current = current.addResource(part);
+      }
+    }
+
+    return current;
   }
 }

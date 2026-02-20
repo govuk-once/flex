@@ -26,16 +26,17 @@ import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-i
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { getDomainEntry } from "../utils/getEntry";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
-import { PrivateApiRef, PublicApiRef } from "./core";
+import { PrivateApiRef } from "./private-gateway";
+import { PublicRouteBinding } from "./public-route-binding";
 
 interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
-  publicApi: PublicApiRef;
   privateApi: PrivateApiRef;
 }
 
 export class FlexDomainStack extends GovUkOnceStack {
+  public readonly publicRouteBindings: PublicRouteBinding[] = [];
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
@@ -49,15 +50,9 @@ export class FlexDomainStack extends GovUkOnceStack {
         Source: "https://github.com/govuk-once/flex",
       },
     });
-    const publicApi = RestApi.fromRestApiAttributes(this, "PublicApi", {
-      restApiId: props.publicApi.restApiId,
-      rootResourceId: props.publicApi.rootResourceId,
-    });
-
     const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
       restApiId: props.privateApi.restApiId,
-      // if needed by your CDK type signature:
-      rootResourceId: props.publicApi.rootResourceId, // replace with private root ID if you expose it
+      rootResourceId: props.privateApi.domainsRootResourceId,
     });
 
     const privateDomainsRoot = Resource.fromResourceAttributes(
@@ -70,10 +65,10 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     );
 
-    this.#processRoutes(props.domain, publicApi.root, "app", "public-");
+    this.#processPublicRoutes(props.domain);
 
     if (props.privateDomain) {
-      this.#processRoutes(
+      this.#processPrivateRoutes(
         props.privateDomain,
         privateDomainsRoot,
         props.domain.domain,
@@ -83,7 +78,52 @@ export class FlexDomainStack extends GovUkOnceStack {
     }
   }
 
-  #processRoutes(
+  #processPublicRoutes(domainConfig: IDomain): void {
+    for (const [versionId, versionConfig] of Object.entries(
+      domainConfig.versions,
+    )) {
+      for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
+        for (const [method, routeConfig] of Object.entries(methodMap)) {
+          const { resolvedVars, envGrantables } = this.#resolveEnvironment(
+            routeConfig.env,
+            routeConfig.envSecret,
+          );
+
+          const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
+
+          const domainEndpointFn = this.#createFunction(
+            routeConfig,
+            domainConfig.domain,
+            path,
+            method,
+            versionId,
+            "public-",
+            resolvedVars,
+          );
+
+          envGrantables.forEach((resource) => {
+            resource.grantRead(domainEndpointFn.function);
+          });
+
+          kmsGrantables.forEach((key) => {
+            key.grantDecrypt(domainEndpointFn.function);
+          });
+
+          const newPath = `app/${versionId}${path}`
+            .replace(/\/+/g, "/")
+            .replace(/^\//, "");
+
+          this.publicRouteBindings.push({
+            path: newPath,
+            method,
+            handler: domainEndpointFn.function,
+          });
+        }
+      }
+    }
+  }
+
+  #processPrivateRoutes(
     domainConfig: IDomain,
     apiRoot: IResource,
     pathPrefix: string,

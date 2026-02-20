@@ -108,6 +108,12 @@ export class FlexInternalGateway extends Construct {
         vpcEndpoints: [apiGatewayEndpoint],
       },
     });
+
+    // private gateway looks empty when deployed, so add a health check
+    privateGateway.root
+      .addResource("health")
+      .addMethod("GET", new MockIntegration());
+
     applyCheckovSkip(
       privateGateway.deploymentStage,
       "CKV_AWS_120",

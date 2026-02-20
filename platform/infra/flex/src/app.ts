@@ -4,6 +4,7 @@ import * as cdk from "aws-cdk-lib";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
 import { FlexDomainStack } from "./stacks/domain";
+import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
 import {
   getDomainConfigs,
   getPrivateDomainConfigs,
@@ -20,11 +21,10 @@ const { certArnParamName } = new FlexCertStack(app, certStackName, {
   subdomainName,
 });
 
-const platform = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-  certArnParamName,
-  domainName,
-  subdomainName,
-});
+const privateGateway = new FlexPrivateGatewayStack(
+  app,
+  getStackName("FlexPrivateGateway"),
+);
 
 /**
  * Dynamically create CloudFormation stack per domain
@@ -32,11 +32,22 @@ const platform = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
 const flexDomains = await getDomainConfigs();
 const privateDomains = await getPrivateDomainConfigs();
 
-flexDomains.forEach((domain) => {
-  new FlexDomainStack(app, getStackName(domain.domain), {
+const domainStacks = flexDomains.map(
+  (domain) =>
+    new FlexDomainStack(app, getStackName(domain.domain), {
     domain,
-    publicApi: platform.restApiRef,
-    privateApi: platform.privateApiRef,
+    privateApi: privateGateway.privateApiRef,
     privateDomain: privateDomains.get(domain.domain),
-  });
+    }),
+);
+
+const publicRouteBindings = domainStacks.flatMap(
+  (stack) => stack.publicRouteBindings,
+);
+
+new FlexPlatformStack(app, getStackName("FlexPlatform"), {
+  certArnParamName,
+  domainName,
+  subdomainName,
+  publicRouteBindings,
 });
