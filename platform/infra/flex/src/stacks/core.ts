@@ -20,8 +20,25 @@ interface FlexPlatformStackProps {
   subdomainName?: string;
 }
 
+export interface PublicApiRef {
+  restApiId: string;
+  rootResourceId: string;
+  stageName: string;
+  authorizerId: string;
+}
+
+export interface PrivateApiRef {
+  restApiId: string;
+  stageName: string;
+  domainsRootResourceId: string;
+  gatewaysRootResourceId: string;
+}
+
 export class FlexPlatformStack extends GovUkOnceStack {
   public readonly restApi: RestApi;
+  public readonly internalGateway: FlexInternalGateway;
+  public readonly restApiRef: PublicApiRef;
+  public readonly privateApiRef: PrivateApiRef;
 
   #getCertArn(certArnParamName: string) {
     const ssmCall = {
@@ -69,7 +86,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
       },
     });
 
-    const { restApi } = new FlexRestApi(this, "RestApi");
+    const { restApi, authorizerId } = new FlexRestApi(this, "RestApi");
     this.restApi = restApi;
     const certArn = this.#getCertArn(certArnParamName);
 
@@ -80,7 +97,23 @@ export class FlexPlatformStack extends GovUkOnceStack {
       restApi,
     });
 
-    new FlexInternalGateway(this, "InternalGateway");
+    const internalGateway = new FlexInternalGateway(this, "InternalGateway");
+    this.internalGateway = internalGateway;
+
+    // export api attrs/ids to avoid circular dependency between domain and platform stacks
+    this.restApiRef = {
+      restApiId: restApi.restApiId,
+      rootResourceId: restApi.restApiRootResourceId,
+      stageName: restApi.deploymentStage.stageName,
+      authorizerId: authorizerId,
+    };
+
+    this.privateApiRef = {
+      restApiId: internalGateway.privateGateway.restApiId,
+      stageName: internalGateway.privateGateway.deploymentStage.stageName,
+      domainsRootResourceId: internalGateway.domainsRoot.resourceId,
+      gatewaysRootResourceId: internalGateway.gatewaysRoot.resourceId,
+    };
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,

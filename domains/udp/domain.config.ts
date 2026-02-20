@@ -8,7 +8,7 @@ export const endpoints = defineDomain({
         "/user": {
           GET: {
             type: "ISOLATED",
-            entry: "handlers/v1/user/get.ts",
+            entry: "handlers/public/v1/user/get.ts",
             envSecret: {
               FLEX_UDP_NOTIFICATION_SECRET:
                 "/flex-secret/udp/notification-hash-secret",
@@ -16,7 +16,7 @@ export const endpoints = defineDomain({
           },
           PATCH: {
             type: "ISOLATED",
-            entry: "handlers/v1/user/patch.ts",
+            entry: "handlers/public/v1/user/patch.ts",
             kmsKeys: {
               ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
             },

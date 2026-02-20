@@ -29,3 +29,25 @@ export async function getDomainConfigs(): Promise<IDomain[]> {
 
   return results;
 }
+
+/**
+ * Returns a Map of domain name to private config
+ */
+export async function getPrivateDomainConfigs(): Promise<Map<string, IDomain>> {
+  const results = new Map<string, IDomain>();
+
+  for await (const entry of glob("*/domain.private.config.ts", {
+    cwd: domainsRoot,
+  })) {
+    const absolutePath = path.join(domainsRoot, entry);
+    const configModule = await jiti.import(absolutePath);
+    const { success, data } = configModuleSchema.safeParse(configModule);
+
+    if (!success) {
+      throw new Error(`Private config invalid: ${absolutePath}`);
+    }
+    results.set(data.endpoints.domain, data.endpoints);
+  }
+
+  return results;
+}

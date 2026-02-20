@@ -13,7 +13,7 @@ import type {
 import status from "http-status";
 import { z } from "zod";
 
-import { generateDerivedId } from "../../../service/derived-id";
+import { generateDerivedId } from "../../../../service/derived-id";
 
 export const handlerResponseSchema = z.object({
   notificationId: z.string(),

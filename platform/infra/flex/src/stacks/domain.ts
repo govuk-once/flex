@@ -1,4 +1,4 @@
-import { IDomain, IDomainEndpoint } from "@flex/sdk";
+import { IDomain, IDomainEndpoint, Permission } from "@flex/sdk";
 import {
   FlexKmsKeyAlias,
   FlexParam,
@@ -10,9 +10,12 @@ import {
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   IResource,
+  IRestApi,
   LambdaIntegration,
+  Resource,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
+import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
@@ -22,32 +25,74 @@ import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egr
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { getDomainEntry } from "../utils/getEntry";
+import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
+import { PrivateApiRef, PublicApiRef } from "./core";
 
 interface FlexDomainStackProps {
   domain: IDomain;
-  restApi: RestApi;
+  privateDomain?: IDomain;
+  publicApi: PublicApiRef;
+  privateApi: PrivateApiRef;
 }
 
 export class FlexDomainStack extends GovUkOnceStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
-  constructor(
-    scope: Construct,
-    id: string,
-    { domain: { domain, owner, versions }, restApi }: FlexDomainStackProps,
-  ) {
+  constructor(scope: Construct, id: string, props: FlexDomainStackProps) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
         System: "FLEX",
-        Owner: owner ?? "N/A",
-        ResourceOwner: domain,
+        Owner: props.domain.owner ?? "N/A",
+        ResourceOwner: props.domain.domain,
         Source: "https://github.com/govuk-once/flex",
       },
     });
+    const publicApi = RestApi.fromRestApiAttributes(this, "PublicApi", {
+      restApiId: props.publicApi.restApiId,
+      rootResourceId: props.publicApi.rootResourceId,
+    });
 
-    for (const [versionId, versionConfig] of Object.entries(versions)) {
+    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
+      restApiId: props.privateApi.restApiId,
+      // if needed by your CDK type signature:
+      rootResourceId: props.publicApi.rootResourceId, // replace with private root ID if you expose it
+    });
+
+    const privateDomainsRoot = Resource.fromResourceAttributes(
+      this,
+      "PrivateDomainsRoot",
+      {
+        resourceId: props.privateApi.domainsRootResourceId,
+        path: "/domains",
+        restApi: privateApi,
+      },
+    );
+
+    this.#processRoutes(props.domain, publicApi.root, "app", "public-");
+
+    if (props.privateDomain) {
+      this.#processRoutes(
+        props.privateDomain,
+        privateDomainsRoot,
+        props.domain.domain,
+        "internal-",
+        privateApi,
+      );
+    }
+  }
+
+  #processRoutes(
+    domainConfig: IDomain,
+    apiRoot: IResource,
+    pathPrefix: string,
+    idPrefix: string,
+    internalApiForPermissions?: IRestApi | RestApi,
+  ): void {
+    for (const [versionId, versionConfig] of Object.entries(
+      domainConfig.versions,
+    )) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
         for (const [method, routeConfig] of Object.entries(methodMap)) {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
@@ -59,10 +104,11 @@ export class FlexDomainStack extends GovUkOnceStack {
 
           const domainEndpointFn = this.#createFunction(
             routeConfig,
-            domain,
+            domainConfig.domain,
             path,
             method,
             versionId,
+            idPrefix,
             resolvedVars,
           );
 
@@ -74,12 +120,27 @@ export class FlexDomainStack extends GovUkOnceStack {
             key.grantDecrypt(domainEndpointFn.function);
           });
 
-          const newPath = `app/${versionId}${path}`;
+          const newPath = `${pathPrefix}/${versionId}${path}`
+            .replace(/\/+/g, "/")
+            .replace(/^\//, "");
 
-          this.#addDeepResource(restApi.root, newPath).addMethod(
+          this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
           );
+
+          if (
+            routeConfig.permissions &&
+            domainEndpointFn.function.role &&
+            internalApiForPermissions
+          ) {
+            this.#grantInternalGatewayPermissions(
+              domainEndpointFn.function.role,
+              routeConfig.permissions,
+              domainConfig.domain,
+              internalApiForPermissions,
+            );
+          }
         }
       }
     }
@@ -163,11 +224,12 @@ export class FlexDomainStack extends GovUkOnceStack {
     path: string,
     method: string,
     versionId: string,
+    idPrefix: string,
     environment?: Record<string, string>,
   ) {
     const { entry, type } = route;
     const cleanPath = path.replace(/\//g, "-");
-    const id = `${versionId}${cleanPath}-${method}`;
+    const id = `${idPrefix}${versionId}${cleanPath}-${method}`;
 
     const props = {
       domain,
@@ -210,5 +272,29 @@ export class FlexDomainStack extends GovUkOnceStack {
 
     this.#keyCache.set(aliasPath, key);
     return key;
+  }
+
+  #grantInternalGatewayPermissions(
+    role: IRole,
+    permissions: Permission[],
+    domainName: string,
+    internalApi: IRestApi,
+  ): void {
+    const allowedRoutePrefixes = permissions.map((perm) => {
+      const base =
+        perm.type === "domain"
+          ? `/domains/${domainName}`
+          : `/gateways/${domainName}`;
+      const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
+      return `${base}${suffix}`;
+    });
+
+    const allowedMethods = permissions.map((perm) => perm.method);
+
+    grantPrivateApiAccess(role, internalApi, {
+      domainId: domainName,
+      allowedRoutePrefixes,
+      allowedMethods,
+    });
   }
 }
