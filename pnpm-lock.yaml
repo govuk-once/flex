@@ -564,6 +564,31 @@ importers:
         specifier: 4.0.18
         version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(msw@2.12.7(@types/node@25.2.2)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
+  platform/domains/udp:
+    dependencies:
+      '@flex/handlers':
+        specifier: workspace:*
+        version: link:../../../libs/handlers
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../../libs/config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../../libs/testing
+      '@types/aws-lambda':
+        specifier: 8.10.160
+        version: 8.10.160
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.0.18
+        version: 4.0.18(@types/node@25.2.2)(jiti@2.6.1)(msw@2.12.7(@types/node@25.2.2)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+
   platform/domains/viewer-request-cff:
     devDependencies:
       '@flex/config':
