@@ -1,5 +1,14 @@
 import nock from "nock";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { createUdpDomainClient } from ".";
 
@@ -15,23 +24,48 @@ vi.mock("@flex/logging", () => ({
   }),
 }));
 
+vi.mock("@flex/flex-fetch", async (actual) => ({
+  ...(await actual()),
+  createSigv4Fetcher:
+    ({ baseUrl }: { baseUrl: string }) =>
+    (path: string, options?: RequestInit) => ({
+      request: fetch(`${baseUrl}${path}`, options),
+      abort: vi.fn(),
+    }),
+}));
+
 describe("UdpDomainClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  // ensures tests fail if a request is not intercepted or mock is missing
+  beforeAll(() => {
+    nock.disableNetConnect();
+  });
+  afterAll(() => {
+    nock.enableNetConnect();
+  });
+
+  // ensures tests fail if a request is not mocked
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
     nock.cleanAll();
   });
 
   it.each([
     {
+      name: "ECONNREFUSED",
       error: new Error("ECONNREFUSED"),
       expectedError: "ECONNREFUSED",
     },
     {
+      name: "ECONNRESET",
       error: new Error("ECONNRESET"),
       expectedError: "ECONNRESET",
     },
   ])(
-    "propagates transient network errors to the caller",
+    "propagates $name network error to the caller",
     async ({ error, expectedError }) => {
       nock(BASE_URL).get("/gateways/udp/v1/preferences").replyWithError(error);
 
@@ -48,27 +82,31 @@ describe("UdpDomainClient", () => {
 
   it.each([
     {
+      name: "400 Bad Request",
       status: 400,
       body: { message: "Bad Request" },
       expectedError: "Bad Request",
     },
     {
+      name: "401 Unauthorized",
       status: 401,
       body: { message: "Unauthorized" },
       expectedError: "Unauthorized",
     },
     {
+      name: "403 Forbidden",
       status: 403,
       body: { message: "Forbidden" },
       expectedError: "Forbidden",
     },
     {
+      name: "404 Not Found",
       status: 404,
       body: { message: "Not Found" },
       expectedError: "Not Found",
     },
   ])(
-    "propagates client-side errors to the caller",
+    "propagates $name client-side error to the caller",
     async ({ status, body, expectedError }) => {
       nock(BASE_URL).get("/gateways/udp/v1/preferences").reply(status, body);
 
@@ -90,7 +128,7 @@ describe("UdpDomainClient", () => {
     },
   );
 
-  it("returns validated response when schema matches", async () => {
+  it("returns validated response from getPreferences matching the expected getPreferences schema", async () => {
     const updatedAt = new Date().toISOString();
     nock(BASE_URL)
       .get("/gateways/udp/v1/preferences")

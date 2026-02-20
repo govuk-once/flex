@@ -1,9 +1,7 @@
-import { createSigv4Fetcher } from "@flex/flex-fetch";
-import { typedFetch } from "@flex/utils";
+import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 
 import {
   PreferencesRequest,
-  PreferencesResponse,
   preferencesResponseSchema,
 } from "../schemas/preferences";
 import { CreateUserRequest } from "../schemas/user";
@@ -45,10 +43,7 @@ export function createUdpDomainClient({
     gateway: {
       getPreferences: () => {
         const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.preferences);
-        return typedFetch<PreferencesResponse>(
-          request,
-          preferencesResponseSchema,
-        );
+        return typedFetch(request, preferencesResponseSchema);
       },
       updatePreferences: (body: PreferencesRequest) => {
         const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.preferences, {

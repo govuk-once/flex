@@ -1,6 +1,5 @@
+import { parseResponseBody } from "@flex/utils";
 import { z } from "zod";
-
-import { parseResponseBody } from "./request";
 
 export type ApiResult<T> =
   | { ok: true; data: T; status: number }
