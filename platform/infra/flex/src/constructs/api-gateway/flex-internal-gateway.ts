@@ -60,7 +60,7 @@ export class FlexInternalGateway extends Construct {
     );
 
     const accessLogGroup = new LogGroup(scope, "AccessLogGroup", {
-      retention: RetentionDays.ONE_MONTH,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const privateGateway = new RestApi(scope, "PrivateGateway", {
