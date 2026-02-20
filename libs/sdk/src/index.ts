@@ -25,9 +25,11 @@ const versionRouteSchema = z.record(
 const featureFlagsSchema = z.record(
   z.string(),
   z.object({
-    name: z.string(),
     description: z.string().optional(),
-    enabled: z.boolean(),
+    enabled: z.union([
+      z.boolean(),
+      z.enum(["staging", "production", "development"]),
+    ]),
   }),
 );
 
@@ -35,14 +37,7 @@ export const domainSchema = z.object({
   domain: z.string(),
   owner: z.string().optional(),
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),
-  featureFlags: z
-    .object({
-      staging: featureFlagsSchema,
-      production: featureFlagsSchema,
-      development: featureFlagsSchema,
-      default: featureFlagsSchema,
-    })
-    .optional(),
+  featureFlags: featureFlagsSchema.optional(),
 });
 
 type InferredDomain = z.infer<typeof domainSchema>;

@@ -28,6 +28,23 @@ interface FlexDomainStackProps {
   restApi: RestApi;
 }
 
+function parseFeatureFlagsForEnvironment(
+  featureFlags: IDomain["featureFlags"],
+  environment: string,
+) {
+  if (!featureFlags) return {};
+  return Object.entries(featureFlags).reduce<Record<string, boolean>>(
+    (flags, [flag, config]) => {
+      flags[flag] =
+        typeof config.enabled === "boolean"
+          ? config.enabled
+          : config.enabled.includes(environment);
+      return flags;
+    },
+    {},
+  );
+}
+
 export class FlexDomainStack extends GovUkOnceStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
@@ -52,8 +69,10 @@ export class FlexDomainStack extends GovUkOnceStack {
 
     const { environment } = getEnvConfig();
 
-    const environmentFeatureFlags =
-      featureFlags?.[environment] ?? featureFlags?.default ?? null;
+    const environmentFeatureFlags = parseFeatureFlagsForEnvironment(
+      featureFlags,
+      environment,
+    );
 
     for (const [versionId, versionConfig] of Object.entries(versions)) {
       for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
@@ -117,7 +136,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
-    featureFlags: NonNullable<IDomain["featureFlags"]>["default"] | null = null,
+    featureFlags: Record<string, boolean> = {},
   ) {
     const resolvedVars: Record<string, string> = {};
     const envGrantables: (ISecret | IStringParameter)[] = [];
@@ -141,13 +160,20 @@ export class FlexDomainStack extends GovUkOnceStack {
     processMap(env, false);
     processMap(envSecret, true);
 
-    if (featureFlags) {
-      Object.entries(featureFlags).forEach(([flagKey, flagValue]) => {
-        resolvedVars[`${flagKey}_FEATURE_FLAG`] = flagValue.name;
-      });
-    }
+    const featureFlagStrings = Object.entries(featureFlags).reduce<
+      Record<string, string>
+    >((flags, [flagKey, flagValue]) => {
+      const normalisedFlagKey = `${flagKey
+        .toUpperCase()
+        .replace(/_+(?:FEATURE_FLAG)?$/g, "")}_FEATURE_FLAG`;
+      flags[normalisedFlagKey] = flagValue.toString();
+      return flags;
+    }, {});
 
-    return { resolvedVars, envGrantables };
+    return {
+      resolvedVars: { ...resolvedVars, ...featureFlagStrings },
+      envGrantables,
+    };
   }
 
   /**
