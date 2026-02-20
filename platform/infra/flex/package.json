@@ -6,7 +6,7 @@
     "hotswap": "cdk deploy --hotswap",
     "diff": "cdk diff",
     "deploy": "cdk deploy --all",
-    "destroy": "cdk destroy \"*-FlexPlatform\" --force && cdk destroy --all --force",
+    "destroy": "cdk destroy --all --force",
     "synth": "cdk synth",
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
