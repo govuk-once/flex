@@ -7,3 +7,9 @@ export const createUserRequestSchema = z.object({
 });
 
 export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
+
+export const createUserResponseSchema = z.object({
+  message: NonEmptyString,
+});
+
+export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;

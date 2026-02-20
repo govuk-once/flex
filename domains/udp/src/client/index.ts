@@ -4,7 +4,7 @@ import {
   PreferencesRequest,
   preferencesResponseSchema,
 } from "../schemas/preferences";
-import { CreateUserRequest } from "../schemas/user";
+import { CreateUserRequest, createUserResponseSchema } from "../schemas/user";
 import {
   UDP_DOMAIN_BASE,
   UDP_DOMAIN_ROUTES,
@@ -65,7 +65,7 @@ export function createUdpDomainClient({
             "Content-Type": "application/json",
           },
         });
-        return typedFetch(request);
+        return typedFetch(request, createUserResponseSchema);
       },
     },
   };
