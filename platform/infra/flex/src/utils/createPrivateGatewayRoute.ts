@@ -7,7 +7,7 @@ export function createPrivateGatewayRoute(
   handler: IFunction,
   gatewayResource: IResource,
 ) {
-  const pathSegments = path.replace(/^\//, "").split("/").filter(Boolean);
+  const pathSegments = path.split("/").filter(Boolean);
   const resource = pathSegments.reduce(
     (parent, segment) =>
       parent.getResource(segment) ?? parent.addResource(segment),
