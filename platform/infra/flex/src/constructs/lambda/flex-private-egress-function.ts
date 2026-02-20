@@ -18,7 +18,7 @@ export class FlexPrivateEgressFunction extends Construct {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const vpc = importVpcFromSsm(this, "/flex-core/vpc");
