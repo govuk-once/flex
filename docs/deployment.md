@@ -43,10 +43,10 @@ Complete the ["Environment Setup"](/docs/environment-setup.md) steps first.
 
 ```bash
 # Deploy all domains
-pnpm deploy
+pnpm run deploy
 
 # Deploy a single domain
-domain=udp pnpm deploy
+domain=udp pnpm run deploy
 ```
 
 This uses `$USER` as the stage name (truncated to 12 characters). Your stack will be named `{user}-FlexPlatform`. When `domain` is set, only that domain's stack is synthesised and deployed.
