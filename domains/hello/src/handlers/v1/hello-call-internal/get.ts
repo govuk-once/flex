@@ -1,4 +1,4 @@
-import { sigv4Fetch } from "@flex/flex-fetch";
+import { createSigv4Fetcher } from "@flex/flex-fetch";
 import { createLambdaHandler } from "@flex/handlers";
 import { getConfig } from "@flex/params";
 import type {
@@ -25,17 +25,17 @@ export const handler = createLambdaHandler<
     const config = await getConfig(configSchema);
     const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
 
-    const response = await sigv4Fetch({
+    const fetcher = createSigv4Fetcher({
       region: config.AWS_REGION,
       baseUrl: baseUrl.toString(),
-      method: "GET",
-      path: "/domains/hello/v1/hello-internal",
     });
 
+    const { request } = fetcher("/domains/hello/v1/hello-internal");
+    const response = await request;
     const body = (await response.json()) as Record<string, unknown>;
     return {
       statusCode: response.status,
-      body: JSON.stringify({ ...body, status: response.status }),
+      body: JSON.stringify(body),
     };
   },
   {
