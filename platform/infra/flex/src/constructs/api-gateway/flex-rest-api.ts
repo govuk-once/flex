@@ -19,7 +19,7 @@ export class FlexRestApi extends Construct {
     super(scope, id);
 
     const accessLogGroup = new LogGroup(this, "ApiAccessLogs", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const authentication = new FlexAuthentication(this, "Authentication");
