@@ -7,6 +7,7 @@ import {
   IResource,
   LogGroupLogDestination,
   MethodLoggingLevel,
+  MockIntegration,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import {

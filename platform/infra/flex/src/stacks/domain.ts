@@ -24,6 +24,7 @@ import type { Construct } from "constructs";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
+import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 import { PrivateApiRef } from "./private-gateway";
@@ -164,9 +165,15 @@ export class FlexDomainStack extends GovUkOnceStack {
             .replace(/\/+/g, "/")
             .replace(/^\//, "");
 
-          this.#addDeepResource(apiRoot, newPath).addMethod(
+          const resource = this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
+          );
+
+          applyCheckovSkip(
+            resource,
+            "CKV_AWS_59",
+            "Lambda function is invoked by API Gateway",
           );
 
           if (
