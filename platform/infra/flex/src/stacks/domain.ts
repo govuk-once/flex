@@ -17,6 +17,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
+import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -28,7 +29,12 @@ import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 import { PrivateApiRef } from "./private-gateway";
-import { PublicRouteBinding } from "./public-route-binding";
+
+export interface PublicRouteBinding {
+  path: string;
+  method: string;
+  handler: IFunction;
+}
 
 interface FlexDomainStackProps {
   domain: IDomain;
@@ -173,7 +179,7 @@ export class FlexDomainStack extends GovUkOnceStack {
           applyCheckovSkip(
             resource,
             "CKV_AWS_59",
-            "Lambda function is invoked by API Gateway",
+            "Private API - access restricted by VPC endpoint and resource policy",
           );
 
           if (

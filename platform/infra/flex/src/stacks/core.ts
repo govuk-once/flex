@@ -16,7 +16,7 @@ import type { Construct } from "constructs";
 
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
-import { PublicRouteBinding } from "./public-route-binding";
+import { PublicRouteBinding } from "./domain";
 
 interface FlexPlatformStackProps {
   certArnParamName: string;

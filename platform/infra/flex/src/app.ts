@@ -35,9 +35,9 @@ const privateDomains = await getPrivateDomainConfigs();
 const domainStacks = flexDomains.map(
   (domain) =>
     new FlexDomainStack(app, getStackName(domain.domain), {
-    domain,
-    privateApi: privateGateway.privateApiRef,
-    privateDomain: privateDomains.get(domain.domain),
+      domain,
+      privateApi: privateGateway.privateApiRef,
+      privateDomain: privateDomains.get(domain.domain),
     }),
 );
 
