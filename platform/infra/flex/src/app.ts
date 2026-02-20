@@ -28,9 +28,23 @@ const privateGateway = new FlexPrivateGatewayStack(
 
 /**
  * Dynamically create CloudFormation stack per domain
+ * Use `domain` env var to deploy a single domain (e.g., domain=hello)
  */
-const flexDomains = await getDomainConfigs();
+const targetDomain = process.env.domain;
+
+const allDomains = await getDomainConfigs();
 const privateDomains = await getPrivateDomainConfigs();
+
+const flexDomains = targetDomain
+  ? allDomains.filter((d) => d.domain === targetDomain)
+  : allDomains;
+
+if (targetDomain && flexDomains.length === 0) {
+  const available = allDomains.map((d) => d.domain).join(", ");
+  throw new Error(
+    `Domain '${targetDomain}' not found. Available domains: ${available}`,
+  );
+}
 
 const domainStacks = flexDomains.map(
   (domain) =>
@@ -41,13 +55,15 @@ const domainStacks = flexDomains.map(
     }),
 );
 
-const publicRouteBindings = domainStacks.flatMap(
-  (stack) => stack.publicRouteBindings,
-);
+if (process.env.deployPlatform !== "false") {
+  const publicRouteBindings = domainStacks.flatMap(
+    (stack) => stack.publicRouteBindings,
+  );
 
-new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-  certArnParamName,
-  domainName,
-  subdomainName,
-  publicRouteBindings,
-});
+  new FlexPlatformStack(app, getStackName("FlexPlatform"), {
+    certArnParamName,
+    domainName,
+    subdomainName,
+    publicRouteBindings,
+  });
+}

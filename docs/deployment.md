@@ -42,10 +42,14 @@ Complete the ["Environment Setup"](/docs/environment-setup.md) steps first.
 ### Deploy
 
 ```bash
-pnpm --filter @platform/flex deploy
+# Deploy all domains
+pnpm deploy
+
+# Deploy a single domain
+domain=udp pnpm deploy
 ```
 
-This uses `$USER` as the stage name (truncated to 12 characters). Your stack will be named `{user}-FlexPlatform`.
+This uses `$USER` as the stage name (truncated to 12 characters). Your stack will be named `{user}-FlexPlatform`. When `domain` is set, only that domain's stack is synthesised and deployed.
 
 ### Verify
 
@@ -194,7 +198,16 @@ Each stage must complete before the next step begins. E2E tests run as part of e
 ### Deploying to a Specific Stage
 
 ```bash
-STAGE=development pnpm --filter @platform/<name> deploy
+STAGE=development pnpm deploy
+```
+
+### Deploying a Single Domain
+
+```bash
+domain=udp pnpm deploy
+
+# With a specific stage
+domain=udp STAGE=development pnpm deploy
 ```
 
 ### Deploying Core Stack
