@@ -55,15 +55,13 @@ const domainStacks = flexDomains.map(
     }),
 );
 
-if (process.env.deployPlatform !== "false") {
-  const publicRouteBindings = domainStacks.flatMap(
-    (stack) => stack.publicRouteBindings,
-  );
+const publicRouteBindings = domainStacks.flatMap(
+  (stack) => stack.publicRouteBindings,
+);
 
-  new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-    certArnParamName,
-    domainName,
-    subdomainName,
-    publicRouteBindings,
-  });
-}
+new FlexPlatformStack(app, getStackName("FlexPlatform"), {
+  certArnParamName,
+  domainName,
+  subdomainName,
+  publicRouteBindings,
+});
