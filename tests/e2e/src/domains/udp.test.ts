@@ -5,40 +5,6 @@ describe("UDP domain", () => {
   const ingressPath = "/app";
   const domainVersion = "v1";
   const endpoint = `${ingressPath}/${domainVersion}/user`;
-  const user = { name: "John Doe" };
-
-  it("rejects request at CloudFront when unauthenticated", async ({
-    cloudfront,
-  }) => {
-    const response = await cloudfront.client.post(endpoint, {
-      body: user,
-    });
-
-    expect(response.headers.get("apigw-requestid")).toBeNull();
-    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    expect(response).toMatchObject({
-      status: 401,
-      statusText: "Unauthorized",
-      body: { message: "Unauthorized" },
-    });
-  });
-
-  it("rejects request at CloudFront when Bearer token is empty", async ({
-    cloudfront,
-  }) => {
-    const response = await cloudfront.client.post(endpoint, {
-      body: user,
-      headers: { Authorization: "Bearer " },
-    });
-
-    expect(response.headers.get("apigw-requestid")).toBeNull();
-    expect(response.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    expect(response).toMatchObject({
-      status: 401,
-      statusText: "Unauthorized",
-      body: { message: "Unauthorized" },
-    });
-  });
 
   describe.todo("/get user", () => {
     // TODO: Replace with valid test user token

@@ -1,6 +1,6 @@
 # @flex/flex-fetch
 
-Lightweight wrapper around `fetch` that adds exponential backoff retries with jitter and a simple `AbortController` to cancel the in-flight request and stop further retries.
+Lightweight wrapper around `fetch` that adds exponential backoff retries with jitter and a simple `AbortController` to cancel the in-flight request and stop further retries. Also provides AWS Signature V4 (SigV4) signed fetch for private API Gateway and similar endpoints.
 
 ## Install
 
@@ -12,14 +12,33 @@ pnpm add @flex/flex-fetch
 
 ## API
 
-- **Function:** `flexFetch(url, options?)`
+### flexFetch
+
+- **Function:** `flexFetch(url, options?, fetcher?)`
 - **Returns:** `{ request: Promise<Response>; abort: () => void }`
 
 ### Options (`FlexFetchRequestInit`)
 
-- **`retryAttempts`**: number of attempts, capped at 5. If omitted, no retries are performed.
+- **`retryAttempts`**: total number of attempts (including the first try), capped at 6. If omitted, no retries are performed.
 - **`maxRetryDelay`**: maximum delay between retries in ms. Clamped to 10-1000 ms.
 - **Other `RequestInit`**: any standard fetch options (`method`, `headers`, `body`, etc.).
+
+### createSigv4Fetcher
+
+Creates a path-based signed fetch for AWS API Gateway (`execute-api`) and compatible endpoints. Use when you already have credentials (e.g. from the environment or explicit credentials). Returns a function that accepts a path and returns a `flexFetch` result.
+Fetch options (retry, headers, method, body, etc.) are passed per request in the second argument to the returned function.
+
+- **Function:** `createSigv4Fetcher(options)`
+- **Returns:** `(path: string, fetchOptions?: FlexFetchRequestInit) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl` (string), `region?`, `credentials?`
+
+### createSigv4FetchWithCredentials
+
+Same as `createSigv4Fetcher` but assumes an IAM role via `STS AssumeRole` to obtain credentials. Credentials are cached per `roleArn` and `externalId`.
+
+- **Function:** `createSigv4FetchWithCredentials(options)`
+- **Returns:** `(path: string, fetchOptions?: FlexFetchRequestInit) => { request: Promise<Response>; abort: () => void }`
+- **Options:** `baseUrl`, `region?`, `roleArn` (required), `roleName` (required), `externalId?`
 
 ### Behavior
 
@@ -73,12 +92,61 @@ try {
 }
 ```
 
+### SigV4 signed fetch (private API Gateway)
+
+Use `createSigv4Fetcher` when calling private API Gateway. Credentials come from the default provider chain (e.g. Lambda execution role, env vars).
+
+```ts
+import { createSigv4Fetcher } from "@flex/flex-fetch";
+
+const fetcher = createSigv4Fetcher({
+  baseUrl: "https://abc123.execute-api.eu-west-2.amazonaws.com/prod",
+  region: "eu-west-2",
+});
+
+const { request } = fetcher("/users", {
+  retryAttempts: 3,
+  headers: { "Content-Type": "application/json" },
+});
+const res = await request;
+const data = await res.json();
+```
+
+### SigV4 with assumed-role credentials
+
+Use `createSigv4FetchWithCredentials` when you need to assume an IAM role to obtain credentials (e.g. cross-account access). Credentials are cached per role.
+
+```ts
+import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
+
+const fetcher = createSigv4FetchWithCredentials({
+  baseUrl: "https://private-api.example.com/prod",
+  region: "eu-west-2",
+  roleArn: "arn:aws:iam::123456789012:role/api-gateway-invoker",
+  roleName: "my-session",
+  externalId: "optional-external-id",
+});
+
+const { request } = fetcher("/data", { retryAttempts: 3 });
+const res = await request;
+const data = await res.json();
+```
+
 ## Notes & Gotchas
 
 - **Retries count:** Retries are only enabled when `retryAttempts` is provided. Attempts are capped at 5.
 - **Logging on failure:** Async failures after all retries won’t be caught by the function’s `try/catch`. Log at the call site by attaching `.catch(...)` to the returned `request` Promise if you need error telemetry.
 
+- **SigV4 service:** Requests are signed for the `execute-api` service (API Gateway). For Lambda Function URLs, use `aws-sigv4-fetch` directly or pass a custom fetcher to `flexFetch`.
+- **Credentials caching:** `createSigv4FetchWithCredentials` caches credential providers per `roleArn` and `externalId`. Repeated calls with the same role reuse the same provider.
+
 ## Under the Hood
 
 - Backoff powered by `exponential-backoff` with `numOfAttempts`, `maxDelay`, and `jitter: "full"`.
 - Abort is handled via `AbortController`; once aborted, the backoff `retry()` returns `false` to stop further attempts.
+- **SigV4 path format:** The fetcher takes a path string. Use a leading slash (e.g. `"/users"`) to avoid concatenation issues; `baseUrl` should not end with a trailing slash.
+
+### Exported types
+
+- **`FlexFetchRequestInit`** – options for `flexFetch` (extends `RequestInit` with `retryAttempts`, `maxRetryDelay`)
+- **`Sigv4FetcherOptions`** – options for `createSigv4Fetcher` and `createSigv4FetchWithCredentials`

@@ -13,7 +13,7 @@ export class FlexPublicFunction extends Construct {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     this.function = new NodejsFunction(this, "Function", {

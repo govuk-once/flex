@@ -31,7 +31,7 @@ export function exportVpcToSsm(
   vpcKey: VpcKey,
   { vpcId }: IVpc,
 ) {
-  new StringParameter(scope, `Vpc${hash(vpcId)}`, {
+  new StringParameter(scope, `Vpc${hash(vpcKey)}`, {
     parameterName: getParamName(vpcKey),
     stringValue: vpcId,
   });
@@ -39,7 +39,7 @@ export function exportVpcToSsm(
 
 export function importVpcFromSsm(scope: Construct, vpcKey: VpcKey) {
   const vpcId = StringParameter.valueFromLookup(scope, getParamName(vpcKey));
-  return Vpc.fromLookup(scope, `Vpc${hash(vpcId)}`, { vpcId });
+  return Vpc.fromLookup(scope, `Vpc${hash(vpcKey)}`, { vpcId });
 }
 
 /** Security Groups */
@@ -52,7 +52,7 @@ export function exportSecurityGroupToSsm(
   SecurityGroupKey: SecurityGroupKey,
   { securityGroupId }: ISecurityGroup,
 ) {
-  new StringParameter(scope, `SG${hash(securityGroupId)}`, {
+  new StringParameter(scope, `SG${hash(SecurityGroupKey)}`, {
     parameterName: getParamName(SecurityGroupKey),
     stringValue: securityGroupId,
   });
@@ -68,7 +68,7 @@ export function importSecurityGroupFromSsm(
   );
   return SecurityGroup.fromLookupById(
     scope,
-    `SG${securityGroupId}`,
+    `SG${hash(SecurityGroupKey)}`,
     securityGroupId,
   );
 }
@@ -81,7 +81,7 @@ export function exportInterfaceVpcEndpointToSsm(
   vpcEndpointKey: VpcEndpointKey,
   { vpcEndpointId }: IVpcEndpoint,
 ) {
-  new StringParameter(scope, `VpcE${hash(vpcEndpointId)}`, {
+  new StringParameter(scope, `VpcE${hash(vpcEndpointKey)}`, {
     parameterName: getParamName(vpcEndpointKey),
     stringValue: vpcEndpointId,
   });
@@ -97,7 +97,7 @@ export function importInterfaceVpcEndpointFromSsm(
   );
   return InterfaceVpcEndpoint.fromInterfaceVpcEndpointAttributes(
     scope,
-    `VpcE${hash(vpcEndpointId)}`,
+    `VpcE${hash(vpcEndpointKey)}`,
     { port: 443, vpcEndpointId },
   );
 }
@@ -110,7 +110,7 @@ export function exportStringToSsm(
   stringKey: StringKey,
   string: string,
 ) {
-  new StringParameter(scope, `String${hash(string)}`, {
+  new StringParameter(scope, `String${hash(stringKey)}`, {
     parameterName: getParamName(stringKey),
     stringValue: string,
   });
@@ -123,7 +123,11 @@ export function importStringFromSsm(scope: Construct, stringKey: StringKey) {
 /** FLEX Params */
 export type FlexParam =
   | "/flex-param/auth/user-pool-id"
-  | "/flex-param/auth/client-id";
+  | "/flex-param/auth/client-id"
+  | "/flex-param/udp/consumer-config-secret-arn"
+  | "/flex-param/udp/cmk-arn"
+  | "/flex-core/vpc-endpoint/api-gateway"
+  | "/flex-param/udp/consumer-role-arn";
 
 export function importFlexParameter(scope: Construct, param: FlexParam) {
   return StringParameter.fromStringParameterName(
@@ -134,7 +138,9 @@ export function importFlexParameter(scope: Construct, param: FlexParam) {
 }
 
 /** Flex Secrets */
-export type FlexSecret = "/flex-secret/udp/notification-hash-secret";
+export type FlexSecret =
+  | "/flex-secret/udp/notification-hash-secret"
+  | "/flex-secret/udp/consumer-config-secret";
 
 export function importFlexSecret(scope: Construct, secret: FlexSecret) {
   return Secret.fromSecretNameV2(
@@ -152,6 +158,6 @@ export function importFlexKmsKeyAlias(
   kmsKeyAlias: FlexKmsKeyAlias,
 ) {
   return Key.fromLookup(scope, `FlexKmsKeyAlias${hash(kmsKeyAlias)}`, {
-    aliasName: `alias${getParamName("/flex-secret-encryption-key")}`,
+    aliasName: `alias${getParamName(kmsKeyAlias)}`,
   });
 }

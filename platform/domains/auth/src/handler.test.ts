@@ -1,16 +1,23 @@
 import {
-  authorizerEvent,
   context,
+  createTokenAuthorizerEvent,
   invalidJwt,
   it,
   jwtMissingUsername,
   publicJWKS,
+  tokenAuthorizerEvent,
   validJwt,
 } from "@flex/testing";
+import {
+  FailedAssertionError,
+  JwtExpiredError,
+  JwtParseError,
+} from "aws-jwt-verify/error";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
+import { createAuthService } from "./services/auth-service";
 
 const TEST_USERPOOL_ID = "eu-west-2_testUserPoolId";
 const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
@@ -27,6 +34,34 @@ vi.mock("@flex/params", () => {
   };
 });
 
+vi.mock("./services/auth-service", async () => {
+  const actual = await vi.importActual<
+    typeof import("./services/auth-service")
+  >("./services/auth-service");
+  return {
+    ...actual,
+    createAuthService: vi.fn(actual.createAuthService),
+  };
+});
+
+function expectDenyPolicy(context?: Record<string, string>) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return expect.objectContaining({
+    principalId: "anonymous",
+    policyDocument: {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Action: "execute-api:Invoke",
+          Effect: "Deny",
+          Resource: tokenAuthorizerEvent.methodArn,
+        },
+      ],
+    },
+    ...(context && { context }),
+  });
+}
+
 describe("Authorizer Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,72 +73,101 @@ describe("Authorizer Handler", () => {
   }) => {
     nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(200, publicJWKS);
 
-    expect(await handler(authorizerEvent, context)).toEqual(
+    expect(await handler(tokenAuthorizerEvent, context)).toEqual(
       authorizerResult.allowWithPairwiseId(),
     );
   });
 
-  it("returns 401 when the authorization header is missing", async ({
-    authorizerEvent,
-  }) => {
+  it.each([
+    {
+      label: "the authorization header is missing",
+      event: createTokenAuthorizerEvent().missingToken(),
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
+    },
+    {
+      label: "the Bearer token is empty",
+      event: createTokenAuthorizerEvent().withToken(""),
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
+    },
+    {
+      label: "the JWT is invalid",
+      event: createTokenAuthorizerEvent().withToken(invalidJwt),
+      cognitoResponseStatus: undefined,
+      cognitoResponseBody: undefined,
+    },
+    {
+      label: "the JWT is valid but missing the username claim",
+      event: createTokenAuthorizerEvent().withToken(jwtMissingUsername),
+      cognitoResponseStatus: 200,
+      cognitoResponseBody: publicJWKS,
+    },
+    {
+      label: "the JWKS endpoint is unavailable",
+      event: createTokenAuthorizerEvent().withToken(validJwt),
+      cognitoResponseStatus: 500,
+      cognitoResponseBody: "Internal Server Error",
+    },
+  ])(
+    "returns explicit deny when $label",
+    async ({ event, cognitoResponseStatus, cognitoResponseBody }) => {
+      if (typeof cognitoResponseStatus === "number") {
+        nock(COGNITO_BASE_URL)
+          .get(JWKS_PATH)
+          .reply(cognitoResponseStatus, cognitoResponseBody);
+      }
+      await expect(handler(event, context)).resolves.toEqual(
+        expectDenyPolicy(),
+      );
+    },
+  );
+
+  it.each([
+    {
+      label: "JwtExpiredError",
+      error: new JwtExpiredError("JWT expired", null, "exp"),
+      expectedContext: { errorMessage: "JWT expired" },
+    },
+    {
+      label: "FailedAssertionError",
+      error: new FailedAssertionError(
+        "Missing authorization token",
+        undefined,
+        "authorization token",
+      ),
+      expectedContext: undefined,
+    },
+    {
+      label: "generic JwtBaseError",
+      error: new JwtParseError("Invalid JWT header"),
+      expectedContext: undefined,
+    },
+  ])(
+    "returns Deny with expected context for $label",
+    async ({ error, expectedContext }) => {
+      vi.mocked(createAuthService).mockResolvedValueOnce({
+        extractPairwiseId: vi.fn().mockRejectedValue(error),
+      });
+
+      await expect(handler(tokenAuthorizerEvent, context)).resolves.toEqual(
+        expectDenyPolicy(expectedContext),
+      );
+    },
+  );
+
+  it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async () => {
+    const unknownError = new Error("Unknown error");
+
+    vi.mocked(createAuthService).mockResolvedValueOnce({
+      extractPairwiseId: vi.fn().mockRejectedValue(unknownError),
+    });
+
     await expect(
-      handler(authorizerEvent.missingToken(), context),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        statusCode: 401,
-        body: "Missing authorization token",
-      }),
-    );
-  });
-
-  it("returns 401 when the Bearer token is empty", async ({
-    authorizerEvent,
-  }) => {
-    await expect(
-      handler(authorizerEvent.withToken(""), context),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        statusCode: 401,
-        body: "Missing authorization token",
-      }),
-    );
-  });
-
-  it("returns 401 when the JWT is invalid", async ({ authorizerEvent }) => {
-    await expect(
-      handler(authorizerEvent.withToken(invalidJwt), context),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        statusCode: 401,
-        body: expect.stringContaining(
-          "Invalid JWT. Header is not a valid JSON object",
-        ) as string,
-      }),
-    );
-  });
-
-  it("returns 401 when the JWT is valid but missing the username claim", async ({
-    authorizerEvent,
-  }) => {
-    nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(200, publicJWKS);
-
-    await expect(
-      handler(authorizerEvent.withToken(jwtMissingUsername), context),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        statusCode: 401,
-        body: "JWT missing username claim",
-      }),
-    );
-  });
-
-  it("returns 401 when the JWKS endpoint is unavailable", async ({
-    authorizerEvent,
-  }) => {
-    nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(500, "Internal Server Error");
-
-    await expect(
-      handler(authorizerEvent.withToken(validJwt), context),
-    ).resolves.toEqual(expect.objectContaining({ statusCode: 401 }));
+      handler(createTokenAuthorizerEvent().withToken(validJwt), context),
+    ).resolves.toEqual({
+      statusCode: 500,
+      headers: {},
+    });
   });
 });

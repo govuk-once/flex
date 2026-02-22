@@ -3,6 +3,7 @@ import {
   AuthorizationType,
   EndpointType,
   LogGroupLogDestination,
+  ResponseType,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -18,7 +19,7 @@ export class FlexRestApi extends Construct {
     super(scope, id);
 
     const accessLogGroup = new LogGroup(this, "ApiAccessLogs", {
-      retention: RetentionDays.ONE_WEEK,
+      retention: RetentionDays.ONE_YEAR,
     });
 
     const authentication = new FlexAuthentication(this, "Authentication");
@@ -55,5 +56,26 @@ export class FlexRestApi extends Construct {
       "CKV_AWS_120",
       "Disabled for now and will renable when caching strategy is defined",
     );
+    this.addUnauthorizedResponseTemplate(this.restApi);
+  }
+
+  private addUnauthorizedResponseTemplate(restApi: RestApi) {
+    restApi.addGatewayResponse("Unauthorized", {
+      type: ResponseType.UNAUTHORIZED,
+      statusCode: "401",
+      templates: {
+        "application/json":
+          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+      },
+    });
+
+    restApi.addGatewayResponse("AccessDenied", {
+      type: ResponseType.ACCESS_DENIED,
+      statusCode: "403",
+      templates: {
+        "application/json":
+          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+      },
+    });
   }
 }

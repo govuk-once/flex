@@ -16,7 +16,6 @@ export type {
   StructuredResponse,
 } from "./fixtures";
 export {
-  authorizerEvent,
   authorizerResult,
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
@@ -30,6 +29,7 @@ export {
   createEventWithAuthorizer,
   createMiddyRequest,
   createResponse,
+  createTokenAuthorizerEvent,
   event,
   eventWithAuthorizer,
   expiredJwt,
@@ -38,6 +38,7 @@ export {
   middyRequest,
   publicJWKS,
   response,
+  tokenAuthorizerEvent,
   validJwt,
   validJwtUsername,
 } from "./fixtures";
