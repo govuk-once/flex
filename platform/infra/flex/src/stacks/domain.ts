@@ -28,6 +28,10 @@ interface FlexDomainStackProps {
   restApi: RestApi;
 }
 
+function normaliseWithSuffix(str: string, suffix: string) {
+  return str.endsWith(suffix) ? str : `${str}${suffix}`;
+}
+
 function parseFeatureFlagsForEnvironment(
   featureFlags: IDomain["featureFlags"],
   environment: string,
@@ -151,7 +155,11 @@ export class FlexDomainStack extends GovUkOnceStack {
 
         envGrantables.push(resource);
 
-        resolvedVars[envKey] = isSecret
+        const normalisedKey = isSecret
+          ? normaliseWithSuffix(envKey, "_SECRET")
+          : envKey;
+
+        resolvedVars[normalisedKey] = isSecret
           ? (resource as ISecret).secretName
           : (resource as IStringParameter).parameterName;
       });
@@ -163,9 +171,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     const featureFlagStrings = Object.entries(featureFlags).reduce<
       Record<string, string>
     >((flags, [flagKey, flagValue]) => {
-      const normalisedFlagKey = `${flagKey
-        .toUpperCase()
-        .replace(/_+(?:FEATURE_FLAG)?$/g, "")}_FEATURE_FLAG`;
+      const normalisedFlagKey = normaliseWithSuffix(flagKey, "_FEATURE_FLAG");
       flags[normalisedFlagKey] = flagValue.toString();
       return flags;
     }, {});
