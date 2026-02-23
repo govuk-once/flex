@@ -23,7 +23,7 @@ export interface PublicApiRef {
   restApiId: string;
   rootResourceId: string;
   stageName: string;
-  authorizerId: string;
+  authorizerLambdaArn: string;
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
@@ -76,13 +76,13 @@ export class FlexPlatformStack extends GovUkOnceStack {
       },
     });
 
-    const { authorizerId, restApi } = new FlexRestApi(this, "RestApi");
+    const { authorizerLambdaArn, restApi } = new FlexRestApi(this, "RestApi");
     this.restApi = restApi;
     this.publicApiRef = {
       restApiId: restApi.restApiId,
       rootResourceId: restApi.restApiRootResourceId,
       stageName: restApi.deploymentStage.stageName,
-      authorizerId,
+      authorizerLambdaArn,
     };
 
     const certArn = this.#getCertArn(certArnParamName);

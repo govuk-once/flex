@@ -10,15 +10,17 @@ import {
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   AuthorizationType,
-  CfnMethod,
+  IdentitySource,
   IResource,
   IRestApi,
   LambdaIntegration,
   Resource,
   RestApi,
+  TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
+import { Function } from "aws-cdk-lib/aws-lambda";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -82,11 +84,20 @@ export class FlexDomainStack extends GovUkOnceStack {
         restApi: publicApi,
       },
     );
-    this.#processPublicRoutes(
-      props.domain,
-      publicApiRoot,
-      props.publicApi.authorizerId,
+
+    // Create authorizer per domain stack using the shared Lambda
+    const authorizerLambda = Function.fromFunctionArn(
+      this,
+      "AuthorizerLambda",
+      props.publicApi.authorizerLambdaArn,
     );
+
+    const authorizer = new TokenAuthorizer(this, "Authorizer", {
+      handler: authorizerLambda,
+      identitySource: IdentitySource.header("Authorization"),
+    });
+
+    this.#processPublicRoutes(props.domain, publicApiRoot, authorizer);
 
     if (props.privateDomain) {
       this.#processPrivateRoutes(
@@ -102,7 +113,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   #processPublicRoutes(
     domainConfig: IDomain,
     publicApiRoot: IResource,
-    authorizerId: string,
+    authorizer: TokenAuthorizer,
   ): void {
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
@@ -140,15 +151,14 @@ export class FlexDomainStack extends GovUkOnceStack {
 
           const resource = this.#addDeepResource(publicApiRoot, newPath);
 
-          const createdMethod = resource.addMethod(
+          resource.addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
+            {
+              authorizer,
+              authorizationType: AuthorizationType.CUSTOM,
+            },
           );
-
-          // escape-hatch
-          const cfnMethod = createdMethod.node.defaultChild as CfnMethod;
-          cfnMethod.authorizerId = authorizerId;
-          cfnMethod.authorizationType = AuthorizationType.CUSTOM;
         }
       }
     }

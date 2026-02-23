@@ -11,6 +11,7 @@ import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-functio
 
 export class FlexAuthentication extends Construct {
   public readonly authorizer: IAuthorizer;
+  public readonly authorizerLambdaArn: string;
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
@@ -32,6 +33,8 @@ export class FlexAuthentication extends Construct {
 
     userPoolId.grantRead(authorizerFunction.function);
     clientId.grantRead(authorizerFunction.function);
+
+    this.authorizerLambdaArn = authorizerFunction.function.functionArn;
 
     this.authorizer = new TokenAuthorizer(this, "LambdaAuthorizer", {
       handler: authorizerFunction.function,
