@@ -1,12 +1,23 @@
 import { HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { z } from "zod";
 
+const permissionsSchema = z.object({
+  type: z.enum(["domain", "gateway"]),
+  path: z.string(),
+  method: z.string(),
+  // TODO: intra-domain permissions
+});
+
+export type Permission = z.infer<typeof permissionsSchema>;
+
 const handlerConfigSchema = z.object({
   entry: z.string(),
   type: z.enum(["PUBLIC", "PRIVATE", "ISOLATED"]),
   env: z.record(z.string(), z.string()).optional(),
   envSecret: z.record(z.string(), z.string()).optional(),
   kmsKeys: z.record(z.string(), z.string()).optional(),
+  permissions: z.array(permissionsSchema).optional(),
+  timeoutSeconds: z.number().optional(),
 });
 
 const routeMethodsSchema = z
