@@ -93,12 +93,7 @@ export class FlexCloudfront extends Construct {
         parameters: { Name: paramName },
         physicalResourceId: PhysicalResourceId.of("get-previous-secret"),
       },
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ["ssm:GetParameter"],
-          resources: [paramArn],
-        }),
-      ]),
+      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
     });
 
     previousSecret.node.addDependency(seedSecretResource);
