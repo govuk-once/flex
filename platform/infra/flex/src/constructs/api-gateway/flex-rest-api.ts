@@ -1,6 +1,5 @@
 import {
   AccessLogFormat,
-  AuthorizationType,
   EndpointType,
   LogGroupLogDestination,
   ResponseType,
@@ -44,10 +43,6 @@ export class FlexRestApi extends Construct {
           user: true,
           caller: true,
         }),
-      },
-      defaultMethodOptions: {
-        authorizer: authentication.authorizer,
-        authorizationType: AuthorizationType.CUSTOM,
       },
       endpointConfiguration: {
         types: [EndpointType.REGIONAL],

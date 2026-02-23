@@ -1,16 +1,14 @@
 import { importFlexParameter } from "@platform/core/outputs";
-import {
-  IAuthorizer,
-  IdentitySource,
-  TokenAuthorizer,
-} from "aws-cdk-lib/aws-apigateway";
 import { Construct } from "constructs";
 
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
+/**
+ * Creates the authorizer Lambda function.
+ * The actual TokenAuthorizer is created per domain stack to avoid CDK validation issues.
+ */
 export class FlexAuthentication extends Construct {
-  public readonly authorizer: IAuthorizer;
   public readonly authorizerLambdaArn: string;
 
   constructor(scope: Construct, id: string) {
@@ -35,11 +33,6 @@ export class FlexAuthentication extends Construct {
     clientId.grantRead(authorizerFunction.function);
 
     this.authorizerLambdaArn = authorizerFunction.function.functionArn;
-
-    this.authorizer = new TokenAuthorizer(this, "LambdaAuthorizer", {
-      handler: authorizerFunction.function,
-      identitySource: IdentitySource.header("Authorization"),
-    });
   }
 
   private getAuthConfig() {
