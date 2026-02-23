@@ -11,17 +11,17 @@ on:
 jobs:
   checkov:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         cdk_project:
           - 'platform/infra/core'
           - 'platform/infra/flex'
           # Add more CDK project paths as needed
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
@@ -31,12 +31,12 @@ jobs:
           version: 10.29.3
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile     
+        run: pnpm install --frozen-lockfile
 
       - name: Synthesize CDK project
         working-directory: ${{ matrix.cdk_project }}
         run: pnpm exec cdk synth
-      
+
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
         with:

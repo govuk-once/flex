@@ -5,7 +5,7 @@ class RequireTags(BaseResourceCheck):
     def __init__(self):
         name = "Ensure all resources have required tags: Environment,  Project"
         id = "CKV_AWS_CUSTOM_TAGS"
-        
+
         # Resources that DON'T support tags - we'll skip these
         self.skip_resources = [
             'AWS::IAM::Role',
@@ -27,7 +27,7 @@ class RequireTags(BaseResourceCheck):
             'AWS::Events::Rule',
             'AWS::CloudWatch::LogGroup',
         ]
-        
+
         # Check all AWS resources by default
         supported_resources = ['AWS::*']
         categories = [CheckCategories.CONVENTION]
@@ -37,26 +37,26 @@ class RequireTags(BaseResourceCheck):
         # Skip resources that don't support tags
         if entity_type and entity_type in self.skip_resources:
             return CheckResult.PASSED
-        
+
         required_tags = ['Environment', 'Project']
-        
+
         # Get tags from Properties
         properties = conf.get('Properties', {})
         tags = properties.get('Tags', [])
-        
+
         # Handle empty tags
         if not tags:
             return CheckResult.FAILED
-        
+
         # Extract tag keys
         tag_keys = [tag.get('Key') for tag in tags if isinstance(tag, dict)]
-        
+
         # Check for missing required tags
         missing = [tag for tag in required_tags if tag not in tag_keys]
-        
+
         if missing:
             return CheckResult.FAILED
-        
+
         return CheckResult.PASSED
 
 check = RequireTags()
