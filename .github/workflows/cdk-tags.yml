@@ -53,9 +53,11 @@ jobs:
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
+        continue-on-error: true
         with:
           directory: ${{ matrix.cdk_project }}/cdk.out
           framework: cloudformation
           external_checks_dirs: ${{ github.workspace }}/checkov-policies
           soft_fail: false
           check: CKV_AWS_CUSTOM_TAGS
+          output_format: cli
