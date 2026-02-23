@@ -1,6 +1,10 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  IResource,
+  LambdaIntegration,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import {
@@ -10,14 +14,15 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
-import { FlexInternalGateway } from "../constructs/api-gateway/flex-internal-gateway";
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { PublicRouteBinding } from "./domain";
 
 interface FlexPlatformStackProps {
   certArnParamName: string;
   domainName: string;
   subdomainName?: string;
+  publicRouteBindings: PublicRouteBinding[];
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
@@ -57,7 +62,12 @@ export class FlexPlatformStack extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    { certArnParamName, domainName, subdomainName }: FlexPlatformStackProps,
+    {
+      certArnParamName,
+      domainName,
+      subdomainName,
+      publicRouteBindings,
+    }: FlexPlatformStackProps,
   ) {
     super(scope, id, {
       tags: {
@@ -80,10 +90,31 @@ export class FlexPlatformStack extends GovUkOnceStack {
       restApi,
     });
 
-    new FlexInternalGateway(this, "InternalGateway");
+    for (const route of publicRouteBindings) {
+      this.#addDeepResource(restApi.root, route.path).addMethod(
+        route.method,
+        new LambdaIntegration(route.handler),
+      );
+    }
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });
+  }
+
+  #addDeepResource(root: IResource, path: string): IResource {
+    const parts = path.split("/").filter(Boolean);
+    let current = root;
+
+    for (const part of parts) {
+      const existing = current.node.tryFindChild(part) as IResource | undefined;
+      if (existing) {
+        current = existing;
+      } else {
+        current = current.addResource(part);
+      }
+    }
+
+    return current;
   }
 }
