@@ -1,10 +1,6 @@
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { CfnOutput } from "aws-cdk-lib";
-import {
-  IResource,
-  LambdaIntegration,
-  RestApi,
-} from "aws-cdk-lib/aws-apigateway";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import {
@@ -16,17 +12,23 @@ import type { Construct } from "constructs";
 
 import { FlexRestApi } from "../constructs/api-gateway/flex-rest-api";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
-import { PublicRouteBinding } from "./domain";
 
 interface FlexPlatformStackProps {
   certArnParamName: string;
   domainName: string;
   subdomainName?: string;
-  publicRouteBindings: PublicRouteBinding[];
+}
+
+export interface PublicApiRef {
+  restApiId: string;
+  rootResourceId: string;
+  stageName: string;
+  authorizerId: string;
 }
 
 export class FlexPlatformStack extends GovUkOnceStack {
   public readonly restApi: RestApi;
+  public readonly publicApiRef: PublicApiRef;
 
   #getCertArn(certArnParamName: string) {
     const ssmCall = {
@@ -62,12 +64,7 @@ export class FlexPlatformStack extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    {
-      certArnParamName,
-      domainName,
-      subdomainName,
-      publicRouteBindings,
-    }: FlexPlatformStackProps,
+    { certArnParamName, domainName, subdomainName }: FlexPlatformStackProps,
   ) {
     super(scope, id, {
       tags: {
@@ -79,8 +76,15 @@ export class FlexPlatformStack extends GovUkOnceStack {
       },
     });
 
-    const { restApi } = new FlexRestApi(this, "RestApi");
+    const { authorizerId, restApi } = new FlexRestApi(this, "RestApi");
     this.restApi = restApi;
+    this.publicApiRef = {
+      restApiId: restApi.restApiId,
+      rootResourceId: restApi.restApiRootResourceId,
+      stageName: restApi.deploymentStage.stageName,
+      authorizerId,
+    };
+
     const certArn = this.#getCertArn(certArnParamName);
 
     new FlexCloudfront(this, "Cloudfront", {
@@ -90,31 +94,8 @@ export class FlexPlatformStack extends GovUkOnceStack {
       restApi,
     });
 
-    for (const route of publicRouteBindings) {
-      this.#addDeepResource(restApi.root, route.path).addMethod(
-        route.method,
-        new LambdaIntegration(route.handler),
-      );
-    }
-
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
     });
-  }
-
-  #addDeepResource(root: IResource, path: string): IResource {
-    const parts = path.split("/").filter(Boolean);
-    let current = root;
-
-    for (const part of parts) {
-      const existing = current.node.tryFindChild(part) as IResource | undefined;
-      if (existing) {
-        current = existing;
-      } else {
-        current = current.addResource(part);
-      }
-    }
-
-    return current;
   }
 }

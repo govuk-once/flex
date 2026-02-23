@@ -26,28 +26,24 @@ const privateGateway = new FlexPrivateGatewayStack(
   getStackName("FlexPrivateGateway"),
 );
 
+const platformStack = new FlexPlatformStack(app, getStackName("FlexPlatform"), {
+  certArnParamName,
+  domainName,
+  subdomainName,
+});
+
 /**
  * Dynamically create CloudFormation stack per domain
  */
 const flexDomains = await getDomainConfigs();
 const privateDomains = await getPrivateDomainConfigs();
 
-const domainStacks = flexDomains.map(
+flexDomains.map(
   (domain) =>
     new FlexDomainStack(app, getStackName(domain.domain), {
       domain,
+      publicApi: platformStack.publicApiRef,
       privateApi: privateGateway.privateApiRef,
       privateDomain: privateDomains.get(domain.domain),
     }),
 );
-
-const publicRouteBindings = domainStacks.flatMap(
-  (stack) => stack.publicRouteBindings,
-);
-
-new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-  certArnParamName,
-  domainName,
-  subdomainName,
-  publicRouteBindings,
-});
