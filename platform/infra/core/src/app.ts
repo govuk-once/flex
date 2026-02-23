@@ -13,5 +13,5 @@ if (!persistent) {
 }
 
 const app = new cdk.App();
-// test
+// test2
 new FlexCoreStack(app, getStackName("FlexCore"));
