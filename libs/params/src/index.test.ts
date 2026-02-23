@@ -1,3 +1,4 @@
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
@@ -5,11 +6,14 @@ import { beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
 
 vi.mock("@aws-lambda-powertools/parameters/ssm");
+vi.mock("@aws-lambda-powertools/parameters/secrets");
 
 export const rawConfigSchema = z.object({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),
+  NEW_FEATURE_FEATURE_FLAG: z.string().min(1),
+  CLIENT_SECRET_SECRET: z.string().min(1),
 });
 
 getLogger({ serviceName: "config_test" });
@@ -23,13 +27,13 @@ async function resetConfigModule() {
   return config;
 }
 
-function getCleanConfig(rawConfigSchema: z.ZodType<object>) {
+function getCleanConfig(rawConfigSchema: z.ZodType<Record<string, string>>) {
   return resetConfigModule().then((config) =>
     config.getConfig(rawConfigSchema),
   );
 }
 
-function getConfig(rawConfigSchema: z.ZodType<object>) {
+function getConfig(rawConfigSchema: z.ZodType<Record<string, string>>) {
   return import(".").then((config) => config.getConfig(rawConfigSchema));
 }
 
@@ -62,6 +66,10 @@ describe("Config", () => {
       client_id_param: "example-client-id-123",
     };
 
+    const resolvedSecretValues = {
+      client_secret_secret: "example-client-secret-abc", // pragma: allowlist secret
+    };
+
     beforeEach(() => {
       vi.resetAllMocks();
     });
@@ -73,19 +81,33 @@ describe("Config", () => {
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
         CLIENT_ID_PARAM_NAME: "client_id_param",
+        NEW_FEATURE_FEATURE_FLAG: "true",
+        CLIENT_SECRET_SECRET: "example-client-secret-abc", // pragma: allowlist secret
       });
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
+      vi.mocked(getSecret).mockResolvedValueOnce(
+        resolvedSecretValues.client_secret_secret,
+      );
 
       const config = await getCleanConfig(rawConfigSchema);
 
-      expect(config).toEqual(
-        expect.objectContaining({
-          AWS_REGION: "us-east-1",
+      expect(config).toEqual({
+        parameters: {
           USERPOOL_ID: "us-east-1_123456789",
           CLIENT_ID: "example-client-id-123",
+        },
+        featureFlags: {
+          NEW_FEATURE: true,
+        },
+        secrets: {
+          CLIENT_SECRET: "example-client-secret-abc", // pragma: allowlist secret
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        envvars: expect.objectContaining({
+          AWS_REGION: "us-east-1",
         }),
-      );
+      });
     });
 
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
@@ -93,6 +115,8 @@ describe("Config", () => {
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
         CLIENT_ID_PARAM_NAME: "client_id_param",
+        NEW_FEATURE_FEATURE_FLAG: "true",
+        CLIENT_SECRET_SECRET: "example-client-secret-abc", // pragma: allowlist secret
       });
 
       vi.mocked(getParametersByName).mockResolvedValueOnce({
@@ -110,7 +134,6 @@ describe("Config", () => {
     const resolvedParamValues = {
       userpool_id_param: "us-east-1_123456789",
       client_id_param: "example-client-id-123",
-      redis_endpoint_param: "example.redis.cache.amazonaws.com:6379",
     };
 
     beforeEach(() => {
@@ -122,6 +145,8 @@ describe("Config", () => {
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
         CLIENT_ID_PARAM_NAME: "client_id_param",
+        NEW_FEATURE_FEATURE_FLAG: "true",
+        CLIENT_SECRET_SECRET: "example-client-secret-abc", // pragma: allowlist secret
       });
 
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
@@ -158,8 +183,8 @@ describe("Config", () => {
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
         CLIENT_ID_PARAM_NAME: "client_id_param",
-        NEW_FEATURE_FEATURE_FLAG: "enabled",
-        JIM: "enabled",
+        NEW_FEATURE_FEATURE_FLAG: "true",
+        CLIENT_SECRET_SECRET: "example-client-secret-abc", // pragma: allowlist secret
       });
 
       vi.mocked(getParametersByName).mockResolvedValueOnce(resolvedParamValues);
@@ -168,9 +193,6 @@ describe("Config", () => {
 
       expect(config).toEqual(
         expect.objectContaining({
-          AWS_REGION: "us-east-1",
-          USERPOOL_ID: "us-east-1_123456789",
-          CLIENT_ID: "example-client-id-123",
           featureFlags: {
             NEW_FEATURE: true,
           },
@@ -218,19 +240,19 @@ describe("Config", () => {
           USERPOOL_ID_PARAM_NAME: "userpool_id_param",
           CLIENT_ID_PARAM_NAME: "client_id_param",
           NEW_FEATURE_FEATURE_FLAG: envValue,
+          CLIENT_SECRET_SECRET: "example-client-secret-abc", // pragma: allowlist secret
         });
 
         vi.mocked(getParametersByName).mockResolvedValueOnce(
           resolvedParamValues,
         );
 
-        const config = await getCleanConfig(overlyPermissiveZodSchema);
+        const config = await getCleanConfig(
+          overlyPermissiveZodSchema as z.ZodType<Record<string, string>>,
+        );
 
         expect(config).toEqual(
           expect.objectContaining({
-            AWS_REGION: "us-east-1",
-            USERPOOL_ID: "us-east-1_123456789",
-            CLIENT_ID: "example-client-id-123",
             featureFlags: {
               NEW_FEATURE: expectedValue,
             },

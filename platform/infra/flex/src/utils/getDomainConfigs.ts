@@ -13,10 +13,9 @@ const configModuleSchema = z.object({
 const jiti = createJiti(import.meta.url);
 const domainsRoot = `${findProjectRoot()}/domains`;
 
-export async function getDomainConfigs(): Promise<IDomain[]> {
+const loadDomainConfigs = async (pattern: string): Promise<IDomain[]> => {
   const results: IDomain[] = [];
-
-  for await (const entry of glob("*/domain.config.ts", { cwd: domainsRoot })) {
+  for await (const entry of glob(pattern, { cwd: domainsRoot })) {
     const absolutePath = path.join(domainsRoot, entry);
     const configModule = await jiti.import(absolutePath);
     const { success, data } = configModuleSchema.safeParse(configModule);
@@ -26,6 +25,17 @@ export async function getDomainConfigs(): Promise<IDomain[]> {
     }
     results.push(data.endpoints);
   }
-
   return results;
+};
+
+export async function getDomainConfigs(): Promise<IDomain[]> {
+  return loadDomainConfigs("*/domain.config.ts");
+}
+
+/**
+ * Returns a Map of domain name to private config
+ */
+export async function getPrivateDomainConfigs(): Promise<Map<string, IDomain>> {
+  const privateConfigs = await loadDomainConfigs("*/domain.private.config.ts");
+  return new Map(privateConfigs.map((config) => [config.domain, config]));
 }
