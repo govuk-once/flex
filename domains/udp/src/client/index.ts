@@ -41,6 +41,16 @@ export function createUdpDomainClient({
 
   return {
     gateway: {
+      createUser: (body: CreateUserRequest) => {
+        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.user, {
+          method: "POST",
+          body: JSON.stringify(body),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        return typedFetch(request, createUserResponseSchema);
+      },
       getPreferences: () => {
         const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.preferences);
         return typedFetch(request, preferencesResponseSchema);

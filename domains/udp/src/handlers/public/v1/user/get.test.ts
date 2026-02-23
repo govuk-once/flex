@@ -5,6 +5,7 @@ import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { generateDerivedId } from "../../../../service/derived-id";
+import { getUserProfile } from "../../../../service/userProfile";
 import { handler, NotificationSecretContext } from "./get";
 
 vi.mock("../../../../service/derived-id", () => ({
@@ -48,7 +49,7 @@ describe("GET /user handler", () => {
           updatedAt,
         },
       },
-    });
+    }) as UserProfileResponse;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -110,8 +111,7 @@ describe("GET /user handler", () => {
         pairwiseId: testPairwiseId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
-      expect(getConfig).toHaveBeenCalledTimes(1);
-      expect(getUserProfile).toHaveBeenCalledWith({
+      expect(getUserProfile).toHaveBeenCalledExactlyOnceWith({
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
         notificationId: mockNotificationId,
@@ -145,7 +145,7 @@ describe("GET /user handler", () => {
           },
         }),
       );
-      expect(generateDerivedId).toHaveBeenCalledWith({
+      expect(generateDerivedId).toHaveBeenCalledExactlyOnceWith({
         pairwiseId: customPairwiseId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
@@ -171,7 +171,7 @@ describe("GET /user handler", () => {
           .create() as UserGetContext,
       );
 
-      expect(generateDerivedId).toHaveBeenCalledTimes(1);
+      expect(generateDerivedId).toHaveBeenCalledOnce();
     });
 
     it("bubbles errors from generateDerivedId", async ({
@@ -206,9 +206,7 @@ describe("GET /user handler", () => {
       response,
     }) => {
       const error = new Error("getUserProfile failed");
-      vi.mocked(getUserProfile).mockImplementation(() => {
-        return Promise.reject(error);
-      });
+      vi.mocked(getUserProfile).mockImplementation(() => Promise.reject(error));
 
       await expect(
         handler(
