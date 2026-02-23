@@ -6,6 +6,7 @@ on:
       - '**/*.ts'
       - '**/cdk.json'
       - '**/package.json'
+  workflow_dispatch:
 
 jobs:
   checkov:
