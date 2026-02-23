@@ -33,7 +33,21 @@ jobs:
 
       - name: Synthesize CDK project
         working-directory: ${{ matrix.cdk_project }}
-        run: pnpm exec cdk synth
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          echo ""
+          echo "=== Contents ==="
+          ls -la
+          echo ""
+          echo "=== Checking for cdk.json ==="
+          cat cdk.json
+          echo ""
+          echo "=== Running cdk synth ==="
+          pnpm exec cdk synth
+          echo ""
+          echo "=== Checking cdk.out ==="
+          ls -la cdk.out/ || echo "cdk.out doesn't exist!"
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
