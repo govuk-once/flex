@@ -7,7 +7,7 @@ import {
   importFlexParameter,
   importFlexSecret,
 } from "@platform/core/outputs";
-import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { getEnvConfig, GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   IResource,
   IRestApi,
@@ -40,6 +40,23 @@ interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
   privateApi: PrivateApiRef;
+}
+
+function parseFeatureFlagsForEnvironment(
+  featureFlags: IDomain["featureFlags"],
+  environment: string,
+) {
+  if (!featureFlags) return {};
+  return Object.entries(featureFlags).reduce<Record<string, boolean>>(
+    (flags, [flag, config]) => {
+      flags[flag] =
+        typeof config.enabled === "boolean"
+          ? config.enabled
+          : config.enabled.includes(environment);
+      return flags;
+    },
+    {},
+  );
 }
 
 export class FlexDomainStack extends GovUkOnceStack {
@@ -86,6 +103,13 @@ export class FlexDomainStack extends GovUkOnceStack {
   }
 
   #processPublicRoutes(domainConfig: IDomain): void {
+    const { environment } = getEnvConfig();
+
+    const environmentFeatureFlags = parseFeatureFlagsForEnvironment(
+      domainConfig.featureFlags,
+      environment,
+    );
+
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -94,6 +118,7 @@ export class FlexDomainStack extends GovUkOnceStack {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
+            environmentFeatureFlags,
           );
 
           const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
@@ -137,6 +162,13 @@ export class FlexDomainStack extends GovUkOnceStack {
     idPrefix: string,
     internalApiForPermissions?: IRestApi | RestApi,
   ): void {
+    const { environment } = getEnvConfig();
+
+    const environmentFeatureFlags = parseFeatureFlagsForEnvironment(
+      domainConfig.featureFlags,
+      environment,
+    );
+
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -145,6 +177,7 @@ export class FlexDomainStack extends GovUkOnceStack {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
             routeConfig.envSecret,
+            environmentFeatureFlags,
           );
 
           const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
@@ -222,6 +255,7 @@ export class FlexDomainStack extends GovUkOnceStack {
   #resolveEnvironment(
     env?: Record<string, string>,
     envSecret?: Record<string, string>,
+    featureFlags: Record<string, boolean> = {},
   ) {
     const resolvedVars: Record<string, string> = {};
     const envGrantables: (ISecret | IStringParameter)[] = [];
@@ -245,7 +279,20 @@ export class FlexDomainStack extends GovUkOnceStack {
     processMap(env, false);
     processMap(envSecret, true);
 
-    return { resolvedVars, envGrantables };
+    const featureFlagStrings = Object.entries(featureFlags).reduce<
+      Record<string, string>
+    >((flags, [flagKey, flagValue]) => {
+      const normalisedFlagKey = `${flagKey
+        .toUpperCase()
+        .replace(/_+(?:FEATURE_FLAG)?$/g, "")}_FEATURE_FLAG`;
+      flags[normalisedFlagKey] = flagValue.toString();
+      return flags;
+    }, {});
+
+    return {
+      resolvedVars: { ...resolvedVars, ...featureFlagStrings },
+      envGrantables,
+    };
   }
 
   /**
