@@ -1,6 +1,5 @@
 import {
   AccessLogFormat,
-  AuthorizationType,
   EndpointType,
   LogGroupLogDestination,
   ResponseType,
@@ -14,7 +13,7 @@ import { FlexAuthentication } from "./flex-authentication";
 
 export class FlexRestApi extends Construct {
   public readonly restApi: RestApi;
-  public readonly authorizerId: string;
+  public readonly authorizerLambdaArn: string;
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
@@ -24,7 +23,7 @@ export class FlexRestApi extends Construct {
     });
 
     const authentication = new FlexAuthentication(this, "Authentication");
-    this.authorizerId = authentication.authorizer.authorizerId;
+    this.authorizerLambdaArn = authentication.authorizerLambdaArn;
 
     this.restApi = new RestApi(this, "Api", {
       description: "Central API Gateway for the Flex Platform",
@@ -44,10 +43,6 @@ export class FlexRestApi extends Construct {
           user: true,
           caller: true,
         }),
-      },
-      defaultMethodOptions: {
-        authorizer: authentication.authorizer,
-        authorizationType: AuthorizationType.CUSTOM,
       },
       endpointConfiguration: {
         types: [EndpointType.REGIONAL],
