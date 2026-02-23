@@ -25,12 +25,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
+      - name: Install dependencies
+        run: npm install      
+
       - name: Synthesize CDK project
         working-directory: ${{ matrix.cdk_project }}
-        run: |
-          npm install
-          npx cdk synth
+        run: npx cdk synth
       
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
