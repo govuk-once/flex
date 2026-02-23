@@ -13,18 +13,25 @@ describe("logging", () => {
   });
 
   describe("getLogger", () => {
-    it("throws when getLogger is called without options before initialization", () => {
+    it("throws with a helpful message when called without options before initialization", () => {
       expect(() => getLogger()).toThrow(
-        "Logger instance not initialized. Call getLogger with options first.",
+        "Logger not initialized. Pass { serviceName, logLevel } to getLogger() in your createLambdaHandler config.",
       );
     });
 
-    it("returns the same logger instance when created with options", () => {
+    it("creates a new logger instance when called with options", () => {
       const logger = getLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
       expect(logger).toBeInstanceOf(Logger);
+    });
+
+    it("returns the same instance on subsequent calls without options", () => {
+      const logger = getLogger({
+        logLevel: "INFO",
+        serviceName: "test-service",
+      });
       expect(getLogger()).toBe(logger);
     });
   });
@@ -40,9 +47,9 @@ describe("logging", () => {
       expect(child).not.toBe(logger);
     });
 
-    it("throws when getChildLogger is called before logger is initialized", () => {
+    it("throws when called before logger is initialized", () => {
       expect(() => getChildLogger({ foo: "bar" })).toThrow(
-        "Logger instance not initialized. Call getLogger first.",
+        "Logger not initialized.",
       );
     });
   });

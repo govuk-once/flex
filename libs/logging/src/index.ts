@@ -2,59 +2,82 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
 import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
-let loggerInstance: Logger | null = null;
+import { LogSanitizer } from "./sanitizer";
+
+const VALID_LOG_LEVELS: readonly string[] = [
+  "TRACE",
+  "DEBUG",
+  "INFO",
+  "WARN",
+  "ERROR",
+  "SILENT",
+  "CRITICAL",
+];
+
+const defaultSanitizer = new LogSanitizer({
+  keyPatterns: [
+    /secret/i,
+    /token/i,
+    /password/i,
+    /passwd/i,
+    /authorization/i,
+    /apikey/i,
+    /api_key/i,
+    /credential/i,
+    /private.?key/i,
+    /access.?key/i,
+    /client.?secret/i,
+    /signing/i,
+  ],
+  valuePatterns: [
+    /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/, // JWT tokens
+  ],
+});
 
 export interface LoggerOptions {
   logLevel?: string;
   serviceName: string;
+  sanitizer?: LogSanitizer;
 }
 
-function isValidLogLevel(level: string = ""): level is LogLevel {
-  return [
-    "TRACE",
-    "DEBUG",
-    "INFO",
-    "WARN",
-    "ERROR",
-    "SILENT",
-    "CRITICAL",
-  ].includes(level.toUpperCase());
-}
+export class FlexLogger extends Logger {
+  static #instance: FlexLogger | null = null;
 
-/**
- * Returns a cached logger instance, or creates one if it doesn't exist.
- * If context is provided and different from the last used, injects context.
- */
-export function getLogger(options?: LoggerOptions): Logger {
-  if (!options) {
-    if (!loggerInstance) {
+  constructor(options: LoggerOptions) {
+    const logLevel = options.logLevel?.toUpperCase() ?? process.env.LOG_LEVEL?.toUpperCase() ??  "INFO";
+    const sanitizer = options.sanitizer ?? defaultSanitizer;
+    const validLevel = VALID_LOG_LEVELS.includes(logLevel) ? (logLevel as LogLevel) : "INFO";
+
+    super({
+      logLevel: validLevel,
+      serviceName: options.serviceName,
+      jsonReplacerFn: sanitizer.createReplacer(),
+    });
+
+    FlexLogger.#instance = this;
+  }
+
+  static getInstance(): FlexLogger {
+    if (!FlexLogger.#instance) {
       throw new Error(
-        "Logger instance not initialized. Call getLogger with options first.",
+        "Logger not initialized. Pass { serviceName, logLevel } to getLogger() in your createLambdaHandler config.",
       );
     }
-    return loggerInstance;
+    return FlexLogger.#instance;
   }
-
-  const logLevel =
-    options.logLevel?.toUpperCase() ??
-    process.env.LOG_LEVEL?.toUpperCase() ??
-    "INFO";
-
-  return (loggerInstance = new Logger({
-    logLevel: isValidLogLevel(logLevel) ? logLevel : "INFO",
-    serviceName: options.serviceName,
-  }));
 }
 
-/**
- * Creates a child logger from the cached logger instance.
- */
-export function getChildLogger(childContext: Record<string, unknown>): Logger {
-  if (!loggerInstance) {
-    throw new Error("Logger instance not initialized. Call getLogger first.");
-  }
-  return loggerInstance.createChild(childContext);
+export function getLogger(options?: LoggerOptions): FlexLogger {
+  return options ? new FlexLogger(options) : FlexLogger.getInstance();
+}
+
+export function getChildLogger(
+  childContext: Record<string, unknown>,
+): Logger {
+  return FlexLogger.getInstance().createChild(childContext);
 }
 
 export { injectLambdaContext };
+export { LogSanitizer } from "./sanitizer";
+export type { LogSanitizerOptions } from "./sanitizer";
 export type { Logger };
