@@ -10,16 +10,12 @@ import {
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
   AuthorizationType,
-  CfnAuthorizer,
   CfnMethod,
-  IAuthorizer,
-  IAuthorizerRef,
   IResource,
   IRestApi,
   LambdaIntegration,
   Resource,
   RestApi,
-  TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
