@@ -61,9 +61,25 @@ export function addVpcEndpoints({
     securityGroup,
   });
 
+  const ssmEndpoint = addVpcEndpoint({
+    vpc,
+    name: "SSM",
+    service: InterfaceVpcEndpointAwsService.SSM,
+    securityGroup,
+  });
+
+  const stsEndpoint = addVpcEndpoint({
+    vpc,
+    name: "STS",
+    service: InterfaceVpcEndpointAwsService.STS,
+    securityGroup,
+  });
+
   return {
     apiGatewayEndpoint,
     cloudwatchEndpoint,
     secretsManagerEndpoint,
+    ssmEndpoint,
+    stsEndpoint,
   };
 }

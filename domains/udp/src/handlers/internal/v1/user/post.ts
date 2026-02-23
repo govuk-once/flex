@@ -61,12 +61,10 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
       return jsonResponse(status.NO_CONTENT);
     } catch (error) {
       logger.error("Failed to process request", { error });
-      if (createHttpError.isHttpError(error)) return error;
-      return Promise.resolve(
-        jsonResponse(status.INTERNAL_SERVER_ERROR, {
-          message: "Failed to process request",
-        }),
-      );
+      if (createHttpError.isHttpError(error)) throw error;
+      return jsonResponse(status.INTERNAL_SERVER_ERROR, {
+        message: "Failed to process request",
+      });
     }
   },
   {

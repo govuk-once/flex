@@ -1,4 +1,4 @@
-import { it } from "@flex/testing";
+import { it, response } from "@flex/testing";
 import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -112,9 +112,7 @@ describe("post handler", () => {
         context.withPairwiseId().create(),
       );
 
-      expect(createHttpError.isHttpError(result)).toBe(true);
-      expect(result).toBeInstanceOf(createHttpError.InternalServerError);
-      expect(result).toMatchObject({ message: "Internal Server Error" });
+      expect(result).toEqual(response.internalServerError);
     });
   });
 });
