@@ -3,8 +3,7 @@ import { getEnvConfig } from "@platform/gov-uk-once";
 const envConfig = getEnvConfig();
 
 export function getParamName(name: string) {
-  return `/${envConfig.environment}${name}`;
+  return `/${envConfig.environment}/${envConfig.stage}${name}`;
 }
 
-/** Flex Secrets */
-export type FlexPlatformParam = "/flex-core/private-gateway/url";
+export type FlexEphemeralParam = "/flex-core/private-gateway/url";
