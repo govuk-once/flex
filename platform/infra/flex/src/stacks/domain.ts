@@ -9,6 +9,8 @@ import {
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import {
+  AuthorizationType,
+  CfnMethod,
   IResource,
   IRestApi,
   LambdaIntegration,
@@ -17,7 +19,6 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
-import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -28,22 +29,17 @@ import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
+import { PublicApiRef } from "./core";
 import { PrivateApiRef } from "./private-gateway";
-
-export interface PublicRouteBinding {
-  path: string;
-  method: string;
-  handler: IFunction;
-}
 
 interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
+  publicApi: PublicApiRef;
   privateApi: PrivateApiRef;
 }
 
 export class FlexDomainStack extends GovUkOnceStack {
-  public readonly publicRouteBindings: PublicRouteBinding[] = [];
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
@@ -72,7 +68,25 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     );
 
-    this.#processPublicRoutes(props.domain);
+    const publicApi = RestApi.fromRestApiAttributes(this, "PublicApi", {
+      restApiId: props.publicApi.restApiId,
+      rootResourceId: props.publicApi.rootResourceId,
+    });
+
+    const publicApiRoot = Resource.fromResourceAttributes(
+      this,
+      "PublicApiRoot",
+      {
+        resourceId: props.publicApi.rootResourceId,
+        path: "/",
+        restApi: publicApi,
+      },
+    );
+    this.#processPublicRoutes(
+      props.domain,
+      publicApiRoot,
+      props.publicApi.authorizerId,
+    );
 
     if (props.privateDomain) {
       this.#processPrivateRoutes(
@@ -85,7 +99,11 @@ export class FlexDomainStack extends GovUkOnceStack {
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain): void {
+  #processPublicRoutes(
+    domainConfig: IDomain,
+    publicApiRoot: IResource,
+    authorizerId: string,
+  ): void {
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -120,11 +138,17 @@ export class FlexDomainStack extends GovUkOnceStack {
             .replace(/\/+/g, "/")
             .replace(/^\//, "");
 
-          this.publicRouteBindings.push({
-            path: newPath,
+          const resource = this.#addDeepResource(publicApiRoot, newPath);
+
+          const createdMethod = resource.addMethod(
             method,
-            handler: domainEndpointFn.function,
-          });
+            new LambdaIntegration(domainEndpointFn.function),
+          );
+
+          // escape-hatch
+          const cfnMethod = createdMethod.node.defaultChild as CfnMethod;
+          cfnMethod.authorizerId = authorizerId;
+          cfnMethod.authorizationType = AuthorizationType.CUSTOM;
         }
       }
     }
