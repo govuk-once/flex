@@ -1,0 +1,41 @@
+name: CDK Tag Validation
+
+on:
+  pull_request:
+    paths:
+      - '**/*.ts'
+      - '**/cdk.json'
+      - '**/package.json'
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        cdk_project:
+          - 'platform/infra/core'
+          - 'platform/infra/flex'
+          # Add more CDK project paths as needed
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Synthesize CDK project
+        working-directory: ${{ matrix.cdk_project }}
+        run: |
+          npm ci
+          npx cdk synth
+      
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ${{ matrix.cdk_project }}/cdk.out
+          framework: cloudformation
+          external_checks_dirs: ${{ github.workspace }}/checkov-policies
+          soft_fail: false
+          check: CKV_AWS_CUSTOM_TAGS
