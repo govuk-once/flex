@@ -9,7 +9,11 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/handlers": "workspace:*"
+    "@flex/flex-fetch": "workspace:*",
+    "@flex/handlers": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "@aws-lambda-powertools/parameters": "2.31.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

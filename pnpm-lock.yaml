@@ -578,9 +578,21 @@ importers:
 
   platform/domains/udp:
     dependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.31.0
+        version: 2.31.0(@aws-sdk/client-secrets-manager@3.985.0)(@aws-sdk/client-ssm@3.985.0)(@middy/core@7.0.2)
+      '@flex/flex-fetch':
+        specifier: workspace:*
+        version: link:../../../libs/flex-fetch
       '@flex/handlers':
         specifier: workspace:*
         version: link:../../../libs/handlers
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../../libs/utils
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@flex/config':
         specifier: workspace:*
