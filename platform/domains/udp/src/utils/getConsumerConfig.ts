@@ -1,13 +1,14 @@
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 const consumerConfigSchema = z.object({
-  region: z.string().min(1),
-  apiAccountId: z.string().min(1),
-  apiUrl: z.string().min(1),
-  apiKey: z.string().min(1),
-  consumerRoleArn: z.string().min(1),
-  externalId: z.string().optional(),
+  region: NonEmptyString,
+  apiAccountId: NonEmptyString,
+  apiUrl: NonEmptyString,
+  apiKey: NonEmptyString,
+  consumerRoleArn: NonEmptyString,
+  externalId: NonEmptyString.optional(),
 });
 
 export type ConsumerConfig = z.output<typeof consumerConfigSchema>;

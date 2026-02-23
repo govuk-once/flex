@@ -4,8 +4,10 @@ import {
   typedFetch,
 } from "@flex/flex-fetch";
 
+import { UDP_REMOTE_ROUTES } from "../contract/route";
 import {
   PreferencesRequest,
+  PreferencesResponse,
   preferencesResponseSchema,
 } from "../schemas/remote/preferences";
 import {
@@ -14,7 +16,6 @@ import {
   createUserResponseSchema,
 } from "../schemas/remote/user";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
-import { UDP_REMOTE_ROUTES } from "./routes";
 
 /**
  * Remote client for the UDP API.
@@ -52,7 +53,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
     updatePreferences: (
       body: PreferencesRequest,
       requestingServiceUserId: string,
-    ): Promise<ApiResult<unknown>> => {
+    ): Promise<ApiResult<PreferencesResponse>> => {
       const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
         method: "POST",
         body: JSON.stringify(body),

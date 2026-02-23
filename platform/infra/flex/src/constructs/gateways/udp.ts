@@ -27,8 +27,7 @@ export function createUdpServiceGateway(
     entry: getPlatformEntry("udp", "handlers/service-gateway.ts"),
     domain: "udp",
     environment: {
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:
-        udpConsumerConfigArn.parameterName,
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: udpConsumerConfigArn.stringValue,
     },
     timeout: Duration.seconds(10),
   });

@@ -1,12 +1,12 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-export const createUserRequestSchema = z.object({
-  notificationId: NonEmptyString,
-  appId: NonEmptyString,
-});
+import { inboundCreateUserRequestSchema } from "../inbound/user";
 
-export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
+// support future update to remote contract
+export const remoteCreateUserRequestSchema = inboundCreateUserRequestSchema;
+
+export type CreateUserRequest = z.infer<typeof remoteCreateUserRequestSchema>;
 
 export const createUserResponseSchema = z.object({
   message: NonEmptyString,
