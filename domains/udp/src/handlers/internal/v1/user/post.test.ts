@@ -1,4 +1,4 @@
-import { it, response } from "@flex/testing";
+import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
@@ -94,6 +94,7 @@ describe("post handler", () => {
     it("returns InternalServerError when API returns non-OK", async ({
       privateGatewayEvent,
       context,
+      response,
     }) => {
       mockCreateUser.mockResolvedValueOnce(
         new Response(JSON.stringify({ message: "Internal Server Error" }), {
@@ -111,7 +112,11 @@ describe("post handler", () => {
         context.withPairwiseId().create(),
       );
 
-      expect(result).toEqual(response.internalServerError);
+      expect(result).toEqual(
+        response.internalServerError(null, {
+          headers: {},
+        }),
+      );
     });
   });
 });
