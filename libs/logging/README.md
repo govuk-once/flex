@@ -20,15 +20,17 @@ Alternatively, run `pnpm <command>` from within `libs/logging/`.
 
 | Name                                          | Description                                   | Code                   |
 | --------------------------------------------- | --------------------------------------------- | ---------------------- |
-| [`getLogger`](#getlogger)                     | Returns a cached logger instance              | [View](./src/index.ts) |
-| [`getChildLogger`](#getchildlogger)           | Creates a child logger with extra context     | [View](./src/index.ts) |
-| [`injectLambdaContext`](#injectlambdacontext) | Middy middleware for Lambda context injection | [View](./src/index.ts) |
+| [`getLogger`](#getlogger)                     | Returns a cached logger instance              | [View](./src/index.ts)     |
+| [`getChildLogger`](#getchildlogger)           | Creates a child logger with extra context     | [View](./src/index.ts)     |
+| [`injectLambdaContext`](#injectlambdacontext) | Middy middleware for Lambda context injection | [View](./src/index.ts)     |
+| [`LogSanitizer`](#logsanitizer)               | Redacts secrets and sensitive values from logs | [View](./src/sanitizer.ts) |
 
 ### Types
 
-| Name            | Description                           | Code                   |
-| --------------- | ------------------------------------- | ---------------------- |
-| `LoggerOptions` | Configuration options for `getLogger` | [View](./src/index.ts) |
+| Name                  | Description                           | Code                       |
+| --------------------- | ------------------------------------- | -------------------------- |
+| `LoggerOptions`       | Configuration options for `getLogger` | [View](./src/index.ts)     |
+| `LogSanitizerOptions` | Configuration options for `LogSanitizer` | [View](./src/sanitizer.ts) |
 
 ---
 
@@ -92,6 +94,57 @@ childLogger.info("Processing request");
 Re-exported Middy middleware from AWS Lambda Powertools. Automatically adds Lambda context to all log entries.
 
 This middleware is applied automatically by `createLambdaHandler` from `@flex/handlers`.
+
+---
+
+## `LogSanitizer`
+
+Redacts secrets and sensitive values from log output. Uses key name patterns and value shape patterns to detect sensitive data. Integrated into the logger via Powertools `jsonReplacerFn` — works recursively on nested objects and arrays automatically.
+
+A default sanitizer is applied by `getLogger` with built-in patterns for common secret key names and JWT tokens. Pass a custom `sanitizer` to `getLogger` to override.
+
+### Default Patterns
+
+Keys matching (case-insensitive):
+
+`secret`, `token`, `password`, `passwd`, `authorization`, `apikey`, `api_key`, `credential`, `private_key`, `access_key`, `client_secret`, `signing`
+
+Values matching:
+
+`/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/` (JWT tokens)
+
+Redacted values are replaced with `***secret-value***`.
+
+### Usage
+
+#### Custom Sanitizer
+
+```typescript
+import { getLogger, LogSanitizer } from "@flex/logging";
+
+const sanitizer = new LogSanitizer({
+  keyPatterns: [/secret/i, /token/i, "pairwiseId"],
+  valuePatterns: [/^eyJ/],
+  parseStringifiedJson: true,
+});
+
+const logger = getLogger({
+  logLevel: "INFO",
+  serviceName: "my-service",
+  sanitizer,
+});
+
+logger.info("User data", { pairwiseId: "abc-123", name: "Alice" });
+// pairwiseId logged as "***secret-value***", name logged as "Alice"
+```
+
+#### Constructor Options
+
+| Option                 | Type                      | Default | Description                                                                 |
+| ---------------------- | ------------------------- | ------- | --------------------------------------------------------------------------- |
+| `keyPatterns`          | `Array<string \| RegExp>` | `[]`    | Strings matched case-insensitively as substrings; regexes tested as-is      |
+| `valuePatterns`        | `Array<string \| RegExp>` | `[]`    | Same logic, applied to string values only                                   |
+| `parseStringifiedJson` | `boolean`                 | `false` | If true, parses string values as JSON, sanitizes the result, and re-stringifies |
 
 ---
 
