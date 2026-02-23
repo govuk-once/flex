@@ -40,9 +40,18 @@ const getNotificationPreferences = async (client: UdpDomainClient) => {
 
   const notificationsResponse = await client.gateway.getPreferences();
 
-  if (!notificationsResponse.ok) {
+  if (!notificationsResponse.ok && notificationsResponse.error.status === 404) {
     logger.debug("User settings not found");
     return null;
+  }
+
+  if (!notificationsResponse.ok) {
+    logger.error("Failed to get user preferences", {
+      response: JSON.stringify(notificationsResponse),
+      status: notificationsResponse.error.body,
+    });
+
+    throw new createHttpError.BadGateway();
   }
 
   return notificationsResponse.data;

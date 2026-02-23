@@ -88,4 +88,24 @@ describe("getUserProfile", () => {
       appId,
     });
   });
+
+  it.each([401, 422, 500])(
+    "throws BadGateway when preferences returns %s",
+    async (statusCode) => {
+      nock(BASE_URL)
+        .get("/gateways/udp/v1/preferences")
+        .reply(statusCode, { message: "Upstream error" });
+
+      await expect(
+        getUserProfile({
+          region,
+          baseUrl: BASE_URL,
+          notificationId,
+          appId,
+        }),
+      ).rejects.toMatchObject({
+        status: 502,
+      });
+    },
+  );
 });

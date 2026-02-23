@@ -1,5 +1,4 @@
 import { ContextWithPairwiseId } from "@flex/middlewares";
-import { getConfig } from "@flex/params";
 import { it } from "@flex/testing";
 import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
@@ -19,7 +18,7 @@ vi.mock("@flex/params", () => ({
     }),
   ),
 }));
-vi.mock("../../../service/userProfile", () => ({
+vi.mock("../../../../service/userProfile", () => ({
   getUserProfile: vi.fn(),
 }));
 vi.mock("@flex/middlewares");

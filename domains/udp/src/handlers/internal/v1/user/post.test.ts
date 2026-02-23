@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
@@ -24,13 +25,11 @@ vi.mock("../../../../client", () => ({
 describe("post handler", () => {
   beforeEach(() => {
     mockCreateUser.mockReset();
-    mockCreateUser.mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 201 }),
-    );
+    mockCreateUser.mockResolvedValue(new Response(null, { status: 204 }));
   });
 
   describe("successful user creation", () => {
-    it("returns 201 when user is created successfully", async ({
+    it("returns 204 when user is created successfully", async ({
       response,
       privateGatewayEvent,
       context,
@@ -46,20 +45,13 @@ describe("post handler", () => {
       );
 
       expect(result).toEqual(
-        response.created(
-          {},
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        ),
+        response.noContent({
+          headers: { "Content-Type": "application/json" },
+        }),
       );
-      expect(mockCreateUser).toHaveBeenCalledWith({
-        privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
-        awsRegion: "eu-west-2",
-        pairwiseId: "test-app-id",
+      expect(mockCreateUser).toHaveBeenCalledExactlyOnceWith({
         notificationId: "test-notification-id",
+        appId: "test-app-id",
       });
     });
   });
@@ -100,8 +92,7 @@ describe("post handler", () => {
   });
 
   describe("API errors", () => {
-    it("returns 500 when API returns non-OK", async ({
-      response,
+    it("returns InternalServerError when API returns non-OK", async ({
       privateGatewayEvent,
       context,
     }) => {
@@ -121,14 +112,9 @@ describe("post handler", () => {
         context.withPairwiseId().create(),
       );
 
-      expect(result).toEqual(
-        response.internalServerError(
-          {
-            message: "Internal Server Error",
-          },
-          { headers: { "Content-Type": "application/json" } },
-        ),
-      );
+      expect(createHttpError.isHttpError(result)).toBe(true);
+      expect(result).toBeInstanceOf(createHttpError.InternalServerError);
+      expect(result).toMatchObject({ message: "Internal Server Error" });
     });
   });
 });

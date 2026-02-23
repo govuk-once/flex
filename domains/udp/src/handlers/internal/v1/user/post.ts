@@ -55,10 +55,10 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
       });
 
       if (!response.ok) {
-        throw new createHttpError.BadGateway();
+        throw new createHttpError.InternalServerError();
       }
 
-      return jsonResponse(status.OK, response.data);
+      return jsonResponse(status.NO_CONTENT);
     } catch (error) {
       logger.error("Failed to process request", { error });
       if (createHttpError.isHttpError(error)) return error;
