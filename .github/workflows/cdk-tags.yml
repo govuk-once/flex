@@ -26,12 +26,16 @@ jobs:
         with:
           node-version: '18'
 
+      - uses: pnpm/actionsi-setup@v4
+        with:
+          version: 10.29.3
+
       - name: Install dependencies
-        run: npm install      
+        run: pnpm install --frozen-lockfile     
 
       - name: Synthesize CDK project
         working-directory: ${{ matrix.cdk_project }}
-        run: npx cdk synth
+        run: pnpm exec cdk synth
       
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
