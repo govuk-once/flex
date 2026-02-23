@@ -1,5 +1,6 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
+import { getLogger } from "@flex/logging";
 import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
@@ -17,6 +18,7 @@ export const handlerRequestSchema = z.object({
 
 export const handler = createLambdaHandler(
   async (event) => {
+    const logger = getLogger();
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
       handlerRequestSchema,
@@ -24,6 +26,7 @@ export const handler = createLambdaHandler(
 
     if (!parsedEvent.success) {
       const message = `Invalid parsed event: ${parsedEvent.error.message}`;
+      logger.debug(message);
       throw new createHttpError.BadRequest(message);
     }
 
