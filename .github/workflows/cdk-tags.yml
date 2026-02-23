@@ -33,6 +33,8 @@ jobs:
 
       - name: Synthesize CDK project
         working-directory: ${{ matrix.cdk_project }}
+        env:
+          STAGE: development
         run: |
           echo "=== Current directory ==="
           pwd
