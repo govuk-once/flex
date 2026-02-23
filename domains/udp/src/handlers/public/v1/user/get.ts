@@ -5,6 +5,7 @@ import {
   extractUser,
   type V2Authorizer,
 } from "@flex/middlewares";
+import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import type {
   APIGatewayProxyEventV2WithLambdaAuthorizer,
@@ -14,14 +15,16 @@ import status from "http-status";
 import { z } from "zod";
 
 import { generateDerivedId } from "../../../../service/derived-id";
-
-export const handlerResponseSchema = z.object({
-  notificationId: z.string(),
-});
+import { getUserProfile } from "../../../../service/userProfile";
 
 export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
+
+const configSchema = z.object({
+  FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
+  AWS_REGION: z.string().min(1),
+});
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
@@ -30,17 +33,20 @@ export const handler = createLambdaHandler<
 >(
   async (_event, context) => {
     const { pairwiseId, notificationSecretKey } = context;
-
+    const config = await getConfig(configSchema);
     const notificationId = generateDerivedId({
       pairwiseId,
       secretKey: notificationSecretKey,
     });
 
-    return Promise.resolve(
-      jsonResponse(status.OK, {
-        notificationId,
-      }),
-    );
+    const userProfile = await getUserProfile({
+      region: config.AWS_REGION,
+      baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
+      notificationId,
+      appId: pairwiseId,
+    });
+
+    return jsonResponse(status.OK, userProfile);
   },
   {
     logLevel: "INFO",
