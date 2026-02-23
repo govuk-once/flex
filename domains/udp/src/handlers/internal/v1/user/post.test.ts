@@ -1,5 +1,4 @@
 import { it, response } from "@flex/testing";
-import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
