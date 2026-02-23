@@ -2,11 +2,10 @@ import { getLogger } from "@flex/logging";
 import { getHeader } from "@flex/utils";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
+import z from "zod";
 
-import type { PreferencesRequest } from "../schemas/remote/preferences";
-import type { CreateUserRequest } from "../schemas/remote/user";
 import { matchToRouteContract } from "./route";
-import type { ResolvedRequest, RouteContract } from "./types";
+import type { ResolvedRequest } from "./types";
 
 /**
  * Resolves the request to a known operation and validates the headers and body.
@@ -43,33 +42,31 @@ export async function resolveRequest(
           event,
           "requesting-service-user-id",
         ),
-        remoteBody: await parseAndMapBody<PreferencesRequest>(mapping, event),
+        remoteBody: await parseAndMapBody(mapping, event),
       };
     case "createUser":
       return {
         operation: "createUser",
-        remoteBody: await parseAndMapBody<CreateUserRequest>(mapping, event),
+        remoteBody: await parseAndMapBody(mapping, event),
       };
     default:
       throw new createHttpError.BadRequest("Unknown operation");
   }
 }
 
-async function parseAndMapBody<T>(
-  mapping: RouteContract,
+async function parseAndMapBody<TSchema extends z.ZodType, TRemoteBody>(
+  mapping: {
+    inboundSchema: TSchema;
+    toRemoteBody: (inbound: z.output<TSchema>) => TRemoteBody;
+  },
   event: APIGatewayProxyEvent,
-): Promise<T> {
+): Promise<TRemoteBody> {
   const body = parseRequestBody(event.body);
-  if (!mapping.inboundSchema) {
-    throw new createHttpError.InternalServerError(
-      "No inbound schema found for this operation.",
-    );
-  }
   const data = await mapping.inboundSchema.safeParseAsync(body);
   if (!data.success) {
     throw new createHttpError.BadRequest("Invalid request body");
   }
-  return mapping.toRemoteBody(data.data as never) as T;
+  return mapping.toRemoteBody(data.data);
 }
 
 function assertRequiredHeaderAndReturn(

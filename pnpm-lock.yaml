@@ -496,6 +496,9 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../testing
       '@types/aws-lambda':
         specifier: 8.10.160
         version: 8.10.160
