@@ -37,12 +37,8 @@ describe("private gateway", () => {
     });
 
     expect(response.status).toBe(403);
-
-    const message =
-      typeof response.body === "string"
-        ? response.body
-        : JSON.stringify(response.body);
-
-    expect(message).toMatch(/forbidden|not authorized|execute-api:Invoke/i);
+    expect(response.body).toMatchObject({
+      type: "auth_error",
+    });
   });
 });
