@@ -1,4 +1,4 @@
-import { it } from "@flex/testing/e2e";
+import { it, validJwt } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
 
 describe("private gateway", () => {
@@ -27,5 +27,22 @@ describe("private gateway", () => {
         );
       },
     );
+  });
+
+  it("rejects service-to-service call when route permissions are missing", async ({
+    cloudfront,
+  }) => {
+    const response = await cloudfront.client.get("/v1/hello-call-internal", {
+      headers: { Authorization: `Bearer ${validJwt}` },
+    });
+
+    expect(response.status).toBe(403);
+
+    const message =
+      typeof response.body === "string"
+        ? response.body
+        : JSON.stringify(response.body);
+
+    expect(message).toMatch(/forbidden|not authorized|execute-api:Invoke/i);
   });
 });

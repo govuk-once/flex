@@ -23,14 +23,18 @@ export const handler = createLambdaHandler<
 >(
   async (_event) => {
     const config = await getConfig(configSchema);
-    const baseUrl = new URL(config.FLEX_PRIVATE_GATEWAY_URL);
 
     const fetcher = createSigv4Fetcher({
       region: config.AWS_REGION,
-      baseUrl: baseUrl.toString(),
+      baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
 
-    const { request } = fetcher("/domains/hello/v1/hello-internal");
+    const { request } = fetcher("/domains/hello/v1/hello-internal", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     const response = await request;
     const body = (await response.json()) as Record<string, unknown>;
     return {
