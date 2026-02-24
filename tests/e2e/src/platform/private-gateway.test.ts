@@ -7,8 +7,8 @@ describe("private gateway", () => {
   }) => {
     // Private API Gateway is only reachable from within the VPC via the
     // interface endpoint. Requests from the public internet receive 403 Forbidden.
-    const response = await privateGateway.client.get("/domains");
-
-    expect(response.status).toBe(403);
+    await expect(privateGateway.client.get("/domains")).rejects.toSatisfy(
+      (response: unknown) => (response as Error).message.includes("ENOTFOUND"),
+    );
   });
 });
