@@ -1,4 +1,3 @@
-import { ApiResult } from "@flex/flex-fetch";
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
@@ -7,15 +6,13 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
 import { z } from "zod";
 
-import type { UdpRemoteClient } from "../client";
 import { createUdpRemoteClient } from "../client";
-import { resolveRequest } from "../contract/resolver";
-import type { ResolvedRequest } from "../contract/types";
+import { execute } from "../contract/executor";
 import { getConsumerConfig } from "../utils/getConsumerConfig";
 
 const configSchema = z.object({
   AWS_REGION: z.string().min(1),
-  FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME: z.string().min(1),
+  FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: z.string().min(1),
 });
 
 /**
@@ -34,9 +31,8 @@ export const handler = createLambdaHandler<
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN,
       );
-      const resolveResult = await resolveRequest(event);
       const remoteClient = createUdpRemoteClient(consumerConfig);
-      const result = await dispatch(remoteClient, resolveResult);
+      const result = await execute(event, remoteClient);
 
       if (!result.ok) {
         return mapRemoteErrorToGatewayResponse(result.error);
@@ -59,25 +55,6 @@ export const handler = createLambdaHandler<
     serviceName: "udp-service-gateway",
   },
 );
-
-async function dispatch(
-  client: UdpRemoteClient,
-  request: ResolvedRequest,
-): Promise<ApiResult<unknown>> {
-  const logger = getLogger();
-  logger.debug("Dispatching", { operation: request.operation });
-  switch (request.operation) {
-    case "getNotifications":
-      return client.getPreferences(request.requestingServiceUserId);
-    case "updateNotifications":
-      return await client.updatePreferences(
-        request.remoteBody,
-        request.requestingServiceUserId,
-      );
-    case "createUser":
-      return await client.createUser(request.remoteBody);
-  }
-}
 
 function mapRemoteErrorToGatewayResponse(error: {
   status: number;
