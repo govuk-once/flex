@@ -139,7 +139,7 @@ export class FlexCloudfront extends Construct {
     return {
       byteMatchStatement: {
         fieldToMatch: {
-          singleHeader: { name: "x-origin-verify" },
+          singleHeader: { Name: "x-origin-verify" },
         },
         positionalConstraint: "EXACTLY",
         searchString: secret,
