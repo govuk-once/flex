@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "flex",
+    "deploy": "pnpm --filter @platform/flex run deploy",
     "checkov": "nx affected --target=checkov",
     "tsc": "nx affected --target=tsc",
     "lint": "nx affected --target=lint",
