@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "3.985.0",
-    "@middy/core": "7.0.2",
-    "@middy/secrets-manager": "7.0.2"
+    "@middy/core": "7.1.1",
+    "@middy/secrets-manager": "7.1.1"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

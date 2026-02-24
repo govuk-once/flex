@@ -22,7 +22,7 @@
     "@aws-sdk/client-cloudformation": "3.985.0",
     "@flex/config": "workspace:*",
     "@types/aws-lambda": "8.10.160",
-    "@types/node": "25.2.2",
+    "@types/node": "25.3.0",
     "eslint": "9.39.2",
     "http-server": "14.1.1",
     "tsx": "4.21.0",

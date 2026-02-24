@@ -19,7 +19,7 @@
     "@platform/gov-uk-once": "workspace:*",
     "aws-cdk": "2.1105.0",
     "aws-cdk-lib": "2.237.1",
-    "constructs": "10.4.5",
+    "constructs": "10.5.1",
     "esbuild": "0.27.3",
     "jiti": "2.6.1",
     "zod": "4.3.6"
@@ -27,7 +27,7 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "25.2.2",
+    "@types/node": "25.3.0",
     "eslint": "9.39.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3"
