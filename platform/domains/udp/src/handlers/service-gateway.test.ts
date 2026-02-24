@@ -292,4 +292,27 @@ describe("UDP Service Gateway handler", () => {
       body: JSON.stringify({ message: "Route not found" }),
     });
   });
+
+  it("returns 500 for unexpected non-http errors", async ({
+    privateGatewayEvent,
+  }) => {
+    vi.mocked(getConfig).mockRejectedValueOnce(new Error("unexpected failure"));
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/udp/v1/notifications", {
+        headers: { "requesting-service-user-id": "pairwise-123" },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: "Internal server error",
+      }),
+    });
+  });
 });

@@ -18,7 +18,7 @@ const remoteClient = {
   createUser: vi.fn(),
 };
 
-describe("executor", () => {
+describe("Executor", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -123,6 +123,17 @@ describe("executor", () => {
     privateGatewayEvent,
   }) => {
     const event = privateGatewayEvent.get("/v1/unknown");
+
+    await expect(execute(event, remoteClient)).rejects.toMatchObject({
+      statusCode: 404,
+      message: "Route not found",
+    });
+  });
+
+  it("throws 404 when path normalizes to root", async ({
+    privateGatewayEvent,
+  }) => {
+    const event = privateGatewayEvent.get("/gateways/udp");
 
     await expect(execute(event, remoteClient)).rejects.toMatchObject({
       statusCode: 404,

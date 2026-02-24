@@ -1,12 +1,7 @@
 import type { ApiResult } from "@flex/flex-fetch";
 import type { APIGatewayProxyEvent } from "aws-lambda";
-import { z } from "zod";
 
 import type { UdpRemoteClient } from "../client";
-import { inboundPreferencesRequestSchema } from "../schemas/inbound/preferences";
-import { inboundCreateUserRequestSchema } from "../schemas/inbound/user";
-import type { PreferencesRequest } from "../schemas/remote/preferences";
-import type { CreateUserRequest } from "../schemas/remote/user";
 
 export type RouteOperation =
   | "getNotifications"
@@ -16,64 +11,33 @@ export type RouteOperation =
 type BaseRouteContract<
   TOp extends RouteOperation,
   TMethod extends "GET" | "POST" | "PUT" | "PATCH",
-  TRemoteResponse,
+  TDomainResponse,
 > = {
   operation: TOp;
   method: TMethod;
   inboundPath: string;
   remotePath: string;
-  fromRemoteResponse?: (remote: TRemoteResponse) => unknown;
+  executeRemote: (
+    event: APIGatewayProxyEvent,
+    client: UdpRemoteClient,
+  ) => Promise<ApiResult<TDomainResponse>>;
 };
 
-export interface GetContract<
-  TOp extends RouteOperation,
-  TContext extends object,
-  TRemoteResponse,
-> extends BaseRouteContract<TOp, "GET", TRemoteResponse> {
-  method: "GET";
-  buildContext: (event: APIGatewayProxyEvent) => TContext;
-  callRemote: (
-    client: UdpRemoteClient,
-    input: TContext,
-  ) => Promise<ApiResult<TRemoteResponse>>;
-}
-
-export interface MutationContract<
-  TOp extends RouteOperation,
-  TSchema extends z.ZodType,
-  TRemoteBody,
-  TContext extends object,
-  TRemoteResponse,
-> extends BaseRouteContract<TOp, "POST" | "PUT" | "PATCH", TRemoteResponse> {
-  method: "POST" | "PUT" | "PATCH";
-  inboundSchema: TSchema;
-  toRemoteBody: (inbound: z.output<TSchema>) => TRemoteBody;
-  buildContext: (event: APIGatewayProxyEvent) => TContext;
-  callRemote: (
-    client: UdpRemoteClient,
-    input: TContext & { remoteBody: TRemoteBody },
-  ) => Promise<ApiResult<TRemoteResponse>>;
-}
-
-export type GetNotificationsRouteContract = GetContract<
+export type GetNotificationsRouteContract = BaseRouteContract<
   "getNotifications",
-  { requestingServiceUserId: string },
+  "GET",
   unknown
 >;
 
-export type UpdateNotificationsRouteContract = MutationContract<
+export type UpdateNotificationsRouteContract = BaseRouteContract<
   "updateNotifications",
-  typeof inboundPreferencesRequestSchema,
-  PreferencesRequest,
-  { requestingServiceUserId: string },
+  "POST",
   unknown
 >;
 
-export type CreateUserRouteContract = MutationContract<
+export type CreateUserRouteContract = BaseRouteContract<
   "createUser",
-  typeof inboundCreateUserRequestSchema,
-  CreateUserRequest,
-  Record<string, never>,
+  "POST",
   unknown
 >;
 
@@ -81,8 +45,3 @@ export type RouteContract =
   | GetNotificationsRouteContract
   | UpdateNotificationsRouteContract
   | CreateUserRouteContract;
-
-export type MutationRouteContract = Extract<
-  RouteContract,
-  { method: "POST" | "PUT" | "PATCH" }
->;
