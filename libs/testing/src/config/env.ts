@@ -3,6 +3,10 @@ import { z } from "zod";
 
 export const e2eEnvSchema = z.object({
   FLEX_API_URL: z.url().describe("Base URL of the deployed API"),
+  VALID_JWT: z.string(),
+  INVALID_JWT: z.string(),
+  EXPIRED_JWT: z.string(),
+  MISSING_USER_NAME_JWT: z.string(),
   STAGE: z
     .string()
     .optional()

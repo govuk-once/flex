@@ -1,7 +1,8 @@
-import { invalidJwt, it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { it } from "@flex/testing/e2e";
+import { describe, expect, inject } from "vitest";
 
 describe("authentication", () => {
+  const { INVALID_JWT } = inject("e2eEnv");
   const endpoint = `/v1/hello-public`;
 
   describe("CloudFront fail-fast", () => {
@@ -51,7 +52,7 @@ describe("authentication", () => {
       cloudfront,
     }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${invalidJwt}` },
+        headers: { Authorization: `Bearer ${INVALID_JWT}` },
       });
 
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");

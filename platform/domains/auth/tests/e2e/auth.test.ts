@@ -1,13 +1,14 @@
-import { it, validJwt } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { it } from "@flex/testing/e2e";
+import { describe, expect, inject } from "vitest";
 
 describe("authentication - API GW", () => {
   const endpoint = `/v1/hello-public`;
 
-  describe.skip("Lambda authorizer", () => {
+  describe("Lambda authorizer", () => {
     it("allows request with a valid token", async ({ cloudfront }) => {
+      const { VALID_JWT } = inject("e2eEnv");
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${validJwt}` },
+        headers: { Authorization: `Bearer ${VALID_JWT}` },
       });
 
       expect(result.headers.get("x-rejected-by")).toBeNull();

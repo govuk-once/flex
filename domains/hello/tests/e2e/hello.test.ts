@@ -1,7 +1,7 @@
-import { it, validJwt } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { it } from "@flex/testing/e2e";
+import { describe, expect, inject } from "vitest";
 
-describe.todo("Domain: Hello", () => {
+describe("Domain: Hello", () => {
   it.for([
     {
       method: "GET",
@@ -21,17 +21,16 @@ describe.todo("Domain: Hello", () => {
   ] as const)(
     "$method $endpoint returns a 200 and hello message",
     async ({ endpoint, expectedBody }, { cloudfront }) => {
-      // TODO: Replace with valid test user token
-      const token = validJwt;
+      const { VALID_JWT } = inject("e2eEnv");
 
       const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${VALID_JWT}` },
       });
 
       expect(response.headers.get("apigw-requestid")).toBeDefined();
       expect(response).toMatchObject({
         status: 200,
-        body: expectedBody,
+        body: JSON.stringify(expectedBody),
       });
     },
   );

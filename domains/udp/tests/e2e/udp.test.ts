@@ -1,17 +1,16 @@
 import { it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { describe, expect, inject } from "vitest";
 
 describe("UDP domain", () => {
   const ingressPath = "/app";
   const domainVersion = "v1";
   const endpoint = `${ingressPath}/${domainVersion}/user`;
+  const { INVALID_JWT, VALID_JWT } = inject("e2eEnv");
 
   describe.todo("/get user", () => {
-    // TODO: Replace with valid test user token
     it("returns a 200 and notification ID", async ({ cloudfront }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${VALID_JWT}` },
       });
 
       expect(response).toMatchObject({
@@ -25,11 +24,10 @@ describe("UDP domain", () => {
     it("returns the same notification ID for the same user", async ({
       cloudfront,
     }) => {
-      const token = "todo.valid.token";
       const request = cloudfront.client.get<{ notificationId: string }>(
         endpoint,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${VALID_JWT}` },
         },
       );
 
@@ -46,13 +44,12 @@ describe("UDP domain", () => {
     it("returns user preferences updated successfully", async ({
       cloudfront,
     }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
           notificationsConsented: true,
           analyticsConsented: true,
         },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${VALID_JWT}` },
       });
 
       expect(response.status).toBe(200);
@@ -66,10 +63,9 @@ describe("UDP domain", () => {
     });
 
     it("rejects invalid payloads", async ({ cloudfront }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: { notificationsConsented: "yes" },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${INVALID_JWT}` },
       });
 
       expect(response).toMatchObject({

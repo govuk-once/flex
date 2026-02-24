@@ -32,12 +32,7 @@ export {
   createResponse,
   event,
   eventWithAuthorizer,
-  expiredJwt,
-  invalidJwt,
-  jwtMissingUsername,
+  getTokenProvider,
   middyRequest,
-  publicJWKS,
   response,
-  validJwt,
-  validJwtUsername,
 } from "./fixtures";

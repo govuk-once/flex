@@ -19,14 +19,7 @@ export {
   event,
   eventWithAuthorizer,
 } from "./apigateway";
-export {
-  expiredJwt,
-  invalidJwt,
-  jwtMissingUsername,
-  publicJWKS,
-  validJwt,
-  validJwtUsername,
-} from "./auth";
+export { getTokenProvider } from "./auth";
 export {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
