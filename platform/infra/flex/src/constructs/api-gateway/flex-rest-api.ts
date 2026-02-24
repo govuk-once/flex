@@ -2,6 +2,7 @@ import {
   AccessLogFormat,
   EndpointType,
   LogGroupLogDestination,
+  MockIntegration,
   ResponseType,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
@@ -53,6 +54,12 @@ export class FlexRestApi extends Construct {
       "CKV_AWS_120",
       "Disabled for now and will renable when caching strategy is defined",
     );
+
+    // Health check endpoint - ensures RestApi has at least one method for CDK validation
+    this.restApi.root
+      .addResource("health")
+      .addMethod("GET", new MockIntegration());
+
     this.addUnauthorizedResponseTemplate(this.restApi);
   }
 
