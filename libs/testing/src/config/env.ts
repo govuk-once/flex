@@ -1,8 +1,11 @@
-import { sanitiseStageName } from "@flex/utils";
+import { sanitiseStageName, Url } from "@flex/utils";
 import { z } from "zod";
 
 export const e2eEnvSchema = z.object({
-  FLEX_API_URL: z.url().describe("Base URL of the deployed API"),
+  FLEX_API_URL: Url.describe("Base URL of the deployed API"),
+  FLEX_PRIVATE_GATEWAY_URL: Url.describe(
+    "Base URL of the deployed private gateway",
+  ),
   STAGE: z
     .string()
     .optional()
@@ -23,3 +26,11 @@ export const flexStackOutputsSchema = z.object({
 });
 
 export type FlexStackOutputs = z.output<typeof flexStackOutputsSchema>;
+
+export const flexPrivateGatewayStackOutputsSchema = z.object({
+  PrivateGatewayUrl: z.url().describe("Private API Gateway URL"),
+});
+
+export type FlexPrivateGatewayStackOutputs = z.output<
+  typeof flexPrivateGatewayStackOutputsSchema
+>;

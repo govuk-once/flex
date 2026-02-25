@@ -129,6 +129,7 @@ export class FlexInternalGateway extends Construct {
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
     new CfnOutput(scope, "PrivateGatewayUrl", {
+      key: "PrivateGatewayUrl",
       value: privateGatewayUrl,
       description: "Private API Gateway URL (only reachable from within VPC)",
     });

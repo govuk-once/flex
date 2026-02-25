@@ -23,6 +23,12 @@ export const endpoints = defineDomain({
             type: "ISOLATED",
           },
         },
+        "/hello-call-internal": {
+          GET: {
+            entry: "handlers/v1/hello-call-internal/get.ts",
+            type: "ISOLATED",
+          },
+        },
       },
     },
   },
