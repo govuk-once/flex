@@ -212,6 +212,54 @@ describe("LogSanitizer", () => {
     });
   });
 
+  describe("addSecretValue", () => {
+    it("redacts exact secret values added at runtime", () => {
+      const sanitizer = new LogSanitizer();
+      sanitizer.addSecretValue("super-secret-api-key-12345");
+      const replacer = sanitizer.createReplacer();
+
+      const input = { apiKey: "super-secret-api-key-12345", name: "visible" };
+      const result = JSON.parse(JSON.stringify(input, replacer));
+
+      expect(result.apiKey).toBe(REDACTED);
+      expect(result.name).toBe("visible");
+    });
+
+    it("redacts when secret value appears as substring", () => {
+      const sanitizer = new LogSanitizer();
+      sanitizer.addSecretValue("secret-value-xyz");
+      const replacer = sanitizer.createReplacer();
+
+      const input = { message: "Error with secret-value-xyz in request" };
+      const result = JSON.parse(JSON.stringify(input, replacer));
+
+      expect(result.message).toBe(REDACTED);
+    });
+
+    it("redacts secrets added after replacer was created", () => {
+      const sanitizer = new LogSanitizer();
+      const replacer = sanitizer.createReplacer();
+
+      sanitizer.addSecretValue("late-added-secret-value");
+
+      const input = { data: "late-added-secret-value" };
+      const result = JSON.parse(JSON.stringify(input, replacer));
+
+      expect(result.data).toBe(REDACTED);
+    });
+
+    it("redacts in nested objects", () => {
+      const sanitizer = new LogSanitizer();
+      sanitizer.addSecretValue("nested-secret-value");
+      const replacer = sanitizer.createReplacer();
+
+      const input = { level1: { level2: { field: "nested-secret-value" } } };
+      const result = JSON.parse(JSON.stringify(input, replacer));
+
+      expect(result.level1.level2.field).toBe(REDACTED);
+    });
+  });
+
   describe("key and value patterns combined", () => {
     it("redacts by key even if value does not match value patterns", () => {
       const sanitizer = new LogSanitizer({

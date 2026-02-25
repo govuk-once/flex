@@ -40,41 +40,40 @@ export interface LoggerOptions {
   sanitizer?: LogSanitizer;
 }
 
-export class FlexLogger extends Logger {
-  static #instance: FlexLogger | null = null;
+let loggerInstance: Logger | undefined;
 
-  constructor(options: LoggerOptions) {
-    const logLevel = options.logLevel?.toUpperCase() ?? process.env.LOG_LEVEL?.toUpperCase() ??  "INFO";
-    const sanitizer = options.sanitizer ?? defaultSanitizer;
-    const validLevel = VALID_LOG_LEVELS.includes(logLevel) ? (logLevel as LogLevel) : "INFO";
+export function createLogger(options: LoggerOptions): Logger {
+  const logLevel =
+    options.logLevel?.toUpperCase() ??
+    process.env.LOG_LEVEL?.toUpperCase() ??
+    "INFO";
+  const sanitizer = options.sanitizer ?? defaultSanitizer;
+  const validLevel = VALID_LOG_LEVELS.includes(logLevel)
+    ? (logLevel as LogLevel)
+    : "INFO";
 
-    super({
-      logLevel: validLevel,
-      serviceName: options.serviceName,
-      jsonReplacerFn: sanitizer.createReplacer(),
-    });
+  loggerInstance = new Logger({
+    logLevel: validLevel,
+    serviceName: options.serviceName,
+    jsonReplacerFn: sanitizer.createReplacer(),
+  });
 
-    FlexLogger.#instance = this;
-  }
-
-  static getInstance(): FlexLogger {
-    if (!FlexLogger.#instance) {
-      throw new Error(
-        "Logger not initialized. Pass { serviceName, logLevel } to getLogger() in your createLambdaHandler config.",
-      );
-    }
-    return FlexLogger.#instance;
-  }
+  return loggerInstance;
 }
 
-export function getLogger(options?: LoggerOptions): FlexLogger {
-  return options ? new FlexLogger(options) : FlexLogger.getInstance();
+export function getLogger(): Logger {
+  if (!loggerInstance) {
+    throw new Error(
+      "Logger not initialized. Call createLogger() in your createLambdaHandler config.",
+    );
+  }
+  return loggerInstance;
 }
 
 export function getChildLogger(
   childContext: Record<string, unknown>,
 ): Logger {
-  return FlexLogger.getInstance().createChild(childContext);
+  return getLogger().createChild(childContext);
 }
 
 export { injectLambdaContext };

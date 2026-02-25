@@ -1,5 +1,5 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
-import { getLogger } from "@flex/logging";
+import { createLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
@@ -14,7 +14,7 @@ export const rawConfigSchema = z.looseObject({
   CLIENT_ID_PARAM_NAME: z.string().min(1),
 });
 
-getLogger({ serviceName: "config_test" });
+createLogger({ serviceName: "config_test" });
 
 describe("Config", () => {
   beforeEach(() => {
@@ -87,7 +87,7 @@ describe("Config", () => {
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      logging.getLogger({ serviceName: "config_test" });
+      logging.createLogger({ serviceName: "config_test" });
       await expect(config.getConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
@@ -118,7 +118,7 @@ describe("Config", () => {
       const config = await import(".");
       const logging = await import("@flex/logging");
 
-      logging.getLogger({ serviceName: "config_test" });
+      logging.createLogger({ serviceName: "config_test" });
 
       const firstConfig = await config.getConfig(rawConfigSchema);
       const secondConfig = await config.getConfig(rawConfigSchema);

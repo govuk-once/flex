@@ -2,33 +2,37 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("logging", () => {
+  let createLogger: typeof import(".").createLogger;
   let getLogger: typeof import(".").getLogger;
   let getChildLogger: typeof import(".").getChildLogger;
 
   beforeEach(async () => {
     vi.resetModules();
     const loggerModule = await import(".");
+    createLogger = loggerModule.createLogger;
     getLogger = loggerModule.getLogger;
     getChildLogger = loggerModule.getChildLogger;
   });
 
-  describe("getLogger", () => {
-    it("throws with a helpful message when called without options before initialization", () => {
-      expect(() => getLogger()).toThrow(
-        "Logger not initialized. Pass { serviceName, logLevel } to getLogger() in your createLambdaHandler config.",
-      );
-    });
-
-    it("creates a new logger instance when called with options", () => {
-      const logger = getLogger({
+  describe("createLogger", () => {
+    it("creates a new logger instance", () => {
+      const logger = createLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
       expect(logger).toBeInstanceOf(Logger);
     });
+  });
 
-    it("returns the same instance on subsequent calls without options", () => {
-      const logger = getLogger({
+  describe("getLogger", () => {
+    it("throws with a helpful message when called before createLogger", () => {
+      expect(() => getLogger()).toThrow(
+        "Logger not initialized. Call createLogger() in your createLambdaHandler config.",
+      );
+    });
+
+    it("returns the instance created by createLogger", () => {
+      const logger = createLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
@@ -38,7 +42,7 @@ describe("logging", () => {
 
   describe("getChildLogger", () => {
     it("creates a child logger from the cached logger", () => {
-      const logger = getLogger({
+      const logger = createLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
