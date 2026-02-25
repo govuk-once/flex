@@ -9,9 +9,11 @@ describe("LogSanitizer", () => {
     it("redacts keys matching a string pattern (case-insensitive substring)", () => {
       const sanitizer = new LogSanitizer({ keyPatterns: ["secret"] });
       const replacer = sanitizer.createReplacer();
+      const input = { notificationSecretKey: "my-secret-value" }; // pragma: allowlist secret
 
-      const input = { notificationSecretKey: "my-secret-value" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.notificationSecretKey).toBe(REDACTED);
     });
@@ -19,9 +21,10 @@ describe("LogSanitizer", () => {
     it("redacts keys matching a regex pattern", () => {
       const sanitizer = new LogSanitizer({ keyPatterns: [/^FLEX_/] });
       const replacer = sanitizer.createReplacer();
-
-      const input = { FLEX_UDP_NOTIFICATION_SECRET: "some-value", other: "ok" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const input = { FLEX_UDP_NOTIFICATION_SECRET: "some-value", other: "ok" }; // pragma: allowlist secret
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.FLEX_UDP_NOTIFICATION_SECRET).toBe(REDACTED);
       expect(result.other).toBe("ok");
@@ -32,7 +35,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { PASSWORD: "abc", userPassword: "def", pass: "ghi" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.PASSWORD).toBe(REDACTED);
       expect(result.userPassword).toBe(REDACTED);
@@ -48,10 +53,12 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = {
-        token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0",
+        token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0", // pragma: allowlist secret
         name: "safe-value",
       };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.token).toBe(REDACTED);
       expect(result.name).toBe("safe-value");
@@ -64,7 +71,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { auth: "Bearer abc123", other: "hello" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.auth).toBe(REDACTED);
       expect(result.other).toBe("hello");
@@ -75,7 +84,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { count: 123, flag: true, label: "abc123" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.count).toBe(123);
       expect(result.flag).toBe(true);
@@ -91,12 +102,14 @@ describe("LogSanitizer", () => {
       const input = {
         level1: {
           level2: {
-            secretKey: "hidden",
+            secretKey: "hidden", // pragma: allowlist secret
             safeKey: "visible",
           },
         },
       };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.level1.level2.secretKey).toBe(REDACTED);
       expect(result.level1.level2.safeKey).toBe("visible");
@@ -112,12 +125,14 @@ describe("LogSanitizer", () => {
           { token: "def", id: 2 },
         ],
       };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
-      expect(result.items[0].token).toBe(REDACTED);
-      expect(result.items[0].id).toBe(1);
-      expect(result.items[1].token).toBe(REDACTED);
-      expect(result.items[1].id).toBe(2);
+      expect(result.items.at(0)?.token).toBe(REDACTED);
+      expect(result.items.at(0)?.id).toBe(1);
+      expect(result.items.at(1)?.token).toBe(REDACTED);
+      expect(result.items.at(1)?.id).toBe(2);
     });
   });
 
@@ -125,9 +140,10 @@ describe("LogSanitizer", () => {
     it("passes all values through when no patterns are provided", () => {
       const sanitizer = new LogSanitizer();
       const replacer = sanitizer.createReplacer();
-
-      const input = { secret: "value", token: "abc", password: "123" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const input = { secret: "value", token: "abc", password: "123" }; // pragma: allowlist secret
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result).toEqual(input);
     });
@@ -141,11 +157,13 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = {
-        password: "hidden",
-        API_KEY: "hidden-too",
+        password: "hidden", // pragma: allowlist secret
+        API_KEY: "hidden-too", // pragma: allowlist secret
         username: "visible",
       };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.password).toBe(REDACTED);
       expect(result.API_KEY).toBe(REDACTED);
@@ -160,7 +178,9 @@ describe("LogSanitizer", () => {
 
       const jsonString = JSON.stringify({ secret: "hidden" });
       const input = { body: jsonString };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.body).toBe(jsonString);
     });
@@ -173,13 +193,18 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const jsonString = JSON.stringify({
-        secret: "hidden",
+        secret: "hidden", // pragma: allowlist secret
         safe: "visible",
       });
       const input = { body: jsonString };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
-      const parsedBody = JSON.parse(result.body as string);
+      const parsedBody = JSON.parse(result.body) as {
+        secret: string;
+        safe: string;
+      };
       expect(parsedBody.secret).toBe(REDACTED);
       expect(parsedBody.safe).toBe("visible");
     });
@@ -192,7 +217,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { message: "not a json {string", count: "42" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.message).toBe("not a json {string");
       expect(result.count).toBe("42");
@@ -206,7 +233,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { value: '"just a string"' };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.value).toBe('"just a string"');
     });
@@ -217,9 +246,10 @@ describe("LogSanitizer", () => {
       const sanitizer = new LogSanitizer();
       sanitizer.addSecretValue("super-secret-api-key-12345");
       const replacer = sanitizer.createReplacer();
-
-      const input = { apiKey: "super-secret-api-key-12345", name: "visible" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const input = { apiKey: "super-secret-api-key-12345", name: "visible" }; // pragma: allowlist secret
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.apiKey).toBe(REDACTED);
       expect(result.name).toBe("visible");
@@ -231,7 +261,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { message: "Error with secret-value-xyz in request" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.message).toBe(REDACTED);
     });
@@ -243,7 +275,9 @@ describe("LogSanitizer", () => {
       sanitizer.addSecretValue("late-added-secret-value");
 
       const input = { data: "late-added-secret-value" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.data).toBe(REDACTED);
     });
@@ -254,7 +288,9 @@ describe("LogSanitizer", () => {
       const replacer = sanitizer.createReplacer();
 
       const input = { level1: { level2: { field: "nested-secret-value" } } };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.level1.level2.field).toBe(REDACTED);
     });
@@ -268,8 +304,13 @@ describe("LogSanitizer", () => {
       });
       const replacer = sanitizer.createReplacer();
 
-      const input = { secretKey: "plain-text", jwt: "eyJhbGciOiJIUzI1NiJ9.test" };
-      const result = JSON.parse(JSON.stringify(input, replacer));
+      const input = {
+        secretKey: "plain-text", // pragma: allowlist secret
+        jwt: "eyJhbGciOiJIUzI1NiJ9.test", // pragma: allowlist secret
+      };
+      const result = JSON.parse(
+        JSON.stringify(input, replacer),
+      ) as typeof input;
 
       expect(result.secretKey).toBe(REDACTED);
       expect(result.jwt).toBe(REDACTED);

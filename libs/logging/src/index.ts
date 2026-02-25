@@ -70,13 +70,11 @@ export function getLogger(): Logger {
   return loggerInstance;
 }
 
-export function getChildLogger(
-  childContext: Record<string, unknown>,
-): Logger {
+export function getChildLogger(childContext: Record<string, unknown>): Logger {
   return getLogger().createChild(childContext);
 }
 
 export { injectLambdaContext };
-export { LogSanitizer } from "./sanitizer";
 export type { LogSanitizerOptions } from "./sanitizer";
+export { LogSanitizer } from "./sanitizer";
 export type { Logger };

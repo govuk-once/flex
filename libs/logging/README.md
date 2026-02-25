@@ -146,19 +146,19 @@ import { LogSanitizer } from "@flex/logging";
 const sanitizer = new LogSanitizer();
 
 // Add secrets as they are fetched from Secrets Manager
-sanitizer.addSecretValue("my-api-key-from-sm");
+sanitizer.addSecretValue("my-api-key-from-sm"); // pragma: allowlist secret
 
 // Any log value containing the secret will be redacted
-logger.info("Request", { apiKey: "my-api-key-from-sm" });
+logger.info("Request", { apiKey: "my-api-key-from-sm" }); // pragma: allowlist secret
 // apiKey logged as "***secret-value***"
 ```
 
 #### Constructor Options
 
-| Option                 | Type                      | Default | Description                                                                 |
-| ---------------------- | ------------------------- | ------- | --------------------------------------------------------------------------- |
-| `keyPatterns`          | `Array<string \| RegExp>` | `[]`    | Strings matched case-insensitively as substrings; regexes tested as-is      |
-| `valuePatterns`        | `Array<string \| RegExp>` | `[]`    | Same logic, applied to string values only                                   |
+| Option                 | Type                      | Default | Description                                                                     |
+| ---------------------- | ------------------------- | ------- | ------------------------------------------------------------------------------- |
+| `keyPatterns`          | `Array<string \| RegExp>` | `[]`    | Strings matched case-insensitively as substrings; regexes tested as-is          |
+| `valuePatterns`        | `Array<string \| RegExp>` | `[]`    | Same logic, applied to string values only                                       |
 | `parseStringifiedJson` | `boolean`                 | `false` | If true, parses string values as JSON, sanitizes the result, and re-stringifies |
 
 ---
