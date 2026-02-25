@@ -124,6 +124,8 @@ export function importStringFromSsm(scope: Construct, stringKey: StringKey) {
 export type FlexParam =
   | "/flex-param/auth/user-pool-id"
   | "/flex-param/auth/client-id"
+  | "/flex-param/auth/stub/user-pool-id"
+  | "/flex-param/auth/stub/client-id"
   | "/flex-param/udp/consumer-config-secret-arn"
   | "/flex-param/udp/cmk-arn"
   | "/flex-core/vpc-endpoint/api-gateway"

@@ -164,6 +164,57 @@ sanitiseStageName("my-long-STAGE-name"); // "my-long-stag"
 
 ---
 
+## `getValidatedSecret`
+
+Retrieves a secret from AWS Secrets Manager, parses the JSON string, and validates the structure using a [Zod](https://zod.dev/) schema.
+
+### Usage
+
+```typescript
+import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
+import { getValidatedSecret } from "@flex/utils";
+import { z } from "zod";
+
+const client = new SecretsManagerClient({});
+const ConfigSchema = z.object({
+  apiKey: z.string(),
+  port: z.number(),
+});
+
+const config = await getValidatedSecret(
+  client,
+  "prod/app-config",
+  ConfigSchema,
+);
+
+// config is typed and validated
+console.log(config.apiKey);
+```
+
+---
+
+## `getValidatedParameter`
+
+Retrieves a string value from AWS Systems Manager (SSM) Parameter Store.
+
+### Usage
+
+```typescript
+import { SSMClient } from "@aws-sdk/client-ssm";
+import { getValidatedParameter } from "@flex/utils";
+
+const client = new SSMClient({});
+
+const apiBaseUrl = await getValidatedParameter(
+  client,
+  "/config/external-api-url",
+);
+
+console.log(`Fetching from: ${apiBaseUrl}`);
+```
+
+---
+
 ## Related
 
 **FLEX:**

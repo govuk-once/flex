@@ -11,11 +11,9 @@ export {
 export { it } from "./extend/it.e2e";
 export type { ApiResponse } from "./fixtures/api";
 export { createApi } from "./fixtures/api";
+export { invalidJwt } from "./fixtures/auth";
+export { getStubTokenGenerator } from "./fixtures/StubTokenGenerator";
 export {
-  expiredJwt,
-  invalidJwt,
-  jwtMissingUsername,
-  publicJWKS,
-  validJwt,
-  validJwtUsername,
-} from "./fixtures/auth";
+  type BaseTokenGenerator,
+  getTokenGenerator,
+} from "./fixtures/TokenGenerator";
