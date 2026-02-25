@@ -1,20 +1,23 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
-import { createLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
 
-import { getConfig } from ".";
-
 vi.mock("@aws-lambda-powertools/parameters/ssm");
 
-export const rawConfigSchema = z.looseObject({
+const rawConfigSchema = z.looseObject({
   AWS_REGION: z.string().min(1),
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),
 });
 
-createLogger({ serviceName: "config_test" });
+async function setup() {
+  vi.resetModules();
+  const config = await import(".");
+  const { createLogger } = await import("@flex/logging");
+  createLogger({ serviceName: "config_test" });
+  return config;
+}
 
 describe("Config", () => {
   beforeEach(() => {
@@ -26,6 +29,8 @@ describe("Config", () => {
       it("throws an error if a required environment variable is missing", async ({
         env,
       }) => {
+        const { getConfig } = await setup();
+
         env.set({
           AWS_REGION: "us-east-1",
           USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -52,6 +57,8 @@ describe("Config", () => {
     it("returns the parsed configuration when all environment variables and parameters are valid", async ({
       env,
     }) => {
+      const { getConfig } = await setup();
+
       env.set({
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -72,9 +79,7 @@ describe("Config", () => {
     });
 
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
-      vi.resetModules();
-      const config = await import(".");
-      const logging = await import("@flex/logging");
+      const { getConfig } = await setup();
 
       env.set({
         AWS_REGION: "us-east-1",
@@ -87,8 +92,7 @@ describe("Config", () => {
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      logging.createLogger({ serviceName: "config_test" });
-      await expect(config.getConfig(rawConfigSchema)).rejects.toThrow(
+      await expect(getConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
     });
@@ -106,6 +110,8 @@ describe("Config", () => {
     });
 
     it("caches the configuration after the first fetch", async ({ env }) => {
+      const { getConfig } = await setup();
+
       env.set({
         AWS_REGION: "us-east-1",
         USERPOOL_ID_PARAM_NAME: "userpool_id_param",
@@ -114,14 +120,8 @@ describe("Config", () => {
 
       vi.mocked(getParametersByName).mockResolvedValue(resolvedParamValues);
 
-      vi.resetModules();
-      const config = await import(".");
-      const logging = await import("@flex/logging");
-
-      logging.createLogger({ serviceName: "config_test" });
-
-      const firstConfig = await config.getConfig(rawConfigSchema);
-      const secondConfig = await config.getConfig(rawConfigSchema);
+      const firstConfig = await getConfig(rawConfigSchema);
+      const secondConfig = await getConfig(rawConfigSchema);
 
       expect(vi.mocked(getParametersByName).mock.calls.length).toBe(1);
       expect(secondConfig).toBe(firstConfig);
