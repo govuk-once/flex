@@ -29,7 +29,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: UDP_REMOTE_ROUTES.user,
     remoteExecutor: makeExecuteRemote(
       async (event) => ({
-        remoteBody: await parseAndMapBodyOrThrow(
+        remoteBody: await parseAndMapBody(
           inboundCreateUserRequestSchema,
           (inbound) => inbound,
           event,
@@ -52,7 +52,7 @@ export const ROUTE_CONTRACTS = {
           event,
           "requesting-service-user-id",
         ),
-        remoteBody: await parseAndMapBodyOrThrow(
+        remoteBody: await parseAndMapBody(
           inboundPreferencesRequestSchema,
           (inbound) => ({
             notifications: {
@@ -112,7 +112,7 @@ export function matchToRouteContract(
   return undefined;
 }
 
-async function parseAndMapBodyOrThrow<TSchema extends z.ZodType, TRemoteBody>(
+async function parseAndMapBody<TSchema extends z.ZodType, TRemoteBody>(
   schema: TSchema,
   toRemoteBody: (inbound: z.output<TSchema>) => TRemoteBody,
   event: APIGatewayProxyEvent,
