@@ -1,63 +1,17 @@
-import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
-import type { Simplify, WithoutPropSuffix } from "@flex/utils";
+import type {
+  OmitPropsWithSuffix,
+  OnlyPropsWithSuffix,
+  Simplify,
+  WithoutPropSuffix,
+  WithoutSuffix,
+} from "@flex/utils";
 import { z } from "zod";
 
-/**
- * Populates parameter fields suffixed with _PARAM_NAME in the raw configuration by fetching their actual values from SSM.
- * Renames the fields to remove the _PARAM_NAME suffix in the returned parsed configuration.
- *
- * @param rawConfig The raw configuration object containing parameter names.
- * @returns The parsed configuration object with parameter values populated.
- */
-async function populateParameterFields<T extends object>(
-  rawConfig: T,
-): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
-  const logger = getLogger();
-
-  const [parameterNames, nonParameterNames] = Object.entries(rawConfig).reduce<
-    [Array<[string, string]>, Array<[string, string]>]
-  >(
-    (acc, entry) => {
-      if (entry[0].endsWith("PARAM_NAME")) {
-        acc[0].push(entry as [string, string]);
-      } else {
-        acc[1].push(entry as [string, string]);
-      }
-      return acc;
-    },
-    [[], []],
-  );
-
-  const parameterStoreKeys = parameterNames.map(([_, value]) => value);
-  logger.debug("Fetching SSM parameters", {
-    parameterNames: parameterStoreKeys,
-  });
-
-  const populatedParameters = await getParametersByName(
-    Object.fromEntries(parameterStoreKeys.map((value) => [value, {}])),
-    { decrypt: true },
-  );
-
-  const populatedConfigEntries = parameterNames.map(([key, parameterName]) => {
-    const parameterValue = populatedParameters[parameterName];
-
-    if (typeof parameterValue !== "string") {
-      const message = `Parameter ${parameterName} not found or is not a string`;
-      logger.error(message);
-      throw new Error(message);
-    }
-
-    return [key.replace("_PARAM_NAME", ""), parameterValue] as [string, string];
-  });
-
-  const parsedConfig = Object.fromEntries([
-    ...populatedConfigEntries,
-    ...nonParameterNames,
-  ]) as Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>;
-
-  return parsedConfig;
-}
+import { populateFeatureFlags } from "./featureFlags";
+import { populateSecrets } from "./secrets";
+import { populateParameterFields } from "./ssm";
+import { splitBySuffix } from "./utils";
 
 const cachedConfig: Map<z.ZodType, unknown> = new Map();
 
@@ -66,18 +20,29 @@ const cachedConfig: Map<z.ZodType, unknown> = new Map();
  *
  * @returns The parsed, populated configuration object.
  */
-export async function getConfig<T extends object>(
+export async function getConfig<T extends Record<string, string>>(
   validator: z.ZodType<T>,
-): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
+) {
   const logger = getLogger();
 
   if (cachedConfig.has(validator)) {
     logger.info("Returning cached configuration");
 
     // This is safe because we only set values of this type in the cache.
-    return cachedConfig.get(validator) as Simplify<
-      WithoutPropSuffix<T, "_PARAM_NAME">
-    >;
+    return cachedConfig.get(validator) as {
+      parameters: Simplify<
+        WithoutPropSuffix<OnlyPropsWithSuffix<T, "_PARAM_NAME">, "_PARAM_NAME">
+      >;
+      featureFlags: Simplify<
+        WithoutSuffix<OnlyPropsWithSuffix<T, "_FEATURE_FLAG">, "_FEATURE_FLAG">
+      >;
+      secrets: Simplify<
+        WithoutSuffix<OnlyPropsWithSuffix<T, "_SECRET">, "_SECRET">
+      >;
+      envvars: Simplify<
+        OmitPropsWithSuffix<T, "_PARAM_NAME" | "_FEATURE_FLAG" | "_SECRET">
+      >;
+    };
   }
 
   logger.info(
@@ -91,11 +56,32 @@ export async function getConfig<T extends object>(
     throw new Error(message);
   }
 
-  const populatedParams = await populateParameterFields(
-    rawConfigSchemaCheck.data,
+  const rawConfig = rawConfigSchemaCheck.data;
+
+  const [parametersOnly, nonParameterConfig] = splitBySuffix(
+    rawConfig,
+    "_PARAM_NAME",
   );
 
-  cachedConfig.set(validator, populatedParams);
+  const [featureFlagsOnly, nonFeatureFlagConfig] = splitBySuffix(
+    nonParameterConfig,
+    "_FEATURE_FLAG",
+  );
 
-  return populatedParams;
+  const [secretsOnly, envvars] = splitBySuffix(nonFeatureFlagConfig, "_SECRET");
+
+  const populatedParameters = await populateParameterFields(parametersOnly);
+  const populatedFeatureFlags = populateFeatureFlags(featureFlagsOnly);
+  const populatedSecrets = await populateSecrets(secretsOnly);
+
+  const finalConfig = {
+    parameters: populatedParameters,
+    featureFlags: populatedFeatureFlags,
+    secrets: populatedSecrets,
+    envvars,
+  };
+
+  cachedConfig.set(validator, finalConfig);
+
+  return finalConfig;
 }

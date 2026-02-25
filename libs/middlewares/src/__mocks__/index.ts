@@ -1,8 +1,5 @@
 import { type MiddlewareObj } from "@middy/core";
-import {
-  type APIGatewayProxyEventV2WithLambdaAuthorizer,
-  Context,
-} from "aws-lambda";
+import { type APIGatewayProxyEventV2WithLambdaAuthorizer } from "aws-lambda";
 import { vi } from "vitest";
 
 import { ContextWithPairwiseId } from "..";
@@ -20,23 +17,7 @@ export const extractUser: MiddlewareObj<
   }),
 };
 
-// --- Mocking secrets exports ---
-export const createSecretsMiddleware: MiddlewareObj<
-  unknown,
-  unknown,
-  Error,
-  Context & Record<string, string | undefined>
-> = vi.fn().mockReturnValue({
-  before: vi.fn(),
-}) as unknown as MiddlewareObj<
-  unknown,
-  unknown,
-  Error,
-  Context & Record<string, string | undefined>
->;
-
 // --- Mocking default export if you have one ---
 export default {
   extractUser,
-  createSecretsMiddleware,
 };
