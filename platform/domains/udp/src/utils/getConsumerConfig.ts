@@ -16,9 +16,11 @@ export type ConsumerConfig = z.output<typeof consumerConfigSchema>;
 export async function getConsumerConfig(
   secretArn: string,
 ): Promise<ConsumerConfig> {
-  const config = await getSecret(secretArn);
+  const config = await getSecret<ConsumerConfig>(secretArn, {
+    transform: "json",
+  });
   if (!config) {
     throw new Error("Consumer config not found");
   }
-  return consumerConfigSchema.parse(JSON.parse(config as string));
+  return config;
 }

@@ -5,13 +5,6 @@ import createHttpError from "http-errors";
 import type { UdpRemoteClient } from "../client";
 import { matchToRouteContract } from "./route";
 
-/**
- * Executes a contract based on the event and client.
- *
- * @param event - The event from the API gateway.
- * @param client - The client to use to execute the contract.
- * @returns The result of the contract execution.
- */
 export async function execute(
   event: APIGatewayProxyEvent,
   client: UdpRemoteClient,
@@ -24,7 +17,7 @@ export async function execute(
   if (!mapping) {
     throw new createHttpError.NotFound("Route not found");
   }
-  return mapping.executeRemote(event, client);
+  return mapping.remoteExecutor(event, client);
 }
 
 function normalizeInboundPath(path: string): string {

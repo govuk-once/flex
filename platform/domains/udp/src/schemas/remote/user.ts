@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { inboundCreateUserRequestSchema } from "../inbound/user";
 
-// support future update to remote contract
+// TODO: true ACL should re-map inbound to remote
 export const remoteCreateUserRequestSchema = inboundCreateUserRequestSchema;
 
 export type CreateUserRequest = z.infer<typeof remoteCreateUserRequestSchema>;

@@ -12,7 +12,7 @@ import { getConsumerConfig } from "../utils/getConsumerConfig";
 
 const configSchema = z.object({
   AWS_REGION: z.string().min(1),
-  FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: z.string().min(1),
+  FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME: z.string().min(1),
 });
 
 /**

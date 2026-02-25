@@ -17,7 +17,7 @@ type BaseRouteContract<
   method: TMethod;
   inboundPath: string;
   remotePath: string;
-  executeRemote: (
+  remoteExecutor: (
     event: APIGatewayProxyEvent,
     client: UdpRemoteClient,
   ) => Promise<ApiResult<TDomainResponse>>;

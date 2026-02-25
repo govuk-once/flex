@@ -27,7 +27,7 @@ export const ROUTE_CONTRACTS = {
     method: "POST",
     inboundPath: INTERNAL_ROUTES.user,
     remotePath: UDP_REMOTE_ROUTES.user,
-    executeRemote: makeExecuteRemote(
+    remoteExecutor: makeExecuteRemote(
       async (event) => ({
         remoteBody: await parseAndMapBodyOrThrow(
           inboundCreateUserRequestSchema,
@@ -46,7 +46,7 @@ export const ROUTE_CONTRACTS = {
     method: "POST",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
-    executeRemote: makeExecuteRemote(
+    remoteExecutor: makeExecuteRemote(
       async (event) => ({
         requestingServiceUserId: assertRequiredHeaderAndReturn(
           event,
@@ -79,7 +79,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
-    executeRemote: makeExecuteRemote(
+    remoteExecutor: makeExecuteRemote(
       (event) =>
         Promise.resolve({
           requestingServiceUserId: assertRequiredHeaderAndReturn(
