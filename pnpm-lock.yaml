@@ -505,6 +505,9 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../testing
       '@types/aws-lambda':
         specifier: 8.10.160
         version: 8.10.160
@@ -587,9 +590,30 @@ importers:
 
   platform/domains/udp:
     dependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.31.0
+        version: 2.31.0(@aws-sdk/client-secrets-manager@3.985.0)(@aws-sdk/client-ssm@3.985.0)(@middy/core@7.0.2)
+      '@flex/flex-fetch':
+        specifier: workspace:*
+        version: link:../../../libs/flex-fetch
       '@flex/handlers':
         specifier: workspace:*
         version: link:../../../libs/handlers
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../../../libs/logging
+      '@flex/params':
+        specifier: workspace:*
+        version: link:../../../libs/params
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -600,6 +624,12 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.160
         version: 8.10.160
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
+      '@vitest/coverage-v8':
+        specifier: 4.0.18
+        version: 4.0.18(vitest@4.0.18(@types/node@25.2.2)(jiti@2.6.1)(msw@2.12.7(@types/node@25.2.2)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2))
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)

@@ -28,7 +28,7 @@ export function createUdpServiceGateway(
     domain: "udp",
     environment: {
       FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:
-        udpConsumerConfigArn.parameterName,
+        udpConsumerConfigArn.stringValue,
     },
     timeout: Duration.seconds(10),
   });
