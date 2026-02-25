@@ -18,45 +18,45 @@ Alternatively, run `pnpm <command>` from within `libs/logging/`.
 
 ## API
 
-| Name                                          | Description                                   | Code                   |
-| --------------------------------------------- | --------------------------------------------- | ---------------------- |
-| [`getLogger`](#getlogger)                     | Returns a cached logger instance              | [View](./src/index.ts)     |
-| [`getChildLogger`](#getchildlogger)           | Creates a child logger with extra context     | [View](./src/index.ts)     |
-| [`injectLambdaContext`](#injectlambdacontext) | Middy middleware for Lambda context injection | [View](./src/index.ts)     |
+| Name                                          | Description                                    | Code                       |
+| --------------------------------------------- | ---------------------------------------------- | -------------------------- |
+| [`createLogger`](#createlogger)               | Creates and caches a logger instance           | [View](./src/index.ts)     |
+| [`getLogger`](#getlogger)                     | Returns the cached logger instance             | [View](./src/index.ts)     |
+| [`getChildLogger`](#getchildlogger)           | Creates a child logger with extra context      | [View](./src/index.ts)     |
+| [`injectLambdaContext`](#injectlambdacontext) | Middy middleware for Lambda context injection  | [View](./src/index.ts)     |
 | [`LogSanitizer`](#logsanitizer)               | Redacts secrets and sensitive values from logs | [View](./src/sanitizer.ts) |
 
 ### Types
 
-| Name                  | Description                           | Code                       |
-| --------------------- | ------------------------------------- | -------------------------- |
-| `LoggerOptions`       | Configuration options for `getLogger` | [View](./src/index.ts)     |
+| Name                  | Description                              | Code                       |
+| --------------------- | ---------------------------------------- | -------------------------- |
+| `LoggerOptions`       | Configuration options for `createLogger` | [View](./src/index.ts)     |
 | `LogSanitizerOptions` | Configuration options for `LogSanitizer` | [View](./src/sanitizer.ts) |
 
 ---
 
-## `getLogger`
+## `createLogger`
 
-Returns a cached singleton logger instance. Creates the logger on first call with options, then returns the cached instance on subsequent calls.
-
-Throws if called without required options before the logger has been initialised.
-
-### Usage
+Creates a Logger instance and caches it as the singleton. Called once per Lambda cold start, typically by `createLambdaHandler` from `@flex/handlers`.
 
 ```typescript
-import { getLogger } from "@flex/logging";
+import { createLogger } from "@flex/logging";
 
-const logger = getLogger({
+const logger = createLogger({
   logLevel: "INFO",
   serviceName: "service-name",
 });
 
 logger.info("Hello from service-name!");
-logger.debug("Debug message", { userId: "123" });
 ```
 
-#### Without Options
+---
 
-After initialisation, retrieve the cached logger without passing options:
+## `getLogger`
+
+Returns the cached logger instance created by `createLogger`. Use this in downstream modules that need the logger without knowing its configuration.
+
+Throws if called before `createLogger`.
 
 ```typescript
 import { getLogger } from "@flex/logging";
@@ -72,14 +72,12 @@ logger.info("Using cached logger instance");
 
 Creates a child logger with additional context. Useful for adding request-specific metadata without modifying the parent logger.
 
-Throws if called before the logger has been initialised with `getLogger()`.
-
-### Usage
+Throws if called before `createLogger`.
 
 ```typescript
-import { getChildLogger, getLogger } from "@flex/logging";
+import { createLogger, getChildLogger } from "@flex/logging";
 
-getLogger({ logLevel: "INFO", serviceName: "service-name" });
+createLogger({ logLevel: "INFO", serviceName: "service-name" });
 
 const childLogger = getChildLogger({ requestId: "abc-123", userId: "456" });
 
@@ -101,7 +99,9 @@ This middleware is applied automatically by `createLambdaHandler` from `@flex/ha
 
 Redacts secrets and sensitive values from log output. Uses key name patterns and value shape patterns to detect sensitive data. Integrated into the logger via Powertools `jsonReplacerFn` — works recursively on nested objects and arrays automatically.
 
-A default sanitizer is applied by `getLogger` with built-in patterns for common secret key names and JWT tokens. Pass a custom `sanitizer` to `getLogger` to override.
+A default sanitizer is applied by `createLogger` with built-in patterns for common secret key names and JWT tokens. Pass a custom `sanitizer` to `createLogger` to override.
+
+Secret values can also be added at runtime via `addSecretValue()` — any string value containing the secret will be redacted. This is useful for intercepting secrets loaded from Secrets Manager.
 
 ### Default Patterns
 
@@ -120,7 +120,7 @@ Redacted values are replaced with `***secret-value***`.
 #### Custom Sanitizer
 
 ```typescript
-import { getLogger, LogSanitizer } from "@flex/logging";
+import { createLogger, LogSanitizer } from "@flex/logging";
 
 const sanitizer = new LogSanitizer({
   keyPatterns: [/secret/i, /token/i, "pairwiseId"],
@@ -128,7 +128,7 @@ const sanitizer = new LogSanitizer({
   parseStringifiedJson: true,
 });
 
-const logger = getLogger({
+const logger = createLogger({
   logLevel: "INFO",
   serviceName: "my-service",
   sanitizer,
@@ -136,6 +136,21 @@ const logger = getLogger({
 
 logger.info("User data", { pairwiseId: "abc-123", name: "Alice" });
 // pairwiseId logged as "***secret-value***", name logged as "Alice"
+```
+
+#### Runtime Secret Values
+
+```typescript
+import { LogSanitizer } from "@flex/logging";
+
+const sanitizer = new LogSanitizer();
+
+// Add secrets as they are fetched from Secrets Manager
+sanitizer.addSecretValue("my-api-key-from-sm");
+
+// Any log value containing the secret will be redacted
+logger.info("Request", { apiKey: "my-api-key-from-sm" });
+// apiKey logged as "***secret-value***"
 ```
 
 #### Constructor Options
