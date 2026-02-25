@@ -25,13 +25,22 @@ describe("getHeader", () => {
     },
     {
       description: "ignores case of the header name",
-      headers: { "x-test": "test" },
+      headers: { "x-TeSt": "test" },
       name: "x-test",
       expected: "test",
     },
+    {
+      description: "returns undefined if the headers are null",
+      headers: null,
+      name: "x-test",
+      expected: undefined,
+    },
   ])("$description", ({ headers, name, expected }, { privateGatewayEvent }) => {
-    expect(getHeader(privateGatewayEvent.create({ headers }), name)).toBe(
-      expected,
-    );
+    expect(
+      getHeader(
+        privateGatewayEvent.create({ headers: headers ?? undefined }),
+        name,
+      ),
+    ).toBe(expected);
   });
 });
