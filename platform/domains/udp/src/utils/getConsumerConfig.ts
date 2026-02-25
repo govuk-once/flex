@@ -22,5 +22,5 @@ export async function getConsumerConfig(
   if (!config) {
     throw new Error("Consumer config not found");
   }
-  return config;
+  return consumerConfigSchema.parseAsync(config);
 }
