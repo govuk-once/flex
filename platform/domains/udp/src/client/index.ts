@@ -6,15 +6,11 @@ import {
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
 import {
+  NotificationsResponse,
+  notificationsResponseSchema,
   PreferencesRequest,
-  PreferencesResponse,
-  preferencesResponseSchema,
 } from "../schemas/remote/preferences";
-import {
-  CreateUserRequest,
-  CreateUserResponse,
-  createUserResponseSchema,
-} from "../schemas/remote/user";
+import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 /**
@@ -35,6 +31,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
   const defaultHeaders = {
     "Content-Type": "application/json",
     "x-api-key": config.apiKey,
+    Accept: "application/json",
   };
 
   return {
@@ -47,13 +44,13 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
-      return typedFetch(request, preferencesResponseSchema);
+      return typedFetch(request, notificationsResponseSchema);
     },
 
     updatePreferences: (
       body: PreferencesRequest,
       requestingServiceUserId: string,
-    ): Promise<ApiResult<PreferencesResponse>> => {
+    ): Promise<ApiResult<NotificationsResponse>> => {
       const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
         method: "POST",
         body: JSON.stringify(body),
@@ -63,7 +60,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
-      return typedFetch(request, preferencesResponseSchema);
+      return typedFetch(request, notificationsResponseSchema);
     },
 
     createUser: (
@@ -74,7 +71,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
         body: JSON.stringify(body),
         headers: defaultHeaders,
       });
-      return typedFetch(request, createUserResponseSchema);
+      return typedFetch(request);
     },
   };
 }

@@ -1,4 +1,5 @@
 import { createLambdaHandler } from "@flex/handlers";
+import { getLogger } from "@flex/logging";
 import {
   type ContextWithPairwiseId,
   createSecretsMiddleware,
@@ -8,8 +9,8 @@ import {
 import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import type {
-  APIGatewayProxyEventV2WithLambdaAuthorizer,
   APIGatewayProxyResultV2,
+  APIGatewayProxyWithLambdaAuthorizerEvent,
 } from "aws-lambda";
 import status from "http-status";
 import { z } from "zod";
@@ -27,7 +28,7 @@ const configSchema = z.object({
 });
 
 export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
+  APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
   APIGatewayProxyResultV2,
   ContextWithPairwiseId & NotificationSecretContext
 >(

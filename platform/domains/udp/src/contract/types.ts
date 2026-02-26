@@ -4,8 +4,8 @@ import type { APIGatewayProxyEvent } from "aws-lambda";
 import type { UdpRemoteClient } from "../client";
 
 export type RouteOperation =
-  | "getNotifications"
-  | "updateNotifications"
+  | "getNotificationPreferences"
+  | "updateNotificationPreferences"
   | "createUser";
 
 type BaseRouteContract<
@@ -23,14 +23,14 @@ type BaseRouteContract<
   ) => Promise<ApiResult<TDomainResponse>>;
 };
 
-export type GetNotificationsRouteContract = BaseRouteContract<
-  "getNotifications",
+export type GetNotificationPreferencesRouteContract = BaseRouteContract<
+  "getNotificationPreferences",
   "GET",
   unknown
 >;
 
-export type UpdateNotificationsRouteContract = BaseRouteContract<
-  "updateNotifications",
+export type UpdateNotificationPreferencesRouteContract = BaseRouteContract<
+  "updateNotificationPreferences",
   "POST",
   unknown
 >;
@@ -42,6 +42,6 @@ export type CreateUserRouteContract = BaseRouteContract<
 >;
 
 export type RouteContract =
-  | GetNotificationsRouteContract
-  | UpdateNotificationsRouteContract
+  | GetNotificationPreferencesRouteContract
+  | UpdateNotificationPreferencesRouteContract
   | CreateUserRouteContract;

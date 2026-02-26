@@ -1,7 +1,7 @@
 // Extracts the user from the request context
 import { MiddlewareObj } from "@middy/core";
 import type {
-  APIGatewayProxyEventV2WithLambdaAuthorizer,
+  APIGatewayProxyWithLambdaAuthorizerEvent,
   Context,
 } from "aws-lambda";
 
@@ -14,13 +14,13 @@ export interface V2Authorizer {
 }
 
 export const extractUser: MiddlewareObj<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
+  APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
   unknown,
   Error,
   ContextWithPairwiseId
 > = {
   before: ({ event, context }) => {
-    const { pairwiseId } = event.requestContext.authorizer.lambda;
+    const { pairwiseId } = event.requestContext.authorizer;
 
     if (!pairwiseId) {
       throw new Error("Pairwise ID not found");

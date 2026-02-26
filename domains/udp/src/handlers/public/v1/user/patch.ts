@@ -1,43 +1,41 @@
-import { ApiGatewayV2Envelope } from "@aws-lambda-powertools/parser/envelopes/api-gatewayv2";
+import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
-import { extractUser } from "@flex/middlewares";
+import { getLogger } from "@flex/logging";
+import {
+  type ContextWithPairwiseId,
+  extractUser,
+  type V2Authorizer,
+} from "@flex/middlewares";
+import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
+import type {
+  APIGatewayProxyResultV2,
+  APIGatewayProxyWithLambdaAuthorizerEvent,
+} from "aws-lambda";
 import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
 
-export const handlerRequestSchema = z
-  .object({
-    notificationsConsented: z.boolean().optional(),
-    analyticsConsented: z.boolean().optional(),
-  })
-  .strict()
-  .refine(
-    (data) => {
-      return (
-        Object.values(data).filter((v) => typeof v === "boolean").length >= 1
-      );
-    },
-    {
-      message: "At least one field must be provided",
-    },
-  );
+import { createUdpDomainClient } from "../../../../client";
+import { preferencesRequestSchema } from "../../../../schemas/preferences";
 
-export const handlerResponseSchema = z.object({
-  preferences: z.object({
-    notificationsConsented: z.boolean().optional(),
-    analyticsConsented: z.boolean().optional(),
-    updatedAt: z.string(),
-  }),
+const configSchema = z.object({
+  FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
+  AWS_REGION: z.string().min(1),
 });
 
-export const handler = createLambdaHandler(
-  async (event) => {
-    const parsedEvent = ApiGatewayV2Envelope.safeParse(
+export const handler = createLambdaHandler<
+  APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
+  APIGatewayProxyResultV2,
+  ContextWithPairwiseId
+>(
+  async (event, context) => {
+    const logger = getLogger();
+    const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
-      handlerRequestSchema,
+      preferencesRequestSchema,
     );
 
     if (!parsedEvent.success) {
@@ -45,17 +43,28 @@ export const handler = createLambdaHandler(
       throw new createHttpError.BadRequest(message);
     }
 
-    return Promise.resolve(
-      jsonResponse(status.OK, {
-        preferences: {
-          ...parsedEvent.data,
-          updatedAt: new Date().toISOString(),
-        },
-      }),
+    const config = await getConfig(configSchema);
+    const client = createUdpDomainClient({
+      region: config.AWS_REGION,
+      baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
+    });
+    const response = await client.domain.patchUser(
+      parsedEvent.data,
+      context.pairwiseId,
     );
+
+    if (!response.ok) {
+      logger.error("Failed to update user preferences", {
+        response: JSON.stringify(response),
+        status: response.error.body,
+      });
+      throw new createHttpError.BadGateway();
+    }
+
+    return jsonResponse(status.OK, response.data);
   },
   {
-    logLevel: "INFO",
+    logLevel: "DEBUG",
     serviceName: "udp-patch-user-service",
     middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
   },

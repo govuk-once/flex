@@ -26,6 +26,7 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
+    const logger = getLogger();
     try {
       const config = await getConfig(configSchema);
       const consumerConfig = await getConsumerConfig(
@@ -40,6 +41,7 @@ export const handler = createLambdaHandler<
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
+      logger.error("Internal server error", { error });
       if (createHttpError.isHttpError(error)) {
         return jsonResponse(error.statusCode, {
           message: error.message,
@@ -52,6 +54,7 @@ export const handler = createLambdaHandler<
     }
   },
   {
+    logLevel: "DEBUG",
     serviceName: "udp-service-gateway",
   },
 );
@@ -62,6 +65,7 @@ function mapRemoteErrorToGatewayResponse(error: {
   body?: unknown;
 }): APIGatewayProxyResultV2 {
   const logger = getLogger();
+  logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
     logger.debug("UDP upstream service unavailable", { error });
     return jsonResponse(502, {

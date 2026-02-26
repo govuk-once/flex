@@ -4,7 +4,7 @@ import {
   PreferencesRequest,
   preferencesResponseSchema,
 } from "../schemas/preferences";
-import { CreateUserRequest, createUserResponseSchema } from "../schemas/user";
+import { CreateUserRequest } from "../schemas/user";
 import {
   UDP_DOMAIN_BASE,
   UDP_DOMAIN_ROUTES,
@@ -49,18 +49,27 @@ export function createUdpDomainClient({
             "Content-Type": "application/json",
           },
         });
-        return typedFetch(request, createUserResponseSchema);
+        return typedFetch(request);
       },
-      getPreferences: () => {
-        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.preferences);
+      getPreferences: (requestingServiceUserId: string) => {
+        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
+          method: "GET",
+          headers: {
+            "requesting-service-user-id": requestingServiceUserId,
+          },
+        });
         return typedFetch(request, preferencesResponseSchema);
       },
-      updatePreferences: (body: PreferencesRequest) => {
-        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.preferences, {
+      updatePreferences: (
+        body: PreferencesRequest,
+        requestingServiceUserId: string,
+      ) => {
+        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
           method: "POST",
           body: JSON.stringify(body),
           headers: {
             "Content-Type": "application/json",
+            "requesting-service-user-id": requestingServiceUserId,
           },
         });
         return typedFetch(request);
@@ -75,7 +84,21 @@ export function createUdpDomainClient({
             "Content-Type": "application/json",
           },
         });
-        return typedFetch(request, createUserResponseSchema);
+        return typedFetch(request);
+      },
+      patchUser: (
+        body: PreferencesRequest,
+        requestingServiceUserId: string,
+      ) => {
+        const { request } = domainFetcher(UDP_DOMAIN_ROUTES.patchUser, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+          headers: {
+            "Content-Type": "application/json",
+            "requesting-service-user-id": requestingServiceUserId,
+          },
+        });
+        return typedFetch(request, preferencesResponseSchema);
       },
     },
   };

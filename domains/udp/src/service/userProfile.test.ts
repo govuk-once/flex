@@ -55,21 +55,21 @@ describe("getUserProfile", () => {
   });
 
   it("creates user and returns preferences when missing", async () => {
-    const updatedAt = new Date().toISOString();
-
     nock(BASE_URL)
-      .get("/gateways/udp/v1/preferences")
+      .get("/gateways/udp/v1/notifications")
       .reply(404, { message: "Not Found" })
       .post("/domains/udp/v1/user", { notificationId, appId })
       .reply(200, { message: "User created successfully" })
-      .post("/gateways/udp/v1/preferences", {
-        notifications: { consentStatus: "unknown" },
+      .post("/gateways/udp/v1/notifications", {
+        preferences: {
+          notifications: { consentStatus: "unknown" },
+        },
       })
       .reply(200, {})
-      .get("/gateways/udp/v1/preferences")
+      .get("/gateways/udp/v1/notifications")
       .reply(200, {
         preferences: {
-          notifications: { consentStatus: "unknown", updatedAt },
+          notifications: { consentStatus: "unknown" },
         },
       });
 
@@ -82,7 +82,7 @@ describe("getUserProfile", () => {
 
     expect(result).toEqual({
       preferences: {
-        notifications: { consentStatus: "unknown", updatedAt },
+        notifications: { consentStatus: "unknown" },
       },
       notificationId,
       appId,
@@ -93,7 +93,7 @@ describe("getUserProfile", () => {
     "throws BadGateway when preferences returns %s",
     async (statusCode) => {
       nock(BASE_URL)
-        .get("/gateways/udp/v1/preferences")
+        .get("/gateways/udp/v1/notifications")
         .reply(statusCode, { message: "Upstream error" });
 
       await expect(

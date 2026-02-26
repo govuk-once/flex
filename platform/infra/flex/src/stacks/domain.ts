@@ -8,6 +8,7 @@ import {
   importFlexSecret,
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { Duration } from "aws-cdk-lib";
 import {
   IResource,
   IRestApi,
@@ -299,6 +300,9 @@ export class FlexDomainStack extends GovUkOnceStack {
       domain,
       entry: getDomainEntry(domain, entry),
       environment,
+      ...(route.timeoutSeconds
+        ? { timeout: Duration.seconds(route.timeoutSeconds) }
+        : {}),
     };
 
     switch (type) {

@@ -1,27 +1,85 @@
 import { it } from "@flex/testing";
-import { afterAll, beforeAll, describe, expect, vi } from "vitest";
+import nock from "nock";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  vi,
+} from "vitest";
 
 import { handler } from "./patch";
 
+vi.mock("@flex/params", () => ({
+  getConfig: vi.fn(() =>
+    Promise.resolve({
+      AWS_REGION: "eu-west-2",
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
+    }),
+  ),
+}));
+
+vi.mock("@flex/flex-fetch", async (actual) => ({
+  ...(await actual()),
+  createSigv4Fetcher:
+    ({ baseUrl }: { baseUrl: string }) =>
+    (path: string, options?: RequestInit) => ({
+      request: fetch(`${baseUrl}${path}`, options),
+      abort: vi.fn(),
+    }),
+}));
+
 describe("PATCH /user handler", () => {
+  const BASE_URL = "https://execute-api.eu-west-2.amazonaws.com";
+
   beforeAll(() => {
-    vi.useFakeTimers();
+    nock.disableNetConnect();
   });
 
   afterAll(() => {
-    vi.useRealTimers();
+    nock.enableNetConnect();
   });
 
-  it("returns user preferences updated successfully", async ({
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
+    nock.cleanAll();
+  });
+
+  it("calls private PATCH and returns mapped preferences", async ({
     response,
     eventWithAuthorizer,
     context,
   }) => {
+    nock(BASE_URL)
+      .patch("/domains/udp/v1/user", {
+        preferences: {
+          notifications: {
+            consentStatus: "accepted",
+          },
+        },
+      })
+      .reply(200, {
+        preferences: {
+          notifications: {
+            consentStatus: "accepted",
+          },
+        },
+      });
+
     const request = await handler(
       eventWithAuthorizer.authenticated({
         body: JSON.stringify({
-          notificationsConsented: true,
-          analyticsConsented: true,
+          preferences: {
+            notifications: {
+              consentStatus: "accepted",
+            },
+          },
         }),
       }),
       context.withPairwiseId().create(),
@@ -31,9 +89,9 @@ describe("PATCH /user handler", () => {
       response.ok(
         {
           preferences: {
-            notificationsConsented: true,
-            analyticsConsented: true,
-            updatedAt: new Date().toISOString(),
+            notifications: {
+              consentStatus: "accepted",
+            },
           },
         },
         {
@@ -45,95 +103,20 @@ describe("PATCH /user handler", () => {
     );
   });
 
-  it("allows updating one field at a time", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    const request = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({ notificationsConsented: true }),
-      }),
-      context.withPairwiseId().create(),
-    );
-
-    expect(request).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notificationsConsented: true,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
-  });
-
-  it.for([
-    {
-      body: { notificationsConsented: "yes", analyticsConsented: true },
-      desc: "string instead of boolean",
-    },
-    {
-      body: { notificationsConsented: 1, analyticsConsented: true },
-      desc: "number instead of boolean",
-    },
-    {
-      body: { notificationsConsented: null, analyticsConsented: true },
-      desc: "null instead of boolean",
-    },
-    {
-      body: {},
-      desc: "missing notificationsConsented and analyticsConsented",
-    },
-  ])(
-    "rejects invalid payload: $desc",
-    async ({ body }, { eventWithAuthorizer, context }) => {
-      const result = await handler(
-        eventWithAuthorizer.authenticated({ body: JSON.stringify(body) }),
-        context.withPairwiseId().create(),
-      );
-
-      expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
-    },
-  );
-
-  it("parses JSON body even with non-standard Content-Type casing", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
+  it("rejects invalid payload", async ({ eventWithAuthorizer, context }) => {
     const result = await handler(
       eventWithAuthorizer.authenticated({
-        headers: { "CoNtEnT-TyPe": "application/json" },
         body: JSON.stringify({
-          notificationsConsented: true,
-          analyticsConsented: true,
+          preferences: {
+            notifications: {
+              consentStatus: "yes",
+            },
+          },
         }),
       }),
       context.withPairwiseId().create(),
     );
 
-    expect(result).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notificationsConsented: true,
-            analyticsConsented: true,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
+    expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
   });
 });

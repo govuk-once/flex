@@ -31,7 +31,6 @@ describe("GET /user handler", () => {
   };
   const testPairwiseId = "test-pairwise-id";
 
-  const updatedAt = new Date().toISOString();
   const mockNotificationId = "mocked-notification-id";
 
   type UserProfileResponse = Awaited<ReturnType<typeof getUserProfile>>;
@@ -45,7 +44,6 @@ describe("GET /user handler", () => {
       preferences: {
         notifications: {
           consentStatus: "unknown",
-          updatedAt,
         },
       },
     }) as UserProfileResponse;
@@ -81,7 +79,6 @@ describe("GET /user handler", () => {
             preferences: {
               notifications: {
                 consentStatus: "unknown",
-                updatedAt,
               },
             },
           },

@@ -55,7 +55,11 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
       });
 
       if (!response.ok) {
-        throw new createHttpError.InternalServerError();
+        logger.error("Failed to create user", {
+          response: JSON.stringify(response),
+          status: response.error.body,
+        });
+        throw new createHttpError.BadGateway();
       }
 
       return jsonResponse(status.NO_CONTENT);

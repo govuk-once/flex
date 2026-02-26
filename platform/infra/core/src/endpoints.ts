@@ -11,11 +11,13 @@ function addVpcEndpoint({
   vpc,
   service,
   securityGroup,
+  allowIngressFromIsolatedSubnets = false,
 }: {
   name: string;
   vpc: Vpc;
   service: InterfaceVpcEndpointAwsService;
   securityGroup: SecurityGroup;
+  allowIngressFromIsolatedSubnets?: boolean;
 }) {
   const endpoint = vpc.addInterfaceEndpoint(name, {
     service,
@@ -28,6 +30,18 @@ function addVpcEndpoint({
       Port.tcp(443),
       "Allow HTTPS to VPC endpoint",
     );
+  }
+
+  if (allowIngressFromIsolatedSubnets) {
+    for (const endpointSg of endpoint.connections.securityGroups) {
+      for (const subnet of vpc.isolatedSubnets) {
+        endpointSg.addIngressRule(
+          Peer.ipv4(subnet.ipv4CidrBlock),
+          Port.tcp(443),
+          "Allow HTTPS from isolated subnet",
+        );
+      }
+    }
   }
 
   return endpoint;
