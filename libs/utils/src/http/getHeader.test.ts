@@ -1,10 +1,16 @@
-import { it } from "@flex/testing";
-import { describe, expect } from "vitest";
+import type { APIGatewayProxyEvent } from "aws-lambda";
+import { describe, expect, it } from "vitest";
 
 import { getHeader } from "./getHeader";
 
+function eventWithHeaders(
+  headers: Record<string, string> | null,
+): APIGatewayProxyEvent {
+  return { headers } as APIGatewayProxyEvent;
+}
+
 describe("getHeader", () => {
-  it.for([
+  it.each([
     {
       description: "returns the value of the header",
       headers: { "x-test": "test" },
@@ -35,10 +41,10 @@ describe("getHeader", () => {
       name: "x-test",
       expected: undefined,
     },
-  ])("$description", ({ headers, name, expected }, { privateGatewayEvent }) => {
+  ])("$description", ({ headers, name, expected }) => {
     expect(
       getHeader(
-        privateGatewayEvent.create({ headers: headers ?? undefined }),
+        eventWithHeaders(headers as Record<string, string> | null),
         name,
       ),
     ).toBe(expected);
