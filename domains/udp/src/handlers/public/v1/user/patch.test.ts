@@ -1,139 +1,138 @@
 import { it } from "@flex/testing";
-import { afterAll, beforeAll, describe, expect, vi } from "vitest";
+import nock from "nock";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  vi,
+} from "vitest";
 
 import { handler } from "./patch";
 
-describe("PATCH /user handler", () => {
+vi.mock("@flex/params", () => ({
+  getConfig: vi.fn(() =>
+    Promise.resolve({
+      AWS_REGION: "eu-west-2",
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
+    }),
+  ),
+}));
+
+vi.mock("@flex/flex-fetch", async (actual) => ({
+  ...(await actual()),
+  createSigv4Fetcher:
+    ({ baseUrl }: { baseUrl: string }) =>
+    (path: string, options?: RequestInit) => ({
+      request: fetch(`${baseUrl}${path}`, options),
+      abort: vi.fn(),
+    }),
+}));
+
+describe("Public PATCH /user handler", () => {
+  const BASE_URL = "https://execute-api.eu-west-2.amazonaws.com";
+
   beforeAll(() => {
-    vi.useFakeTimers();
+    nock.disableNetConnect();
   });
 
   afterAll(() => {
-    vi.useRealTimers();
+    nock.enableNetConnect();
   });
 
-  it("returns user preferences updated successfully", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    const request = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({
-          notificationsConsented: true,
-          analyticsConsented: true,
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
+    nock.cleanAll();
+  });
+
+  describe("when user preferences are updated successfully", () => {
+    it("returns 200 with user preferences updated successfully", async ({
+      response,
+      privateGatewayEventWithAuthorizer,
+      context,
+    }) => {
+      nock(BASE_URL)
+        .patch("/domains/udp/v1/user", {
+          preferences: {
+            notifications: {
+              consentStatus: "accepted",
+            },
+          },
+        })
+        .reply(200, {
+          preferences: {
+            notifications: {
+              consentStatus: "accepted",
+            },
+          },
+        });
+
+      const request = await handler(
+        privateGatewayEventWithAuthorizer.patch("/user", {
+          body: {
+            preferences: {
+              notifications: {
+                consentStatus: "accepted",
+              },
+            },
+          },
         }),
-      }),
-      context.withPairwiseId().create(),
-    );
+        context.withPairwiseId().create(),
+      );
 
-    expect(request).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notificationsConsented: true,
-            analyticsConsented: true,
-            updatedAt: new Date().toISOString(),
+      expect(request).toEqual(
+        response.ok(
+          {
+            preferences: {
+              notifications: {
+                consentStatus: "accepted",
+              },
+            },
           },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
-        },
-      ),
-    );
-  });
-
-  it("allows updating one field at a time", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    const request = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({ notificationsConsented: true }),
-      }),
-      context.withPairwiseId().create(),
-    );
-
-    expect(request).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notificationsConsented: true,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
+        ),
+      );
+    });
   });
 
   it.for([
     {
-      body: { notificationsConsented: "yes", analyticsConsented: true },
-      desc: "string instead of boolean",
+      body: {
+        preferences: {
+          notifications: {
+            consentStatus: "yes",
+          },
+        },
+      },
+      description: "unknown consent status",
     },
     {
-      body: { notificationsConsented: 1, analyticsConsented: true },
-      desc: "number instead of boolean",
-    },
-    {
-      body: { notificationsConsented: null, analyticsConsented: true },
-      desc: "null instead of boolean",
-    },
-    {
-      body: {},
-      desc: "missing notificationsConsented and analyticsConsented",
+      body: {
+        preferences: {
+          notifications: {},
+        },
+      },
+      description: "missing consent status",
     },
   ])(
-    "rejects invalid payload: $desc",
-    async ({ body }, { eventWithAuthorizer, context }) => {
+    "rejects invalid payload: $description",
+    async ({ body }, { privateGatewayEventWithAuthorizer, context }) => {
       const result = await handler(
-        eventWithAuthorizer.authenticated({ body: JSON.stringify(body) }),
+        privateGatewayEventWithAuthorizer.patch("/user", { body }),
         context.withPairwiseId().create(),
       );
 
       expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
     },
   );
-
-  it("parses JSON body even with non-standard Content-Type casing", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    const result = await handler(
-      eventWithAuthorizer.authenticated({
-        headers: { "CoNtEnT-TyPe": "application/json" },
-        body: JSON.stringify({
-          notificationsConsented: true,
-          analyticsConsented: true,
-        }),
-      }),
-      context.withPairwiseId().create(),
-    );
-
-    expect(result).toEqual(
-      response.ok(
-        {
-          preferences: {
-            notificationsConsented: true,
-            analyticsConsented: true,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
-  });
 });

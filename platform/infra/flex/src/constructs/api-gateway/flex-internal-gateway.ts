@@ -17,9 +17,11 @@ import {
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
+import { getParamName } from "../../utils/getParamName";
 import { createUdpServiceGateway } from "../gateways/udp";
 
 /**
@@ -132,6 +134,11 @@ export class FlexInternalGateway extends Construct {
       key: "PrivateGatewayUrl",
       value: privateGatewayUrl,
       description: "Private API Gateway URL (only reachable from within VPC)",
+    });
+
+    new StringParameter(scope, "PrivateGatewayUrlParam", {
+      parameterName: getParamName("/flex-core/private-gateway/url"),
+      stringValue: privateGatewayUrl,
     });
 
     return {

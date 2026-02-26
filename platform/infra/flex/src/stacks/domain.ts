@@ -8,6 +8,7 @@ import {
   importFlexSecret,
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
+import { Duration } from "aws-cdk-lib";
 import {
   IResource,
   IRestApi,
@@ -19,14 +20,16 @@ import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
-import { IStringParameter } from "aws-cdk-lib/aws-ssm";
+import { IStringParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
+import crypto from "crypto";
 
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
+import { FlexEphemeralParam, getParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 import { PrivateApiRef } from "./private-gateway";
 
@@ -41,6 +44,8 @@ interface FlexDomainStackProps {
   privateDomain?: IDomain;
   privateApi: PrivateApiRef;
 }
+
+type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
 export class FlexDomainStack extends GovUkOnceStack {
   public readonly publicRouteBindings: PublicRouteBinding[] = [];
@@ -93,6 +98,7 @@ export class FlexDomainStack extends GovUkOnceStack {
         for (const [method, routeConfig] of Object.entries(methodMap)) {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
+            routeConfig.envEphemeral,
             routeConfig.envSecret,
           );
 
@@ -144,6 +150,7 @@ export class FlexDomainStack extends GovUkOnceStack {
         for (const [method, routeConfig] of Object.entries(methodMap)) {
           const { resolvedVars, envGrantables } = this.#resolveEnvironment(
             routeConfig.env,
+            routeConfig.envEphemeral,
             routeConfig.envSecret,
           );
 
@@ -221,6 +228,7 @@ export class FlexDomainStack extends GovUkOnceStack {
    */
   #resolveEnvironment(
     env?: Record<string, string>,
+    envEphemeral?: Record<string, string>,
     envSecret?: Record<string, string>,
   ) {
     const resolvedVars: Record<string, string> = {};
@@ -228,22 +236,26 @@ export class FlexDomainStack extends GovUkOnceStack {
 
     const processMap = (
       map: Record<string, string> | undefined,
-      isSecret: boolean,
+      type: EnvResourceType,
     ) => {
       if (!map) return;
       Object.entries(map).forEach(([envKey, resourcePath]) => {
-        const resource = this.#getOrImportEnv(resourcePath, isSecret);
+        const resource = this.#getOrImportEnv(resourcePath, type);
 
         envGrantables.push(resource);
 
-        resolvedVars[envKey] = isSecret
-          ? (resource as ISecret).secretName
-          : (resource as IStringParameter).parameterName;
+        if (type === "secret") {
+          resolvedVars[envKey] = (resource as ISecret).secretName;
+          return;
+        }
+
+        resolvedVars[envKey] = (resource as IStringParameter).parameterName;
       });
     };
 
-    processMap(env, false);
-    processMap(envSecret, true);
+    processMap(env, "core-param");
+    processMap(envEphemeral, "ephemeral-param");
+    processMap(envSecret, "secret");
 
     return { resolvedVars, envGrantables };
   }
@@ -288,6 +300,9 @@ export class FlexDomainStack extends GovUkOnceStack {
       domain,
       entry: getDomainEntry(domain, entry),
       environment,
+      ...(route.timeoutSeconds
+        ? { timeout: Duration.seconds(route.timeoutSeconds) }
+        : {}),
     };
 
     switch (type) {
@@ -301,18 +316,37 @@ export class FlexDomainStack extends GovUkOnceStack {
   }
 
   // --- Resource Importers ---
-  #getOrImportEnv(path: string, isSecret: boolean): ISecret | IStringParameter {
-    if (this.#envCache.has(path)) {
-      const cached = this.#envCache.get(path);
+  #getOrImportEnv(
+    path: string,
+    type: EnvResourceType,
+  ): ISecret | IStringParameter {
+    const cacheKey = `${type}:${path}`;
+
+    if (this.#envCache.has(cacheKey)) {
+      const cached = this.#envCache.get(cacheKey);
       if (cached !== undefined) return cached;
     }
 
-    const resource = isSecret
-      ? importFlexSecret(this, path as FlexSecret)
-      : importFlexParameter(this, path as FlexParam);
+    let resource: ISecret | IStringParameter;
 
-    this.#envCache.set(path, resource);
+    if (type === "secret") {
+      resource = importFlexSecret(this, path as FlexSecret);
+    } else if (type === "ephemeral-param") {
+      resource = StringParameter.fromStringParameterName(
+        this,
+        `EphemeralParam${this.#hash(path)}`,
+        getParamName(path as FlexEphemeralParam),
+      );
+    } else {
+      resource = importFlexParameter(this, path as FlexParam);
+    }
+
+    this.#envCache.set(cacheKey, resource);
     return resource;
+  }
+
+  #hash(value: string): string {
+    return crypto.createHash("md5").update(value).digest("hex").slice(0, 16);
   }
 
   #getOrImportKey(aliasPath: string): IKey {

@@ -54,18 +54,17 @@ describe("Executor", () => {
           ok: true,
           status: 200,
           data: {
-            preferences: {
-              notifications: {
-                consentStatus: "accepted",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
+            data: {
+              consentStatus: "accepted",
             },
           },
         });
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.updatePreferences).toHaveBeenCalledWith(
-          { notifications: { consentStatus: "accepted" } },
+          {
+            data: { consentStatus: "accepted" },
+          },
           "123",
         );
       },
@@ -80,11 +79,8 @@ describe("Executor", () => {
           ok: true,
           status: 200,
           data: {
-            preferences: {
-              notifications: {
-                consentStatus: "accepted",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
+            data: {
+              consentStatus: "accepted",
             },
           },
         });

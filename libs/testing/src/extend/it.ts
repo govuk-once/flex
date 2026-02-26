@@ -12,7 +12,10 @@ import {
   createMiddyRequest,
   createResponse,
 } from "../fixtures";
-import { createRestApiEvent } from "../fixtures/apigateway";
+import {
+  createRestApiEvent,
+  createRestApiEventWithAuthorizer,
+} from "../fixtures/apigateway";
 
 interface Fixtures {
   authorizerEvent: ReturnType<typeof createAuthorizerEvent>;
@@ -26,6 +29,9 @@ interface Fixtures {
   eventWithAuthorizer: ReturnType<typeof createEventWithAuthorizer>;
   middy: ReturnType<typeof createMiddyRequest>;
   privateGatewayEvent: ReturnType<typeof createRestApiEvent>;
+  privateGatewayEventWithAuthorizer: ReturnType<
+    typeof createRestApiEventWithAuthorizer
+  >;
   redis: {
     client: {
       get: Mock<(key: string) => Promise<string | null>>;
@@ -86,6 +92,8 @@ export const it = vitestIt.extend<Fixtures>({
   eventWithAuthorizer: async ({}, use) => use(createEventWithAuthorizer()),
   middy: async ({}, use) => use(createMiddyRequest()),
   privateGatewayEvent: async ({}, use) => use(createRestApiEvent()),
+  privateGatewayEventWithAuthorizer: async ({}, use) =>
+    use(createRestApiEventWithAuthorizer()),
   redis: [
     async ({}, use) => {
       const store = new Map<string, string>();

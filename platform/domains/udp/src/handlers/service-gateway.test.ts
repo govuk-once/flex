@@ -3,7 +3,7 @@ import { context, it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createUdpRemoteClient } from "../client";
-import type { PreferencesResponse } from "../schemas/remote/preferences";
+import type { NotificationsResponse } from "../schemas/remote/preferences";
 import type { ConsumerConfig } from "../utils/getConsumerConfig";
 import { getConsumerConfig } from "../utils/getConsumerConfig";
 import { handler } from "./service-gateway";
@@ -32,12 +32,9 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   externalId: "test-external-id",
 };
 
-const MOCK_REMOTE_PREFERENCES: PreferencesResponse = {
-  preferences: {
-    notifications: {
-      consentStatus: "accepted",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-    },
+const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
+  data: {
+    consentStatus: "accepted",
   },
 };
 
@@ -47,7 +44,7 @@ const remoteClient = {
   createUser: vi.fn(),
 };
 
-describe("UDP Service Gateway handler", () => {
+describe("UDP Service Gateway", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getConfig).mockResolvedValue({
@@ -68,7 +65,7 @@ describe("UDP Service Gateway handler", () => {
     remoteClient.getPreferences.mockResolvedValue({
       ok: true,
       status: 200,
-      data: MOCK_REMOTE_PREFERENCES,
+      data: MOCK_REMOTE_NOTIFICATIONS,
     });
 
     const response = await handler(
@@ -87,7 +84,6 @@ describe("UDP Service Gateway handler", () => {
         preferences: {
           notifications: {
             consentStatus: "accepted",
-            updatedAt: "2026-01-01T00:00:00.000Z",
           },
         },
       }),
@@ -107,13 +103,10 @@ describe("UDP Service Gateway handler", () => {
       ok: true,
       status: 200,
       data: {
-        preferences: {
-          notifications: {
-            consentStatus: "denied",
-            updatedAt: "2026-01-02T00:00:00.000Z",
-          },
+        data: {
+          consentStatus: "denied",
         },
-      } satisfies PreferencesResponse,
+      } satisfies NotificationsResponse,
     });
 
     const response = await handler(
@@ -139,13 +132,14 @@ describe("UDP Service Gateway handler", () => {
         preferences: {
           notifications: {
             consentStatus: "denied",
-            updatedAt: "2026-01-02T00:00:00.000Z",
           },
         },
       }),
     });
     expect(remoteClient.updatePreferences).toHaveBeenCalledWith(
-      { notifications: { consentStatus: "denied" } },
+      {
+        data: { consentStatus: "denied" },
+      },
       "pairwise-456",
     );
   });
@@ -178,7 +172,6 @@ describe("UDP Service Gateway handler", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message: "created" }),
     });
     expect(remoteClient.createUser).toHaveBeenCalledWith({
       notificationId: "notif-123",

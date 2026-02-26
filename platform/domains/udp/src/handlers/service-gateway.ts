@@ -16,7 +16,7 @@ const configSchema = z.object({
 });
 
 /**
- * UDP connector (service gateway) – internal-only, invoked via the private API gateway.
+ * UDP Service Gateway – internal-only, invoked via the private API gateway.
  *
  * Receives Flex requests, routes to typed remote client methods, validates and
  * translates remote responses to internal contract. No direct invocation from domain lambdas.
@@ -26,6 +26,7 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
+    const logger = getLogger();
     try {
       const config = await getConfig(configSchema);
       const consumerConfig = await getConsumerConfig(
@@ -40,6 +41,7 @@ export const handler = createLambdaHandler<
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
+      logger.error("Internal server error", { error });
       if (createHttpError.isHttpError(error)) {
         return jsonResponse(error.statusCode, {
           message: error.message,
@@ -62,6 +64,7 @@ function mapRemoteErrorToGatewayResponse(error: {
   body?: unknown;
 }): APIGatewayProxyResultV2 {
   const logger = getLogger();
+  logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
     logger.debug("UDP upstream service unavailable", { error });
     return jsonResponse(502, {

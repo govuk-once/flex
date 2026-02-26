@@ -14,11 +14,11 @@ const INTERNAL_ROUTES = {
   notifications: "/v1/notifications",
 } as const;
 
-export const UDP_REMOTE_BASE = "/udp/v1";
+export const UDP_REMOTE_BASE = "/v1";
 
 export const UDP_REMOTE_ROUTES = {
-  notifications: "/notifications",
-  user: "/user",
+  notifications: `${UDP_REMOTE_BASE}/notifications`,
+  user: `${UDP_REMOTE_BASE}/user`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -36,13 +36,11 @@ export const ROUTE_CONTRACTS = {
         ),
       }),
       (client, { remoteBody }) => client.createUser(remoteBody),
-      (remote) => ({
-        message: remote.message,
-      }),
+      () => undefined,
     ),
   },
   "POST:/v1/notifications": {
-    operation: "updateNotifications",
+    operation: "updateNotificationPreferences",
     method: "POST",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
@@ -55,7 +53,7 @@ export const ROUTE_CONTRACTS = {
         remoteBody: await parseAndMapBody(
           inboundPreferencesRequestSchema,
           (inbound) => ({
-            notifications: {
+            data: {
               consentStatus: inbound.preferences.notifications.consentStatus,
             },
           }),
@@ -67,15 +65,14 @@ export const ROUTE_CONTRACTS = {
       (remote) => ({
         preferences: {
           notifications: {
-            consentStatus: remote.preferences.notifications.consentStatus,
-            updatedAt: remote.preferences.notifications.updatedAt,
+            consentStatus: remote.data.consentStatus,
           },
         },
       }),
     ),
   },
   "GET:/v1/notifications": {
-    operation: "getNotifications",
+    operation: "getNotificationPreferences",
     method: "GET",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
@@ -92,8 +89,7 @@ export const ROUTE_CONTRACTS = {
       (remote) => ({
         preferences: {
           notifications: {
-            consentStatus: remote.preferences.notifications.consentStatus,
-            updatedAt: remote.preferences.notifications.updatedAt,
+            consentStatus: remote.data.consentStatus,
           },
         },
       }),
