@@ -4,15 +4,17 @@ import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { LogSanitizer } from "./sanitizer";
 
-const VALID_LOG_LEVELS: readonly string[] = [
-  "TRACE",
-  "DEBUG",
-  "INFO",
-  "WARN",
-  "ERROR",
-  "SILENT",
-  "CRITICAL",
-];
+function getLogLevel(level: string = "INFO"): LogLevel {
+  return ([
+    "TRACE",
+    "DEBUG",
+    "INFO",
+    "WARN",
+    "ERROR",
+    "SILENT",
+    "CRITICAL",
+  ].find((l) => l === level.toUpperCase()) ?? "INFO") as LogLevel;
+}
 
 const defaultSanitizer = new LogSanitizer({
   keyPatterns: [
@@ -43,17 +45,10 @@ export interface LoggerOptions {
 let loggerInstance: Logger | undefined;
 
 export function createLogger(options: LoggerOptions): Logger {
-  const logLevel =
-    options.logLevel?.toUpperCase() ??
-    process.env.LOG_LEVEL?.toUpperCase() ??
-    "INFO";
   const sanitizer = options.sanitizer ?? defaultSanitizer;
-  const validLevel = VALID_LOG_LEVELS.includes(logLevel)
-    ? (logLevel as LogLevel)
-    : "INFO";
 
   loggerInstance = new Logger({
-    logLevel: validLevel,
+    logLevel: getLogLevel(options.logLevel ?? process.env.LOG_LEVEL),
     serviceName: options.serviceName,
     jsonReplacerFn: sanitizer.createReplacer(),
   });

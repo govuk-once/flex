@@ -46,25 +46,28 @@ export class LogSanitizer {
         return REDACTED;
       }
 
-      if (typeof value === "string") {
-        if (this.#containsSecret(value)) {
-          return REDACTED;
-        }
+      if (typeof value !== "string") {
+        return value;
+      }
 
-        if (this.#matches(value, this.#valuePatterns)) {
-          return REDACTED;
-        }
+      if (
+        this.#containsSecret(value) ||
+        this.#matches(value, this.#valuePatterns)
+      ) {
+        return REDACTED;
+      }
 
-        if (this.#parseStringifiedJson) {
-          try {
-            const parsed: unknown = JSON.parse(value);
-            if (parsed !== null && typeof parsed === "object") {
-              return JSON.stringify(parsed, this.createReplacer());
-            }
-          } catch {
-            // not valid JSON, return as-is
-          }
+      if (!this.#parseStringifiedJson) {
+        return value;
+      }
+
+      try {
+        const parsed: unknown = JSON.parse(value);
+        if (parsed !== null && typeof parsed === "object") {
+          return JSON.stringify(parsed, this.createReplacer());
         }
+      } catch {
+        // not valid JSON, return as-is
       }
 
       return value;
