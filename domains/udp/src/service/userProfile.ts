@@ -109,7 +109,7 @@ export const getUserProfile = async ({
     baseUrl,
   });
 
-  const preferencesResponse = await getNotificationPreferences(client, appId);
+  let preferencesResponse = await getNotificationPreferences(client, appId);
 
   if (!preferencesResponse) {
     logger.debug("User settings not found, creating user");
@@ -118,20 +118,11 @@ export const getUserProfile = async ({
       appId,
       client,
     });
-    const newPreferencesResponse = await getNotificationPreferences(
-      client,
-      appId,
-    );
+    preferencesResponse = await getNotificationPreferences(client, appId);
 
-    if (!newPreferencesResponse) {
+    if (!preferencesResponse) {
       throw new createHttpError.BadGateway();
     }
-
-    return userProfile({
-      notificationId,
-      appId,
-      preferences: newPreferencesResponse.preferences,
-    });
   }
 
   return userProfile({
