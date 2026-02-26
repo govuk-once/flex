@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@platform/gov-uk-once": "workspace:*",
-    "aws-cdk": "2.1105.0",
-    "aws-cdk-lib": "2.237.1",
-    "constructs": "10.4.5"
+    "aws-cdk": "2.1107.0",
+    "aws-cdk-lib": "2.240.0",
+    "constructs": "10.5.1"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",

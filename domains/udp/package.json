@@ -21,7 +21,7 @@
     "@middy/http-header-normalizer": "7.0.2",
     "@middy/http-json-body-parser": "7.0.2",
     "@middy/secrets-manager": "7.0.2",
-    "@smithy/util-utf8": "^4.2.0",
+    "@smithy/util-utf8": "^4.2.1",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
     "zod": "4.3.6"
