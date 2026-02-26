@@ -40,7 +40,7 @@ describe("UDP domain", () => {
     });
   });
 
-  describe("/patch user", () => {
+  describe.todo("/patch user", () => {
     // TODO: pending valid tokens
     it("returns user preferences updated successfully", async ({
       cloudfront,
