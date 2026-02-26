@@ -44,7 +44,7 @@ const remoteClient = {
   createUser: vi.fn(),
 };
 
-describe("UDP Service Gateway handler", () => {
+describe("UDP Service Gateway", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getConfig).mockResolvedValue({
@@ -138,10 +138,6 @@ describe("UDP Service Gateway handler", () => {
     });
     expect(remoteClient.updatePreferences).toHaveBeenCalledWith(
       {
-        configuration: {
-          expiryMechanism: "DELETE",
-          expiresAt: expect.any(Number),
-        },
         data: { consentStatus: "denied" },
       },
       "pairwise-456",
@@ -176,7 +172,6 @@ describe("UDP Service Gateway handler", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ message: "created" }),
     });
     expect(remoteClient.createUser).toHaveBeenCalledWith({
       notificationId: "notif-123",

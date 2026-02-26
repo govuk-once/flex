@@ -35,6 +35,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("UdpDomainClient", () => {
+  const appId = "123";
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -76,9 +77,9 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      await expect(
-        client.gateway.getPreferences("requester-123"),
-      ).rejects.toThrow(expectedError);
+      await expect(client.gateway.getPreferences(appId)).rejects.toThrow(
+        expectedError,
+      );
     },
   );
 
@@ -117,7 +118,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.getPreferences("requester-123");
+      const result = await client.gateway.getPreferences(appId);
 
       expect(result).toEqual({
         ok: false,
@@ -146,7 +147,7 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
     });
 
-    const result = await client.gateway.getPreferences("requester-123");
+    const result = await client.gateway.getPreferences(appId);
 
     expect(result).toEqual({
       ok: true,
@@ -193,7 +194,7 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
       region,
     });
-    const result = await client.gateway.getPreferences("requester-123");
+    const result = await client.gateway.getPreferences(appId);
 
     expect(result.ok).toBe(false);
 

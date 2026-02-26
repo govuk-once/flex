@@ -60,11 +60,11 @@ describe("GET /user handler", () => {
 
     it("returns 200 with user profile payload", async ({
       response,
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
     }) => {
       const request = await handler(
-        eventWithAuthorizer.authenticated(),
+        privateGatewayEventWithAuthorizer.authenticated(),
         context
           .withPairwiseId()
           .withSecret(mockNotificationSecret)
@@ -92,11 +92,11 @@ describe("GET /user handler", () => {
     });
 
     it("calls getUserProfile with derived notificationId and config", async ({
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
     }) => {
       await handler(
-        eventWithAuthorizer.authenticated(),
+        privateGatewayEventWithAuthorizer.authenticated(),
         context
           .withPairwiseId()
           .withSecret(mockNotificationSecret)
@@ -117,7 +117,7 @@ describe("GET /user handler", () => {
 
     it("passes custom pairwiseId as appId to getUserProfile", async ({
       response,
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
     }) => {
       const customPairwiseId = "custom-user-id-123";
@@ -127,7 +127,7 @@ describe("GET /user handler", () => {
       vi.mocked(getUserProfile).mockResolvedValueOnce(customProfile);
 
       const request = await handler(
-        eventWithAuthorizer.authenticated({}, customPairwiseId),
+        privateGatewayEventWithAuthorizer.authenticated({}, customPairwiseId),
         context
           .withPairwiseId(customPairwiseId)
           .withSecret(mockNotificationSecret)
@@ -156,11 +156,11 @@ describe("GET /user handler", () => {
 
   describe("service integration", () => {
     it("calls generateDerivedId exactly once per request", async ({
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
     }) => {
       await handler(
-        eventWithAuthorizer.authenticated(),
+        privateGatewayEventWithAuthorizer.authenticated(),
         context
           .withPairwiseId()
           .withSecret(mockNotificationSecret)
@@ -171,7 +171,7 @@ describe("GET /user handler", () => {
     });
 
     it("bubbles errors from generateDerivedId", async ({
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
       response,
     }) => {
@@ -182,7 +182,7 @@ describe("GET /user handler", () => {
 
       await expect(
         handler(
-          eventWithAuthorizer.authenticated(),
+          privateGatewayEventWithAuthorizer.authenticated(),
           context
             .withPairwiseId()
             .withSecret(mockNotificationSecret)
@@ -197,7 +197,7 @@ describe("GET /user handler", () => {
     });
 
     it("bubbles errors from getUserProfile", async ({
-      eventWithAuthorizer,
+      privateGatewayEventWithAuthorizer,
       context,
       response,
     }) => {
@@ -206,7 +206,7 @@ describe("GET /user handler", () => {
 
       await expect(
         handler(
-          eventWithAuthorizer.authenticated(),
+          privateGatewayEventWithAuthorizer.authenticated(),
           context
             .withPairwiseId()
             .withSecret(mockNotificationSecret)

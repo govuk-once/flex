@@ -16,7 +16,7 @@ const configSchema = z.object({
 });
 
 /**
- * UDP connector (service gateway) – internal-only, invoked via the private API gateway.
+ * UDP Service Gateway – internal-only, invoked via the private API gateway.
  *
  * Receives Flex requests, routes to typed remote client methods, validates and
  * translates remote responses to internal contract. No direct invocation from domain lambdas.
@@ -54,7 +54,6 @@ export const handler = createLambdaHandler<
     }
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-service-gateway",
   },
 );

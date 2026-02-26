@@ -64,7 +64,6 @@ export const handler = createLambdaHandler<
     return jsonResponse(status.OK, response.data);
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-patch-user-service",
     middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
   },

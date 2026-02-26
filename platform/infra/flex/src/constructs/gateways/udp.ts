@@ -23,19 +23,23 @@ export function createUdpServiceGateway(
     "/flex-param/udp/consumer-role-arn",
   );
   const udpCmk = Key.fromKeyArn(scope, "UdpCmk", udpCmkArn.stringValue);
-  const udpConnector = new FlexPrivateIsolatedFunction(scope, "UdpConnector", {
-    entry: getPlatformEntry("udp", "handlers/service-gateway.ts"),
-    domain: "udp",
-    environment: {
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:
-        udpConsumerConfigArn.parameterName,
+  const udpServiceGateway = new FlexPrivateIsolatedFunction(
+    scope,
+    "UdpServiceGateway",
+    {
+      entry: getPlatformEntry("udp", "handlers/service-gateway.ts"),
+      domain: "udp",
+      environment: {
+        FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:
+          udpConsumerConfigArn.parameterName,
+      },
+      timeout: Duration.seconds(10),
     },
-    timeout: Duration.seconds(10),
-  });
+  );
 
-  udpConsumerConfigArn.grantRead(udpConnector.function);
-  udpCmk.grantDecrypt(udpConnector.function);
-  udpConnector.function.addToRolePolicy(
+  udpConsumerConfigArn.grantRead(udpServiceGateway.function);
+  udpCmk.grantDecrypt(udpServiceGateway.function);
+  udpServiceGateway.function.addToRolePolicy(
     new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ["secretsmanager:GetSecretValue"],
@@ -43,7 +47,7 @@ export function createUdpServiceGateway(
     }),
   );
 
-  udpConnector.function.addToRolePolicy(
+  udpServiceGateway.function.addToRolePolicy(
     new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ["sts:AssumeRole"],
@@ -54,7 +58,7 @@ export function createUdpServiceGateway(
   createPrivateGatewayRoute(
     "udp/{proxy+}",
     "ANY",
-    udpConnector.function,
+    udpServiceGateway.function,
     gatewaysResource,
   );
 }

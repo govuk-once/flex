@@ -1,4 +1,3 @@
-import { IsoDateTime } from "@flex/utils";
 import { z } from "zod";
 
 export const CONSENT_STATUS_SCHEMA = z.enum(["unknown", "accepted", "denied"]);

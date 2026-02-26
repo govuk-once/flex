@@ -31,7 +31,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
     }),
 }));
 
-describe("PATCH /user handler", () => {
+describe("Public PATCH /user handler", () => {
   const BASE_URL = "https://execute-api.eu-west-2.amazonaws.com";
 
   beforeAll(() => {
@@ -51,72 +51,88 @@ describe("PATCH /user handler", () => {
     nock.cleanAll();
   });
 
-  it("calls private PATCH and returns mapped preferences", async ({
-    response,
-    eventWithAuthorizer,
-    context,
-  }) => {
-    nock(BASE_URL)
-      .patch("/domains/udp/v1/user", {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
-      })
-      .reply(200, {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
-      });
-
-    const request = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({
+  describe("when user preferences are updated successfully", () => {
+    it("returns 200 with user preferences updated successfully", async ({
+      response,
+      privateGatewayEventWithAuthorizer,
+      context,
+    }) => {
+      nock(BASE_URL)
+        .patch("/domains/udp/v1/user", {
           preferences: {
             notifications: {
               consentStatus: "accepted",
             },
           },
-        }),
-      }),
-      context.withPairwiseId().create(),
-    );
-
-    expect(request).toEqual(
-      response.ok(
-        {
+        })
+        .reply(200, {
           preferences: {
             notifications: {
               consentStatus: "accepted",
             },
           },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      ),
-    );
-  });
+        });
 
-  it("rejects invalid payload", async ({ eventWithAuthorizer, context }) => {
-    const result = await handler(
-      eventWithAuthorizer.authenticated({
-        body: JSON.stringify({
-          preferences: {
-            notifications: {
-              consentStatus: "yes",
+      const request = await handler(
+        privateGatewayEventWithAuthorizer.patch("/user", {
+          body: {
+            preferences: {
+              notifications: {
+                consentStatus: "accepted",
+              },
             },
           },
         }),
-      }),
-      context.withPairwiseId().create(),
-    );
+        context.withPairwiseId().create(),
+      );
 
-    expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
+      expect(request).toEqual(
+        response.ok(
+          {
+            preferences: {
+              notifications: {
+                consentStatus: "accepted",
+              },
+            },
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
   });
+
+  it.for([
+    {
+      body: {
+        preferences: {
+          notifications: {
+            consentStatus: "yes",
+          },
+        },
+      },
+      description: "unknown consent status",
+    },
+    {
+      body: {
+        preferences: {
+          notifications: {},
+        },
+      },
+      description: "missing consent status",
+    },
+  ])(
+    "rejects invalid payload: $description",
+    async ({ body }, { privateGatewayEventWithAuthorizer, context }) => {
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.patch("/user", { body }),
+        context.withPairwiseId().create(),
+      );
+
+      expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
+    },
+  );
 });

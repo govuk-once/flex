@@ -3,20 +3,23 @@ import type { Request } from "@middy/core";
 import { mergeDeepLeft } from "ramda";
 
 import type {
-  EventWithAuthorizer,
-  EventWithAuthorizerOverrides,
+  RestApiEventWithAuthorizer,
+  RestApiEventWithAuthorizerOverrides,
 } from "./apigateway";
-import { createEventWithAuthorizer, eventWithAuthorizer } from "./apigateway";
+import {
+  createRestApiEventWithAuthorizer,
+  restApiEventWithAuthorizer,
+} from "./apigateway";
 import type { ContextOverrides, ContextWithPairwiseId } from "./lambda";
 import { context } from "./lambda";
 
 export type MiddyRequest<
-  Event extends EventWithAuthorizer = EventWithAuthorizer,
+  Event extends RestApiEventWithAuthorizer = RestApiEventWithAuthorizer,
   Result = unknown,
 > = Request<Event, Result, Error, ContextWithPairwiseId>;
 
 export interface MiddyRequestOverrides<
-  Event extends EventWithAuthorizer = EventWithAuthorizer,
+  Event extends RestApiEventWithAuthorizer = RestApiEventWithAuthorizer,
   Result = unknown,
 > {
   event?: DeepPartial<Event>;
@@ -27,11 +30,11 @@ export interface MiddyRequestOverrides<
 }
 
 function buildMiddyRequest<
-  Event extends EventWithAuthorizer = EventWithAuthorizer,
+  Event extends RestApiEventWithAuthorizer = RestApiEventWithAuthorizer,
   Result = unknown,
 >(overrides: MiddyRequestOverrides<Event, Result> = {}) {
   return mergeDeepLeft(overrides, {
-    event: eventWithAuthorizer,
+    event: restApiEventWithAuthorizer,
     context,
     response: null,
     error: null,
@@ -40,29 +43,32 @@ function buildMiddyRequest<
 }
 
 const {
-  authenticated: authenticatedEventWithAuthorizer,
-  unauthenticated: unauthenticatedEventWithAuthorizer,
-} = createEventWithAuthorizer();
+  authenticated: authenticatedRestApiEventWithAuthorizer,
+  unauthenticated: unauthenticatedRestApiEventWithAuthorizer,
+} = createRestApiEventWithAuthorizer();
 
 export function createMiddyRequest() {
   return {
-    create: <Event extends EventWithAuthorizer, Result>(
+    create: <Event extends RestApiEventWithAuthorizer, Result>(
       overrides?: MiddyRequestOverrides<Event, Result>,
     ) => buildMiddyRequest<Event, Result>(overrides),
     authenticated: (
-      overrides?: EventWithAuthorizerOverrides,
+      overrides?: RestApiEventWithAuthorizerOverrides,
       pairwiseId = "test-pairwise-id",
     ) =>
       buildMiddyRequest({
-        event: authenticatedEventWithAuthorizer(overrides, pairwiseId),
+        event: authenticatedRestApiEventWithAuthorizer(overrides, pairwiseId),
       }),
     unauthenticated: () =>
-      buildMiddyRequest({ event: unauthenticatedEventWithAuthorizer() }),
-    withEvent: <Event extends EventWithAuthorizer>(event: DeepPartial<Event>) =>
-      buildMiddyRequest<Event>({ event }),
+      buildMiddyRequest({
+        event: unauthenticatedRestApiEventWithAuthorizer(),
+      }),
+    withEvent: <Event extends RestApiEventWithAuthorizer>(
+      event: DeepPartial<Event>,
+    ) => buildMiddyRequest<Event>({ event }),
     withContext: (context: ContextOverrides) => buildMiddyRequest({ context }),
     withResponse: <Result>(response: Result) =>
-      buildMiddyRequest<EventWithAuthorizer, Result>({ response }),
+      buildMiddyRequest<RestApiEventWithAuthorizer, Result>({ response }),
     withError: (error: Error) => buildMiddyRequest({ error }),
   };
 }

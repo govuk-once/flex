@@ -11,12 +11,6 @@ export const notificationsResponseSchema = z.object({
 export type NotificationsResponse = z.infer<typeof notificationsResponseSchema>;
 
 export const preferencesRequestSchema = z.object({
-  configuration: z
-    .object({
-      expiryMechanism: z.literal("DELETE"),
-      expiresAt: z.number().int(),
-    })
-    .optional(),
   data: z.object({
     consentStatus: consentStatusSchema,
   }),

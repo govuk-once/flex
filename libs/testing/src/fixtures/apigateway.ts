@@ -5,6 +5,7 @@ import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyEventV2WithLambdaAuthorizer,
+  APIGatewayProxyWithLambdaAuthorizerEvent,
   APIGatewayRequestAuthorizerEventV2,
   APIGatewayTokenAuthorizerEvent,
 } from "aws-lambda";
@@ -435,3 +436,98 @@ export function createRestApiEvent() {
 }
 
 export const restApiEvent = buildRestApiEvent();
+
+// ----------------------------------------------------------------------------
+// Rest API Event with Lambda Authorizer
+// ----------------------------------------------------------------------------
+
+export type RestApiEventWithAuthorizer<
+  T extends AuthorizerContext = AuthorizerContext,
+> = APIGatewayProxyWithLambdaAuthorizerEvent<T>;
+
+export type RestApiEventWithAuthorizerOverrides<
+  T extends AuthorizerContext = AuthorizerContext,
+> = DeepPartial<RestApiEventWithAuthorizer<T>>;
+
+const baseRestApiEventWithAuthorizer = buildRestApiEvent({
+  requestContext: {
+    authorizer: {
+      principalId: "test-pairwise-id",
+      integrationLatency: 0,
+      pairwiseId: "test-pairwise-id",
+    },
+  },
+} as RestApiEventOverrides) as RestApiEventWithAuthorizer;
+
+function buildRestApiEventWithAuthorizer<
+  T extends AuthorizerContext = AuthorizerContext,
+>(overrides: RestApiEventWithAuthorizerOverrides<T> = {}) {
+  return mergeDeepLeft(
+    overrides,
+    baseRestApiEventWithAuthorizer,
+  ) as RestApiEventWithAuthorizer<T>;
+}
+
+export function createRestApiEventWithAuthorizer<
+  T extends AuthorizerContext = AuthorizerContext,
+>() {
+  return {
+    create: (overrides?: RestApiEventWithAuthorizerOverrides<T>) =>
+      buildRestApiEventWithAuthorizer<T>(overrides),
+    get: (path: string, options: RestApiEventRequestOptions = {}) =>
+      buildRestApiEventWithAuthorizer({
+        ...options,
+        httpMethod: "GET",
+        path,
+      }),
+    post: <TReqBody>(
+      path: string,
+      options: RestApiEventRequestOptions<TReqBody>,
+    ) =>
+      buildRestApiEventWithAuthorizer({
+        ...options,
+        headers: { "Content-Type": "application/json", ...options.headers },
+        httpMethod: "POST",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
+    patch: <TReqBody>(
+      path: string,
+      options: RestApiEventRequestOptions<TReqBody>,
+    ) =>
+      buildRestApiEventWithAuthorizer({
+        ...options,
+        headers: { "Content-Type": "application/json", ...options.headers },
+        httpMethod: "PATCH",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
+    authenticated: (
+      overrides?: RestApiEventWithAuthorizerOverrides<T>,
+      pairwiseId = "test-pairwise-id",
+    ) =>
+      buildRestApiEventWithAuthorizer({
+        ...overrides,
+        requestContext: {
+          authorizer: {
+            principalId: pairwiseId,
+            integrationLatency: 0,
+            pairwiseId,
+          },
+        },
+      }),
+    unauthenticated: (overrides?: RestApiEventWithAuthorizerOverrides<T>) =>
+      buildRestApiEventWithAuthorizer({
+        ...overrides,
+        requestContext: {
+          authorizer: {
+            principalId: "anonymous",
+            integrationLatency: 0,
+            pairwiseId: undefined,
+          },
+        },
+      }),
+  } as const;
+}
+
+export const restApiEventWithAuthorizer = buildRestApiEventWithAuthorizer();

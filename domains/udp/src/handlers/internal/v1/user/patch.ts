@@ -69,14 +69,7 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
       throw new createHttpError.BadGateway();
     }
 
-    return jsonResponse(status.OK, {
-      preferences: {
-        notifications: {
-          consentStatus:
-            parsedEvent.data.preferences.notifications.consentStatus,
-        },
-      },
-    });
+    return jsonResponse(status.OK, response.data);
   },
   {
     logLevel: "INFO",

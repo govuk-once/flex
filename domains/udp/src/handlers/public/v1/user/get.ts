@@ -1,5 +1,4 @@
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
 import {
   type ContextWithPairwiseId,
   createSecretsMiddleware,
@@ -50,7 +49,6 @@ export const handler = createLambdaHandler<
     return jsonResponse(status.OK, userProfile);
   },
   {
-    logLevel: "INFO",
     serviceName: "udp-get-user-service",
     middlewares: [
       extractUser,

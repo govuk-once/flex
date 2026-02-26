@@ -21,14 +21,14 @@ vi.mock("../../../../client", () => ({
   })),
 }));
 
-describe("post handler", () => {
+describe("POST /user handler", () => {
   beforeEach(() => {
     mockCreateUser.mockReset();
     mockCreateUser.mockResolvedValue(new Response(null, { status: 204 }));
   });
 
-  describe("successful user creation", () => {
-    it("returns 204 when user is created successfully", async ({
+  describe("when user is created successfully", () => {
+    it("returns 204 no content", async ({
       response,
       privateGatewayEvent,
       context,
@@ -90,8 +90,8 @@ describe("post handler", () => {
     );
   });
 
-  describe("API errors", () => {
-    it("returns InternalServerError when API returns non-OK", async ({
+  describe("when upstream service returns error", () => {
+    it("returns internal server error", async ({
       privateGatewayEvent,
       context,
       response,
@@ -113,9 +113,16 @@ describe("post handler", () => {
       );
 
       expect(result).toEqual(
-        response.internalServerError(null, {
-          headers: {},
-        }),
+        response.internalServerError(
+          {
+            message: "Failed to process request",
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
       );
     });
   });
