@@ -35,7 +35,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("UdpDomainClient", () => {
-  const appId = "123";
+  const userId = "123";
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -77,7 +77,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      await expect(client.gateway.getPreferences(appId)).rejects.toThrow(
+      await expect(client.gateway.notifications.get(userId)).rejects.toThrow(
         expectedError,
       );
     },
@@ -118,7 +118,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.getPreferences(appId);
+      const result = await client.gateway.notifications.get(userId);
 
       expect(result).toEqual({
         ok: false,
@@ -131,39 +131,31 @@ describe("UdpDomainClient", () => {
     },
   );
 
-  it("returns validated response from getPreferences matching the expected getPreferences schema", async () => {
-    nock(BASE_URL)
-      .get("/gateways/udp/v1/notifications")
-      .reply(200, {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
-      });
+  it("returns validated response from notifications.get matching the expected schema", async () => {
+    nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(200, {
+      consentStatus: "accepted",
+      notificationId: "notif-123",
+    });
 
     const client = createUdpDomainClient({
       region,
       baseUrl: BASE_URL,
     });
 
-    const result = await client.gateway.getPreferences(appId);
+    const result = await client.gateway.notifications.get(userId);
 
     expect(result).toEqual({
       ok: true,
       data: {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
+        consentStatus: "accepted",
+        notificationId: "notif-123",
       },
       status: 200,
     });
   });
 
   it("returns status, data and body when schema is not provided", async () => {
-    nock(BASE_URL).post("/domains/udp/v1/user").reply(200, {
+    nock(BASE_URL).post("/domains/udp/v1/users").reply(200, {
       message: "User created successfully",
     });
     const client = createUdpDomainClient({
@@ -171,9 +163,9 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
     });
 
-    const result = await client.domain.createUser({
+    const result = await client.domain.user.create({
       notificationId: "123",
-      appId: "456",
+      userId: "456",
     });
 
     expect(result).toEqual({
@@ -194,14 +186,12 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
       region,
     });
-    const result = await client.gateway.getPreferences(appId);
+    const result = await client.gateway.notifications.get(userId);
 
     expect(result.ok).toBe(false);
-
-    const { error } = result as Extract<typeof result, { ok: false }>;
-
-    expect(error.status).toBe(422);
-    expect(error.message).toBe("Response validation failed");
-    expect(error.body).toBeDefined();
+    if (result.ok) return;
+    expect(result.error.status).toBe(422);
+    expect(result.error.message).toBe("Response validation failed");
+    expect(result.error.body).toBeDefined();
   });
 });

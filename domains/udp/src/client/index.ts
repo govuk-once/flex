@@ -1,9 +1,11 @@
 import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 
 import {
-  PreferencesRequest,
-  preferencesResponseSchema,
-} from "../schemas/preferences";
+  CreateNotificationRequest,
+  createNotificationResponseSchema,
+  getNotificationResponseSchema,
+  UpdateNotificationRequest,
+} from "../schemas/notifications";
 import { CreateUserRequest } from "../schemas/user";
 import {
   UDP_DOMAIN_BASE,
@@ -41,64 +43,69 @@ export function createUdpDomainClient({
 
   return {
     gateway: {
-      createUser: (body: CreateUserRequest) => {
-        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.user, {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        return typedFetch(request);
+      users: {
+        create: (body: CreateUserRequest) => {
+          const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.users, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          return typedFetch(request);
+        },
       },
-      getPreferences: (requestingServiceUserId: string) => {
-        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
-          method: "GET",
-          headers: {
-            "requesting-service-user-id": requestingServiceUserId,
-          },
-        });
-        return typedFetch(request, preferencesResponseSchema);
-      },
-      updatePreferences: (
-        body: PreferencesRequest,
-        requestingServiceUserId: string,
-      ) => {
-        const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-            "requesting-service-user-id": requestingServiceUserId,
-          },
-        });
-        return typedFetch(request);
+      notifications: {
+        get: (userId: string) => {
+          const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
+            method: "GET",
+            headers: {
+              "requesting-service-user-id": userId,
+            },
+          });
+          return typedFetch(request, getNotificationResponseSchema);
+        },
+        update: (
+          requestingServiceUserId: string,
+          body: UpdateNotificationRequest,
+        ) => {
+          const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+            headers: {
+              "requesting-service-user-id": requestingServiceUserId,
+            },
+          });
+          return typedFetch(request, createNotificationResponseSchema);
+        },
+        create: (
+          body: CreateNotificationRequest,
+          requestingServiceUserId: string,
+        ) => {
+          const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+              "Content-Type": "application/json",
+              "requesting-service-user-id": requestingServiceUserId,
+            },
+          });
+          return typedFetch(request, createNotificationResponseSchema);
+        },
       },
     },
     domain: {
-      createUser: (body: CreateUserRequest) => {
-        const { request } = domainFetcher(UDP_DOMAIN_ROUTES.createUser, {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        return typedFetch(request);
-      },
-      patchUser: (
-        body: PreferencesRequest,
-        requestingServiceUserId: string,
-      ) => {
-        const { request } = domainFetcher(UDP_DOMAIN_ROUTES.patchUser, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-            "requesting-service-user-id": requestingServiceUserId,
-          },
-        });
-        return typedFetch(request, preferencesResponseSchema);
+      user: {
+        create: (body: CreateUserRequest) => {
+          const { request } = domainFetcher(UDP_DOMAIN_ROUTES.createUser, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          return typedFetch(request);
+        },
       },
     },
   };

@@ -32,7 +32,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("getUserProfile", () => {
-  const appId = "test-app-id";
+  const userId = "test-user-id";
   const notificationId = "test-notification-id";
   const BASE_URL = "https://example.com";
   const region = "eu-west-2";
@@ -58,34 +58,56 @@ describe("getUserProfile", () => {
     nock(BASE_URL)
       .get("/gateways/udp/v1/notifications")
       .reply(404, { message: "Not Found" })
-      .post("/domains/udp/v1/user", { notificationId, appId })
+      .post("/domains/udp/v1/users", { notificationId, userId })
       .reply(200, { message: "User created successfully" })
       .post("/gateways/udp/v1/notifications", {
-        preferences: {
-          notifications: { consentStatus: "unknown" },
-        },
+        consentStatus: "unknown",
+        notificationId,
       })
-      .reply(200, {})
+      .reply(200, { consentStatus: "unknown", notificationId })
       .get("/gateways/udp/v1/notifications")
       .reply(200, {
-        preferences: {
-          notifications: { consentStatus: "unknown" },
-        },
+        consentStatus: "unknown",
+        notificationId,
       });
 
     const result = await getUserProfile({
       region,
       baseUrl: BASE_URL,
       notificationId,
-      appId,
+      userId,
     });
 
     expect(result).toEqual({
-      preferences: {
-        notifications: { consentStatus: "unknown" },
-      },
       notificationId,
-      appId,
+      userId,
+      notifications: {
+        consentStatus: "unknown",
+        notificationId,
+      },
+    });
+  });
+
+  it("returns existing preferences when user already exists", async () => {
+    nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(200, {
+      consentStatus: "accepted",
+      notificationId,
+    });
+
+    const result = await getUserProfile({
+      region,
+      baseUrl: BASE_URL,
+      notificationId,
+      userId,
+    });
+
+    expect(result).toEqual({
+      notificationId,
+      userId,
+      notifications: {
+        consentStatus: "accepted",
+        notificationId,
+      },
     });
   });
 
@@ -101,10 +123,10 @@ describe("getUserProfile", () => {
           region,
           baseUrl: BASE_URL,
           notificationId,
-          appId,
+          userId,
         }),
       ).rejects.toMatchObject({
-        status: 502,
+        statusCode: 502,
       });
     },
   );

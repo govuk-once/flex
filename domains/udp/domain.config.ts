@@ -5,7 +5,7 @@ export const endpoints = defineDomain({
   versions: {
     v1: {
       routes: {
-        "/user": {
+        "/users": {
           GET: {
             type: "ISOLATED",
             entry: "handlers/public/v1/user/get.ts",
@@ -24,8 +24,13 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "domain",
-                path: "/v1/user",
+                path: "/v1/notifications",
                 method: "POST",
+              },
+              {
+                type: "domain",
+                path: "/v1/notifications",
+                method: "GET",
               },
               {
                 type: "gateway",
@@ -34,9 +39,18 @@ export const endpoints = defineDomain({
               },
             ],
           },
+        },
+        "/users/notifications": {
           PATCH: {
             type: "ISOLATED",
             entry: "handlers/public/v1/user/patch.ts",
+            envSecret: {
+              FLEX_UDP_NOTIFICATION_SECRET:
+                "/flex-secret/udp/notification-hash-secret",
+            },
+            kmsKeys: {
+              ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
+            },
             envEphemeral: {
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                 "/flex-core/private-gateway/url",
@@ -45,7 +59,7 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "domain",
-                path: "/v1/user",
+                path: "/v1/notifications",
                 method: "PATCH",
               },
             ],

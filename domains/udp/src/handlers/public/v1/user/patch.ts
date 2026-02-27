@@ -3,6 +3,7 @@ import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import {
   type ContextWithPairwiseId,
+  createSecretsMiddleware,
   extractUser,
   type V2Authorizer,
 } from "@flex/middlewares";
@@ -19,7 +20,12 @@ import status from "http-status";
 import { z } from "zod";
 
 import { createUdpDomainClient } from "../../../../client";
-import { preferencesRequestSchema } from "../../../../schemas/preferences";
+import { updateNotificationRequestSchema } from "../../../../schemas/notifications";
+import { generateDerivedId } from "../../../../service/derived-id";
+
+export type NotificationSecretContext = {
+  notificationSecretKey: string;
+};
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -29,13 +35,13 @@ const configSchema = z.object({
 export const handler = createLambdaHandler<
   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
   APIGatewayProxyResultV2,
-  ContextWithPairwiseId
+  ContextWithPairwiseId & NotificationSecretContext
 >(
   async (event, context) => {
     const logger = getLogger();
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
-      preferencesRequestSchema,
+      updateNotificationRequestSchema,
     );
 
     if (!parsedEvent.success) {
@@ -43,14 +49,22 @@ export const handler = createLambdaHandler<
       throw new createHttpError.BadRequest(message);
     }
 
+    const notificationId = generateDerivedId({
+      pairwiseId: context.pairwiseId,
+      secretKey: context.notificationSecretKey,
+    });
+
     const config = await getConfig(configSchema);
     const client = createUdpDomainClient({
       region: config.AWS_REGION,
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
-    const response = await client.domain.patchUser(
-      parsedEvent.data,
+    const response = await client.gateway.notifications.update(
       context.pairwiseId,
+      {
+        consentStatus: parsedEvent.data.consentStatus,
+        notificationId,
+      },
     );
 
     if (!response.ok) {
@@ -65,6 +79,15 @@ export const handler = createLambdaHandler<
   },
   {
     serviceName: "udp-patch-user-service",
-    middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
+    middlewares: [
+      extractUser,
+      httpHeaderNormalizer(),
+      httpJsonBodyParser(),
+      createSecretsMiddleware<NotificationSecretContext>({
+        secrets: {
+          notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
+        },
+      }),
+    ],
   },
 );

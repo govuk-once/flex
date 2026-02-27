@@ -39,7 +39,7 @@ describe("GET /user handler", () => {
     overrides: Partial<UserProfileResponse> = {},
   ): UserProfileResponse =>
     mergeDeepLeft(overrides, {
-      appId: testPairwiseId,
+      userId: testPairwiseId,
       notificationId: mockNotificationId,
       preferences: {
         notifications: {
@@ -74,7 +74,7 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            appId: testPairwiseId,
+            userId: testPairwiseId,
             notificationId: mockNotificationId,
             preferences: {
               notifications: {
@@ -111,18 +111,18 @@ describe("GET /user handler", () => {
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
         notificationId: mockNotificationId,
-        appId: testPairwiseId,
+        userId: testPairwiseId,
       });
     });
 
-    it("passes custom pairwiseId as appId to getUserProfile", async ({
+    it("passes custom pairwiseId as userId to getUserProfile", async ({
       response,
       privateGatewayEventWithAuthorizer,
       context,
     }) => {
       const customPairwiseId = "custom-user-id-123";
       const customProfile = makeUserProfileResponse({
-        appId: customPairwiseId,
+        userId: customPairwiseId,
       });
       vi.mocked(getUserProfile).mockResolvedValueOnce(customProfile);
 
@@ -149,7 +149,7 @@ describe("GET /user handler", () => {
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
         notificationId: mockNotificationId,
-        appId: customPairwiseId,
+        userId: customPairwiseId,
       });
     });
   });

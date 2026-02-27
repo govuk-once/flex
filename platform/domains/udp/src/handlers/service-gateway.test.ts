@@ -101,7 +101,7 @@ describe("UDP Service Gateway", () => {
       method: "POST",
       path: "/v1/user",
       operation: "createUser",
-      body: { notificationId: "123", appId: "456" },
+      body: { notificationId: "123", userId: "456" },
       expected: MOCK_EXPECTED_DOMAIN_USER,
     },
   ])(
