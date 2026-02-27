@@ -1,6 +1,5 @@
 import { importFlexParameter } from "@platform/core/outputs";
 import { getEnvConfig } from "@platform/gov-uk-once";
-import { Duration } from "aws-cdk-lib";
 import {
   IAuthorizer,
   IdentitySource,
