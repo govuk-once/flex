@@ -82,6 +82,17 @@ export class FlexInternalGateway extends Construct {
               },
             },
           }),
+          new PolicyStatement({
+            effect: Effect.DENY,
+            principals: [new AnyPrincipal()],
+            actions: ["execute-api:Invoke"],
+            resources: ["execute-api:/*"],
+            conditions: {
+              StringNotEquals: {
+                "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
+              },
+            },
+          }),
         ],
       }),
       deployOptions: {
@@ -122,8 +133,6 @@ export class FlexInternalGateway extends Construct {
       "CKV_AWS_120",
       "Disabled for now and will renable when caching strategy is defined",
     );
-
-    privateGateway.grantInvokeFromVpcEndpointsOnly([apiGatewayEndpoint]);
 
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
