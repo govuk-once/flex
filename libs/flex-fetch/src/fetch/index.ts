@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { NumberUpTo } from "@flex/utils";
 import { backOff } from "exponential-backoff";
 
@@ -39,7 +39,6 @@ export function flexFetch(
   options?: FlexFetchRequestInit,
   fetcher: typeof fetch = fetch,
 ): { request: Promise<Response>; abort: () => void } {
-  const logger = getLogger();
   logger.debug("flex-fetch called", { url });
   logger.debug("flex-fetch options", { options });
 

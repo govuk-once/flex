@@ -1,5 +1,4 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
-import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
@@ -13,8 +12,6 @@ export const rawConfigSchema = z.looseObject({
   USERPOOL_ID_PARAM_NAME: z.string().min(1),
   CLIENT_ID_PARAM_NAME: z.string().min(1),
 });
-
-getLogger({ serviceName: "config_test" });
 
 describe("Config", () => {
   beforeEach(() => {
@@ -74,7 +71,6 @@ describe("Config", () => {
     it("throws an error if a fetched parameter is missing", async ({ env }) => {
       vi.resetModules();
       const config = await import(".");
-      const logging = await import("@flex/logging");
 
       env.set({
         AWS_REGION: "us-east-1",
@@ -87,7 +83,6 @@ describe("Config", () => {
         // "client_id_param" is intentionally missing to simulate the error
       });
 
-      logging.getLogger({ serviceName: "config_test" });
       await expect(config.getConfig(rawConfigSchema)).rejects.toThrow(
         "Parameter client_id_param not found or is not a string",
       );
@@ -116,9 +111,6 @@ describe("Config", () => {
 
       vi.resetModules();
       const config = await import(".");
-      const logging = await import("@flex/logging");
-
-      logging.getLogger({ serviceName: "config_test" });
 
       const firstConfig = await config.getConfig(rawConfigSchema);
       const secondConfig = await config.getConfig(rawConfigSchema);

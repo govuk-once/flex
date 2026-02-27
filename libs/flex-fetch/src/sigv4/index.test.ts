@@ -16,17 +16,7 @@ vi.mock("@aws-sdk/credential-providers", () => ({
   }),
 }));
 
-vi.mock("@flex/logging", () => {
-  const loggerFunctions = {
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  };
-  return {
-    getLogger: () => loggerFunctions,
-  };
-});
+vi.mock("@flex/logging");
 
 vi.mock("aws-sigv4-fetch", () => ({
   createSignedFetcher: (opts: unknown) => createSignedFetcherMock(opts),

@@ -21,15 +21,7 @@ vi.mock("@flex/params", () => ({
   ),
 }));
 
-vi.mock("@flex/flex-fetch", async (actual) => ({
-  ...(await actual()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
+vi.mock("@flex/flex-fetch");
 
 describe("Public PATCH /user handler", () => {
   const BASE_URL = "https://execute-api.eu-west-2.amazonaws.com";
