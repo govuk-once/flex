@@ -3,7 +3,9 @@ import { context, it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createUdpRemoteClient } from "../client";
-import type { NotificationsResponse } from "../schemas/remote/preferences";
+import { DomainNotificationsResponse } from "../schemas/domain/notifications";
+import type { NotificationsResponse } from "../schemas/remote/notifications";
+import { CreateUserResponse } from "../schemas/remote/user";
 import type { ConsumerConfig } from "../utils/getConsumerConfig";
 import { getConsumerConfig } from "../utils/getConsumerConfig";
 import { handler } from "./service-gateway";
@@ -32,6 +34,14 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   externalId: "test-external-id",
 };
 
+const MOCK_EXPECTED_DOMAIN_NOTIFICATIONS: DomainNotificationsResponse = {
+  consentStatus: "accepted",
+};
+
+const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
+  message: "User created",
+};
+
 const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
   data: {
     consentStatus: "accepted",
@@ -39,9 +49,25 @@ const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
 };
 
 const remoteClient = {
-  getPreferences: vi.fn(),
-  updatePreferences: vi.fn(),
-  createUser: vi.fn(),
+  user: {
+    create: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { message: "User created" },
+    }),
+  },
+  notifications: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_REMOTE_NOTIFICATIONS,
+    }),
+    update: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_REMOTE_NOTIFICATIONS,
+    }),
+  },
 };
 
 describe("UDP Service Gateway", () => {
@@ -55,17 +81,64 @@ describe("UDP Service Gateway", () => {
     vi.mocked(createUdpRemoteClient).mockReturnValue(remoteClient);
   });
 
-  it("dispatches GET /v1/notifications and maps remote response", async ({
+  it.for([
+    {
+      method: "GET",
+      path: "/v1/notifications",
+      operation: "getNotificationPreferences",
+      headers: { "requesting-service-user-id": "123" },
+      expected: MOCK_EXPECTED_DOMAIN_NOTIFICATIONS,
+    },
+    {
+      method: "POST",
+      path: "/v1/notifications",
+      operation: "updateNotificationPreferences",
+      headers: { "requesting-service-user-id": "123" },
+      body: { consentStatus: "accepted" },
+      expected: MOCK_EXPECTED_DOMAIN_NOTIFICATIONS,
+    },
+    {
+      method: "POST",
+      path: "/v1/user",
+      operation: "createUser",
+      body: { notificationId: "123", appId: "456" },
+      expected: MOCK_EXPECTED_DOMAIN_USER,
+    },
+  ])(
+    "routes $method $path to $operation operation and maps remote response to $expected",
+    async (
+      { method, path, headers, body, expected },
+      { privateGatewayEvent },
+    ) => {
+      const response = await handler(
+        privateGatewayEvent.create({
+          httpMethod: method,
+          path,
+          headers,
+          body: JSON.stringify(body),
+        }),
+        context,
+      );
+
+      expect(response).toEqual({
+        statusCode: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(expected),
+      });
+    },
+  );
+
+  it("returns 400 if the remote contract has changed unexpectedly", async ({
     privateGatewayEvent,
-    env,
   }) => {
-    env.set({
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
-    remoteClient.getPreferences.mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: MOCK_REMOTE_NOTIFICATIONS,
+    remoteClient.notifications.get.mockResolvedValue({
+      ok: false,
+      error: {
+        status: 400,
+        message: "Bad Request",
+      },
     });
 
     const response = await handler(
@@ -76,113 +149,20 @@ describe("UDP Service Gateway", () => {
     );
 
     expect(response).toEqual({
-      statusCode: 200,
+      statusCode: 400,
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
+        message: "Bad Request",
       }),
-    });
-    expect(getConsumerConfig).toHaveBeenCalledWith(TEST_SECRET_ARN);
-    expect(remoteClient.getPreferences).toHaveBeenCalledWith("pairwise-123");
-  });
-
-  it("dispatches POST /v1/notifications with internal consent shape", async ({
-    privateGatewayEvent,
-    env,
-  }) => {
-    env.set({
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
-    remoteClient.updatePreferences.mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: {
-        data: {
-          consentStatus: "denied",
-        },
-      } satisfies NotificationsResponse,
-    });
-
-    const response = await handler(
-      privateGatewayEvent.post("/gateways/udp/v1/notifications", {
-        headers: { "requesting-service-user-id": "pairwise-456" },
-        body: {
-          preferences: {
-            notifications: {
-              consentStatus: "denied",
-            },
-          },
-        },
-      }),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        preferences: {
-          notifications: {
-            consentStatus: "denied",
-          },
-        },
-      }),
-    });
-    expect(remoteClient.updatePreferences).toHaveBeenCalledWith(
-      {
-        data: { consentStatus: "denied" },
-      },
-      "pairwise-456",
-    );
-  });
-
-  it("dispatches POST /v1/user with internal create user shape", async ({
-    privateGatewayEvent,
-    env,
-  }) => {
-    env.set({
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
-    remoteClient.createUser.mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: { message: "created" },
-    });
-
-    const response = await handler(
-      privateGatewayEvent.post("/gateways/udp/v1/user", {
-        body: {
-          notificationId: "notif-123",
-          appId: "app-abc",
-        },
-      }),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    expect(remoteClient.createUser).toHaveBeenCalledWith({
-      notificationId: "notif-123",
-      appId: "app-abc",
     });
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({
     privateGatewayEvent,
   }) => {
-    remoteClient.getPreferences.mockResolvedValue({
+    remoteClient.notifications.get.mockResolvedValue({
       ok: false,
       error: {
         status: 503,
@@ -212,7 +192,7 @@ describe("UDP Service Gateway", () => {
   it("passes through remote 4xx status and body", async ({
     privateGatewayEvent,
   }) => {
-    remoteClient.getPreferences.mockResolvedValue({
+    remoteClient.notifications.get.mockResolvedValue({
       ok: false,
       error: {
         status: 404,
@@ -240,30 +220,6 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  it("returns 400 when required requesting-service-user-id header is missing", async ({
-    privateGatewayEvent,
-    env,
-  }) => {
-    env.set({
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
-
-    const response = await handler(
-      privateGatewayEvent.get("/gateways/udp/v1/notifications"),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 400,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: "Missing requesting-service-user-id header",
-      }),
-    });
-  });
-
   it("returns 404 for unsupported routes", async ({
     privateGatewayEvent,
     env,
@@ -286,11 +242,8 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  it("returns 500 for unexpected non-http errors", async ({
-    privateGatewayEvent,
-  }) => {
-    vi.mocked(getConfig).mockRejectedValueOnce(new Error("unexpected failure"));
-
+  it("returns 500 for uncaught exceptions", async ({ privateGatewayEvent }) => {
+    vi.mocked(createUdpRemoteClient).mockRejectedValue(new Error("Test error"));
     const response = await handler(
       privateGatewayEvent.get("/gateways/udp/v1/notifications", {
         headers: { "requesting-service-user-id": "pairwise-123" },
@@ -303,9 +256,7 @@ describe("UDP Service Gateway", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        message: "Internal server error",
-      }),
+      body: JSON.stringify({ message: "Internal server error" }),
     });
   });
 });

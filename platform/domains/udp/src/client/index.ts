@@ -1,16 +1,12 @@
-import {
-  ApiResult,
-  createSigv4FetchWithCredentials,
-  typedFetch,
-} from "@flex/flex-fetch";
+import { createSigv4FetchWithCredentials, typedFetch } from "@flex/flex-fetch";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
 import {
-  NotificationsResponse,
+  CreateOrUpdateNotificationsRequest,
+  createOrUpdateNotificationsResponseSchema,
   notificationsResponseSchema,
-  PreferencesRequest,
-} from "../schemas/remote/preferences";
-import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
+} from "../schemas/remote/notifications";
+import { CreateUserRequest } from "../schemas/remote/user";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 /**
@@ -35,43 +31,44 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
   };
 
   return {
-    getPreferences: (requestingServiceUserId: string) => {
-      const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
-        method: "GET",
-        headers: {
-          ...defaultHeaders,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
-      });
-      return typedFetch(request, notificationsResponseSchema);
+    user: {
+      create: (body: CreateUserRequest) => {
+        const { request } = fetcher(UDP_REMOTE_ROUTES.user, {
+          method: "POST",
+          body: JSON.stringify(body),
+          headers: defaultHeaders,
+        });
+        return typedFetch(request);
+      },
     },
+    notifications: {
+      get: (requestingServiceUserId: string) => {
+        const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
+          method: "GET",
+          headers: {
+            ...defaultHeaders,
+            "requesting-service": "app",
+            "requesting-service-user-id": requestingServiceUserId,
+          },
+        });
+        return typedFetch(request, notificationsResponseSchema);
+      },
 
-    updatePreferences: (
-      body: PreferencesRequest,
-      requestingServiceUserId: string,
-    ): Promise<ApiResult<NotificationsResponse>> => {
-      const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-          ...defaultHeaders,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
-      });
-      return typedFetch(request, notificationsResponseSchema);
-    },
-
-    createUser: (
-      body: CreateUserRequest,
-    ): Promise<ApiResult<CreateUserResponse>> => {
-      const { request } = fetcher(UDP_REMOTE_ROUTES.user, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: defaultHeaders,
-      });
-      return typedFetch(request);
+      update: (
+        body: CreateOrUpdateNotificationsRequest,
+        requestingServiceUserId: string,
+      ) => {
+        const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
+          method: "POST",
+          body: JSON.stringify(body),
+          headers: {
+            ...defaultHeaders,
+            "requesting-service": "app",
+            "requesting-service-user-id": requestingServiceUserId,
+          },
+        });
+        return typedFetch(request, createOrUpdateNotificationsResponseSchema);
+      },
     },
   };
 }
