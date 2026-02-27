@@ -19,7 +19,7 @@ const configSchema = z.object({
 
 const handlerRequestSchema = z.object({
   notificationId: NonEmptyString,
-  appId: NonEmptyString,
+  userId: NonEmptyString,
 });
 
 export const handler = createLambdaHandler<APIGatewayProxyEvent>(
@@ -43,9 +43,9 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
         baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
       });
 
-      const response = await client.gateway.createUser({
+      const response = await client.gateway.users.create({
         notificationId: parsedEvent.data.notificationId,
-        appId: parsedEvent.data.appId,
+        userId: parsedEvent.data.userId,
       });
 
       if (!response.ok) {

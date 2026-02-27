@@ -2,49 +2,44 @@ import { getLogger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import { createUdpDomainClient, UdpDomainClient } from "../client";
-import { PreferencesResponse } from "../schemas/preferences";
+import { CreateNotificationResponse } from "../schemas/notifications";
 
 const createUser = async ({
   notificationId,
-  appId,
+  userId,
   client,
 }: {
   notificationId: string;
-  appId: string;
+  userId: string;
   client: UdpDomainClient;
 }) => {
   const logger = getLogger();
-  const response = await client.domain.createUser({
+  const response = await client.domain.user.create({
     notificationId,
-    appId,
+    userId,
   });
 
   if (!response.ok) {
     logger.error("Failed to create user", {
-      response: JSON.stringify(response),
-      status: response.error.body,
+      status: response.error.status,
     });
 
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User created successfully, setting default preferences");
+  logger.debug("User created successfully, creating notifications");
 
-  const updatePreferencesResponse = await client.gateway.updatePreferences(
+  const createNotificationsResponse = await client.gateway.notifications.create(
     {
-      preferences: {
-        notifications: {
-          consentStatus: "unknown",
-        },
-      },
+      consentStatus: "unknown",
+      notificationId,
     },
-    appId,
+    userId,
   );
 
-  if (!updatePreferencesResponse.ok) {
-    logger.error("Failed to set default preferences", {
-      response: JSON.stringify(updatePreferencesResponse),
-      status: updatePreferencesResponse.error.body,
+  if (!createNotificationsResponse.ok) {
+    logger.error("Failed to create notifications", {
+      status: createNotificationsResponse.error.status,
     });
 
     throw new createHttpError.BadGateway();
@@ -53,21 +48,20 @@ const createUser = async ({
 
 const getNotificationPreferences = async (
   client: UdpDomainClient,
-  appId: string,
+  userId: string,
 ) => {
   const logger = getLogger();
 
-  const notificationsResponse = await client.gateway.getPreferences(appId);
+  const notificationsResponse = await client.gateway.notifications.get(userId);
 
   if (!notificationsResponse.ok && notificationsResponse.error.status === 404) {
-    logger.debug("User settings not found");
+    logger.debug("No notifications settings exist for this user.");
     return null;
   }
 
   if (!notificationsResponse.ok) {
-    logger.error("Failed to get user preferences", {
-      response: JSON.stringify(notificationsResponse),
-      status: notificationsResponse.error.body,
+    logger.error("Failed to retrieve notifications settings", {
+      status: notificationsResponse.error.status,
     });
 
     throw new createHttpError.BadGateway();
@@ -78,17 +72,17 @@ const getNotificationPreferences = async (
 
 const userProfile = ({
   notificationId,
-  appId,
-  preferences,
+  userId,
+  notifications,
 }: {
   notificationId: string;
-  appId: string;
-  preferences: PreferencesResponse["preferences"];
+  userId: string;
+  notifications: CreateNotificationResponse;
 }) => {
   return {
     notificationId,
-    appId,
-    preferences,
+    userId,
+    notifications,
   };
 };
 
@@ -96,12 +90,12 @@ export const getUserProfile = async ({
   region,
   baseUrl,
   notificationId,
-  appId,
+  userId,
 }: {
   region: string;
   baseUrl: string;
   notificationId: string;
-  appId: string;
+  userId: string;
 }) => {
   const logger = getLogger();
   const client = createUdpDomainClient({
@@ -109,25 +103,25 @@ export const getUserProfile = async ({
     baseUrl,
   });
 
-  let preferencesResponse = await getNotificationPreferences(client, appId);
+  let notificationsResponse = await getNotificationPreferences(client, userId);
 
-  if (!preferencesResponse) {
+  if (!notificationsResponse) {
     logger.debug("User settings not found, creating user");
     await createUser({
       notificationId,
-      appId,
+      userId,
       client,
     });
-    preferencesResponse = await getNotificationPreferences(client, appId);
+    notificationsResponse = await getNotificationPreferences(client, userId);
 
-    if (!preferencesResponse) {
+    if (!notificationsResponse) {
       throw new createHttpError.BadGateway();
     }
   }
 
   return userProfile({
     notificationId,
-    appId,
-    preferences: preferencesResponse.preferences,
+    userId,
+    notifications: notificationsResponse,
   });
 };

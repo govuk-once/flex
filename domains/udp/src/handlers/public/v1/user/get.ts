@@ -43,12 +43,13 @@ export const handler = createLambdaHandler<
       region: config.AWS_REGION,
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
       notificationId,
-      appId: pairwiseId,
+      userId: pairwiseId,
     });
 
     return jsonResponse(status.OK, userProfile);
   },
   {
+    logLevel: "DEBUG",
     serviceName: "udp-get-user-service",
     middlewares: [
       extractUser,
