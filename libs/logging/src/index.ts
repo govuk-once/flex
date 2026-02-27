@@ -2,15 +2,10 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
 import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
-let loggerInstance: Logger | null = null;
+import { LogSanitizer } from "./sanitizer";
 
-export interface LoggerOptions {
-  logLevel?: string;
-  serviceName: string;
-}
-
-function isValidLogLevel(level: string = ""): level is LogLevel {
-  return [
+function getLogLevel(level: string = "INFO"): LogLevel {
+  return ([
     "TRACE",
     "DEBUG",
     "INFO",
@@ -18,43 +13,63 @@ function isValidLogLevel(level: string = ""): level is LogLevel {
     "ERROR",
     "SILENT",
     "CRITICAL",
-  ].includes(level.toUpperCase());
+  ].find((l) => l === level.toUpperCase()) ?? "INFO") as LogLevel;
 }
 
-/**
- * Returns a cached logger instance, or creates one if it doesn't exist.
- * If context is provided and different from the last used, injects context.
- */
-export function getLogger(options?: LoggerOptions): Logger {
-  if (!options) {
-    if (!loggerInstance) {
-      throw new Error(
-        "Logger instance not initialized. Call getLogger with options first.",
-      );
-    }
-    return loggerInstance;
-  }
+const defaultSanitizer = new LogSanitizer({
+  keyPatterns: [
+    /secret/i,
+    /token/i,
+    /password/i,
+    /passwd/i,
+    /authorization/i,
+    /apikey/i,
+    /api_key/i,
+    /credential/i,
+    /private.?key/i,
+    /access.?key/i,
+    /client.?secret/i,
+    /signing/i,
+  ],
+  valuePatterns: [
+    /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/, // JWT tokens
+  ],
+});
 
-  const logLevel =
-    options.logLevel?.toUpperCase() ??
-    process.env.LOG_LEVEL?.toUpperCase() ??
-    "INFO";
+export interface LoggerOptions {
+  logLevel?: string;
+  serviceName: string;
+  sanitizer?: LogSanitizer;
+}
 
-  return (loggerInstance = new Logger({
-    logLevel: isValidLogLevel(logLevel) ? logLevel : "INFO",
+let loggerInstance: Logger | undefined;
+
+export function createLogger(options: LoggerOptions): Logger {
+  const sanitizer = options.sanitizer ?? defaultSanitizer;
+
+  loggerInstance = new Logger({
+    logLevel: getLogLevel(options.logLevel ?? process.env.LOG_LEVEL),
     serviceName: options.serviceName,
-  }));
+    jsonReplacerFn: sanitizer.createReplacer(),
+  });
+
+  return loggerInstance;
 }
 
-/**
- * Creates a child logger from the cached logger instance.
- */
-export function getChildLogger(childContext: Record<string, unknown>): Logger {
+export function getLogger(): Logger {
   if (!loggerInstance) {
-    throw new Error("Logger instance not initialized. Call getLogger first.");
+    throw new Error(
+      "Logger not initialized. Call createLogger() in your createLambdaHandler config.",
+    );
   }
-  return loggerInstance.createChild(childContext);
+  return loggerInstance;
+}
+
+export function getChildLogger(childContext: Record<string, unknown>): Logger {
+  return getLogger().createChild(childContext);
 }
 
 export { injectLambdaContext };
+export type { LogSanitizerOptions } from "./sanitizer";
+export { LogSanitizer } from "./sanitizer";
 export type { Logger };

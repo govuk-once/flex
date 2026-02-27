@@ -1,37 +1,46 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+async function setup() {
+  vi.resetModules();
+  const { createLogger, getLogger, getChildLogger } = await import(".");
+  return { createLogger, getLogger, getChildLogger };
+}
 
 describe("logging", () => {
-  let getLogger: typeof import(".").getLogger;
-  let getChildLogger: typeof import(".").getChildLogger;
-
-  beforeEach(async () => {
-    vi.resetModules();
-    const loggerModule = await import(".");
-    getLogger = loggerModule.getLogger;
-    getChildLogger = loggerModule.getChildLogger;
-  });
-
-  describe("getLogger", () => {
-    it("throws when getLogger is called without options before initialization", () => {
-      expect(() => getLogger()).toThrow(
-        "Logger instance not initialized. Call getLogger with options first.",
-      );
-    });
-
-    it("returns the same logger instance when created with options", () => {
-      const logger = getLogger({
+  describe("createLogger", () => {
+    it("creates a new logger instance", async () => {
+      const { createLogger } = await setup();
+      const logger = createLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
       expect(logger).toBeInstanceOf(Logger);
+    });
+  });
+
+  describe("getLogger", () => {
+    it("throws with a helpful message when called before createLogger", async () => {
+      const { getLogger } = await setup();
+      expect(() => getLogger()).toThrow(
+        "Logger not initialized. Call createLogger() in your createLambdaHandler config.",
+      );
+    });
+
+    it("returns the instance created by createLogger", async () => {
+      const { createLogger, getLogger } = await setup();
+      const logger = createLogger({
+        logLevel: "INFO",
+        serviceName: "test-service",
+      });
       expect(getLogger()).toBe(logger);
     });
   });
 
   describe("getChildLogger", () => {
-    it("creates a child logger from the cached logger", () => {
-      const logger = getLogger({
+    it("creates a child logger from the cached logger", async () => {
+      const { createLogger, getChildLogger } = await setup();
+      const logger = createLogger({
         logLevel: "INFO",
         serviceName: "test-service",
       });
@@ -40,9 +49,10 @@ describe("logging", () => {
       expect(child).not.toBe(logger);
     });
 
-    it("throws when getChildLogger is called before logger is initialized", () => {
+    it("throws when called before logger is initialized", async () => {
+      const { getChildLogger } = await setup();
       expect(() => getChildLogger({ foo: "bar" })).toThrow(
-        "Logger instance not initialized. Call getLogger first.",
+        "Logger not initialized.",
       );
     });
   });

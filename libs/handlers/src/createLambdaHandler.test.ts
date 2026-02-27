@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createLambdaHandler } from "./createLambdaHandler";
 
-vi.spyOn(logger, "getLogger");
+vi.spyOn(logger, "createLogger");
 vi.spyOn(logger, "injectLambdaContext");
 
 const baseLoggerOptions = {
@@ -143,22 +143,6 @@ describe("createLambdaHandler", () => {
   });
 
   describe("logging integration", () => {
-    it("injects logger context into the handler", async ({ response }) => {
-      const expectedResponse = response.ok({ message: "success" });
-      const handler = createLambdaHandler(
-        async () => Promise.resolve(expectedResponse),
-        { ...baseLoggerOptions },
-      );
-
-      await handler(event, context);
-
-      expect(logger.getLogger).toHaveBeenCalledOnce();
-      expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
-        logger.getLogger(),
-        expect.any(Object),
-      );
-    });
-
     it.for([
       { logLevel: "DEBUG", expected: true },
       { logLevel: "debug", expected: true },
@@ -177,7 +161,7 @@ describe("createLambdaHandler", () => {
 
         await handler(event, context);
 
-        expect(logger.getLogger).toHaveBeenCalledOnce();
+        expect(logger.createLogger).toHaveBeenCalledOnce();
         expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
           expect.anything(),
           expect.objectContaining({ logEvent: expected }),
@@ -196,7 +180,7 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logger.getLogger).toHaveBeenCalledOnce();
+      expect(logger.createLogger).toHaveBeenCalledOnce();
       expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         expect.anything(),
         expect.objectContaining({
