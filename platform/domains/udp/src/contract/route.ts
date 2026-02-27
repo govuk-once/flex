@@ -1,12 +1,10 @@
-import type { ApiResult } from "@flex/flex-fetch";
 import { getHeader } from "@flex/utils";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import type { UdpRemoteClient } from "../client";
-import { inboundPreferencesRequestSchema } from "../schemas/inbound/preferences";
-import { inboundCreateUserRequestSchema } from "../schemas/inbound/user";
+import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
+import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import type { RouteContract } from "./types";
 
 const INTERNAL_ROUTES = {
@@ -27,98 +25,58 @@ export const ROUTE_CONTRACTS = {
     method: "POST",
     inboundPath: INTERNAL_ROUTES.user,
     remotePath: UDP_REMOTE_ROUTES.user,
-    remoteExecutor: makeExecuteRemote(
-      async (event) => ({
-        remoteBody: await parseAndMapBody(
-          inboundCreateUserRequestSchema,
-          (inbound) => inbound,
-          event,
-        ),
-      }),
-      (client, { remoteBody }) => client.createUser(remoteBody),
-      () => undefined,
-    ),
+    toRemote: async (event) =>
+      parseAndMapBody(inboundCreateUserRequestSchema, event),
+    callRemote: (client, data) => client.user.create(data),
   },
   "POST:/v1/notifications": {
     operation: "updateNotificationPreferences",
     method: "POST",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
-    remoteExecutor: makeExecuteRemote(
-      async (event) => ({
-        requestingServiceUserId: assertRequiredHeaderAndReturn(
-          event,
-          "requesting-service-user-id",
-        ),
-        remoteBody: await parseAndMapBody(
-          inboundPreferencesRequestSchema,
-          (inbound) => ({
-            data: {
-              consentStatus: inbound.preferences.notifications.consentStatus,
-            },
-          }),
-          event,
-        ),
-      }),
-      (client, { remoteBody, requestingServiceUserId }) =>
-        client.updatePreferences(remoteBody, requestingServiceUserId),
-      (remote) => ({
-        preferences: {
-          notifications: {
-            consentStatus: remote.data.consentStatus,
-          },
-        },
-      }),
-    ),
+    toRemote: async (event) => {
+      const data = await parseAndMapBody(
+        inboundCreateOrUpdateNotificationsRequestSchema,
+        event,
+      );
+      const requestingServiceUserId = assertRequiredHeaderAndReturn(
+        event,
+        "requesting-service-user-id",
+      );
+      return { data, requestingServiceUserId };
+    },
+    callRemote: (client, data) =>
+      client.notifications.update(data, data.requestingServiceUserId),
+    toDomain: (remote) => remote.data,
   },
   "GET:/v1/notifications": {
     operation: "getNotificationPreferences",
     method: "GET",
     inboundPath: INTERNAL_ROUTES.notifications,
     remotePath: UDP_REMOTE_ROUTES.notifications,
-    remoteExecutor: makeExecuteRemote(
-      (event) =>
-        Promise.resolve({
-          requestingServiceUserId: assertRequiredHeaderAndReturn(
-            event,
-            "requesting-service-user-id",
-          ),
-        }),
-      (client, { requestingServiceUserId }) =>
-        client.getPreferences(requestingServiceUserId),
-      (remote) => ({
-        preferences: {
-          notifications: {
-            consentStatus: remote.data.consentStatus,
-          },
-        },
-      }),
-    ),
+    toRemote: (event) => {
+      const requestingServiceUserId = assertRequiredHeaderAndReturn(
+        event,
+        "requesting-service-user-id",
+      );
+      return Promise.resolve({ requestingServiceUserId });
+    },
+    callRemote: (client, data) =>
+      client.notifications.get(data.requestingServiceUserId),
+    toDomain: (remote) => remote.data,
   },
 } as const satisfies Record<string, RouteContract>;
 
-export function matchToRouteContract(
-  method: string,
-  path: string,
-): RouteContract | undefined {
-  const key = `${method.toUpperCase()}:${path}`;
-  if (key in ROUTE_CONTRACTS) {
-    return ROUTE_CONTRACTS[key as keyof typeof ROUTE_CONTRACTS];
-  }
-  return undefined;
-}
-
-async function parseAndMapBody<TSchema extends z.ZodType, TRemoteBody>(
-  schema: TSchema,
-  toRemoteBody: (inbound: z.output<TSchema>) => TRemoteBody,
+async function parseAndMapBody<T extends z.ZodType>(
+  schema: T,
   event: APIGatewayProxyEvent,
-): Promise<TRemoteBody> {
+): Promise<z.infer<T>> {
   const body = parseRequestBody(event.body);
-  const data = await schema.safeParseAsync(body);
-  if (!data.success) {
-    throw new createHttpError.BadRequest("Invalid request body");
+  const result = await schema.safeParseAsync(body);
+  if (!result.success) {
+    throw new createHttpError.BadRequest(result.error.message);
   }
-  return toRemoteBody(data.data);
+  return result.data;
 }
 
 function assertRequiredHeaderAndReturn(
@@ -141,29 +99,4 @@ function parseRequestBody(body: string | null): unknown {
   } catch {
     throw new createHttpError.BadRequest("Invalid JSON body");
   }
-}
-
-function makeExecuteRemote<TRemoteRequest, TRemoteResponse, TDomainResponse>(
-  toRemote: (event: APIGatewayProxyEvent) => Promise<TRemoteRequest>,
-  callRemote: (
-    client: UdpRemoteClient,
-    input: TRemoteRequest,
-  ) => Promise<ApiResult<TRemoteResponse>>,
-  fromRemote: (remote: TRemoteResponse) => TDomainResponse,
-) {
-  return async (
-    event: APIGatewayProxyEvent,
-    client: UdpRemoteClient,
-  ): Promise<ApiResult<TDomainResponse>> => {
-    const request = await toRemote(event);
-    const result = await callRemote(client, request);
-    if (!result.ok) {
-      return result;
-    }
-    return {
-      ok: true,
-      status: result.status,
-      data: fromRemote(result.data),
-    };
-  };
 }

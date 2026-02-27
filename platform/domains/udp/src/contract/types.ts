@@ -1,7 +1,15 @@
-import type { ApiResult } from "@flex/flex-fetch";
+import { ApiResult } from "@flex/flex-fetch";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 
 import type { UdpRemoteClient } from "../client";
+import { DomainNotificationsResponse } from "../schemas/domain/notifications";
+import type {
+  CreateOrUpdateNotificationsRequest,
+  CreateOrUpdateNotificationsResponse,
+  GetNotificationsRequest,
+  NotificationsResponse,
+} from "../schemas/remote/notifications";
+import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
 
 export type RouteOperation =
   | "getNotificationPreferences"
@@ -11,34 +19,44 @@ export type RouteOperation =
 type BaseRouteContract<
   TOp extends RouteOperation,
   TMethod extends "GET" | "POST" | "PUT" | "PATCH",
+  TRemoteRequest,
+  TRemoteResponse,
   TDomainResponse,
 > = {
   operation: TOp;
   method: TMethod;
   inboundPath: string;
   remotePath: string;
-  remoteExecutor: (
-    event: APIGatewayProxyEvent,
+  toRemote: (event: APIGatewayProxyEvent) => Promise<TRemoteRequest>;
+  callRemote: (
     client: UdpRemoteClient,
-  ) => Promise<ApiResult<TDomainResponse>>;
+    input: TRemoteRequest,
+  ) => Promise<ApiResult<TRemoteResponse>>;
+  toDomain?: (remote: TRemoteResponse) => TDomainResponse;
 };
 
 export type GetNotificationPreferencesRouteContract = BaseRouteContract<
   "getNotificationPreferences",
   "GET",
-  unknown
+  GetNotificationsRequest,
+  NotificationsResponse,
+  DomainNotificationsResponse
 >;
 
 export type UpdateNotificationPreferencesRouteContract = BaseRouteContract<
   "updateNotificationPreferences",
   "POST",
-  unknown
+  CreateOrUpdateNotificationsRequest,
+  CreateOrUpdateNotificationsResponse,
+  DomainNotificationsResponse
 >;
 
 export type CreateUserRouteContract = BaseRouteContract<
   "createUser",
   "POST",
-  unknown
+  CreateUserRequest,
+  unknown,
+  CreateUserResponse
 >;
 
 export type RouteContract =

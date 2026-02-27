@@ -1,7 +1,7 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { inboundCreateUserRequestSchema } from "../inbound/user";
+import { inboundCreateUserRequestSchema } from "../domain/user";
 
 // TODO: true ACL should re-map inbound to remote
 export const remoteCreateUserRequestSchema = inboundCreateUserRequestSchema;
