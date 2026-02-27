@@ -7,7 +7,6 @@ export { buildUrl } from "./http/url";
 export { findProjectRoot, getStackOutputs, sanitiseStageName } from "./infra";
 export * from "./openapi/domain/hello-world";
 export * from "./openapi/domain/topics";
-export * from "./params";
 export { jsonResponse } from "./response/json";
 export * from "./schemas/common";
 export * from "./schemas/domain/hello-world";

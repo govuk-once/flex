@@ -1,5 +1,4 @@
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
-import { getValidatedSecret } from "@flex/utils";
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { importJWK, JWK, SignJWT } from "jose";
 import z from "zod";
 
@@ -39,25 +38,27 @@ class StubTokenGenerator implements BaseTokenGenerator {
 }
 
 export async function getStubTokenGenerator(): Promise<StubTokenGenerator> {
-  const client = new SecretsManagerClient();
-  const privateKeyData = await getValidatedSecret(
-    client,
+  const rawSecret = await getSecret(
     "/development/flex-secret/auth/e2e/private_jwk",
-    z.object({
-      alg: z.string(),
-      d: z.string(),
-      dp: z.string(),
-      dq: z.string(),
-      e: z.string(),
-      kty: z.string(),
-      n: z.string(),
-      p: z.string(),
-      q: z.string(),
-      qi: z.string(),
-      use: z.string(),
-      kid: z.string(),
-    }),
+    { transform: "json" },
   );
+
+  const PrivateKeySchema = z.object({
+    alg: z.string(),
+    d: z.string(),
+    dp: z.string(),
+    dq: z.string(),
+    e: z.string(),
+    kty: z.string(),
+    n: z.string(),
+    p: z.string(),
+    q: z.string(),
+    qi: z.string(),
+    use: z.string(),
+    kid: z.string(),
+  });
+
+  const privateKeyData = PrivateKeySchema.parse(rawSecret);
 
   const privateKey = (await importJWK(privateKeyData, "RS256")) as CryptoKey;
   const publicJWKS = {

@@ -1,6 +1,5 @@
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
-import { SSMClient } from "@aws-sdk/client-ssm";
-import { getValidatedParameter, getValidatedSecret } from "@flex/utils";
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import axios, { AxiosInstance } from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { load } from "cheerio";
@@ -156,46 +155,48 @@ class TokenGenerator implements BaseTokenGenerator {
   }
 }
 
+const UserSecretSchema = z.object({
+  email: z.email(),
+  password: z.string(),
+  totp: z.string(),
+});
+
+const ClientSecretSchema = z.object({
+  clientSecret: z.string(),
+});
+
 export async function getTokenGenerator(
   stage: "staging" | "production",
 ): Promise<TokenGenerator> {
-  const secretsManagerClient = new SecretsManagerClient();
-  const ssmClient = new SSMClient();
+  const [
+    userSecretRaw,
+    clientSecretRaw,
+    clientId,
+    oneLoginEnvironment,
+    authUrl,
+  ] = await Promise.all([
+    getSecret(`/${stage}/flex-secret/e2e/test_user`, {
+      transform: "json",
+    }),
+    getSecret(`/${stage}/flex-secret/auth/client_secret`, {
+      transform: "json",
+    }),
+    getParameter(`/${stage}/flex-param/auth/client-id`),
+    getParameter(`/${stage}/flex-param/auth/one-login-environment`),
+    getParameter(`/${stage}/flex-param/auth/auth-url`),
+  ]);
 
-  const [userSecret, clientSecret, clientId, oneLoginEnvironment, authUrl] =
-    await Promise.all([
-      getValidatedSecret(
-        secretsManagerClient,
-        `/${stage}/flex-secret/e2e/test_user`,
-        z.object({
-          email: z.email(),
-          password: z.string(),
-          totp: z.string(),
-        }),
-      ),
-      getValidatedSecret(
-        secretsManagerClient,
-        `/${stage}/flex-secret/auth/client_secret`,
-        z.object({
-          clientSecret: z.string(),
-        }),
-      ),
-      getValidatedParameter(ssmClient, `/${stage}/flex-param/auth/client-id`),
-      getValidatedParameter(
-        ssmClient,
-        `/${stage}/flex-param/auth/one-login-environment`,
-      ),
-      getValidatedParameter(ssmClient, `/${stage}/flex-param/auth/auth-url`),
-    ]);
+  const userSecret = UserSecretSchema.parse(userSecretRaw);
+  const clientSecret = ClientSecretSchema.parse(clientSecretRaw);
 
   const config: JwtAuthConfig = {
     email: userSecret.email,
     password: userSecret.password,
     totp: userSecret.totp,
-    clientId,
+    clientId: clientId as string,
     clientSecret: clientSecret.clientSecret,
-    oneLoginEnvironment,
-    authUrl,
+    oneLoginEnvironment: oneLoginEnvironment as string,
+    authUrl: authUrl as string,
     redirectUri: "localhost:3000",
   };
 

@@ -459,9 +459,6 @@ importers:
       '@aws-sdk/client-secrets-manager':
         specifier: 3.985.0
         version: 3.985.0
-      '@aws-sdk/client-ssm':
-        specifier: 3.985.0
-        version: 3.985.0
       '@flex/config':
         specifier: workspace:*
         version: link:../config
@@ -530,12 +527,6 @@ importers:
         version: 5.4.6(zod@4.3.6)
     devDependencies:
       '@aws-sdk/client-cloudformation':
-        specifier: 3.985.0
-        version: 3.985.0
-      '@aws-sdk/client-secrets-manager':
-        specifier: 3.985.0
-        version: 3.985.0
-      '@aws-sdk/client-ssm':
         specifier: 3.985.0
         version: 3.985.0
       '@flex/config':
