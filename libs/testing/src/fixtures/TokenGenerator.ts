@@ -144,7 +144,7 @@ class TokenGenerator implements BaseTokenGenerator {
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           code,
-          redirect_uri: this.config.redirectUri,
+          redirect_uri: `http://${this.config.redirectUri}`,
           code_verifier,
           scope: "email openid",
         }),
@@ -183,9 +183,9 @@ export async function getTokenGenerator(
       getValidatedParameter(ssmClient, `/${stage}/flex-param/auth/client-id`),
       getValidatedParameter(
         ssmClient,
-        `/${stage}/flex-param/auth/oneLoginEnvironment`,
+        `/${stage}/flex-param/auth/one-login-environment`,
       ),
-      getValidatedParameter(ssmClient, `/${stage}/flex-param/auth/authUrl`),
+      getValidatedParameter(ssmClient, `/${stage}/flex-param/auth/auth-url`),
     ]);
 
   const config: JwtAuthConfig = {

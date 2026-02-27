@@ -31,10 +31,6 @@ describe("private gateway", () => {
     );
   });
 
-  /**
-   * TODO:
-   *  - fix BUG FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME is undefined
-   */
   it.todo(
     "rejects service-to-service call when route permissions are missing",
     async ({ cloudfront }) => {

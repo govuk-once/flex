@@ -1,11 +1,6 @@
 import { it } from "@flex/testing/e2e";
 import { describe, expect, inject } from "vitest";
 
-/**
- * TODO:
- *  - Fix e2e tests currently getting
- *    * No method found matching route error?
- */
 describe.todo("UDP domain", () => {
   const { JWT } = inject("e2eEnv");
   const domainVersion = "v1";
