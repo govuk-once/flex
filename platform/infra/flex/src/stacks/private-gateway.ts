@@ -26,8 +26,8 @@ export class FlexPrivateGatewayStack extends GovUkOnceStack {
     });
 
     const internalGateway = new FlexInternalGateway(this, "InternalGateway");
-    this.internalGateway = internalGateway;
 
+    this.internalGateway = internalGateway;
     this.privateApiRef = {
       restApiId: internalGateway.privateGateway.restApiId,
       stageName: internalGateway.privateGateway.deploymentStage.stageName,

@@ -1,4 +1,11 @@
-import { IDomain, IDomainEndpoint, Permission } from "@flex/sdk";
+import type {
+  FunctionConfig,
+  IacDomainConfig,
+  IDomain,
+  IDomainEndpoint,
+  Permission,
+  RouteAccess,
+} from "@flex/sdk";
 import {
   FlexKmsKeyAlias,
   FlexParam,
@@ -9,18 +16,18 @@ import {
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { Duration } from "aws-cdk-lib";
+import type { IResource, IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
-  IResource,
-  IRestApi,
   LambdaIntegration,
   Resource,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { IRole } from "aws-cdk-lib/aws-iam";
-import { IKey } from "aws-cdk-lib/aws-kms";
-import { IFunction } from "aws-cdk-lib/aws-lambda";
-import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
-import { IStringParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
+import type { IRole } from "aws-cdk-lib/aws-iam";
+import type { IKey } from "aws-cdk-lib/aws-kms";
+import type { IFunction } from "aws-cdk-lib/aws-lambda";
+import type { ISecret } from "aws-cdk-lib/aws-secretsmanager";
+import type { IStringParameter } from "aws-cdk-lib/aws-ssm";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import crypto from "crypto";
 
@@ -31,13 +38,21 @@ import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { FlexEphemeralParam, getParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
-import { PrivateApiRef } from "./private-gateway";
-
-export interface PublicRouteBinding {
-  path: string;
-  method: string;
-  handler: IFunction;
-}
+import { grantRoutePermissions } from "../utils/integrations";
+import { toFunctionConfig } from "../utils/lambda";
+import {
+  grantRouteResources,
+  importResources,
+  resolveApiResource,
+} from "../utils/resources";
+import {
+  flattenRoutes,
+  getFunctionAccess,
+  resolveRouteReferences,
+  toApiGatewayPath,
+  toPascalCase,
+} from "../utils/routes";
+import type { PrivateApiRef } from "./private-gateway";
 
 interface FlexDomainStackProps {
   domain: IDomain;
@@ -62,6 +77,7 @@ export class FlexDomainStack extends GovUkOnceStack {
         Source: "https://github.com/govuk-once/flex",
       },
     });
+
     const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
       restApiId: props.privateApi.restApiId,
       rootResourceId: props.privateApi.domainsRootResourceId,
@@ -130,6 +146,8 @@ export class FlexDomainStack extends GovUkOnceStack {
             path: newPath,
             method,
             handler: domainEndpointFn.function,
+            // NOTE: Default to false, this field is used in PoC
+            isPublicAccess: false,
           });
         }
       }
@@ -383,5 +401,148 @@ export class FlexDomainStack extends GovUkOnceStack {
       allowedRoutePrefixes,
       allowedMethods,
     });
+  }
+}
+
+// ----------------------------------------------------------------------------
+// PoC
+// ----------------------------------------------------------------------------
+
+export interface PublicRouteBinding {
+  readonly handler: IFunction;
+  readonly method: string;
+  readonly path: string;
+  readonly isPublicAccess: boolean;
+}
+
+interface FlexDomainStackPoCProps {
+  config: IacDomainConfig;
+  privateApi: PrivateApiRef;
+}
+
+export class FlexDomainStackPoC extends GovUkOnceStack {
+  public readonly publicRouteBindings: PublicRouteBinding[] = [];
+
+  constructor(
+    scope: Construct,
+    id: string,
+    { config, privateApi }: FlexDomainStackPoCProps,
+  ) {
+    super(scope, id, {
+      tags: {
+        Product: "GOV.UK",
+        System: "FLEX",
+        Owner: config.owner ?? "N/A",
+        ResourceOwner: config.name,
+        Source: "https://github.com/govuk-once/flex",
+      },
+    });
+
+    const privateRestApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
+      restApiId: privateApi.restApiId,
+      rootResourceId: privateApi.domainsRootResourceId,
+    });
+
+    const privateDomainsRoot = Resource.fromResourceAttributes(
+      this,
+      "PrivateDomainsRoot",
+      {
+        path: "/domains",
+        resourceId: privateApi.domainsRootResourceId,
+        restApi: privateRestApi,
+      },
+    );
+
+    const routes = flattenRoutes(config.routes);
+
+    const [resourceReferences, integrationReferences] = resolveRouteReferences(
+      routes,
+      { resources: config.resources, integrations: config.integrations },
+    );
+
+    const resources = importResources(this, resourceReferences);
+
+    routes.forEach(
+      ({ gateway, handlerPath, method, path, routeConfig, version }) => {
+        const functionId = toPascalCase(
+          `${config.name}-${gateway}-${version}-${routeConfig.name}`,
+        );
+        const routeAccess = getFunctionAccess(
+          routeConfig.access,
+          config.common?.access,
+        );
+
+        const lambda = this.#createFunction(functionId, routeAccess, {
+          domain: config.name,
+          entry: getDomainEntry(config.name, handlerPath),
+          ...toFunctionConfig(routeConfig.function, config.common?.function),
+        });
+
+        if (routeConfig.resources?.length) {
+          grantRouteResources(lambda.function, {
+            keys: routeConfig.resources,
+            resources,
+          });
+        }
+
+        if (routeConfig.integrations?.length) {
+          grantRoutePermissions(lambda.function, {
+            keys: routeConfig.integrations,
+            integrations: integrationReferences,
+            api: privateRestApi,
+            domain: config.name,
+          });
+        }
+
+        const resourcePath = toApiGatewayPath({
+          domain: config.name,
+          gateway,
+          version,
+          path,
+        });
+
+        if (gateway === "public") {
+          this.publicRouteBindings.push({
+            handler: lambda.function,
+            method,
+            path: resourcePath,
+            isPublicAccess: routeAccess === "public",
+          });
+        }
+
+        if (gateway === "private") {
+          const resource = resolveApiResource(privateDomainsRoot, resourcePath);
+
+          const resourceMethod = resource.addMethod(
+            method,
+            new LambdaIntegration(lambda.function),
+          );
+
+          applyCheckovSkip(
+            resourceMethod,
+            "CKV_AWS_59",
+            "Private API - access restricted by VPC endpoint and resource policy",
+          );
+        }
+      },
+    );
+  }
+
+  #createFunction(
+    id: string,
+    access: RouteAccess,
+    props: ReturnType<typeof toFunctionConfig> & {
+      domain: string;
+      entry: string;
+    },
+  ) {
+    switch (access) {
+      case "isolated":
+        return new FlexPrivateIsolatedFunction(this, id, props);
+      case "private":
+        return new FlexPrivateEgressFunction(this, id, props);
+      case "public":
+        return new FlexPublicFunction(this, id, props);
+    }
   }
 }
