@@ -29,8 +29,6 @@ export class FlexAuthentication extends Construct {
       "AuthorizerFunction",
       {
         entry: getPlatformEntry("auth", "handler.ts"),
-        /** Timing out on cold starts when using stub */
-        timeout: Duration.seconds(15),
         environment: {
           USERPOOL_ID_PARAM_NAME: userPoolId.parameterName,
           CLIENT_ID_PARAM_NAME: clientId.parameterName,

@@ -1,7 +1,11 @@
-import { SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
-import { getValidatedSecret } from "@flex/utils";
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import type { APIGatewayProxyResultV2 } from "aws-lambda";
 import { z } from "zod";
+
+const SecretSchema = z.object({
+  n: z.string(),
+  kid: z.string(),
+});
 
 interface JwkPublicKey {
   alg: string;
@@ -16,49 +20,38 @@ interface JwksResponse {
   keys: JwkPublicKey[];
 }
 
-const secretClient = new SecretsManagerClient();
-let cachedJwks: JwksResponse | null = null;
+const SECRET_NAME = "/development/flex-secret/auth/e2e/private_jwk";
+const CACHE_MAX_AGE = 300;
 
 export const handler = async (): Promise<APIGatewayProxyResultV2> => {
   try {
-    if (cachedJwks) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cachedJwks),
-      };
-    }
+    const rawSecret = await getSecret(SECRET_NAME, {
+      maxAge: CACHE_MAX_AGE,
+      transform: "json",
+    });
 
-    const privateKeyData = await getValidatedSecret(
-      secretClient,
-      "/development/flex-secret/auth/e2e/private_jwk",
-      z.object({
-        n: z.string(),
-        kid: z.string(),
-      }),
-    );
+    const validatedSecret = SecretSchema.parse(rawSecret);
 
-    const jwks = {
+    const jwks: JwksResponse = {
       keys: [
         {
           alg: "RS256",
           e: "AQAB",
           kty: "RSA",
-          n: privateKeyData.n,
+          n: validatedSecret.n,
           use: "sig",
-          kid: privateKeyData.kid,
+          kid: validatedSecret.kid,
         },
       ],
     };
 
-    cachedJwks = jwks;
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(jwks),
     };
   } catch (error) {
-    console.error("Error fetching JWKS:", error);
+    console.error("Error fetching or validating JWKS:", error);
 
     return {
       statusCode: 500,

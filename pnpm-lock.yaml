@@ -571,9 +571,6 @@ importers:
       '@aws-lambda-powertools/parameters':
         specifier: 2.31.0
         version: 2.31.0(@aws-sdk/client-secrets-manager@3.985.0)(@aws-sdk/client-ssm@3.985.0)(@middy/core@7.0.2)
-      '@aws-sdk/client-secrets-manager':
-        specifier: 3.985.0
-        version: 3.985.0
       '@aws-sdk/client-ssm':
         specifier: 3.985.0
         version: 3.985.0
@@ -586,9 +583,6 @@ importers:
       '@flex/params':
         specifier: workspace:*
         version: link:../../../libs/params
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../../libs/utils
       aws-jwt-verify:
         specifier: 5.1.1
         version: 5.1.1
