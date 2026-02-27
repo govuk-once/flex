@@ -20,7 +20,7 @@ export const endpoints = defineDomain({
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                 "/flex-core/private-gateway/url",
             },
-            timeoutSeconds: 15,
+            timeoutSeconds: 25,
             permissions: [
               {
                 type: "domain",
@@ -41,7 +41,7 @@ export const endpoints = defineDomain({
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                 "/flex-core/private-gateway/url",
             },
-            timeoutSeconds: 10,
+            timeoutSeconds: 20,
             permissions: [
               {
                 type: "domain",

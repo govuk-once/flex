@@ -33,7 +33,7 @@ export function createUdpServiceGateway(
         FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN_PARAM_NAME:
           udpConsumerConfigArn.parameterName,
       },
-      timeout: Duration.seconds(10),
+      timeout: Duration.seconds(30),
     },
   );
 
