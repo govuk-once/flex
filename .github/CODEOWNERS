@@ -1,0 +1,38 @@
+# Default owner for everything in the repo
+
+* @govuk-once/govuk-once-flex-developers
+
+# Github Actions workflows
+
+/.github/workflows/ @govuk-once/govuk-once-flex-developers
+
+# Github configuration (dependabot, CODEOWNERS, etc.)
+
+/.github/ @govuk-once/govuk-once-flex-developers
+
+# Platform infrastructure
+
+/platform/infra/ @govuk-once/govuk-once-flex-developers
+
+# Platform domains (auth, gateways, etc.)
+
+/platform/domains/ @govuk-once/govuk-once-flex-developers
+
+# Platform libraries
+
+/libs/ @govuk-once/govuk-once-flex-developers
+
+# Domain application source code
+# TODO: Assign to respective domain teams as they onboard
+# Example:
+# /domains/udp/ @govuk-once/govuk-once-udp-developers
+
+/domains/ @govuk-once/govuk-once-flex-developers
+
+# End-to-end tests
+
+/tests/ @govuk-once/govuk-once-flex-developers
+
+# Documentation
+
+/docs/ @govuk-once/govuk-once-flex-developers
