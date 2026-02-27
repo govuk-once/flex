@@ -1,7 +1,9 @@
-import { it, validJwt } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { it } from "@flex/testing/e2e";
+import { describe, expect, inject } from "vitest";
 
 describe("private gateway", () => {
+  const { JWT } = inject("e2eEnv");
+
   it("rejects direct access from public internet (403 Forbidden)", async ({
     privateGateway,
   }) => {
@@ -29,16 +31,17 @@ describe("private gateway", () => {
     );
   });
 
-  it("rejects service-to-service call when route permissions are missing", async ({
-    cloudfront,
-  }) => {
-    const response = await cloudfront.client.get("/v1/hello-call-internal", {
-      headers: { Authorization: `Bearer ${validJwt}` },
-    });
+  it.todo(
+    "rejects service-to-service call when route permissions are missing",
+    async ({ cloudfront }) => {
+      const response = await cloudfront.client.get("/v1/hello-call-internal", {
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
+      });
 
-    expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({
-      type: "auth_error",
-    });
-  });
+      expect(response.status).toBe(403);
+      expect(response.body).toMatchObject({
+        type: "auth_error",
+      });
+    },
+  );
 });

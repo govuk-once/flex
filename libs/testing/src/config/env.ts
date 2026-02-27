@@ -6,6 +6,10 @@ export const e2eEnvSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL: Url.describe(
     "Base URL of the deployed private gateway",
   ),
+  JWT: z.object({
+    VALID: z.string(),
+    INVALID: z.string(),
+  }),
   STAGE: z
     .string()
     .optional()
