@@ -16,24 +16,8 @@ import { createUdpDomainClient } from ".";
 const BASE_URL = "https://udp-domain.example.com";
 const region = "us-east-1";
 
-vi.mock("@flex/logging", () => ({
-  getLogger: vi.fn().mockReturnValue({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
-
-vi.mock("@flex/flex-fetch", async (actual) => ({
-  ...(await actual()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
+vi.mock("@flex/logging");
+vi.mock("@flex/flex-fetch");
 
 describe("UdpDomainClient", () => {
   beforeEach(() => {

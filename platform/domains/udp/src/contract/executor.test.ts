@@ -3,14 +3,7 @@ import { beforeEach, describe, expect, vi } from "vitest";
 
 import { execute } from "./executor";
 
-vi.mock("@flex/logging", () => ({
-  getLogger: vi.fn().mockReturnValue({
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock("@flex/logging");
 
 const remoteClient = {
   user: {

@@ -1,4 +1,9 @@
-import { getLogger, injectLambdaContext, LoggerOptions } from "@flex/logging";
+import {
+  injectLambdaContext,
+  logger,
+  setLogLevel,
+  setLogServiceName,
+} from "@flex/logging";
 import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import type { Context } from "aws-lambda";
@@ -11,18 +16,6 @@ import { clearTmp } from "./cleanup";
  * @template TEvent - The type of the Lambda event
  * @template TResult - The type of the Lambda response
  * @template TContext - The type of the Lambda context
- * @example
- * ```typescript
- * const handler = createLambdaHandler<
- *   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
- *   APIGatewayProxyResultV2,
- *   ContextWithPairwiseId & NotificationSecretContext
- * >(
- *   async (event: APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>, context: ContextWithPairwiseId & NotificationSecretContext) => {
- *     return { statusCode: 200, body: JSON.stringify({ message: "Hello, World!" }) };
- *   }
- * );
- * ```
  */
 type CustomHandler<TEvent, TResult, TContext extends Context = Context> = (
   event: TEvent,
@@ -37,11 +30,13 @@ export type LambdaHandlerConfig<
   TResult = unknown,
   TContext = unknown,
 > = {
+  serviceName: string;
+  logLevel?: string;
   /**
    * Array of middy middlewares to apply to the handler
    */
   middlewares?: Array<MiddlewareObj<TEvent, TResult, Error, TContext>>;
-} & LoggerOptions;
+};
 
 /**
  * Creates a generic Lambda handler wrapped with middy middleware framework
@@ -49,21 +44,8 @@ export type LambdaHandlerConfig<
  * @template TEvent - The type of the Lambda event
  * @template TResult - The type of the Lambda response
  * @param handler - The core Lambda handler function
- * @param config - Optional configuration for middlewares
+ * @param config - Configuration for the handler
  * @returns A middy-wrapped Lambda handler
- *
- * @example
- * ```typescript
- * const handler = createLambdaHandler(
- *   async (event: CustomEvent) => {
- *     return { result: 'success' };
- *   },
- *   {
- *     loggerOptions: { level: 'INFO', serviceName: 'my-service' },
- *     middlewares: [customMiddleware],
- *   }
- * );
- * ```
  */
 export function createLambdaHandler<
   TEvent = unknown,
@@ -73,16 +55,19 @@ export function createLambdaHandler<
   handler: CustomHandler<TEvent, TResult, TContext>,
   config: LambdaHandlerConfig<TEvent, TResult, TContext>,
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
+  setLogServiceName(config.serviceName);
+  if (config.logLevel) {
+    setLogLevel(config.logLevel);
+  }
+  const logLevel = logger.getLevelName();
+
   const middyHandler = middy<TEvent, TResult, Error, TContext>()
     .use(httpErrorHandler())
-    .handler(handler)
-    .before(() => {
-      clearTmp();
-    });
-  const logLevel = config.logLevel?.toUpperCase();
+    .handler(handler);
 
   middyHandler.use(
-    injectLambdaContext(getLogger(config), {
+    injectLambdaContext(logger, {
+      clearState: true,
       logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
       correlationIdPath: "requestContext.requestId",
     }),

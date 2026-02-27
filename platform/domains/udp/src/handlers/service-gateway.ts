@@ -1,5 +1,5 @@
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
@@ -26,7 +26,6 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
-    const logger = getLogger();
     try {
       const config = await getConfig(configSchema);
       const consumerConfig = await getConsumerConfig(
@@ -63,7 +62,6 @@ function mapRemoteErrorToGatewayResponse(error: {
   message: string;
   body?: unknown;
 }): APIGatewayProxyResultV2 {
-  const logger = getLogger();
   logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
     logger.debug("UDP upstream service unavailable", { error });

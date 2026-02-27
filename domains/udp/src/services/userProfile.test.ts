@@ -13,24 +13,8 @@ import {
 
 import { getUserProfile } from "./userProfile";
 
-vi.mock("@flex/logging", () => ({
-  getLogger: vi.fn().mockReturnValue({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
-
-vi.mock("@flex/flex-fetch", async (actual) => ({
-  ...(await actual()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
+vi.mock("@flex/logging");
+vi.mock("@flex/flex-fetch");
 
 describe("getUserProfile", () => {
   const notificationId = createNotificationId();
