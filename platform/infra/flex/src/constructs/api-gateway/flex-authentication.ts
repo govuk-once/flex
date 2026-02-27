@@ -1,5 +1,6 @@
 import { importFlexParameter } from "@platform/core/outputs";
 import { getEnvConfig } from "@platform/gov-uk-once";
+import { Duration } from "aws-cdk-lib";
 import {
   IAuthorizer,
   IdentitySource,
@@ -28,6 +29,8 @@ export class FlexAuthentication extends Construct {
       "AuthorizerFunction",
       {
         entry: getPlatformEntry("auth", "handler.ts"),
+        // Timing out on the stub/dev env as takes longer than 3 seconds on cold starts
+        timeout: Duration.seconds(10),
         environment: {
           USERPOOL_ID_PARAM_NAME: userPoolId.parameterName,
           CLIENT_ID_PARAM_NAME: clientId.parameterName,
