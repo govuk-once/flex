@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import { createUdpDomainClient, UdpDomainClient } from "../client";
@@ -13,7 +13,6 @@ const createUser = async ({
   appId: string;
   client: UdpDomainClient;
 }) => {
-  const logger = getLogger();
   const response = await client.domain.createUser({
     notificationId,
     appId,
@@ -55,8 +54,6 @@ const getNotificationPreferences = async (
   client: UdpDomainClient,
   appId: string,
 ) => {
-  const logger = getLogger();
-
   const notificationsResponse = await client.gateway.getPreferences(appId);
 
   if (!notificationsResponse.ok && notificationsResponse.error.status === 404) {
@@ -103,7 +100,6 @@ export const getUserProfile = async ({
   notificationId: string;
   appId: string;
 }) => {
-  const logger = getLogger();
   const client = createUdpDomainClient({
     region,
     baseUrl,

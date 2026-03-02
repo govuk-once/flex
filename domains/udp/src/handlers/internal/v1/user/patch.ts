@@ -1,6 +1,6 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { getConfig } from "@flex/params";
 import { getHeader, jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
@@ -27,8 +27,6 @@ const configSchema = z.object({
 
 export const handler = createLambdaHandler<APIGatewayProxyEvent>(
   async (event) => {
-    const logger = getLogger();
-
     const requestingServiceUserId = getHeader(
       event,
       "requesting-service-user-id",

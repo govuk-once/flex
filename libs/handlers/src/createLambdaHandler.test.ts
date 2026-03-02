@@ -1,4 +1,4 @@
-import * as logger from "@flex/logging";
+import * as logging from "@flex/logging";
 import { context, event, it } from "@flex/testing";
 import type { MiddlewareObj } from "@middy/core";
 import type {
@@ -10,11 +10,11 @@ import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createLambdaHandler } from "./createLambdaHandler";
 
-vi.spyOn(logger, "getLogger");
-vi.spyOn(logger, "injectLambdaContext");
+vi.spyOn(logging, "setLogServiceName");
+vi.spyOn(logging, "setLogLevel");
+vi.spyOn(logging, "injectLambdaContext");
 
 const baseLoggerOptions = {
-  logLevel: "INFO",
   serviceName: "test-service",
 } as const;
 
@@ -143,7 +143,7 @@ describe("createLambdaHandler", () => {
   });
 
   describe("logging integration", () => {
-    it("injects logger context into the handler", async ({ response }) => {
+    it("configures the logger and injects context", async ({ response }) => {
       const expectedResponse = response.ok({ message: "success" });
       const handler = createLambdaHandler(
         async () => Promise.resolve(expectedResponse),
@@ -152,10 +152,13 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logger.getLogger).toHaveBeenCalledOnce();
-      expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
-        logger.getLogger(),
+      expect(logging.setLogServiceName).toHaveBeenCalledExactlyOnceWith(
+        "test-service",
+      );
+      expect(logging.setLogLevel).not.toHaveBeenCalled();
+      expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         expect.any(Object),
+        expect.objectContaining({ logEvent: false }),
       );
     });
 
@@ -177,8 +180,9 @@ describe("createLambdaHandler", () => {
 
         await handler(event, context);
 
-        expect(logger.getLogger).toHaveBeenCalledOnce();
-        expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
+        expect(logging.setLogServiceName).toHaveBeenCalledOnce();
+        expect(logging.setLogLevel).toHaveBeenCalledExactlyOnceWith(logLevel);
+        expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
           expect.anything(),
           expect.objectContaining({ logEvent: expected }),
         );
@@ -196,8 +200,8 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logger.getLogger).toHaveBeenCalledOnce();
-      expect(logger.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
+      expect(logging.setLogServiceName).toHaveBeenCalledOnce();
+      expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         expect.anything(),
         expect.objectContaining({
           correlationIdPath: "requestContext.requestId",

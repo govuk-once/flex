@@ -14,7 +14,7 @@ See [@flex/handlers](/libs/handlers/README.md) for full API documentation.
 
 ```typescript
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
@@ -25,8 +25,6 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
-    const logger = getLogger();
-
     // Business logic
 
     return {
@@ -47,7 +45,7 @@ For handlers behind authentication that need the user's pairwise ID:
 
 ```typescript
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import type { ContextWithPairwiseId, V2Authorizer } from "@flex/middlewares";
 import { extractUser } from "@flex/middlewares";
 import type {
@@ -61,8 +59,6 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId
 >(
   async (event, context) => {
-    const logger = getLogger();
-
     const userId = context.pairwiseId;
 
     return {
@@ -84,7 +80,7 @@ For handlers that need to validate incoming requests:
 
 ```typescript
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
@@ -101,8 +97,6 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
-    const logger = getLogger();
-
     const parseResult = RequestBodySchema.safeParse(event.body);
 
     if (!parseResult.success) {

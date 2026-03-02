@@ -72,7 +72,7 @@ Access the logger via `@flex/logging`:
 
 ```typescript
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
@@ -83,8 +83,6 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
-    const logger = getLogger();
-
     logger.info("Handling request", { path: event.rawPath });
 
     return {
@@ -93,7 +91,6 @@ export const handler = createLambdaHandler<
     };
   },
   {
-    logLevel: "INFO",
     serviceName: "service-name",
   },
 );

@@ -1,6 +1,6 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import {
   type ContextWithPairwiseId,
   extractUser,
@@ -32,7 +32,6 @@ export const handler = createLambdaHandler<
   ContextWithPairwiseId
 >(
   async (event, context) => {
-    const logger = getLogger();
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
       preferencesRequestSchema,

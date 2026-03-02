@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { getConfig } from "@flex/params";
 import { JwtVerifier } from "aws-jwt-verify";
 import { validateCognitoJwtFields } from "aws-jwt-verify/cognito-verifier";
@@ -12,7 +12,6 @@ function extractToken(event: APIGatewayTokenAuthorizerEvent) {
 }
 
 export async function createAuthService() {
-  const logger = getLogger();
   const { AWS_REGION, CLIENT_ID, JWKS_URI, USERPOOL_ID } =
     await getConfig(configSchema);
 

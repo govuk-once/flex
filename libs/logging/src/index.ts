@@ -1,60 +1,52 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
-import { LogLevel } from "@aws-lambda-powertools/logger/types";
+import type { LogLevel } from "@aws-lambda-powertools/logger/types";
 
-let loggerInstance: Logger | null = null;
+import { FlexLogFormatter } from "./formatter";
+import { clampLogLevel } from "./logLevel";
+import { addSecretValue } from "./sanitizer";
 
-export interface LoggerOptions {
-  logLevel?: string;
-  serviceName: string;
-}
+const effectiveLevel = clampLogLevel(
+  process.env.POWERTOOLS_LOG_LEVEL ?? process.env.LOG_LEVEL ?? "INFO",
+  process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
+  process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
+);
 
-function isValidLogLevel(level: string = ""): level is LogLevel {
-  return [
-    "TRACE",
-    "DEBUG",
-    "INFO",
-    "WARN",
-    "ERROR",
-    "SILENT",
-    "CRITICAL",
-  ].includes(level.toUpperCase());
+const formatter = new FlexLogFormatter();
+
+export const logger = new Logger({
+  logLevel: effectiveLevel as LogLevel,
+  logFormatter: formatter,
+});
+
+/**
+ * Sets the service name on the log formatter.
+ * Called by createLambdaHandler — domain devs should not call this directly.
+ */
+export function setLogServiceName(name: string): void {
+  formatter.setServiceName(name);
 }
 
 /**
- * Returns a cached logger instance, or creates one if it doesn't exist.
- * If context is provided and different from the last used, injects context.
+ * Sets the log level on the logger instance (clamped between floor and ceiling).
+ * Called by createLambdaHandler — domain devs should not call this directly.
  */
-export function getLogger(options?: LoggerOptions): Logger {
-  if (!options) {
-    if (!loggerInstance) {
-      throw new Error(
-        "Logger instance not initialized. Call getLogger with options first.",
-      );
-    }
-    return loggerInstance;
-  }
-
-  const logLevel =
-    options.logLevel?.toUpperCase() ??
-    process.env.LOG_LEVEL?.toUpperCase() ??
-    "INFO";
-
-  return (loggerInstance = new Logger({
-    logLevel: isValidLogLevel(logLevel) ? logLevel : "INFO",
-    serviceName: options.serviceName,
-  }));
+export function setLogLevel(level: string): void {
+  const clamped = clampLogLevel(
+    level,
+    process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
+    process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
+  );
+  logger.setLogLevel(clamped as LogLevel);
 }
 
 /**
- * Creates a child logger from the cached logger instance.
+ * Creates a child logger with additional persistent context.
+ * Domain developers use this to decorate logs with request-specific data.
  */
-export function getChildLogger(childContext: Record<string, unknown>): Logger {
-  if (!loggerInstance) {
-    throw new Error("Logger instance not initialized. Call getLogger first.");
-  }
-  return loggerInstance.createChild(childContext);
+export function createChildLogger(context?: Record<string, unknown>): Logger {
+  return logger.createChild({ persistentKeys: context });
 }
 
-export { injectLambdaContext };
+export { addSecretValue, injectLambdaContext };
 export type { Logger };
