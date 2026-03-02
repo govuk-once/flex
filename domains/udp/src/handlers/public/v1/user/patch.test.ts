@@ -74,7 +74,7 @@ describe("Public PATCH /user handler", () => {
       context,
     }) => {
       nock(BASE_URL)
-        .patch("/gateways/udp/v1/notifications", {
+        .post("/gateways/udp/v1/notifications", {
           consentStatus: "accepted",
           notificationId: derivedNotificationId,
         })

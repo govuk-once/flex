@@ -65,7 +65,7 @@ describe("Executor", () => {
   }) => {
     const event = privateGatewayEvent.create({
       httpMethod: "POST",
-      path: "/v1/user",
+      path: "/v1/users",
       body: "{invalid-json",
     });
 

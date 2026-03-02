@@ -8,7 +8,7 @@ import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import type { RouteContract } from "./types";
 
 const INTERNAL_ROUTES = {
-  user: "/v1/user",
+  user: "/v1/users",
   notifications: "/v1/notifications",
 } as const;
 
@@ -20,7 +20,7 @@ export const UDP_REMOTE_ROUTES = {
 } as const;
 
 export const ROUTE_CONTRACTS = {
-  "POST:/v1/user": {
+  "POST:/v1/users": {
     operation: "createUser",
     method: "POST",
     inboundPath: INTERNAL_ROUTES.user,

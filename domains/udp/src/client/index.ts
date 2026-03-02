@@ -70,7 +70,7 @@ export function createUdpDomainClient({
           body: UpdateNotificationRequest,
         ) => {
           const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
-            method: "PATCH",
+            method: "POST",
             body: JSON.stringify(body),
             headers: {
               "requesting-service-user-id": requestingServiceUserId,
