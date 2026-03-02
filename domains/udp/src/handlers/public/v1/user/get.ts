@@ -14,12 +14,9 @@ import type {
 import status from "http-status";
 import { z } from "zod";
 
+import { NotificationSecretContext } from "../../../../schemas/notifications";
 import { generateDerivedId } from "../../../../service/derived-id";
 import { getUserProfile } from "../../../../service/userProfile";
-
-export type NotificationSecretContext = {
-  notificationSecretKey: string;
-};
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -49,7 +46,6 @@ export const handler = createLambdaHandler<
     return jsonResponse(status.OK, userProfile);
   },
   {
-    logLevel: "DEBUG",
     serviceName: "udp-get-user-service",
     middlewares: [
       extractUser,

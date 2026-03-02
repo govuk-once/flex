@@ -9,7 +9,4 @@ export const UDP_DOMAIN_BASE = "/domains/udp/v1";
 
 export const UDP_DOMAIN_ROUTES = {
   createUser: "/users",
-  createNotification: "/users/notifications",
-  getNotification: "/users/notifications",
-  patchNotification: "/users/notifications",
 } as const;

@@ -5,7 +5,7 @@ import { consentStatusSchema, notificationIdSchema } from "../common";
 export const notificationsResponseSchema = z.object({
   data: z.object({
     consentStatus: consentStatusSchema,
-    notificationId: notificationIdSchema,
+    notificationId: z.string(),
   }),
 });
 
@@ -16,7 +16,6 @@ export const createOrUpdateNotificationsRequestSchema = z.object({
     consentStatus: consentStatusSchema,
     notificationId: notificationIdSchema,
   }),
-  requestingServiceUserId: z.string(),
 });
 
 export type CreateOrUpdateNotificationsRequest = z.infer<
@@ -26,7 +25,7 @@ export type CreateOrUpdateNotificationsRequest = z.infer<
 export const createOrUpdateNotificationsResponseSchema = z.object({
   data: z.object({
     consentStatus: consentStatusSchema,
-    notificationId: notificationIdSchema,
+    notificationId: z.string(),
   }),
 });
 

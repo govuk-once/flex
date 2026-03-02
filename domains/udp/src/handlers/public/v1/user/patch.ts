@@ -20,12 +20,11 @@ import status from "http-status";
 import { z } from "zod";
 
 import { createUdpDomainClient } from "../../../../client";
-import { updateNotificationRequestSchema } from "../../../../schemas/notifications";
+import {
+  NotificationSecretContext,
+  updateNotificationRequestSchema,
+} from "../../../../schemas/notifications";
 import { generateDerivedId } from "../../../../service/derived-id";
-
-export type NotificationSecretContext = {
-  notificationSecretKey: string;
-};
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -60,11 +59,11 @@ export const handler = createLambdaHandler<
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
     const response = await client.gateway.notifications.update(
-      context.pairwiseId,
       {
         consentStatus: parsedEvent.data.consentStatus,
         notificationId,
       },
+      context.pairwiseId,
     );
 
     if (!response.ok) {

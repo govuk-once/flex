@@ -2,11 +2,9 @@ import { z } from "zod";
 
 export const CONSENT_STATUS_SCHEMA = z.enum(["unknown", "accepted", "denied"]);
 
-const notificationIdSchema = z.string().optional();
-
 export const createNotificationRequestSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: notificationIdSchema,
+  notificationId: z.string(),
 });
 
 export type CreateNotificationRequest = z.infer<
@@ -15,7 +13,7 @@ export type CreateNotificationRequest = z.infer<
 
 export const createNotificationResponseSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: notificationIdSchema,
+  notificationId: z.string(),
 });
 
 export type CreateNotificationResponse = z.infer<
@@ -24,7 +22,7 @@ export type CreateNotificationResponse = z.infer<
 
 export const getNotificationResponseSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: notificationIdSchema,
+  notificationId: z.string(),
 });
 
 export type GetNotificationResponse = z.infer<
@@ -33,9 +31,12 @@ export type GetNotificationResponse = z.infer<
 
 export const updateNotificationRequestSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: notificationIdSchema,
 });
 
 export type UpdateNotificationRequest = z.infer<
   typeof updateNotificationRequestSchema
 >;
+
+export type NotificationSecretContext = {
+  notificationSecretKey: string;
+};

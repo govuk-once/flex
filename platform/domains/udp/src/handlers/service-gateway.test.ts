@@ -36,6 +36,7 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
 
 const MOCK_EXPECTED_DOMAIN_NOTIFICATIONS: DomainNotificationsResponse = {
   consentStatus: "accepted",
+  notificationId: "mock-notification-id",
 };
 
 const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
@@ -45,6 +46,7 @@ const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
 const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
   data: {
     consentStatus: "accepted",
+    notificationId: "mock-notification-id",
   },
 };
 

@@ -13,7 +13,7 @@ export type InboundCreateOrUpdateNotificationsRequest = z.infer<
 
 export const domainNotificationsResponseSchema = z.object({
   consentStatus: consentStatusSchema,
-  notificationId: notificationIdSchema,
+  notificationId: z.string(),
 });
 
 export type DomainNotificationsResponse = z.infer<

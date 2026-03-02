@@ -74,7 +74,7 @@ async function parseAndMapBody<T extends z.ZodType>(
   const body = parseRequestBody(event.body);
   const result = await schema.safeParseAsync(body);
   if (!result.success) {
-    throw new createHttpError.BadRequest(result.error.message);
+    throw new createHttpError.BadRequest();
   }
   return result.data;
 }

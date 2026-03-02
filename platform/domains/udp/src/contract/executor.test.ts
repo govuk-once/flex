@@ -27,6 +27,123 @@ describe("Executor", () => {
     vi.clearAllMocks();
   });
 
+  it.for([
+    {
+      method: "POST",
+      path: "/v1/users",
+      operation: "createUser",
+      body: { userId: "456", notificationId: "5678" },
+      configureRemoteClient: () => {
+        remoteClient.user.create.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { message: "created" },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.user.create).toHaveBeenCalledWith({
+          userId: "456",
+          notificationId: "5678",
+        });
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/notifications",
+      operation: "updateNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: { consentStatus: "accepted", notificationId: "abc" },
+      configureRemoteClient: () => {
+        remoteClient.notifications.update.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            data: { consentStatus: "accepted", notificationId: "abc" },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.notifications.update).toHaveBeenCalledWith(
+          { data: { consentStatus: "accepted", notificationId: "abc" } },
+          "123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/notifications",
+      operation: "getNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: undefined,
+      configureRemoteClient: () => {
+        remoteClient.notifications.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            data: { consentStatus: "accepted", notificationId: "abc" },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.notifications.get).toHaveBeenCalledWith("123");
+      },
+    },
+  ])(
+    "should resolve request for $method $path to $operation",
+    async (
+      {
+        method,
+        path,
+        headers,
+        body,
+        configureRemoteClient,
+        assertRemoteClientCall,
+      },
+      { privateGatewayEvent },
+    ) => {
+      configureRemoteClient();
+      const event = privateGatewayEvent.create({
+        httpMethod: method,
+        path,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const result = await execute(event, remoteClient);
+      expect(result).toBeDefined();
+      assertRemoteClientCall();
+    },
+  );
+
+  it.for([
+    {
+      method: "POST",
+      path: "/v1/users",
+      operation: "createUser",
+      body: { userId: null, notificationId: "5678" },
+    },
+    {
+      method: "POST",
+      path: "/v1/notifications",
+      operation: "updateNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: { consentStatus: "invalid-status" },
+    },
+  ])(
+    "throws 400 when $method $path $operation body fails schema validation",
+    async ({ method, path, headers, body }, { privateGatewayEvent }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: method,
+        path,
+        headers,
+        body: JSON.stringify(body),
+      });
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Invalid request body",
+      });
+    },
+  );
+
   it("throws 404 when route is not registered", async ({
     privateGatewayEvent,
   }) => {

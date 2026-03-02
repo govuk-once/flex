@@ -66,8 +66,8 @@ export function createUdpDomainClient({
           return typedFetch(request, getNotificationResponseSchema);
         },
         update: (
-          requestingServiceUserId: string,
           body: UpdateNotificationRequest,
+          requestingServiceUserId: string,
         ) => {
           const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {
             method: "POST",
