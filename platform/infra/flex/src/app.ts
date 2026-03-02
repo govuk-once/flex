@@ -3,8 +3,9 @@ import * as cdk from "aws-cdk-lib";
 
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
-import { FlexDomainStack } from "./stacks/domain";
+import { FlexPrivateDomainStack } from "./stacks/private-domain";
 import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
+import { FlexPublicDomainStack } from "./stacks/public-domain";
 import {
   getDomainConfigs,
   getPrivateDomainConfigs,
@@ -20,11 +21,6 @@ const { certArnParamName } = new FlexCertStack(app, certStackName, {
   domainName,
   subdomainName,
 });
-
-const privateGateway = new FlexPrivateGatewayStack(
-  app,
-  getStackName("FlexPrivateGateway"),
-);
 
 /**
  * Dynamically create CloudFormation stack per domain
@@ -46,18 +42,41 @@ if (targetDomain && flexDomains.length === 0) {
   );
 }
 
-const domainStacks = flexDomains.map(
+// Public domain stacks — one per domain config
+const publicDomainStacks = flexDomains.map(
   (domain) =>
-    new FlexDomainStack(app, getStackName(domain.domain), {
-      domain,
-      privateApi: privateGateway.privateApiRef,
-      privateDomain: privateDomains.get(domain.domain),
-    }),
+    new FlexPublicDomainStack(
+      app,
+      getStackName(`${domain.domain}-public`),
+      { domain },
+    ),
 );
 
-const publicRouteBindings = domainStacks.flatMap(
+// Private domain stacks — one per private domain config, filtered by targetDomain
+const privateDomainStacks = [...privateDomains.values()]
+  .filter((d) => !targetDomain || d.domain === targetDomain)
+  .map(
+    (domain) =>
+      new FlexPrivateDomainStack(
+        app,
+        getStackName(`${domain.domain}-private`),
+        { domain },
+      ),
+  );
+
+const publicRouteBindings = publicDomainStacks.flatMap(
   (stack) => stack.publicRouteBindings,
 );
+const privateRouteBindings = privateDomainStacks.flatMap(
+  (stack) => stack.privateRouteBindings,
+);
+
+// Private gateway instantiated AFTER domain stacks — receives all route
+// bindings so they land in the same CDK construct tree as the RestApi.
+// This ensures CDK's auto-deployment hash includes all domain routes.
+new FlexPrivateGatewayStack(app, getStackName("FlexPrivateGateway"), {
+  privateRouteBindings,
+});
 
 new FlexPlatformStack(app, getStackName("FlexPlatform"), {
   certArnParamName,

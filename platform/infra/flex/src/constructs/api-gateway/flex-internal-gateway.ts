@@ -150,6 +150,16 @@ export class FlexInternalGateway extends Construct {
       stringValue: privateGatewayUrl,
     });
 
+    new StringParameter(scope, "PrivateGatewayRestApiIdParam", {
+      parameterName: getParamName("/flex-core/private-gateway/rest-api-id"),
+      stringValue: privateGateway.restApiId,
+    });
+
+    new StringParameter(scope, "PrivateGatewayStageNameParam", {
+      parameterName: getParamName("/flex-core/private-gateway/stage-name"),
+      stringValue: privateGateway.deploymentStage.stageName,
+    });
+
     return {
       privateGateway,
       domainsRoot,

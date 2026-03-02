@@ -9,14 +9,7 @@ import {
 } from "@platform/core/outputs";
 import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { Duration } from "aws-cdk-lib";
-import {
-  IResource,
-  IRestApi,
-  LambdaIntegration,
-  Resource,
-  RestApi,
-} from "aws-cdk-lib/aws-apigateway";
-import { IRole } from "aws-cdk-lib/aws-iam";
+import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import { IFunction } from "aws-cdk-lib/aws-lambda";
 import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
@@ -26,33 +19,32 @@ import crypto from "crypto";
 
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
-import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
-import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { FlexEphemeralParam, getParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
-import { PrivateApiRef } from "./private-gateway";
 
-export interface PublicRouteBinding {
+export interface PrivateRouteBinding {
   path: string;
   method: string;
   handler: IFunction;
 }
 
-interface FlexDomainStackProps {
+interface FlexPrivateDomainStackProps {
   domain: IDomain;
-  privateDomain?: IDomain;
-  privateApi: PrivateApiRef;
 }
 
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
-export class FlexDomainStack extends GovUkOnceStack {
-  public readonly publicRouteBindings: PublicRouteBinding[] = [];
+export class FlexPrivateDomainStack extends GovUkOnceStack {
+  public readonly privateRouteBindings: PrivateRouteBinding[] = [];
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
-  constructor(scope: Construct, id: string, props: FlexDomainStackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: FlexPrivateDomainStackProps,
+  ) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -62,86 +54,32 @@ export class FlexDomainStack extends GovUkOnceStack {
         Source: "https://github.com/govuk-once/flex",
       },
     });
-    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: props.privateApi.restApiId,
-      rootResourceId: props.privateApi.domainsRootResourceId,
-    });
 
-    const privateDomainsRoot = Resource.fromResourceAttributes(
+    // Import restApiId from SSM — returns a CloudFormation dynamic reference
+    // ({{resolve:ssm:...}}), not a CDK cross-stack token. CDK does not detect
+    // SSM dynamic references as stack-to-stack dependencies, so no circular dep.
+    const restApiId = StringParameter.valueForStringParameter(
       this,
-      "PrivateDomainsRoot",
+      getParamName("/flex-core/private-gateway/rest-api-id"),
+    );
+
+    // Reconstruct a minimal IRestApi — used only for IAM grant ARN construction
+    // via arnForExecuteApi(). Route registration happens in FlexPrivateGatewayStack.
+    const privateApiForGrants = RestApi.fromRestApiAttributes(
+      this,
+      "PrivateApiForGrants",
       {
-        resourceId: props.privateApi.domainsRootResourceId,
-        path: "/domains",
-        restApi: privateApi,
+        restApiId,
+        rootResourceId: restApiId, // dummy — only restApiId matters for arnForExecuteApi
       },
     );
 
-    this.#processPublicRoutes(props.domain);
-
-    if (props.privateDomain) {
-      this.#processPrivateRoutes(
-        props.privateDomain,
-        privateDomainsRoot,
-        props.domain.domain,
-        "internal-",
-        privateApi,
-      );
-    }
-  }
-
-  #processPublicRoutes(domainConfig: IDomain): void {
-    for (const [versionId, versionConfig] of Object.entries(
-      domainConfig.versions,
-    )) {
-      for (const [path, methodMap] of Object.entries(versionConfig.routes)) {
-        for (const [method, routeConfig] of Object.entries(methodMap)) {
-          const { resolvedVars, envGrantables } = this.#resolveEnvironment(
-            routeConfig.env,
-            routeConfig.envEphemeral,
-            routeConfig.envSecret,
-          );
-
-          const { kmsGrantables } = this.#resolveKms(routeConfig.kmsKeys);
-
-          const domainEndpointFn = this.#createFunction(
-            routeConfig,
-            domainConfig.domain,
-            path,
-            method,
-            versionId,
-            "public-",
-            resolvedVars,
-          );
-
-          envGrantables.forEach((resource) => {
-            resource.grantRead(domainEndpointFn.function);
-          });
-
-          kmsGrantables.forEach((key) => {
-            key.grantDecrypt(domainEndpointFn.function);
-          });
-
-          const newPath = `app/${versionId}${path}`
-            .replace(/\/+/g, "/")
-            .replace(/^\//, "");
-
-          this.publicRouteBindings.push({
-            path: newPath,
-            method,
-            handler: domainEndpointFn.function,
-          });
-        }
-      }
-    }
+    this.#processPrivateRoutes(props.domain, privateApiForGrants);
   }
 
   #processPrivateRoutes(
     domainConfig: IDomain,
-    apiRoot: IResource,
-    pathPrefix: string,
-    idPrefix: string,
-    internalApiForPermissions?: IRestApi | RestApi,
+    privateApiForGrants: ReturnType<typeof RestApi.fromRestApiAttributes>,
   ): void {
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
@@ -162,7 +100,7 @@ export class FlexDomainStack extends GovUkOnceStack {
             path,
             method,
             versionId,
-            idPrefix,
+            "internal-",
             resolvedVars,
           );
 
@@ -174,31 +112,22 @@ export class FlexDomainStack extends GovUkOnceStack {
             key.grantDecrypt(domainEndpointFn.function);
           });
 
-          const newPath = `${pathPrefix}/${versionId}${path}`
+          const newPath = `${domainConfig.domain}/${versionId}${path}`
             .replace(/\/+/g, "/")
             .replace(/^\//, "");
 
-          const resource = this.#addDeepResource(apiRoot, newPath).addMethod(
+          this.privateRouteBindings.push({
+            path: newPath,
             method,
-            new LambdaIntegration(domainEndpointFn.function),
-          );
+            handler: domainEndpointFn.function,
+          });
 
-          applyCheckovSkip(
-            resource,
-            "CKV_AWS_59",
-            "Private API - access restricted by VPC endpoint and resource policy",
-          );
-
-          if (
-            routeConfig.permissions &&
-            domainEndpointFn.function.role &&
-            internalApiForPermissions
-          ) {
+          if (routeConfig.permissions && domainEndpointFn.function.role) {
             this.#grantInternalGatewayPermissions(
               domainEndpointFn.function.role,
               routeConfig.permissions,
               domainConfig.domain,
-              internalApiForPermissions,
+              privateApiForGrants,
             );
           }
         }
@@ -206,26 +135,6 @@ export class FlexDomainStack extends GovUkOnceStack {
     }
   }
 
-  #addDeepResource(root: IResource, path: string): IResource {
-    const parts = path.split("/").filter(Boolean);
-    let current = root;
-
-    for (const part of parts) {
-      const existing = current.node.tryFindChild(part) as IResource | undefined;
-      if (existing) {
-        current = existing;
-      } else {
-        current = current.addResource(part);
-      }
-    }
-
-    return current;
-  }
-
-  /**
-   * Resolves standard Env Vars and Secrets.
-   * Returns a map of EnvKeys -> Values and a list of resources to grant permissions to.
-   */
   #resolveEnvironment(
     env?: Record<string, string>,
     envEphemeral?: Record<string, string>,
@@ -260,10 +169,6 @@ export class FlexDomainStack extends GovUkOnceStack {
     return { resolvedVars, envGrantables };
   }
 
-  /**
-   * Resolves KMS Keys.
-   * Injects Key ARN as env var and prepares keys for permission granting.
-   */
   #resolveKms(keys?: Record<string, string>) {
     const kmsVars: Record<string, string> = {};
     const kmsGrantables: IKey[] = [];
@@ -280,9 +185,6 @@ export class FlexDomainStack extends GovUkOnceStack {
     return { kmsVars, kmsGrantables };
   }
 
-  /**
-   * Factory method to instantiate the correct Lambda Construct based on type
-   */
   #createFunction(
     route: IDomainEndpoint,
     domain: string,
@@ -306,16 +208,17 @@ export class FlexDomainStack extends GovUkOnceStack {
     };
 
     switch (type) {
-      case "PUBLIC":
-        return new FlexPublicFunction(this, id, props);
       case "PRIVATE":
         return new FlexPrivateEgressFunction(this, id, props);
       case "ISOLATED":
         return new FlexPrivateIsolatedFunction(this, id, props);
+      default:
+        throw new Error(
+          `Unsupported function type "${type}" in private domain config for ${domain}${path}`,
+        );
     }
   }
 
-  // --- Resource Importers ---
   #getOrImportEnv(
     path: string,
     type: EnvResourceType,
@@ -362,10 +265,10 @@ export class FlexDomainStack extends GovUkOnceStack {
   }
 
   #grantInternalGatewayPermissions(
-    role: IRole,
+    role: import("aws-cdk-lib/aws-iam").IRole,
     permissions: Permission[],
     domainName: string,
-    internalApi: IRestApi,
+    internalApi: ReturnType<typeof RestApi.fromRestApiAttributes>,
   ): void {
     const allowedRoutePrefixes = permissions.map((perm) => {
       const base =
