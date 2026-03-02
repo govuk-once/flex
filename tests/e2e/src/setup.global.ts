@@ -68,7 +68,7 @@ export default async function setup({
   );
 }
 
-async function getJwtClient(stage: string): Promise<BaseTokenGenerator> {
+export async function getJwtClient(stage: string): Promise<BaseTokenGenerator> {
   if (stage === "staging" || stage === "production") {
     return await getTokenGenerator(stage);
   }

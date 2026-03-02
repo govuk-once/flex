@@ -24,6 +24,21 @@ See the [Environment Setup](/docs/environment-setup.md) for prerequisites and de
 
 ---
 
+## Development Utilities
+
+```bash
+# Generate a JWT against ephemeral or dev stack
+pnpm jwt
+
+# Generate a JWT against staging stack
+STAGE=staging pnpm jwt
+```
+
+> Note:
+> - You need to ensure you have AWS cli access setup to run the above in the correct environment
+
+---
+
 ## Developer Roles
 
 | Role         | Access             | Guide                                                       |
