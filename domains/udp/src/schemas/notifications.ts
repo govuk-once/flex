@@ -37,6 +37,15 @@ export type UpdateNotificationRequest = z.infer<
   typeof updateNotificationRequestSchema
 >;
 
+export const updateNotificationOutboundRequestSchema =
+  updateNotificationRequestSchema.extend({
+    notificationId: z.string(),
+  });
+
+export type UpdateNotificationOutboundRequest = z.infer<
+  typeof updateNotificationOutboundRequestSchema
+>;
+
 export type NotificationSecretContext = {
   notificationSecretKey: string;
 };

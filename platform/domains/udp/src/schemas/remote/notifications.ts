@@ -32,11 +32,3 @@ export const createOrUpdateNotificationsResponseSchema = z.object({
 export type CreateOrUpdateNotificationsResponse = z.infer<
   typeof createOrUpdateNotificationsResponseSchema
 >;
-
-export const getNotificationsRequestSchema = z.object({
-  requestingServiceUserId: z.string(),
-});
-
-export type GetNotificationsRequest = z.infer<
-  typeof getNotificationsRequestSchema
->;

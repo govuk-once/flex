@@ -42,7 +42,7 @@ describe("Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.user.create).toHaveBeenCalledWith({
-          userId: "456",
+          appId: "456",
           notificationId: "5678",
         });
       },
@@ -64,7 +64,10 @@ describe("Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.notifications.update).toHaveBeenCalledWith(
-          { data: { consentStatus: "accepted", notificationId: "abc" } },
+          {
+            data: { consentStatus: "accepted", notificationId: "abc" },
+            requestingServiceUserId: "123",
+          },
           "123",
         );
       },
@@ -138,8 +141,7 @@ describe("Executor", () => {
         body: JSON.stringify(body),
       });
       await expect(execute(event, remoteClient)).rejects.toMatchObject({
-        statusCode: 400,
-        message: "Invalid request body",
+        message: "Bad Request",
       });
     },
   );

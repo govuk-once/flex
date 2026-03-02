@@ -11,7 +11,8 @@ import {
   vi,
 } from "vitest";
 
-import { handler, type NotificationSecretContext } from "./patch";
+import { NotificationSecretContext } from "../../../../schemas/notifications";
+import { handler } from "./patch";
 
 const mockGenerateDerivedId = vi.hoisted(() => vi.fn());
 

@@ -2,11 +2,11 @@ import { ApiResult } from "@flex/flex-fetch";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 
 import type { UdpRemoteClient } from "../client";
+import { RequestingServiceUserIdHeader } from "../schemas/common";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import type {
   CreateOrUpdateNotificationsRequest,
   CreateOrUpdateNotificationsResponse,
-  GetNotificationsRequest,
   NotificationsResponse,
 } from "../schemas/remote/notifications";
 import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
@@ -38,7 +38,7 @@ type BaseRouteContract<
 export type GetNotificationPreferencesRouteContract = BaseRouteContract<
   "getNotificationPreferences",
   "GET",
-  GetNotificationsRequest,
+  RequestingServiceUserIdHeader,
   NotificationsResponse,
   DomainNotificationsResponse
 >;
@@ -46,7 +46,7 @@ export type GetNotificationPreferencesRouteContract = BaseRouteContract<
 export type UpdateNotificationPreferencesRouteContract = BaseRouteContract<
   "updateNotificationPreferences",
   "POST",
-  CreateOrUpdateNotificationsRequest,
+  CreateOrUpdateNotificationsRequest & RequestingServiceUserIdHeader,
   CreateOrUpdateNotificationsResponse,
   DomainNotificationsResponse
 >;

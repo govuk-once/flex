@@ -25,8 +25,13 @@ export const ROUTE_CONTRACTS = {
     method: "POST",
     inboundPath: INTERNAL_ROUTES.user,
     remotePath: UDP_REMOTE_ROUTES.user,
-    toRemote: async (event) =>
-      parseAndMapBody(inboundCreateUserRequestSchema, event),
+    toRemote: async (event) => {
+      const data = await parseAndMapBody(inboundCreateUserRequestSchema, event);
+      return {
+        notificationId: data.notificationId,
+        appId: data.userId,
+      };
+    },
     callRemote: (client, data) => client.user.create(data),
   },
   "POST:/v1/notifications": {

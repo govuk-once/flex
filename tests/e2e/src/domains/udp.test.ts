@@ -6,7 +6,7 @@ describe("UDP domain", () => {
   const domainVersion = "v1";
   const endpoint = `/${domainVersion}/users`;
 
-  describe.todo("user", () => {
+  describe("user", () => {
     describe("when I create a user", () => {
       it("returns a 200 and notification ID", async ({ cloudfront }) => {
         const response = await cloudfront.client.get(endpoint, {
@@ -40,7 +40,7 @@ describe("UDP domain", () => {
     });
   });
 
-  describe.todo("notifications", () => {
+  describe("notifications", () => {
     const notificationsEndpoint = `/${domainVersion}/users/notifications`;
 
     describe("when I update my notifications preferences", () => {

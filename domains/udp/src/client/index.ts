@@ -4,7 +4,7 @@ import {
   CreateNotificationRequest,
   createNotificationResponseSchema,
   getNotificationResponseSchema,
-  UpdateNotificationRequest,
+  UpdateNotificationOutboundRequest,
 } from "../schemas/notifications";
 import { CreateUserRequest } from "../schemas/user";
 import {
@@ -66,7 +66,7 @@ export function createUdpDomainClient({
           return typedFetch(request, getNotificationResponseSchema);
         },
         update: (
-          body: UpdateNotificationRequest,
+          body: UpdateNotificationOutboundRequest,
           requestingServiceUserId: string,
         ) => {
           const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.notifications, {

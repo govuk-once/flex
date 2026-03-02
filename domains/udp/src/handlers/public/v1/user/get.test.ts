@@ -3,9 +3,10 @@ import { it } from "@flex/testing";
 import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
+import { NotificationSecretContext } from "../../../../schemas/notifications";
 import { generateDerivedId } from "../../../../service/derived-id";
 import { getUserProfile } from "../../../../service/userProfile";
-import { handler, NotificationSecretContext } from "./get";
+import { handler } from "./get";
 
 vi.mock("../../../../service/derived-id", () => ({
   generateDerivedId: vi.fn(),
