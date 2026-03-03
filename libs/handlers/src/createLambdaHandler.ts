@@ -3,6 +3,8 @@ import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import type { Context } from "aws-lambda";
 
+import { clearTmp } from "./cleanup";
+
 /**
  * Custom handler type that allows custom context types extending Context
  *
@@ -86,6 +88,8 @@ export function createLambdaHandler<
   config.middlewares?.forEach((middleware) => {
     middyHandler.use(middleware);
   });
+
+  clearTmp();
 
   return middyHandler;
 }

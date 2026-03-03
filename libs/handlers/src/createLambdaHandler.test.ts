@@ -13,6 +13,10 @@ import { createLambdaHandler } from "./createLambdaHandler";
 vi.spyOn(logger, "getLogger");
 vi.spyOn(logger, "injectLambdaContext");
 
+vi.mock("./cleanup", () => ({
+  clearTmp: vi.fn(),
+}));
+
 const baseLoggerOptions = {
   logLevel: "INFO",
   serviceName: "test-service",
