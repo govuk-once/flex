@@ -144,13 +144,15 @@ const cachedConfig: Map<z.ZodType, unknown> = new Map();
 export async function getConfig<T extends object>(
   validator: z.ZodType<T>,
 ): Promise<
-  FoldSuffixInto<
-    WithoutPropSuffix<
-      ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
-      "_PARAM_NAME"
-    >,
-    "_FEATURE_FLAG",
-    "featureFlags"
+  Simplify<
+    FoldSuffixInto<
+      WithoutPropSuffix<
+        ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+        "_PARAM_NAME"
+      >,
+      "_FEATURE_FLAG",
+      "featureFlags"
+    >
   >
 > {
   const logger = getLogger();
@@ -159,13 +161,15 @@ export async function getConfig<T extends object>(
     logger.info("Returning cached configuration");
 
     // This is safe because we only set values of this type in the cache.
-    return cachedConfig.get(validator) as FoldSuffixInto<
-      WithoutPropSuffix<
-        ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
-        "_PARAM_NAME"
-      >,
-      "_FEATURE_FLAG",
-      "featureFlags"
+    return cachedConfig.get(validator) as Simplify<
+      FoldSuffixInto<
+        WithoutPropSuffix<
+          ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+          "_PARAM_NAME"
+        >,
+        "_FEATURE_FLAG",
+        "featureFlags"
+      >
     >;
   }
 
@@ -189,13 +193,15 @@ export async function getConfig<T extends object>(
   const finalConfig = {
     ...populatedParams,
     featureFlags: featureFlags,
-  } as FoldSuffixInto<
-    WithoutPropSuffix<
-      ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
-      "_PARAM_NAME"
-    >,
-    "_FEATURE_FLAG",
-    "featureFlags"
+  } as Simplify<
+    FoldSuffixInto<
+      WithoutPropSuffix<
+        ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+        "_PARAM_NAME"
+      >,
+      "_FEATURE_FLAG",
+      "featureFlags"
+    >
   >;
 
   cachedConfig.set(validator, finalConfig);

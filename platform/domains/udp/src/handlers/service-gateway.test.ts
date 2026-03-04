@@ -47,9 +47,15 @@ const remoteClient = {
 describe("UDP Service Gateway", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getConfig).mockResolvedValue({
+    vi.mocked(
+      getConfig<{
+        AWS_REGION: string;
+        FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: string;
+      }>,
+    ).mockResolvedValue({
       AWS_REGION: "eu-west-2",
       FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+      featureFlags: {},
     });
     vi.mocked(getConsumerConfig).mockResolvedValue(TEST_CONSUMER_CONFIG);
     vi.mocked(createUdpRemoteClient).mockReturnValue(remoteClient);
