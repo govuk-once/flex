@@ -75,7 +75,10 @@ export function createLambdaHandler<
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
   const middyHandler = middy<TEvent, TResult, Error, TContext>()
     .use(httpErrorHandler())
-    .handler(handler);
+    .handler(handler)
+    .before(() => {
+      clearTmp();
+    });
   const logLevel = config.logLevel?.toUpperCase();
 
   middyHandler.use(
