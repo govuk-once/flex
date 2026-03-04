@@ -18,7 +18,7 @@ export async function getConsumerConfig(
 ): Promise<ConsumerConfig> {
   const config = await getSecret<ConsumerConfig>(secretArn, {
     transform: "json",
-    maxAge: 60,
+    maxAge: 600,
   });
 
   if (!config) {
