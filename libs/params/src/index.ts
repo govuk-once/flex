@@ -1,6 +1,7 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
 import { getLogger } from "@flex/logging";
 import type {
+  ConvertPropsWithSuffix,
   FoldSuffixInto,
   OmitPropsWithSuffix,
   OnlyPropsWithSuffix,
@@ -97,7 +98,13 @@ function removeFeatureFlags<T extends object>(
 function extractFeatureFlags<T extends object>(
   rawConfig: T,
 ): Simplify<
-  WithoutSuffix<OnlyPropsWithSuffix<T, "_FEATURE_FLAG">, "_FEATURE_FLAG">
+  WithoutSuffix<
+    OnlyPropsWithSuffix<
+      ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+      "_FEATURE_FLAG"
+    >,
+    "_FEATURE_FLAG"
+  >
 > {
   const featureFlagEntries = Object.entries(rawConfig).filter(([key]) =>
     key.endsWith("_FEATURE_FLAG"),
@@ -117,7 +124,13 @@ function extractFeatureFlags<T extends object>(
   ]);
 
   return Object.fromEntries(renamedFeatureFlagEntries) as Simplify<
-    WithoutSuffix<OnlyPropsWithSuffix<T, "_FEATURE_FLAG">, "_FEATURE_FLAG">
+    WithoutSuffix<
+      OnlyPropsWithSuffix<
+        ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+        "_FEATURE_FLAG"
+      >,
+      "_FEATURE_FLAG"
+    >
   >;
 }
 
@@ -132,7 +145,10 @@ export async function getConfig<T extends object>(
   validator: z.ZodType<T>,
 ): Promise<
   FoldSuffixInto<
-    WithoutPropSuffix<T, "_PARAM_NAME">,
+    WithoutPropSuffix<
+      ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+      "_PARAM_NAME"
+    >,
     "_FEATURE_FLAG",
     "featureFlags"
   >
@@ -144,7 +160,10 @@ export async function getConfig<T extends object>(
 
     // This is safe because we only set values of this type in the cache.
     return cachedConfig.get(validator) as FoldSuffixInto<
-      WithoutPropSuffix<T, "_PARAM_NAME">,
+      WithoutPropSuffix<
+        ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+        "_PARAM_NAME"
+      >,
       "_FEATURE_FLAG",
       "featureFlags"
     >;
@@ -171,7 +190,10 @@ export async function getConfig<T extends object>(
     ...populatedParams,
     featureFlags: featureFlags,
   } as FoldSuffixInto<
-    WithoutPropSuffix<T, "_PARAM_NAME">,
+    WithoutPropSuffix<
+      ConvertPropsWithSuffix<T, "_FEATURE_FLAG", boolean>,
+      "_PARAM_NAME"
+    >,
     "_FEATURE_FLAG",
     "featureFlags"
   >;

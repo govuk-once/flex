@@ -26,4 +26,14 @@ export const endpoints = defineDomain({
       },
     },
   },
+  featureFlags: {
+    ENABLED_FEATURE_FLAG: {
+      description: "An enabled feature flag for the hello domain",
+      enabled: true,
+    },
+    DISABLED_FEATURE_FLAG: {
+      description: "A disabled feature flag for the hello domain",
+      enabled: false,
+    },
+  },
 });

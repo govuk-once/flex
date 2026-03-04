@@ -27,8 +27,10 @@ Complete the [Environment Setup](/docs/environment-setup.md) before starting dom
 | [`@flex/handlers`](/libs/handlers/README.md)       | Lambda handler factory | All handlers                                                         |
 | [`@flex/logging`](/libs/logging/README.md)         | Structured logging     | When you need logging                                                |
 | [`@flex/middlewares`](/libs/middlewares/README.md) | Shared middleware      | When you need to modify the request/response with additional context |
+| [`@flex/params`](/libs/params/README.md)           | Config loader/validator| When you need environment/config validation, SSM params, feature flags|
 | [`@flex/testing`](/libs/testing/README.md)         | Test fixtures          | All test suites                                                      |
 | [`@flex/utils`](/libs/utils/README.md)             | Schemas and utilities  | Validation, schemas, common utilities/types                          |
+
 
 ---
 

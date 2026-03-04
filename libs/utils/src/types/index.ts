@@ -120,3 +120,25 @@ export type FoldSuffixInto<
 >;
 
 export type Maybe<T> = T | null | undefined;
+
+/**
+ * Converts properties of an object type that end with a specific suffix to a new type
+ * Example:
+ * type T = { hello: string; world_PARAM_NAME: string };
+ * type R = ConvertPropsWithSuffix<T, "_PARAM_NAME", number>;
+ * // Result: { hello: string; world_PARAM_NAME: number }
+ */
+export type ConvertPropsWithSuffix<T, Suffix extends string, NewType> = {
+  [K in keyof T]: K extends `${infer _Base}${Suffix}` ? NewType : T[K];
+};
+
+const x: Simplify<
+  ConvertPropsWithSuffix<
+    { hello: string; world_PARAM_NAME: string },
+    "_PARAM_NAME",
+    number
+  >
+> = {
+  hello: "hello",
+  world_PARAM_NAME: 42,
+};
