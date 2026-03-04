@@ -131,14 +131,3 @@ export type Maybe<T> = T | null | undefined;
 export type ConvertPropsWithSuffix<T, Suffix extends string, NewType> = {
   [K in keyof T]: K extends `${infer _Base}${Suffix}` ? NewType : T[K];
 };
-
-const x: Simplify<
-  ConvertPropsWithSuffix<
-    { hello: string; world_PARAM_NAME: string },
-    "_PARAM_NAME",
-    number
-  >
-> = {
-  hello: "hello",
-  world_PARAM_NAME: 42,
-};

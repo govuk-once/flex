@@ -73,7 +73,10 @@ describe("authentication", () => {
       expect(result).toEqual(
         expect.objectContaining({
           status: 200,
-          body: { message: "Hello public world!" },
+          body: {
+            featureFlags: { enabled: true, disabled: false },
+            message: "Hello public world!",
+          },
         }),
       );
     });
