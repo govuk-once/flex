@@ -30,7 +30,7 @@ describe("clearTmp", () => {
     clearTmp();
 
     expect(readdirSync). toHaveBeenCalledExactlyOnceWith("/tmp");
-    expect(rmSync).toHaveBeenCalledWith("/tmp/file1.txt", {
+    expect(rmSync). toHaveBeenCalledExactlyOnceWith("/tmp/file1.txt", {
       recursive: true,
       force: true,
     });
