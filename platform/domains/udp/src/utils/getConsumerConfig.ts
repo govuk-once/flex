@@ -18,7 +18,9 @@ export async function getConsumerConfig(
 ): Promise<ConsumerConfig> {
   const config = await getSecret<ConsumerConfig>(secretArn, {
     transform: "json",
+    maxAge: 60,
   });
+
   if (!config) {
     throw new Error("Consumer config not found");
   }
