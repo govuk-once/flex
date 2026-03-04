@@ -1,11 +1,12 @@
-import { IsoDateTime } from "@flex/utils";
 import { z } from "zod";
 
 export const CONSENT_STATUS_SCHEMA = z.enum(["unknown", "accepted", "denied"]);
 
 export const preferencesRequestSchema = z.object({
-  notifications: z.object({
-    consentStatus: CONSENT_STATUS_SCHEMA,
+  preferences: z.object({
+    notifications: z.object({
+      consentStatus: CONSENT_STATUS_SCHEMA,
+    }),
   }),
 });
 
@@ -15,7 +16,6 @@ export const preferencesResponseSchema = z.object({
   preferences: z.object({
     notifications: z.object({
       consentStatus: CONSENT_STATUS_SCHEMA,
-      updatedAt: IsoDateTime,
     }),
   }),
 });

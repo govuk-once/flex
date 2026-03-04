@@ -1,17 +1,15 @@
 import { it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { describe, expect, inject } from "vitest";
 
-describe("UDP domain", () => {
-  const ingressPath = "/app";
+describe.todo("UDP domain", () => {
+  const { JWT } = inject("e2eEnv");
   const domainVersion = "v1";
-  const endpoint = `${ingressPath}/${domainVersion}/user`;
+  const endpoint = `/${domainVersion}/user`;
 
-  describe.todo("/get user", () => {
-    // TODO: Replace with valid test user token
+  describe("/get user", () => {
     it("returns a 200 and notification ID", async ({ cloudfront }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
 
       expect(response).toMatchObject({
@@ -25,11 +23,10 @@ describe("UDP domain", () => {
     it("returns the same notification ID for the same user", async ({
       cloudfront,
     }) => {
-      const token = "todo.valid.token";
       const request = cloudfront.client.get<{ notificationId: string }>(
         endpoint,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${JWT.VALID}` },
         },
       );
 
@@ -41,35 +38,41 @@ describe("UDP domain", () => {
     });
   });
 
-  describe.todo("/patch user", () => {
-    // TODO: pending valid tokens
+  describe("/patch user", () => {
     it("returns user preferences updated successfully", async ({
       cloudfront,
     }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
         body: {
-          notificationsConsented: true,
-          analyticsConsented: true,
+          preferences: {
+            notifications: {
+              consentStatus: "accepted",
+            },
+          },
         },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
 
       expect(response.status).toBe(200);
       expect(response.body).toMatchObject({
         preferences: {
-          notificationsConsented: true,
-          analyticsConsented: true,
-          updatedAt: expect.any(String) as string,
+          notifications: {
+            consentStatus: "accepted",
+          },
         },
       });
     });
 
     it("rejects invalid payloads", async ({ cloudfront }) => {
-      const token = "todo.valid.token";
       const response = await cloudfront.client.patch(endpoint, {
-        body: { notificationsConsented: "yes" },
-        headers: { Authorization: `Bearer ${token}` },
+        body: {
+          preferences: {
+            notifications: {
+              consentStatus: "yes",
+            },
+          },
+        },
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
 
       expect(response).toMatchObject({

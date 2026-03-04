@@ -1,0 +1,129 @@
+import { it } from "@flex/testing";
+import { beforeEach, describe, expect, vi } from "vitest";
+
+import { handler } from "./post";
+
+const mockCreateUser = vi.hoisted(() => vi.fn());
+
+vi.mock("@flex/params", () => ({
+  getConfig: vi.fn(() =>
+    Promise.resolve({
+      AWS_REGION: "eu-west-2",
+      FLEX_PRIVATE_GATEWAY_URL: "https://execute-api.eu-west-2.amazonaws.com",
+    }),
+  ),
+}));
+vi.mock("../../../../client", () => ({
+  createUdpDomainClient: vi.fn(() => ({
+    gateway: {
+      createUser: mockCreateUser,
+    },
+  })),
+}));
+
+describe("POST /user handler", () => {
+  beforeEach(() => {
+    mockCreateUser.mockReset();
+    mockCreateUser.mockResolvedValue(new Response(null, { status: 204 }));
+  });
+
+  describe("when user is created successfully", () => {
+    it("returns 204 no content", async ({
+      response,
+      privateGatewayEvent,
+      context,
+    }) => {
+      const result = await handler(
+        privateGatewayEvent.post("/user", {
+          body: {
+            notificationId: "test-notification-id",
+            appId: "test-app-id",
+          },
+        }),
+        context.withPairwiseId().create(),
+      );
+
+      expect(result).toEqual(
+        response.noContent({
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      expect(mockCreateUser).toHaveBeenCalledExactlyOnceWith({
+        notificationId: "test-notification-id",
+        appId: "test-app-id",
+      });
+    });
+  });
+
+  describe("invalid payload", () => {
+    it.for([
+      {
+        body: { notificationId: "id" },
+        desc: "missing appId",
+      },
+      {
+        body: { appId: "app" },
+        desc: "missing notificationId",
+      },
+      {
+        body: {},
+        desc: "missing both notificationId and appId",
+      },
+      {
+        body: { notificationId: 123, appId: "app" },
+        desc: "notificationId not a string",
+      },
+      {
+        body: { notificationId: "id", appId: null },
+        desc: "appId null",
+      },
+    ])(
+      "rejects invalid payload: $desc",
+      async ({ body }, { privateGatewayEvent, context }) => {
+        const result = await handler(
+          privateGatewayEvent.post("/user", { body }),
+          context.withPairwiseId().create(),
+        );
+
+        expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));
+      },
+    );
+  });
+
+  describe("when upstream service returns error", () => {
+    it("returns internal server error", async ({
+      privateGatewayEvent,
+      context,
+      response,
+    }) => {
+      mockCreateUser.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Internal Server Error" }), {
+          status: 500,
+        }),
+      );
+
+      const result = await handler(
+        privateGatewayEvent.post("/user", {
+          body: {
+            notificationId: "test-notification-id",
+            appId: "test-app-id",
+          },
+        }),
+        context.withPairwiseId().create(),
+      );
+
+      expect(result).toEqual(
+        response.internalServerError(
+          {
+            message: "Failed to process request",
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        ),
+      );
+    });
+  });
+});

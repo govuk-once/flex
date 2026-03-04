@@ -29,19 +29,40 @@ export function sanitiseStageName(value?: string) {
     .slice(0, 12);
 }
 
+function toSafeMessage(err: unknown) {
+  const e = err as {
+    name?: string;
+    message?: string;
+    $metadata?: { requestId?: string };
+  };
+  const requestId = e.$metadata?.requestId
+    ? ` requestId=${e.$metadata.requestId}`
+    : "";
+  const name = e.name ?? "CloudFormationError";
+  const message = e.message ?? "Failed to query stack outputs";
+  return `${name}: ${message}${requestId}`;
+}
+
 export async function getStackOutputs(stackName: string) {
   const client = new CloudFormationClient();
   const command = new DescribeStacksCommand({
     StackName: stackName,
   });
 
-  const { Stacks } = await client.send(command);
+  try {
+    const { Stacks } = await client.send(command);
 
-  if (!Stacks?.[0]?.Outputs) {
-    throw new Error(`No outputs found in stack: "${stackName}"`);
+    if (!Stacks?.[0]?.Outputs) {
+      throw new Error(`No outputs found in stack: "${stackName}"`);
+    }
+
+    return Object.fromEntries(
+      Stacks[0].Outputs.map((o) => [o.OutputKey ?? "", o.OutputValue ?? ""]),
+    );
+  } catch (error) {
+    // Important: throw a fresh Error so Vitest serializes only safe text.
+    throw new Error(
+      `Unable to resolve CloudFormation outputs for stack "${stackName}". ${toSafeMessage(error)}`,
+    );
   }
-
-  return Object.fromEntries(
-    Stacks[0].Outputs.map((o) => [o.OutputKey ?? "", o.OutputValue ?? ""]),
-  );
 }

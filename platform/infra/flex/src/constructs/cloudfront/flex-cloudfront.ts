@@ -14,7 +14,6 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { RestApiOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
@@ -140,7 +139,7 @@ export class FlexCloudfront extends Construct {
     return {
       byteMatchStatement: {
         fieldToMatch: {
-          singleHeader: { name: "x-origin-verify" },
+          singleHeader: { Name: "x-origin-verify" },
         },
         positionalConstraint: "EXACTLY",
         searchString: secret,

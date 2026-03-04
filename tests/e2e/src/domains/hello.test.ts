@@ -1,11 +1,14 @@
 import { it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { describe, expect, inject } from "vitest";
 
-describe("Domain: Hello", () => {
+describe("Domain: Hello v1", () => {
+  const { JWT } = inject("e2eEnv");
+  const version = "/v1";
+
   it.for([
-    { method: "GET", endpoint: "/hello-isolated" },
-    { method: "GET", endpoint: "/hello-private" },
-    { method: "GET", endpoint: "/hello-public" },
+    { method: "GET", endpoint: `${version}/hello-isolated` },
+    { method: "GET", endpoint: `${version}/hello-private` },
+    { method: "GET", endpoint: `${version}/hello-public` },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when unauthenticated",
     async ({ endpoint }, { cloudfront }) => {
@@ -22,9 +25,10 @@ describe("Domain: Hello", () => {
   );
 
   it.for([
-    { method: "GET", endpoint: "/hello-isolated" },
-    { method: "GET", endpoint: "/hello-private" },
-    { method: "GET", endpoint: "/hello-public" },
+    { method: "GET", endpoint: `${version}/hello-isolated` },
+    { method: "GET", endpoint: `${version}/hello-private` },
+    { method: "GET", endpoint: `${version}/hello-public` },
+    { method: "GET", endpoint: `${version}/hello-call-internal` },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when Bearer token is empty",
     async ({ endpoint }, { cloudfront }) => {
@@ -42,30 +46,27 @@ describe("Domain: Hello", () => {
     },
   );
 
-  it.todo.for([
+  it.for([
     {
       method: "GET",
-      endpoint: "/hello-isolated",
+      endpoint: `${version}/hello-isolated`,
       expectedBody: { message: "Hello isolated world!" },
     },
     {
       method: "GET",
-      endpoint: "/hello-private",
+      endpoint: `${version}/hello-private`,
       expectedBody: { message: "Hello private world!" },
     },
     {
       method: "GET",
-      endpoint: "/hello-public",
+      endpoint: `${version}/hello-public`,
       expectedBody: { message: "Hello public world!" },
     },
   ] as const)(
     "$method $endpoint returns a 200 and hello message",
     async ({ endpoint, expectedBody }, { cloudfront }) => {
-      // TODO: Replace with valid test user token
-      const token = "todo.valid.token";
-
       const response = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
 
       expect(response.headers.get("apigw-requestid")).toBeDefined();

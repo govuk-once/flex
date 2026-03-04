@@ -37,22 +37,7 @@ export class FlexPrivateIsolatedFunction extends Construct {
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
-      // bundling: {
-      //   nodeModules: [
-      //     "@smithy/protocol-http",
-      //     "@smithy/signature-v4",
-      //     "@smithy/util-utf8",
-      //   ],
-      // },
     });
-
-    // this.function.addToRolePolicy(
-    //   new PolicyStatement({
-    //     effect: Effect.ALLOW,
-    //     actions: ["execute-api:Invoke"],
-    //     resources: ["arn:aws:execute-api:eu-west-2:{UDP-Account}:*/*/*/*"],
-    //   }),
-    // );
 
     if (functionProps.domain) {
       Tags.of(this.function).add("ResourceOwner", functionProps.domain, {

@@ -14,6 +14,7 @@ const handlerConfigSchema = z.object({
   entry: z.string(),
   type: z.enum(["PUBLIC", "PRIVATE", "ISOLATED"]),
   env: z.record(z.string(), z.string()).optional(),
+  envEphemeral: z.record(z.string(), z.string()).optional(),
   envSecret: z.record(z.string(), z.string()).optional(),
   kmsKeys: z.record(z.string(), z.string()).optional(),
   permissions: z.array(permissionsSchema).optional(),

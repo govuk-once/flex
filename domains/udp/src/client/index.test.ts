@@ -35,6 +35,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("UdpDomainClient", () => {
+  const appId = "123";
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -67,14 +68,16 @@ describe("UdpDomainClient", () => {
   ])(
     "propagates $name network error to the caller",
     async ({ error, expectedError }) => {
-      nock(BASE_URL).get("/gateways/udp/v1/preferences").replyWithError(error);
+      nock(BASE_URL)
+        .get("/gateways/udp/v1/notifications")
+        .replyWithError(error);
 
       const client = createUdpDomainClient({
         region,
         baseUrl: BASE_URL,
       });
 
-      await expect(client.gateway.getPreferences()).rejects.toThrow(
+      await expect(client.gateway.getPreferences(appId)).rejects.toThrow(
         expectedError,
       );
     },
@@ -108,14 +111,14 @@ describe("UdpDomainClient", () => {
   ])(
     "propagates $name client-side error to the caller",
     async ({ status, body, expectedError }) => {
-      nock(BASE_URL).get("/gateways/udp/v1/preferences").reply(status, body);
+      nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(status, body);
 
       const client = createUdpDomainClient({
         region,
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.getPreferences();
+      const result = await client.gateway.getPreferences(appId);
 
       expect(result).toEqual({
         ok: false,
@@ -129,14 +132,12 @@ describe("UdpDomainClient", () => {
   );
 
   it("returns validated response from getPreferences matching the expected getPreferences schema", async () => {
-    const updatedAt = new Date().toISOString();
     nock(BASE_URL)
-      .get("/gateways/udp/v1/preferences")
+      .get("/gateways/udp/v1/notifications")
       .reply(200, {
         preferences: {
           notifications: {
             consentStatus: "accepted",
-            updatedAt,
           },
         },
       });
@@ -146,7 +147,7 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
     });
 
-    const result = await client.gateway.getPreferences();
+    const result = await client.gateway.getPreferences(appId);
 
     expect(result).toEqual({
       ok: true,
@@ -154,7 +155,6 @@ describe("UdpDomainClient", () => {
         preferences: {
           notifications: {
             consentStatus: "accepted",
-            updatedAt,
           },
         },
       },
@@ -187,14 +187,14 @@ describe("UdpDomainClient", () => {
 
   it("returns ok false and error when schema validation fails", async () => {
     nock(BASE_URL)
-      .get("/gateways/udp/v1/preferences")
+      .get("/gateways/udp/v1/notifications")
       .reply(200, { invalid: "shape" });
 
     const client = createUdpDomainClient({
       baseUrl: BASE_URL,
       region,
     });
-    const result = await client.gateway.getPreferences();
+    const result = await client.gateway.getPreferences(appId);
 
     expect(result.ok).toBe(false);
 

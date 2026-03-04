@@ -9,7 +9,7 @@ describe("extractUser middleware", () => {
 
     extractUser.before?.(request);
 
-    expect(request.event.requestContext.authorizer.lambda.pairwiseId).toBe(
+    expect(request.event.requestContext.authorizer.pairwiseId).toBe(
       "test-pairwise-id",
     );
   });

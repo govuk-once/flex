@@ -1,7 +1,8 @@
-import { expiredJwt, invalidJwt, it, validJwt } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { it } from "@flex/testing/e2e";
+import { describe, expect, inject } from "vitest";
 
 describe("authentication", () => {
+  const { JWT } = inject("e2eEnv");
   const endpoint = `/v1/hello-public`;
 
   describe("CloudFront viewer-request", () => {
@@ -51,7 +52,7 @@ describe("authentication", () => {
       cloudfront,
     }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${invalidJwt}` },
+        headers: { Authorization: `Bearer ${JWT.INVALID}` },
       });
 
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
@@ -60,33 +61,19 @@ describe("authentication", () => {
         body: { message: "Unauthorized" },
       });
     });
-
-    it.skip("rejects expired tokens", async ({ cloudfront }) => {
-      const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${expiredJwt}` },
-      });
-
-      expect(result).toMatchObject({
-        status: 403,
-        body: {
-          message: "JWT expired",
-          type: "auth_error",
-        },
-      });
-    });
   });
 
-  describe.skip("Lambda authorizer", () => {
+  describe("Lambda authorizer", () => {
     it("allows request with a valid token", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${validJwt}` },
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
 
       expect(result.headers.get("x-rejected-by")).toBeNull();
       expect(result).toEqual(
         expect.objectContaining({
           status: 200,
-          body: JSON.stringify({ message: "Hello public world!" }),
+          body: { message: "Hello public world!" },
         }),
       );
     });

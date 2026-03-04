@@ -1,4 +1,12 @@
-import { e2eEnvSchema, flexStackOutputsSchema } from "@flex/testing/e2e";
+import {
+  BaseTokenGenerator,
+  e2eEnvSchema,
+  flexPrivateGatewayStackOutputsSchema,
+  flexStackOutputsSchema,
+  getStubTokenGenerator,
+  getTokenGenerator,
+  invalidJwt,
+} from "@flex/testing/e2e";
 import { getStackOutputs, sanitiseStageName } from "@flex/utils";
 import { config } from "dotenv";
 
@@ -9,23 +17,60 @@ export default async function setup({
 }: {
   provide: (key: "e2eEnv", value: unknown) => void;
 }) {
-  if (process.env.FLEX_API_URL) {
-    provide("e2eEnv", e2eEnvSchema.parse(process.env));
-    return;
+  const manualApiUrl = process.env.FLEX_API_URL;
+  const manualGatewayUrl = process.env.FLEX_PRIVATE_GATEWAY_URL;
+
+  const envStage = sanitiseStageName(process.env.STAGE);
+
+  let stage: string;
+  let apiUrl: string;
+  let privateGatewayUrl: string;
+
+  if (manualApiUrl || manualGatewayUrl) {
+    if (!manualApiUrl || !manualGatewayUrl || envStage === undefined) {
+      throw new Error(
+        "Manual Override Error: To provide a manual URL, you must provide FLEX_API_URL, FLEX_PRIVATE_GATEWAY_URL, and STAGE in your .env or command line.",
+      );
+    }
+
+    stage = envStage;
+    apiUrl = manualApiUrl;
+    privateGatewayUrl = manualGatewayUrl;
+  } else {
+    stage = envStage ?? sanitiseStageName(process.env.USER) ?? "development";
+
+    const [platformOutputs, gatewayOutputs] = await Promise.all([
+      getStackOutputs(`${stage}-FlexPlatform`),
+      getStackOutputs(`${stage}-FlexPrivateGateway`),
+    ]);
+
+    apiUrl = flexStackOutputsSchema.parse(platformOutputs).FlexApiUrl;
+    privateGatewayUrl =
+      flexPrivateGatewayStackOutputsSchema.parse(
+        gatewayOutputs,
+      ).PrivateGatewayUrl;
   }
 
-  const stage =
-    sanitiseStageName(process.env.STAGE ?? process.env.USER) ?? "development";
-  const stack = `${stage}-FlexPlatform`;
-  const outputs = await getStackOutputs(stack);
-
-  const { FlexApiUrl } = flexStackOutputsSchema.parse(outputs);
+  const jwtClient = await getJwtClient(stage);
+  const validJwtToken = await jwtClient.getToken();
 
   provide(
     "e2eEnv",
     e2eEnvSchema.parse({
-      FLEX_API_URL: FlexApiUrl,
+      FLEX_API_URL: apiUrl,
+      FLEX_PRIVATE_GATEWAY_URL: privateGatewayUrl,
       STAGE: stage,
+      JWT: {
+        VALID: validJwtToken,
+        INVALID: invalidJwt,
+      },
     }),
   );
+}
+
+export async function getJwtClient(stage: string): Promise<BaseTokenGenerator> {
+  if (stage === "staging" || stage === "production") {
+    return await getTokenGenerator(stage);
+  }
+  return await getStubTokenGenerator();
 }

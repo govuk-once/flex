@@ -9,11 +9,11 @@ import type { APIGatewayProxyResultV2 } from "aws-lambda";
  */
 export function jsonResponse(
   statusCode: number,
-  body: unknown,
+  body?: unknown,
 ): APIGatewayProxyResultV2 {
   return {
     statusCode,
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
     headers: { "Content-Type": "application/json" },
   };
 }

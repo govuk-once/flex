@@ -8,6 +8,8 @@ export type {
   EventOverrides,
   EventWithAuthorizer,
   EventWithAuthorizerOverrides,
+  RestApiEventWithAuthorizer,
+  RestApiEventWithAuthorizerOverrides,
 } from "./apigateway";
 export {
   authorizerEvent,
@@ -16,9 +18,11 @@ export {
   createAuthorizerResult,
   createEvent,
   createEventWithAuthorizer,
+  createRestApiEventWithAuthorizer,
   createTokenAuthorizerEvent,
   event,
   eventWithAuthorizer,
+  restApiEventWithAuthorizer,
   tokenAuthorizerEvent,
 } from "./apigateway";
 export {
