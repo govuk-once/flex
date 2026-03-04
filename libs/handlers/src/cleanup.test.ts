@@ -1,3 +1,4 @@
+import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import fs, { readdirSync, rmSync } from "fs";
 import { vol } from "memfs";
@@ -13,6 +14,7 @@ vitest.mock("node:fs", async () => {
 beforeEach(() => {
   vol.reset();
   vi.clearAllMocks();
+  getLogger({ serviceName: "test-service" });
 });
 
 describe("clearTmp", () => {
@@ -30,11 +32,12 @@ describe("clearTmp", () => {
     clearTmp();
 
     expect(readdirSync).toHaveBeenCalledExactlyOnceWith("/tmp");
-    expect(rmSync).toHaveBeenCalledExactlyOnceWith("/tmp/file1.txt", {
+    expect(rmSync).toHaveBeenCalledTimes(2);
+    expect(rmSync).toHaveBeenCalledWith("/tmp/file1.txt", {
       recursive: true,
       force: true,
     });
-    expect(rmSync).toHaveBeenCalledExactlyOnceWith("/tmp/file2.txt", {
+    expect(rmSync).toHaveBeenCalledWith("/tmp/file2.txt", {
       recursive: true,
       force: true,
     });
