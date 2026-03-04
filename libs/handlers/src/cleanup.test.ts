@@ -34,7 +34,7 @@ describe("clearTmp", () => {
       recursive: true,
       force: true,
     });
-    expect(rmSync).toHaveBeenCalledWith("/tmp/file2.txt", {
+    expect(rmSync). toHaveBeenCalledExactlyOnceWith("/tmp/file2.txt", {
       recursive: true,
       force: true,
     });
