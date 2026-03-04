@@ -1,6 +1,7 @@
+import { it } from "@flex/testing";
 import fs, { readdirSync, rmSync } from "fs";
 import { vol } from "memfs";
-import { describe, expect, it, vi, vitest } from "vitest";
+import { describe, expect, vi, vitest } from "vitest";
 
 import { clearTmp } from "./cleanup";
 
@@ -10,7 +11,9 @@ vitest.mock("node:fs", async () => {
 });
 
 describe("clearTmp", () => {
-  it("should clear all files in the /tmp directory", () => {
+  it("should clear all files in the /tmp directory", ({ env }) => {
+    env.set({ NODE_ENV: "production" });
+
     vol.fromJSON({
       "/tmp/file1.txt": "content1",
       "/tmp/file2.txt": "content2",
