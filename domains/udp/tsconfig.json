@@ -5,5 +5,14 @@
     "vitest.config.ts",
     "domain.config.ts",
     "domain.private.config.ts"
-  ]
+  ],
+  "compilerOptions": {
+    "paths": {
+      "@schemas/*": ["./src/schemas/*"],
+      "@services/*": ["./src/services/*"],
+      "@client": ["./src/client"],
+      "@types": ["./src/types/index.ts"],
+      "@test/fixtures": ["./src/test/fixtures.ts"]
+    }
+  }
 }
