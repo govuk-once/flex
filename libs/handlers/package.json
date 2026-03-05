@@ -23,6 +23,7 @@
     "@types/http-errors": "2.0.5",
     "eslint": "9.39.2",
     "http-errors": "2.0.1",
+    "memfs": "4.56.10",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }
