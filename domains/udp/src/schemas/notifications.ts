@@ -1,10 +1,12 @@
 import { z } from "zod";
 
+import { notificationId } from "./common";
+
 export const CONSENT_STATUS_SCHEMA = z.enum(["unknown", "accepted", "denied"]);
 
 export const createNotificationRequestSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: z.string(),
+  notificationId,
 });
 
 export type CreateNotificationRequest = z.infer<
@@ -13,7 +15,7 @@ export type CreateNotificationRequest = z.infer<
 
 export const createNotificationResponseSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: z.string(),
+  notificationId,
 });
 
 export type CreateNotificationResponse = z.infer<
@@ -22,7 +24,7 @@ export type CreateNotificationResponse = z.infer<
 
 export const getNotificationResponseSchema = z.object({
   consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId: z.string(),
+  notificationId,
 });
 
 export type GetNotificationResponse = z.infer<
@@ -39,7 +41,7 @@ export type UpdateNotificationRequest = z.infer<
 
 export const updateNotificationOutboundRequestSchema =
   updateNotificationRequestSchema.extend({
-    notificationId: z.string(),
+    notificationId,
   });
 
 export type UpdateNotificationOutboundRequest = z.infer<

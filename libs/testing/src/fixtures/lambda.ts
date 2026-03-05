@@ -1,4 +1,4 @@
-import type { DeepPartial } from "@flex/utils";
+import type { DeepPartial, UserId } from "@flex/utils";
 import type { Context } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
@@ -20,12 +20,12 @@ const baseContext: Context = {
   succeed: () => {},
 };
 
-function buildContext(overrides?: DeepPartial<ContextWithPairwiseId>) {
-  return mergeDeepLeft(overrides ?? {}, baseContext) as ContextWithPairwiseId;
+function buildContext(overrides?: DeepPartial<ContextWithUserId>) {
+  return mergeDeepLeft(overrides ?? {}, baseContext) as ContextWithUserId;
 }
 
-export interface ContextWithPairwiseId extends Context {
-  pairwiseId: string;
+export interface ContextWithUserId extends Context {
+  userId: UserId;
 }
 
 type Secrets = Record<string, unknown>;
@@ -53,7 +53,7 @@ class BuildContext {
     return buildContext({
       ...this.overrides,
       ...this.secrets,
-      pairwiseId: this.pairwiseId,
+      userId: this.pairwiseId,
       ...overrides,
     });
   }

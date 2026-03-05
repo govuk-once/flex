@@ -1,8 +1,9 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
+import { createUdpDomainClient } from "@client";
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import {
-  type ContextWithPairwiseId,
+  type ContextWithUserId,
   createSecretsMiddleware,
   extractUser,
   type V2Authorizer,
@@ -11,6 +12,11 @@ import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
+import {
+  NotificationSecretContext,
+  updateNotificationRequestSchema,
+} from "@schemas/notifications";
+import { getNotificationId } from "@services/getNotificationId";
 import type {
   APIGatewayProxyResultV2,
   APIGatewayProxyWithLambdaAuthorizerEvent,
@@ -18,13 +24,6 @@ import type {
 import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
-
-import { createUdpDomainClient } from "../../../../client";
-import {
-  NotificationSecretContext,
-  updateNotificationRequestSchema,
-} from "../../../../schemas/notifications";
-import { generateDerivedId } from "../../../../service/derived-id";
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -34,10 +33,11 @@ const configSchema = z.object({
 export const handler = createLambdaHandler<
   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
   APIGatewayProxyResultV2,
-  ContextWithPairwiseId & NotificationSecretContext
+  ContextWithUserId & NotificationSecretContext
 >(
   async (event, context) => {
     const logger = getLogger();
+    const { userId, notificationSecretKey } = context;
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
       updateNotificationRequestSchema,
@@ -48,9 +48,9 @@ export const handler = createLambdaHandler<
       throw new createHttpError.BadRequest(message);
     }
 
-    const notificationId = generateDerivedId({
-      pairwiseId: context.pairwiseId,
-      secretKey: context.notificationSecretKey,
+    const notificationId = getNotificationId({
+      userId,
+      secretKey: notificationSecretKey,
     });
 
     const config = await getConfig(configSchema);
@@ -58,12 +58,13 @@ export const handler = createLambdaHandler<
       region: config.AWS_REGION,
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
+
     const response = await client.gateway.notifications.update(
       {
         consentStatus: parsedEvent.data.consentStatus,
         notificationId,
       },
-      context.pairwiseId,
+      userId,
     );
 
     if (!response.ok) {

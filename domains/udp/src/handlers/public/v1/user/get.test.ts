@@ -1,16 +1,16 @@
-import { ContextWithPairwiseId } from "@flex/middlewares";
-import { it } from "@flex/testing";
+import { ContextWithUserId } from "@flex/middlewares";
+import { createUserId, it } from "@flex/testing";
+import { NotificationSecretContext } from "@schemas/notifications";
+import { getNotificationId } from "@services/getNotificationId";
+import { getUserProfile } from "@services/userProfile";
+import { testNotificationId } from "@test/fixtures";
+import type { NotificationId } from "@types";
 import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { NotificationSecretContext } from "../../../../schemas/notifications";
-import { generateDerivedId } from "../../../../service/derived-id";
-import { getUserProfile } from "../../../../service/userProfile";
 import { handler } from "./get";
 
-vi.mock("../../../../service/derived-id", () => ({
-  generateDerivedId: vi.fn(),
-}));
+vi.mock("@services/getNotificationId");
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
     Promise.resolve({
@@ -19,12 +19,12 @@ vi.mock("@flex/params", () => ({
     }),
   ),
 }));
-vi.mock("../../../../service/userProfile", () => ({
+vi.mock("@services/userProfile", () => ({
   getUserProfile: vi.fn(),
 }));
 vi.mock("@flex/middlewares");
 
-type UserGetContext = ContextWithPairwiseId & NotificationSecretContext;
+type UserGetContext = ContextWithUserId & NotificationSecretContext;
 
 describe("GET /user handler", () => {
   const mockNotificationSecret = {
@@ -56,7 +56,6 @@ describe("GET /user handler", () => {
   describe("when a user profile is found", () => {
     beforeEach(() => {
       vi.mocked(getUserProfile).mockResolvedValue(makeUserProfileResponse());
-      vi.mocked(generateDerivedId).mockReturnValue(mockNotificationId);
     });
 
     it("returns 200 with user profile payload", async ({
@@ -104,14 +103,14 @@ describe("GET /user handler", () => {
           .create() as UserGetContext,
       );
 
-      expect(generateDerivedId).toHaveBeenCalledWith({
-        pairwiseId: testPairwiseId,
+      expect(getNotificationId).toHaveBeenCalledWith({
+        userId: testPairwiseId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
       expect(getUserProfile).toHaveBeenCalledExactlyOnceWith({
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
-        notificationId: mockNotificationId,
+        notificationId: testNotificationId,
         userId: testPairwiseId,
       });
     });
@@ -121,7 +120,7 @@ describe("GET /user handler", () => {
       privateGatewayEventWithAuthorizer,
       context,
     }) => {
-      const customPairwiseId = "custom-user-id-123";
+      const customPairwiseId = createUserId("custom-user-id-123");
       const customProfile = makeUserProfileResponse({
         userId: customPairwiseId,
       });
@@ -142,21 +141,21 @@ describe("GET /user handler", () => {
           },
         }),
       );
-      expect(generateDerivedId).toHaveBeenCalledExactlyOnceWith({
-        pairwiseId: customPairwiseId,
+      expect(getNotificationId).toHaveBeenCalledExactlyOnceWith({
+        userId: customPairwiseId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
       expect(getUserProfile).toHaveBeenCalledWith({
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
-        notificationId: mockNotificationId,
+        notificationId: testNotificationId,
         userId: customPairwiseId,
       });
     });
   });
 
   describe("service integration", () => {
-    it("calls generateDerivedId exactly once per request", async ({
+    it("calls getNotificationId exactly once per request", async ({
       privateGatewayEventWithAuthorizer,
       context,
     }) => {
@@ -168,16 +167,16 @@ describe("GET /user handler", () => {
           .create() as UserGetContext,
       );
 
-      expect(generateDerivedId).toHaveBeenCalledOnce();
+      expect(getNotificationId).toHaveBeenCalledOnce();
     });
 
-    it("bubbles errors from generateDerivedId", async ({
+    it("bubbles errors from getNotificationId", async ({
       privateGatewayEventWithAuthorizer,
       context,
       response,
     }) => {
-      const error = new Error("generateDerivedId failed");
-      vi.mocked(generateDerivedId).mockImplementation(() => {
+      const error = new Error("getNotificationId failed");
+      vi.mocked(getNotificationId).mockImplementation(() => {
         throw error;
       });
 

@@ -1,5 +1,7 @@
-import type { ContextWithPairwiseId } from "@flex/middlewares";
+import type { ContextWithUserId } from "@flex/middlewares";
 import { it } from "@flex/testing";
+import { getNotificationId } from "@services/getNotificationId";
+import { testNotificationId } from "@test/fixtures";
 import nock from "nock";
 import {
   afterAll,
@@ -14,14 +16,9 @@ import {
 import { NotificationSecretContext } from "../../../../schemas/notifications";
 import { handler } from "./patch";
 
-const mockGenerateDerivedId = vi.hoisted(() => vi.fn());
+type UserPatchContext = ContextWithUserId & NotificationSecretContext;
 
-type UserPatchContext = ContextWithPairwiseId & NotificationSecretContext;
-
-vi.mock("../../../../service/derived-id", () => ({
-  generateDerivedId: (...args: unknown[]) =>
-    mockGenerateDerivedId(...args) as never,
-}));
+vi.mock("@services/getNotificationId");
 vi.mock("@flex/middlewares");
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
@@ -63,12 +60,6 @@ describe("Public PATCH /user handler", () => {
   });
 
   describe("when user preferences are updated successfully", () => {
-    const derivedNotificationId = "derived-notification-id";
-
-    beforeEach(() => {
-      mockGenerateDerivedId.mockReturnValue(derivedNotificationId);
-    });
-
     it("derives notificationId and passes it to the private handler", async ({
       response,
       privateGatewayEventWithAuthorizer,
@@ -77,11 +68,11 @@ describe("Public PATCH /user handler", () => {
       nock(BASE_URL)
         .post("/gateways/udp/v1/notifications", {
           consentStatus: "accepted",
-          notificationId: derivedNotificationId,
+          notificationId: testNotificationId,
         })
         .reply(200, {
           consentStatus: "accepted",
-          notificationId: derivedNotificationId,
+          notificationId: testNotificationId,
         });
 
       const request = await handler(
@@ -96,15 +87,15 @@ describe("Public PATCH /user handler", () => {
           .create() as UserPatchContext,
       );
 
-      expect(mockGenerateDerivedId).toHaveBeenCalledWith({
-        pairwiseId: "test-pairwise-id",
+      expect(getNotificationId).toHaveBeenCalledWith({
+        userId: "test-pairwise-id",
         secretKey: "test-secret", // pragma: allowlist secret
       });
       expect(request).toEqual(
         response.ok(
           {
             consentStatus: "accepted",
-            notificationId: derivedNotificationId,
+            notificationId: testNotificationId,
           },
           {
             headers: {
@@ -130,7 +121,6 @@ describe("Public PATCH /user handler", () => {
   ])(
     "rejects invalid payload: $description",
     async ({ body }, { privateGatewayEventWithAuthorizer, context }) => {
-      mockGenerateDerivedId.mockReturnValue("derived-id");
       const result = await handler(
         privateGatewayEventWithAuthorizer.patch("/user", { body }),
         context

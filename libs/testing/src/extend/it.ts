@@ -1,4 +1,5 @@
 /* eslint-disable no-empty-pattern */
+import { UserId } from "@flex/utils";
 import type { Mock } from "vitest";
 import { it as vitestIt, vi } from "vitest";
 
@@ -16,6 +17,7 @@ import {
   createRestApiEvent,
   createRestApiEventWithAuthorizer,
 } from "../fixtures/apigateway";
+import { createUserId } from "../fixtures/user";
 
 interface Fixtures {
   authorizerEvent: ReturnType<typeof createAuthorizerEvent>;
@@ -53,6 +55,7 @@ interface Fixtures {
     set: (params: Record<string, unknown>) => void;
     delete: (...paths: string[]) => void;
   };
+  userId: UserId;
 }
 
 export const it = vitestIt.extend<Fixtures>({
@@ -136,4 +139,5 @@ export const it = vitestIt.extend<Fixtures>({
     },
     { auto: true },
   ],
+  userId: async ({}, use) => use(createUserId()),
 });

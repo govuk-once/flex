@@ -1,3 +1,4 @@
+import { createUserId } from "@flex/testing";
 import { type MiddlewareObj } from "@middy/core";
 import {
   type APIGatewayProxyEventV2WithLambdaAuthorizer,
@@ -5,22 +6,20 @@ import {
 } from "aws-lambda";
 import { vi } from "vitest";
 
-import { ContextWithPairwiseId } from "..";
+import { ContextWithUserId } from "..";
 import { type V2Authorizer } from "..";
 
-// Assume the real module exports a function 'getUser'
 export const extractUser: MiddlewareObj<
   APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
   unknown,
   Error,
-  ContextWithPairwiseId
+  ContextWithUserId
 > = {
   before: vi.fn().mockImplementation((request) => {
-    (request as ContextWithPairwiseId).pairwiseId = "test-pairwise-id";
+    (request as ContextWithUserId).userId = createUserId("test-user-id");
   }),
 };
 
-// --- Mocking secrets exports ---
 export const createSecretsMiddleware: MiddlewareObj<
   unknown,
   unknown,
@@ -35,7 +34,6 @@ export const createSecretsMiddleware: MiddlewareObj<
   Context & Record<string, string | undefined>
 >;
 
-// --- Mocking default export if you have one ---
 export default {
   extractUser,
   createSecretsMiddleware,

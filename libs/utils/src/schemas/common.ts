@@ -88,3 +88,10 @@ export const ApiGatewayUrlSchema = z.url({
 });
 
 export type ApiGatewayUrl = z.output<typeof ApiGatewayUrlSchema>;
+
+// ============================================================================
+// CROSS-DOMAIN
+// ============================================================================
+
+export const UserId = NonEmptyString.brand<"UserId">();
+export type UserId = z.output<typeof UserId>;
