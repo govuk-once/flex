@@ -1,5 +1,6 @@
 import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 
+import { identityRequest } from "../schemas/identity";
 import {
   PreferencesRequest,
   preferencesResponseSchema,
@@ -41,6 +42,23 @@ export function createUdpDomainClient({
 
   return {
     gateway: {
+      createServiceLink: (
+        service: string,
+        serviceId: string,
+        body: identityRequest,
+      ) => {
+        const { request } = gatewayFetcher(
+          `${UDP_GATEWAY_ROUTES.postIdentity}/${service}/${serviceId}`,
+          {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        return typedFetch(request);
+      },
       createUser: (body: CreateUserRequest) => {
         const { request } = gatewayFetcher(UDP_GATEWAY_ROUTES.user, {
           method: "POST",

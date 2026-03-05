@@ -3,6 +3,7 @@ export const UDP_GATEWAY_BASE = "/gateways/udp/v1";
 export const UDP_GATEWAY_ROUTES = {
   notifications: "/notifications",
   user: "/user",
+  postIdentity: "/identity",
 } as const;
 
 export const UDP_DOMAIN_BASE = "/domains/udp/v1";
