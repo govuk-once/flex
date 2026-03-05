@@ -1,3 +1,5 @@
+import { it } from "@flex/testing";
+import { createNotificationId } from "@test/fixtures";
 import nock from "nock";
 import {
   afterAll,
@@ -6,7 +8,6 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
   vi,
 } from "vitest";
 
@@ -20,7 +21,7 @@ vi.mock("@flex/logging", () => ({
     debug: vi.fn(),
   }),
 }));
-// Important: convert SigV4 fetcher into plain fetch for tests
+
 vi.mock("@flex/flex-fetch", async (actual) => ({
   ...(await actual()),
   createSigv4Fetcher:
@@ -32,8 +33,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("getUserProfile", () => {
-  const userId = "test-user-id";
-  const notificationId = "test-notification-id";
+  const notificationId = createNotificationId();
   const BASE_URL = "https://example.com";
   const region = "eu-west-2";
 
@@ -54,7 +54,9 @@ describe("getUserProfile", () => {
     nock.cleanAll();
   });
 
-  it("creates user and returns preferences when missing", async () => {
+  it("creates user and returns preferences when missing", async ({
+    userId,
+  }) => {
     nock(BASE_URL)
       .get("/gateways/udp/v1/notifications")
       .reply(404, { message: "Not Found" })
@@ -64,12 +66,7 @@ describe("getUserProfile", () => {
         consentStatus: "unknown",
         notificationId,
       })
-      .reply(200, { consentStatus: "unknown", notificationId })
-      .get("/gateways/udp/v1/notifications")
-      .reply(200, {
-        consentStatus: "unknown",
-        notificationId,
-      });
+      .reply(200, { consentStatus: "unknown", notificationId });
 
     const result = await getUserProfile({
       region,
@@ -88,7 +85,9 @@ describe("getUserProfile", () => {
     });
   });
 
-  it("returns existing preferences when user already exists", async () => {
+  it("returns existing preferences when user already exists", async ({
+    userId,
+  }) => {
     nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(200, {
       consentStatus: "accepted",
       notificationId,
@@ -111,9 +110,9 @@ describe("getUserProfile", () => {
     });
   });
 
-  it.each([401, 422, 500])(
+  it.for([401, 422, 500])(
     "throws BadGateway when preferences returns %s",
-    async (statusCode) => {
+    async (statusCode, { userId }) => {
       nock(BASE_URL)
         .get("/gateways/udp/v1/notifications")
         .reply(statusCode, { message: "Upstream error" });

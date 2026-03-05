@@ -61,3 +61,6 @@ export type NumberBetween<From extends number, To extends number> = Exclude<
   NumberUpTo<To>,
   NumberUpTo<From>
 >;
+
+type Brand<B> = { __brand: B };
+export type Branded<T, B> = T & Brand<B>;
