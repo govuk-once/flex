@@ -14,7 +14,8 @@ import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
 export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
-  | "createUser";
+  | "createUser"
+  | "createIdentityLink";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -59,7 +60,14 @@ export type CreateUserRouteContract = BaseRouteContract<
   CreateUserResponse
 >;
 
+export type CreateIdentityLinkRouteContract = BaseRouteContract<
+  "createIdentityLink",
+  "POST",
+  unknown
+>;
+
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
-  | CreateUserRouteContract;
+  | CreateUserRouteContract
+  | CreateIdentityLinkRouteContract;

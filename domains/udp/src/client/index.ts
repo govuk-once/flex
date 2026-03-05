@@ -8,6 +8,7 @@ import {
 } from "@schemas/notifications";
 import { CreateUserRequest } from "@schemas/user";
 
+import { identityRequest } from "../schemas/identity";
 import {
   UDP_DOMAIN_BASE,
   UDP_DOMAIN_ROUTES,
@@ -57,6 +58,23 @@ export function createUdpDomainClient({
           });
           return typedFetch(request);
         },
+      },
+      createServiceLink: (
+        service: string,
+        serviceId: string,
+        body: identityRequest,
+      ) => {
+        const { request } = gatewayFetcher(
+          `${UDP_GATEWAY_ROUTES.postIdentity}/${service}/${serviceId}`,
+          {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        return typedFetch(request);
       },
       notifications: {
         get: (userId: UserId) => {
