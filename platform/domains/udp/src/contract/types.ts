@@ -6,7 +6,8 @@ import type { UdpRemoteClient } from "../client";
 export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
-  | "createUser";
+  | "createUser"
+  | "createIdentityLink";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -41,7 +42,14 @@ export type CreateUserRouteContract = BaseRouteContract<
   unknown
 >;
 
+export type CreateIdentityLinkRouteContract = BaseRouteContract<
+  "createIdentityLink",
+  "POST",
+  unknown
+>;
+
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
-  | CreateUserRouteContract;
+  | CreateUserRouteContract
+  | CreateIdentityLinkRouteContract;

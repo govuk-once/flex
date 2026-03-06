@@ -15,6 +15,7 @@ vi.mock("@flex/logging", () => ({
 const remoteClient = {
   getPreferences: vi.fn(),
   updatePreferences: vi.fn(),
+  createServiceLink: vi.fn(),
   createUser: vi.fn(),
 };
 
@@ -87,6 +88,26 @@ describe("Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.getPreferences).toHaveBeenCalledWith("123");
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/identity/my-service/user-abc-123",
+      operation: "createServiceLink",
+      body: { appId: "pairwise-999" },
+      configureRemoteClient: () => {
+        remoteClient.createServiceLink.mockResolvedValue({
+          ok: true,
+          status: 201,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.createServiceLink).toHaveBeenCalledWith(
+          "my-service",
+          "user-abc-123",
+          { appId: "pairwise-999" },
+        );
       },
     },
   ])(
@@ -176,6 +197,12 @@ describe("Executor", () => {
       operation: "updateNotifications",
       headers: { "requesting-service-user-id": "123" },
       body: { preferences: undefined },
+    },
+    {
+      method: "POST",
+      path: "/v1/identity/service/id",
+      operation: "createServiceLink",
+      body: { appId: undefined },
     },
   ])(
     "throws 400 when $method $path $operation body fails schema validation",

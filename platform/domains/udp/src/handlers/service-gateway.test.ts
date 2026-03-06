@@ -41,6 +41,7 @@ const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
 const remoteClient = {
   getPreferences: vi.fn(),
   updatePreferences: vi.fn(),
+  createServiceLink: vi.fn(),
   createUser: vi.fn(),
 };
 
@@ -177,6 +178,48 @@ describe("UDP Service Gateway", () => {
       notificationId: "notif-123",
       appId: "app-abc",
     });
+  });
+
+  it("dispatches POST /v1/identity/:service/:identifier and links service ID", async ({
+    privateGatewayEvent,
+    env,
+  }) => {
+    env.set({
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+    });
+
+    const serviceName = "test-service";
+    const identifier = "user-abc-123";
+    const appId = "pairwise-999";
+
+    remoteClient.createServiceLink.mockResolvedValue({
+      ok: true,
+      status: 201,
+      data: undefined,
+    });
+
+    const response = await handler(
+      privateGatewayEvent.post(
+        `/gateways/udp/v1/identity/${serviceName}/${identifier}`,
+        {
+          body: { appId },
+        },
+      ),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 201,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    expect(remoteClient.createServiceLink).toHaveBeenCalledWith(
+      serviceName,
+      identifier,
+      { appId },
+    );
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({

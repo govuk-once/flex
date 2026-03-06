@@ -5,8 +5,10 @@ import createHttpError from "http-errors";
 import z from "zod";
 
 import type { UdpRemoteClient } from "../client";
+import { identityRequestSchema } from "../schemas/inbound/identity";
 import { inboundPreferencesRequestSchema } from "../schemas/inbound/preferences";
 import { inboundCreateUserRequestSchema } from "../schemas/inbound/user";
+import { normalizeInboundPath } from "./executor";
 import type { RouteContract } from "./types";
 
 const INTERNAL_ROUTES = {
@@ -19,9 +21,44 @@ export const UDP_REMOTE_BASE = "/v1";
 export const UDP_REMOTE_ROUTES = {
   notifications: `${UDP_REMOTE_BASE}/notifications`,
   user: `${UDP_REMOTE_BASE}/user`,
+  identity: `${UDP_REMOTE_BASE}/identity`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
+  "POST:/v1/identity": {
+    operation: "createIdentityLink",
+    method: "POST",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    remoteExecutor: makeExecuteRemote(
+      async (event) => {
+        /** /v1/identity/{serviceName}/{identifier} */
+        const pathParams = normalizeInboundPath(event.path).split("/");
+
+        const serviceName = pathParams[3];
+        const identifier = pathParams[4];
+
+        if (!serviceName || !identifier) {
+          throw new createHttpError.BadRequest(
+            "Missing serviceName or identifier in path",
+          );
+        }
+
+        return {
+          serviceName,
+          identifier,
+          remoteBody: await parseAndMapBody(
+            identityRequestSchema,
+            (inbound) => inbound,
+            event,
+          ),
+        };
+      },
+      (client, { serviceName, identifier, remoteBody }) =>
+        client.createServiceLink(serviceName, identifier, remoteBody),
+      () => undefined,
+    ),
+  },
   "POST:/v1/user": {
     operation: "createUser",
     method: "POST",
@@ -105,6 +142,14 @@ export function matchToRouteContract(
   if (key in ROUTE_CONTRACTS) {
     return ROUTE_CONTRACTS[key as keyof typeof ROUTE_CONTRACTS];
   }
+
+  /**
+   * Dynamic identity path for identity due to /{serviceName}/{identifier}
+   */
+  if (method.toUpperCase() === "POST" && path.startsWith("/v1/identity/")) {
+    return ROUTE_CONTRACTS["POST:/v1/identity"];
+  }
+
   return undefined;
 }
 
