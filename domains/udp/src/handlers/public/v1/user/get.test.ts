@@ -4,7 +4,6 @@ import { NotificationSecretContext } from "@schemas/notifications";
 import { getNotificationId } from "@services/getNotificationId";
 import { getUserProfile } from "@services/userProfile";
 import { testNotificationId } from "@test/fixtures";
-import type { NotificationId } from "@types";
 import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -47,7 +46,7 @@ describe("GET /user handler", () => {
           consentStatus: "unknown",
         },
       },
-    }) as UserProfileResponse;
+    });
 
   beforeEach(() => {
     vi.clearAllMocks();
