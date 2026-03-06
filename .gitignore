@@ -25,3 +25,6 @@ coverage/
 cdk.context.json
 
 .env
+
+# HTTP client
+*.http
