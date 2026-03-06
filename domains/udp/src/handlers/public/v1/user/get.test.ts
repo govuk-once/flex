@@ -3,7 +3,7 @@ import { createUserId, it } from "@flex/testing";
 import { NotificationSecretContext } from "@schemas/notifications";
 import { getNotificationId } from "@services/getNotificationId";
 import { getUserProfile } from "@services/userProfile";
-import { testNotificationId } from "@test/fixtures";
+import { createNotificationId, testNotificationId } from "@test/fixtures";
 import { mergeDeepLeft } from "ramda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -29,24 +29,20 @@ describe("GET /user handler", () => {
   const mockNotificationSecret = {
     notificationSecretKey: "mocked-notification-secret", // pragma: allowlist secret
   };
-  const testPairwiseId = "test-pairwise-id";
-
-  const mockNotificationId = "mocked-notification-id";
-
   type UserProfileResponse = Awaited<ReturnType<typeof getUserProfile>>;
 
   const makeUserProfileResponse = (
     overrides: Partial<UserProfileResponse> = {},
   ): UserProfileResponse =>
     mergeDeepLeft(overrides, {
-      userId: testPairwiseId,
-      notificationId: mockNotificationId,
+      userId: createUserId(),
+      notificationId: createNotificationId(),
       preferences: {
         notifications: {
           consentStatus: "unknown",
         },
       },
-    });
+    }) as UserProfileResponse;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,6 +57,7 @@ describe("GET /user handler", () => {
       response,
       privateGatewayEventWithAuthorizer,
       context,
+      userId,
     }) => {
       const request = await handler(
         privateGatewayEventWithAuthorizer.authenticated(),
@@ -73,8 +70,8 @@ describe("GET /user handler", () => {
       expect(request).toEqual(
         response.ok(
           {
-            userId: testPairwiseId,
-            notificationId: mockNotificationId,
+            userId,
+            notificationId: createNotificationId(),
             preferences: {
               notifications: {
                 consentStatus: "unknown",
@@ -93,6 +90,7 @@ describe("GET /user handler", () => {
     it("calls getUserProfile with derived notificationId and config", async ({
       privateGatewayEventWithAuthorizer,
       context,
+      userId,
     }) => {
       await handler(
         privateGatewayEventWithAuthorizer.authenticated(),
@@ -103,14 +101,14 @@ describe("GET /user handler", () => {
       );
 
       expect(getNotificationId).toHaveBeenCalledWith({
-        userId: testPairwiseId,
+        userId,
         secretKey: mockNotificationSecret.notificationSecretKey,
       });
       expect(getUserProfile).toHaveBeenCalledExactlyOnceWith({
         region: "eu-west-2",
         baseUrl: "https://execute-api.eu-west-2.amazonaws.com",
         notificationId: testNotificationId,
-        userId: testPairwiseId,
+        userId,
       });
     });
 

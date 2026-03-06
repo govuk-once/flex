@@ -64,6 +64,7 @@ describe("Public PATCH /user handler", () => {
       response,
       privateGatewayEventWithAuthorizer,
       context,
+      userId,
     }) => {
       nock(BASE_URL)
         .post("/gateways/udp/v1/notifications", {
@@ -88,7 +89,7 @@ describe("Public PATCH /user handler", () => {
       );
 
       expect(getNotificationId).toHaveBeenCalledWith({
-        userId: "test-pairwise-id",
+        userId,
         secretKey: "test-secret", // pragma: allowlist secret
       });
       expect(request).toEqual(

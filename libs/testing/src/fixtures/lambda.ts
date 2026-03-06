@@ -2,6 +2,8 @@ import type { DeepPartial, UserId } from "@flex/utils";
 import type { Context } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
+import { createUserId } from "./user";
+
 export type ContextOverrides = DeepPartial<Context>;
 
 const baseContext: Context = {
@@ -39,7 +41,7 @@ class BuildContext {
     this.overrides = overrides;
   }
 
-  withPairwiseId(pairwiseId: string = "test-pairwise-id") {
+  withPairwiseId(pairwiseId: string = createUserId()) {
     this.pairwiseId = pairwiseId;
     return this;
   }
