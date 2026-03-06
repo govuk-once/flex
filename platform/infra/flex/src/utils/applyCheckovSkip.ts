@@ -6,6 +6,10 @@ export function applyCheckovSkip(
   id: string,
   comment?: string,
 ) {
-  const defaultChild = construct.node.defaultChild as CfnResource;
-  defaultChild.addMetadata("checkov", { skip: [{ id, comment }] });
+  const resource =
+    construct instanceof CfnResource
+      ? construct
+      : (construct.node.defaultChild as CfnResource);
+
+  resource.addMetadata("checkov", { skip: [{ id, comment }] });
 }

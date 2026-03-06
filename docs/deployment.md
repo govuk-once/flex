@@ -210,16 +210,6 @@ domain=udp pnpm deploy
 domain=udp STAGE=development pnpm deploy
 ```
 
-### Deploying Core Stack
-
-Core stack deployment only succeeds for persistent stages:
-
-```bash
-STAGE=development pnpm --filter @platform/core deploy
-```
-
-Ephemeral stages skip core deployment via [`stage_guard.sh`](/platform/infra/core/scripts/stage_guard.sh).
-
 ### Comparing Changes
 
 Preview changes before deploying:
@@ -276,9 +266,7 @@ aws cloudformation describe-stacks \
 **FLEX:**
 
 - [@flex/e2e](/tests/e2e/README.md)
-- [@platform/core](/platform/infra/core/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
-- [@platform/gov-uk-once](/platform/infra/gov-uk-once/README.md)
 
 **Guides:**
 

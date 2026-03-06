@@ -11,7 +11,7 @@ export const endpoints = defineDomain({
             entry: "handlers/public/v1/identity/post.ts",
             envEphemeral: {
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex-core/private-gateway/url",
+                "/flex/apigw/private/gateway-url",
             },
             timeoutSeconds: 20,
             permissions: [
@@ -36,7 +36,7 @@ export const endpoints = defineDomain({
             },
             envEphemeral: {
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex-core/private-gateway/url",
+                "/flex/apigw/private/gateway-url",
             },
             timeoutSeconds: 25,
             permissions: [
@@ -71,7 +71,7 @@ export const endpoints = defineDomain({
             },
             envEphemeral: {
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex-core/private-gateway/url",
+                "/flex/apigw/private/gateway-url",
             },
             timeoutSeconds: 20,
             permissions: [

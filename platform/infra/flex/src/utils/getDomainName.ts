@@ -1,5 +1,6 @@
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
-import { getEnvConfig } from "@platform/gov-uk-once";
+
+import { getEnvConfig } from "../base/env";
 
 const hostedZoneParamName = "/infra/dns/hostedzonename";
 

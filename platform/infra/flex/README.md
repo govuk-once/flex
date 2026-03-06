@@ -48,14 +48,16 @@ Deploys the application layer infrastructure.
 ### Usage
 
 ```typescript
-import { getStackName } from "@platform/gov-uk-once";
 import * as cdk from "aws-cdk-lib";
 
+import { getEnvConfig } from "./base/env";
 import { FlexPlatformStack } from "./stack";
+
+const { env, stage } = getEnvConfig();
 
 const app = new cdk.App();
 
-new FlexPlatformStack(app, getStackName("FlexPlatform"));
+new FlexPlatformStack(app, `${stage}-FlexPlatform`);
 ```
 
 ### Resources
@@ -203,6 +205,4 @@ getPlatformEntry("auth", "handler.ts");
 
 **FLEX:**
 
-- [@platform/core](/platform/infra/core/README.md)
-- [@platform/gov-uk-once](/platform/infra/gov-uk-once/README.md)
 - [Platform Development Guide](/docs/platform-development.md)

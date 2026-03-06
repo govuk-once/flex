@@ -29,7 +29,7 @@ describe("buildDomainIntegrations", () => {
   const gateway = {
     key: "gatewayKey",
     url: "https://gateway.example.com",
-    path: "/flex-core/private-gateway/url",
+    path: "/flex/apigw/private/gateway-url",
   };
   const region = "eu-west-2";
 
