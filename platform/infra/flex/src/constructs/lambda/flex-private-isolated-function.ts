@@ -1,9 +1,5 @@
-import {
-  importSecurityGroupFromSsm,
-  importVpcFromSsm,
-} from "@platform/core/outputs";
 import { Tags } from "aws-cdk-lib";
-import { SubnetType } from "aws-cdk-lib/aws-ec2";
+import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
@@ -11,28 +7,35 @@ import { Construct } from "constructs";
 
 import { FlexFunctionProps } from "../types";
 
+interface FlexPrivateIsolatedFunctionProps extends FlexFunctionProps {
+  vpc: IVpc;
+  privateIsolatedSg: ISecurityGroup;
+}
+
 export class FlexPrivateIsolatedFunction extends Construct {
   public readonly function: NodejsFunction;
 
-  constructor(scope: Construct, id: string, functionProps: FlexFunctionProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    {
+      vpc,
+      privateIsolatedSg,
+      ...functionProps
+    }: FlexPrivateIsolatedFunctionProps,
+  ) {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
       retention: RetentionDays.ONE_YEAR,
     });
 
-    const vpc = importVpcFromSsm(this, "/flex-core/vpc");
-    const privateIsolated = importSecurityGroupFromSsm(
-      this,
-      "/flex-core/security-group/private-isolated",
-    );
-
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       ...functionProps,
       logGroup,
-      securityGroups: [privateIsolated],
+      securityGroups: [privateIsolatedSg],
       vpc,
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED,

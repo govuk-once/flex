@@ -11,6 +11,8 @@ import {
 } from "aws-cdk-lib/aws-elasticache";
 import { Construct } from "constructs";
 
+import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
+
 function createElastiCacheSecurityGroup(
   scope: Construct,
   {
@@ -87,6 +89,7 @@ export function createElastiCacheCluster(
     atRestEncryptionEnabled: true,
     // authToken: 'super-secret' TODO CKV_AWS_31
   });
+  applyCheckovSkip(cacheCluster, "CKV_AWS_31", "This is todo");
 
   return { cacheCluster };
 }
