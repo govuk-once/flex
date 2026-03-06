@@ -1,3 +1,5 @@
+import { it } from "@flex/testing";
+import { createNotificationId } from "@test/fixtures";
 import nock from "nock";
 import {
   afterAll,
@@ -6,7 +8,6 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
   vi,
 } from "vitest";
 
@@ -35,26 +36,24 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("UdpDomainClient", () => {
-  const appId = "123";
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // ensures tests fail if a request is not intercepted or mock is missing
   beforeAll(() => {
     nock.disableNetConnect();
   });
+
   afterAll(() => {
     nock.enableNetConnect();
   });
 
-  // ensures tests fail if a request is not mocked
   afterEach(() => {
     expect(nock.isDone()).toBe(true);
     nock.cleanAll();
   });
 
-  it.each([
+  it.for([
     {
       name: "ECONNREFUSED",
       error: new Error("ECONNREFUSED"),
@@ -67,7 +66,7 @@ describe("UdpDomainClient", () => {
     },
   ])(
     "propagates $name network error to the caller",
-    async ({ error, expectedError }) => {
+    async ({ error, expectedError }, { userId }) => {
       nock(BASE_URL)
         .get("/gateways/udp/v1/notifications")
         .replyWithError(error);
@@ -77,13 +76,13 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      await expect(client.gateway.getPreferences(appId)).rejects.toThrow(
+      await expect(client.gateway.notifications.get(userId)).rejects.toThrow(
         expectedError,
       );
     },
   );
 
-  it.each([
+  it.for([
     {
       name: "400 Bad Request",
       status: 400,
@@ -110,7 +109,7 @@ describe("UdpDomainClient", () => {
     },
   ])(
     "propagates $name client-side error to the caller",
-    async ({ status, body, expectedError }) => {
+    async ({ status, body, expectedError }, { userId }) => {
       nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(status, body);
 
       const client = createUdpDomainClient({
@@ -118,7 +117,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.getPreferences(appId);
+      const result = await client.gateway.notifications.get(userId);
 
       expect(result).toEqual({
         ok: false,
@@ -131,39 +130,35 @@ describe("UdpDomainClient", () => {
     },
   );
 
-  it("returns validated response from getPreferences matching the expected getPreferences schema", async () => {
-    nock(BASE_URL)
-      .get("/gateways/udp/v1/notifications")
-      .reply(200, {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
-      });
+  it("returns validated response from notifications.get matching the expected schema", async ({
+    userId,
+  }) => {
+    nock(BASE_URL).get("/gateways/udp/v1/notifications").reply(200, {
+      consentStatus: "accepted",
+      notificationId: "notif-123",
+    });
 
     const client = createUdpDomainClient({
       region,
       baseUrl: BASE_URL,
     });
 
-    const result = await client.gateway.getPreferences(appId);
+    const result = await client.gateway.notifications.get(userId);
 
     expect(result).toEqual({
       ok: true,
       data: {
-        preferences: {
-          notifications: {
-            consentStatus: "accepted",
-          },
-        },
+        consentStatus: "accepted",
+        notificationId: "notif-123",
       },
       status: 200,
     });
   });
 
-  it("returns status, data and body when schema is not provided", async () => {
-    nock(BASE_URL).post("/domains/udp/v1/user").reply(200, {
+  it("returns status, data and body when schema is not provided", async ({
+    userId,
+  }) => {
+    nock(BASE_URL).post("/domains/udp/v1/users").reply(200, {
       message: "User created successfully",
     });
     const client = createUdpDomainClient({
@@ -171,9 +166,9 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
     });
 
-    const result = await client.domain.createUser({
-      notificationId: "123",
-      appId: "456",
+    const result = await client.domain.user.create({
+      notificationId: createNotificationId(),
+      userId,
     });
 
     expect(result).toEqual({
@@ -185,7 +180,9 @@ describe("UdpDomainClient", () => {
     });
   });
 
-  it("returns ok false and error when schema validation fails", async () => {
+  it("returns ok false and error when schema validation fails", async ({
+    userId,
+  }) => {
     nock(BASE_URL)
       .get("/gateways/udp/v1/notifications")
       .reply(200, { invalid: "shape" });
@@ -194,14 +191,12 @@ describe("UdpDomainClient", () => {
       baseUrl: BASE_URL,
       region,
     });
-    const result = await client.gateway.getPreferences(appId);
+    const result = await client.gateway.notifications.get(userId);
 
     expect(result.ok).toBe(false);
-
-    const { error } = result as Extract<typeof result, { ok: false }>;
-
-    expect(error.status).toBe(422);
-    expect(error.message).toBe("Response validation failed");
-    expect(error.body).toBeDefined();
+    if (result.ok) return;
+    expect(result.error.status).toBe(422);
+    expect(result.error.message).toBe("Response validation failed");
+    expect(result.error.body).toBeDefined();
   });
 });

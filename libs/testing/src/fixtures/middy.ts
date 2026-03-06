@@ -10,13 +10,13 @@ import {
   createRestApiEventWithAuthorizer,
   restApiEventWithAuthorizer,
 } from "./apigateway";
-import type { ContextOverrides, ContextWithPairwiseId } from "./lambda";
+import type { ContextOverrides, ContextWithUserId } from "./lambda";
 import { context } from "./lambda";
 
 export type MiddyRequest<
   Event extends RestApiEventWithAuthorizer = RestApiEventWithAuthorizer,
   Result = unknown,
-> = Request<Event, Result, Error, ContextWithPairwiseId>;
+> = Request<Event, Result, Error, ContextWithUserId>;
 
 export interface MiddyRequestOverrides<
   Event extends RestApiEventWithAuthorizer = RestApiEventWithAuthorizer,

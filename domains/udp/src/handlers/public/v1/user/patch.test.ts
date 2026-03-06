@@ -1,4 +1,7 @@
+import type { ContextWithUserId } from "@flex/middlewares";
 import { it } from "@flex/testing";
+import { getNotificationId } from "@services/getNotificationId";
+import { testNotificationId } from "@test/fixtures";
 import nock from "nock";
 import {
   afterAll,
@@ -10,8 +13,13 @@ import {
   vi,
 } from "vitest";
 
+import { NotificationSecretContext } from "../../../../schemas/notifications";
 import { handler } from "./patch";
 
+type UserPatchContext = ContextWithUserId & NotificationSecretContext;
+
+vi.mock("@services/getNotificationId");
+vi.mock("@flex/middlewares");
 vi.mock("@flex/params", () => ({
   getConfig: vi.fn(() =>
     Promise.resolve({
@@ -52,48 +60,43 @@ describe("Public PATCH /user handler", () => {
   });
 
   describe("when user preferences are updated successfully", () => {
-    it("returns 200 with user preferences updated successfully", async ({
+    it("derives notificationId and passes it to the private handler", async ({
       response,
       privateGatewayEventWithAuthorizer,
       context,
+      userId,
     }) => {
       nock(BASE_URL)
-        .patch("/domains/udp/v1/user", {
-          preferences: {
-            notifications: {
-              consentStatus: "accepted",
-            },
-          },
+        .post("/gateways/udp/v1/notifications", {
+          consentStatus: "accepted",
+          notificationId: testNotificationId,
         })
         .reply(200, {
-          preferences: {
-            notifications: {
-              consentStatus: "accepted",
-            },
-          },
+          consentStatus: "accepted",
+          notificationId: testNotificationId,
         });
 
       const request = await handler(
         privateGatewayEventWithAuthorizer.patch("/user", {
           body: {
-            preferences: {
-              notifications: {
-                consentStatus: "accepted",
-              },
-            },
+            consentStatus: "accepted",
           },
         }),
-        context.withPairwiseId().create(),
+        context
+          .withPairwiseId()
+          .withSecret({ notificationSecretKey: "test-secret" }) // pragma: allowlist secret
+          .create() as UserPatchContext,
       );
 
+      expect(getNotificationId).toHaveBeenCalledWith({
+        userId,
+        secretKey: "test-secret", // pragma: allowlist secret
+      });
       expect(request).toEqual(
         response.ok(
           {
-            preferences: {
-              notifications: {
-                consentStatus: "accepted",
-              },
-            },
+            consentStatus: "accepted",
+            notificationId: testNotificationId,
           },
           {
             headers: {
@@ -108,20 +111,12 @@ describe("Public PATCH /user handler", () => {
   it.for([
     {
       body: {
-        preferences: {
-          notifications: {
-            consentStatus: "yes",
-          },
-        },
+        consentStatus: "yes",
       },
       description: "unknown consent status",
     },
     {
-      body: {
-        preferences: {
-          notifications: {},
-        },
-      },
+      body: {},
       description: "missing consent status",
     },
   ])(
@@ -129,7 +124,10 @@ describe("Public PATCH /user handler", () => {
     async ({ body }, { privateGatewayEventWithAuthorizer, context }) => {
       const result = await handler(
         privateGatewayEventWithAuthorizer.patch("/user", { body }),
-        context.withPairwiseId().create(),
+        context
+          .withPairwiseId()
+          .withSecret({ notificationSecretKey: "test-secret" }) // pragma: allowlist secret
+          .create() as UserPatchContext,
       );
 
       expect(result).toEqual(expect.objectContaining({ statusCode: 400 }));

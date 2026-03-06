@@ -1,8 +1,10 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
+import { createUdpDomainClient } from "@client";
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import {
-  type ContextWithPairwiseId,
+  type ContextWithUserId,
+  createSecretsMiddleware,
   extractUser,
   type V2Authorizer,
 } from "@flex/middlewares";
@@ -10,6 +12,11 @@ import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
+import {
+  NotificationSecretContext,
+  updateNotificationRequestSchema,
+} from "@schemas/notifications";
+import { getNotificationId } from "@services/getNotificationId";
 import type {
   APIGatewayProxyResultV2,
   APIGatewayProxyWithLambdaAuthorizerEvent,
@@ -17,9 +24,6 @@ import type {
 import createHttpError from "http-errors";
 import status from "http-status";
 import { z } from "zod";
-
-import { createUdpDomainClient } from "../../../../client";
-import { preferencesRequestSchema } from "../../../../schemas/preferences";
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -29,13 +33,14 @@ const configSchema = z.object({
 export const handler = createLambdaHandler<
   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
   APIGatewayProxyResultV2,
-  ContextWithPairwiseId
+  ContextWithUserId & NotificationSecretContext
 >(
   async (event, context) => {
     const logger = getLogger();
+    const { userId, notificationSecretKey } = context;
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,
-      preferencesRequestSchema,
+      updateNotificationRequestSchema,
     );
 
     if (!parsedEvent.success) {
@@ -43,14 +48,23 @@ export const handler = createLambdaHandler<
       throw new createHttpError.BadRequest(message);
     }
 
+    const notificationId = getNotificationId({
+      userId,
+      secretKey: notificationSecretKey,
+    });
+
     const config = await getConfig(configSchema);
     const client = createUdpDomainClient({
       region: config.AWS_REGION,
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
-    const response = await client.domain.patchUser(
-      parsedEvent.data,
-      context.pairwiseId,
+
+    const response = await client.gateway.notifications.update(
+      {
+        consentStatus: parsedEvent.data.consentStatus,
+        notificationId,
+      },
+      userId,
     );
 
     if (!response.ok) {
@@ -65,6 +79,15 @@ export const handler = createLambdaHandler<
   },
   {
     serviceName: "udp-patch-user-service",
-    middlewares: [extractUser, httpHeaderNormalizer(), httpJsonBodyParser()],
+    middlewares: [
+      extractUser,
+      httpHeaderNormalizer(),
+      httpJsonBodyParser(),
+      createSecretsMiddleware<NotificationSecretContext>({
+        secrets: {
+          notificationSecretKey: process.env.FLEX_UDP_NOTIFICATION_SECRET,
+        },
+      }),
+    ],
   },
 );
