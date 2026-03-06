@@ -27,7 +27,7 @@
     "@types/node": "25.0.9",
     "@vitest/coverage-v8": "4.0.18",
     "eslint": "9.39.2",
-    "nock": "14.0.10",
+    "nock": "15.0.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }
