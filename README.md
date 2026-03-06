@@ -98,11 +98,9 @@ flex/
 
 ### Infrastructure
 
-| Stack                                                            | Description                                               |
-| ---------------------------------------------------------------- | --------------------------------------------------------- |
-| [`@platform/core`](/platform/infra/core/README.md)               | VPC, subnets, security groups, VPC endpoints and cache    |
-| [`@platform/flex`](/platform/infra/flex/README.md)               | API Gateway, CloudFront, Lambda constructs and routes     |
-| [`@platform/gov-uk-once`](/platform/infra/gov-uk-once/README.md) | Base CDK stack with GDS tagging and environment utilities |
+| Stack                                                | Description                                                    |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| [`@platform/flex`](/platform/infra/flex/README.md)   | VPC, API Gateway, CloudFront, Lambda constructs and routes     |
 
 ---
 

@@ -1,29 +1,24 @@
 import { IDomain, IDomainEndpoint, Permission } from "@flex/sdk";
-import {
-  FlexKmsKeyAlias,
-  FlexParam,
-  FlexSecret,
-  importFlexKmsKeyAlias,
-  importFlexParameter,
-  importFlexSecret,
-} from "@platform/core/outputs";
-import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { Duration } from "aws-cdk-lib";
 import {
+  IdentitySource,
   IResource,
   IRestApi,
   LambdaIntegration,
   Resource,
   RestApi,
+  TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
-import { IKey } from "aws-cdk-lib/aws-kms";
-import { IFunction } from "aws-cdk-lib/aws-lambda";
-import { ISecret } from "aws-cdk-lib/aws-secretsmanager";
+import { IKey, Key } from "aws-cdk-lib/aws-kms";
+import { Function, IFunction } from "aws-cdk-lib/aws-lambda";
+import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 import crypto from "crypto";
 
+import { BaseStack } from "../base";
+import { getEnvConfig } from "../base/env";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
@@ -31,7 +26,8 @@ import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getDomainEntry } from "../utils/getEntry";
 import { FlexEphemeralParam, getParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
-import { PrivateApiRef } from "./private-gateway";
+
+const { env, stage } = getEnvConfig();
 
 export interface PublicRouteBinding {
   path: string;
@@ -42,15 +38,48 @@ export interface PublicRouteBinding {
 interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
-  privateApi: PrivateApiRef;
 }
 
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
-export class FlexDomainStack extends GovUkOnceStack {
-  public readonly publicRouteBindings: PublicRouteBinding[] = [];
+export class FlexDomainStack extends BaseStack {
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
+
+  #getRestApi(
+    id: string,
+    restApiId: string,
+    rootResourceId: string,
+    rootPath: string,
+  ) {
+    const restApi = RestApi.fromRestApiAttributes(this, `${id}Api`, {
+      restApiId: restApiId,
+      rootResourceId,
+    });
+
+    const rootResource = Resource.fromResourceAttributes(this, `${id}Root`, {
+      resourceId: rootResourceId,
+      path: rootPath,
+      restApi,
+    });
+
+    return {
+      restApi,
+      rootResource,
+    };
+  }
+
+  #getPublicRestApi() {
+    const restApiId = this.import(`/${stage}/flex/apigw/public/rest-api-id`);
+    const resourceId = this.import(`/${stage}/flex/apigw/public/root`);
+    return this.#getRestApi("Public", restApiId, resourceId, "/");
+  }
+
+  #getPrivateRestApi() {
+    const restApiId = this.import(`/${stage}/flex/apigw/private/rest-api-id`);
+    const resourceId = this.import(`/${stage}/flex/apigw/private/domains-root`);
+    return this.#getRestApi("Private", restApiId, resourceId, "/domains");
+  }
 
   constructor(scope: Construct, id: string, props: FlexDomainStackProps) {
     super(scope, id, {
@@ -61,36 +90,42 @@ export class FlexDomainStack extends GovUkOnceStack {
         ResourceOwner: props.domain.domain,
         Source: "https://github.com/govuk-once/flex",
       },
-    });
-    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: props.privateApi.restApiId,
-      rootResourceId: props.privateApi.domainsRootResourceId,
-    });
-
-    const privateDomainsRoot = Resource.fromResourceAttributes(
-      this,
-      "PrivateDomainsRoot",
-      {
-        resourceId: props.privateApi.domainsRootResourceId,
-        path: "/domains",
-        restApi: privateApi,
+      env: {
+        region: "eu-west-2",
       },
-    );
+    });
 
-    this.#processPublicRoutes(props.domain);
+    const publicRestApi = this.#getPublicRestApi();
+    const privateRestApi = this.#getPrivateRestApi();
+
+    this.#processPublicRoutes(props.domain, publicRestApi.rootResource);
 
     if (props.privateDomain) {
       this.#processPrivateRoutes(
         props.privateDomain,
-        privateDomainsRoot,
+        privateRestApi.rootResource,
         props.domain.domain,
         "internal-",
-        privateApi,
+        privateRestApi.restApi,
       );
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain): void {
+  #processPublicRoutes(domainConfig: IDomain, apiRoot: IResource): void {
+    const authorizerFnArn = this.import(
+      `/${stage}/flex/apigw/public/authorizer-fn`,
+    );
+
+    const authorizerFn = Function.fromFunctionAttributes(this, "AuthorizerFn", {
+      functionArn: authorizerFnArn,
+      sameEnvironment: true,
+    });
+
+    const authorizer = new TokenAuthorizer(this, "LambdaAuthorizer", {
+      handler: authorizerFn,
+      identitySource: IdentitySource.header("Authorization"),
+    });
+
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -126,11 +161,11 @@ export class FlexDomainStack extends GovUkOnceStack {
             .replace(/\/+/g, "/")
             .replace(/^\//, "");
 
-          this.publicRouteBindings.push({
-            path: newPath,
+          this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
-            handler: domainEndpointFn.function,
-          });
+            new LambdaIntegration(domainEndpointFn.function),
+            { authorizer },
+          );
         }
       }
     }
@@ -305,14 +340,38 @@ export class FlexDomainStack extends GovUkOnceStack {
         : {}),
     };
 
+    const vpc = this.importVpc(`/${env}/flex/vpc`);
+    const privateEgressSg = this.importSecurityGroup(
+      `/${env}/flex/sg/private-egress`,
+    );
+    const privateIsolatedSg = this.importSecurityGroup(
+      `/${env}/flex/sg/private-isolated`,
+    );
+
     switch (type) {
       case "PUBLIC":
         return new FlexPublicFunction(this, id, props);
       case "PRIVATE":
-        return new FlexPrivateEgressFunction(this, id, props);
+        return new FlexPrivateEgressFunction(this, id, {
+          vpc,
+          privateEgressSg,
+          ...props,
+        });
       case "ISOLATED":
-        return new FlexPrivateIsolatedFunction(this, id, props);
+        return new FlexPrivateIsolatedFunction(this, id, {
+          vpc,
+          privateIsolatedSg,
+          ...props,
+        });
     }
+  }
+
+  #importFlexSecret(scope: Construct, secret: string) {
+    return Secret.fromSecretNameV2(
+      scope,
+      `FlexSecret${this.#hash(secret)}`,
+      getParamName(secret),
+    );
   }
 
   // --- Resource Importers ---
@@ -330,7 +389,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     let resource: ISecret | IStringParameter;
 
     if (type === "secret") {
-      resource = importFlexSecret(this, path as FlexSecret);
+      resource = this.#importFlexSecret(this, path);
     } else if (type === "ephemeral-param") {
       resource = StringParameter.fromStringParameterName(
         this,
@@ -338,7 +397,11 @@ export class FlexDomainStack extends GovUkOnceStack {
         getParamName(path as FlexEphemeralParam),
       );
     } else {
-      resource = importFlexParameter(this, path as FlexParam);
+      resource = StringParameter.fromStringParameterName(
+        this,
+        `FlexParam${this.#hash(path)}`,
+        getParamName(path),
+      );
     }
 
     this.#envCache.set(cacheKey, resource);
@@ -350,12 +413,16 @@ export class FlexDomainStack extends GovUkOnceStack {
   }
 
   #getOrImportKey(aliasPath: string): IKey {
-    if (this.#keyCache.has(aliasPath)) {
-      const cached = this.#keyCache.get(aliasPath);
-      if (cached !== undefined) return cached;
-    }
+    const cached = this.#keyCache.get(aliasPath);
+    if (cached !== undefined) return cached;
 
-    const key = importFlexKmsKeyAlias(this, aliasPath as FlexKmsKeyAlias);
+    const key = Key.fromLookup(
+      this,
+      `FlexKmsKeyAlias${this.#hash(aliasPath)}`,
+      {
+        aliasName: `alias${getParamName(aliasPath)}`,
+      },
+    );
 
     this.#keyCache.set(aliasPath, key);
     return key;
