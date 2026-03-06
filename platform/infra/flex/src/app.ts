@@ -1,67 +1,84 @@
-import { getStackName } from "@platform/gov-uk-once";
-import * as cdk from "aws-cdk-lib";
-
+import { SsmApp } from "./base";
+import { Environment, getEnvConfig } from "./base/env";
 import { FlexCertStack } from "./stacks/cert";
-import { FlexPlatformStack } from "./stacks/core";
+import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexDomainStack } from "./stacks/domain";
-import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
+import { FlexPlatformStack } from "./stacks/platform";
 import {
   getDomainConfigs,
   getPrivateDomainConfigs,
 } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
-const app = new cdk.App();
+const { env, persistent, stage } = getEnvConfig();
+
+const app = new SsmApp();
+const region = "eu-west-2";
+
+app.addExternalExports(region, [
+  // Provided by platform team
+  "/infra/dns/hostedzoneid",
+  "/infra/dns/hostedzonename",
+  // Provided by flex-params repo
+  `/${env}/flex-param/auth/client-id`,
+  `/${env}/flex-param/auth/user-pool-id`,
+  `/${env}/flex-param/auth/stub/client-id`,
+  `/${env}/flex-param/auth/stub/user-pool-id`,
+  `/${env}/flex-param/udp/cmk-arn`,
+  `/${env}/flex-param/udp/consumer-config-secret-arn`,
+  `/${env}/flex-param/udp/consumer-role-arn`,
+]);
 
 const { domainName, subdomainName } = await getDomainName();
 
-const certStackName = getStackName("FlexCertStack");
-const { certArnParamName } = new FlexCertStack(app, certStackName, {
+if (persistent) {
+  new FlexCoreStack(app, `${env}-FlexCore`);
+} else if (env === Environment.DEVELOPMENT) {
+  // Add these as external deps as we reuse the development env vpc
+  app.addExternalExports(region, [
+    `/${env}/flex/vpc`,
+    `/${env}/flex/sg/private-egress`,
+    `/${env}/flex/sg/private-isolated`,
+    `/${env}/flex/vpc-e/api-gateway`,
+    `/${env}/flex/cache/endpoint`,
+  ]);
+}
+
+new FlexCertStack(app, `${stage}-FlexCertStack`, {
   domainName,
   subdomainName,
 });
 
-const privateGateway = new FlexPrivateGatewayStack(
-  app,
-  getStackName("FlexPrivateGateway"),
-);
+new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
+  domainName,
+  subdomainName,
+});
 
 /**
  * Dynamically create CloudFormation stack per domain
  * Use `domain` env var to deploy a single domain (e.g., domain=hello)
  */
-const targetDomain = process.env.domain;
+async function getPublicDomainConfigs() {
+  const allDomains = await getDomainConfigs();
 
-const allDomains = await getDomainConfigs();
-const privateDomains = await getPrivateDomainConfigs();
+  const targetDomain = process.env.domain;
+  if (!targetDomain) return allDomains;
 
-const flexDomains = targetDomain
-  ? allDomains.filter((d) => d.domain === targetDomain)
-  : allDomains;
+  const domain = allDomains.find((d) => d.domain === targetDomain);
+  if (domain) return [domain];
 
-if (targetDomain && flexDomains.length === 0) {
   const available = allDomains.map((d) => d.domain).join(", ");
   throw new Error(
     `Domain '${targetDomain}' not found. Available domains: ${available}`,
   );
 }
 
-const domainStacks = flexDomains.map(
-  (domain) =>
-    new FlexDomainStack(app, getStackName(domain.domain), {
-      domain,
-      privateApi: privateGateway.privateApiRef,
-      privateDomain: privateDomains.get(domain.domain),
-    }),
-);
+const publicDomains = await getPublicDomainConfigs();
+const privateDomains = await getPrivateDomainConfigs();
 
-const publicRouteBindings = domainStacks.flatMap(
-  (stack) => stack.publicRouteBindings,
-);
-
-new FlexPlatformStack(app, getStackName("FlexPlatform"), {
-  certArnParamName,
-  domainName,
-  subdomainName,
-  publicRouteBindings,
+publicDomains.map((domain) => {
+  new FlexDomainStack(app, `${stage}-${domain.domain}`, {
+    domain,
+    privateDomain: privateDomains.get(domain.domain),
+  });
 });
