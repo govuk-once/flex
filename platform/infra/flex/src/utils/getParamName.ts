@@ -1,9 +1,9 @@
-import { getEnvConfig } from "@platform/gov-uk-once";
+import { getEnvConfig } from "../base/env";
 
 const envConfig = getEnvConfig();
 
 export function getParamName(name: string) {
-  return `/${envConfig.environment}/${envConfig.stage}${name}`;
+  return `/${envConfig.env}${name}`;
 }
 
 export type FlexEphemeralParam = "/flex-core/private-gateway/url";
