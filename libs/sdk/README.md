@@ -1,6 +1,6 @@
 # @flex/sdk
 
-Configuration for Domains which allows domains to define `domain.config.ts` at the root of their project, which will at the moment handle the IaC aspect of their project.
+Declarative domain configuration for the FLEX platform. Handles route handler creation, AWS resource resolution, service-to-service communication via integrations and automated CDK infrastructure generated from a single configuration file.
 
 ---
 
@@ -18,55 +18,42 @@ Alternatively, run `pnpm <command>` from within `libs/sdk/`.
 
 ## API
 
-| Name                                 | Description                               | Code                    |
-| ------------------------------------ | ----------------------------------------- | ----------------------- |
-| [`@flex/config/domain`](#flexDomain) | Shared Domain interface for configuration | [View](./src/domain.ts) |
+| Name                | Description                                    | Code                    |
+| ------------------- | ---------------------------------------------- | ----------------------- |
+| [`domain`](#domain) | Domain configuration and route handler factory | [View](./src/domain.ts) |
 
 ---
 
-## `@flex/config/domain`
+## `domain`
 
-### `defineDomain`
+Creates the domain configuration and exposes a factory for building route handlers and a utility for accessing route context.
 
-This function allows you to define you domain config such as endpoints. You need to add the following at the root of your domain config for the IaC to pick up you domain settings to deploy `domain.config.ts`.
+> `domain` should only be called once and will expose the functionality needed for building lambda handlers and provisioning the necessary infrastructure.
 
-#### Usage
+### Usage
 
 ```typescript
-import { defineDomain } from "@flex/iac";
+import { domain } from "@flex/sdk";
+import { createUserRequestSchema } from "@flex/udp-domain";
 
-export const endpoints = defineDomain({
-  domain: "example",
-  versions: {
+export const { config, route, routeContext } = domain({
+  name: "my-domain",
+  resources: {
+    exampleKey: { type: "secret", path: "/path/to/key" },
+  },
+  routes: {
     v1: {
-      routes: {
-        "/example": {
-          GET: {
-            entry: "handlers/v1/example/get.ts",
-            type: "ISOLATED",
-            envSecret: {
-              FLEX_EXAMPLE_SECRET: "/flex-secret/example/example-hash-secret",
-            },
-          },
-          PATCH: {
-            type: "ISOLATED",
-            entry: "handlers/v1/example/patch.ts",
-            kmsKeys: {
-              ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
-            },
+      "/user": {
+        GET: {
+          public: {
+            name: "get-user",
+            resources: ["exampleKey"],
           },
         },
-      },
-    },
-    v2: {
-      routes: {
-        "/example": {
-          GET: {
-            entry: "handlers/v2/example/get.ts",
-            type: "ISOLATED",
-            envSecret: {
-              FLEX_EXAMPLE_SECRET: "/flex-secret/example/example-hash-secret",
-            },
+        POST: {
+          private: {
+            name: "create-user",
+            body: createUserRequestSchema,
           },
         },
       },
@@ -75,89 +62,230 @@ export const endpoints = defineDomain({
 });
 ```
 
-The above example would make 3 endpoints for the domain `example` which are:
+### API
 
-- GET ~ `/app/v1/example`
-- PATCH ~ `/app/v1/example`
-- GET ~ `/app/v2/example`
+| Property       | Type                                             | Description                                  |
+| -------------- | ------------------------------------------------ | -------------------------------------------- |
+| `config`       | `Config extends DomainConfig`                    | Domain configuration for CDK consumption     |
+| `route`        | `RouteHandler<Config>`                           | Handler factory for creating Lambda handlers |
+| `routeContext` | `<Route extends DomainRoutes>() => RouteContext` | Utility for accessing Lambda handler context |
 
-Reference:
+### Route Key
 
-```text
-{
-  // Service Identity
-  domain: "example",            // (Required) Unique identifier for the service/domain.
-  owner: "example@example.com", // (Optional) Owner of this domain.
+Route keys identify which endpoint a handler will serve. Only routes defined in the domain configuration will be available as a valid route key:
 
-  // API Versions (Map: VersionID -> Config)
-  versions: {
-    "v1": {
-      // Routes (Map: Path -> Methods)
-      // Paths must start with '/'
-      routes: {
-        "/example": {
+| Format                             | Example                     |
+| ---------------------------------- | --------------------------- |
+| `"METHOD /version/path"`           | `"GET /v1/user"`            |
+| `"METHOD /version/path [private]"` | `"POST /v1/user [private]"` |
 
-          // HTTP Methods (Map: Method -> Handler Config)
-          // Allowed: GET, POST, PUT, DELETE, PATCH, HEAD
-          GET: {
-            // Handler Logic
-            entry: "handlers/v1/example/get.ts", // Path relative to domain root
+### Handler Context
 
-            // Network Access Level
-            // Options: "PUBLIC" | "PRIVATE" | "ISOLATED"
-            type: "ISOLATED",
+The context object passed to the handler is scoped to the route definition. Only known properties defined for that route are included:
 
-            // Secrets (Injected as Environment Variables)
-            // Key = Process.env name | Value = SSM/SecretManager path
-            envSecret: {
-              FLEX_EXAMPLE_SECRET: "/flex-secret/example/secret-path",
-            },
+| Property       | Condition                                          |
+| -------------- | -------------------------------------------------- |
+| `logger`       | All handlers                                       |
+| `auth`         | All non-public handlers                            |
+| `body`         | Included when the route declares a `body` schema   |
+| `queryParams`  | Included when the route declares a `query` schema  |
+| `pathParams`   | Included when the path contains a `:param` segment |
+| `headers`      | Included when the route declares a header          |
+| `resources`    | Included when the route declares a resource        |
+| `integrations` | Included when the route declares an integration    |
 
-            // Parameters (SSM Parameter Store)
-            // Value is the PATH in AWS SSM.
-            // Result is injected as process.env.TABLE_NAME
-            env: {
-              TABLE_NAME: "/flex/config/dynamodb-table-name"
-            },
+See [Handler Patterns](/docs/domain-development.md#handler-patterns) for examples of each context property.
 
-            // KMS Keys (Permission + ARN Injection)
-            kmsKeys: {
-               ENCRYPTION_KEY: "/flex-key/storage-key"
-            }
-          },
-        },
-      },
-    },
-  },
+### Handler Result
+
+Handlers return one of three response shapes. The SDK handles the conversion to an API Gateway proxy result:
+
+```typescript
+// Success response (with data)
+return {
+  status: 200,
+  data: { key: "value" },
+};
+
+// Success response (no content)
+return { status: 204 };
+
+// Error response
+return {
+  status: 400,
+  error: { message: "some error message" },
 };
 ```
 
-#### 1. Top Level Configuration
+Handlers can also throw from `http-errors` for standard error responses. See [Handler Integrations](/docs/domain-development.md#with-integrations) for an example:
 
-| Field    | Type                 | Required | Description                                                                        |
-| -------- | -------------------- | -------- | ---------------------------------------------------------------------------------- |
-| domain   | string               | Y        | The unique name of the service (e.g., "udp", "billing"). Used for resource naming. |
-| owner    | string               | N        | The team or individual owning this service.                                        |
-| versions | Map<string, Version> | Y        | HashMap of API versions (e.g., "v1", "v2").                                        |
+### Response Validation
 
-#### 2. Version Configuration
+When a route defines a `response` schema, the SDK validates the handler's response `data` against it. Validation errors are logged and return a 500 response. Set the log level to `DEBUG` or `TRACE` to include validation errors in the response body.
 
-| Field  | Type                    | Required | Description                                                                                                                               |
-| ------ | ----------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| routes | Map<string, PathObject> | Y        | A HashMap defining all URL resources for this version. Keys must be valid URL paths starting with / (e.g., "/user", "/billing/invoices"). |
+### Common Defaults
 
-#### 3. Path Configuration
+Common fields apply defaults across all routes. Route-level config takes precedence:
 
-| Field                               | Type        | Required                 | Description                                                                      |
-| ----------------------------------- | ----------- | ------------------------ | -------------------------------------------------------------------------------- |
-| GET, POST, PUT, PATCH, DELETE, HEAD | RouteObject | At least one is required | The HTTP method configuration. Defines the handler logic for that specific verb. |
+| Common Field | Type                                  | Default      | Description                                 |
+| ------------ | ------------------------------------- | ------------ | ------------------------------------------- |
+| `access`     | `"public" \| "private" \| "isolated"` | `"isolated"` | Default Lambda network access               |
+| `logLevel`   | `LogLevel`                            | `"INFO"`     | Define log level                            |
+| `function`   | `FunctionConfig`                      | —            | Default Lambda options                      |
+| `headers`    | `Record<string, HeaderConfig>`        | —            | Headers that must be included on all routes |
 
-#### 4. Route Configuration
+See [Domain Configuration](/docs/domain-development.md#domain-configuration) for a more complete example.
 
-| Field     | Type                   | Description                                                       |
-| --------- | ---------------------- | ----------------------------------------------------------------- |
-| entry     | string                 | Path to the TypeScript handler file relative to the project root. |
-| type      | enum                   | Defines network access (PUBLIC, PRIVATE, ISOLATED).               |
-| env       | Record<string, string> | Maps process.env[KEY] to an SSM Parameter Store path.             |
-| envSecret | Record<string, string> | Maps process.env[KEY] to a Secrets Manager path.                  |
-| kmsKeys   | Record<string, string> | Maps process.env[KEY] to a KMS Key Alias.                         |
+#### With Route Context
+
+Export typed context utilities to access handler context externally. Context is stored using `AsyncLocalStorage` so it's only accessible during handler execution:
+
+```typescript
+export const getUserContext = routeContext<"GET /v1/user">;
+export const createUserContext = routeContext<"POST /v1/user">;
+```
+
+See [With Route Context](/docs/domain-development.md#with-route-context) for a complete example including helper functions and `AsyncLocalStorage` scope rules.
+
+---
+
+## Resources
+
+Declare AWS-managed values that the platform provisions and injects into the Lambda environment. Resources are declared at domain level and referenced per route.
+
+> Resource keys become Lambda environment variable names and are granted the appropriate IAM permissions based on the resource type.
+
+### Types
+
+| Type            | Service             | Resolution | Environment Variable | Context value          |
+| --------------- | ------------------- | ---------- | -------------------- | ---------------------- |
+| `"kms"`         | KMS                 | Deploy     | Key ARN              | Key ARN                |
+| `"secret"`      | Secrets Manager     | Runtime    | Secret name          | Decrypted secret value |
+| `"ssm"`         | SSM Parameter Store | Deploy     | Parameter value      | Parameter value        |
+| `"ssm:runtime"` | SSM Parameter Store | Runtime    | Parameter name       | Parameter value        |
+
+Deploy-time resources have their resolved values baked into the Lambda environment at deployment. Runtime resources store the resource name in the environment variable and the handler middleware is where the value is resolved.
+
+### Options
+
+| Name    | Supports                             | Values                     | Default         | Description                                                        |
+| ------- | ------------------------------------ | -------------------------- | --------------- | ------------------------------------------------------------------ |
+| `scope` | `"secret"`, `"ssm"`, `"ssm:runtime"` | `"environment"`, `"stage"` | `"environment"` | Includes stage name alongside the environment in the resource path |
+
+See [With Resources](/docs/domain-development.md#with-resources) for an example.
+
+---
+
+## Integrations
+
+Integrations declare HTTP clients for calling other domains through the FLEX private gateway. All calls are SigV4-signed.
+
+### Types
+
+| Type        | Path prefix                    | Wildcard | Use case                                           |
+| ----------- | ------------------------------ | -------- | -------------------------------------------------- |
+| `"gateway"` | `/gateways/{target}/{version}` | Yes      | Route to any path on the target domain             |
+| `"domain"`  | `/domains/{target}/{version}`  | No       | Call a specific endpoint with an optional contract |
+
+When `target` is omitted, it defaults to the current domain name.
+
+### Invocation
+
+```typescript
+// Wildcard integration: path must be provided when called
+const result = await integrations.udpRead({
+  path: "/user",
+  // pass options...
+});
+
+// Integrations accept optional request/response types depending on the HTTP method
+const result = await integrations.udpWrite<RequestSchema, ResponseSchema>({
+  path: "/user",
+  // pass options...
+});
+
+const result = await integrations.udpRead<ResponseSchema>({
+  path: "/user",
+  // pass options...
+});
+
+// Fixed endpoint integration: path is already defined, body and response are typed (if schemas were provided)
+const result = await integrations.udpPatchUser({
+  body: {
+    preferences: {
+      notifications: {
+        consentStatus: "unknown",
+      },
+    },
+  },
+});
+```
+
+### IntegrationResult
+
+```typescript
+// Success result
+{
+  ok: true,
+  status: 200,
+  data: {
+    key: "value",
+  }
+}
+
+// Error result
+{
+  ok: false,
+  error: {
+    status: 502,
+    message: "some error message",
+    body: { /* */ }
+  }
+}
+```
+
+### Options
+
+| Name            | Description                                                                     |
+| --------------- | ------------------------------------------------------------------------------- |
+| `target`        | Target domain name (Default to same domain)                                     |
+| `body`          | Request body schema                                                             |
+| `response`      | Response schema                                                                 |
+| `retryAttempts` | Number of retry attempts on failed requests (default set by `@flex/flex-fetch`) |
+| `maxRetryDelay` | Maximum delay between each retry (default set by `@flex/flex-fetch`)            |
+
+> Any route using integrations must explicitly include the private gateway URL resource (e.g. `flexPrivateGatewayUrl`) in its route config `resources`.
+
+See [With Integrations](/docs/domain-development.md#with-integrations) for an example.
+
+---
+
+## Headers
+
+Headers declare custom request headers at the common or route level. Route headers merge with common headers, with route-level values taking precedence.
+
+Missing required headers return an automatic 400 response including a list of all missing header names. Optional headers appear as `string | undefined` in the handler context.
+
+| Parameter  | Type      | Default | Description                               |
+| ---------- | --------- | ------- | ----------------------------------------- |
+| `name`     | `string`  | —       | HTTP header name (case-insensitive)       |
+| `required` | `boolean` | true    | Whether the header must be present or not |
+
+See [With Headers](/docs/domain-development.md#with-headers) for an example.
+
+---
+
+## Related
+
+**FLEX:**
+
+- [@flex/logging](/libs/logging/README.md)
+- [@flex/utils](/libs/utils/README.md)
+- [@flex/testing](/libs/testing/README.md)
+- [@platform/flex](/platform/infra/flex/README.md)
+
+**Guides:**
+
+- [Domain Development Guide](/docs/domain-development.md)
+- [Platform Development Guide](/docs/platform-development.md)
+- [Developer Reference](/docs/developer-reference.md)

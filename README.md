@@ -73,6 +73,7 @@ flex/
 | [`@flex/logging`](/libs/logging/README.md)         | Structured logging via AWS Lambda Powertools                 |
 | [`@flex/middlewares`](/libs/middlewares/README.md) | Shared Middy middleware                                      |
 | [`@flex/params`](/libs/params/README.md)           | Environment variable validation and SSM parameter resolution |
+| [`@flex/sdk`](/libs/sdk/README.md)                 | Declarative domain configuration and route handler factory   |
 | [`@flex/testing`](/libs/testing/README.md)         | Test fixtures, helpers and extended test functions           |
 | [`@flex/utils`](/libs/utils/README.md)             | Shared schemas, types and HTTP utilities                     |
 
@@ -80,10 +81,11 @@ flex/
 
 ## Domains
 
-| Domain                                           | Description                                             |
-| ------------------------------------------------ | ------------------------------------------------------- |
-| [`@flex/hello-domain`](/domains/hello/README.md) | Example domain demonstrating Lambda deployment patterns |
-| [`@flex/udp-domain`](/domains/udp/README.md)     | User Data Platform for user settings management         |
+| Domain                                           | Description                                                             |
+| ------------------------------------------------ | ----------------------------------------------------------------------- |
+| [`@flex/hello-domain`](/domains/hello/README.md) | Example domain demonstrating Lambda deployment patterns                 |
+| [`@flex/poc-domain`](/domains/poc/README.md)     | Example domain demonstrating route handler patterns using the SDK |
+| [`@flex/udp-domain`](/domains/udp/README.md)     | User Data Platform for user settings management                         |
 
 ---
 
