@@ -186,7 +186,7 @@ describe("UDP Service Gateway", () => {
       privateGatewayEvent.post(
         `/gateways/udp/v1/identity/${serviceName}/${identifier}`,
         {
-          body: { userId },
+          body: { appId: userId },
         },
       ),
       context,
@@ -202,7 +202,7 @@ describe("UDP Service Gateway", () => {
     expect(remoteClient.serviceLink.create).toHaveBeenCalledWith(
       serviceName,
       identifier,
-      { userId },
+      { appId: userId },
     );
   });
 
