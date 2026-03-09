@@ -27,6 +27,10 @@ export const endpoints = defineDomain({
           GET: {
             entry: "handlers/v1/hello-call-internal/get.ts",
             type: "ISOLATED",
+            envEphemeral: {
+              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                "/flex-core/private-gateway/url",
+            },
           },
         },
       },
