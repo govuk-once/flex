@@ -1,10 +1,10 @@
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { postIdentityService } from "../../../../service/identityService";
+import { postIdentityService } from "../../../../services/identityService";
 import { handler } from "./post";
 
-vi.mock("../../../../service/identityService", () => ({
+vi.mock("../../../../services/identityService", () => ({
   postIdentityService: vi.fn(),
 }));
 
@@ -21,10 +21,10 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
   ...(await actual()),
   createSigv4Fetcher:
     ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
+      (path: string, options?: RequestInit) => ({
+        request: fetch(`${baseUrl}${path}`, options),
+        abort: vi.fn(),
+      }),
 }));
 
 describe("POST /identity/:service/:identifier - service handler", () => {

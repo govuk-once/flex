@@ -8,7 +8,7 @@ import {
 } from "@schemas/notifications";
 import { CreateUserRequest } from "@schemas/user";
 
-import { identityRequest } from "../schemas/identity";
+import { IdentityRequest } from "@schemas/identity";
 import {
   UDP_DOMAIN_BASE,
   UDP_DOMAIN_ROUTES,
@@ -62,7 +62,7 @@ export function createUdpDomainClient({
       createServiceLink: (
         service: string,
         serviceId: string,
-        body: identityRequest,
+        body: IdentityRequest,
       ) => {
         const { request } = gatewayFetcher(
           `${UDP_GATEWAY_ROUTES.postIdentity}/${service}/${serviceId}`,

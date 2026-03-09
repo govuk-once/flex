@@ -14,14 +14,14 @@ export const endpoints = defineDomain({
                 "/flex-core/private-gateway/url",
             },
             timeoutSeconds: 20,
+            permissions: [
+              {
+                type: "gateway",
+                path: "",
+                method: "POST",
+              },
+            ],
           },
-          permissions: [
-            {
-              type: "gateway",
-              path: "",
-              method: "POST",
-            },
-          ],
         },
         "/users": {
           GET: {

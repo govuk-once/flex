@@ -1,9 +1,12 @@
+import { getHeader } from "@flex/utils";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
+import { identityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
+import { normalizeInboundPath } from "../utils/normalizeInboundPath";
 import type { RouteContract } from "./types";
 
 const INTERNAL_ROUTES = {
@@ -20,41 +23,28 @@ export const UDP_REMOTE_ROUTES = {
 } as const;
 
 export const ROUTE_CONTRACTS = {
-  /** TODO update the below to match new structure */
-  // "POST:/v1/identity": {
-  //   operation: "createIdentityLink",
-  //   method: "POST",
-  //   inboundPath: "/v1/identity",
-  //   remotePath: "/v1/identity",
-  //   remoteExecutor: makeExecuteRemote(
-  //     async (event) => {
-  //       /** /v1/identity/{serviceName}/{identifier} */
-  //       const pathParams = normalizeInboundPath(event.path).split("/");
+  "POST:/v1/identity": {
+    operation: "createIdentityLink",
+    method: "POST",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+      const identifier = pathParams[4];
 
-  //       const serviceName = pathParams[3];
-  //       const identifier = pathParams[4];
+      if (!serviceName || !identifier) {
+        throw new createHttpError.BadRequest(
+          "Missing serviceName or identifier in path",
+        );
+      }
 
-  //       if (!serviceName || !identifier) {
-  //         throw new createHttpError.BadRequest(
-  //           "Missing serviceName or identifier in path",
-  //         );
-  //       }
-
-  //       return {
-  //         serviceName,
-  //         identifier,
-  //         remoteBody: await parseAndMapBody(
-  //           identityRequestSchema,
-  //           (inbound) => inbound,
-  //           event,
-  //         ),
-  //       };
-  //     },
-  //     (client, { serviceName, identifier, remoteBody }) =>
-  //       client.createServiceLink(serviceName, identifier, remoteBody),
-  //     () => undefined,
-  //   ),
-  // },
+      const body = await parseAndMapBody(identityRequestBodySchema, event);
+      return { serviceName, identifier, body };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.create(data.serviceName, data.identifier, data.body),
+  },
   "POST:/v1/users": {
     operation: "createUser",
     method: "POST",
@@ -106,25 +96,6 @@ export const ROUTE_CONTRACTS = {
     toDomain: (remote) => remote.data,
   },
 } as const satisfies Record<string, RouteContract>;
-
-// export function matchToRouteContract(
-//   method: string,
-//   path: string,
-// ): RouteContract | undefined {
-//   const key = `${method.toUpperCase()}:${path}`;
-//   if (key in ROUTE_CONTRACTS) {
-//     return ROUTE_CONTRACTS[key as keyof typeof ROUTE_CONTRACTS];
-//   }
-//
-//   /**
-//    * Dynamic identity path for identity due to /{serviceName}/{identifier}
-//    */
-//   if (method.toUpperCase() === "POST" && path.startsWith("/v1/identity/")) {
-//     return ROUTE_CONTRACTS["POST:/v1/identity"];
-//   }
-//
-//   return undefined;
-// }
 
 async function parseAndMapBody<T extends z.ZodType>(
   schema: T,

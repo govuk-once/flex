@@ -4,6 +4,10 @@ import type { APIGatewayProxyEvent } from "aws-lambda";
 import type { UdpRemoteClient } from "../client";
 import { RequestingServiceUserIdHeader } from "../schemas/common";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
+import {
+  CreateIdentityResponse,
+  identityRequest,
+} from "../schemas/remote/identity";
 import type {
   CreateOrUpdateNotificationsRequest,
   CreateOrUpdateNotificationsResponse,
@@ -63,7 +67,9 @@ export type CreateUserRouteContract = BaseRouteContract<
 export type CreateIdentityLinkRouteContract = BaseRouteContract<
   "createIdentityLink",
   "POST",
-  unknown
+  identityRequest,
+  unknown,
+  CreateIdentityResponse
 >;
 
 export type RouteContract =

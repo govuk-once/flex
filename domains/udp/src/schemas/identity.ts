@@ -8,4 +8,4 @@ export const identitySchema = z.object({
   idToken: NonEmptyString.optional(),
 });
 
-export type identityRequest = z.infer<typeof identitySchema>;
+export type IdentityRequest = z.infer<typeof identitySchema>;

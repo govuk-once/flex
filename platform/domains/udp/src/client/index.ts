@@ -5,7 +5,10 @@ import {
 } from "@flex/flex-fetch";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import { identityRequest } from "../schemas/remote/identity";
+import {
+  identityBodyRequest,
+  identityRequest,
+} from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,
@@ -80,7 +83,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
       create: (
         serviceName: string,
         identifier: string,
-        body: identityRequest,
+        body: identityBodyRequest,
       ): Promise<ApiResult<void>> => {
         const { request } = fetcher(
           `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}`,

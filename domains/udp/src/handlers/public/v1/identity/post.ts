@@ -1,6 +1,6 @@
 import { createLambdaHandler } from "@flex/handlers";
 import {
-  type ContextWithPairwiseId,
+  type ContextWithUserId,
   extractUser,
   V2Authorizer,
 } from "@flex/middlewares";
@@ -14,7 +14,7 @@ import { status } from "http-status";
 import { z } from "zod";
 
 import { createUdpDomainClient } from "../../../../client";
-import { postIdentityService } from "../../../../service/identityService";
+import { postIdentityService } from "../../../../services/identityService";
 
 const configSchema = z.object({
   FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
@@ -26,12 +26,12 @@ export const handler = createLambdaHandler<
     pathParameters: { serviceName: string; identifier: string };
   },
   APIGatewayProxyResultV2,
-  ContextWithPairwiseId
+  ContextWithUserId
 >(
   async (event, context) => {
     const {
       pathParameters: { serviceName, identifier },
-      context: { pairwiseId },
+      context: { userId },
     } = { ...event, context };
 
     const config = await getConfig(configSchema);
@@ -41,7 +41,7 @@ export const handler = createLambdaHandler<
     });
 
     await postIdentityService({
-      appId: pairwiseId,
+      appId: userId,
       client,
       service: serviceName,
       serviceId: identifier,
@@ -50,7 +50,7 @@ export const handler = createLambdaHandler<
     return jsonResponse(status.CREATED);
   },
   {
-    serviceName: "udp-get-user-service",
+    serviceName: "udp-post-identity-service",
     middlewares: [extractUser],
   },
 );

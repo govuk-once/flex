@@ -199,7 +199,7 @@ describe("UDP Service Gateway", () => {
       },
     });
 
-    expect(remoteClient.serviceLink).toHaveBeenCalledWith(
+    expect(remoteClient.serviceLink.create).toHaveBeenCalledWith(
       serviceName,
       identifier,
       { appId },
