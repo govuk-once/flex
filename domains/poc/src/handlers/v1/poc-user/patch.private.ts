@@ -1,20 +1,16 @@
-import type { PreferencesRequest, PreferencesResponse } from "@flex/udp-domain";
 import createHttpError from "http-errors";
 
 import { route } from "../../../../domain.config";
 
 export const handler = route(
   "PATCH /v1/poc-user [private]",
-  async ({ body, headers, integrations, logger }) => {
-    const updatePreferencesResult = await integrations.udpWrite<
-      PreferencesRequest,
-      PreferencesResponse
-    >({
+  async ({ headers, integrations, logger }) => {
+    const updatePreferencesResult = await integrations.udpWrite({
       path: "/notifications",
       headers: {
         "requesting-service-user-id": headers.requestingServiceUserId,
       },
-      body,
+      body: { preferences: { notifications: { consentStatus: "unknown" } } },
     });
 
     if (!updatePreferencesResult.ok) {

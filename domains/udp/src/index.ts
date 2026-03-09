@@ -1,12 +1,23 @@
 export type {
-  PreferencesRequest,
-  PreferencesResponse,
-} from "./schemas/preferences";
+  CreateNotificationRequest,
+  CreateNotificationResponse,
+  GetNotificationResponse,
+  NotificationSecretContext,
+  UpdateNotificationOutboundRequest,
+  UpdateNotificationRequest,
+} from "./schemas/notifications";
 export {
-  preferencesRequestSchema,
-  preferencesResponseSchema,
-} from "./schemas/preferences";
-export type { CreateUserRequest, CreateUserResponse } from "./schemas/user";
+  createNotificationRequestSchema,
+  createNotificationResponseSchema,
+  getNotificationResponseSchema,
+  updateNotificationOutboundRequestSchema,
+  updateNotificationRequestSchema,
+} from "./schemas/notifications";
+export type {
+  CreateUserRequest,
+  CreateUserResponse,
+  UserProfileResponse,
+} from "./schemas/user";
 export {
   createUserRequestSchema,
   createUserResponseSchema,
