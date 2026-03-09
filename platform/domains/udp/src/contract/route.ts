@@ -22,8 +22,8 @@ export const UDP_REMOTE_ROUTES = {
   identity: `${UDP_REMOTE_BASE}/identity`,
 } as const;
 
-export const ROUTE_CONTRACTS = {
-  "POST:/v1/identity": {
+export const DYNAMIC_ROUTES = {
+  "POST:/v1/identity/:serviceName/:identifier": {
     operation: "createIdentityLink",
     method: "POST",
     inboundPath: "/v1/identity",
@@ -45,6 +45,9 @@ export const ROUTE_CONTRACTS = {
     callRemote: (client, data) =>
       client.serviceLink.create(data.serviceName, data.identifier, data.body),
   },
+} as const satisfies Record<string, RouteContract>;
+
+export const ROUTE_CONTRACTS = {
   "POST:/v1/users": {
     operation: "createUser",
     method: "POST",

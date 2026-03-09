@@ -4,8 +4,15 @@ import createHttpError from "http-errors";
 
 import type { UdpRemoteClient } from "../client";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
-import { ROUTE_CONTRACTS } from "./route";
+import { DYNAMIC_ROUTES, ROUTE_CONTRACTS } from "./route";
 import { RouteContract } from "./types";
+
+const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
+  {
+    pattern: /^POST:\/v1\/identity\/[^/]+\/[^/]+$/,
+    contract: DYNAMIC_ROUTES["POST:/v1/identity/:serviceName/:identifier"],
+  },
+];
 
 export function matchToRouteContract(
   method: string,
@@ -17,16 +24,11 @@ export function matchToRouteContract(
     return ROUTE_CONTRACTS[lookUpKey as keyof typeof ROUTE_CONTRACTS];
   }
 
-  // Add future dynamic routes here (e.g., GET /v1/identity/[serviceName])
-  const DYNAMIC_ROUTES = [
-    {
-      pattern: /^POST:\/v1\/identity\/[^/]+\/[^/]+$/,
-      contract: ROUTE_CONTRACTS["POST:/v1/identity"],
-    },
-  ];
+  const match = DYNAMIC_ROUTE_LIST.find((route) =>
+    route.pattern.test(lookUpKey),
+  );
 
-  return DYNAMIC_ROUTES.find((route) => route.pattern.test(lookUpKey))
-    ?.contract;
+  return match?.contract;
 }
 
 async function run(
