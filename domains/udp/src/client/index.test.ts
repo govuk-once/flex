@@ -237,4 +237,91 @@ describe("UdpDomainClient", () => {
       expect(result.ok).toBe(true);
     });
   });
+
+  describe("gateway.serviceLink.delete", () => {
+    const SERVICE = "test-service";
+    const IDENTIFIER = "test-identifier";
+
+    it("calls the correct endpoint with the provided service and serviceId", async () => {
+      nock(BASE_URL)
+        .delete(`/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`)
+        .reply(204);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.delete(
+        SERVICE,
+        IDENTIFIER,
+      );
+
+      expect(result).toEqual({
+        ok: true,
+        status: 204,
+      });
+    });
+
+    it("includes correct headers in the request", async () => {
+      nock(BASE_URL)
+        .delete(/.*/)
+        .matchHeader("Content-Type", "application/json")
+        .reply(204);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.delete(
+        SERVICE,
+        IDENTIFIER,
+      );
+
+      expect(result.ok).toBe(true);
+    });
+  });
+
+  describe("gateway.serviceLink.get", () => {
+    const SERVICE = "test-service";
+    const USER_ID = "test-user-id";
+    const MOCK_RESPONSE = { serviceId: "internal-id-123" };
+
+    it("calls the correct endpoint and passes the userId in the User-Id header", async () => {
+      nock(BASE_URL)
+        .get(`/gateways/udp/v1/identity/${SERVICE}`)
+        .matchHeader("User-Id", USER_ID)
+        .reply(200, MOCK_RESPONSE);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.get(SERVICE, USER_ID);
+
+      expect(result).toEqual({
+        ok: true,
+        status: 200,
+        data: MOCK_RESPONSE,
+      });
+    });
+
+    it("includes mandatory application/json content-type header", async () => {
+      nock(BASE_URL)
+        .get(new RegExp(`${SERVICE}$`))
+        .matchHeader("Content-Type", "application/json")
+        .reply(200, MOCK_RESPONSE);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.get(SERVICE, USER_ID);
+
+      expect(result.ok).toBe(true);
+    });
+  });
 });

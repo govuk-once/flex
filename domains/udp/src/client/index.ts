@@ -62,12 +62,37 @@ export function createUdpDomainClient({
       serviceLink: {
         create: (service: string, serviceId: string, body: IdentityRequest) => {
           const { request } = gatewayFetcher(
-            `${UDP_GATEWAY_ROUTES.postIdentity}/${service}/${serviceId}`,
+            `${UDP_GATEWAY_ROUTES.identity}/${service}/${serviceId}`,
             {
               method: "POST",
               body: JSON.stringify(body),
               headers: {
                 "Content-Type": "application/json",
+              },
+            },
+          );
+          return typedFetch(request);
+        },
+        delete: (service: string, serviceId: string) => {
+          const { request } = gatewayFetcher(
+            `${UDP_GATEWAY_ROUTES.identity}/${service}/${serviceId}`,
+            {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          return typedFetch(request);
+        },
+        get: (service: string, userId: string) => {
+          const { request } = gatewayFetcher(
+            `${UDP_GATEWAY_ROUTES.identity}/${service}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "User-Id": userId,
               },
             },
           );

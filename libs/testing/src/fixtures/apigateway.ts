@@ -432,6 +432,13 @@ export function createRestApiEvent() {
         path,
         body: options.body ? JSON.stringify(options.body) : undefined,
       }),
+    delete: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
+      buildRestApiEvent({
+        ...options,
+        httpMethod: "DELETE",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
   } as const;
 }
 
@@ -478,6 +485,12 @@ export function createRestApiEventWithAuthorizer<
       buildRestApiEventWithAuthorizer({
         ...options,
         httpMethod: "GET",
+        path,
+      }),
+    delete: (path: string, options: RestApiEventRequestOptions = {}) =>
+      buildRestApiEventWithAuthorizer({
+        ...options,
+        httpMethod: "DELETE",
         path,
       }),
     post: <TReqBody>(
