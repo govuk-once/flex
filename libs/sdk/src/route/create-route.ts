@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger, setLogLevel, setLogServiceName } from "@flex/logging";
 
 import type {
   DomainConfig,
@@ -58,10 +58,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const querySchema = routeConfig.query;
     const responseSchema = routeConfig.response;
 
-    const logger = getLogger({
-      serviceName: `${config.name}-${gateway}-${version}-${routeConfig.name}`,
-      logLevel,
-    });
+    setLogServiceName(
+      `${config.name}-${gateway}-${version}-${routeConfig.name}`,
+    );
+    setLogLevel(logLevel);
 
     const middyHandler = configureMiddleware({
       logger,
