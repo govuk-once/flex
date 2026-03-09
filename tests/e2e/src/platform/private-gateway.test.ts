@@ -31,17 +31,16 @@ describe("private gateway", () => {
     );
   });
 
-  it.todo(
-    "rejects service-to-service call when route permissions are missing",
-    async ({ cloudfront }) => {
-      const response = await cloudfront.client.get("/v1/hello-call-internal", {
-        headers: { Authorization: `Bearer ${JWT.VALID}` },
-      });
+  it("rejects service-to-service call when route permissions are missing", async ({
+    cloudfront,
+  }) => {
+    const response = await cloudfront.client.get("/v1/hello-call-internal", {
+      headers: { Authorization: `Bearer ${JWT.VALID}` },
+    });
 
-      expect(response.status).toBe(403);
-      expect(response.body).toMatchObject({
-        type: "auth_error",
-      });
-    },
-  );
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({
+      type: "auth_error",
+    });
+  });
 });
