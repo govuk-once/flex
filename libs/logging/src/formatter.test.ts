@@ -89,14 +89,15 @@ describe("FlexLogFormatter", () => {
     });
 
     it("maps X-Ray trace ID", () => {
+      const xRayTraceId = "1-5f4e7a3c-abc123";
       const formatter = new FlexLogFormatter();
       const output = formatter
         .formatAttributes(
-          createBaseAttributes({ xRayTraceId: "1-5f4e7a3c-abc123" }),
+          createBaseAttributes({ xRayTraceId }),
           {},
         )
         .getAttributes();
-      expect(output.xray_trace_id).toBe("1-5f4e7a3c-abc123");
+      expect(output.xray_trace_id).toBe(xRayTraceId);
     });
 
     it("maps sampling rate", () => {

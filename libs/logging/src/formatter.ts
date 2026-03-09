@@ -32,7 +32,6 @@ export class FlexLogFormatter extends LogFormatter {
       service: this.#serviceName ?? attributes.serviceName,
     };
 
-    // Add organizational context from environment variables
     if (process.env.FLEX_ORG) {
       baseAttributes.org = process.env.FLEX_ORG;
     }
@@ -40,25 +39,21 @@ export class FlexLogFormatter extends LogFormatter {
       baseAttributes.team = process.env.FLEX_TEAM;
     }
 
-    // Add Lambda context if available
     if (attributes.lambdaContext) {
       baseAttributes.function_name = attributes.lambdaContext.functionName;
       baseAttributes.request_id = attributes.lambdaContext.awsRequestId;
     }
 
-    // Add X-Ray trace ID if available
     if (attributes.xRayTraceId) {
       baseAttributes.xray_trace_id = attributes.xRayTraceId;
     }
 
-    // Add sampling rate if set
     if (attributes.sampleRateValue) {
       baseAttributes.sampling_rate = attributes.sampleRateValue;
     }
 
     const logItem = new LogItem({ attributes: baseAttributes });
 
-    // Add and sanitize additional attributes
     const sanitizedAdditional = this.#sanitizeAttributes(
       additionalLogAttributes,
     );
@@ -78,7 +73,7 @@ export class FlexLogFormatter extends LogFormatter {
       } else {
         const sanitizedValue = this.#sanitize(key, value);
         if (sanitizedValue !== undefined) {
-          sanitized[key] = sanitizedValue as LogAttributes[keyof LogAttributes];
+          sanitized[key] = sanitizedValue;
         }
       }
     }

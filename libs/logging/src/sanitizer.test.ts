@@ -1,19 +1,17 @@
-import { beforeEach, describe, expect, it } from "vitest";
-
-import { addSecretValue, createSanitizer, resetSanitizer } from "./sanitizer";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("sanitizer", () => {
-  beforeEach(() => {
-    resetSanitizer();
+  let addSecretValue: typeof import("./sanitizer").addSecretValue;
+  let sanitize: ReturnType<typeof import("./sanitizer").createSanitizer>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const mod = await import("./sanitizer");
+    addSecretValue = mod.addSecretValue;
+    sanitize = mod.createSanitizer();
   });
 
   describe("createSanitizer", () => {
-    let sanitize: ReturnType<typeof createSanitizer>;
-
-    beforeEach(() => {
-      sanitize = createSanitizer();
-    });
-
     it("redacts values when key matches sensitive patterns", () => {
       expect(sanitize("password", "my-password-123")).toBe("***REDACTED***"); // pragma: allowlist secret
       expect(sanitize("secret", "super-secret")).toBe("***REDACTED***"); // pragma: allowlist secret
@@ -27,7 +25,6 @@ describe("sanitizer", () => {
     it("redacts JWT tokens based on value pattern", () => {
       const jwtToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"; // pragma: allowlist secret
-
       expect(sanitize("data", jwtToken)).toBe("***REDACTED***");
     });
 
@@ -48,7 +45,6 @@ describe("sanitizer", () => {
     it("registers secret values for partial redaction", () => {
       const secret = "my-secret-value"; // pragma: allowlist secret
       addSecretValue(secret);
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", `The secret is ${secret} here`)).toBe(
         "The secret is ***REDACTED*** here",
@@ -60,7 +56,6 @@ describe("sanitizer", () => {
       const secretTwo = "secret-two"; // pragma: allowlist secret
       addSecretValue(secretOne);
       addSecretValue(secretTwo);
-      const sanitize = createSanitizer();
 
       expect(
         sanitize("message", `Found ${secretOne} and ${secretTwo} in logs`),
@@ -70,7 +65,6 @@ describe("sanitizer", () => {
     it("handles numeric secret values", () => {
       const pin = 123456; // pragma: allowlist secret
       addSecretValue(pin);
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", `Pin code is ${String(pin)}`)).toBe(
         "Pin code is ***REDACTED***",
@@ -80,7 +74,6 @@ describe("sanitizer", () => {
     it("ignores null and undefined values", () => {
       addSecretValue(null);
       addSecretValue(undefined);
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", "normal message")).toBe("normal message");
     });
@@ -88,7 +81,6 @@ describe("sanitizer", () => {
     it("ignores empty string values", () => {
       addSecretValue("");
       addSecretValue("   ");
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", "normal message")).toBe("normal message");
     });
@@ -96,7 +88,6 @@ describe("sanitizer", () => {
     it("handles special regex characters in secret values", () => {
       const secret = "secret.with+special*chars"; // pragma: allowlist secret
       addSecretValue(secret);
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", `Found ${secret} in text`)).toBe(
         "Found ***REDACTED*** in text",
@@ -108,7 +99,6 @@ describe("sanitizer", () => {
       const long = "my-secret-long"; // pragma: allowlist secret
       addSecretValue(short);
       addSecretValue(long);
-      const sanitize = createSanitizer();
 
       expect(sanitize("message", `Value is ${long} here`)).toBe(
         "Value is ***REDACTED*** here",

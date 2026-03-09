@@ -91,7 +91,7 @@ setLogLevel("DEBUG");
 
 ## `createChildLogger`
 
-Creates a child logger with additional persistent context. Use this to add request-specific metadata without modifying the platform logger.
+Creates a child logger with additional persistent context. Use this to add request-specific metadata without modifying the base logger.
 
 ### Usage
 
