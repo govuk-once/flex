@@ -1,11 +1,12 @@
+export type { NotificationId } from "./schemas/common";
 export type {
-  PreferencesRequest,
-  PreferencesResponse,
-} from "./schemas/preferences";
+  CreateNotificationRequest,
+  CreateNotificationResponse,
+} from "./schemas/notifications";
 export {
-  preferencesRequestSchema,
-  preferencesResponseSchema,
-} from "./schemas/preferences";
+  createNotificationRequestSchema,
+  createNotificationResponseSchema,
+} from "./schemas/notifications";
 export type { CreateUserRequest, CreateUserResponse } from "./schemas/user";
 export {
   createUserRequestSchema,

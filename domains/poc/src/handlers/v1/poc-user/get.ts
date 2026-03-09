@@ -1,10 +1,11 @@
 import crypto from "node:crypto";
 
 import type {
+  CreateNotificationRequest,
+  CreateNotificationResponse,
   CreateUserRequest,
   CreateUserResponse,
-  PreferencesRequest,
-  PreferencesResponse,
+  NotificationId,
 } from "@flex/udp-domain";
 import createHttpError from "http-errors";
 
@@ -42,7 +43,8 @@ export const handler = route("GET /v1/poc-user", async ({ auth, logger }) => {
 
     logger.debug("User created successfully, setting default preferences");
 
-    const defaultPreferencesResult = await updateUserPreferences();
+    const defaultPreferencesResult =
+      await updateUserPreferences(notificationId);
 
     if (!defaultPreferencesResult.ok) {
       logger.error("Failed to set default preferences", {
@@ -70,9 +72,9 @@ export const handler = route("GET /v1/poc-user", async ({ auth, logger }) => {
   return {
     status: 200,
     data: {
-      appId: auth.pairwiseId,
+      appId: auth.userId,
       notificationId,
-      preferences: preferencesResult.data.preferences,
+      preferences: preferencesResult.data,
     },
   };
 });
@@ -86,34 +88,37 @@ function generateDerivedId() {
 
   return crypto
     .createHmac("sha256", resources.flexUdpNotificationSecret)
-    .update(auth.pairwiseId)
-    .digest("base64url");
+    .update(auth.userId)
+    .digest("base64url") as NotificationId;
 }
 
 async function getUserPreferences() {
   const { auth, integrations } = getUserContext();
 
-  return await integrations.udpRead<PreferencesResponse>({
+  return await integrations.udpRead<CreateNotificationResponse>({
     path: "/notifications",
-    headers: { "requesting-service-user-id": auth.pairwiseId },
+    headers: { "requesting-service-user-id": auth.userId },
   });
 }
 
-async function updateUserPreferences() {
+async function updateUserPreferences(notificationId: NotificationId) {
   const { auth, integrations } = getUserContext();
 
-  return await integrations.udpWrite<PreferencesRequest, PreferencesResponse>({
+  return await integrations.udpWrite<
+    CreateNotificationRequest,
+    CreateNotificationResponse
+  >({
     path: "/notifications",
-    headers: { "requesting-service-user-id": auth.pairwiseId },
-    body: { preferences: { notifications: { consentStatus: "unknown" } } },
+    headers: { "requesting-service-user-id": auth.userId },
+    body: { consentStatus: "unknown", notificationId },
   });
 }
 
-async function createUser(notificationId: string) {
+async function createUser(notificationId: NotificationId) {
   const { auth, integrations } = getUserContext();
 
   return await integrations.udpWrite<CreateUserRequest, CreateUserResponse>({
     path: "/user",
-    body: { appId: auth.pairwiseId, notificationId },
+    body: { userId: auth.userId, notificationId },
   });
 }

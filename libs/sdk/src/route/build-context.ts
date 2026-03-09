@@ -1,4 +1,5 @@
 import type { Logger } from "@flex/logging";
+import { UserId } from "@flex/utils";
 import type { ZodType } from "zod";
 
 import type {
@@ -59,7 +60,7 @@ function extractAuth(event: LambdaEvent): RouteAuth {
   if (!pairwiseId) throw new Error("Pairwise ID not found");
 
   return {
-    pairwiseId,
+    userId: pairwiseId as UserId,
   };
 }
 

@@ -1,5 +1,6 @@
 import type { FlexFetchRequestInit } from "@flex/flex-fetch";
 import type { Logger } from "@flex/logging";
+import { UserId } from "@flex/utils";
 import type {
   APIGatewayProxyEventBase,
   APIGatewayProxyResult,
@@ -530,7 +531,7 @@ type WithBody<RouteConfig> = RouteConfig extends {
   : unknown;
 
 export interface RouteAuth {
-  readonly pairwiseId: string;
+  readonly userId: UserId;
 }
 
 interface HandlerSuccessResult {

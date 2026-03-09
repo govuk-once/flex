@@ -1,8 +1,8 @@
 import { domain, header, integration, resource } from "@flex/sdk";
 import {
+  createNotificationRequestSchema,
+  createNotificationResponseSchema,
   createUserRequestSchema,
-  preferencesRequestSchema,
-  preferencesResponseSchema,
   userProfileResponseSchema,
 } from "@flex/udp-domain";
 
@@ -25,8 +25,8 @@ const { config, route, routeContext } = domain({
     udpWrite: integration.gateway("POST /v1/*", { target: "udp" }),
     udpPatchUser: integration.domain("PATCH /v1/user", {
       target: "udp",
-      body: preferencesRequestSchema,
-      response: preferencesResponseSchema,
+      body: createNotificationRequestSchema,
+      response: createNotificationResponseSchema,
     }),
   },
   routes: {
@@ -57,8 +57,8 @@ const { config, route, routeContext } = domain({
             name: "update-user-preferences",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["udpPatchUser"],
-            body: preferencesRequestSchema,
-            response: preferencesResponseSchema,
+            body: createNotificationRequestSchema,
+            response: createNotificationResponseSchema,
           },
           private: {
             name: "sync-user-preferences",
@@ -67,7 +67,7 @@ const { config, route, routeContext } = domain({
             headers: {
               requestingServiceUserId: header("requesting-service-user-id"),
             },
-            body: preferencesRequestSchema,
+            body: createNotificationRequestSchema,
           },
         },
       },
