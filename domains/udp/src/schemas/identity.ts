@@ -19,3 +19,9 @@ export const identitySchema = z.object({
 });
 
 export type IdentityRequest = z.infer<typeof identitySchema>;
+
+export const identityDeleteSchema = z.object({
+  appId: NonEmptyString,
+});
+
+export type IdentityDeleteRequest = z.infer<typeof identityDeleteSchema>;

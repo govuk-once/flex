@@ -1,6 +1,6 @@
 import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 import type { UserId } from "@flex/utils";
-import { IdentityRequest } from "@schemas/identity";
+import { IdentityDeleteRequest, IdentityRequest } from "@schemas/identity";
 import {
   CreateNotificationRequest,
   createNotificationResponseSchema,
@@ -62,9 +62,22 @@ export function createUdpDomainClient({
       serviceLink: {
         create: (service: string, serviceId: string, body: IdentityRequest) => {
           const { request } = gatewayFetcher(
-            `${UDP_GATEWAY_ROUTES.postIdentity}/${service}/${serviceId}`,
+            `${UDP_GATEWAY_ROUTES.identity}/${service}/${serviceId}`,
             {
               method: "POST",
+              body: JSON.stringify(body),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          return typedFetch(request);
+        },
+        delete: (service: string, body: IdentityDeleteRequest) => {
+          const { request } = gatewayFetcher(
+            `${UDP_GATEWAY_ROUTES.identity}/${service}`,
+            {
+              method: "DELETE",
               body: JSON.stringify(body),
               headers: {
                 "Content-Type": "application/json",

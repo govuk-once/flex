@@ -23,6 +23,24 @@ export const endpoints = defineDomain({
             ],
           },
         },
+        "/identity/{serviceName}": {
+          DELETE: {
+            type: "ISOLATED",
+            entry: "handlers/public/v1/identity/delete.ts",
+            envEphemeral: {
+              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                "/flex-core/private-gateway/url",
+            },
+            timeoutSeconds: 20,
+            permissions: [
+              {
+                type: "gateway",
+                path: "",
+                method: "DELETE",
+              },
+            ],
+          },
+        },
         "/users": {
           GET: {
             type: "ISOLATED",
