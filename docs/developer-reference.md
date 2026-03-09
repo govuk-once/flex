@@ -6,129 +6,15 @@ Common patterns, best practices and workflows when developing on FLEX.
 
 ## Handler Patterns
 
-All Lambda handlers use `createLambdaHandler` from `@flex/handlers`.
+Domain handlers are built using the [@flex/sdk](/libs/sdk/README.md) package. The SDK provides a declarative configuration API and a typed handler factory that conditionally includes context properties based on the route definition.
 
-See [@flex/handlers](/libs/handlers/README.md) for full API documentation.
+See the [Domain Development Guide: Handler Patterns](/docs/domain-development.md#handler-patterns) for all handler examples including authentication, request body/query validation, path parameters, resources, integrations, headers and route context.
 
-### Base Handler
-
-```typescript
-import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
-
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2
->(
-  async (event) => {
-    const logger = getLogger();
-
-    // Business logic
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Success" }),
-    };
-  },
-  {
-    logLevel: "INFO",
-    serviceName: "service-name",
-  },
-);
-```
-
-### With User Context
-
-For handlers behind authentication that need the user's pairwise ID:
-
-```typescript
-import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
-import type { ContextWithPairwiseId, V2Authorizer } from "@flex/middlewares";
-import { extractUser } from "@flex/middlewares";
-import type {
-  APIGatewayProxyEventV2WithLambdaAuthorizer,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
-
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
-  APIGatewayProxyResultV2,
-  ContextWithPairwiseId
->(
-  async (event, context) => {
-    const logger = getLogger();
-
-    const userId = context.pairwiseId;
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ userId }),
-    };
-  },
-  {
-    logLevel: "INFO",
-    serviceName: "service-name",
-    middlewares: [extractUser],
-  },
-);
-```
-
-### With Request Validation
-
-For handlers that need to validate incoming requests:
-
-```typescript
-import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
-import { z } from "zod";
-
-const RequestBodySchema = z.object({
-  name: z.string().min(1),
-  email: z.email(),
-});
-
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2
->(
-  async (event) => {
-    const logger = getLogger();
-
-    const parseResult = RequestBodySchema.safeParse(event.body);
-
-    if (!parseResult.success) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Invalid request body" }),
-      };
-    }
-
-    const { name, email } = parseResult.data;
-
-    return {
-      statusCode: 201,
-      body: JSON.stringify({ name, email }),
-    };
-  },
-  {
-    logLevel: "INFO",
-    serviceName: "service-name",
-  },
-);
-```
-
----
+See [@flex/sdk](/libs/sdk/README.md) for full API reference on domain configuration, resources, integrations, headers and other configuration options.
 
 ## Lambda Constructs
+
+Lambda constructs are managed by the SDK based on the `access` field specified in your domain configuration. The table below is a reference for platform engineers maintaining the construct implementations.
 
 ### Choosing a Construct
 
@@ -147,33 +33,15 @@ Does your handler need to call external APIs?
         └── No → FlexPublicFunction
 ```
 
-### Creating a Lambda Function
+Domain developers set the `access` field on a route or in the domain configuration "common" options. The platform maps these values to the appropriate Lambda construct:
 
-```typescript
-import { FlexPublicFunction } from "./constructs/flex-public-function";
-import { FlexPrivateEgressFunction } from "./constructs/flex-private-egress-function";
-import { FlexPrivateIsolatedFunction } from "./constructs/flex-private-isolated-function";
-import { getDomainEntry } from "./utils/getEntry";
+| Value        | Lambda                        |
+| ------------ | ----------------------------- |
+| `"public"`   | `FlexPublicFunction`          |
+| `"private"`  | `FlexPrivateEgressFunction`   |
+| `"isolated"` | `FlexPrivateIsolatedFunction` |
 
-const publicFunction = new FlexPublicFunction(this, "PublicFunction", {
-  entry: getDomainEntry("domain", "handlers/public/get.ts"),
-  domain: "domain",
-});
-
-const privateFunction = new FlexPrivateEgressFunction(this, "PrivateFunction", {
-  entry: getDomainEntry("domain", "handlers/private/get.ts"),
-  domain: "domain",
-});
-
-const isolatedFunction = new FlexPrivateIsolatedFunction(
-  this,
-  "IsolatedFunction",
-  {
-    entry: getDomainEntry("domain", "handlers/isolated/get.ts"),
-    domain: "domain",
-  },
-);
-```
+The default is `"isolated"` when no `access` value is specified.
 
 ### Entry Point Helpers
 
@@ -195,9 +63,8 @@ getPlatformEntry("domain", "handler.ts");
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
+- [@flex/sdk](/libs/sdk/README.md)
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
