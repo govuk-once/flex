@@ -21,10 +21,10 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
   ...(await actual()),
   createSigv4Fetcher:
     ({ baseUrl }: { baseUrl: string }) =>
-      (path: string, options?: RequestInit) => ({
-        request: fetch(`${baseUrl}${path}`, options),
-        abort: vi.fn(),
-      }),
+    (path: string, options?: RequestInit) => ({
+      request: fetch(`${baseUrl}${path}`, options),
+      abort: vi.fn(),
+    }),
 }));
 
 describe("POST /identity/:service/:identifier - service handler", () => {

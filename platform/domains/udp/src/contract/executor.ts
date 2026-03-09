@@ -25,8 +25,9 @@ export function matchToRouteContract(
     },
   ];
 
-  return DYNAMIC_ROUTES.find((route) => route.pattern.test(lookUpKey))?.contract;
-};
+  return DYNAMIC_ROUTES.find((route) => route.pattern.test(lookUpKey))
+    ?.contract;
+}
 
 async function run(
   contract: RouteContract,

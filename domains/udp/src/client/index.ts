@@ -1,5 +1,6 @@
 import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 import type { UserId } from "@flex/utils";
+import { IdentityRequest } from "@schemas/identity";
 import {
   CreateNotificationRequest,
   createNotificationResponseSchema,
@@ -8,7 +9,6 @@ import {
 } from "@schemas/notifications";
 import { CreateUserRequest } from "@schemas/user";
 
-import { IdentityRequest } from "@schemas/identity";
 import {
   UDP_DOMAIN_BASE,
   UDP_DOMAIN_ROUTES,

@@ -1,3 +1,5 @@
+export type { IdentityRequest } from "./schemas/identity";
+export { identitySchema } from "./schemas/identity";
 export type {
   CreateNotificationRequest,
   CreateNotificationResponse,

@@ -5,10 +5,7 @@ import {
 } from "@flex/flex-fetch";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import {
-  identityBodyRequest,
-  identityRequest,
-} from "../schemas/remote/identity";
+import { identityBodyRequest } from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,
