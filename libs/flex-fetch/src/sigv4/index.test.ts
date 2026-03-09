@@ -1,4 +1,5 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
+import { memoize } from "@smithy/property-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { flexFetch } from "../fetch";
@@ -8,12 +9,20 @@ const createSignedFetcherMock = vi.fn((_opts: unknown) =>
   vi.fn(() => Promise.resolve(new Response("{}"))),
 );
 
-vi.mock("@aws-sdk/credential-providers", () => ({
-  fromTemporaryCredentials: vi.fn().mockResolvedValue({
+const mockCredentialProvider = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({
     accessKeyId: "test-access-key-id",
     secretAccessKey: "test-secret-access-key", // pragma: allowlist secret
     sessionToken: "test-session-token",
   }),
+);
+
+vi.mock("@aws-sdk/credential-providers", () => ({
+  fromTemporaryCredentials: vi.fn().mockReturnValue(mockCredentialProvider),
+}));
+
+vi.mock("@smithy/property-provider", () => ({
+  memoize: vi.fn((provider: unknown) => provider),
 }));
 
 vi.mock("@flex/logging", () => {
@@ -45,11 +54,12 @@ describe("createSigv4Fetcher", () => {
   const baseUrl = "https://api.example.com";
   const path = "/foo";
   const fullUrl = `${baseUrl}${path}`;
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns flex fetch wrapper with signed fetch function", () => {
+  it("returns a flex fetch wrapper with a signed fetch function", () => {
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -61,7 +71,7 @@ describe("createSigv4Fetcher", () => {
     expect(abort).toBeInstanceOf(Function);
   });
 
-  it("calls createSignedFetcher with region and service", () => {
+  it("signs request using the execute-api service for the given region", () => {
     createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -74,7 +84,7 @@ describe("createSigv4Fetcher", () => {
     });
   });
 
-  it("passes the path to flexFetch", () => {
+  it("constructs the full URL by joining the base URL and the path", () => {
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -92,7 +102,7 @@ describe("createSigv4Fetcher", () => {
     );
   });
 
-  it("passes options transparently to flexFetch", () => {
+  it("passes fetch options through to to flexFetch without modification", () => {
     const fetchOptions = {
       retryAttempts: 3 as const,
       maxRetryDelay: 500,
@@ -113,7 +123,7 @@ describe("createSigv4Fetcher", () => {
     );
   });
 
-  it("passes custom credentials to createSignedFetcher", () => {
+  it("forwards custom static credentials to the signed fetcher", () => {
     const credentials = {
       accessKeyId: "custom-key",
       secretAccessKey: "custom-secret", // pragma: allowlist secret
@@ -133,7 +143,7 @@ describe("createSigv4Fetcher", () => {
     );
   });
 
-  it("uses default fetch options when none are provided", () => {
+  it("defaults to an empty options object when no fetch options are provided", () => {
     const fetcher = createSigv4Fetcher({
       baseUrl,
       region: "us-east-1",
@@ -149,23 +159,37 @@ describe("createSigv4FetchWithCredentials", () => {
     baseUrl: "https://api.example.com",
     region: "us-east-1",
     roleName: "test-role",
-    roleArn: "arn:aws:iam::111111111111:role/cache-role",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("caches credentials on subsequent calls", () => {
-    createSigv4FetchWithCredentials(baseOptions);
-    createSigv4FetchWithCredentials(baseOptions);
+  it("wraps the credential provider with memoize to enable SDK-level credential TTL caching", () => {
+    createSigv4FetchWithCredentials({
+      ...baseOptions,
+      roleArn: "arn:aws:iam::111111111111:role/cache-role",
+    });
 
-    expect(fromTemporaryCredentials).toHaveBeenCalledTimes(1);
+    expect(fromTemporaryCredentials).toHaveBeenCalledOnce();
+  });
+
+  it("reuses the same memoized provider instance on subsequent calls with the same role, avoiding redundant STS assume role calls", () => {
+    const cacheTest = {
+      ...baseOptions,
+      roleArn: "arn:aws:iam::222222222222:role/memoization-test",
+    };
+
+    createSigv4FetchWithCredentials(cacheTest);
+    createSigv4FetchWithCredentials(cacheTest);
+
+    expect(fromTemporaryCredentials).toHaveBeenCalledOnce();
+    expect(memoize).toHaveBeenCalledOnce();
   });
 
   it.each([
     {
-      name: "externalId is undefined",
+      name: "no externalId",
       options: {
         ...baseOptions,
         roleArn: "arn:...:role/no-ext",
@@ -177,7 +201,7 @@ describe("createSigv4FetchWithCredentials", () => {
       },
     },
     {
-      name: "externalId is provided",
+      name: "with externalId",
       options: {
         ...baseOptions,
         roleArn: "arn:...:role/ext",
@@ -189,16 +213,22 @@ describe("createSigv4FetchWithCredentials", () => {
         ExternalId: "my-ext-id",
       },
     },
-  ])("sets expected params when $name", ({ options, expectedParams }) => {
-    createSigv4FetchWithCredentials(options);
-    expect(fromTemporaryCredentials).toHaveBeenCalledWith({
-      params: expectedParams,
-    });
-  });
+  ])(
+    "passes correct STS assume-role config to fromTemporaryCredentials when $name",
+    ({ options, expectedParams }) => {
+      createSigv4FetchWithCredentials(options);
+      expect(fromTemporaryCredentials).toHaveBeenCalledWith({
+        clientConfig: {
+          region: baseOptions.region,
+        },
+        params: expectedParams,
+      });
+    },
+  );
 
-  it("creates separate credential providers for different roleArn or externalId", () => {
-    const roleA = "arn:aws:iam::444444444444:role/role-a";
-    const roleB = "arn:aws:iam::555555555555:role/role-b";
+  it("creates a separate memoized provider per unique role ARN and externalId combination", () => {
+    const roleA = "arn:aws:iam::444444444444:role/separate-role-a";
+    const roleB = "arn:aws:iam::555555555555:role/separate-role-b";
 
     createSigv4FetchWithCredentials({
       ...baseOptions,
@@ -214,5 +244,6 @@ describe("createSigv4FetchWithCredentials", () => {
     });
 
     expect(fromTemporaryCredentials).toHaveBeenCalledTimes(2);
+    expect(memoize).toHaveBeenCalledTimes(2);
   });
 });

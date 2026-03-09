@@ -325,6 +325,9 @@ importers:
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
+      '@smithy/property-provider':
+        specifier: 4.2.8
+        version: 4.2.8
       aws-sigv4-fetch:
         specifier: 4.4.1
         version: 4.4.1
