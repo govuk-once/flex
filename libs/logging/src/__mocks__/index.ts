@@ -22,6 +22,13 @@ export const logger: Record<string, Mock | Record<string, Mock>> = {
 
 export const setLogServiceName: Mock = vi.fn();
 export const setLogLevel: Mock = vi.fn();
-export const createChildLogger: Mock = vi.fn();
+export const createChildLogger: Mock = vi.fn().mockReturnValue({
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  critical: vi.fn(),
+});
 export const addSecretValue: Mock = vi.fn();
 export const injectLambdaContext: Mock = vi.fn();

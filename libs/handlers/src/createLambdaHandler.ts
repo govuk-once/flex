@@ -46,6 +46,24 @@ export type LambdaHandlerConfig<
  * @param handler - The core Lambda handler function
  * @param config - Configuration for the handler
  * @returns A middy-wrapped Lambda handler
+ *
+ * @example
+ * ```typescript
+ * export const handler = createLambdaHandler<
+ *   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer>,
+ *   APIGatewayProxyResultV2,
+ *   ContextWithUserId & NotificationSecretContext
+ * >(
+ *   async (event, context) => {
+ *     const { userId } = context;
+ *     return jsonResponse(200, { userId });
+ *   },
+ *   {
+ *     serviceName: "my-service",
+ *     middlewares: [extractUser, httpJsonBodyParser()],
+ *   },
+ * );
+ * ```
  */
 export function createLambdaHandler<
   TEvent = unknown,
