@@ -1,17 +1,13 @@
-import type { CreateUserRequest, CreateUserResponse } from "@flex/udp-domain";
 import createHttpError from "http-errors";
 
 import { route } from "../../../../domain.config";
 
 export const handler = route(
   "POST /v1/poc-user [private]",
-  async ({ body, integrations, logger }) => {
-    const createUserResult = await integrations.udpWrite<
-      CreateUserRequest,
-      CreateUserResponse
-    >({
+  async ({ integrations, logger }) => {
+    const createUserResult = await integrations.udpWrite({
       path: "/user",
-      body,
+      body: {},
     });
 
     if (!createUserResult.ok) {

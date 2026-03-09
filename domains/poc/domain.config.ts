@@ -1,10 +1,4 @@
 import { domain, header, integration, resource } from "@flex/sdk";
-import {
-  createUserRequestSchema,
-  preferencesRequestSchema,
-  preferencesResponseSchema,
-  userProfileResponseSchema,
-} from "@flex/udp-domain";
 
 const { config, route, routeContext } = domain({
   name: "poc",
@@ -23,11 +17,7 @@ const { config, route, routeContext } = domain({
   integrations: {
     udpRead: integration.gateway("GET /v1/*", { target: "udp" }),
     udpWrite: integration.gateway("POST /v1/*", { target: "udp" }),
-    udpPatchUser: integration.domain("PATCH /v1/user", {
-      target: "udp",
-      body: preferencesRequestSchema,
-      response: preferencesResponseSchema,
-    }),
+    udpPatchUser: integration.domain("PATCH /v1/user", { target: "udp" }),
   },
   routes: {
     v1: {
@@ -41,7 +31,6 @@ const { config, route, routeContext } = domain({
               "flexUdpNotificationSecret",
             ],
             integrations: ["udpRead", "udpWrite"],
-            response: userProfileResponseSchema,
           },
         },
         POST: {
@@ -49,7 +38,6 @@ const { config, route, routeContext } = domain({
             name: "create-user-profile",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["udpWrite"],
-            body: createUserRequestSchema,
           },
         },
         PATCH: {
@@ -57,8 +45,6 @@ const { config, route, routeContext } = domain({
             name: "update-user-preferences",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["udpPatchUser"],
-            body: preferencesRequestSchema,
-            response: preferencesResponseSchema,
           },
           private: {
             name: "sync-user-preferences",
@@ -67,7 +53,6 @@ const { config, route, routeContext } = domain({
             headers: {
               requestingServiceUserId: header("requesting-service-user-id"),
             },
-            body: preferencesRequestSchema,
           },
         },
       },

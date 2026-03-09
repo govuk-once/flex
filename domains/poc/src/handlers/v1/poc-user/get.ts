@@ -1,11 +1,5 @@
 import crypto from "node:crypto";
 
-import type {
-  CreateUserRequest,
-  CreateUserResponse,
-  PreferencesRequest,
-  PreferencesResponse,
-} from "@flex/udp-domain";
 import createHttpError from "http-errors";
 
 import { getUserContext, route } from "../../../../domain.config";
@@ -69,11 +63,7 @@ export const handler = route("GET /v1/poc-user", async ({ auth, logger }) => {
 
   return {
     status: 200,
-    data: {
-      appId: auth.pairwiseId,
-      notificationId,
-      preferences: preferencesResult.data.preferences,
-    },
+    data: { userId: auth.pairwiseId, notificationId },
   };
 });
 
@@ -93,7 +83,7 @@ function generateDerivedId() {
 async function getUserPreferences() {
   const { auth, integrations } = getUserContext();
 
-  return await integrations.udpRead<PreferencesResponse>({
+  return await integrations.udpRead({
     path: "/notifications",
     headers: { "requesting-service-user-id": auth.pairwiseId },
   });
@@ -102,7 +92,7 @@ async function getUserPreferences() {
 async function updateUserPreferences() {
   const { auth, integrations } = getUserContext();
 
-  return await integrations.udpWrite<PreferencesRequest, PreferencesResponse>({
+  return await integrations.udpWrite({
     path: "/notifications",
     headers: { "requesting-service-user-id": auth.pairwiseId },
     body: { preferences: { notifications: { consentStatus: "unknown" } } },
@@ -112,7 +102,7 @@ async function updateUserPreferences() {
 async function createUser(notificationId: string) {
   const { auth, integrations } = getUserContext();
 
-  return await integrations.udpWrite<CreateUserRequest, CreateUserResponse>({
+  return await integrations.udpWrite({
     path: "/user",
     body: { appId: auth.pairwiseId, notificationId },
   });

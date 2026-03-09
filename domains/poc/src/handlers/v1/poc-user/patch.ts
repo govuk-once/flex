@@ -4,10 +4,10 @@ import { route } from "../../../../domain.config";
 
 export const handler = route(
   "PATCH /v1/poc-user",
-  async ({ auth, body, integrations, logger }) => {
+  async ({ auth, integrations, logger }) => {
     const patchUserResult = await integrations.udpPatchUser({
-      body,
       headers: { "requesting-service-user-id": auth.pairwiseId },
+      body: { preferences: { notifications: { consentStatus: "unknown" } } },
     });
 
     if (!patchUserResult.ok) {
