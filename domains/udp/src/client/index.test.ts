@@ -201,14 +201,16 @@ describe("UdpDomainClient", () => {
   });
 
   describe("gateway.createServiceLink", () => {
-    const service = "test-service";
-    const serviceId = "user-123";
-    const body = { appId: "pairwise-id-999" };
+    const SERVICE = "test-service";
+    const IDENTIFIER = "user-123";
 
-    it("calls the correct endpoint with the provided service and serviceId", async () => {
+    it("calls the correct endpoint with the provided service and serviceId", async ({
+      userId,
+    }) => {
+      const body = { appId: userId };
       nock(BASE_URL)
         .post(
-          `/gateways/udp/v1/identity/${service}/${serviceId}`,
+          `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`,
           (actualBody) => {
             return JSON.stringify(actualBody) === JSON.stringify(body);
           },
@@ -221,8 +223,8 @@ describe("UdpDomainClient", () => {
       });
 
       const result = await client.gateway.createServiceLink(
-        service,
-        serviceId,
+        SERVICE,
+        IDENTIFIER,
         body,
       );
 
@@ -232,7 +234,7 @@ describe("UdpDomainClient", () => {
       });
     });
 
-    it("includes correct headers in the request", async () => {
+    it("includes correct headers in the request", async ({ userId }) => {
       nock(BASE_URL)
         .post(/.*/)
         .matchHeader("Content-Type", "application/json")
@@ -244,9 +246,9 @@ describe("UdpDomainClient", () => {
       });
 
       const result = await client.gateway.createServiceLink(
-        service,
-        serviceId,
-        body,
+        SERVICE,
+        IDENTIFIER,
+        { appId: userId },
       );
       expect(result.ok).toBe(true);
     });

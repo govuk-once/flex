@@ -1,4 +1,5 @@
 import { getLogger } from "@flex/logging";
+import { it } from "@flex/testing";
 import nock from "nock";
 import {
   afterAll,
@@ -7,7 +8,6 @@ import {
   beforeEach,
   describe,
   expect,
-  it,
   vi,
 } from "vitest";
 
@@ -35,13 +35,12 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 
 describe("postIdentityService", () => {
   const BASE_URL = "https://example.com";
-  const region = "eu-west-2";
-  const appId = "test-app-id";
-  const service = "test-service";
-  const serviceId = "test-service-id";
+  const REGION = "eu-west-2";
+  const SERVICE = "test-service";
+  const IDENTIFIER = "user-123";
 
   const client = createUdpDomainClient({
-    region,
+    region: REGION,
     baseUrl: BASE_URL,
   });
 
@@ -62,21 +61,21 @@ describe("postIdentityService", () => {
     nock.cleanAll();
   });
 
-  it("successfully links service ID to app ID", async () => {
+  it("successfully links service ID to app ID", async ({ userId }) => {
     const logger = getLogger();
-    const expectedPath = `/gateways/udp/v1/identity/${service}/${serviceId}`;
+    const expectedPath = `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`;
 
     nock(BASE_URL)
       .post(expectedPath, {
-        appId,
+        appId: userId,
       })
       .reply(201, { success: true });
 
     await postIdentityService({
       client,
-      service,
-      serviceId,
-      appId,
+      service: SERVICE,
+      serviceId: IDENTIFIER,
+      appId: userId,
     });
 
     expect(nock.isDone()).toBe(true);
@@ -90,11 +89,11 @@ describe("postIdentityService", () => {
     );
   });
 
-  it.each([401, 403, 422, 500, 503])(
+  it.for([401, 403, 422, 500, 503])(
     "throws BadGateway when createServiceLink returns %s",
-    async (statusCode) => {
+    async (statusCode, { userId }) => {
       nock(BASE_URL)
-        .post(`/gateways/udp/v1/identity/${service}/${serviceId}`)
+        .post(`/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`)
         .reply(statusCode, {
           message: "Upstream error",
           detail: "some details",
@@ -103,9 +102,9 @@ describe("postIdentityService", () => {
       await expect(
         postIdentityService({
           client,
-          service,
-          serviceId,
-          appId,
+          service: SERVICE,
+          serviceId: IDENTIFIER,
+          appId: userId,
         }),
       ).rejects.toMatchObject({
         status: 502,

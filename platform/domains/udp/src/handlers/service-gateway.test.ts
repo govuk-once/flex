@@ -167,6 +167,7 @@ describe("UDP Service Gateway", () => {
   it("dispatches POST /v1/identity/:service/:identifier and links service ID", async ({
     privateGatewayEvent,
     env,
+    userId,
   }) => {
     env.set({
       FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
@@ -174,7 +175,6 @@ describe("UDP Service Gateway", () => {
 
     const serviceName = "test-service";
     const identifier = "user-abc-123";
-    const appId = "pairwise-999";
 
     remoteClient.serviceLink.create.mockResolvedValue({
       ok: true,
@@ -186,7 +186,7 @@ describe("UDP Service Gateway", () => {
       privateGatewayEvent.post(
         `/gateways/udp/v1/identity/${serviceName}/${identifier}`,
         {
-          body: { appId },
+          body: { userId },
         },
       ),
       context,
@@ -202,7 +202,7 @@ describe("UDP Service Gateway", () => {
     expect(remoteClient.serviceLink.create).toHaveBeenCalledWith(
       serviceName,
       identifier,
-      { appId },
+      { userId },
     );
   });
 

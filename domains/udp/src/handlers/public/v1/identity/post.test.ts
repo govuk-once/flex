@@ -1,7 +1,7 @@
 import { it } from "@flex/testing";
+import { postIdentityService } from "@services/identityService";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { postIdentityService } from "../../../../services/identityService";
 import { handler } from "./post";
 
 vi.mock("../../../../services/identityService", () => ({
@@ -28,7 +28,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
 }));
 
 describe("POST /identity/:service/:identifier - service handler", () => {
-  const SERVICE_NAME = "test-service";
+  const SERVICE = "test-service";
   const IDENTIFIER = "user-123";
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe("POST /identity/:service/:identifier - service handler", () => {
       const event = {
         ...privateGatewayEventWithAuthorizer.post("/identity", { body: {} }),
         pathParameters: {
-          serviceName: SERVICE_NAME,
+          serviceName: SERVICE,
           identifier: IDENTIFIER,
         },
       };
@@ -80,8 +80,8 @@ describe("POST /identity/:service/:identifier - service handler", () => {
       const event = {
         ...privateGatewayEventWithAuthorizer.authenticated(),
         pathParameters: {
-          serviceName: "test-service",
-          identifier: "test-identifier",
+          serviceName: SERVICE,
+          identifier: IDENTIFIER,
         },
       } as Parameters<typeof handler>[0];
 
