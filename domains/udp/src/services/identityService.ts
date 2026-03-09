@@ -16,7 +16,7 @@ export const postIdentityService = async ({
 }) => {
   const logger = getLogger();
 
-  const response = await client.gateway.createServiceLink(service, serviceId, {
+  const response = await client.gateway.serviceLink.create(service, serviceId, {
     appId,
   });
 

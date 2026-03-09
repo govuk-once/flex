@@ -29,10 +29,10 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
   ...(await actual()),
   createSigv4Fetcher:
     ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
+      (path: string, options?: RequestInit) => ({
+        request: fetch(`${baseUrl}${path}`, options),
+        abort: vi.fn(),
+      }),
 }));
 
 describe("UdpDomainClient", () => {
@@ -200,7 +200,7 @@ describe("UdpDomainClient", () => {
     expect(result.error.body).toBeDefined();
   });
 
-  describe("gateway.createServiceLink", () => {
+  describe("gateway.serviceLink.create", () => {
     const SERVICE = "test-service";
     const IDENTIFIER = "user-123";
 
@@ -222,7 +222,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.createServiceLink(
+      const result = await client.gateway.serviceLink.create(
         SERVICE,
         IDENTIFIER,
         body,
@@ -245,7 +245,7 @@ describe("UdpDomainClient", () => {
         baseUrl: BASE_URL,
       });
 
-      const result = await client.gateway.createServiceLink(
+      const result = await client.gateway.serviceLink.create(
         SERVICE,
         IDENTIFIER,
         { appId: userId },
