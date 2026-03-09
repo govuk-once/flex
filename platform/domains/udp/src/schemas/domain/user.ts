@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const inboundCreateUserRequestSchema = z.object({
   notificationId: NonEmptyString,
-  appId: NonEmptyString,
+  userId: NonEmptyString,
 });
 
 export type InboundCreateUserRequest = z.infer<

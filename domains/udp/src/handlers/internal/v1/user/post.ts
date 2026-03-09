@@ -2,9 +2,10 @@ import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-
 import { createLambdaHandler } from "@flex/handlers";
 import { getLogger } from "@flex/logging";
 import { getConfig } from "@flex/params";
-import { jsonResponse, NonEmptyString } from "@flex/utils";
+import { jsonResponse, NonEmptyString, UserId } from "@flex/utils";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
+import { notificationId } from "@schemas/common";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import status from "http-status";
@@ -18,8 +19,8 @@ const configSchema = z.object({
 });
 
 const handlerRequestSchema = z.object({
-  notificationId: NonEmptyString,
-  appId: NonEmptyString,
+  notificationId,
+  userId: UserId,
 });
 
 export const handler = createLambdaHandler<APIGatewayProxyEvent>(
@@ -43,9 +44,9 @@ export const handler = createLambdaHandler<APIGatewayProxyEvent>(
         baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
       });
 
-      const response = await client.gateway.createUser({
+      const response = await client.gateway.users.create({
         notificationId: parsedEvent.data.notificationId,
-        appId: parsedEvent.data.appId,
+        userId: parsedEvent.data.userId,
       });
 
       if (!response.ok) {

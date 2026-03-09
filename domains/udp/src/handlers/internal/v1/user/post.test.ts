@@ -16,7 +16,9 @@ vi.mock("@flex/params", () => ({
 vi.mock("../../../../client", () => ({
   createUdpDomainClient: vi.fn(() => ({
     gateway: {
-      createUser: mockCreateUser,
+      users: {
+        create: mockCreateUser,
+      },
     },
   })),
 }));
@@ -37,7 +39,7 @@ describe("POST /user handler", () => {
         privateGatewayEvent.post("/user", {
           body: {
             notificationId: "test-notification-id",
-            appId: "test-app-id",
+            userId: "test-user-id",
           },
         }),
         context.withPairwiseId().create(),
@@ -50,7 +52,7 @@ describe("POST /user handler", () => {
       );
       expect(mockCreateUser).toHaveBeenCalledExactlyOnceWith({
         notificationId: "test-notification-id",
-        appId: "test-app-id",
+        userId: "test-user-id",
       });
     });
   });
@@ -59,23 +61,23 @@ describe("POST /user handler", () => {
     it.for([
       {
         body: { notificationId: "id" },
-        desc: "missing appId",
+        desc: "missing userId",
       },
       {
-        body: { appId: "app" },
+        body: { userId: "user" },
         desc: "missing notificationId",
       },
       {
         body: {},
-        desc: "missing both notificationId and appId",
+        desc: "missing both notificationId and userId",
       },
       {
-        body: { notificationId: 123, appId: "app" },
+        body: { notificationId: 123, userId: "user" },
         desc: "notificationId not a string",
       },
       {
-        body: { notificationId: "id", appId: null },
-        desc: "appId null",
+        body: { notificationId: "id", userId: null },
+        desc: "userId null",
       },
     ])(
       "rejects invalid payload: $desc",
@@ -106,7 +108,7 @@ describe("POST /user handler", () => {
         privateGatewayEvent.post("/user", {
           body: {
             notificationId: "test-notification-id",
-            appId: "test-app-id",
+            userId: "test-user-id",
           },
         }),
         context.withPairwiseId().create(),

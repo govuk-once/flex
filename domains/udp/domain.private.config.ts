@@ -5,23 +5,7 @@ export const endpoints = defineDomain({
   versions: {
     v1: {
       routes: {
-        "/user": {
-          PATCH: {
-            type: "ISOLATED",
-            entry: "handlers/internal/v1/user/patch.ts",
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex-core/private-gateway/url",
-            },
-            timeoutSeconds: 20,
-            permissions: [
-              {
-                type: "gateway",
-                path: "notifications",
-                method: "POST",
-              },
-            ],
-          },
+        "/users": {
           POST: {
             type: "ISOLATED",
             entry: "handlers/internal/v1/user/post.ts",

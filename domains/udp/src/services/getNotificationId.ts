@@ -1,7 +1,9 @@
+import { UserId } from "@flex/utils";
+import { NotificationId } from "@types";
 import crypto from "crypto";
 
 interface GeneratedDerivedIdProps {
-  pairwiseId: string;
+  userId: UserId;
   secretKey: string;
 }
 
@@ -14,15 +16,15 @@ interface GeneratedDerivedIdProps {
  * @param props.secretKey - The secret key to use for the derivation.
  * @returns The derived ID.
  */
-export const generateDerivedId = ({
-  pairwiseId,
+export const getNotificationId = ({
+  userId,
   secretKey,
 }: GeneratedDerivedIdProps) => {
-  if (!pairwiseId.trim() || !secretKey.trim()) {
-    throw new Error("Pairwise ID and secret key cannot be empty");
+  if (!userId.trim() || !secretKey.trim()) {
+    throw new Error("User ID and secret key cannot be empty");
   }
 
   const hmac = crypto.createHmac("sha256", secretKey);
-  hmac.update(pairwiseId);
-  return hmac.digest("base64url");
+  hmac.update(userId);
+  return hmac.digest("base64url") as NotificationId;
 };

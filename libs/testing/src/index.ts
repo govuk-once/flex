@@ -42,3 +42,4 @@ export {
   validJwt,
   validJwtUsername,
 } from "./fixtures";
+export { createUserId } from "./fixtures/user";

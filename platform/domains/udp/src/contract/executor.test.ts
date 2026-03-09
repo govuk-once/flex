@@ -13,9 +13,13 @@ vi.mock("@flex/logging", () => ({
 }));
 
 const remoteClient = {
-  getPreferences: vi.fn(),
-  updatePreferences: vi.fn(),
-  createUser: vi.fn(),
+  user: {
+    create: vi.fn(),
+  },
+  notifications: {
+    get: vi.fn(),
+    update: vi.fn(),
+  },
 };
 
 describe("Executor", () => {
@@ -26,19 +30,19 @@ describe("Executor", () => {
   it.for([
     {
       method: "POST",
-      path: "/v1/user",
+      path: "/v1/users",
       operation: "createUser",
-      body: { appId: "1234", notificationId: "5678" },
+      body: { userId: "456", notificationId: "5678" },
       configureRemoteClient: () => {
-        remoteClient.createUser.mockResolvedValue({
+        remoteClient.user.create.mockResolvedValue({
           ok: true,
           status: 200,
           data: { message: "created" },
         });
       },
       assertRemoteClientCall: () => {
-        expect(remoteClient.createUser).toHaveBeenCalledWith({
-          appId: "1234",
+        expect(remoteClient.user.create).toHaveBeenCalledWith({
+          appId: "456",
           notificationId: "5678",
         });
       },
@@ -48,22 +52,21 @@ describe("Executor", () => {
       path: "/v1/notifications",
       operation: "updateNotifications",
       headers: { "requesting-service-user-id": "123" },
-      body: { preferences: { notifications: { consentStatus: "accepted" } } },
+      body: { consentStatus: "accepted", notificationId: "abc" },
       configureRemoteClient: () => {
-        remoteClient.updatePreferences.mockResolvedValue({
+        remoteClient.notifications.update.mockResolvedValue({
           ok: true,
           status: 200,
           data: {
-            data: {
-              consentStatus: "accepted",
-            },
+            data: { consentStatus: "accepted", notificationId: "abc" },
           },
         });
       },
       assertRemoteClientCall: () => {
-        expect(remoteClient.updatePreferences).toHaveBeenCalledWith(
+        expect(remoteClient.notifications.update).toHaveBeenCalledWith(
           {
-            data: { consentStatus: "accepted" },
+            data: { consentStatus: "accepted", notificationId: "abc" },
+            requestingServiceUserId: "123",
           },
           "123",
         );
@@ -74,19 +77,18 @@ describe("Executor", () => {
       path: "/v1/notifications",
       operation: "getNotifications",
       headers: { "requesting-service-user-id": "123" },
+      body: undefined,
       configureRemoteClient: () => {
-        remoteClient.getPreferences.mockResolvedValue({
+        remoteClient.notifications.get.mockResolvedValue({
           ok: true,
           status: 200,
           data: {
-            data: {
-              consentStatus: "accepted",
-            },
+            data: { consentStatus: "accepted", notificationId: "abc" },
           },
         });
       },
       assertRemoteClientCall: () => {
-        expect(remoteClient.getPreferences).toHaveBeenCalledWith("123");
+        expect(remoteClient.notifications.get).toHaveBeenCalledWith("123");
       },
     },
   ])(
@@ -112,6 +114,35 @@ describe("Executor", () => {
       const result = await execute(event, remoteClient);
       expect(result).toBeDefined();
       assertRemoteClientCall();
+    },
+  );
+
+  it.for([
+    {
+      method: "POST",
+      path: "/v1/users",
+      operation: "createUser",
+      body: { userId: null, notificationId: "5678" },
+    },
+    {
+      method: "POST",
+      path: "/v1/notifications",
+      operation: "updateNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: { consentStatus: "invalid-status" },
+    },
+  ])(
+    "throws 400 when $method $path $operation body fails schema validation",
+    async ({ method, path, headers, body }, { privateGatewayEvent }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: method,
+        path,
+        headers,
+        body: JSON.stringify(body),
+      });
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        message: "Bad Request",
+      });
     },
   );
 
@@ -153,7 +184,7 @@ describe("Executor", () => {
   }) => {
     const event = privateGatewayEvent.create({
       httpMethod: "POST",
-      path: "/v1/user",
+      path: "/v1/users",
       body: "{invalid-json",
     });
 
@@ -162,34 +193,4 @@ describe("Executor", () => {
       message: "Invalid JSON body",
     });
   });
-
-  it.for([
-    {
-      method: "POST",
-      path: "/v1/user",
-      operation: "createUser",
-      body: { appId: null, notificationId: "5678" },
-    },
-    {
-      method: "POST",
-      path: "/v1/notifications",
-      operation: "updateNotifications",
-      headers: { "requesting-service-user-id": "123" },
-      body: { preferences: undefined },
-    },
-  ])(
-    "throws 400 when $method $path $operation body fails schema validation",
-    async ({ method, path, headers, body }, { privateGatewayEvent }) => {
-      const event = privateGatewayEvent.create({
-        httpMethod: method,
-        path,
-        headers,
-        body: JSON.stringify(body),
-      });
-      await expect(execute(event, remoteClient)).rejects.toMatchObject({
-        statusCode: 400,
-        message: "Invalid request body",
-      });
-    },
-  );
 });
