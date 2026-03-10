@@ -3,18 +3,32 @@ import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 
 import type { UdpRemoteClient } from "../client";
+import { normalizeInboundPath } from "../utils/normalizeInboundPath";
 import { ROUTE_CONTRACTS } from "./route";
 import { RouteContract } from "./types";
+
+const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
+  {
+    pattern: /^POST:\/v1\/identity\/[^/]+\/[^/]+$/,
+    contract: ROUTE_CONTRACTS["POST:/v1/identity/:serviceName/:identifier"],
+  },
+];
 
 export function matchToRouteContract(
   method: string,
   path: string,
 ): RouteContract | undefined {
-  const key = `${method.toUpperCase()}:${path}`;
-  if (key in ROUTE_CONTRACTS) {
-    return ROUTE_CONTRACTS[key as keyof typeof ROUTE_CONTRACTS];
+  const lookUpKey = `${method.toUpperCase()}:${path}`;
+
+  if (lookUpKey in ROUTE_CONTRACTS) {
+    return ROUTE_CONTRACTS[lookUpKey as keyof typeof ROUTE_CONTRACTS];
   }
-  return undefined;
+
+  const match = DYNAMIC_ROUTE_LIST.find((route) =>
+    route.pattern.test(lookUpKey),
+  );
+
+  return match?.contract;
 }
 
 async function run(
@@ -51,12 +65,4 @@ export async function execute(
   }
 
   return run(mapping, event, client);
-}
-
-function normalizeInboundPath(path: string): string {
-  if (path.startsWith("/gateways/udp")) {
-    const normalized = path.replace(/^\/gateways\/udp/, "");
-    return normalized.length > 0 ? normalized : "/";
-  }
-  return path;
 }

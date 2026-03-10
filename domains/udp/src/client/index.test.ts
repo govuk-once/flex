@@ -199,4 +199,58 @@ describe("UdpDomainClient", () => {
     expect(result.error.message).toBe("Response validation failed");
     expect(result.error.body).toBeDefined();
   });
+
+  describe("gateway.serviceLink.create", () => {
+    const SERVICE = "test-service";
+    const IDENTIFIER = "user-123";
+
+    it("calls the correct endpoint with the provided service and serviceId", async ({
+      userId,
+    }) => {
+      const body = { appId: userId };
+      nock(BASE_URL)
+        .post(
+          `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`,
+          (actualBody) => {
+            return JSON.stringify(actualBody) === JSON.stringify(body);
+          },
+        )
+        .reply(201);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.create(
+        SERVICE,
+        IDENTIFIER,
+        body,
+      );
+
+      expect(result).toEqual({
+        ok: true,
+        status: 201,
+      });
+    });
+
+    it("includes correct headers in the request", async ({ userId }) => {
+      nock(BASE_URL)
+        .post(/.*/)
+        .matchHeader("Content-Type", "application/json")
+        .reply(201);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.create(
+        SERVICE,
+        IDENTIFIER,
+        { appId: userId },
+      );
+      expect(result.ok).toBe(true);
+    });
+  });
 });

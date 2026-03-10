@@ -1,10 +1,12 @@
 import { getHeader } from "@flex/utils";
-import type { APIGatewayProxyEvent } from "aws-lambda";
+import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
+import { identityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
+import { normalizeInboundPath } from "../utils/normalizeInboundPath";
 import type { RouteContract } from "./types";
 
 const INTERNAL_ROUTES = {
@@ -17,6 +19,7 @@ export const UDP_REMOTE_BASE = "/v1";
 export const UDP_REMOTE_ROUTES = {
   notifications: `${UDP_REMOTE_BASE}/notifications`,
   user: `${UDP_REMOTE_BASE}/user`,
+  identity: `${UDP_REMOTE_BASE}/identity`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -69,6 +72,28 @@ export const ROUTE_CONTRACTS = {
     callRemote: (client, data) =>
       client.notifications.get(data.requestingServiceUserId),
     toDomain: (remote) => remote.data,
+  },
+  "POST:/v1/identity/:serviceName/:identifier": {
+    operation: "createIdentityLink",
+    method: "POST",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+      const identifier = pathParams[4];
+
+      if (!serviceName || !identifier) {
+        throw new createHttpError.BadRequest(
+          "Missing serviceName or identifier in path",
+        );
+      }
+
+      const body = await parseAndMapBody(identityRequestBodySchema, event);
+      return { serviceName, identifier, body };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.create(data.serviceName, data.identifier, data.body),
   },
 } as const satisfies Record<string, RouteContract>;
 

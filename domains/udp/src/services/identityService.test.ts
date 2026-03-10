@@ -1,0 +1,113 @@
+import { createUdpDomainClient } from "@client";
+import { getLogger } from "@flex/logging";
+import { it } from "@flex/testing";
+import { createIdentityService } from "@services/identityService";
+import nock from "nock";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  vi,
+} from "vitest";
+
+vi.mock("@flex/logging", () => ({
+  getLogger: vi.fn().mockReturnValue({
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  }),
+}));
+
+vi.mock("@flex/flex-fetch", async (actual) => ({
+  ...(await actual()),
+  createSigv4Fetcher:
+    ({ baseUrl }: { baseUrl: string }) =>
+    (path: string, options?: RequestInit) => ({
+      request: fetch(`${baseUrl}${path}`, options),
+      abort: vi.fn(),
+    }),
+}));
+
+describe("createIdentityService", () => {
+  const BASE_URL = "https://example.com";
+  const REGION = "eu-west-2";
+  const SERVICE = "test-service";
+  const IDENTIFIER = "user-123";
+
+  const client = createUdpDomainClient({
+    region: REGION,
+    baseUrl: BASE_URL,
+  });
+
+  beforeAll(() => {
+    nock.disableNetConnect();
+  });
+
+  afterAll(() => {
+    nock.enableNetConnect();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true);
+    nock.cleanAll();
+  });
+
+  it("successfully links service ID to app ID", async ({ userId }) => {
+    const logger = getLogger();
+    const expectedPath = `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`;
+
+    nock(BASE_URL)
+      .post(expectedPath, {
+        appId: userId,
+      })
+      .reply(201, { success: true });
+
+    await createIdentityService({
+      client,
+      service: SERVICE,
+      serviceId: IDENTIFIER,
+      appId: userId,
+    });
+
+    expect(nock.isDone()).toBe(true);
+
+    /* eslint-disable @typescript-eslint/unbound-method */
+    const { info, error } = logger;
+
+    expect(error).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith(
+      "service ID has now been linked to app ID",
+    );
+  });
+
+  it.for([401, 403, 422, 500, 503])(
+    "throws BadGateway when createServiceLink returns %s",
+    async (statusCode, { userId }) => {
+      nock(BASE_URL)
+        .post(`/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`)
+        .reply(statusCode, {
+          message: "Upstream error",
+          detail: "some details",
+        });
+
+      await expect(
+        createIdentityService({
+          client,
+          service: SERVICE,
+          serviceId: IDENTIFIER,
+          appId: userId,
+        }),
+      ).rejects.toMatchObject({
+        status: 502,
+      });
+    },
+  );
+});

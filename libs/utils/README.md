@@ -21,12 +21,13 @@ Alternatively, run `pnpm <command>` from within `libs/utils/`.
 
 ### HTTP
 
-| Name                                        | Description                            | Code                               |
-| ------------------------------------------- | -------------------------------------- | ---------------------------------- |
-| [`buildUrl`](#buildurl)                     | Build URL with query parameters        | [View](./src/http/url.ts)          |
-| [`buildRequest`](#buildrequest)             | Build a fetch Request object           | [View](./src/http/request.ts)      |
-| [`parseResponseBody`](#parseresponsebody)   | Parse response body by content type    | [View](./src/http/request.ts)      |
-| [`extractQueryParams`](#extractqueryparams) | Convert params object to search string | [View](./src/http/query-params.ts) |
+| Name                                        | Description                                              | Code                                     |
+| ------------------------------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| [`buildUrl`](#buildurl)                     | Build URL with query parameters                          | [View](./src/http/url.ts)                |
+| [`buildRequest`](#buildrequest)             | Build a fetch Request object                             | [View](./src/http/request.ts)            |
+| [`parseResponseBody`](#parseresponsebody)   | Parse response body by content type                      | [View](./src/http/request.ts)            |
+| [`extractQueryParams`](#extractqueryparams) | Convert params object to search string                   | [View](./src/http/query-params.ts)       |
+| [`validatePathParams`](#validatepathparams) | Validate AWS Lambda path parameters against a Zod schema | [View](./src/http/validatePathParams.ts) |
 
 ### Infrastructure
 
@@ -160,6 +161,34 @@ Converts to lowercase, removes non-alphanumeric characters (except hyphens), and
 import { sanitiseStageName } from "@flex/utils";
 
 sanitiseStageName("my-long-STAGE-name"); // "my-long-stag"
+```
+
+---
+
+## `validatePathParams`
+
+Validate AWS API Gateway path parameters against a [Zod](https://zod.dev/) schema.
+
+This utility ensures that required dynamic path segments (e.g., `/{serviceName}/{identifier}`) exist and meet your criteria at runtime. If validation fails, it logs the specific error using `treeifyError` and throws a `400 Bad Request` (via `http-errors`).
+
+### Usage
+
+```typescript
+import { z } from "zod";
+import { validatePathParams } from "@flex/utils";
+
+const pathSchema = z.object({
+  serviceName: z.string().min(1),
+  identifier: z.string().min(1),
+});
+
+// Inside your Lambda handler or Route Contract
+const { serviceName, identifier } = validatePathParams(
+  pathSchema,
+  event.pathParameters,
+);
+
+// logic continues with guaranteed, non-empty strings...
 ```
 
 ---
