@@ -185,7 +185,7 @@ const pathSchema = z.object({
 // Inside your Lambda handler or Route Contract
 const { serviceName, identifier } = validatePathParams(
   pathSchema,
-  event.pathParameters
+  event.pathParameters,
 );
 
 // logic continues with guaranteed, non-empty strings...
