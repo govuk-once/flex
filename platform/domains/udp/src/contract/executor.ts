@@ -12,6 +12,10 @@ const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
     pattern: /^POST:\/v1\/identity\/[^/]+\/[^/]+$/,
     contract: ROUTE_CONTRACTS["POST:/v1/identity/:serviceName/:identifier"],
   },
+  {
+    pattern: /^DELETE:\/v1\/identity\/[^/]+$/,
+    contract: ROUTE_CONTRACTS["DELETE:/v1/identity/:serviceName"],
+  },
 ];
 
 export function matchToRouteContract(

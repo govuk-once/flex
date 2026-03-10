@@ -1,15 +1,23 @@
 import { z } from "zod";
 
 import {
-  createIdentityResponseSchema,
-  identityRequestBodySchema,
-  identityRequestSchema,
+  createIdentityRequestBodySchema,
+  createIdentityRequestSchema,
+  deleteIdentityRequestSchema,
+  exchangeIdentityResponseSchema,
+  identityResponseSchema,
 } from "../domain/identity";
 
-export type identityBodyRequest = z.infer<typeof identityRequestBodySchema>;
+export type CreateIdentityBodyRequest = z.infer<
+  typeof createIdentityRequestBodySchema
+>;
 
-export type identityRequest = z.infer<typeof identityRequestSchema>;
+export type CreateIdentityRequest = z.infer<typeof createIdentityRequestSchema>;
 
-export type CreateIdentityResponse = z.infer<
-  typeof createIdentityResponseSchema
+export type IdentityResponse = z.infer<typeof identityResponseSchema>;
+
+export type DeleteIdentityRequest = z.infer<typeof deleteIdentityRequestSchema>;
+
+export type ExchangeIdentityResponse = z.infer<
+  typeof exchangeIdentityResponseSchema
 >;

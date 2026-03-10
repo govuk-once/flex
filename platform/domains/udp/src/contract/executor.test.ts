@@ -22,6 +22,7 @@ const remoteClient = {
   },
   serviceLink: {
     create: vi.fn(),
+    delete: vi.fn(),
   },
 };
 
@@ -114,6 +115,25 @@ describe("Executor", () => {
         );
       },
     },
+    {
+      method: "DELETE",
+      path: "/v1/identity/my-service",
+      operation: "deleteIdentityLink",
+      body: { appId: "pairwise-999" },
+      configureRemoteClient: () => {
+        remoteClient.serviceLink.delete.mockResolvedValue({
+          ok: true,
+          status: 204,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.serviceLink.delete).toHaveBeenCalledWith(
+          "my-service",
+          "pairwise-999",
+        );
+      },
+    },
   ])(
     "should resolve request for $method $path to $operation",
     async (
@@ -158,6 +178,12 @@ describe("Executor", () => {
       method: "POST",
       path: "/v1/identity/service/id",
       operation: "createServiceLink",
+      body: { appId: undefined },
+    },
+    {
+      method: "DELETE",
+      path: "/v1/identity/service-name",
+      operation: "deleteIdentityLink",
       body: { appId: undefined },
     },
   ])(

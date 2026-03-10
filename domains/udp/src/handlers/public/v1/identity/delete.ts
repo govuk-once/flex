@@ -7,6 +7,7 @@ import {
 } from "@flex/middlewares";
 import { getConfig } from "@flex/params";
 import { jsonResponse } from "@flex/utils";
+import { deleteIdentityService } from "@services/identityService";
 import {
   APIGatewayProxyResultV2,
   APIGatewayProxyWithLambdaAuthorizerEvent,
@@ -38,7 +39,11 @@ export const handler = createLambdaHandler<
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
 
-    await client.gateway.identity.delete(serviceName, { appId: userId });
+    await deleteIdentityService({
+      client,
+      appId: userId,
+      service: serviceName,
+    });
 
     return jsonResponse(status.NO_CONTENT);
   },
