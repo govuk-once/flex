@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import { UdpDomainClient } from "../client";
@@ -14,8 +14,6 @@ export const createIdentityService = async ({
   serviceId: string;
   appId: string;
 }) => {
-  const logger = getLogger();
-
   const response = await client.gateway.serviceLink.create(service, serviceId, {
     appId,
   });

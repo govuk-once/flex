@@ -1,5 +1,5 @@
 import { createUdpDomainClient } from "@client";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { createIdentityService } from "@services/identityService";
 import nock from "nock";
@@ -13,14 +13,7 @@ import {
   vi,
 } from "vitest";
 
-vi.mock("@flex/logging", () => ({
-  getLogger: vi.fn().mockReturnValue({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock("@flex/logging");
 
 vi.mock("@flex/flex-fetch", async (actual) => ({
   ...(await actual()),
@@ -61,7 +54,6 @@ describe("createIdentityService", () => {
   });
 
   it("successfully links service ID to app ID", async ({ userId }) => {
-    const logger = getLogger();
     const expectedPath = `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`;
 
     nock(BASE_URL)
