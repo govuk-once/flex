@@ -5,6 +5,7 @@
     "dev": "cdk watch",
     "hotswap": "cdk deploy --hotswap",
     "diff": "cdk diff",
+    "deploy:gateway": "cdk deploy --app 'tsx src/gateway-app.ts' --require-approval never",
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy \"*-FlexPlatform\" --force && cdk destroy --all --force",
     "synth": "cdk synth",

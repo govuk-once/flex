@@ -67,8 +67,7 @@ export class FlexInternalGateway extends Construct {
     });
 
     const privateGateway = new RestApi(scope, "PrivateGateway", {
-      description:
-        "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
+      description: `Private API Gateway - Internal service-to-service and domain-to-gateway routing for ${this.node.id}`,
       policy: new PolicyDocument({
         statements: [
           new PolicyStatement({
@@ -148,6 +147,18 @@ export class FlexInternalGateway extends Construct {
     new StringParameter(scope, "PrivateGatewayUrlParam", {
       parameterName: getParamName("/flex-core/private-gateway/url"),
       stringValue: privateGatewayUrl,
+    });
+
+    new StringParameter(scope, "PrivateGatewayRestApiIdParam", {
+      parameterName: getParamName("/flex-core/private-gateway/rest-api-id"),
+      stringValue: privateGateway.restApiId,
+    });
+
+    new StringParameter(scope, "PrivateGatewayDomainsRootResourceIdParam", {
+      parameterName: getParamName(
+        "/flex-core/private-gateway/root-resource-id",
+      ),
+      stringValue: domainsRoot.resourceId,
     });
 
     return {

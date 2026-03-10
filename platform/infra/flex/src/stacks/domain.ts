@@ -51,12 +51,18 @@ import {
   toApiGatewayPath,
   toPascalCase,
 } from "../utils/routes";
-import type { PrivateApiRef } from "./private-gateway";
+
+const DUMMY_VALUE_PREFIX = "dummy-value-for";
+
+export interface PublicRouteBinding {
+  path: string;
+  method: string;
+  handler: IFunction;
+}
 
 interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
-  privateApi: PrivateApiRef;
 }
 
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
@@ -77,31 +83,42 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     });
 
-    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: props.privateApi.restApiId,
-      rootResourceId: props.privateApi.domainsRootResourceId,
-    });
-
-    const privateDomainsRoot = Resource.fromResourceAttributes(
-      this,
-      "PrivateDomainsRoot",
-      {
-        resourceId: props.privateApi.domainsRootResourceId,
-        path: "/domains",
-        restApi: privateApi,
-      },
-    );
-
     this.#processPublicRoutes(props.domain);
 
     if (props.privateDomain) {
-      this.#processPrivateRoutes(
-        props.privateDomain,
-        privateDomainsRoot,
-        props.domain.domain,
-        "internal-",
-        privateApi,
+      const restApiId = StringParameter.valueFromLookup(
+        this,
+        getParamName("/flex-core/private-gateway/rest-api-id"),
       );
+      const domainsRootResourceId = StringParameter.valueFromLookup(
+        this,
+        getParamName("/flex-core/private-gateway/root-resource-id"),
+      );
+
+      if (!restApiId.startsWith(DUMMY_VALUE_PREFIX)) {
+        const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
+          restApiId,
+          rootResourceId: domainsRootResourceId,
+        });
+
+        const privateDomainsRoot = Resource.fromResourceAttributes(
+          this,
+          "PrivateDomainsRoot",
+          {
+            resourceId: domainsRootResourceId,
+            path: "/domains",
+            restApi: privateApi,
+          },
+        );
+
+        this.#processPrivateRoutes(
+          props.privateDomain,
+          privateDomainsRoot,
+          props.domain.domain,
+          "internal-",
+          privateApi,
+        );
+      }
     }
   }
 

@@ -50,6 +50,9 @@ jobs:
       - name: Deploy FLEX Core AWS infra
         run: cd ./platform/infra/core && pnpm run deploy --require-approval never
 
+      - name: Deploy FLEX Private Gateway
+        run: cd ./platform/infra/flex && pnpm run deploy:gateway
+
       - name: Deploy FLEX Flex AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
 

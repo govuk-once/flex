@@ -4,7 +4,6 @@ import * as cdk from "aws-cdk-lib";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
 import { FlexDomainStack, FlexDomainStackPoC } from "./stacks/domain";
-import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
@@ -18,11 +17,6 @@ const { certArnParamName } = new FlexCertStack(app, certStackName, {
   domainName,
   subdomainName,
 });
-
-const privateGateway = new FlexPrivateGatewayStack(
-  app,
-  getStackName("FlexPrivateGateway"),
-);
 
 /**
  * Dynamically create CloudFormation stack per domain
