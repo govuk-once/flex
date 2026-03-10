@@ -22,31 +22,6 @@ export const UDP_REMOTE_ROUTES = {
   identity: `${UDP_REMOTE_BASE}/identity`,
 } as const;
 
-export const DYNAMIC_ROUTES = {
-  "POST:/v1/identity/:serviceName/:identifier": {
-    operation: "createIdentityLink",
-    method: "POST",
-    inboundPath: "/v1/identity",
-    remotePath: "/v1/identity",
-    toRemote: async (event) => {
-      const pathParams = normalizeInboundPath(event.path).split("/");
-      const serviceName = pathParams[3];
-      const identifier = pathParams[4];
-
-      if (!serviceName || !identifier) {
-        throw new createHttpError.BadRequest(
-          "Missing serviceName or identifier in path",
-        );
-      }
-
-      const body = await parseAndMapBody(identityRequestBodySchema, event);
-      return { serviceName, identifier, body };
-    },
-    callRemote: (client, data) =>
-      client.serviceLink.create(data.serviceName, data.identifier, data.body),
-  },
-} as const satisfies Record<string, RouteContract>;
-
 export const ROUTE_CONTRACTS = {
   "POST:/v1/users": {
     operation: "createUser",
@@ -97,6 +72,28 @@ export const ROUTE_CONTRACTS = {
     callRemote: (client, data) =>
       client.notifications.get(data.requestingServiceUserId),
     toDomain: (remote) => remote.data,
+  },
+  "POST:/v1/identity/:serviceName/:identifier": {
+    operation: "createIdentityLink",
+    method: "POST",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+      const identifier = pathParams[4];
+
+      if (!serviceName || !identifier) {
+        throw new createHttpError.BadRequest(
+          "Missing serviceName or identifier in path",
+        );
+      }
+
+      const body = await parseAndMapBody(identityRequestBodySchema, event);
+      return { serviceName, identifier, body };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.create(data.serviceName, data.identifier, data.body),
   },
 } as const satisfies Record<string, RouteContract>;
 

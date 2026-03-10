@@ -4,13 +4,13 @@ import createHttpError from "http-errors";
 
 import type { UdpRemoteClient } from "../client";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
-import { DYNAMIC_ROUTES, ROUTE_CONTRACTS } from "./route";
+import { ROUTE_CONTRACTS } from "./route";
 import { RouteContract } from "./types";
 
 const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
   {
     pattern: /^POST:\/v1\/identity\/[^/]+\/[^/]+$/,
-    contract: DYNAMIC_ROUTES["POST:/v1/identity/:serviceName/:identifier"],
+    contract: ROUTE_CONTRACTS["POST:/v1/identity/:serviceName/:identifier"],
   },
 ];
 
