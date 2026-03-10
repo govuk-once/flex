@@ -30,7 +30,6 @@ jobs:
   deployStaging:
     name: Deploy to Staging
     needs: deployDev
-    environment: 'staging'
     uses: ./.github/workflows/_buildDeploy.yml
     with:
       AWS_REGION: 'eu-west-2'
