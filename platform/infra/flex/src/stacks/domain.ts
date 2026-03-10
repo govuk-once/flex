@@ -58,6 +58,7 @@ export interface PublicRouteBinding {
   path: string;
   method: string;
   handler: IFunction;
+  isPublicAccess: boolean;
 }
 
 interface FlexDomainStackProps {
@@ -424,16 +425,8 @@ export class FlexDomainStack extends GovUkOnceStack {
 // PoC
 // ----------------------------------------------------------------------------
 
-export interface PublicRouteBinding {
-  readonly handler: IFunction;
-  readonly method: string;
-  readonly path: string;
-  readonly isPublicAccess: boolean;
-}
-
 interface FlexDomainStackPoCProps {
   config: IacDomainConfig;
-  privateApi: PrivateApiRef;
 }
 
 export class FlexDomainStackPoC extends GovUkOnceStack {
@@ -442,7 +435,7 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
   constructor(
     scope: Construct,
     id: string,
-    { config, privateApi }: FlexDomainStackPoCProps,
+    { config }: FlexDomainStackPoCProps,
   ) {
     super(scope, id, {
       tags: {
@@ -454,20 +447,31 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
       },
     });
 
-    const privateRestApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: privateApi.restApiId,
-      rootResourceId: privateApi.domainsRootResourceId,
-    });
-
-    const privateDomainsRoot = Resource.fromResourceAttributes(
+    const restApiId = StringParameter.valueFromLookup(
       this,
-      "PrivateDomainsRoot",
-      {
-        path: "/domains",
-        resourceId: privateApi.domainsRootResourceId,
-        restApi: privateRestApi,
-      },
+      getParamName("/flex-core/private-gateway/rest-api-id"),
     );
+    const domainsRootResourceId = StringParameter.valueFromLookup(
+      this,
+      getParamName("/flex-core/private-gateway/root-resource-id"),
+    );
+
+    const hasPrivateGateway = !restApiId.startsWith(DUMMY_VALUE_PREFIX);
+
+    const privateRestApi = hasPrivateGateway
+      ? RestApi.fromRestApiAttributes(this, "PrivateApi", {
+          restApiId,
+          rootResourceId: domainsRootResourceId,
+        })
+      : undefined;
+
+    const privateDomainsRoot = hasPrivateGateway
+      ? Resource.fromResourceAttributes(this, "PrivateDomainsRoot", {
+          path: "/domains",
+          resourceId: domainsRootResourceId,
+          restApi: privateRestApi!,
+        })
+      : undefined;
 
     const routes = flattenRoutes(config.routes);
 
@@ -501,7 +505,7 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
           });
         }
 
-        if (routeConfig.integrations?.length) {
+        if (routeConfig.integrations?.length && hasPrivateGateway && privateRestApi) {
           grantRoutePermissions(lambda.function, {
             keys: routeConfig.integrations,
             integrations: integrationReferences,
@@ -526,7 +530,7 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
           });
         }
 
-        if (gateway === "private") {
+        if (gateway === "private" && hasPrivateGateway && privateDomainsRoot) {
           const resource = resolveApiResource(privateDomainsRoot, resourcePath);
 
           const resourceMethod = resource.addMethod(

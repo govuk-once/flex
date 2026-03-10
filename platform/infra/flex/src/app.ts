@@ -1,9 +1,11 @@
 import { getStackName } from "@platform/gov-uk-once";
 import * as cdk from "aws-cdk-lib";
+import crypto from "crypto";
 
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
 import { FlexDomainStack, FlexDomainStackPoC } from "./stacks/domain";
+import { FlexPrivateGatewayDeploymentStack } from "./stacks/private-gateway-deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
@@ -35,7 +37,6 @@ const pocStacks = pocDomains.map(
   (config) =>
     new FlexDomainStackPoC(app, getStackName(config.name), {
       config,
-      privateApi: privateGateway.privateApiRef,
     }),
 );
 
@@ -48,7 +49,6 @@ const legacyStacks = legacyDomains.map(
     new FlexDomainStack(app, getStackName(configs.public.domain), {
       domain: configs.public,
       privateDomain: configs.private,
-      privateApi: privateGateway.privateApiRef,
     }),
 );
 
@@ -56,6 +56,27 @@ const publicRouteBindings = [
   ...pocStacks.flatMap((s) => s.publicRouteBindings),
   ...legacyStacks.flatMap((s) => s.publicRouteBindings),
 ];
+
+const routesHash = crypto
+  .createHash("sha256")
+  .update(
+    publicRouteBindings
+      .map((b) => `${b.method}:${b.path}`)
+      .sort()
+      .join("|"),
+  )
+  .digest("hex")
+  .slice(0, 16);
+
+const gatewayDeploymentStack = new FlexPrivateGatewayDeploymentStack(
+  app,
+  getStackName("FlexPrivateGatewayDeployment"),
+  { routesHash },
+);
+
+[...pocStacks, ...legacyStacks].forEach((s) => {
+  gatewayDeploymentStack.addDependency(s);
+});
 
 if (targetDomain && pocDomains.length === 0 && legacyDomains.length === 0) {
   const available = [
