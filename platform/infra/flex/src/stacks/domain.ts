@@ -132,11 +132,7 @@ export class FlexDomainStack extends BaseStack {
           });
         }
 
-        if (
-          routeConfig.integrations?.length &&
-          hasPrivateGateway &&
-          privateRestApi
-        ) {
+        if (routeConfig.integrations?.length) {
           grantRoutePermissions(lambda.function, {
             keys: routeConfig.integrations,
             integrations: integrationReferences,

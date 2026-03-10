@@ -11,8 +11,6 @@ import type { Construct } from "constructs";
 
 import { getParamName } from "../utils/getParamName";
 
-const DUMMY_VALUE_PREFIX = "dummy-value-for";
-
 interface FlexPrivateGatewayDeploymentStackProps {
   /**
    * Hash of the currently-deployed private domain routes. When this changes
@@ -39,18 +37,11 @@ export class FlexPrivateGatewayDeploymentStack extends GovUkOnceStack {
       },
     });
 
-    const restApiId = StringParameter.valueFromLookup(
+    const restApiId = StringParameter.fromStringParameterName(
       this,
+      "PrivateGatewayRestApiId",
       getParamName("/flex-core/private-gateway/rest-api-id"),
-    );
-
-    // Phase 1 (gateway-app.ts) must run before Phase 2 so the SSM parameter
-    // exists at synth time. If it doesn't, valueFromLookup returns a dummy
-    // string — skip the custom resources entirely rather than deploying them
-    // with an invalid API ID.
-    if (restApiId.startsWith(DUMMY_VALUE_PREFIX)) {
-      return;
-    }
+    ).stringValue;
 
     const region = Stack.of(this).region;
 
