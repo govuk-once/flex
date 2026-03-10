@@ -9,6 +9,7 @@ export const endpoints = defineDomain({
           GET: {
             type: "ISOLATED",
             entry: "handlers/v1/hello-internal/get.ts",
+            permissions: [],
           },
         },
       },

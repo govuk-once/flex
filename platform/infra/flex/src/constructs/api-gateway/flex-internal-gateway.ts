@@ -71,6 +71,8 @@ export class FlexInternalGateway extends Construct {
         "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
       policy: new PolicyDocument({
         statements: [
+          // Only Flex Lambda execution roles (tagged flex:private-caller=true)
+          // arriving through the VPC interface endpoint may invoke routes.
           new PolicyStatement({
             effect: Effect.ALLOW,
             principals: [new AnyPrincipal()],
@@ -79,9 +81,11 @@ export class FlexInternalGateway extends Construct {
             conditions: {
               StringEquals: {
                 "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
+                "aws:PrincipalTag/flex:private-caller": "true",
               },
             },
           }),
+          // Deny everything that doesn't arrive through the VPC endpoint.
           new PolicyStatement({
             effect: Effect.DENY,
             principals: [new AnyPrincipal()],

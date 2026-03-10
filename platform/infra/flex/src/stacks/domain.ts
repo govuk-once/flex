@@ -223,11 +223,15 @@ export class FlexDomainStack extends GovUkOnceStack {
             "Private API - access restricted by VPC endpoint and resource policy",
           );
 
-          if (
-            routeConfig.permissions &&
-            domainEndpointFn.function.role &&
-            internalApiForPermissions
-          ) {
+          if (routeConfig.permissions === undefined) {
+            throw new Error(
+              `Private route ${method} ${path} (v${versionId}) in domain "${domainConfig.domain}" must declare explicit permissions. ` +
+                `Add a "permissions" array to the route config specifying which routes this Lambda is allowed to call. ` +
+                `Use an empty array [] if this Lambda does not need to call any private routes.`,
+            );
+          }
+
+          if (domainEndpointFn.function.role && internalApiForPermissions) {
             this.#grantInternalGatewayPermissions(
               domainEndpointFn.function.role,
               routeConfig.permissions,
@@ -404,8 +408,8 @@ export class FlexDomainStack extends GovUkOnceStack {
     const allowedRoutePrefixes = permissions.map((perm) => {
       const base =
         perm.type === "domain"
-          ? `/domains/${domainName}`
-          : `/gateways/${domainName}`;
+          ? `/domains/${perm.target}`
+          : `/gateways/${perm.target}`;
       const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
       return `${base}${suffix}`;
     });

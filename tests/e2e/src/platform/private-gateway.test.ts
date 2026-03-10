@@ -39,8 +39,12 @@ describe("private gateway", () => {
     });
 
     expect(response.status).toBe(403);
-    expect(response.body).toMatchObject({
-      type: "auth_error",
-    });
+    expect(response.body).toMatchObject(
+      expect.objectContaining({
+        Message: expect.stringMatching(
+          /User: anonymous is not authorized to perform: execute-api:Invoke/,
+        ) as string,
+      }),
+    );
   });
 });

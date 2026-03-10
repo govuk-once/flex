@@ -17,6 +17,7 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "gateway",
+                target: "udp",
                 path: "",
                 method: "POST",
               },
@@ -42,16 +43,19 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "domain",
+                target: "udp",
                 path: "/v1/notifications",
                 method: "POST",
               },
               {
                 type: "domain",
+                target: "udp",
                 path: "/v1/notifications",
                 method: "GET",
               },
               {
                 type: "gateway",
+                target: "udp",
                 path: "",
                 method: "GET",
               },
@@ -77,6 +81,7 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "domain",
+                target: "udp",
                 path: "/v1/notifications",
                 method: "PATCH",
               },

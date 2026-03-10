@@ -12,6 +12,7 @@ interface RoutePermissions {
 
   /**
    * Route prefixes this domain is allowed to call.
+   * An empty array means this Lambda makes no outbound private API calls — no IAM grant is added.
    *
    * Examples:
    * - ["/gateways/dvla/*"] - Can call DVLA gateway
@@ -54,15 +55,17 @@ export function grantPrivateApiAccess(
   }
 
   if (permissions.allowedRoutePrefixes.length === 0) {
-    throw new Error(
-      `grantPrivateApiAccess: domain "${permissions.domainId}" must specify at least one allowedRoutePrefix. ` +
-        `Use ["/*"] explicitly if you intend to allow all routes.`,
-    );
+    return; // No outbound private API calls needed — nothing to grant.
   }
 
   const methods = permissions.allowedMethods ?? ["*"];
-  const resources = permissions.allowedRoutePrefixes.map((prefix) =>
-    api.arnForExecuteApi("*", prefix, "*"),
+
+  // Build one ARN per (method, prefix) pair so the method is encoded directly
+  // in the resource ARN rather than relying on a condition.
+  const resources = methods.flatMap((method) =>
+    permissions.allowedRoutePrefixes.map((prefix) =>
+      api.arnForExecuteApi(method, prefix, "*"),
+    ),
   );
 
   role.addToPrincipalPolicy(
@@ -71,14 +74,6 @@ export function grantPrivateApiAccess(
       effect: Effect.ALLOW,
       actions: ["execute-api:Invoke"],
       resources,
-      conditions:
-        methods.length > 0 && !methods.includes("*")
-          ? {
-              StringEquals: {
-                "execute-api:Method": methods,
-              },
-            }
-          : undefined,
     }),
   );
 }
