@@ -3,7 +3,7 @@ import createHttpError from "http-errors";
 
 import { UdpDomainClient } from "../client";
 
-export const postIdentityService = async ({
+export const createIdentityService = async ({
   client,
   service,
   serviceId,

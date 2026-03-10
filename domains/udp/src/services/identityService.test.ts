@@ -1,5 +1,7 @@
+import { createUdpDomainClient } from "@client";
 import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
+import { createIdentityService } from "@services/identityService";
 import nock from "nock";
 import {
   afterAll,
@@ -10,9 +12,6 @@ import {
   expect,
   vi,
 } from "vitest";
-
-import { createUdpDomainClient } from "../client";
-import { postIdentityService } from "./identityService";
 
 vi.mock("@flex/logging", () => ({
   getLogger: vi.fn().mockReturnValue({
@@ -33,7 +32,7 @@ vi.mock("@flex/flex-fetch", async (actual) => ({
     }),
 }));
 
-describe("postIdentityService", () => {
+describe("createIdentityService", () => {
   const BASE_URL = "https://example.com";
   const REGION = "eu-west-2";
   const SERVICE = "test-service";
@@ -71,7 +70,7 @@ describe("postIdentityService", () => {
       })
       .reply(201, { success: true });
 
-    await postIdentityService({
+    await createIdentityService({
       client,
       service: SERVICE,
       serviceId: IDENTIFIER,
@@ -100,7 +99,7 @@ describe("postIdentityService", () => {
         });
 
       await expect(
-        postIdentityService({
+        createIdentityService({
           client,
           service: SERVICE,
           serviceId: IDENTIFIER,

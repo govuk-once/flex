@@ -1,3 +1,4 @@
+import { createUdpDomainClient } from "@client";
 import { createLambdaHandler } from "@flex/handlers";
 import {
   type ContextWithUserId,
@@ -5,21 +6,14 @@ import {
   V2Authorizer,
 } from "@flex/middlewares";
 import { getConfig } from "@flex/params";
-import { jsonResponse } from "@flex/utils";
+import { jsonResponse, validatePathParams } from "@flex/utils";
+import { configSchema, identityPathSchema } from "@schemas/identity";
+import { createIdentityService } from "@services/identityService";
 import type {
   APIGatewayProxyResultV2,
   APIGatewayProxyWithLambdaAuthorizerEvent,
 } from "aws-lambda";
 import { status } from "http-status";
-import { z } from "zod";
-
-import { createUdpDomainClient } from "../../../../client";
-import { postIdentityService } from "../../../../services/identityService";
-
-const configSchema = z.object({
-  FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
-  AWS_REGION: z.string().min(1),
-});
 
 export const handler = createLambdaHandler<
   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer> & {
@@ -29,10 +23,11 @@ export const handler = createLambdaHandler<
   ContextWithUserId
 >(
   async (event, context) => {
-    const {
-      pathParameters: { serviceName, identifier },
-      context: { userId },
-    } = { ...event, context };
+    const userId = context.userId;
+    const { serviceName, identifier } = validatePathParams(
+      identityPathSchema,
+      event.pathParameters,
+    );
 
     const config = await getConfig(configSchema);
     const client = createUdpDomainClient({
@@ -40,7 +35,7 @@ export const handler = createLambdaHandler<
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
 
-    await postIdentityService({
+    await createIdentityService({
       appId: userId,
       client,
       service: serviceName,

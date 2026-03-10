@@ -1,11 +1,11 @@
 import { it } from "@flex/testing";
-import { postIdentityService } from "@services/identityService";
+import { createIdentityService } from "@services/identityService";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
 
 vi.mock("../../../../services/identityService", () => ({
-  postIdentityService: vi.fn(),
+  createIdentityService: vi.fn(),
 }));
 
 vi.mock("@flex/params", () => ({
@@ -35,13 +35,13 @@ describe("POST /identity/:service/:identifier - service handler", () => {
     vi.clearAllMocks();
   });
 
-  describe("when identity service is posted successfully", () => {
+  describe("when a new service identity is linked", () => {
     it("returns 201 Created when identity is posted", async ({
       response,
       privateGatewayEventWithAuthorizer,
       context,
     }) => {
-      vi.mocked(postIdentityService).mockResolvedValue(undefined);
+      vi.mocked(createIdentityService).mockResolvedValue(undefined);
 
       const event = {
         ...privateGatewayEventWithAuthorizer.post("/identity", { body: {} }),
@@ -67,13 +67,13 @@ describe("POST /identity/:service/:identifier - service handler", () => {
   });
 
   describe("service integration", () => {
-    it("bubbles errors from postIdentityService", async ({
+    it("bubbles errors from createIdentityService", async ({
       privateGatewayEventWithAuthorizer,
       context,
       response,
     }) => {
-      const error = new Error("postIdentityService failed");
-      vi.mocked(postIdentityService).mockImplementation(() =>
+      const error = new Error("createIdentityService failed");
+      vi.mocked(createIdentityService).mockImplementation(() =>
         Promise.reject(error),
       );
 
