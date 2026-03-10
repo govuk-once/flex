@@ -67,7 +67,8 @@ export class FlexInternalGateway extends Construct {
     });
 
     const privateGateway = new RestApi(scope, "PrivateGateway", {
-      description: `Private API Gateway - Internal service-to-service and domain-to-gateway routing for ${this.node.id}`,
+      description:
+        "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
       policy: new PolicyDocument({
         statements: [
           new PolicyStatement({
