@@ -12,6 +12,10 @@ export const identityPathSchema = z.object({
   identifier: NonEmptyString,
 });
 
+export const getIdentityPathSchema = z.object({
+  serviceName: NonEmptyString,
+});
+
 export const identitySchema = z.object({
   appId: UserId,
   accessToken: NonEmptyString.optional(),

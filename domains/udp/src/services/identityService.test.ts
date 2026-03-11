@@ -4,6 +4,7 @@ import { it } from "@flex/testing";
 import {
   createIdentityService,
   deleteIdentityService,
+  getIdentityService,
 } from "@services/identityService";
 import nock from "nock";
 import {
@@ -163,5 +164,73 @@ describe("IdentityService", () => {
         expect.any(Object),
       );
     });
+  });
+
+  describe("getIdentityService", () => {
+    const GET_PATH = `/gateways/udp/v1/identity/${SERVICE}`;
+
+    it("returns linked: true when the service link exists", async ({
+      userId,
+    }) => {
+      nock(BASE_URL).get(GET_PATH).matchHeader("User-Id", userId).reply(200, {
+        serviceId: IDENTIFIER,
+        serviceName: SERVICE,
+      });
+
+      const result = await getIdentityService({
+        client,
+        service: SERVICE,
+        userId,
+      });
+
+      expect(result).toEqual({ linked: true });
+      expect(nock.isDone()).toBe(true);
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it("returns linked: false when the service link is not found (404)", async ({
+      userId,
+    }) => {
+      nock(BASE_URL).get(GET_PATH).matchHeader("User-Id", userId).reply(404, {
+        message: "Not Found",
+      });
+
+      const result = await getIdentityService({
+        client,
+        service: SERVICE,
+        userId,
+      });
+
+      expect(result).toEqual({ linked: false });
+      expect(nock.isDone()).toBe(true);
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it.for([401, 403, 500])(
+      "throws BadGateway and logs error when GET returns %s",
+      async (statusCode, { userId }) => {
+        nock(BASE_URL)
+          .get(GET_PATH)
+          .matchHeader("User-Id", userId)
+          .reply(statusCode, { error: "Internal Server Error" });
+
+        await expect(
+          getIdentityService({
+            client,
+            service: SERVICE,
+            userId,
+          }),
+        ).rejects.toMatchObject({
+          status: 502,
+        });
+
+        expect(logger.error).toHaveBeenCalledWith(
+          "Failed to unlink app ID to service ID",
+          expect.objectContaining({
+            status: statusCode,
+          }),
+        );
+      },
+    );
   });
 });

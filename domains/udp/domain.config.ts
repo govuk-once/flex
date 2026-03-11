@@ -48,6 +48,23 @@ export const endpoints = defineDomain({
               },
             ],
           },
+          GET: {
+            type: "ISOLATED",
+            entry: "handlers/public/v1/identity/get.ts",
+            envEphemeral: {
+              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                "/flex/apigw/private/gateway-url",
+            },
+            timeoutSeconds: 20,
+            permissions: [
+              {
+                type: "gateway",
+                target: "udp",
+                path: "/v1/identity/*",
+                method: "GET",
+              },
+            ],
+          },
         },
         "/users": {
           GET: {
