@@ -73,6 +73,19 @@ export function createUdpDomainClient({
           );
           return typedFetch(request);
         },
+        get: (service: string, body: IdentityRequest) => {
+          const { request } = gatewayFetcher(
+            `${UDP_GATEWAY_ROUTES.postIdentity}/${service}`,
+            {
+              method: "GET",
+              body: JSON.stringify(body),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            },
+          );
+          return typedFetch(request);
+        },
       },
       notifications: {
         get: (userId: UserId) => {

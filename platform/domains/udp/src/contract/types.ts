@@ -6,6 +6,8 @@ import { RequestingServiceUserIdHeader } from "../schemas/common";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import {
   CreateIdentityResponse,
+  GetIdentityRequest,
+  GetIdentityResponse,
   identityRequest,
 } from "../schemas/remote/identity";
 import type {
@@ -19,7 +21,8 @@ export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
   | "createUser"
-  | "createIdentityLink";
+  | "createIdentityLink"
+  | "getIdentityLink";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -72,8 +75,18 @@ export type CreateIdentityLinkRouteContract = BaseRouteContract<
   CreateIdentityResponse
 >;
 
+export type GetIdentityLinkRouteContract = BaseRouteContract<
+  "getIdentityLink",
+  "GET",
+  /** TODO update types */
+  GetIdentityRequest,
+  unknown,
+  GetIdentityResponse
+>;
+
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
   | CreateUserRouteContract
-  | CreateIdentityLinkRouteContract;
+  | CreateIdentityLinkRouteContract
+  | GetIdentityLinkRouteContract;

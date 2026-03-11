@@ -92,6 +92,20 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
         );
         return typedFetch(request);
       },
+      get: (serviceName: string, userId: string): Promise<ApiResult<void>> => {
+        const { request } = fetcher(
+          `${UDP_REMOTE_ROUTES.identity}/exchange?serviceName=${serviceName}`,
+          {
+            method: "GET",
+            headers: {
+              ...defaultHeaders,
+              "requesting-service": "app",
+              "requesting-service-user-id": userId,
+            },
+          },
+        );
+        return typedFetch(request);
+      },
     },
   };
 }

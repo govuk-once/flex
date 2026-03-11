@@ -3,7 +3,10 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import { identityRequestBodySchema } from "../schemas/domain/identity";
+import {
+  getIdentityRequestBodySchema,
+  identityRequestBodySchema,
+} from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
@@ -72,6 +75,30 @@ export const ROUTE_CONTRACTS = {
     callRemote: (client, data) =>
       client.notifications.get(data.requestingServiceUserId),
     toDomain: (remote) => remote.data,
+  },
+  "GET:/v1/identity/:serviceName": {
+    operation: "getIdentityLink",
+    method: "GET",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+
+      if (!serviceName) {
+        throw new createHttpError.BadRequest(
+          "Missing serviceName or identifier in path",
+        );
+      }
+
+      const { appId } = await parseAndMapBody(
+        getIdentityRequestBodySchema,
+        event,
+      );
+      return { serviceName, userId: appId };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.get(data.serviceName, data.userId),
   },
   "POST:/v1/identity/:serviceName/:identifier": {
     operation: "createIdentityLink",
