@@ -23,7 +23,7 @@ export function parseIntegrationRoute(
 
   return {
     ...extractRouteKeySegments(
-      isWildcard ? routeKey.replace(/\/\*$/, "") : routeKey,
+      isWildcard ? routeKey.replace(/\*$/, "") : routeKey,
     ),
     isWildcard,
   };
@@ -44,7 +44,7 @@ export function toIntegrationResult<T>(
 // Integration / Request
 // ----------------------------------------------------------------------------
 
-interface InvokerOptions extends Pick<
+export interface InvokerOptions extends Pick<
   FlexFetchRequestInit,
   "maxRetryDelay" | "retryAttempts"
 > {
@@ -54,7 +54,7 @@ interface InvokerOptions extends Pick<
   query?: Readonly<Record<string, string>>;
 }
 
-interface IntegrationInvokerConfig extends Pick<
+export interface IntegrationInvokerConfig extends Pick<
   FlexFetchRequestInit,
   "maxRetryDelay" | "retryAttempts"
 > {
@@ -146,7 +146,7 @@ function resolveGatewayUrl(
   resources: DomainConfig["resources"],
   gatewayPath: string,
 ) {
-  if (!resources) {
+  if (!resources || Object.keys(resources).length === 0) {
     throw new Error(
       "Domain resources must define a gateway URL when integrations are used",
     );

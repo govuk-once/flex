@@ -34,10 +34,10 @@ vi.mock("@flex/params", () => {
   };
 });
 
-vi.mock("./services/auth-service", async () => {
-  const actual = await vi.importActual<
-    typeof import("./services/auth-service")
-  >("./services/auth-service");
+vi.mock("./services/auth-service", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("./services/auth-service")>();
+
   return {
     ...actual,
     createAuthService: vi.fn(actual.createAuthService),
