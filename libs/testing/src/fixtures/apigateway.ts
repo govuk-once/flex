@@ -432,6 +432,13 @@ export function createRestApiEvent() {
         path,
         body: options.body ? JSON.stringify(options.body) : undefined,
       }),
+    delete: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
+      buildRestApiEvent({
+        ...options,
+        httpMethod: "DELETE",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
   } as const;
 }
 

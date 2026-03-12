@@ -5,8 +5,9 @@ import type { UdpRemoteClient } from "../client";
 import { RequestingServiceUserIdHeader } from "../schemas/common";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import {
-  CreateIdentityResponse,
-  identityRequest,
+  CreateIdentityRequest,
+  DeleteIdentityRequest,
+  IdentityResponse,
 } from "../schemas/remote/identity";
 import type {
   CreateOrUpdateNotificationsRequest,
@@ -19,11 +20,12 @@ export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
   | "createUser"
-  | "createIdentityLink";
+  | "createIdentityLink"
+  | "deleteIdentityLink";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
-  TMethod extends "GET" | "POST" | "PUT" | "PATCH",
+  TMethod extends "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   TRemoteRequest,
   TRemoteResponse,
   TDomainResponse,
@@ -67,13 +69,22 @@ export type CreateUserRouteContract = BaseRouteContract<
 export type CreateIdentityLinkRouteContract = BaseRouteContract<
   "createIdentityLink",
   "POST",
-  identityRequest,
+  CreateIdentityRequest,
   unknown,
-  CreateIdentityResponse
+  IdentityResponse
+>;
+
+export type DeleteIdentityLinkRouteContract = BaseRouteContract<
+  "deleteIdentityLink",
+  "DELETE",
+  DeleteIdentityRequest,
+  unknown,
+  IdentityResponse
 >;
 
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
   | CreateUserRouteContract
-  | CreateIdentityLinkRouteContract;
+  | CreateIdentityLinkRouteContract
+  | DeleteIdentityLinkRouteContract;

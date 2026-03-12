@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import { identityRequestBodySchema } from "../schemas/domain/identity";
+import { createIdentityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
@@ -89,11 +89,36 @@ export const ROUTE_CONTRACTS = {
         );
       }
 
-      const body = await parseAndMapBody(identityRequestBodySchema, event);
+      const body = await parseAndMapBody(
+        createIdentityRequestBodySchema,
+        event,
+      );
       return { serviceName, identifier, body };
     },
     callRemote: (client, data) =>
       client.serviceLink.create(data.serviceName, data.identifier, data.body),
+  },
+  "DELETE:/v1/identity/:serviceName": {
+    operation: "deleteIdentityLink",
+    method: "DELETE",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+
+      if (!serviceName) {
+        throw new createHttpError.BadRequest("Missing serviceName in path");
+      }
+
+      const { appId } = await parseAndMapBody(
+        createIdentityRequestBodySchema,
+        event,
+      );
+      return { serviceName, appId };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.delete(data.serviceName, data.appId),
   },
 } as const satisfies Record<string, RouteContract>;
 

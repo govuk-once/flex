@@ -253,4 +253,49 @@ describe("UdpDomainClient", () => {
       expect(result.ok).toBe(true);
     });
   });
+
+  describe("gateway.serviceLink.delete", () => {
+    const SERVICE = "test-service";
+
+    it("calls the correct endpoint with the provided service and serviceId", async ({
+      userId,
+    }) => {
+      const body = { appId: userId };
+      nock(BASE_URL)
+        .delete(`/gateways/udp/v1/identity/${SERVICE}`, (actualBody) => {
+          return JSON.stringify(actualBody) === JSON.stringify(body);
+        })
+        .reply(204);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.delete(SERVICE, body);
+
+      expect(result).toEqual({
+        ok: true,
+        status: 204,
+      });
+    });
+
+    it("includes correct headers in the request", async ({ userId }) => {
+      nock(BASE_URL)
+        .delete(/.*/)
+        .matchHeader("Content-Type", "application/json")
+        .reply(204);
+
+      const client = createUdpDomainClient({
+        region,
+        baseUrl: BASE_URL,
+      });
+
+      const result = await client.gateway.serviceLink.delete(SERVICE, {
+        appId: userId,
+      });
+
+      expect(result.ok).toBe(true);
+    });
+  });
 });

@@ -5,7 +5,8 @@ import {
 } from "@flex/flex-fetch";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import { identityBodyRequest } from "../schemas/remote/identity";
+import { exchangeIdentityResponseSchema } from "../schemas/domain/identity";
+import { CreateIdentityBodyRequest } from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,
@@ -80,7 +81,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
       create: (
         serviceName: string,
         identifier: string,
-        body: identityBodyRequest,
+        body: CreateIdentityBodyRequest,
       ): Promise<ApiResult<void>> => {
         const { request } = fetcher(
           `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}`,
@@ -90,6 +91,41 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
             headers: defaultHeaders,
           },
         );
+        return typedFetch(request);
+      },
+      delete: async (
+        serviceName: string,
+        userId: string,
+      ): Promise<ApiResult<void>> => {
+        const exchangeResult = await typedFetch(
+          fetcher(
+            `${UDP_REMOTE_ROUTES.identity}/exchange?serviceName=${serviceName}`,
+            {
+              method: "GET",
+              headers: {
+                ...defaultHeaders,
+                "requesting-service": "app",
+                "requesting-service-user-id": userId,
+              },
+            },
+          ).request,
+          exchangeIdentityResponseSchema,
+        );
+
+        if (!exchangeResult.ok) {
+          return exchangeResult;
+        }
+
+        const remoteId = exchangeResult.data.serviceId;
+
+        const { request } = fetcher(
+          `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${remoteId}`,
+          {
+            method: "DELETE",
+            headers: defaultHeaders,
+          },
+        );
+
         return typedFetch(request);
       },
     },
