@@ -89,25 +89,38 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     });
 
-    const restApiId = StringParameter.fromStringParameterName(
-      this,
-      "PrivateGatewayRestApiId",
-      getParamName("/flex-core/private-gateway/rest-api-id"),
-    ).stringValue;
-    const domainsRootResourceId = StringParameter.fromStringParameterName(
-      this,
-      "PrivateGatewayRootResourceId",
-      getParamName("/flex-core/private-gateway/root-resource-id"),
-    ).stringValue;
+    const hasPublicPermissions = Object.values(props.domain.versions).some(
+      (v) =>
+        Object.values(v.routes).some((methods) =>
+          Object.values(methods).some((route) => route?.permissions?.length),
+        ),
+    );
+    const needsPrivateGateway = !!props.privateDomain || hasPublicPermissions;
 
-    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId,
-      rootResourceId: domainsRootResourceId,
-    });
+    let privateApi: IRestApi | undefined;
+    let domainsRootResourceId: string | undefined;
+
+    if (needsPrivateGateway) {
+      const restApiId = StringParameter.fromStringParameterName(
+        this,
+        "PrivateGatewayRestApiId",
+        getParamName("/flex-core/private-gateway/rest-api-id"),
+      ).stringValue;
+      domainsRootResourceId = StringParameter.fromStringParameterName(
+        this,
+        "PrivateGatewayRootResourceId",
+        getParamName("/flex-core/private-gateway/root-resource-id"),
+      ).stringValue;
+
+      privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
+        restApiId,
+        rootResourceId: domainsRootResourceId,
+      });
+    }
 
     this.#processPublicRoutes(props.domain, privateApi);
 
-    if (props.privateDomain) {
+    if (props.privateDomain && privateApi && domainsRootResourceId) {
       const privateDomainsRoot = Resource.fromResourceAttributes(
         this,
         "PrivateDomainsRoot",
@@ -128,7 +141,10 @@ export class FlexDomainStack extends GovUkOnceStack {
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain, internalApi: IRestApi): void {
+  #processPublicRoutes(
+    domainConfig: IDomain,
+    internalApi: IRestApi | undefined,
+  ): void {
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -162,7 +178,8 @@ export class FlexDomainStack extends GovUkOnceStack {
 
           if (
             routeConfig.permissions?.length &&
-            domainEndpointFn.function.role
+            domainEndpointFn.function.role &&
+            internalApi
           ) {
             this.#grantInternalGatewayPermissions(
               domainEndpointFn.function.role,
