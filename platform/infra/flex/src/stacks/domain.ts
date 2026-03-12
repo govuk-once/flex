@@ -92,7 +92,7 @@ export class FlexDomainStack extends GovUkOnceStack {
     const hasPublicPermissions = Object.values(props.domain.versions).some(
       (v) =>
         Object.values(v.routes).some((methods) =>
-          Object.values(methods).some((route) => route?.permissions?.length),
+          Object.values(methods).some((route) => route.permissions?.length),
         ),
     );
     const needsPrivateGateway = !!props.privateDomain || hasPublicPermissions;
