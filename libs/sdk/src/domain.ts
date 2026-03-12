@@ -32,9 +32,9 @@ export function domain<
 
 const permissionsSchema = z.object({
   type: z.enum(["domain", "gateway"]),
+  target: z.string(),
   path: z.string(),
   method: z.string(),
-  // TODO: intra-domain permissions
 });
 
 export type Permission = z.infer<typeof permissionsSchema>;

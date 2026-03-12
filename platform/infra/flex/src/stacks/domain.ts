@@ -17,6 +17,7 @@ import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { Duration } from "aws-cdk-lib";
 import type { IResource, IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
+  AuthorizationType,
   LambdaIntegration,
   Resource,
   RestApi,
@@ -51,18 +52,29 @@ import {
   toApiGatewayPath,
   toPascalCase,
 } from "../utils/routes";
-import type { PrivateApiRef } from "./private-gateway";
+
+export interface PublicRouteBinding {
+  path: string;
+  method: string;
+  handler: IFunction;
+  isPublicAccess: boolean;
+}
+
+export interface PrivateRouteBinding {
+  path: string;
+  method: string;
+}
 
 interface FlexDomainStackProps {
   domain: IDomain;
   privateDomain?: IDomain;
-  privateApi: PrivateApiRef;
 }
 
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
 export class FlexDomainStack extends GovUkOnceStack {
   public readonly publicRouteBindings: PublicRouteBinding[] = [];
+  public readonly privateRouteBindings: PrivateRouteBinding[] = [];
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
@@ -77,24 +89,48 @@ export class FlexDomainStack extends GovUkOnceStack {
       },
     });
 
-    const privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: props.privateApi.restApiId,
-      rootResourceId: props.privateApi.domainsRootResourceId,
-    });
-
-    const privateDomainsRoot = Resource.fromResourceAttributes(
-      this,
-      "PrivateDomainsRoot",
-      {
-        resourceId: props.privateApi.domainsRootResourceId,
-        path: "/domains",
-        restApi: privateApi,
-      },
+    const hasPublicPermissions = Object.values(props.domain.versions).some(
+      (v) =>
+        Object.values(v.routes).some((methods) =>
+          Object.values(methods).some((route) => route.permissions?.length),
+        ),
     );
+    const needsPrivateGateway = !!props.privateDomain || hasPublicPermissions;
 
-    this.#processPublicRoutes(props.domain);
+    let privateApi: IRestApi | undefined;
+    let domainsRootResourceId: string | undefined;
 
-    if (props.privateDomain) {
+    if (needsPrivateGateway) {
+      const restApiId = StringParameter.fromStringParameterName(
+        this,
+        "PrivateGatewayRestApiId",
+        getParamName("/flex-core/private-gateway/rest-api-id"),
+      ).stringValue;
+      domainsRootResourceId = StringParameter.fromStringParameterName(
+        this,
+        "PrivateGatewayRootResourceId",
+        getParamName("/flex-core/private-gateway/root-resource-id"),
+      ).stringValue;
+
+      privateApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
+        restApiId,
+        rootResourceId: domainsRootResourceId,
+      });
+    }
+
+    this.#processPublicRoutes(props.domain, privateApi);
+
+    if (props.privateDomain && privateApi && domainsRootResourceId) {
+      const privateDomainsRoot = Resource.fromResourceAttributes(
+        this,
+        "PrivateDomainsRoot",
+        {
+          resourceId: domainsRootResourceId,
+          path: "/domains",
+          restApi: privateApi,
+        },
+      );
+
       this.#processPrivateRoutes(
         props.privateDomain,
         privateDomainsRoot,
@@ -105,7 +141,10 @@ export class FlexDomainStack extends GovUkOnceStack {
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain): void {
+  #processPublicRoutes(
+    domainConfig: IDomain,
+    internalApi: IRestApi | undefined,
+  ): void {
     for (const [versionId, versionConfig] of Object.entries(
       domainConfig.versions,
     )) {
@@ -136,6 +175,19 @@ export class FlexDomainStack extends GovUkOnceStack {
           kmsGrantables.forEach((key) => {
             key.grantDecrypt(domainEndpointFn.function);
           });
+
+          if (
+            routeConfig.permissions?.length &&
+            domainEndpointFn.function.role &&
+            internalApi
+          ) {
+            this.#grantInternalGatewayPermissions(
+              domainEndpointFn.function.role,
+              routeConfig.permissions,
+              domainConfig.domain,
+              internalApi,
+            );
+          }
 
           const newPath = `app/${versionId}${path}`
             .replace(/\/+/g, "/")
@@ -195,9 +247,12 @@ export class FlexDomainStack extends GovUkOnceStack {
             .replace(/\/+/g, "/")
             .replace(/^\//, "");
 
+          this.privateRouteBindings.push({ path: newPath, method });
+
           const resource = this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
+            { authorizationType: AuthorizationType.IAM },
           );
 
           applyCheckovSkip(
@@ -206,11 +261,15 @@ export class FlexDomainStack extends GovUkOnceStack {
             "Private API - access restricted by VPC endpoint and resource policy",
           );
 
-          if (
-            routeConfig.permissions &&
-            domainEndpointFn.function.role &&
-            internalApiForPermissions
-          ) {
+          if (routeConfig.permissions === undefined) {
+            throw new Error(
+              `Private route ${method} ${path} (v${versionId}) in domain "${domainConfig.domain}" must declare explicit permissions. ` +
+                `Add a "permissions" array to the route config specifying which routes this Lambda is allowed to call. ` +
+                `Use an empty array [] if this Lambda does not need to call any private routes.`,
+            );
+          }
+
+          if (domainEndpointFn.function.role && internalApiForPermissions) {
             this.#grantInternalGatewayPermissions(
               domainEndpointFn.function.role,
               routeConfig.permissions,
@@ -387,8 +446,8 @@ export class FlexDomainStack extends GovUkOnceStack {
     const allowedRoutePrefixes = permissions.map((perm) => {
       const base =
         perm.type === "domain"
-          ? `/domains/${domainName}`
-          : `/gateways/${domainName}`;
+          ? `/domains/${perm.target}`
+          : `/gateways/${perm.target}`;
       const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
       return `${base}${suffix}`;
     });
@@ -407,25 +466,18 @@ export class FlexDomainStack extends GovUkOnceStack {
 // PoC
 // ----------------------------------------------------------------------------
 
-export interface PublicRouteBinding {
-  readonly handler: IFunction;
-  readonly method: string;
-  readonly path: string;
-  readonly isPublicAccess: boolean;
-}
-
 interface FlexDomainStackPoCProps {
   config: IacDomainConfig;
-  privateApi: PrivateApiRef;
 }
 
 export class FlexDomainStackPoC extends GovUkOnceStack {
   public readonly publicRouteBindings: PublicRouteBinding[] = [];
+  public readonly privateRouteBindings: PrivateRouteBinding[] = [];
 
   constructor(
     scope: Construct,
     id: string,
-    { config, privateApi }: FlexDomainStackPoCProps,
+    { config }: FlexDomainStackPoCProps,
   ) {
     super(scope, id, {
       tags: {
@@ -437,9 +489,20 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
       },
     });
 
+    const restApiId = StringParameter.fromStringParameterName(
+      this,
+      "PrivateGatewayRestApiId",
+      getParamName("/flex-core/private-gateway/rest-api-id"),
+    ).stringValue;
+    const domainsRootResourceId = StringParameter.fromStringParameterName(
+      this,
+      "PrivateGatewayRootResourceId",
+      getParamName("/flex-core/private-gateway/root-resource-id"),
+    ).stringValue;
+
     const privateRestApi = RestApi.fromRestApiAttributes(this, "PrivateApi", {
-      restApiId: privateApi.restApiId,
-      rootResourceId: privateApi.domainsRootResourceId,
+      restApiId,
+      rootResourceId: domainsRootResourceId,
     });
 
     const privateDomainsRoot = Resource.fromResourceAttributes(
@@ -447,7 +510,7 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
       "PrivateDomainsRoot",
       {
         path: "/domains",
-        resourceId: privateApi.domainsRootResourceId,
+        resourceId: domainsRootResourceId,
         restApi: privateRestApi,
       },
     );
@@ -510,11 +573,14 @@ export class FlexDomainStackPoC extends GovUkOnceStack {
         }
 
         if (gateway === "private") {
+          this.privateRouteBindings.push({ path: resourcePath, method });
+
           const resource = resolveApiResource(privateDomainsRoot, resourcePath);
 
           const resourceMethod = resource.addMethod(
             method,
             new LambdaIntegration(lambda.function),
+            { authorizationType: AuthorizationType.IAM },
           );
 
           applyCheckovSkip(

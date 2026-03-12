@@ -17,7 +17,8 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "gateway",
-                path: "user",
+                target: "udp",
+                path: "/v1/users",
                 method: "POST",
               },
             ],
