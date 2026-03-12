@@ -1,5 +1,8 @@
 import type { IResource } from "aws-cdk-lib/aws-apigateway";
-import { LambdaIntegration } from "aws-cdk-lib/aws-apigateway";
+import {
+  AuthorizationType,
+  LambdaIntegration,
+} from "aws-cdk-lib/aws-apigateway";
 import type { IFunction } from "aws-cdk-lib/aws-lambda";
 
 export function createPrivateGatewayRoute(
@@ -14,5 +17,7 @@ export function createPrivateGatewayRoute(
       parent.getResource(segment) ?? parent.addResource(segment),
     gatewayResource,
   );
-  return resource.addMethod(method, new LambdaIntegration(handler));
+  return resource.addMethod(method, new LambdaIntegration(handler), {
+    authorizationType: AuthorizationType.IAM,
+  });
 }

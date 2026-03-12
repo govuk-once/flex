@@ -39,10 +39,6 @@ export class FlexPrivateEgressFunction extends Construct {
       },
     });
 
-    Tags.of(this.function).add("flex:private-caller", "true", {
-      priority: 200,
-    });
-
     if (functionProps.domain) {
       Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
         priority: 200,

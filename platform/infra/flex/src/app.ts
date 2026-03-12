@@ -4,7 +4,11 @@ import crypto from "crypto";
 
 import { FlexCertStack } from "./stacks/cert";
 import { FlexPlatformStack } from "./stacks/core";
-import { FlexDomainStack, FlexDomainStackPoC } from "./stacks/domain";
+import {
+  FlexDomainStack,
+  FlexDomainStackPoC,
+  type PrivateRouteBinding,
+} from "./stacks/domain";
 import { FlexPrivateGatewayStack } from "./stacks/private-gateway";
 import { FlexPrivateGatewayDeploymentStack } from "./stacks/private-gateway-deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
@@ -65,10 +69,15 @@ const publicRouteBindings = [
   ...legacyStacks.flatMap((s) => s.publicRouteBindings),
 ];
 
+const privateRouteBindings: PrivateRouteBinding[] = [
+  ...pocStacks.flatMap((s) => s.privateRouteBindings),
+  ...legacyStacks.flatMap((s) => s.privateRouteBindings),
+];
+
 const routesHash = crypto
   .createHash("sha256")
   .update(
-    publicRouteBindings
+    privateRouteBindings
       .map((b) => `${b.method}:${b.path}`)
       .sort()
       .join("|"),
