@@ -1,3 +1,4 @@
+import { getEnvConfig } from "@platform/gov-uk-once";
 import { Tags } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
@@ -6,6 +7,8 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 import { FlexFunctionProps } from "../types";
+
+const { stage } = getEnvConfig();
 
 interface FlexPrivateEgressFunctionProps extends FlexFunctionProps {
   vpc: IVpc;
@@ -30,6 +33,13 @@ export class FlexPrivateEgressFunction extends Construct {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       ...functionProps,
+      environment: {
+        FLEX_ENVIRONMENT: stage,
+        ...(stage === "production" && {
+          FLEX_LOG_LEVEL_CEILING: "INFO",
+        }),
+        ...functionProps.environment,
+      },
       logGroup,
       securityGroups: [privateEgressSg],
       vpc,
