@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { IRestApi, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, IRole, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
@@ -68,9 +70,15 @@ export function grantPrivateApiAccess(
     ),
   );
 
+  const hash = crypto
+    .createHash("md5")
+    .update(resources.join("|"))
+    .digest("hex")
+    .slice(0, 8);
+
   role.addToPrincipalPolicy(
     new PolicyStatement({
-      sid: `AllowPrivateApiAccess${permissions.domainId}`,
+      sid: `AllowPrivateApiAccess${permissions.domainId}${hash}`,
       effect: Effect.ALLOW,
       actions: ["execute-api:Invoke"],
       resources,
