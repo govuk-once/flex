@@ -36,6 +36,7 @@ export interface PublicRouteBinding {
 
 export class FlexDomainStack extends BaseStack {
   public readonly publicRouteBindings: PublicRouteBinding[] = [];
+  public readonly privateRouteBindings: PrivateRouteBinding[] = [];
 
   #getRestApi(
     id: string,

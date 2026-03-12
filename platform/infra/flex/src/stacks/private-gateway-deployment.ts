@@ -49,8 +49,8 @@ export class FlexPrivateGatewayDeploymentStack extends GovUkOnceStack {
       new PolicyStatement({
         actions: ["apigateway:POST", "apigateway:PATCH"],
         resources: [
-          `arn:aws:apigateway:${region}::/restapis/*/deployments`,
-          `arn:aws:apigateway:${region}::/restapis/*/stages/prod`,
+          `arn:aws:apigateway:${region}::/restapis/${restApiId}/deployments`,
+          `arn:aws:apigateway:${region}::/restapis/${restApiId}/stages/prod`,
         ],
       }),
     ]);
