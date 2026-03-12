@@ -1,7 +1,7 @@
 import { ApiGatewayEnvelope } from "@aws-lambda-powertools/parser/envelopes/api-gateway";
 import { createUdpDomainClient } from "@client";
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import {
   type ContextWithUserId,
   createSecretsMiddleware,
@@ -36,7 +36,6 @@ export const handler = createLambdaHandler<
   ContextWithUserId & NotificationSecretContext
 >(
   async (event, context) => {
-    const logger = getLogger();
     const { userId, notificationSecretKey } = context;
     const parsedEvent = ApiGatewayEnvelope.safeParse(
       event,

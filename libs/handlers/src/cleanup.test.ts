@@ -1,4 +1,3 @@
-import { getLogger } from "@flex/logging";
 import { it } from "@flex/testing";
 import fs, { readdirSync, rmSync } from "fs";
 import { vol } from "memfs";
@@ -6,6 +5,7 @@ import { beforeEach, describe, expect, vi, vitest } from "vitest";
 
 import { clearTmp } from "./cleanup";
 
+vitest.mock("@flex/logging");
 vitest.mock("node:fs", async () => {
   const fs = await import("memfs");
   return fs;
@@ -14,7 +14,6 @@ vitest.mock("node:fs", async () => {
 beforeEach(() => {
   vol.reset();
   vi.clearAllMocks();
-  getLogger({ serviceName: "test-service" });
 });
 
 describe("clearTmp", () => {

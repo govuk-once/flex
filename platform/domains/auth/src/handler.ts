@@ -1,5 +1,5 @@
 import { createLambdaHandler } from "@flex/handlers";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import {
   FailedAssertionError,
   JwtBaseError,
@@ -23,7 +23,6 @@ const handler = createLambdaHandler<
   async (
     event: APIGatewayTokenAuthorizerEvent,
   ): Promise<APIGatewayAuthorizerResult> => {
-    const logger = getLogger();
     const authService = await createAuthService();
 
     try {

@@ -1,4 +1,4 @@
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
 import * as backOff from "exponential-backoff";
 import nock from "nock";
@@ -6,17 +6,7 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { flexFetch } from "./index";
 
-vi.mock("@flex/logging", () => {
-  const loggerFunctions = {
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  };
-  return {
-    getLogger: () => loggerFunctions,
-  };
-});
+vi.mock("@flex/logging");
 
 describe("flex-fetch", () => {
   beforeEach(() => {
@@ -189,7 +179,7 @@ describe("flex-fetch", () => {
     );
   });
 
-  it("logs errors on failure using getLogger.error", async () => {
+  it("logs errors on failure using logger.error", async () => {
     const err = new Error("network");
     nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
 
@@ -198,7 +188,6 @@ describe("flex-fetch", () => {
     });
 
     await expect(request).rejects.toThrow(err);
-    const logger = getLogger();
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledTimes(1);
@@ -221,7 +210,6 @@ describe("flex-fetch", () => {
     });
 
     await expect(request).rejects.toThrow();
-    const logger = getLogger();
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledTimes(1);
@@ -245,7 +233,7 @@ describe("flex-fetch", () => {
     });
 
     await expect(request).rejects.toThrow();
-    const logger = getLogger();
+
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.debug).toBeCalledWith(
       "options",

@@ -1,20 +1,13 @@
 import { beforeEach } from "node:test";
 
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { APIGatewayProxyEventPathParameters } from "aws-lambda";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { validatePathParams } from "./validatePathParams";
 
-vi.mock("@flex/logging", () => ({
-  getLogger: vi.fn().mockReturnValue({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+vi.mock("@flex/logging");
 
 const testSchema = z.object({
   serviceName: z.string().min(1),
@@ -27,7 +20,6 @@ describe("validatePathParams", () => {
   });
 
   it("successfully returns validated data when params are valid", () => {
-    const logger = getLogger();
     const data: APIGatewayProxyEventPathParameters = {
       serviceName: "test",
       identifier: "123",
@@ -55,7 +47,6 @@ describe("validatePathParams", () => {
       data: { serviceName: "test" },
     },
   ])("$description", ({ data }) => {
-    const logger = getLogger();
     expect(() => validatePathParams(testSchema, data)).toThrow();
 
     // eslint-disable-next-line @typescript-eslint/unbound-method

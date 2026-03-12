@@ -1,5 +1,5 @@
 import { getParametersByName } from "@aws-lambda-powertools/parameters/ssm";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import type { Simplify, WithoutPropSuffix } from "@flex/utils";
 import { z } from "zod";
 
@@ -13,8 +13,6 @@ import { z } from "zod";
 async function populateParameterFields<T extends object>(
   rawConfig: T,
 ): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
-  const logger = getLogger();
-
   const [parameterNames, nonParameterNames] = Object.entries(rawConfig).reduce<
     [Array<[string, string]>, Array<[string, string]>]
   >(
@@ -69,8 +67,6 @@ const cachedConfig: Map<z.ZodType, unknown> = new Map();
 export async function getConfig<T extends object>(
   validator: z.ZodType<T>,
 ): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
-  const logger = getLogger();
-
   if (cachedConfig.has(validator)) {
     logger.info("Returning cached configuration");
 

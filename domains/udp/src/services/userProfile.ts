@@ -1,5 +1,5 @@
 import { createUdpDomainClient, UdpDomainClient } from "@client";
-import { getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import { UserId } from "@flex/utils";
 import { CreateNotificationResponse } from "@schemas/notifications";
 import { NotificationId } from "@types";
@@ -36,7 +36,6 @@ const createUserAndAggregateProfile = async ({
   userId,
   client,
 }: UserProfileContext) => {
-  const logger = getLogger();
   const response = await client.domain.user.create({
     notificationId,
     userId,
@@ -83,7 +82,7 @@ const aggregateUserProfile = async (
     return null;
   }
   if (!notificationsResult.ok) {
-    getLogger().error("Failed to retrieve notifications settings", {
+    logger.error("Failed to retrieve notifications settings", {
       status: notificationsResult.error.status,
     });
     throw new createHttpError.BadGateway();
