@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const REDACTED = "***REDACTED***";
+
 describe("sanitizer", () => {
   let addSecretValue: typeof import("./sanitizer").addSecretValue;
   let sanitize: ReturnType<typeof import("./sanitizer").createSanitizer>;
@@ -12,20 +14,64 @@ describe("sanitizer", () => {
   });
 
   describe("createSanitizer", () => {
-    it("redacts values when key matches sensitive patterns", () => {
-      expect(sanitize("password", "my-password-123")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("secret", "super-secret")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("token", "auth-token")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("apiKey", "key-123")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("api_key", "key-456")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("authorization", "Bearer xyz")).toBe("***REDACTED***"); // pragma: allowlist secret
-      expect(sanitize("clientSecret", "secret-abc")).toBe("***REDACTED***"); // pragma: allowlist secret
+    it("redacts values when key matches secret patterns", () => {
+      (
+        [
+          ["password", "my-password-123"], // pragma: allowlist secret
+          ["secret", "super-secret"], // pragma: allowlist secret
+          ["token", "auth-token"], // pragma: allowlist secret
+          ["apiKey", "key-123"], // pragma: allowlist secret
+          ["api_key", "key-456"], // pragma: allowlist secret
+          ["authorization", "Bearer xyz"], // pragma: allowlist secret
+          ["clientSecret", "secret-abc"], // pragma: allowlist secret
+        ] as [string, string][]
+      ).forEach(([key, value]) => {
+        expect(sanitize(key, value)).toBe(REDACTED);
+      });
     });
 
     it("redacts JWT tokens based on value pattern", () => {
       const jwtToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"; // pragma: allowlist secret
-      expect(sanitize("data", jwtToken)).toBe("***REDACTED***");
+      expect(sanitize("data", jwtToken)).toBe(REDACTED);
+    });
+
+    it("redacts values when key matches PII patterns", () => {
+      (
+        [
+          ["email", "user@example.com"],
+          ["phone", "+447700900000"],
+          ["mobile", "07700900000"],
+          ["forename", "Jane"],
+          ["surname", "Doe"],
+          ["firstName", "Jane"],
+          ["last_name", "Doe"],
+          ["fullName", "Jane Doe"],
+          ["date_of_birth", "1990-01-01"],
+          ["dob", "1990-01-01"],
+          ["nino", "AB123456C"],
+          ["national_insurance", "AB123456C"],
+          ["postcode", "SW1A 1AA"],
+          ["zipCode", "12345"],
+          ["sortCode", "12-34-56"],
+          ["accountNumber", "12345678"],
+          ["ipAddress", "192.168.1.1"],
+        ] as [string, string][]
+      ).forEach(([key, value]) => {
+        expect(sanitize(key, value)).toBe(REDACTED);
+      });
+    });
+
+    it("redacts PII detected by value patterns", () => {
+      [
+        "user@example.com",
+        "Contact: +447700900000",
+        "NI: AB123456C",
+        "Post: SW1A 1AA",
+        "IP: 192.168.1.1",
+      ].forEach((value) => {
+        expect(sanitize("data", value)).toBe(REDACTED);
+      });
     });
 
     it("preserves non-sensitive values", () => {
@@ -47,7 +93,7 @@ describe("sanitizer", () => {
       addSecretValue(secret);
 
       expect(sanitize("message", `The secret is ${secret} here`)).toBe(
-        "The secret is ***REDACTED*** here",
+        `The secret is ${REDACTED} here`,
       );
     });
 
@@ -59,7 +105,7 @@ describe("sanitizer", () => {
 
       expect(
         sanitize("message", `Found ${secretOne} and ${secretTwo} in logs`),
-      ).toBe("Found ***REDACTED*** and ***REDACTED*** in logs");
+      ).toBe(`Found ${REDACTED} and ${REDACTED} in logs`);
     });
 
     it("handles numeric secret values", () => {
@@ -67,7 +113,7 @@ describe("sanitizer", () => {
       addSecretValue(pin);
 
       expect(sanitize("message", `Pin code is ${String(pin)}`)).toBe(
-        "Pin code is ***REDACTED***",
+        `Pin code is ${REDACTED}`,
       );
     });
 
@@ -90,7 +136,7 @@ describe("sanitizer", () => {
       addSecretValue(secret);
 
       expect(sanitize("message", `Found ${secret} in text`)).toBe(
-        "Found ***REDACTED*** in text",
+        `Found ${REDACTED} in text`,
       );
     });
 
@@ -101,8 +147,72 @@ describe("sanitizer", () => {
       addSecretValue(long);
 
       expect(sanitize("message", `Value is ${long} here`)).toBe(
-        "Value is ***REDACTED*** here",
+        `Value is ${REDACTED} here`,
       );
+    });
+  });
+
+  describe("PII debug toggle", () => {
+    beforeEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("bypasses PII key redaction when FLEX_LOG_PII_DEBUG is true", async () => {
+      vi.stubEnv("FLEX_LOG_PII_DEBUG", "true");
+      vi.resetModules();
+      const mod = await import("./sanitizer");
+      const debugSanitize = mod.createSanitizer();
+
+      (
+        [
+          ["email", "user@example.com"],
+          ["phone", "+447700900000"],
+          ["forename", "Jane"],
+          ["postcode", "SW1A 1AA"],
+        ] as [string, string][]
+      ).forEach(([key, value]) => {
+        expect(debugSanitize(key, value)).toBe(value);
+      });
+    });
+
+    it("bypasses PII value redaction when FLEX_LOG_PII_DEBUG is true", async () => {
+      vi.stubEnv("FLEX_LOG_PII_DEBUG", "true");
+      vi.resetModules();
+      const mod = await import("./sanitizer");
+      const debugSanitize = mod.createSanitizer();
+
+      ["user@example.com", "IP: 192.168.1.1"].forEach((value) => {
+        expect(debugSanitize("data", value)).toBe(value);
+      });
+    });
+
+    it("still redacts secrets when FLEX_LOG_PII_DEBUG is true", async () => {
+      vi.stubEnv("FLEX_LOG_PII_DEBUG", "true");
+      vi.resetModules();
+      const mod = await import("./sanitizer");
+      const debugSanitize = mod.createSanitizer();
+
+      expect(debugSanitize("password", "my-password")).toBe(REDACTED); // pragma: allowlist secret
+      expect(debugSanitize("token", "auth-token")).toBe(REDACTED); // pragma: allowlist secret
+      const jwt =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"; // pragma: allowlist secret
+      expect(debugSanitize("data", jwt)).toBe(REDACTED);
+    });
+
+    it("ignores FLEX_LOG_PII_DEBUG in production", async () => {
+      vi.stubEnv("FLEX_ENVIRONMENT", "production");
+      vi.stubEnv("FLEX_LOG_PII_DEBUG", "true");
+      vi.resetModules();
+      const mod = await import("./sanitizer");
+      const prodSanitize = mod.createSanitizer();
+
+      expect(prodSanitize("email", "user@example.com")).toBe(REDACTED);
+      expect(prodSanitize("data", "user@example.com")).toBe(REDACTED);
+    });
+
+    it("redacts PII by default when FLEX_LOG_PII_DEBUG is not set", () => {
+      expect(sanitize("email", "user@example.com")).toBe(REDACTED);
+      expect(sanitize("data", "user@example.com")).toBe(REDACTED);
     });
   });
 });
