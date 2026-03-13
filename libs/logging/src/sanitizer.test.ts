@@ -49,8 +49,8 @@ describe("sanitizer", () => {
           ["fullName", "Jane Doe"],
           ["date_of_birth", "1990-01-01"],
           ["dob", "1990-01-01"],
-          ["nino", "AB123456C"],
-          ["national_insurance", "AB123456C"],
+          ["nino", "AB123456C"], // pragma: allowlist secret
+          ["national_insurance", "AB123456C"], // pragma: allowlist secret
           ["postcode", "SW1A 1AA"],
           ["zipCode", "12345"],
           ["sortCode", "12-34-56"],
@@ -66,7 +66,7 @@ describe("sanitizer", () => {
       [
         "user@example.com",
         "Contact: +447700900000",
-        "NI: AB123456C",
+        "NI: AB123456C", // pragma: allowlist secret
         "Post: SW1A 1AA",
         "IP: 192.168.1.1",
       ].forEach((value) => {
