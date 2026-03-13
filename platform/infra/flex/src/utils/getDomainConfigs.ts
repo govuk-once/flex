@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import { glob } from "node:fs/promises";
 import path from "node:path";
 
@@ -12,67 +11,80 @@ import { findProjectRoot } from "@flex/utils";
 import { createJiti } from "jiti";
 import z from "zod";
 
-const configModuleSchema = z.object({
+const jiti = createJiti(import.meta.url);
+const domainsRoot = `${findProjectRoot()}/domains`;
+
+async function loadDomainConfig<T extends z.ZodType>(
+  schema: T,
+  domain: string,
+  filename?: string,
+): Promise<z.infer<T> | undefined> {
+  try {
+    const filepath = filename ? path.join(domain, filename) : domain;
+
+    const file = await jiti.import(filepath);
+    const parseResult = schema.safeParse(file);
+
+    return parseResult.success ? parseResult.data : undefined;
+  } catch {
+    return;
+  }
+}
+
+/**
+ * Legacy config loader
+ */
+
+interface LegacyDomainConfigs {
+  publicDomain: IDomain;
+  privateDomain?: IDomain;
+}
+
+const legacySchema = z.object({
   endpoints: domainSchema,
 });
 
-const jiti = createJiti(import.meta.url);
-
-const domainsRoot = `${findProjectRoot()}/domains`;
-
-interface LegacyDomainConfigs {
-  public: IDomain;
-  private?: IDomain;
-}
-
-// TODO: Return single list of domains when poc migration is complete
-interface DomainConfigs {
-  endpoints: LegacyDomainConfigs[];
-  poc: IacDomainConfig[];
-}
-
-export async function getDomainConfigs(): Promise<DomainConfigs> {
-  const domains: DomainConfigs = { endpoints: [], poc: [] };
+export async function getLegacyDomainConfigs() {
+  const domains: LegacyDomainConfigs[] = [];
 
   for await (const entry of glob("*/domain.config.ts", { cwd: domainsRoot })) {
-    const absolutePath = path.join(domainsRoot, entry);
+    const domainDir = path.dirname(path.join(domainsRoot, entry));
 
-    const file = await jiti.import<
-      { config: IacDomainConfig } | { endpoints: IDomain }
-    >(absolutePath);
+    const [publicConfig, privateConfig] = await Promise.all([
+      loadDomainConfig(legacySchema, domainDir, "domain.config.ts"),
+      loadDomainConfig(legacySchema, domainDir, "domain.private.config.ts"),
+    ]);
 
-    if ("config" in file) {
-      const { data, error } = DomainConfigSchema.safeParse(file.config);
+    if (!publicConfig) continue;
 
-      if (error) throw new Error(`Invalid domain config: ${absolutePath}`);
-
-      domains.poc.push(data);
-      continue;
-    }
-
-    const { data, error } = configModuleSchema.safeParse(file);
-
-    if (error) throw new Error(`Invalid domain config: ${absolutePath}`);
-
-    domains.endpoints.push({
-      public: data.endpoints,
-      private: await loadDomainPrivateConfig(path.dirname(absolutePath)),
+    domains.push({
+      publicDomain: publicConfig.endpoints,
+      privateDomain: privateConfig?.endpoints,
     });
   }
 
   return domains;
 }
 
-async function loadDomainPrivateConfig(dir: string) {
-  const file = path.join(dir, "domain.private.config.ts");
+/**
+ * Config loader
+ */
 
-  if (!fs.existsSync(file)) return;
+const configSchema = z.object({
+  config: DomainConfigSchema,
+});
 
-  const { data, error } = configModuleSchema.safeParse(
-    await jiti.import<IDomain>(file),
-  );
+export async function getDomainConfigs() {
+  const domains: IacDomainConfig[] = [];
 
-  if (error) throw new Error(`Invalid domain config: ${file}`);
+  for await (const entry of glob("*/domain.config.ts", { cwd: domainsRoot })) {
+    const absolutePath = path.join(domainsRoot, entry);
+    const config = await loadDomainConfig(configSchema, absolutePath);
 
-  return data.endpoints;
+    if (!config) continue;
+
+    domains.push(config.config);
+  }
+
+  return domains;
 }

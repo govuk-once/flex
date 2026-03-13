@@ -192,7 +192,7 @@ export function buildDomainIntegrations(
   const fetcher = createSigv4Fetcher({
     baseUrl: resolveGatewayUrl(
       config.resources,
-      "/flex-core/private-gateway/url",
+      "/flex/apigw/private/gateway-url",
     ),
     region,
   });

@@ -7,7 +7,7 @@ const { config, route, routeContext } = domain({
   },
   resources: {
     encryptionKeyArn: resource.kms("/flex-secret/encryption-key"),
-    flexPrivateGatewayUrl: resource.ssm("/flex-core/private-gateway/url", {
+    flexPrivateGatewayUrl: resource.ssm("/flex/apigw/private/gateway-url", {
       scope: "stage",
     }),
     flexUdpNotificationSecret: resource.secret(

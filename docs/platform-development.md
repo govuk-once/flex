@@ -214,13 +214,15 @@ platform/infra/<name>/
 
 ```typescript
 import * as cdk from "aws-cdk-lib";
-import { getStackName } from "@platform/gov-uk-once";
 
+import { getEnvConfig } from "./base/env";
 import { ExampleStack } from "./stack";
+
+const { stage } = getEnvConfig();
 
 const app = new cdk.App();
 
-new ExampleStack(app, getStackName("ExampleStack"));
+new ExampleStack(app, `${stage}-ExampleStack`));
 ```
 
 ### Stack Definition
@@ -228,10 +230,11 @@ new ExampleStack(app, getStackName("ExampleStack"));
 All stacks extend `GovUkOnceStack` for consistent GDS-compliant tagging:
 
 ```typescript
-import { GovUkOnceStack } from "@platform/gov-uk-once";
 import type { Construct } from "constructs";
 
-export class ExampleStack extends GovUkOnceStack {
+import { BaseStack } from "../base";
+
+export class ExampleStack extends BaseStack {
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
@@ -240,6 +243,9 @@ export class ExampleStack extends GovUkOnceStack {
         Owner: "",
         Source: "https://github.com/govuk-once/flex",
       },
+      env: {
+        region: "eu-west-2",
+      }
     });
 
     // Define resources, call methods, etc
@@ -249,12 +255,14 @@ export class ExampleStack extends GovUkOnceStack {
 
 ### Stack Naming Convention
 
-Use `getStackName()` for consistent stage-prefixed names:
+Use `getEnvConfig()` and prefix your stack with either the stage or env. Use env in the case where you want to reference a persistent environment only e.g the VPC stack.
 
 ```typescript
-import { getStackName } from "@platform/gov-uk-once";
+import { getEnvConfig } from "./base/env";
 
-new ExampleStack(app, getStackName("ExampleStack"));
+const { env, stage } = getEnvConfig();
+
+new ExampleStack(app, `${stage}-ExampleStack`);
 // "development-ExampleStack", "pr-123-ExampleStack", etc.
 ```
 
@@ -263,7 +271,7 @@ new ExampleStack(app, getStackName("ExampleStack"));
 Use `getEnvConfig()` to access environment details:
 
 ```typescript
-import { getEnvConfig } from "@platform/gov-uk-once";
+import { getEnvConfig } from "./base/env";
 
 const { stage, environment, persistent } = getEnvConfig();
 
@@ -547,9 +555,7 @@ Changes to `@flex/config` affect all packages:
 - [@flex/params](/libs/params/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
-- [@platform/core](/platform/infra/core/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
-- [@platform/gov-uk-once](/platform/infra/gov-uk-once/README.md)
 
 **Guides:**
 
