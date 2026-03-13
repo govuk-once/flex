@@ -1,3 +1,4 @@
+import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 import { notificationId } from "./common";
@@ -48,6 +49,30 @@ export type UpdateNotificationOutboundRequest = z.infer<
   typeof updateNotificationOutboundRequestSchema
 >;
 
+export const updateNotificationResponseSchema = z.object({
+  consentStatus: CONSENT_STATUS_SCHEMA,
+  notificationId,
+});
+
+export type UpdateNotificationResponse = z.infer<
+  typeof updateNotificationResponseSchema
+>;
+
 export type NotificationSecretContext = {
   notificationSecretKey: string;
 };
+
+export const getUserPreferencesResponseSchema = z.object({
+  userId: NonEmptyString,
+  notificationId,
+  preferences: z.object({
+    notifications: z.object({
+      consentStatus: CONSENT_STATUS_SCHEMA,
+      notificationId,
+    }),
+  }),
+});
+
+export type GetUserPreferencesResponse = z.infer<
+  typeof getUserPreferencesResponseSchema
+>;

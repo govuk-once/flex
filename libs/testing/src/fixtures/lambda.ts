@@ -31,11 +31,13 @@ export interface ContextWithUserId extends Context {
 }
 
 type Secrets = Record<string, unknown>;
+type Params = Record<string, unknown>;
 
 class BuildContext {
   overrides?: DeepPartial<Context> & Partial<Secrets>;
   pairwiseId?: string = undefined;
   secrets?: Secrets = undefined;
+  params?: Params = undefined;
 
   constructor(overrides?: DeepPartial<Context> & Partial<Secrets>) {
     this.overrides = overrides;
@@ -51,10 +53,16 @@ class BuildContext {
     return this;
   }
 
+  withParams(params: Record<string, unknown>) {
+    this.params = params;
+    return this;
+  }
+
   create(overrides?: DeepPartial<Context>) {
     return buildContext({
       ...this.overrides,
       ...this.secrets,
+      ...this.params,
       userId: this.pairwiseId,
       ...overrides,
     });
@@ -79,8 +87,7 @@ class BuildContext {
  * ```
  */
 export function createContext(overrides?: DeepPartial<Context>) {
-  const builder = new BuildContext(overrides);
-  return builder;
+  return new BuildContext(overrides);
 }
 
 export const context = buildContext();

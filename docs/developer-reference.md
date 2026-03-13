@@ -12,6 +12,10 @@ See the [Domain Development Guide: Handler Patterns](/docs/domain-development.md
 
 See [@flex/sdk](/libs/sdk/README.md) for full API reference on domain configuration, resources, integrations, headers and other configuration options.
 
+## Testing
+
+See [Domain Development Guide: Testing](/docs/domain-development.md#testing) for handler test setup, patterns and examples.
+
 ## Lambda Constructs
 
 Lambda constructs are managed by the SDK based on the `access` field specified in your domain configuration. The table below is a reference for platform engineers maintaining the construct implementations.

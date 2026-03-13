@@ -14,7 +14,7 @@ import { resolveHeaders } from "./headers";
 import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
 
-interface BuildContextOptions {
+export interface BuildContextOptions {
   access: RouteAccess;
   logger: Logger;
   bodySchema?: ZodType;
@@ -32,29 +32,35 @@ export function buildHandlerContext(
     logger,
     bodySchema,
     querySchema,
-    resources,
+    resources: resourcesProp,
     headers,
     integrations,
   }: BuildContextOptions,
 ): RouteStore {
-  const pathParams = extractPathParams(event);
+  const pathParams = extractPathParams(event.pathParameters);
   const body = extractRequestBody(event.body, bodySchema);
-  const queryParams = extractQueryParams(event, querySchema);
+  const queryParams = extractQueryParams(
+    event.queryStringParameters,
+    querySchema,
+  );
+  const resources = resourcesProp
+    ? extractResources(context, resourcesProp)
+    : undefined;
 
   return {
     logger,
-    ...(access !== "public" && { auth: extractAuth(event) }),
+    ...(access !== "public" && { auth: extractAuth(event.requestContext) }),
     ...(body !== undefined && { body }),
     ...(pathParams && { pathParams }),
     ...(queryParams && { queryParams }),
-    ...(resources && { resources: extractResources(context, resources) }),
+    ...(resources && { resources }),
     ...(headers && { headers: resolveHeaders(headers, event.headers) }),
     ...(integrations && { integrations }),
   };
 }
 
-function extractAuth(event: LambdaEvent): RouteAuth {
-  const { pairwiseId } = event.requestContext.authorizer;
+function extractAuth(requestContext: LambdaEvent["requestContext"]): RouteAuth {
+  const { pairwiseId } = requestContext.authorizer;
 
   if (!pairwiseId) throw new Error("Pairwise ID not found");
 
@@ -64,21 +70,26 @@ function extractAuth(event: LambdaEvent): RouteAuth {
 }
 
 function extractPathParams(
-  event: LambdaEvent,
+  pathParameters: LambdaEvent["pathParameters"],
 ): Readonly<Record<string, string>> | undefined {
-  if (!event.pathParameters) return;
+  if (!pathParameters || Object.keys(pathParameters).length === 0) {
+    return;
+  }
 
   return Object.fromEntries(
-    Object.entries(event.pathParameters).filter(
+    Object.entries(pathParameters).filter(
       (entry): entry is [string, string] => entry[1] !== undefined,
     ),
   );
 }
 
-function extractQueryParams(event: LambdaEvent, schema?: ZodType) {
+function extractQueryParams(
+  queryStringParameters: LambdaEvent["queryStringParameters"],
+  schema?: ZodType,
+) {
   if (!schema) return;
 
-  return schema.parse(event.queryStringParameters ?? {}) as Readonly<
+  return schema.parse(queryStringParameters ?? {}) as Readonly<
     Record<string, unknown>
   >;
 }

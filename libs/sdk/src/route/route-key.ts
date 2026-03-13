@@ -1,13 +1,13 @@
 import type { HttpMethod } from "../types";
 
-interface RouteKeySegments {
+export interface RouteKeySegments {
   method: HttpMethod;
   version: string;
   path: string;
   gateway: "public" | "private";
 }
 
-export function extractRouteKeySegments(routeKey: string) {
+export function extractRouteKeySegments(routeKey: string): RouteKeySegments {
   const [method, versionedPath] = routeKey.split(" ");
 
   if (!method || !versionedPath) {
@@ -16,14 +16,21 @@ export function extractRouteKeySegments(routeKey: string) {
     );
   }
 
-  const [, version, ...pathParts] = versionedPath.split("/");
+  const [, version, ...pathParts] =
+    stripRouteKeyGatewayIdentifier(versionedPath).split("/");
+
+  if (!version || pathParts.length === 0) {
+    throw new Error(
+      `Invalid route key. Expected "METHOD /version/path" or "METHOD /version/path [private]", but got "${routeKey}"`,
+    );
+  }
 
   return {
-    method,
+    method: method as HttpMethod,
     version,
     path: `/${pathParts.join("/")}`,
     gateway: routeKey.endsWith("[private]") ? "private" : "public",
-  } as RouteKeySegments;
+  };
 }
 
 export function stripRouteKeyGatewayIdentifier(route: string) {

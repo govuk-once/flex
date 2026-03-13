@@ -59,7 +59,7 @@ export function getRouteResources(
   resources: DomainConfig["resources"],
   resourceKeys?: readonly string[],
 ): ReadonlyMap<string, ResolvedResource> | undefined {
-  if (!resourceKeys?.length || !resources) return;
+  if (!resources || !resourceKeys?.length) return;
 
   return new Map(
     resourceKeys.map((key) => {

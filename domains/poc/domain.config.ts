@@ -1,58 +1,98 @@
-import { domain, header, integration, resource } from "@flex/sdk";
+import { domain } from "@flex/sdk";
+import {
+  createNotificationRequestSchema,
+  createNotificationResponseSchema,
+  createUserRequestSchema,
+  getNotificationResponseSchema,
+  getUserPreferencesResponseSchema,
+  updateNotificationRequestSchema,
+  updateNotificationResponseSchema,
+} from "@flex/udp-domain";
 
 const { config, route, routeContext } = domain({
   name: "poc",
   common: {
+    access: "isolated",
     function: { timeoutSeconds: 30 },
   },
   resources: {
-    encryptionKeyArn: resource.kms("/flex-secret/encryption-key"),
-    flexPrivateGatewayUrl: resource.ssm("/flex-core/private-gateway/url", {
+    flexPrivateGatewayUrl: {
+      type: "ssm",
+      path: "/flex-core/private-gateway/url",
       scope: "stage",
-    }),
-    flexUdpNotificationSecret: resource.secret(
-      "/flex-secret/udp/notification-hash-secret",
-    ),
+    },
+    encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
+    udpNotificationSecret: {
+      type: "secret",
+      path: "/flex-secret/udp/notification-hash-secret",
+    },
   },
   integrations: {
-    udpRead: integration.gateway("GET /v1/*", { target: "udp" }),
-    udpWrite: integration.gateway("POST /v1/*", { target: "udp" }),
-    udpPatchUser: integration.domain("PATCH /v1/user", { target: "udp" }),
+    udpWrite: { type: "gateway", target: "udp", route: "POST /v1/*" },
+    udpCreateUser: { type: "gateway", target: "udp", route: "POST /v1/user" },
+    udpGetNotifications: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/notifications",
+      response: getNotificationResponseSchema,
+    },
+    udpPostNotifications: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/notifications",
+      body: createNotificationRequestSchema,
+      response: createNotificationResponseSchema,
+    },
   },
   routes: {
-    v1: {
-      "/poc-user": {
+    v0: {
+      "/identity/:serviceName/:identifier": {
+        POST: {
+          public: {
+            name: "create-identity-link",
+            resources: ["flexPrivateGatewayUrl"],
+            integrations: ["udpWrite"],
+          },
+        },
+      },
+      "/users": {
         GET: {
           public: {
-            name: "get-user-profile",
+            name: "get-user-preferences",
             resources: [
-              "encryptionKeyArn",
               "flexPrivateGatewayUrl",
-              "flexUdpNotificationSecret",
+              "encryptionKeyArn",
+              "udpNotificationSecret",
             ],
-            integrations: ["udpRead", "udpWrite"],
+            integrations: [
+              "udpWrite",
+              "udpGetNotifications",
+              "udpPostNotifications",
+            ],
+            response: getUserPreferencesResponseSchema,
           },
         },
         POST: {
           private: {
-            name: "create-user-profile",
+            name: "create-user",
             resources: ["flexPrivateGatewayUrl"],
-            integrations: ["udpWrite"],
+            integrations: ["udpCreateUser"],
+            body: createUserRequestSchema,
           },
         },
+      },
+      "/users/notifications": {
         PATCH: {
           public: {
-            name: "update-user-preferences",
-            resources: ["flexPrivateGatewayUrl"],
-            integrations: ["udpPatchUser"],
-          },
-          private: {
-            name: "sync-user-preferences",
-            resources: ["flexPrivateGatewayUrl"],
-            integrations: ["udpWrite"],
-            headers: {
-              requestingServiceUserId: header("requesting-service-user-id"),
-            },
+            name: "update-user-notifications",
+            resources: [
+              "flexPrivateGatewayUrl",
+              "encryptionKeyArn",
+              "udpNotificationSecret",
+            ],
+            integrations: ["udpPostNotifications"],
+            body: updateNotificationRequestSchema,
+            response: updateNotificationResponseSchema,
           },
         },
       },
@@ -60,10 +100,11 @@ const { config, route, routeContext } = domain({
   },
 });
 
-export const getUserContext = routeContext<"GET /v1/poc-user">;
-export const createUserContext = routeContext<"POST /v1/poc-user [private]">;
-export const patchUserContext = routeContext<"PATCH /v1/poc-user">;
-export const patchUserPrivateContext =
-  routeContext<"PATCH /v1/poc-user [private]">;
+export const createIdentityContext =
+  routeContext<"POST /v0/identity/:serviceName/:identifier">;
+export const getUsersContext = routeContext<"GET /v0/users">;
+export const createUserContext = routeContext<"POST /v0/users [private]">;
+export const updateUserNotificationsContext =
+  routeContext<"PATCH /v0/users/notifications">;
 
 export { config, route };
