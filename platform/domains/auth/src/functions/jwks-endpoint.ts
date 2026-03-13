@@ -1,4 +1,5 @@
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import { logger } from "@flex/logging";
 import type { APIGatewayProxyResultV2 } from "aws-lambda";
 import { z } from "zod";
 
@@ -51,7 +52,7 @@ export const handler = async (): Promise<APIGatewayProxyResultV2> => {
       body: JSON.stringify(jwks),
     };
   } catch (error) {
-    console.error("Error fetching or validating JWKS:", error);
+    logger.error("Error fetching or validating JWKS", { error });
 
     return {
       statusCode: 500,

@@ -131,13 +131,27 @@ This middleware is applied automatically by `createLambdaHandler` from `@flex/ha
 
 ## Sanitization
 
-All logs pass through the `FlexLogFormatter` which sanitizes sensitive data:
+All logs pass through the `FlexLogFormatter` which sanitizes sensitive data. See [Log Redaction and Filtering](/docs/log-redaction.md) for the full architecture.
 
-- **Key patterns** — keys matching `password`, `secret`, `token`, `apikey`, `authorization`, `credential`, `private_key`, `access_key`, `client_secret`, `signing` are fully redacted
-- **Value patterns** — JWT tokens (values starting with `eyJ...`) are fully redacted
+### Secret patterns (always redacted)
+
+Keys matching `password`, `secret`, `token`, `apikey`, `authorization`, `credential`, `private_key`, `access_key`, `client_secret`, `signing` are fully redacted. JWT tokens (values starting with `eyJ...`) are redacted by value.
+
+### PII patterns (redacted by default)
+
+Keys matching `email`, `phone`, `mobile`, `forename`, `surname`, `first_name`, `last_name`, `full_name`, `date_of_birth`, `dob`, `nino`, `national_insurance`, `postcode`, `zip_code`, `sort_code`, `account_number`, `ip_address` are fully redacted.
+
+Values matching email addresses, UK phone numbers, National Insurance numbers, UK postcodes, and IPv4 addresses are redacted by pattern.
+
+### Other mechanisms
+
 - **Runtime secrets** — values registered via `addSecretValue` are replaced inline
 - **Nested objects** — sanitization recurses into nested object structures
 - **Arrays** — sanitization recurses into arrays, including nested objects within arrays
+
+### PII debug toggle
+
+Set `FLEX_LOG_PII_DEBUG=true` to bypass PII redaction in non-production environments. Secret patterns are always redacted regardless of this toggle. This toggle is hard-blocked in production via a runtime guard and is never injected by CDK for production deployments.
 
 ---
 
@@ -155,14 +169,16 @@ This provides `logger` with all methods as `vi.fn()` spies, plus stubs for `setL
 
 ## Environment variables
 
-| Variable                 | Description                           | Default |
-| ------------------------ | ------------------------------------- | ------- |
-| `POWERTOOLS_LOG_LEVEL`   | Primary log level override            | —       |
-| `LOG_LEVEL`              | Fallback log level override           | —       |
-| `FLEX_LOG_LEVEL_FLOOR`   | Least verbose allowed level           | `INFO`  |
-| `FLEX_LOG_LEVEL_CEILING` | Most verbose allowed level            | `TRACE` |
-| `FLEX_ORG`               | Organisation name added to log output | —       |
-| `FLEX_TEAM`              | Team name added to log output         | —       |
+| Variable                 | Description                                           | Default |
+| ------------------------ | ----------------------------------------------------- | ------- |
+| `POWERTOOLS_LOG_LEVEL`   | Primary log level override                            | —       |
+| `LOG_LEVEL`              | Fallback log level override                           | —       |
+| `FLEX_LOG_LEVEL_FLOOR`   | Least verbose allowed level                           | `INFO`  |
+| `FLEX_LOG_LEVEL_CEILING` | Most verbose allowed level                            | `TRACE` |
+| `FLEX_ENVIRONMENT`       | Deployment environment (`production`, `staging`, ...) | —       |
+| `FLEX_LOG_PII_DEBUG`     | Bypass PII redaction (non-production only)            | `false` |
+| `FLEX_ORG`               | Organisation name added to log output                 | —       |
+| `FLEX_TEAM`              | Team name added to log output                         | —       |
 
 ---
 
