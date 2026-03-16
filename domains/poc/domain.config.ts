@@ -10,15 +10,6 @@ import {
 } from "@flex/udp-domain";
 import { z } from "zod";
 
-const getUserPreferencesWithFlagsResponseSchema =
-  getUserPreferencesResponseSchema.extend({
-    newUserProfileEnabled: z.boolean(),
-  });
-
-export type GetUserPreferencesWithFlagsResponse = z.infer<
-  typeof getUserPreferencesWithFlagsResponseSchema
->;
-
 const { config, route, routeContext } = domain({
   name: "poc",
   common: {
@@ -91,7 +82,7 @@ const { config, route, routeContext } = domain({
               "udpPostNotifications",
             ],
             featureFlags: ["newUserProfileEnabled"],
-            response: getUserPreferencesWithFlagsResponseSchema,
+            response: getUserPreferencesResponseSchema,
           },
         },
         POST: {
