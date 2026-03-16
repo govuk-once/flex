@@ -4,6 +4,9 @@ import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
 
+const notificationsEndpoint = "/gateways/udp/v1/notifications";
+const usersEndpoint = "/gateways/udp/v1/users";
+
 vi.mock("node:crypto", () => ({
   default: {
     createHmac: vi.fn(() => ({
@@ -21,10 +24,13 @@ describe("GET /v0/users", () => {
 
   it("returns 200 with aggregated profile when the user profile exists", async ({
     context,
+    env,
     privateGatewayEventWithAuthorizer,
   }) => {
+    env.set({ STAGE: "production" });
+
     gateway
-      .get("/gateways/udp/v1/notifications")
+      .get(notificationsEndpoint)
       .matchHeader("requesting-service-user-id", pairwiseId)
       .reply(200, {
         consentStatus: "accepted",
@@ -52,21 +58,25 @@ describe("GET /v0/users", () => {
             notificationId: "existing-notification-id",
           },
         },
+        newUserProfileEnabled: false,
       }),
     );
   });
 
   it("returns 200 and creates user and notifications when the user profile does not exist", async ({
     context,
+    env,
     privateGatewayEventWithAuthorizer,
   }) => {
+    env.set({ STAGE: "production" });
+
     gateway
-      .get("/gateways/udp/v1/notifications")
+      .get(notificationsEndpoint)
       .matchHeader("requesting-service-user-id", pairwiseId)
       .reply(404)
-      .post("/gateways/udp/v1/users")
+      .post(usersEndpoint)
       .reply(204)
-      .post("/gateways/udp/v1/notifications")
+      .post(notificationsEndpoint)
       .matchHeader("requesting-service-user-id", pairwiseId)
       .reply(200, {
         consentStatus: "unknown",
@@ -94,6 +104,7 @@ describe("GET /v0/users", () => {
             notificationId: "new-notification-id",
           },
         },
+        newUserProfileEnabled: false,
       }),
     );
   });
@@ -102,7 +113,7 @@ describe("GET /v0/users", () => {
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    gateway.get("/gateways/udp/v1/notifications").reply(500);
+    gateway.get(notificationsEndpoint).reply(500);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
@@ -119,9 +130,9 @@ describe("GET /v0/users", () => {
     privateGatewayEventWithAuthorizer,
   }) => {
     gateway
-      .get("/gateways/udp/v1/notifications")
+      .get(notificationsEndpoint)
       .reply(404)
-      .post("/gateways/udp/v1/users")
+      .post(usersEndpoint)
       .reply(500);
 
     const result = await handler(
@@ -139,11 +150,11 @@ describe("GET /v0/users", () => {
     privateGatewayEventWithAuthorizer,
   }) => {
     gateway
-      .get("/gateways/udp/v1/notifications")
+      .get(notificationsEndpoint)
       .reply(404)
-      .post("/gateways/udp/v1/users")
+      .post(usersEndpoint)
       .reply(204)
-      .post("/gateways/udp/v1/notifications")
+      .post(notificationsEndpoint)
       .reply(500);
 
     const result = await handler(
@@ -154,5 +165,94 @@ describe("GET /v0/users", () => {
     );
 
     expect(result.statusCode).toBe(500);
+  });
+
+  describe("feature flags", () => {
+    it.for([
+      { stage: "development", expected: true },
+      { stage: "staging", expected: true },
+      { stage: "production", expected: false },
+    ])(
+      "returns newUserProfileEnabled=$expected when STAGE=$stage",
+      async ({ stage, expected }, { context, env, privateGatewayEventWithAuthorizer }) => {
+        env.set({ STAGE: stage });
+
+        gateway
+          .get(notificationsEndpoint)
+          .matchHeader("requesting-service-user-id", pairwiseId)
+          .reply(200, {
+            consentStatus: "accepted",
+            notificationId: "existing-notification-id",
+          });
+
+        const result = await handler(
+          privateGatewayEventWithAuthorizer.get(endpoint),
+          context
+            .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
+            .create(),
+        );
+
+        expect(result.statusCode).toBe(200);
+        expect(JSON.parse(result.body)).toMatchObject({
+          newUserProfileEnabled: expected,
+        });
+      },
+    );
+
+    it("treats a personal stage as development (newUserProfileEnabled=true)", async ({
+      context,
+      env,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      env.set({ STAGE: "ljones" });
+
+      gateway
+        .get(notificationsEndpoint)
+        .matchHeader("requesting-service-user-id", pairwiseId)
+        .reply(200, {
+          consentStatus: "accepted",
+          notificationId: "existing-notification-id",
+        });
+
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.get(endpoint),
+        context
+          .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
+          .create(),
+      );
+
+      expect(result.statusCode).toBe(200);
+      expect(JSON.parse(result.body)).toMatchObject({
+        newUserProfileEnabled: true,
+      });
+    });
+
+    it("respects a runtime process.env override over the environment-specific value", async ({
+      context,
+      env,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      env.set({ STAGE: "staging", newUserProfileEnabled: "false" });
+
+      gateway
+        .get(notificationsEndpoint)
+        .matchHeader("requesting-service-user-id", pairwiseId)
+        .reply(200, {
+          consentStatus: "accepted",
+          notificationId: "existing-notification-id",
+        });
+
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.get(endpoint),
+        context
+          .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
+          .create(),
+      );
+
+      expect(result.statusCode).toBe(200);
+      expect(JSON.parse(result.body)).toMatchObject({
+        newUserProfileEnabled: false,
+      });
+    });
   });
 });

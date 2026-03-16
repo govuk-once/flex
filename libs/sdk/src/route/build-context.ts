@@ -11,7 +11,7 @@ import type {
 } from "../types";
 import { RequestBodyParseError } from "../utils/errors";
 import { resolveHeaders } from "./headers";
-import type { ResolvedResource } from "./resolve-config";
+import type { ResolvedFeatureFlag, ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
 
 export interface BuildContextOptions {
@@ -20,6 +20,7 @@ export interface BuildContextOptions {
   bodySchema?: ZodType;
   querySchema?: ZodType;
   resources?: ReadonlyMap<string, ResolvedResource>;
+  featureFlags?: ReadonlyMap<string, ResolvedFeatureFlag>;
   headers?: Readonly<Record<string, HeaderConfig>>;
   integrations?: DomainIntegrations;
 }
@@ -33,6 +34,7 @@ export function buildHandlerContext(
     bodySchema,
     querySchema,
     resources: resourcesProp,
+    featureFlags: featureFlagsProp,
     headers,
     integrations,
   }: BuildContextOptions,
@@ -46,6 +48,9 @@ export function buildHandlerContext(
   const resources = resourcesProp
     ? extractResources(context, resourcesProp)
     : undefined;
+  const featureFlags = featureFlagsProp
+    ? extractFeatureFlags(featureFlagsProp)
+    : undefined;
 
   return {
     logger,
@@ -54,6 +59,7 @@ export function buildHandlerContext(
     ...(pathParams && { pathParams }),
     ...(queryParams && { queryParams }),
     ...(resources && { resources }),
+    ...(featureFlags && { featureFlags }),
     ...(headers && { headers: resolveHeaders(headers, event.headers) }),
     ...(integrations && { integrations }),
   };
@@ -104,11 +110,21 @@ function extractRequestBody(body: LambdaEvent["body"], schema?: ZodType) {
   }
 }
 
+function extractFeatureFlags(
+  featureFlags: ReadonlyMap<string, ResolvedFeatureFlag>,
+) {
+  if (!featureFlags.size) return;
+
+  return Object.fromEntries(
+    Array.from(featureFlags).map(([key, { value }]) => [key, value]),
+  );
+}
+
 function extractResources(
   context: LambdaContext,
   resources: ReadonlyMap<string, ResolvedResource>,
 ) {
-  if (resources.size === 0) return;
+  if (!resources.size) return;
 
   return Object.fromEntries(
     Array.from(resources).map(([key, { type, value }]) => {

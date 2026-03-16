@@ -5,6 +5,7 @@ import type {
   DomainConfig,
   DomainResult,
   HttpMethod,
+  InferFeatureFlagKeys,
   InferIntegrationKeys,
   InferResourceKeys,
 } from "./types";
@@ -16,7 +17,8 @@ import type {
 export function domain<
   const Config extends DomainConfig<
     InferResourceKeys<Config>,
-    InferIntegrationKeys<Config>
+    InferIntegrationKeys<Config>,
+    InferFeatureFlagKeys<Config>
   >,
 >(config: Config): DomainResult<Config> {
   return {

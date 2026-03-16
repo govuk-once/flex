@@ -336,4 +336,37 @@ describe("buildHandlerContext", () => {
       expect(store.integrations).toBeUndefined();
     });
   });
+
+  describe("Feature Flags", () => {
+    it("includes feature flags in the context when the route references domain feature flags", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const featureFlags = new Map([
+        ["flagA", { value: true }],
+        ["flagB", { value: false }],
+      ]);
+
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        { ...contextOptions, featureFlags },
+      );
+
+      expect(store.featureFlags).toStrictEqual({ flagA: true, flagB: false });
+    });
+
+    it("omits feature flags from the context when the route does not reference any", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        contextOptions,
+      );
+
+      expect(store.featureFlags).toBeUndefined();
+    });
+  });
 });

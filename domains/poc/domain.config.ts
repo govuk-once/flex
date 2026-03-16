@@ -8,6 +8,16 @@ import {
   updateNotificationRequestSchema,
   updateNotificationResponseSchema,
 } from "@flex/udp-domain";
+import { z } from "zod";
+
+const getUserPreferencesWithFlagsResponseSchema =
+  getUserPreferencesResponseSchema.extend({
+    newUserProfileEnabled: z.boolean(),
+  });
+
+export type GetUserPreferencesWithFlagsResponse = z.infer<
+  typeof getUserPreferencesWithFlagsResponseSchema
+>;
 
 const { config, route, routeContext } = domain({
   name: "poc",
@@ -25,6 +35,17 @@ const { config, route, routeContext } = domain({
     udpNotificationSecret: {
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
+    },
+  },
+  featureFlags: {
+    newUserProfileEnabled: {
+      description: "Enable the new user profile experience",
+      default: false,
+      environments: {
+        development: true,
+        staging: true,
+        production: false,
+      },
     },
   },
   integrations: {
@@ -69,7 +90,8 @@ const { config, route, routeContext } = domain({
               "udpGetNotifications",
               "udpPostNotifications",
             ],
-            response: getUserPreferencesResponseSchema,
+            featureFlags: ["newUserProfileEnabled"],
+            response: getUserPreferencesWithFlagsResponseSchema,
           },
         },
         POST: {

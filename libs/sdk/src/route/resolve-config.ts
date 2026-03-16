@@ -2,8 +2,10 @@ import type { ZodType } from "zod";
 
 import type {
   DomainConfig,
+  DomainFeatureFlag,
   DomainIntegrations,
   DomainResource,
+  FlexEnvironment,
   HeaderConfig,
   HttpMethod,
   LogLevel,
@@ -26,6 +28,7 @@ interface ResolvedRouteConfig {
   readonly response?: ZodType;
   readonly resources?: readonly string[];
   readonly integrations?: readonly string[];
+  readonly featureFlags?: readonly string[];
   readonly headers?: Readonly<Record<string, HeaderConfig>>;
 }
 
@@ -80,6 +83,66 @@ export function getRouteResources(
       }
 
       return [key, { type: resource.type, value }] as const;
+    }),
+  );
+}
+
+export interface ResolvedFeatureFlag {
+  value: boolean;
+}
+
+const NAMED_ENVIRONMENTS: ReadonlySet<string> = new Set([
+  "development",
+  "staging",
+  "production",
+]);
+
+function resolveCurrentEnvironment(): FlexEnvironment {
+  const stage = process.env.STAGE;
+  if (stage && NAMED_ENVIRONMENTS.has(stage)) {
+    return stage as FlexEnvironment;
+  }
+  return "development";
+}
+
+/**
+ * Resolves feature flag values.
+ *
+ * Resolution order (first defined wins):
+ * 1. `process.env[key]`: explicit runtime override ("true" / "false")
+ * 2. `environments[currentEnvironment]`: environment-specific value
+ * 3. `default`: global fallback
+ * 4. `false`
+ *
+ * The current environment is read from `process.env.STAGE`. Any stage that is
+ * not one of "development", "staging", or "production" (e.g. a personal stage)
+ * is treated as "development".
+ */
+export function getRouteFeatureFlags(
+  featureFlags: DomainConfig["featureFlags"],
+  flagKeys?: readonly string[],
+): ReadonlyMap<string, ResolvedFeatureFlag> | undefined {
+  if (!featureFlags || !flagKeys?.length) return;
+
+  const currentEnvironment = resolveCurrentEnvironment();
+
+  return new Map(
+    flagKeys.map((key) => {
+      const flag = featureFlags[key] as DomainFeatureFlag | undefined;
+
+      if (!flag) {
+        throw new Error(
+          `"${key}" referenced in "featureFlags" but was not defined in domain featureFlags`,
+        );
+      }
+
+      const envOverride = process.env[key];
+      const value =
+        envOverride !== undefined
+          ? envOverride === "true"
+          : (flag.environments?.[currentEnvironment] ?? flag.default ?? false);
+
+      return [key, { value }] as const;
     }),
   );
 }
