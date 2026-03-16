@@ -18,7 +18,7 @@ const { config, route, routeContext } = domain({
   resources: {
     flexPrivateGatewayUrl: {
       type: "ssm",
-      path: "/flex-core/private-gateway/url",
+      path: "/flex/apigw/private/gateway-url",
       scope: "stage",
     },
     encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },

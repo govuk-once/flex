@@ -1,6 +1,5 @@
 import { randomBytes } from "node:crypto";
 
-import { getEnvConfig } from "@platform/gov-uk-once";
 import { Duration, Stack } from "aws-cdk-lib";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
@@ -31,6 +30,7 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 
+import { getEnvConfig } from "../../base/env";
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
@@ -78,49 +78,42 @@ export class FlexCloudfront extends Construct {
       policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
     });
 
+    const previousSsmGet = {
+      service: "SSM",
+      action: "getParameter",
+      parameters: { Name: paramName },
+      physicalResourceId: PhysicalResourceId.of("get-previous-secret"),
+    };
     // Safe to read as it will have been created above if it did not exist
     const previousSecret = new AwsCustomResource(this, "GetPreviousSecret", {
-      onCreate: {
+      onCreate: previousSsmGet,
+      onUpdate: previousSsmGet,
+      // We share the parameter across these 3 calls so we only delete in one place
+      onDelete: {
         service: "SSM",
-        action: "getParameter",
+        action: "deleteParameter",
         parameters: { Name: paramName },
-        physicalResourceId: PhysicalResourceId.of("get-previous-secret"),
-      },
-      onUpdate: {
-        service: "SSM",
-        action: "getParameter",
-        parameters: { Name: paramName },
-        physicalResourceId: PhysicalResourceId.of("get-previous-secret"),
       },
       policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
     });
 
     previousSecret.node.addDependency(seedSecretResource);
 
+    const currentSsmPut = {
+      service: "SSM",
+      action: "putParameter",
+      parameters: {
+        Name: paramName,
+        Value: newSecret,
+        Type: "String",
+        Overwrite: true,
+      },
+      physicalResourceId: PhysicalResourceId.of("store-new-secret"),
+    };
     // Store the new secret for the next deployment
     const setCurrentSecret = new AwsCustomResource(this, "StoreNewSecret", {
-      onCreate: {
-        service: "SSM",
-        action: "putParameter",
-        parameters: {
-          Name: paramName,
-          Value: newSecret,
-          Type: "String",
-          Overwrite: true,
-        },
-        physicalResourceId: PhysicalResourceId.of("store-new-secret"),
-      },
-      onUpdate: {
-        service: "SSM",
-        action: "putParameter",
-        parameters: {
-          Name: paramName,
-          Value: newSecret,
-          Type: "String",
-          Overwrite: true,
-        },
-        physicalResourceId: PhysicalResourceId.of("store-new-secret"),
-      },
+      onCreate: currentSsmPut,
+      onUpdate: currentSsmPut,
       policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
     });
 

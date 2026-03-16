@@ -115,26 +115,6 @@ export function getFunctionAccess(routeAccess?: string, commonAccess?: string) {
   return (routeAccess ?? commonAccess ?? "isolated") as RouteAccess;
 }
 
-interface ApiGatewayPathOptions {
-  domain: string;
-  gateway: "public" | "private";
-  version: string;
-  path: string;
-}
-
-export function toApiGatewayPath({
-  domain,
-  gateway,
-  path,
-  version,
-}: ApiGatewayPathOptions) {
-  const resolvedPathWithParams = path.replace(/:(\w+)/g, "{$1}");
-
-  return gateway === "private"
-    ? `${domain}/${version}${resolvedPathWithParams}`
-    : `app/${version}${resolvedPathWithParams}`;
-}
-
 export function toPascalCase(value: string) {
   return value.replace(/(^|-)(\w)/g, (_, __, character: string) =>
     character.toUpperCase(),

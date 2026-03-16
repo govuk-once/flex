@@ -1,18 +1,7 @@
 import type { DomainResource } from "@flex/sdk";
-import type {
-  FlexKmsKeyAlias,
-  FlexParam,
-  FlexSecret,
-} from "@platform/core/outputs";
-import {
-  importFlexKmsKeyAlias,
-  importFlexParameter,
-  importFlexSecret,
-} from "@platform/core/outputs";
-import type { IResource } from "aws-cdk-lib/aws-apigateway";
-import type { IKey } from "aws-cdk-lib/aws-kms";
+import { type IKey, Key } from "aws-cdk-lib/aws-kms";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import type { ISecret } from "aws-cdk-lib/aws-secretsmanager";
+import { type ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -28,6 +17,35 @@ export type ImportedResource =
 
 export type ImportedResources = ReadonlyMap<string, ImportedResource>;
 
+/**
+ * These importers directly reference AWS resources using CDK lookup methods
+ * and bypass the SsmApp dependency graph. They are intentionally used for
+ * resources that are managed outside the Flex stack lifecycle (e.g. secrets
+ * and parameters written by flex-params or UDP). Do not use these for
+ * resources owned by another Flex stack - use BaseStack.import() instead.
+ */
+function importFlexKmsKeyAlias(scope: Construct, kmsKeyAlias: string) {
+  return Key.fromLookup(scope, `FlexKmsKeyAlias${createHash(kmsKeyAlias)}`, {
+    aliasName: `alias${getParamName(kmsKeyAlias)}`,
+  });
+}
+
+function importFlexSecret(scope: Construct, secret: string) {
+  return Secret.fromSecretNameV2(
+    scope,
+    `FlexSecret${createHash(secret)}`,
+    getParamName(secret),
+  );
+}
+
+function importFlexParameter(scope: Construct, param: string) {
+  return StringParameter.fromStringParameterName(
+    scope,
+    `FlexParam${createHash(param)}`,
+    getParamName(param),
+  );
+}
+
 function importResource(
   scope: Construct,
   { type, path, scope: resourceScope }: DomainResource,
@@ -38,14 +56,14 @@ function importResource(
     case "kms":
       return {
         type: "kms",
-        construct: importFlexKmsKeyAlias(scope, path as FlexKmsKeyAlias),
+        construct: importFlexKmsKeyAlias(scope, path),
       };
     case "secret":
       return {
         type: "secret",
         construct: importFlexSecret(
           scope,
-          (isStageScoped ? getParamName(path) : path) as FlexSecret,
+          isStageScoped ? getParamName(path) : path,
         ),
       };
     case "ssm":
@@ -58,7 +76,7 @@ function importResource(
               `EphemeralParam${createHash(path)}`,
               getParamName(path),
             )
-          : importFlexParameter(scope, path as FlexParam),
+          : importFlexParameter(scope, path),
       };
     default:
       throw new Error(`Unsupported resource type: ${type}`);
@@ -127,18 +145,4 @@ export function grantRouteResources(
         throw new Error("Unsupported resource type");
     }
   });
-}
-
-export function resolveApiResource(target: IResource, path: string) {
-  const parts = path.split("/").filter(Boolean);
-
-  let current = target;
-
-  for (const part of parts) {
-    current =
-      (current.node.tryFindChild(part) as IResource | undefined) ??
-      current.addResource(part);
-  }
-
-  return current;
 }
