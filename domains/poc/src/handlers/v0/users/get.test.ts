@@ -58,7 +58,7 @@ describe("GET /v0/users", () => {
             notificationId: "existing-notification-id",
           },
         },
-        newUserProfileEnabled: false,
+        newUserProfileEnabled: true,
       }),
     );
   });
@@ -104,7 +104,7 @@ describe("GET /v0/users", () => {
             notificationId: "new-notification-id",
           },
         },
-        newUserProfileEnabled: false,
+        newUserProfileEnabled: true,
       }),
     );
   });
@@ -178,7 +178,11 @@ describe("GET /v0/users", () => {
         { stage, expected },
         { context, env, privateGatewayEventWithAuthorizer },
       ) => {
+        vi.resetModules();
+
         env.set({ STAGE: stage });
+
+        const handler = (await import("./get")).handler;
 
         gateway
           .get(notificationsEndpoint)
@@ -235,7 +239,11 @@ describe("GET /v0/users", () => {
       env,
       privateGatewayEventWithAuthorizer,
     }) => {
+      vi.resetModules();
+
       env.set({ STAGE: "staging", newUserProfileEnabled: "false" });
+
+      const handler = (await import("./get")).handler;
 
       gateway
         .get(notificationsEndpoint)

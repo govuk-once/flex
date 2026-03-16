@@ -44,6 +44,7 @@ vi.mock("./resolve-config", () => ({
   getRouteLogLevel: vi.fn(),
   getRouteResources: vi.fn(),
   getRouteIntegrations: vi.fn(),
+  getRouteFeatureFlags: vi.fn(),
 }));
 vi.mock("./response", () => ({
   toApiGatewayResponse: vi.fn(),
