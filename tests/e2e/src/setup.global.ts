@@ -1,7 +1,6 @@
 import {
   BaseTokenGenerator,
   e2eEnvSchema,
-  flexPrivateGatewayStackOutputsSchema,
   flexStackOutputsSchema,
   getStubTokenGenerator,
   getTokenGenerator,
@@ -39,16 +38,12 @@ export default async function setup({
   } else {
     stage = envStage ?? sanitiseStageName(process.env.USER) ?? "development";
 
-    const [platformOutputs, gatewayOutputs] = await Promise.all([
-      getStackOutputs(`${stage}-FlexPlatform`),
-      getStackOutputs(`${stage}-FlexPrivateGateway`),
-    ]);
+    const platformOutputs = await getStackOutputs(`${stage}-FlexPlatform`);
 
-    apiUrl = flexStackOutputsSchema.parse(platformOutputs).FlexApiUrl;
-    privateGatewayUrl =
-      flexPrivateGatewayStackOutputsSchema.parse(
-        gatewayOutputs,
-      ).PrivateGatewayUrl;
+    const platform = flexStackOutputsSchema.parse(platformOutputs);
+
+    apiUrl = platform.FlexApiUrl;
+    privateGatewayUrl = platform.PrivateGatewayUrl;
   }
 
   const jwtClient = await getJwtClient(stage);

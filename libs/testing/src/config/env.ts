@@ -27,14 +27,7 @@ export type E2EEnv = z.output<typeof e2eEnvSchema>;
 
 export const flexStackOutputsSchema = z.object({
   FlexApiUrl: z.url().describe("Flex Platform API URL"),
-});
-
-export type FlexStackOutputs = z.output<typeof flexStackOutputsSchema>;
-
-export const flexPrivateGatewayStackOutputsSchema = z.object({
   PrivateGatewayUrl: z.url().describe("Private API Gateway URL"),
 });
 
-export type FlexPrivateGatewayStackOutputs = z.output<
-  typeof flexPrivateGatewayStackOutputsSchema
->;
+export type FlexStackOutputs = z.output<typeof flexStackOutputsSchema>;

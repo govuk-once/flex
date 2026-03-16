@@ -3,12 +3,11 @@ import { describe, expect, inject } from "vitest";
 
 describe("Domain: Hello v1", () => {
   const { JWT } = inject("e2eEnv");
-  const version = "/v1";
 
   it.for([
-    { method: "GET", endpoint: `${version}/hello-isolated` },
-    { method: "GET", endpoint: `${version}/hello-private` },
-    { method: "GET", endpoint: `${version}/hello-public` },
+    { method: "GET", endpoint: `hello/v1/hello-isolated` },
+    { method: "GET", endpoint: `hello/v1/hello-private` },
+    { method: "GET", endpoint: `hello/v1/hello-public` },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when unauthenticated",
     async ({ endpoint }, { cloudfront }) => {
@@ -25,10 +24,10 @@ describe("Domain: Hello v1", () => {
   );
 
   it.for([
-    { method: "GET", endpoint: `${version}/hello-isolated` },
-    { method: "GET", endpoint: `${version}/hello-private` },
-    { method: "GET", endpoint: `${version}/hello-public` },
-    { method: "GET", endpoint: `${version}/hello-call-internal` },
+    { method: "GET", endpoint: `hello/v1/hello-isolated` },
+    { method: "GET", endpoint: `hello/v1/hello-private` },
+    { method: "GET", endpoint: `hello/v1/hello-public` },
+    { method: "GET", endpoint: `hello/v1/hello-call-internal` },
   ] as const)(
     "$method $endpoint rejects request at CloudFront when Bearer token is empty",
     async ({ endpoint }, { cloudfront }) => {
@@ -49,17 +48,17 @@ describe("Domain: Hello v1", () => {
   it.for([
     {
       method: "GET",
-      endpoint: `${version}/hello-isolated`,
+      endpoint: `hello/v1/hello-isolated`,
       expectedBody: { message: "Hello isolated world!" },
     },
     {
       method: "GET",
-      endpoint: `${version}/hello-private`,
+      endpoint: `hello/v1/hello-private`,
       expectedBody: { message: "Hello private world!" },
     },
     {
       method: "GET",
-      endpoint: `${version}/hello-public`,
+      endpoint: `hello/v1/hello-public`,
       expectedBody: { message: "Hello public world!" },
     },
   ] as const)(

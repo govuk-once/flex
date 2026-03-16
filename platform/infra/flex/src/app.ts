@@ -3,6 +3,7 @@ import { Environment, getEnvConfig } from "./base/env";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCoreStack } from "./stacks/core/stack";
+import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexLegacyDomainStack } from "./stacks/legacy-domain";
 import { FlexPlatformStack } from "./stacks/platform";
@@ -64,6 +65,7 @@ new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   subdomainName,
 });
 
+const deployedDomains: string[] = [];
 const legacyDomainConfigs = await getLegacyDomainConfigs();
 const domainConfigs = await getDomainConfigs();
 const targetDomain = process.env.domain;
@@ -72,15 +74,21 @@ for (const { publicDomain, privateDomain } of legacyDomainConfigs) {
   const domainName = publicDomain.domain;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexLegacyDomainStack(app, `${stage}-legacy-${domainName}`, {
+  const stackName = `${stage}-legacy-${domainName}`;
+  new FlexLegacyDomainStack(app, stackName, {
     publicDomain,
     privateDomain,
   });
+  deployedDomains.push(stackName);
 }
 
 for (const domainConfig of domainConfigs) {
   const domainName = domainConfig.name;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexDomainStack(app, `${stage}-${domainName}`, domainConfig);
+  const stackName = `${stage}-${domainName}`;
+  new FlexDomainStack(app, stackName, domainConfig);
+  deployedDomains.push(stackName);
 }
+
+new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, deployedDomains);

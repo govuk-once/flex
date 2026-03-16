@@ -1,12 +1,12 @@
 import { it } from "@flex/testing/e2e";
-import { describe, expect, inject } from "vitest";
+import { assert, describe, expect, inject } from "vitest";
 
 describe("UDP domain", () => {
   const { JWT } = inject("e2eEnv");
-  const domainVersion = "v1";
-  const endpoint = `/${domainVersion}/users`;
 
   describe("user", () => {
+    const endpoint = `udp/v1/users`;
+
     describe("when I create a user", () => {
       it("returns a 200 and notification ID", async ({ cloudfront }) => {
         const response = await cloudfront.client.get(endpoint, {
@@ -33,15 +33,18 @@ describe("UDP domain", () => {
 
         const [response1, response2] = await Promise.all([request, request]);
 
-        expect(response1.body?.notificationId).toBe(
-          response2.body?.notificationId,
+        assert(response1.body != null, "response should not be null");
+        assert(response2.body != null, "response should not be null");
+
+        expect(response1.body.notificationId).toBe(
+          response2.body.notificationId,
         );
       });
     });
   });
 
   describe("notifications", () => {
-    const notificationsEndpoint = `/${domainVersion}/users/notifications`;
+    const notificationsEndpoint = `udp/v1/users/notifications`;
 
     describe("when I update my notifications preferences", () => {
       it("returns user preferences updated successfully", async ({

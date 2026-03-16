@@ -69,7 +69,7 @@ export class FlexLegacyDomainStack extends BaseStack {
   #getPublicRestApi() {
     const restApiId = this.import(STAGE_KEYS.ApigwPublicRestId);
     const appResourceId = this.import(STAGE_KEYS.ApigwPublicAppRoot);
-    return this.#getRestApi("Public", restApiId, appResourceId, "/");
+    return this.#getRestApi("Public", restApiId, appResourceId, "/app");
   }
 
   #getPrivateRestApi() {

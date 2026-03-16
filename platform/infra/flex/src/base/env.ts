@@ -1,11 +1,4 @@
-function sanitiseStageName(value?: string) {
-  if (!value) return undefined;
-
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "")
-    .slice(0, 12);
-}
+import { sanitiseStageName } from "@flex/utils";
 
 export enum Environment {
   DEVELOPMENT = "development",
