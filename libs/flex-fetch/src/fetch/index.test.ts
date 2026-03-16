@@ -189,14 +189,11 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow(err);
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledTimes(1);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledWith("flex-fetch failed", {
       url: "https://example.com/data",
       error: err,
     });
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.debug).toBeCalledWith("options", expect.any(Object));
   });
 
@@ -211,9 +208,7 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledTimes(1);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.error).toBeCalledWith(
       "flex-fetch failed",
       expect.objectContaining({
@@ -234,7 +229,6 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(logger.debug).toBeCalledWith(
       "options",
       expect.objectContaining({

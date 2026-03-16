@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import html from "@html-eslint/eslint-plugin";
+import vitest from "@vitest/eslint-plugin";
 import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import reactPlugin from "eslint-plugin-react";
@@ -16,6 +17,7 @@ const flattenedTsConfigRules = tseslint.configs.strictTypeChecked.reduce(
   {},
 );
 
+// @ts-expect-error
 const findUpFileDir = (f) => findUpSync(f)?.slice(0, -f.length);
 const gitignoreFiles = readGitignoreFiles({ cwd: findUpFileDir(".gitignore") });
 
@@ -63,6 +65,7 @@ export const config = [
       "@typescript-eslint": tseslint.plugin,
       "simple-import-sort": simpleImportSort,
     },
+    // @ts-expect-error return type for flattenedTsConfigRules is valid can ignore
     rules: {
       ...js.configs.recommended.rules,
       ...flattenedTsConfigRules,
@@ -110,6 +113,7 @@ export const config = [
     files: ["**/*.json"],
     language: "json/json",
     plugins: {
+      // @ts-expect-error issue within "@eslint/json" not our own
       json,
     },
     rules: {
@@ -124,6 +128,18 @@ export const config = [
     language: "markdown/commonmark",
     rules: {
       "markdown/no-html": "error",
+    },
+  },
+  {
+    files: ["tests/**", "**/*.test.ts"],
+    plugins: { vitest },
+    rules: {
+      ...vitest.configs.recommended.rules,
+      "@typescript-eslint/unbound-method": "off",
+      "vitest/no-standalone-expect": "off",
+    },
+    settings: {
+      vitest: { vitestImports: ["@flex/e2e", "@flex/testing"] },
     },
   },
   eslintPluginPrettierRecommended,

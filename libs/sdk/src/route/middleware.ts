@@ -10,7 +10,7 @@ import ssmMiddleware from "@middy/ssm";
 import type { LambdaEvent, LambdaResult } from "../types";
 import type { ResolvedResource } from "./resolve-config";
 
-interface MiddlewareOptions {
+export interface MiddlewareOptions {
   readonly logger: Logger;
   readonly logLevel: string;
   readonly hasRequestBody: boolean;

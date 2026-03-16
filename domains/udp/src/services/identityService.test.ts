@@ -71,11 +71,8 @@ describe("createIdentityService", () => {
 
     expect(nock.isDone()).toBe(true);
 
-    /* eslint-disable @typescript-eslint/unbound-method */
-    const { info, error } = logger;
-
-    expect(error).not.toHaveBeenCalled();
-    expect(info).toHaveBeenCalledWith(
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.info).toHaveBeenCalledWith(
       "service ID has now been linked to app ID",
     );
   });

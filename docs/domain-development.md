@@ -39,13 +39,15 @@ Complete the [Environment Setup](/docs/environment-setup.md) before starting dom
 domains/<domain>/
 ├── domain.config.ts
 ├── src/
-│   └── handlers/
-│       └── v1/
-│           └── /<resource>
-│               ├── <method>.ts
-│               ├── <method>.test.ts
-│               ├── <method>.private.ts
-│               └── <method>.private.test.ts
+│   ├── handlers/
+│   │   └── <version>/
+│   │       └── /<resource>
+│   │           ├── <method>.ts
+│   │           ├── <method>.test.ts
+│   │           ├── <method>.private.ts
+│   │           └── <method>.private.test.ts
+│   └── tests/
+│       └── setup.ts
 ├── eslint.config.mjs
 ├── package.json
 ├── README.md
@@ -166,16 +168,19 @@ All private and non-public access routes will include `auth` on the context:
 ```typescript
 import { route } from "path/to/domain.config";
 
-export const handler = route("POST /v1/path [private]", async ({ auth, logger }) => {
-  const { pairwiseId } = auth;
+export const handler = route(
+  "POST /v1/path [private]",
+  async ({ auth, logger }) => {
+    const { pairwiseId } = auth;
 
-  logger.info("Authenticated user", { userId: auth.pairwiseId });
+    logger.info("Authenticated user", { userId: auth.pairwiseId });
 
-  return {
-    status: 200,
-    data: { userId: pairwiseId },
-  };
-});
+    return {
+      status: 200,
+      data: { userId: pairwiseId },
+    };
+  },
+);
 ```
 
 #### With Request Body
@@ -524,53 +529,253 @@ const notificationId = getNotificationId(); // throws
 
 ---
 
-## Testing (WIP)
+## Testing
 
-### Unit Tests
+### Overview
 
-Create a test file alongside the handler:
+Handler tests run the full SDK workflow that includes:
+
+- Registering route middleware
+- Constructing the route context and providing it to the handler
+- Transforming responses
+- Error handling
+
+All integration HTTP calls are intercepted using [nock](https://github.com/nock/nock).
+
+### Setup
+
+Every domain using `@flex/sdk` requires three things:
+
+1. Set up domain Vitest configuration (`vitest.config.ts`)
+
+Each domain needs to register its own test configuration, which needs to be merged with the Flex managed Vitest configuration.
+
+This allows each domain to do all of the following:
+
+- Inject the SDK setup file
+- Provide its own local setup file (This is necessary for mocks that need to be defined in the same workspace and where you want to provide your own shared setup/teardown lifecycles)
+- Inject environment variables for use across each test suite
+
+```typescript
+import { config } from "@flex/config/vitest";
+import { defineConfig, mergeConfig } from "vitest/config";
+
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      setupFiles: ["@flex/testing/setup/sdk", "./src/tests/setup.ts"],
+      env: {
+        AWS_REGION: "eu-west-2",
+        exampleKey: "arn:aws:kms:eu-west-2:123456789012:key/test-key",
+        gatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
+        mySecret: "/path/to/name",
+      },
+    },
+  }),
+);
+```
+
+Deploy-time resources (e.g. `"kms", "ssm"`, etc) must be defined here so they're available when the handler module loads.
+
+2. Add domain setup file (`src/tests/setup.ts`)
+
+This is required if you need to mock certain middleware but can also include setup/teardown lifecycles (A good example would be the `nock` setup/teardown steps).
+
+```typescript
+import nock from "nock";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
+
+vi.mock("@middy/secrets-manager", () => ({
+  default: () => ({ before: vi.fn() }),
+  secret: vi.fn((v: string) => v),
+}));
+
+vi.mock("@middy/ssm", () => ({
+  default: () => ({ before: vi.fn() }),
+}));
+
+beforeAll(() => {
+  nock.disableNetConnect();
+});
+
+afterAll(() => {
+  nock.enableNetConnect();
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+afterEach(() => {
+  expect(nock.isDone()).toBe(true);
+  nock.cleanAll();
+});
+```
+
+> These mocks must live in the domain workspace and won't work as intended if mocked from an external workspace such as `@flex/testing` or `@flex/sdk`.
+
+1. Add dev dependencies
+
+When using resources that are resolved via middleware, you must include those packages in the domain package `devDependencies`:
+
+```json
+{
+  "devDependencies": {
+    "@middy/secrets-manager": "<version>",
+    "@middy/ssm": "<version>"
+    // plus any other middlewares that need to be mocked...
+  }
+}
+```
+
+Without these dev dependencies, the mocks defined in your local setup file (`src/tests/setup.ts`) won't work as intended.
+
+### Mocking Resources
+
+| Resource        | Location                   | Fixture                                |
+| --------------- | -------------------------- | -------------------------------------- |
+| `"kms"`         | `env` (`vitest.config.ts`) | —                                      |
+| `"ssm"`         | `env` (`vitest.config.ts`) | —                                      |
+| `"secret"`      | Lambda context             | `context.withSecret({ key: "value" })` |
+| `"ssm:runtime"` | Lambda context             | `context.withParams({ key: "value" })` |
+
+By default resources are baked into `process.env`. Any resources that you know need to be resolved via middleware (Secrets, optionally SSM if you need these parameters to be resolved via middleware) should instead use the context fixture methods to set those values to the lambda context.
+
+### Writing your First Handler Test
+
+Create the test file based on the route gateway type:
 
 - Public handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.test.ts`:
 - Private handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.private.test.ts`:
 
 ```typescript
-import { context, it } from "@flex/testing";
+import { it } from "@flex/testing";
+import nock from "nock";
 import { describe, expect } from "vitest";
 
-import { handler } from "./get";
+import { handler } from "./post.private";
 
-// Mock dependencies...
+describe("POST /v1/user [private]", () => {
+  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
+  const endpoint = "/v1/user";
 
-describe("GET /v1/user", () => {
-  it("returns 200 with user", async ({ event, response }) => {
-    // TODO
+  it("returns 204 when user is created successfully", async ({
+    privateGatewayEventWithAuthorizer,
+    context,
+  }) => {
+    gateway
+      .post("/gateways/udp/v1/user", {
+        appId: "test-app-id",
+        notificationId: "test-notification-id",
+      })
+      .reply(200, {});
 
-    expect(result).toEqual(
-      response.ok({
-        data: {
-          // expected
-        },
+    const result = await handler(
+      privateGatewayEventWithAuthorizer.post(endpoint, {
+        body: { appId: "test-app-id", notificationId: "test-notification-id" },
       }),
+      context.create(),
     );
+
+    expect(result.statusCode).toBe(204);
+  });
+
+  it("returns 500 when upstream fails", async ({
+    privateGatewayEventWithAuthorizer,
+    context,
+  }) => {
+    gateway.post("/gateways/udp/v1/user").reply(500, { message: "Failed" });
+
+    const result = await handler(
+      privateGatewayEventWithAuthorizer.post(endpoint, {
+        body: { appId: "test-app-id", notificationId: "test-notification-id" },
+      }),
+      context.create(),
+    );
+
+    expect(result.statusCode).toBe(500);
+  });
+
+  it("returns 400 for invalid payload", async ({
+    privateGatewayEventWithAuthorizer,
+    context,
+  }) => {
+    const result = await handler(
+      privateGatewayEventWithAuthorizer.post(endpoint, {
+        body: { appId: "test-app-id" },
+      }),
+      context.create(),
+    );
+
+    expect(result.statusCode).toBe(400);
   });
 });
 ```
 
+> The URL passed to `nock()` must match the value of the gateway URL set in `vitest.config.ts` env.
+
+#### Handlers with runtime resources
+
+Routes that reference `type: "secret"` or `type: "ssm:runtime"` resources will be resolved internally by the handler middleware and injected onto the Lambda context:
+
+```typescript
+const result = await handler(
+  privateGatewayEventWithAuthorizer.get(endpoint),
+  context
+    .withSecret({ mySecret: "resolved-secret-value" }) // pragma: allowlist secret
+    .withParams({ myParam: "resolved-param-value" })
+    .create(),
+);
+```
+
 ### E2E Tests
 
-Create a test file at `tests/e2e/src/domains/<domain>.test.ts`.
+E2E tests verify deployed handlers through the full request flow. Create a test file at `tests/e2e/src/domains/<domain>.test.ts`.
+
+#### Setup
+
+E2E tests use the `@flex/testing/e2e` extended `it` function:
+
+| Fixture          | Description                             |
+| ---------------- | --------------------------------------- |
+| `cloudfront`     | HTTP client via CloudFront              |
+| `privateGateway` | HTTP client for the private API gateway |
+
+| Token         | Description                  |
+| ------------- | ---------------------------- |
+| `JWT.VALID`   | Valid authentication token   |
+| `JWT.INVALID` | Invalid authentication token |
+
+#### Writing E2E Tests
 
 ```typescript
 import { it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { describe, expect, inject } from "vitest";
 
-describe("Domain", () => {
+describe("Example Domain", () => {
   const { JWT } = inject("e2eEnv");
 
-  const endpoint = `/v1/user`;
+  describe("GET /v1/resource", () => {
+    const endpoint = "/v1/resource";
 
-  it("returns XXX and expected response", async ({ cloudfront }) => {
-    // TODO
+    it("rejects unauthenticated requests", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint);
+
+      expect(result.status).toBe(401);
+      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+    });
+
+    it("returns 200 with data", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
+      });
+
+      expect(result.status).toBe(200);
+      expect(result.body).toEqual({
+        // expected data
+      });
+    });
   });
 });
 ```
@@ -601,10 +806,15 @@ STAGE=development pnpm --filter @flex/e2e test:e2e
 ### Adding a New Domain
 
 1. Create the [directory structure](#directory-structure) in `domains/<domain>/`
-2. Define the domain configuration in `domain.config.ts`
-3. Define handlers in `src/handlers/*`
-4. Create `README.md` using the [FLEX Domain template](/docs/documentation-guide.md#flex-domain)
-5. Deploy the domain `pnpm run deploy` and verify tests `pnpm --filter @flex/e2e test:e2e`
+2. Define domain configuration in `domain.config.ts`
+3. Update `vitest.config.ts`
+   1. Add SDK setup file
+   2. Add local setup file (`src/tests/setup.ts`) and include Middy SSM/Secrets mocks and include the nock lifecycle setup/teardown steps
+   3. Add environment variables
+4. Add `@middy/secrets-manager` and/or `@middy/ssm` as devDependencies if the domain uses resources for these services
+5. Define route handler(s)
+6. Create `README.md`
+7. Deploy (`pnpm run deploy`) and verify (`pnpm --filter @flex/e2e test:e2e`)
 
 > The platform will [automatically include the new domain](platform/infra/flex/src/utils/getDomainConfigs.ts) for deployment, no manual wiring is necessary.
 
