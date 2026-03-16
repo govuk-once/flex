@@ -174,7 +174,10 @@ describe("GET /v0/users", () => {
       { stage: "production", expected: false },
     ])(
       "returns newUserProfileEnabled=$expected when STAGE=$stage",
-      async ({ stage, expected }, { context, env, privateGatewayEventWithAuthorizer }) => {
+      async (
+        { stage, expected },
+        { context, env, privateGatewayEventWithAuthorizer },
+      ) => {
         env.set({ STAGE: stage });
 
         gateway

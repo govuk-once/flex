@@ -372,7 +372,12 @@ export type GatewayRouteConfig<
   FeatureFlagKeys extends string = string,
 > =
   | {
-      readonly public: MethodRouteConfig<Method, ResourceKeys, IntegrationKeys, FeatureFlagKeys>;
+      readonly public: MethodRouteConfig<
+        Method,
+        ResourceKeys,
+        IntegrationKeys,
+        FeatureFlagKeys
+      >;
       readonly private?: MethodRouteConfig<
         Method,
         ResourceKeys,
@@ -464,7 +469,9 @@ type VersionRoutes<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
-> = Readonly<Record<string, PathRoutes<ResourceKeys, IntegrationKeys, FeatureFlagKeys>>>;
+> = Readonly<
+  Record<string, PathRoutes<ResourceKeys, IntegrationKeys, FeatureFlagKeys>>
+>;
 
 export interface DomainConfig<
   ResourceKeys extends string = string,
@@ -475,7 +482,11 @@ export interface DomainConfig<
   readonly routes: Readonly<
     Record<
       string,
-      VersionRoutes<NoInfer<ResourceKeys>, NoInfer<IntegrationKeys>, NoInfer<FeatureFlagKeys>>
+      VersionRoutes<
+        NoInfer<ResourceKeys>,
+        NoInfer<IntegrationKeys>,
+        NoInfer<FeatureFlagKeys>
+      >
     >
   >;
   readonly common?: DomainConfigCommon;
