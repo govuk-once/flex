@@ -8,7 +8,6 @@ import {
   updateNotificationRequestSchema,
   updateNotificationResponseSchema,
 } from "@flex/udp-domain";
-import { z } from "zod";
 
 const { config, route, routeContext } = domain({
   name: "poc",
