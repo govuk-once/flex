@@ -34,11 +34,11 @@ export class FlexPrivateEgressFunction extends Construct {
       tracing: Tracing.ACTIVE,
       ...functionProps,
       environment: {
+        ...functionProps.environment,
         FLEX_ENVIRONMENT: stage,
         ...(stage === "production" && {
           FLEX_LOG_LEVEL_CEILING: "INFO",
         }),
-        ...functionProps.environment,
       },
       logGroup,
       securityGroups: [privateEgressSg],

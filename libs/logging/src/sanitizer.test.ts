@@ -4,12 +4,17 @@ const REDACTED = "***REDACTED***";
 
 describe("sanitizer", () => {
   let addSecretValue: typeof import("./sanitizer").addSecretValue;
+  let addSensitiveKey: typeof import("./sanitizer").addSensitiveKey;
+  let addSensitivePattern: typeof import("./sanitizer").addSensitivePattern;
   let sanitize: ReturnType<typeof import("./sanitizer").createSanitizer>;
 
   beforeEach(async () => {
+    vi.unstubAllEnvs();
     vi.resetModules();
     const mod = await import("./sanitizer");
     addSecretValue = mod.addSecretValue;
+    addSensitiveKey = mod.addSensitiveKey;
+    addSensitivePattern = mod.addSensitivePattern;
     sanitize = mod.createSanitizer();
   });
 
@@ -152,11 +157,35 @@ describe("sanitizer", () => {
     });
   });
 
-  describe("PII debug toggle", () => {
-    beforeEach(() => {
-      vi.unstubAllEnvs();
+  describe("addSensitiveKey", () => {
+    it("redacts values when key matches a custom string pattern", () => {
+      addSensitiveKey("passport");
+
+      expect(sanitize("passportNumber", "123456789")).toBe(REDACTED);
     });
 
+    it("redacts values when key matches a custom RegExp pattern", () => {
+      addSensitiveKey(/\bdriving.?licen[cs]e\b/i);
+
+      expect(sanitize("drivingLicence", "SMITH901010JA9AA")).toBe(REDACTED);
+    });
+  });
+
+  describe("addSensitivePattern", () => {
+    it("redacts values matching a custom string pattern", () => {
+      addSensitivePattern("\\b[A-Z]{2}\\d{7}\\b");
+
+      expect(sanitize("data", "Passport: AB1234567")).toBe(REDACTED);
+    });
+
+    it("redacts values matching a custom RegExp pattern", () => {
+      addSensitivePattern(/\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/);
+
+      expect(sanitize("data", "Card: 4111 1111 1111 1111")).toBe(REDACTED);
+    });
+  });
+
+  describe("PII debug toggle", () => {
     it("bypasses PII key redaction when FLEX_LOG_PII_DEBUG is true", async () => {
       vi.stubEnv("FLEX_LOG_PII_DEBUG", "true");
       vi.resetModules();

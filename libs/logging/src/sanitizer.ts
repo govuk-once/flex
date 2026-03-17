@@ -82,6 +82,26 @@ function matchesValuePattern(value: string): boolean {
 }
 
 /**
+ * Marks a key name as sensitive so its value is redacted from logs.
+ * Accepts a RegExp or a string (converted to a case-insensitive regex).
+ * Follows PII rules: bypassed by FLEX_LOG_PII_DEBUG in non-production.
+ */
+export function addSensitiveKey(pattern: RegExp | string): void {
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+  piiKeyPatterns.push(regex);
+}
+
+/**
+ * Adds a pattern to detect sensitive data in log values.
+ * Accepts a RegExp or a string (converted to a case-insensitive regex).
+ * Follows PII rules: bypassed by FLEX_LOG_PII_DEBUG in non-production.
+ */
+export function addSensitivePattern(pattern: RegExp | string): void {
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+  piiValuePatterns.push(regex);
+}
+
+/**
  * Adds a secret value to be redacted from logs.
  * Call this after loading secrets to ensure they are sanitized.
  */

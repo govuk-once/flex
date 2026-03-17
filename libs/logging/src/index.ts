@@ -4,7 +4,11 @@ import type { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
 import { clampLogLevel } from "./logLevel";
-import { addSecretValue } from "./sanitizer";
+import {
+  addSecretValue,
+  addSensitiveKey,
+  addSensitivePattern,
+} from "./sanitizer";
 
 const effectiveLevel = clampLogLevel(
   process.env.POWERTOOLS_LOG_LEVEL ?? process.env.LOG_LEVEL ?? "INFO",
@@ -48,5 +52,10 @@ export function createChildLogger(context?: Record<string, unknown>): Logger {
   return logger.createChild({ persistentKeys: context });
 }
 
-export { addSecretValue, injectLambdaContext };
+export {
+  addSecretValue,
+  addSensitiveKey,
+  addSensitivePattern,
+  injectLambdaContext,
+};
 export type { Logger };

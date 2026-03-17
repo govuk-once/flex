@@ -58,6 +58,22 @@ To add a new redaction pattern, edit [`libs/logging/src/sanitizer.ts`](/libs/log
 
 The distinction matters: secret patterns are **never** bypassed, while PII patterns can be bypassed with the debug toggle in non-production environments.
 
+### Domain-specific redaction
+
+Domains can register additional sensitive patterns at runtime without modifying the shared library:
+
+```typescript
+import { addSensitiveKey, addSensitivePattern } from "@flex/logging";
+
+addSensitiveKey("passport");                    // redact by key name
+addSensitivePattern(/\b[A-Z]{2}\d{7}\b/);      // redact by value content
+```
+
+- `addSensitiveKey(pattern)` — redact values under matching keys
+- `addSensitivePattern(pattern)` — redact values containing matching content
+
+Both accept a `string` (converted to a case-insensitive regex) or a `RegExp`. These follow the same rules as built-in PII patterns: bypassed by the debug toggle, always active in production.
+
 ---
 
 ## Log level clamping
@@ -78,13 +94,13 @@ Each Lambda construct (`FlexPublicFunction`, `FlexPrivateEgressFunction`, `FlexP
 
 ```typescript
 environment: {
+  ...functionProps.environment,
   FLEX_ENVIRONMENT: stage,
   ...(stage === "production" && { FLEX_LOG_LEVEL_CEILING: "INFO" }),
-  ...functionProps.environment,
 }
 ```
 
-Domain-provided environment variables are spread **after** platform variables, but the clamping logic in the logger prevents any override from exceeding the ceiling.
+Platform-enforced variables (`FLEX_ENVIRONMENT`, `FLEX_LOG_LEVEL_CEILING`) are spread **after** domain-provided variables, preventing domains from overriding production safeguards.
 
 ---
 

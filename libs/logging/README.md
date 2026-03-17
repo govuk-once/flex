@@ -143,6 +143,22 @@ Keys matching `email`, `phone`, `mobile`, `forename`, `surname`, `first_name`, `
 
 Values matching email addresses, UK phone numbers, National Insurance numbers, UK postcodes, and IPv4 addresses are redacted by pattern.
 
+### Domain-specific redaction
+
+Domains can register additional sensitive patterns at startup:
+
+```typescript
+import { addSensitiveKey, addSensitivePattern } from "@flex/logging";
+
+addSensitiveKey("passport"); // redact by key name
+addSensitivePattern(/\b[A-Z]{2}\d{7}\b/); // redact by value content
+```
+
+- `addSensitiveKey(pattern)` — redact values under matching keys
+- `addSensitivePattern(pattern)` — redact values containing matching content
+
+Both accept a `string` (converted to a case-insensitive regex) or a `RegExp`. Both follow PII rules: bypassed by `FLEX_LOG_PII_DEBUG` in non-production, always active in production.
+
 ### Other mechanisms
 
 - **Runtime secrets** — values registered via `addSecretValue` are replaced inline
