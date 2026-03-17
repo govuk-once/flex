@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { SsmApp } from "./base";
 import { Environment, getEnvConfig } from "./base/env";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
@@ -6,6 +8,7 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexLegacyDomainStack } from "./stacks/legacy-domain";
 import { FlexPlatformStack } from "./stacks/platform";
+import { FlexPrivateGatewayDeploymentStack } from "./stacks/private-gateway-deployment";
 import {
   getDomainConfigs,
   getLegacyDomainConfigs,
@@ -68,19 +71,53 @@ const legacyDomainConfigs = await getLegacyDomainConfigs();
 const domainConfigs = await getDomainConfigs();
 const targetDomain = process.env.domain;
 
+const legacyDomainStacks: FlexLegacyDomainStack[] = [];
 for (const { publicDomain, privateDomain } of legacyDomainConfigs) {
   const domainName = publicDomain.domain;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexLegacyDomainStack(app, `${stage}-legacy-${domainName}`, {
-    publicDomain,
-    privateDomain,
-  });
+  legacyDomainStacks.push(
+    new FlexLegacyDomainStack(app, `${stage}-legacy-${domainName}`, {
+      publicDomain,
+      privateDomain,
+    }),
+  );
 }
 
+const domainStacks: FlexDomainStack[] = [];
 for (const domainConfig of domainConfigs) {
   const domainName = domainConfig.name;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexDomainStack(app, `${stage}-${domainName}`, domainConfig);
+  domainStacks.push(
+    new FlexDomainStack(app, `${stage}-${domainName}`, domainConfig),
+  );
+}
+
+const allPrivateBindings: Array<{ method: string; path: string }> = [
+  ...legacyDomainStacks.flatMap((s) => s.privateRouteBindings),
+  ...domainStacks.flatMap((s) => s.privateRouteBindings),
+];
+
+const routesHash = crypto
+  .createHash("sha256")
+  .update(
+    allPrivateBindings
+      .map((b) => `${b.method}:${b.path}`)
+      .sort()
+      .join("|"),
+  )
+  .digest("hex");
+
+const deploymentStack = new FlexPrivateGatewayDeploymentStack(
+  app,
+  `${stage}-FlexPrivateGatewayDeployment`,
+  { routesHash },
+);
+
+for (const stack of legacyDomainStacks) {
+  deploymentStack.addDependency(stack);
+}
+for (const stack of domainStacks) {
+  deploymentStack.addDependency(stack);
 }

@@ -1,7 +1,5 @@
-import { GovUkOnceStack } from "@platform/gov-uk-once";
 import { Stack } from "aws-cdk-lib";
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
@@ -9,7 +7,8 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
-import { getParamName } from "../utils/getParamName";
+import { BaseStack } from "../base";
+import { STAGE_KEYS } from "../ssm-keys";
 
 interface FlexPrivateGatewayDeploymentStackProps {
   /**
@@ -21,7 +20,7 @@ interface FlexPrivateGatewayDeploymentStackProps {
   routesHash: string;
 }
 
-export class FlexPrivateGatewayDeploymentStack extends GovUkOnceStack {
+export class FlexPrivateGatewayDeploymentStack extends BaseStack {
   constructor(
     scope: Construct,
     id: string,
@@ -35,13 +34,10 @@ export class FlexPrivateGatewayDeploymentStack extends GovUkOnceStack {
         ResourceOwner: "flex-private-gateway",
         Source: "https://github.com/govuk-once/flex",
       },
+      env: { region: "eu-west-2" },
     });
 
-    const restApiId = StringParameter.fromStringParameterName(
-      this,
-      "PrivateGatewayRestApiId",
-      getParamName("/flex-core/private-gateway/rest-api-id"),
-    ).stringValue;
+    const restApiId = this.import(STAGE_KEYS.ApigwPrivateRestId);
 
     const region = Stack.of(this).region;
 

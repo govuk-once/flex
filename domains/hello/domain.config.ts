@@ -29,7 +29,7 @@ export const endpoints = defineDomain({
             type: "ISOLATED",
             envEphemeral: {
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex-core/private-gateway/url",
+                "/flex/apigw/private/gateway-url",
             },
           },
         },

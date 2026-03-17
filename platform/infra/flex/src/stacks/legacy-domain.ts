@@ -32,6 +32,11 @@ export interface PublicRouteBinding {
   handler: IFunction;
 }
 
+export interface PrivateRouteBinding {
+  method: string;
+  path: string;
+}
+
 interface FlexDomainStackProps {
   publicDomain: IDomain;
   privateDomain?: IDomain;
@@ -40,6 +45,8 @@ interface FlexDomainStackProps {
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
 export class FlexLegacyDomainStack extends BaseStack {
+  public readonly privateRouteBindings: PrivateRouteBinding[] = [];
+
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
@@ -218,6 +225,8 @@ export class FlexLegacyDomainStack extends BaseStack {
             "CKV_AWS_59",
             "Private API - access restricted by VPC endpoint and resource policy",
           );
+
+          this.privateRouteBindings.push({ method, path: newPath });
 
           if (
             routeConfig.permissions &&

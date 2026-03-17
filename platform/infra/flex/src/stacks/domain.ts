@@ -34,6 +34,11 @@ export interface PublicRouteBinding {
   readonly isPublicAccess: boolean;
 }
 
+export interface PrivateRouteBinding {
+  readonly method: string;
+  readonly path: string;
+}
+
 export class FlexDomainStack extends BaseStack {
   public readonly publicRouteBindings: PublicRouteBinding[] = [];
   public readonly privateRouteBindings: PrivateRouteBinding[] = [];
@@ -164,6 +169,8 @@ export class FlexDomainStack extends BaseStack {
             "CKV_AWS_59",
             "Private API - access restricted by VPC endpoint and resource policy",
           );
+
+          this.privateRouteBindings.push({ method, path: resourcePath });
         }
       },
     );
