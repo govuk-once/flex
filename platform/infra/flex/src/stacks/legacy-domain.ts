@@ -23,7 +23,7 @@ import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createHash } from "../utils/create-hash";
 import { getDomainEntry } from "../utils/getEntry";
-import { getParamName } from "../utils/getParamName";
+import { getParamName, getStageParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 
 export interface RouteBinding {
@@ -393,7 +393,7 @@ export class FlexLegacyDomainStack extends BaseStack {
       resource = StringParameter.fromStringParameterName(
         this,
         `EphemeralParam${createHash(path)}`,
-        getParamName(path),
+        getStageParamName(path),
       );
     } else {
       resource = StringParameter.fromStringParameterName(
