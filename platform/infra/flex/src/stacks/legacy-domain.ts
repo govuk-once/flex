@@ -10,7 +10,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { IRole } from "aws-cdk-lib/aws-iam";
 import { IKey, Key } from "aws-cdk-lib/aws-kms";
-import { Function, IFunction } from "aws-cdk-lib/aws-lambda";
+import { Function } from "aws-cdk-lib/aws-lambda";
 import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { IStringParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
@@ -26,10 +26,9 @@ import { getDomainEntry } from "../utils/getEntry";
 import { getParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 
-export interface PublicRouteBinding {
-  path: string;
+export interface RouteBinding {
   method: string;
-  handler: IFunction;
+  path: string;
 }
 
 interface FlexDomainStackProps {
@@ -40,6 +39,9 @@ interface FlexDomainStackProps {
 type EnvResourceType = "core-param" | "ephemeral-param" | "secret";
 
 export class FlexLegacyDomainStack extends BaseStack {
+  public readonly publicRouteBindings: RouteBinding[] = [];
+  public readonly privateRouteBindings: RouteBinding[] = [];
+
   #envCache = new Map<string, ISecret | IStringParameter>();
   #keyCache = new Map<string, IKey>();
 
@@ -69,7 +71,7 @@ export class FlexLegacyDomainStack extends BaseStack {
   #getPublicRestApi() {
     const restApiId = this.import(STAGE_KEYS.ApigwPublicRestId);
     const appResourceId = this.import(STAGE_KEYS.ApigwPublicAppRoot);
-    return this.#getRestApi("Public", restApiId, appResourceId, "/");
+    return this.#getRestApi("Public", restApiId, appResourceId, "/app");
   }
 
   #getPrivateRestApi() {
@@ -161,6 +163,8 @@ export class FlexLegacyDomainStack extends BaseStack {
             new LambdaIntegration(domainEndpointFn.function),
             { authorizer },
           );
+
+          this.publicRouteBindings.push({ method, path: newPath });
         }
       }
     }
@@ -218,6 +222,8 @@ export class FlexLegacyDomainStack extends BaseStack {
             "CKV_AWS_59",
             "Private API - access restricted by VPC endpoint and resource policy",
           );
+
+          this.privateRouteBindings.push({ method, path: newPath });
 
           if (
             routeConfig.permissions &&

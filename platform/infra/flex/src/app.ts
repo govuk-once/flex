@@ -3,6 +3,7 @@ import { Environment, getEnvConfig } from "./base/env";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCoreStack } from "./stacks/core/stack";
+import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexLegacyDomainStack } from "./stacks/legacy-domain";
 import { FlexPlatformStack } from "./stacks/platform";
@@ -68,19 +69,41 @@ const legacyDomainConfigs = await getLegacyDomainConfigs();
 const domainConfigs = await getDomainConfigs();
 const targetDomain = process.env.domain;
 
+const deployedDomains: string[] = [];
+const legacyDomainStacks: FlexLegacyDomainStack[] = [];
+const domainStacks: FlexDomainStack[] = [];
+
 for (const { publicDomain, privateDomain } of legacyDomainConfigs) {
   const domainName = publicDomain.domain;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexLegacyDomainStack(app, `${stage}-legacy-${domainName}`, {
+  const stackName = `${stage}-legacy-${domainName}`;
+  const stack = new FlexLegacyDomainStack(app, stackName, {
     publicDomain,
     privateDomain,
   });
+  legacyDomainStacks.push(stack);
+  deployedDomains.push(stackName);
 }
 
 for (const domainConfig of domainConfigs) {
   const domainName = domainConfig.name;
   if (targetDomain && targetDomain !== domainName) continue;
 
-  new FlexDomainStack(app, `${stage}-${domainName}`, domainConfig);
+  const stackName = `${stage}-${domainName}`;
+  const stack = new FlexDomainStack(app, stackName, domainConfig);
+  domainStacks.push(stack);
+  deployedDomains.push(stackName);
 }
+
+new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, {
+  deployedDomains,
+  publicRouteBindings: [
+    ...legacyDomainStacks.flatMap((s) => s.publicRouteBindings),
+    ...domainStacks.flatMap((s) => s.publicRouteBindings),
+  ],
+  privateRouteBindings: [
+    ...legacyDomainStacks.flatMap((s) => s.privateRouteBindings),
+    ...domainStacks.flatMap((s) => s.privateRouteBindings),
+  ],
+});
