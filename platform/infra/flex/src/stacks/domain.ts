@@ -7,6 +7,7 @@ import {
   RestApi,
   TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
+import { PermissionsBoundary } from "aws-cdk-lib/aws-iam";
 import { Function } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
@@ -16,6 +17,7 @@ import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-i
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getDomainEntry } from "../utils/getEntry";
 import { grantRoutePermissions } from "../utils/integrations";
 import { toFunctionConfig } from "../utils/lambda";
@@ -95,6 +97,13 @@ export class FlexDomainStack extends BaseStack {
     const { restApi: privateRestApi, rootResource: privateDomainsRoot } =
       this.#getPrivateRestApi();
     const { rootResource: publicDomainsRoot } = this.#getPublicRestApi();
+
+    const permissionsBoundary = createPermissionsBoundary(
+      this,
+      "DomainPermissionsBoundary",
+      privateRestApi,
+    );
+    PermissionsBoundary.of(this).apply(permissionsBoundary);
 
     const authorizerFnArn = this.import(STAGE_KEYS.ApigwPublicAuthorizerFn);
 
