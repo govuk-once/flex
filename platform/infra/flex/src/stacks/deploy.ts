@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import {
   AwsCustomResource,
@@ -9,27 +11,47 @@ import { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { STAGE_KEYS } from "../ssm-keys";
 
+interface RouteBinding {
+  readonly method: string;
+  readonly path: string;
+}
+
+interface FlexApiDeploymentStackProps {
+  deployedDomains: string[];
+  publicRouteBindings: RouteBinding[];
+  privateRouteBindings: RouteBinding[];
+}
+
+function buildRoutesHash(bindings: RouteBinding[]) {
+  return crypto
+    .createHash("sha256")
+    .update(
+      bindings
+        .map((b) => `${b.method}:${b.path}`)
+        .sort()
+        .join("|"),
+    )
+    .digest("hex");
+}
+
 export class FlexApiDeploymentStack extends BaseStack {
-  #deployApi(id: string, restApiId: string) {
+  #deployApi(id: string, restApiId: string, routesHash: string) {
+    const deployAction = {
+      service: "APIGateway",
+      action: "createDeployment",
+      parameters: {
+        restApiId,
+        stageName: "prod",
+        description: `routes:${routesHash}`,
+      },
+      physicalResourceId: PhysicalResourceId.of(
+        `flex-${id.toLowerCase()}-gateway-deployment`,
+      ),
+    };
+
     new AwsCustomResource(this, `${id}-DeployApi`, {
-      onCreate: {
-        service: "APIGateway",
-        action: "createDeployment",
-        parameters: {
-          restApiId,
-          stageName: "prod",
-        },
-        physicalResourceId: PhysicalResourceId.of(Date.now().toString()),
-      },
-      onUpdate: {
-        service: "APIGateway",
-        action: "createDeployment",
-        parameters: {
-          restApiId,
-          stageName: "prod",
-        },
-        physicalResourceId: PhysicalResourceId.of(Date.now().toString()),
-      },
+      onCreate: deployAction,
+      onUpdate: deployAction,
       policy: AwsCustomResourcePolicy.fromStatements([
         new PolicyStatement({
           actions: ["apigateway:POST"],
@@ -41,7 +63,15 @@ export class FlexApiDeploymentStack extends BaseStack {
     });
   }
 
-  constructor(scope: Construct, id: string, deployedDomains: string[]) {
+  constructor(
+    scope: Construct,
+    id: string,
+    {
+      deployedDomains,
+      publicRouteBindings,
+      privateRouteBindings,
+    }: FlexApiDeploymentStackProps,
+  ) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -57,9 +87,17 @@ export class FlexApiDeploymentStack extends BaseStack {
     });
 
     const publicRestApiId = this.import(STAGE_KEYS.ApigwPublicRestId);
-    this.#deployApi("Public", publicRestApiId);
+    this.#deployApi(
+      "Public",
+      publicRestApiId,
+      buildRoutesHash(publicRouteBindings),
+    );
 
     const privateRestApiId = this.import(STAGE_KEYS.ApigwPrivateRestId);
-    this.#deployApi("Private", privateRestApiId);
+    this.#deployApi(
+      "Private",
+      privateRestApiId,
+      buildRoutesHash(privateRouteBindings),
+    );
   }
 }

@@ -7,7 +7,7 @@ import {
   RestApi,
   TokenAuthorizer,
 } from "aws-cdk-lib/aws-apigateway";
-import { Function, IFunction } from "aws-cdk-lib/aws-lambda";
+import { Function } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
@@ -27,15 +27,14 @@ import {
   toPascalCase,
 } from "../utils/routes";
 
-export interface PublicRouteBinding {
-  readonly handler: IFunction;
+export interface RouteBinding {
   readonly method: string;
   readonly path: string;
-  readonly isPublicAccess: boolean;
 }
 
 export class FlexDomainStack extends BaseStack {
-  public readonly publicRouteBindings: PublicRouteBinding[] = [];
+  public readonly publicRouteBindings: RouteBinding[] = [];
+  public readonly privateRouteBindings: RouteBinding[] = [];
 
   #getRestApi(
     id: string,
@@ -150,6 +149,8 @@ export class FlexDomainStack extends BaseStack {
             new LambdaIntegration(lambda.function),
             { authorizer },
           );
+
+          this.publicRouteBindings.push({ method, path: resourcePath });
         }
 
         if (gateway === "private") {
@@ -163,6 +164,8 @@ export class FlexDomainStack extends BaseStack {
             "CKV_AWS_59",
             "Private API - access restricted by VPC endpoint and resource policy",
           );
+
+          this.privateRouteBindings.push({ method, path: resourcePath });
         }
       },
     );

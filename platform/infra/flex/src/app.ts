@@ -65,20 +65,24 @@ new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   subdomainName,
 });
 
-const deployedDomains: string[] = [];
 const legacyDomainConfigs = await getLegacyDomainConfigs();
 const domainConfigs = await getDomainConfigs();
 const targetDomain = process.env.domain;
+
+const deployedDomains: string[] = [];
+const legacyDomainStacks: FlexLegacyDomainStack[] = [];
+const domainStacks: FlexDomainStack[] = [];
 
 for (const { publicDomain, privateDomain } of legacyDomainConfigs) {
   const domainName = publicDomain.domain;
   if (targetDomain && targetDomain !== domainName) continue;
 
   const stackName = `${stage}-legacy-${domainName}`;
-  new FlexLegacyDomainStack(app, stackName, {
+  const stack = new FlexLegacyDomainStack(app, stackName, {
     publicDomain,
     privateDomain,
   });
+  legacyDomainStacks.push(stack);
   deployedDomains.push(stackName);
 }
 
@@ -87,8 +91,19 @@ for (const domainConfig of domainConfigs) {
   if (targetDomain && targetDomain !== domainName) continue;
 
   const stackName = `${stage}-${domainName}`;
-  new FlexDomainStack(app, stackName, domainConfig);
+  const stack = new FlexDomainStack(app, stackName, domainConfig);
+  domainStacks.push(stack);
   deployedDomains.push(stackName);
 }
 
-new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, deployedDomains);
+new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, {
+  deployedDomains,
+  publicRouteBindings: [
+    ...legacyDomainStacks.flatMap((s) => s.publicRouteBindings),
+    ...domainStacks.flatMap((s) => s.publicRouteBindings),
+  ],
+  privateRouteBindings: [
+    ...legacyDomainStacks.flatMap((s) => s.privateRouteBindings),
+    ...domainStacks.flatMap((s) => s.privateRouteBindings),
+  ],
+});
