@@ -1,10 +1,10 @@
-import { getEnvConfig } from "@platform/gov-uk-once";
 import { Tags } from "aws-cdk-lib";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
+import { getEnvConfig } from "../../base/env";
 import { FlexFunctionProps } from "../types";
 
 const { stage } = getEnvConfig();
