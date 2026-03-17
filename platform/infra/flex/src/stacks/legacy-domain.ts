@@ -97,7 +97,11 @@ export class FlexLegacyDomainStack extends BaseStack {
     const publicRestApi = this.#getPublicRestApi();
     const privateRestApi = this.#getPrivateRestApi();
 
-    this.#processPublicRoutes(props.publicDomain, publicRestApi.rootResource);
+    this.#processPublicRoutes(
+      props.publicDomain,
+      publicRestApi.rootResource,
+      privateRestApi.restApi,
+    );
 
     if (props.privateDomain) {
       this.#processPrivateRoutes(
@@ -110,7 +114,11 @@ export class FlexLegacyDomainStack extends BaseStack {
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain, apiRoot: IResource): void {
+  #processPublicRoutes(
+    domainConfig: IDomain,
+    apiRoot: IResource,
+    internalApiForPermissions?: IRestApi | RestApi,
+  ): void {
     const authorizerFnArn = this.import(STAGE_KEYS.ApigwPublicAuthorizerFn);
 
     const authorizerFn = Function.fromFunctionAttributes(this, "AuthorizerFn", {
@@ -165,6 +173,19 @@ export class FlexLegacyDomainStack extends BaseStack {
           );
 
           this.publicRouteBindings.push({ method, path: newPath });
+
+          if (
+            routeConfig.permissions &&
+            domainEndpointFn.function.role &&
+            internalApiForPermissions
+          ) {
+            this.#grantInternalGatewayPermissions(
+              domainEndpointFn.function.role,
+              routeConfig.permissions,
+              domainConfig.domain,
+              internalApiForPermissions,
+            );
+          }
         }
       }
     }
@@ -432,8 +453,8 @@ export class FlexLegacyDomainStack extends BaseStack {
     const allowedRoutePrefixes = permissions.map((perm) => {
       const base =
         perm.type === "domain"
-          ? `/domains/${domainName}`
-          : `/gateways/${domainName}`;
+          ? `/domains/${perm.target}`
+          : `/gateways/${perm.target}`;
       const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
       return `${base}${suffix}`;
     });
