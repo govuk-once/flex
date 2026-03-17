@@ -28,6 +28,7 @@ const EXTERNAL = "@@EXTERNAL@@";
 
 export class SsmApp extends cdk.App {
   #stacks = new Map<string, BaseStack>();
+  #stackDeps = new Map<string, string[] | undefined>();
   #stackGraph = new DirectedGraph();
   #exports = new Map<string, string>(); // region + key = stackId
 
@@ -71,16 +72,18 @@ export class SsmApp extends cdk.App {
     this.#stackGraph.mergeEdge(storedStackId, stackName);
   }
 
-  register(stack: BaseStack) {
+  register(stack: BaseStack, dependencies?: string[]) {
     const stackName = stack.stackName;
     if (this.#stacks.has(stackName)) {
       throw new Error(`Stack with name ${stackName} already registered in app`);
     }
     this.#stacks.set(stackName, stack);
+    this.#stackDeps.set(stackName, dependencies);
   }
 
   printDependencyTree(graph: Graph<NodeAttributes>) {
     const roots = graph.nodes().filter((n) => graph.inDegree(n) === 0);
+    const visited = new Set<string>();
 
     console.log("\nFLEX Platform");
 
@@ -88,10 +91,15 @@ export class SsmApp extends cdk.App {
       const { label, version } = graph.getNodeAttributes(node);
       const connector = isLast ? "└── " : "├── ";
       const childPrefix = isLast ? "    " : "│   ";
+      const name = `${label ?? node}${version ? ` v${version}` : ""}`;
 
-      console.log(
-        `${prefix}${connector}${label ?? node}${version ? ` v${version}` : ""}`,
-      );
+      if (visited.has(node)) {
+        console.log(`${prefix}${connector}${name} (↑ see above)`);
+        return;
+      }
+
+      visited.add(node);
+      console.log(`${prefix}${connector}${name}`);
 
       const children = graph.outNeighbors(node);
       children.forEach((child, i) => {
@@ -107,6 +115,11 @@ export class SsmApp extends cdk.App {
   }
 
   synth(options?: cdk.StageSynthesisOptions): cdk.cx_api.CloudAssembly {
+    [...this.#stackDeps.entries()].forEach(([stackName, deps]) => {
+      if (!deps) return;
+      deps.forEach((dep) => this.#stackGraph.mergeEdge(dep, stackName));
+    });
+
     const { edges } = this.#stackGraph.export();
 
     edges.forEach(({ source, target }) => {
@@ -185,7 +198,11 @@ export abstract class BaseStack extends cdk.Stack {
     return construct;
   }
 
-  constructor(app: Construct, id: string, { tags, env }: BaseStackProps) {
+  constructor(
+    app: Construct,
+    id: string,
+    { tags, env, dependencies }: BaseStackProps,
+  ) {
     super(app, id, {
       env: {
         account: process.env.CDK_DEFAULT_ACCOUNT,
@@ -197,7 +214,7 @@ export abstract class BaseStack extends cdk.Stack {
       throw new Error("BaseStack must be used within an SsmApp");
     }
 
-    app.register(this);
+    app.register(this, dependencies);
     this.#app = app;
     this.#addStackTags(tags);
   }

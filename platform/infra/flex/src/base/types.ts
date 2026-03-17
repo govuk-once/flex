@@ -18,4 +18,5 @@ export interface BaseStackProps {
     region: "eu-west-2" | "us-east-1";
   };
   tags: TagOptions;
+  dependencies?: string[];
 }

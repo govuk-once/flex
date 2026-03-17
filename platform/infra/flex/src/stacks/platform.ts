@@ -1,4 +1,4 @@
-import { Duration } from "aws-cdk-lib";
+import { CfnOutput, Duration } from "aws-cdk-lib";
 import {
   AccessLogFormat,
   AuthorizationType,
@@ -352,5 +352,10 @@ export class FlexPlatformStack extends BaseStack {
       [STAGE_KEYS.ApigwPrivateDomainRoot]: domainsRoot.resourceId,
       [STAGE_KEYS.ApigwPrivateGatewaysRoot]: gatewaysRoot.resourceId,
     });
+
+    new CfnOutput(this, "FlexApiUrl", {
+      value: `https://${subdomainName ?? domainName}`,
+    });
+    new CfnOutput(this, "PrivateGatewayUrl", { value: privateGatewayUrl });
   }
 }

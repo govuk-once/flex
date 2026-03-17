@@ -5,8 +5,8 @@ import { describe, expect, inject } from "vitest";
 describe("POC domain", () => {
   const { JWT } = inject("e2eEnv");
 
-  describe("POST /v0/identity/:serviceName/:identifier", () => {
-    const endpoint = `/v0/identity/test-service/test-id`;
+  describe("POST /poc/v0/identity/:serviceName/:identifier", () => {
+    const endpoint = `/poc/v0/identity/test-service/test-id`;
 
     it("rejects unauthenticated requests", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint);
@@ -26,8 +26,8 @@ describe("POC domain", () => {
     });
   });
 
-  describe("GET /v0/users", () => {
-    const endpoint = `/v0/users`;
+  describe("GET /poc/v0/users", () => {
+    const endpoint = `/poc/v0/users`;
 
     it("rejects unauthenticated requests", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint);
@@ -90,8 +90,8 @@ describe("POC domain", () => {
     });
   });
 
-  describe("PATCH /v0/users/notifications", () => {
-    const endpoint = `/v0/users/notifications`;
+  describe("PATCH /poc/v0/users/notifications", () => {
+    const endpoint = `/poc/v0/users/notifications`;
 
     it("rejects unauthenticated requests", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint);
