@@ -276,7 +276,7 @@ export class FlexPlatformStack extends BaseStack {
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
-    const dvlaConserumConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+    const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
@@ -298,10 +298,10 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     createDvlaServiceGateway(this, {
-      vpc,
-      consumerConfigArn: dvlaConserumConfigArn,
       gatewaysResource: gatewaysRoot,
       privateEgressSg,
+      vpc,
+      consumerConfigArn: dvlaConsumerConfigArn,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash

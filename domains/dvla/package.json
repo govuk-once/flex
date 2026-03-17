@@ -1,0 +1,30 @@
+{
+  "name": "@flex/dvla-domain",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@flex/handlers": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "http-errors": "2.0.1",
+    "http-status": "2.1.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@types/aws-lambda": "8.10.161",
+    "@types/http-errors": "2.0.5",
+    "eslint": "10.0.3",
+    "nock": "14.0.11",
+    "typescript": "5.9.3",
+    "vite-tsconfig-paths": "6.1.1",
+    "vitest": "4.1.0"
+  }
+}
