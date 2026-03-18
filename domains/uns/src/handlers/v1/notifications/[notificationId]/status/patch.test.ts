@@ -99,29 +99,4 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
 
     expect(result.statusCode).toBe(404);
   });
-
-  it("returns 401 when x-api-key is missing", async ({ event }) => {
-    const result = await handler(
-      event.create({
-        pathParameters: { notificationId: existingId },
-        body: JSON.stringify({ Status: "READ" }),
-      }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(401);
-  });
-
-  it("returns 401 when x-api-key is invalid", async ({ event }) => {
-    const result = await handler(
-      event.create({
-        headers: { "x-api-key": "wrong-key" },
-        pathParameters: { notificationId: existingId },
-        body: JSON.stringify({ Status: "READ" }),
-      }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(401);
-  });
 });

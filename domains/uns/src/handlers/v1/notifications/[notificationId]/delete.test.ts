@@ -45,25 +45,4 @@ describe("DELETE /v1/notifications/{notificationId}", () => {
 
     expect(result.statusCode).toBe(400);
   });
-
-  it("returns 401 when x-api-key is missing", async ({ event }) => {
-    const result = await handler(
-      event.create({ pathParameters: { notificationId: existingId } }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(401);
-  });
-
-  it("returns 401 when x-api-key is invalid", async ({ event }) => {
-    const result = await handler(
-      event.create({
-        headers: { "x-api-key": "wrong-key" },
-        pathParameters: { notificationId: existingId },
-      }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(401);
-  });
 });

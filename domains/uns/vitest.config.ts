@@ -7,7 +7,6 @@ export default mergeConfig(
     test: {
       env: {
         AWS_REGION: "eu-west-2",
-        UNS_MOCK_API_KEY: "mock-api-key",
       },
     },
   }),

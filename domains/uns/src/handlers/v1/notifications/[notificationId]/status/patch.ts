@@ -1,7 +1,7 @@
 import { createLambdaHandler } from "@flex/handlers";
 import type {
   APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
+  APIGatewayProxyStructuredResultV2,
 } from "aws-lambda";
 
 import { MOCK_NOTIFICATIONS } from "../../../../../data/notifications";
@@ -9,17 +9,9 @@ import { PatchNotificationBodySchema } from "../../../../../schemas/notification
 
 export const handler = createLambdaHandler<
   APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2
+  APIGatewayProxyStructuredResultV2
 >(
-  (event): Promise<APIGatewayProxyResultV2> => {
-    const apiKey = event.headers["x-api-key"];
-    if (!apiKey || apiKey !== process.env["UNS_MOCK_API_KEY"]) {
-      return Promise.resolve({
-        statusCode: 401,
-        body: JSON.stringify({ message: "Unauthorized" }),
-      });
-    }
-
+  (event): Promise<APIGatewayProxyStructuredResultV2> => {
     const notificationId = event.pathParameters?.["notificationId"];
     if (!notificationId) {
       return Promise.resolve({
