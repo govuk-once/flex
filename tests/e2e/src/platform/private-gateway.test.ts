@@ -31,17 +31,23 @@ describe("private gateway", () => {
     );
   });
 
-  it.todo(
-    "rejects service-to-service call when route permissions are missing",
-    async ({ cloudfront }) => {
-      const response = await cloudfront.client.get("/v1/hello-call-internal", {
+  it("rejects service-to-service call when route permissions are missing", async ({
+    cloudfront,
+  }) => {
+    const response = await cloudfront.client.get(
+      "/hello/v1/hello-call-internal",
+      {
         headers: { Authorization: `Bearer ${JWT.VALID}` },
-      });
+      },
+    );
 
-      expect(response.status).toBe(403);
-      expect(response.body).toMatchObject({
-        type: "auth_error",
-      });
-    },
-  );
+    // The raw AWS denial message is surfaced intentionally to demonstrate
+    // IAM auth enforcement at the method level.
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject(
+      expect.objectContaining({
+        Message: expect.any(String) as string,
+      }),
+    );
+  });
 });

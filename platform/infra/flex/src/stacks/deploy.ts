@@ -49,7 +49,7 @@ export class FlexApiDeploymentStack extends BaseStack {
       ),
     };
 
-    new AwsCustomResource(this, `${id}-DeployApi`, {
+    return new AwsCustomResource(this, `${id}-DeployApi`, {
       onCreate: deployAction,
       onUpdate: deployAction,
       policy: AwsCustomResourcePolicy.fromStatements([
@@ -87,17 +87,18 @@ export class FlexApiDeploymentStack extends BaseStack {
     });
 
     const publicRestApiId = this.import(STAGE_KEYS.ApigwPublicRestId);
-    this.#deployApi(
+    const publicDeploy = this.#deployApi(
       "Public",
       publicRestApiId,
       buildRoutesHash(publicRouteBindings),
     );
 
     const privateRestApiId = this.import(STAGE_KEYS.ApigwPrivateRestId);
-    this.#deployApi(
+    const privateDeploy = this.#deployApi(
       "Private",
       privateRestApiId,
       buildRoutesHash(privateRouteBindings),
     );
+    privateDeploy.node.addDependency(publicDeploy);
   }
 }

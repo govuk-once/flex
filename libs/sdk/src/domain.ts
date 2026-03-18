@@ -34,7 +34,7 @@ const permissionsSchema = z.object({
   type: z.enum(["domain", "gateway"]),
   path: z.string(),
   method: z.string(),
-  // TODO: intra-domain permissions
+  target: z.string(),
 });
 
 export type Permission = z.infer<typeof permissionsSchema>;

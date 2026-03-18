@@ -3,7 +3,7 @@ import { describe, expect, inject } from "vitest";
 
 describe("authentication", () => {
   const { JWT } = inject("e2eEnv");
-  const endpoint = `/v1/hello-public`;
+  const endpoint = `/hello/v1/hello-public`;
 
   describe("CloudFront viewer-request", () => {
     it("rejects request where authorization header is missing", async ({

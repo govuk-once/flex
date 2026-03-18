@@ -213,17 +213,10 @@ export class FlexPlatformStack extends BaseStack {
         "Private API Gateway - Internal service-to-service and domain-to-gateway routing",
       policy: new PolicyDocument({
         statements: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            principals: [new AnyPrincipal()],
-            actions: ["execute-api:Invoke"],
-            resources: ["execute-api:/*"],
-            conditions: {
-              StringEquals: {
-                "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
-              },
-            },
-          }),
+          // Deny everything that doesn't arrive through the VPC interface endpoint.
+          // No explicit Allow is present — for same-account principals this means
+          // the IAM policy becomes the sole gate. Callers must have
+          // execute-api:Invoke on the specific route ARN in their IAM role.
           new PolicyStatement({
             effect: Effect.DENY,
             principals: [new AnyPrincipal()],
