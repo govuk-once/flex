@@ -80,10 +80,10 @@ export const endpoints = defineDomain({
             timeoutSeconds: 20,
             permissions: [
               {
-                type: "domain",
+                type: "gateway",
                 target: "udp",
                 path: "/v1/notifications",
-                method: "PATCH",
+                method: "POST",
               },
             ],
           },
