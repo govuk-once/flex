@@ -65,7 +65,7 @@ describe("configureMiddleware", () => {
       middlewareLogger(error);
 
       expect(logger.error).toHaveBeenCalledExactlyOnceWith("Unhandled error", {
-        error,
+        detail: error,
       });
     });
   });

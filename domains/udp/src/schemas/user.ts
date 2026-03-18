@@ -1,30 +1,31 @@
-import { NonEmptyString } from "@flex/utils";
-import { UserId } from "@flex/utils";
+import { NonEmptyString, UserId } from "@flex/utils";
 import { z } from "zod";
 
-import { notificationId } from "./common";
+import {
+  NotificationIdBranded,
+  NotificationPreferencesConsentStatus,
+} from "./notifications";
 
-export const createUserRequestSchema = z.object({
-  notificationId,
+export const CreateUserRequestSchema = z.object({
   userId: UserId,
+  notificationId: NotificationIdBranded,
 });
 
-export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
+export type CreateUserRequest = z.output<typeof CreateUserRequestSchema>;
 
-export const createUserResponseSchema = z.object({
+export const CreateUserResponseSchema = z.object({
   message: NonEmptyString,
 });
 
-export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;
+export type CreateUserResponse = z.output<typeof CreateUserResponseSchema>;
 
-export const userProfileResponseSchema = z.object({
-  notificationId: NonEmptyString,
-  appId: NonEmptyString,
-  preferences: z.object({
-    notifications: z.object({
-      consentStatus: z.enum(["unknown", "accepted", "denied"]),
-    }),
+export const GetUserResponseSchema = z.object({
+  userId: UserId,
+  notificationId: NotificationIdBranded,
+  notifications: z.object({
+    consentStatus: NotificationPreferencesConsentStatus,
+    notificationId: NotificationIdBranded,
   }),
 });
 
-export type UserProfileResponse = z.infer<typeof userProfileResponseSchema>;
+export type GetUserResponse = z.output<typeof GetUserResponseSchema>;

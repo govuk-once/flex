@@ -1,133 +1,125 @@
-import { defineDomain } from "@flex/sdk";
+import { domain } from "@flex/sdk";
 
-export const endpoints = defineDomain({
-  domain: "udp",
-  versions: {
+import {
+  CreateNotificationPreferencesRequestSchema,
+  CreateNotificationPreferencesResponseSchema,
+  CreateUserRequestSchema,
+  GetNotificationPreferencesResponseSchema,
+  GetUserResponseSchema,
+  UpdateNotificationPreferencesOutboundResponseSchema,
+  UpdateNotificationPreferencesRequestSchema,
+} from "./src/schemas";
+
+export const { config, route, routeContext } = domain({
+  name: "udp",
+  common: {
+    access: "isolated",
+    function: { timeoutSeconds: 20 },
+  },
+  resources: {
+    privateGatewayUrl: {
+      type: "ssm",
+      path: "/flex/apigw/private/gateway-url",
+      scope: "stage",
+    },
+    encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
+    udpNotificationSecret: {
+      type: "secret",
+      path: "/flex-secret/udp/notification-hash-secret",
+    },
+  },
+  integrations: {
+    createUser: {
+      type: "domain",
+      route: "POST /v1/users",
+      body: CreateUserRequestSchema,
+    },
+    udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
+    udpCreateIdentity: { type: "gateway", route: "POST /v1/identity/*" },
+    udpDeleteIdentity: { type: "gateway", route: "DELETE /v1/identity/*" },
+    udpGetNotificationPreferences: {
+      type: "gateway",
+      route: "GET /v1/notifications",
+      response: GetNotificationPreferencesResponseSchema,
+    },
+    udpCreateNotificationPreferences: {
+      type: "gateway",
+      route: "POST /v1/notifications",
+      body: CreateNotificationPreferencesRequestSchema,
+      response: CreateNotificationPreferencesResponseSchema,
+    },
+    udpCreateUser: {
+      type: "gateway",
+      route: "POST /v1/users",
+      body: CreateUserRequestSchema,
+    },
+  },
+  routes: {
     v1: {
-      routes: {
-        "/identity/{serviceName}/{identifier}": {
-          POST: {
-            type: "ISOLATED",
-            entry: "handlers/public/v1/identity/post.ts",
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex/apigw/private/gateway-url",
-            },
-            timeoutSeconds: 20,
-            permissions: [
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/identity/*",
-                method: "POST",
-              },
-            ],
+      "/identity/:service": {
+        GET: {
+          public: {
+            name: "get-service-identity",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetIdentity"],
           },
         },
-        "/identity/{serviceName}": {
-          DELETE: {
-            type: "ISOLATED",
-            entry: "handlers/public/v1/identity/delete.ts",
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex/apigw/private/gateway-url",
-            },
-            timeoutSeconds: 20,
-            permissions: [
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/identity/*",
-                method: "DELETE",
-              },
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/identity/*",
-                method: "GET",
-              },
-            ],
-          },
-          GET: {
-            type: "ISOLATED",
-            entry: "handlers/public/v1/identity/get.ts",
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex/apigw/private/gateway-url",
-            },
-            timeoutSeconds: 20,
-            permissions: [
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/identity/*",
-                method: "GET",
-              },
-            ],
+        DELETE: {
+          public: {
+            name: "delete-service-identity",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpDeleteIdentity", "udpGetIdentity"],
           },
         },
-        "/users": {
-          GET: {
-            type: "ISOLATED",
-            entry: "handlers/public/v1/user/get.ts",
-            envSecret: {
-              FLEX_UDP_NOTIFICATION_SECRET:
-                "/flex-secret/udp/notification-hash-secret",
-            },
-            kmsKeys: {
-              ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
-            },
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex/apigw/private/gateway-url",
-            },
-            timeoutSeconds: 25,
-            permissions: [
-              {
-                type: "domain",
-                target: "udp",
-                path: "/v1/users",
-                method: "POST",
-              },
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/notifications",
-                method: "GET",
-              },
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/notifications",
-                method: "POST",
-              },
-            ],
+      },
+      "/identity/:service/:id": {
+        POST: {
+          public: {
+            name: "create-service-identity-link",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpCreateIdentity"],
           },
         },
-        "/users/notifications": {
-          PATCH: {
-            type: "ISOLATED",
-            entry: "handlers/public/v1/user/patch.ts",
-            envSecret: {
-              FLEX_UDP_NOTIFICATION_SECRET:
-                "/flex-secret/udp/notification-hash-secret",
-            },
-            kmsKeys: {
-              ENCRYPTION_KEY_ARN: "/flex-secret/encryption-key",
-            },
-            envEphemeral: {
-              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
-                "/flex/apigw/private/gateway-url",
-            },
-            timeoutSeconds: 20,
-            permissions: [
-              {
-                type: "gateway",
-                target: "udp",
-                path: "/v1/notifications",
-                method: "POST",
-              },
+      },
+      "/users": {
+        GET: {
+          public: {
+            name: "get-user-notification-preferences",
+            resources: [
+              "privateGatewayUrl",
+              "encryptionKey",
+              "udpNotificationSecret",
             ],
+            integrations: [
+              "createUser",
+              "udpCreateNotificationPreferences",
+              "udpGetNotificationPreferences",
+            ],
+            function: { timeoutSeconds: 25 },
+            response: GetUserResponseSchema,
+          },
+        },
+        POST: {
+          private: {
+            name: "create-user",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpCreateUser"],
+            body: CreateUserRequestSchema,
+          },
+        },
+      },
+      "/users/notifications": {
+        PATCH: {
+          public: {
+            name: "update-user-notification-preferences",
+            resources: [
+              "privateGatewayUrl",
+              "encryptionKey",
+              "udpNotificationSecret",
+            ],
+            integrations: ["udpCreateNotificationPreferences"],
+            body: UpdateNotificationPreferencesRequestSchema,
+            response: UpdateNotificationPreferencesOutboundResponseSchema,
           },
         },
       },
