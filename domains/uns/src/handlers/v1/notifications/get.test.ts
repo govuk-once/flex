@@ -16,7 +16,7 @@ describe("GET /v1/notifications", () => {
         headers: { "x-api-key": validApiKey },
         queryStringParameters: { externalUserId: existingUserId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(200);
@@ -30,7 +30,7 @@ describe("GET /v1/notifications", () => {
         headers: { "x-api-key": validApiKey },
         queryStringParameters: { externalUserId: existingUserId },
       }),
-      context.create(),
+      context,
     );
 
     const body = JSON.parse(result.body as string) as Record<string, unknown>[];
@@ -47,7 +47,7 @@ describe("GET /v1/notifications", () => {
   it("returns 400 when externalUserId is missing", async ({ event }) => {
     const result = await handler(
       event.create({ headers: { "x-api-key": validApiKey } }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(400);
@@ -58,7 +58,7 @@ describe("GET /v1/notifications", () => {
       event.create({
         queryStringParameters: { externalUserId: existingUserId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);
@@ -70,7 +70,7 @@ describe("GET /v1/notifications", () => {
         headers: { "x-api-key": "wrong-key" },
         queryStringParameters: { externalUserId: existingUserId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);

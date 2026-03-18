@@ -6,7 +6,7 @@ import { handler } from "./patch";
 
 describe("PATCH /v1/notifications/{notificationId}/status", () => {
   const validApiKey = "mock-api-key";
-  const existingId = MOCK_NOTIFICATIONS[0]!.NotificationID;
+  const existingId = MOCK_NOTIFICATIONS.at(0)?.NotificationID ?? "";
   const unknownId = "00000000-0000-0000-0000-000000000000";
 
   it("returns 202 when a valid patch request is made", async ({ event }) => {
@@ -16,7 +16,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "READ" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(202);
@@ -29,7 +29,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "MARKED_AS_UNREAD" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(202);
@@ -42,7 +42,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "RECEIVED" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(202);
@@ -55,7 +55,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "INVALID_STATUS" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(400);
@@ -67,7 +67,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         headers: { "x-api-key": validApiKey },
         pathParameters: { notificationId: existingId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(400);
@@ -79,7 +79,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         headers: { "x-api-key": validApiKey },
         body: JSON.stringify({ Status: "READ" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(400);
@@ -94,7 +94,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: unknownId },
         body: JSON.stringify({ Status: "READ" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(404);
@@ -106,7 +106,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "READ" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);
@@ -119,7 +119,7 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
         pathParameters: { notificationId: existingId },
         body: JSON.stringify({ Status: "READ" }),
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);

@@ -11,21 +11,23 @@ export const handler = createLambdaHandler<
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2
 >(
-  async (event) => {
-    const apiKey = event.headers?.["x-api-key"];
+  (event): Promise<APIGatewayProxyResultV2> => {
+    const apiKey = event.headers["x-api-key"];
     if (!apiKey || apiKey !== process.env["UNS_MOCK_API_KEY"]) {
-      return {
+      return Promise.resolve({
         statusCode: 401,
         body: JSON.stringify({ message: "Unauthorized" }),
-      };
+      });
     }
 
     const notificationId = event.pathParameters?.["notificationId"];
     if (!notificationId) {
-      return {
+      return Promise.resolve({
         statusCode: 400,
-        body: JSON.stringify({ message: "Bad Request: notificationId is required" }),
-      };
+        body: JSON.stringify({
+          message: "Bad Request: notificationId is required",
+        }),
+      });
     }
 
     const rawBody: unknown = event.body
@@ -34,10 +36,10 @@ export const handler = createLambdaHandler<
 
     const parsed = PatchNotificationBodySchema.safeParse(rawBody);
     if (!parsed.success) {
-      return {
+      return Promise.resolve({
         statusCode: 400,
         body: JSON.stringify({ message: "Bad Request: invalid body" }),
-      };
+      });
     }
 
     const exists = MOCK_NOTIFICATIONS.some(
@@ -45,16 +47,16 @@ export const handler = createLambdaHandler<
     );
 
     if (!exists) {
-      return {
+      return Promise.resolve({
         statusCode: 404,
         body: JSON.stringify({ message: "Not Found" }),
-      };
+      });
     }
 
-    return {
+    return Promise.resolve({
       statusCode: 202,
       body: "",
-    };
+    });
   },
   { serviceName: "uns-mock-patch-notification-status", logLevel: "INFO" },
 );

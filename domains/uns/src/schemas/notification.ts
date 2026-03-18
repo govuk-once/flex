@@ -10,7 +10,7 @@ export const NotificationStatusSchema = z.enum([
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 
 export const NotificationSchema = z.object({
-  NotificationID: z.string().uuid(),
+  NotificationID: z.uuid(),
   NotificationTitle: z.string(),
   NotificationBody: z.string(),
   MessageTitle: z.string(),

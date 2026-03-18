@@ -6,7 +6,7 @@ import { handler } from "./get";
 
 describe("GET /v1/notifications/{notificationId}", () => {
   const validApiKey = "mock-api-key";
-  const existingId = MOCK_NOTIFICATIONS[0]!.NotificationID;
+  const existingId = MOCK_NOTIFICATIONS.at(0)?.NotificationID ?? "";
   const unknownId = "00000000-0000-0000-0000-000000000000";
 
   it("returns 200 with the matching notification", async ({ event }) => {
@@ -15,11 +15,13 @@ describe("GET /v1/notifications/{notificationId}", () => {
         headers: { "x-api-key": validApiKey },
         pathParameters: { notificationId: existingId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body as string) as { NotificationID: string };
+    const body = JSON.parse(result.body as string) as {
+      NotificationID: string;
+    };
     expect(body.NotificationID).toBe(existingId);
   });
 
@@ -31,7 +33,7 @@ describe("GET /v1/notifications/{notificationId}", () => {
         headers: { "x-api-key": validApiKey },
         pathParameters: { notificationId: unknownId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(404);
@@ -40,7 +42,7 @@ describe("GET /v1/notifications/{notificationId}", () => {
   it("returns 400 when notificationId is missing", async ({ event }) => {
     const result = await handler(
       event.create({ headers: { "x-api-key": validApiKey } }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(400);
@@ -49,7 +51,7 @@ describe("GET /v1/notifications/{notificationId}", () => {
   it("returns 401 when x-api-key is missing", async ({ event }) => {
     const result = await handler(
       event.create({ pathParameters: { notificationId: existingId } }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);
@@ -61,7 +63,7 @@ describe("GET /v1/notifications/{notificationId}", () => {
         headers: { "x-api-key": "wrong-key" },
         pathParameters: { notificationId: existingId },
       }),
-      context.create(),
+      context,
     );
 
     expect(result.statusCode).toBe(401);

@@ -10,27 +10,29 @@ export const handler = createLambdaHandler<
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2
 >(
-  async (event) => {
-    const apiKey = event.headers?.["x-api-key"];
+  (event): Promise<APIGatewayProxyResultV2> => {
+    const apiKey = event.headers["x-api-key"];
     if (!apiKey || apiKey !== process.env["UNS_MOCK_API_KEY"]) {
-      return {
+      return Promise.resolve({
         statusCode: 401,
         body: JSON.stringify({ message: "Unauthorized" }),
-      };
+      });
     }
 
     const externalUserId = event.queryStringParameters?.["externalUserId"];
     if (!externalUserId) {
-      return {
+      return Promise.resolve({
         statusCode: 400,
-        body: JSON.stringify({ message: "Bad Request: externalUserId is required" }),
-      };
+        body: JSON.stringify({
+          message: "Bad Request: externalUserId is required",
+        }),
+      });
     }
 
-    return {
+    return Promise.resolve({
       statusCode: 200,
       body: JSON.stringify(MOCK_NOTIFICATIONS),
-    };
+    });
   },
   { serviceName: "uns-mock-get-notifications", logLevel: "INFO" },
 );
