@@ -79,7 +79,6 @@ export function grantRoutePermissions(
         effect: Effect.ALLOW,
         actions: ["execute-api:Invoke"],
         resources,
-        conditions: { StringEquals: { "execute-api:Method": [method] } },
       }),
     );
   }
