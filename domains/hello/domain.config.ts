@@ -31,6 +31,7 @@ export const endpoints = defineDomain({
               FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
                 "/flex/apigw/private/gateway-url",
             },
+            timeoutSeconds: 10,
           },
         },
       },
