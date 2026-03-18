@@ -7,7 +7,7 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { createHash } from "./create-hash";
-import { getParamName } from "./getParamName";
+import { getParamName, getStageParamName } from "./getParamName";
 
 export type ImportedResource =
   | { readonly type: "secret"; readonly construct: ISecret }
@@ -63,7 +63,7 @@ function importResource(
         type: "secret",
         construct: importFlexSecret(
           scope,
-          isStageScoped ? getParamName(path) : path,
+          isStageScoped ? getStageParamName(path) : path,
         ),
       };
     case "ssm":
@@ -74,7 +74,7 @@ function importResource(
           ? StringParameter.fromStringParameterName(
               scope,
               `EphemeralParam${createHash(path)}`,
-              getParamName(path),
+              getStageParamName(path),
             )
           : importFlexParameter(scope, path),
       };
