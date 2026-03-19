@@ -6,7 +6,7 @@ import {
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
 
-const { config, route, routeContext } = domain({
+export const { config, route, routeContext } = domain({
   name: "uns",
   common: {
     access: "isolated",
@@ -46,13 +46,3 @@ const { config, route, routeContext } = domain({
     },
   },
 });
-
-export const getNotificationsContext = routeContext<"GET /v1/notifications">;
-export const getNotificationByIdContext =
-  routeContext<"GET /v1/notifications/:notificationId">;
-export const deleteNotificationContext =
-  routeContext<"DELETE /v1/notifications/:notificationId">;
-export const patchNotificationStatusContext =
-  routeContext<"PATCH /v1/notifications/:notificationId/status">;
-
-export { config, route };

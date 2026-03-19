@@ -1,3 +1,4 @@
+import { IsoDateTime, NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 export const NotificationStatusSchema = z.enum([
@@ -10,12 +11,12 @@ export const NotificationStatusSchema = z.enum([
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 
 export const NotificationSchema = z.object({
-  NotificationID: z.string(),
-  NotificationTitle: z.string(),
-  NotificationBody: z.string(),
-  MessageTitle: z.string(),
-  MessageBody: z.string(),
-  DispatchedDateTime: z.string(),
+  NotificationID: NonEmptyString,
+  NotificationTitle: NonEmptyString,
+  NotificationBody: NonEmptyString,
+  MessageTitle: NonEmptyString,
+  MessageBody: NonEmptyString,
+  DispatchedDateTime: IsoDateTime,
   Status: NotificationStatusSchema.optional(),
 });
 
