@@ -68,9 +68,13 @@ const DomainResourceSchema = z.object({
   scope: z.enum(["environment", "stage"]).optional(),
 });
 
-const FlexEnvironmentSchema = z.enum(["development", "staging", "production"]);
+export const FlexEnvironmentSchema = z.enum([
+  "development",
+  "staging",
+  "production",
+]);
 
-const DomainFeatureFlagSchema = z.object({
+export const DomainFeatureFlagSchema = z.object({
   description: NonEmptyString.optional(),
   default: z.boolean().optional(),
   environments: z.record(FlexEnvironmentSchema, z.boolean()).optional(),

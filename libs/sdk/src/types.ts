@@ -5,7 +5,12 @@ import type {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import type { ZodType } from "zod";
+import type { z, ZodType } from "zod";
+
+import {
+  DomainFeatureFlagSchema,
+  FlexEnvironmentSchema,
+} from "./config/schema";
 
 // ----------------------------------------------------------------------------
 // Flex Function
@@ -73,13 +78,8 @@ export interface DomainResource<T extends string = string> {
 // Feature Flags
 // ----------------------------------------------------------------------------
 
-export type FlexEnvironment = "development" | "staging" | "production";
-
-export interface DomainFeatureFlag {
-  readonly description?: string;
-  readonly default?: boolean;
-  readonly environments?: Partial<Record<FlexEnvironment, boolean>>;
-}
+export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
+export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 interface DomainResourceCommonOptions {
   scope?: "environment" | "stage";
