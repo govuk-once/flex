@@ -13,12 +13,3 @@ export function applyCheckovSkip(
 
   resource.addMetadata("checkov", { skip: [{ id, comment }] });
 }
-
-export function applyCheckovSkips(
-  construct: IConstruct,
-  skips: { id: string; comment?: string }[],
-) {
-  skips.forEach(({ id, comment }) => {
-    applyCheckovSkip(construct, id, comment);
-  });
-}
