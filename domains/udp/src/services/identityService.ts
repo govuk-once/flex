@@ -79,3 +79,33 @@ export const deleteIdentityService = async ({
 
   logger.info("service ID has now been unlinked to app ID");
 };
+
+export const getIdentityService = async ({
+  client,
+  service,
+  userId,
+}: {
+  client: UdpDomainClient;
+  service: string;
+  userId: string;
+}) => {
+  const exchangeResponse = await client.gateway.serviceLink.get(
+    service,
+    userId,
+  );
+
+  if (!exchangeResponse.ok) {
+    if (exchangeResponse.error.status === status.NOT_FOUND) {
+      return { linked: false };
+    }
+
+    logger.error("Failed to verify if user has existing service link", {
+      status: exchangeResponse.error.status,
+      errorBody: exchangeResponse.error.body,
+    });
+
+    throw new createHttpError.BadGateway();
+  }
+
+  return { linked: true };
+};
