@@ -1,5 +1,6 @@
 import { domain } from "@flex/sdk";
-import { viewDriverResponseSchema } from "@schemas/driversLicence";
+
+import { viewDriverResponseSchema } from "./src/schemas/driversLicence";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",

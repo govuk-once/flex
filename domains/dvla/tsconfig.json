@@ -3,8 +3,7 @@
   "include": ["src/**/*.ts", "vitest.config.ts", "domain.config.ts"],
   "compilerOptions": {
     "paths": {
-      "@domain": ["./domain.config.ts"],
-      "@schemas/*": ["./src/schemas/*"]
+      "@domain": ["./domain.config.ts"]
     }
   }
 }
