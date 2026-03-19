@@ -61,8 +61,10 @@ export function createPermissionsBoundary(
           "secretsmanager:DescribeSecret",
           "ssm:GetParameter",
           "ssm:GetParameters",
+          "ssm:DeleteParameter",
           "ssm:DescribeParameters",
           "ssm:GetParameterHistory",
+          "ssm:PutParameter",
           "kms:Decrypt",
           "sts:AssumeRole",
         ],
@@ -86,9 +88,8 @@ export function createPermissionsBoundary(
   });
 
   // Suppress Checkov checks that flag broad resource scopes in this permissions boundary.
-  // A permissions boundary intentionally uses wildcard resources — it defines the maximum
-  // permissions ceiling, and actual role policies constrain access further. These checks are
-  // not meaningful in the context of a permissions boundary policy.
+  // A permissions boundary intentionally uses wildcard resources to define the maximum
+  // permissions allowed.
   (policy.node.defaultChild as CfnResource).addMetadata("checkov", {
     skip: [
       {

@@ -13,6 +13,12 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { RestApiOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import {
+  ManagedPolicy,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from "aws-cdk-lib/aws-iam";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
@@ -25,7 +31,6 @@ import {
 import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import {
   AwsCustomResource,
-  AwsCustomResourcePolicy,
   PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
@@ -65,6 +70,28 @@ export class FlexCloudfront extends Construct {
     const paramArn = `arn:aws:ssm:${stack.region}:${stack.account}:parameter${paramName}`;
     const newSecret = randomBytes(64).toString("hex");
 
+    // Had issues with the custom resource role not having permissions to manage the parameter,
+    // when the permission boundary was implemented so creating a dedicated role for the custom resource
+    // with a policy that allows it to manage the specific parameter it needs to interact with.
+    const customResourceRole = new Role(this, "RotatingSecretRole", {
+      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AWSLambdaBasicExecutionRole",
+        ),
+      ],
+    });
+    customResourceRole.addToPolicy(
+      new PolicyStatement({
+        actions: [
+          "ssm:PutParameter",
+          "ssm:GetParameter",
+          "ssm:DeleteParameter",
+        ],
+        resources: [paramArn],
+      }),
+    );
+
     // Ensure the parameter exists with a default value. This is important on the first
     // deployment for ephemeral envs. Likely will only run once on the main envs.
     const seedSecretResource = new AwsCustomResource(this, "SeedSecret", {
@@ -75,7 +102,7 @@ export class FlexCloudfront extends Construct {
         physicalResourceId: PhysicalResourceId.of("seed-secret"),
         ignoreErrorCodesMatching: "ParameterAlreadyExists",
       },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      role: customResourceRole,
     });
 
     const previousSsmGet = {
@@ -94,7 +121,7 @@ export class FlexCloudfront extends Construct {
         action: "deleteParameter",
         parameters: { Name: paramName },
       },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      role: customResourceRole,
     });
 
     previousSecret.node.addDependency(seedSecretResource);
@@ -114,7 +141,7 @@ export class FlexCloudfront extends Construct {
     const setCurrentSecret = new AwsCustomResource(this, "StoreNewSecret", {
       onCreate: currentSsmPut,
       onUpdate: currentSsmPut,
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      role: customResourceRole,
     });
 
     setCurrentSecret.node.addDependency(previousSecret);
