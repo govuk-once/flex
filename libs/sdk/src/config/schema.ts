@@ -2,9 +2,9 @@ import { NonEmptyString } from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
 
-const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
+export const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
 
-const LogLevelSchema = z.enum([
+export const LogLevelSchema = z.enum([
   "TRACE",
   "DEBUG",
   "INFO",
@@ -14,7 +14,7 @@ const LogLevelSchema = z.enum([
   "CRITICAL",
 ]);
 
-const HttpMethodSchema = z.enum([
+export const HttpMethodSchema = z.enum([
   "GET",
   "POST",
   "PUT",
@@ -24,7 +24,7 @@ const HttpMethodSchema = z.enum([
   "OPTIONS",
 ]);
 
-const FunctionConfigSchema = z.object({
+export const FunctionConfigSchema = z.object({
   environment: z.record(NonEmptyString, NonEmptyString).optional(),
   memorySize: z.number().int().min(128).max(10240).optional(),
   timeoutSeconds: z.number().int().min(1).max(900).optional(),

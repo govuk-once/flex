@@ -10,6 +10,10 @@ import type { z, ZodType } from "zod";
 import {
   DomainFeatureFlagSchema,
   FlexEnvironmentSchema,
+  FunctionConfigSchema,
+  HttpMethodSchema,
+  LogLevelSchema,
+  RouteAccessSchema,
 } from "./config/schema";
 
 // ----------------------------------------------------------------------------
@@ -17,11 +21,7 @@ import {
 // ----------------------------------------------------------------------------
 
 // Add more fields if needed, based on Nodejsfunction
-export interface FunctionConfig {
-  environment?: Readonly<Record<string, string>>;
-  memorySize?: number;
-  timeoutSeconds?: number;
-}
+export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
 
 // ----------------------------------------------------------------------------
 // Headers
@@ -404,27 +404,13 @@ export type GatewayRouteConfig<
 // Domain Config
 // ----------------------------------------------------------------------------
 
-export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
 
 type HttpMethodWithBody = Extract<HttpMethod, "POST" | "PUT" | "PATCH">;
 
-export type LogLevel =
-  | "TRACE"
-  | "DEBUG"
-  | "INFO"
-  | "WARN"
-  | "ERROR"
-  | "SILENT"
-  | "CRITICAL";
+export type LogLevel = z.infer<typeof LogLevelSchema>;
 
-export type RouteAccess = "public" | "private" | "isolated";
+export type RouteAccess = z.infer<typeof RouteAccessSchema>;
 
 interface DomainConfigCommon {
   readonly access?: RouteAccess;
