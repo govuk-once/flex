@@ -1,3 +1,4 @@
+compact: true
 skip-check:
   - CKV_AWS_115
   - CKV_AWS_116

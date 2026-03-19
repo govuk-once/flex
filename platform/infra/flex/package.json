@@ -10,7 +10,7 @@
     "synth": "cdk synth",
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation"
+    "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "3.985.0",

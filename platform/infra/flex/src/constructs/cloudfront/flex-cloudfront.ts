@@ -13,6 +13,7 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { RestApiOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
@@ -65,6 +66,14 @@ export class FlexCloudfront extends Construct {
     const paramArn = `arn:aws:ssm:${stack.region}:${stack.account}:parameter${paramName}`;
     const newSecret = randomBytes(64).toString("hex");
 
+    // Use fromStatements with explicit actions rather than fromSdkCalls to ensure the correct
+    // IAM permissions are always granted. fromSdkCalls auto-generates actions, which can be
+    // unreliable when a permissions boundary is applied to the stack.
+    const ssmPolicy = (actions: string[]) =>
+      AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({ actions, resources: [paramArn] }),
+      ]);
+
     // Ensure the parameter exists with a default value. This is important on the first
     // deployment for ephemeral envs. Likely will only run once on the main envs.
     const seedSecretResource = new AwsCustomResource(this, "SeedSecret", {
@@ -75,7 +84,7 @@ export class FlexCloudfront extends Construct {
         physicalResourceId: PhysicalResourceId.of("seed-secret"),
         ignoreErrorCodesMatching: "ParameterAlreadyExists",
       },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      policy: ssmPolicy(["ssm:PutParameter"]),
     });
 
     const previousSsmGet = {
@@ -94,7 +103,7 @@ export class FlexCloudfront extends Construct {
         action: "deleteParameter",
         parameters: { Name: paramName },
       },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      policy: ssmPolicy(["ssm:GetParameter", "ssm:DeleteParameter"]),
     });
 
     previousSecret.node.addDependency(seedSecretResource);
@@ -114,7 +123,7 @@ export class FlexCloudfront extends Construct {
     const setCurrentSecret = new AwsCustomResource(this, "StoreNewSecret", {
       onCreate: currentSsmPut,
       onUpdate: currentSsmPut,
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: [paramArn] }),
+      policy: ssmPolicy(["ssm:PutParameter"]),
     });
 
     setCurrentSecret.node.addDependency(previousSecret);
