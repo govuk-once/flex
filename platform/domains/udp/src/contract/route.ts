@@ -3,7 +3,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import { identityRequestBodySchema } from "../schemas/domain/identity";
+import { createIdentityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
@@ -89,11 +89,54 @@ export const ROUTE_CONTRACTS = {
         );
       }
 
-      const body = await parseAndMapBody(identityRequestBodySchema, event);
+      const body = await parseAndMapBody(
+        createIdentityRequestBodySchema,
+        event,
+      );
       return { serviceName, identifier, body };
     },
     callRemote: (client, data) =>
       client.serviceLink.create(data.serviceName, data.identifier, data.body),
+  },
+  "DELETE:/v1/identity/:serviceName/:identifier": {
+    operation: "deleteIdentityLink",
+    method: "DELETE",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+      const identifier = pathParams[4];
+
+      if (!serviceName || !identifier) {
+        throw new createHttpError.BadRequest(
+          "Missing serviceName or identifier in path",
+        );
+      }
+
+      return { serviceName, identifier };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.delete(data.serviceName, data.identifier),
+  },
+  "GET:/v1/identity/:serviceName": {
+    operation: "getIdentityLink",
+    method: "GET",
+    inboundPath: "/v1/identity",
+    remotePath: "/v1/identity",
+    toRemote: (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const serviceName = pathParams[3];
+      const userId = assertRequiredHeaderAndReturn(event, "User-Id");
+
+      if (!serviceName) {
+        throw new createHttpError.BadRequest("Missing serviceName in path");
+      }
+
+      return { serviceName, userId };
+    },
+    callRemote: (client, data) =>
+      client.serviceLink.get(data.serviceName, data.userId),
   },
 } as const satisfies Record<string, RouteContract>;
 

@@ -2,6 +2,7 @@ import { IDomain, IDomainEndpoint, Permission } from "@flex/sdk";
 import { Duration } from "aws-cdk-lib";
 import type { IResource, IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
+  AuthorizationType,
   IdentitySource,
   LambdaIntegration,
   Resource,
@@ -23,7 +24,7 @@ import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createHash } from "../utils/create-hash";
 import { getDomainEntry } from "../utils/getEntry";
-import { getParamName } from "../utils/getParamName";
+import { getParamName, getStageParamName } from "../utils/getParamName";
 import { grantPrivateApiAccess } from "../utils/grantPrivateApiAccess";
 
 export interface RouteBinding {
@@ -97,7 +98,11 @@ export class FlexLegacyDomainStack extends BaseStack {
     const publicRestApi = this.#getPublicRestApi();
     const privateRestApi = this.#getPrivateRestApi();
 
-    this.#processPublicRoutes(props.publicDomain, publicRestApi.rootResource);
+    this.#processPublicRoutes(
+      props.publicDomain,
+      publicRestApi.rootResource,
+      privateRestApi.restApi,
+    );
 
     if (props.privateDomain) {
       this.#processPrivateRoutes(
@@ -110,7 +115,11 @@ export class FlexLegacyDomainStack extends BaseStack {
     }
   }
 
-  #processPublicRoutes(domainConfig: IDomain, apiRoot: IResource): void {
+  #processPublicRoutes(
+    domainConfig: IDomain,
+    apiRoot: IResource,
+    internalApiForPermissions?: IRestApi | RestApi,
+  ): void {
     const authorizerFnArn = this.import(STAGE_KEYS.ApigwPublicAuthorizerFn);
 
     const authorizerFn = Function.fromFunctionAttributes(this, "AuthorizerFn", {
@@ -165,6 +174,19 @@ export class FlexLegacyDomainStack extends BaseStack {
           );
 
           this.publicRouteBindings.push({ method, path: newPath });
+
+          if (
+            routeConfig.permissions &&
+            domainEndpointFn.function.role &&
+            internalApiForPermissions
+          ) {
+            this.#grantInternalGatewayPermissions(
+              domainEndpointFn.function.role,
+              routeConfig.permissions,
+              domainConfig.domain,
+              internalApiForPermissions,
+            );
+          }
         }
       }
     }
@@ -215,6 +237,7 @@ export class FlexLegacyDomainStack extends BaseStack {
           const resource = this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
+            { authorizationType: AuthorizationType.IAM },
           );
 
           applyCheckovSkip(
@@ -393,7 +416,7 @@ export class FlexLegacyDomainStack extends BaseStack {
       resource = StringParameter.fromStringParameterName(
         this,
         `EphemeralParam${createHash(path)}`,
-        getParamName(path),
+        getStageParamName(path),
       );
     } else {
       resource = StringParameter.fromStringParameterName(
@@ -432,8 +455,8 @@ export class FlexLegacyDomainStack extends BaseStack {
     const allowedRoutePrefixes = permissions.map((perm) => {
       const base =
         perm.type === "domain"
-          ? `/domains/${domainName}`
-          : `/gateways/${domainName}`;
+          ? `/domains/${perm.target}`
+          : `/gateways/${perm.target}`;
       const suffix = perm.path.startsWith("/") ? perm.path : `/${perm.path}`;
       return `${base}${suffix}`;
     });

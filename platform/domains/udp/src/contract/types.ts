@@ -5,8 +5,11 @@ import type { UdpRemoteClient } from "../client";
 import { RequestingServiceUserIdHeader } from "../schemas/common";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import {
-  CreateIdentityResponse,
-  identityRequest,
+  CreateIdentityRequest,
+  DeleteIdentityRequest,
+  GetIdentityRequest,
+  GetIdentityResponse,
+  IdentityResponse,
 } from "../schemas/remote/identity";
 import type {
   CreateOrUpdateNotificationsRequest,
@@ -19,11 +22,13 @@ export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
   | "createUser"
-  | "createIdentityLink";
+  | "createIdentityLink"
+  | "deleteIdentityLink"
+  | "getIdentityLink";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
-  TMethod extends "GET" | "POST" | "PUT" | "PATCH",
+  TMethod extends "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   TRemoteRequest,
   TRemoteResponse,
   TDomainResponse,
@@ -32,7 +37,9 @@ type BaseRouteContract<
   method: TMethod;
   inboundPath: string;
   remotePath: string;
-  toRemote: (event: APIGatewayProxyEvent) => Promise<TRemoteRequest>;
+  toRemote: (
+    event: APIGatewayProxyEvent,
+  ) => TRemoteRequest | Promise<TRemoteRequest>;
   callRemote: (
     client: UdpRemoteClient,
     input: TRemoteRequest,
@@ -67,13 +74,31 @@ export type CreateUserRouteContract = BaseRouteContract<
 export type CreateIdentityLinkRouteContract = BaseRouteContract<
   "createIdentityLink",
   "POST",
-  identityRequest,
+  CreateIdentityRequest,
   unknown,
-  CreateIdentityResponse
+  IdentityResponse
+>;
+
+export type DeleteIdentityLinkRouteContract = BaseRouteContract<
+  "deleteIdentityLink",
+  "DELETE",
+  DeleteIdentityRequest,
+  unknown,
+  IdentityResponse
+>;
+
+export type GetIdentityLinkRouteContract = BaseRouteContract<
+  "getIdentityLink",
+  "GET",
+  GetIdentityRequest,
+  unknown,
+  GetIdentityResponse
 >;
 
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
   | CreateUserRouteContract
-  | CreateIdentityLinkRouteContract;
+  | CreateIdentityLinkRouteContract
+  | DeleteIdentityLinkRouteContract
+  | GetIdentityLinkRouteContract;

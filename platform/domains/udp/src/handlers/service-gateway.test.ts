@@ -72,6 +72,8 @@ const remoteClient = {
   },
   serviceLink: {
     create: vi.fn(),
+    delete: vi.fn(),
+    get: vi.fn(),
   },
 };
 
@@ -203,6 +205,86 @@ describe("UDP Service Gateway", () => {
       serviceName,
       identifier,
       { appId: userId },
+    );
+  });
+
+  it("dispatches DELETE /v1/identity/:serviceName/:identifier and unlinks service ID", async ({
+    privateGatewayEvent,
+    env,
+    userId,
+  }) => {
+    env.set({
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+    });
+
+    const serviceName = "test-service";
+
+    remoteClient.serviceLink.delete.mockResolvedValue({
+      ok: true,
+      status: 204,
+      data: undefined,
+    });
+
+    const response = await handler(
+      privateGatewayEvent.delete(
+        `/gateways/udp/v1/identity/${serviceName}/${userId}`,
+        {
+          body: { appId: userId },
+        },
+      ),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 204,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    expect(remoteClient.serviceLink.delete).toHaveBeenCalledWith(
+      serviceName,
+      userId,
+    );
+  });
+
+  it("dispatches GET /v1/identity/:serviceName and gets identity link", async ({
+    privateGatewayEvent,
+    env,
+    userId,
+  }) => {
+    env.set({
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+    });
+
+    const serviceName = "test-service";
+
+    remoteClient.serviceLink.get.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { identity: "linked-account-info" },
+    });
+
+    const response = await handler(
+      privateGatewayEvent.get(`/gateways/udp/v1/identity/${serviceName}`, {
+        headers: {
+          "User-Id": userId,
+        },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ identity: "linked-account-info" }),
+    });
+
+    expect(remoteClient.serviceLink.get).toHaveBeenCalledWith(
+      serviceName,
+      userId,
     );
   });
 

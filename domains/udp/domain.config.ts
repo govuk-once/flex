@@ -17,8 +17,34 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "gateway",
-                path: "",
+                target: "udp",
+                path: "/v1/identity/*",
                 method: "POST",
+              },
+            ],
+          },
+        },
+        "/identity/{serviceName}": {
+          DELETE: {
+            type: "ISOLATED",
+            entry: "handlers/public/v1/identity/delete.ts",
+            envEphemeral: {
+              FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME:
+                "/flex/apigw/private/gateway-url",
+            },
+            timeoutSeconds: 20,
+            permissions: [
+              {
+                type: "gateway",
+                target: "udp",
+                path: "/v1/identity/*",
+                method: "DELETE",
+              },
+              {
+                type: "gateway",
+                target: "udp",
+                path: "/v1/identity/*",
+                method: "GET",
               },
             ],
           },
@@ -42,18 +68,21 @@ export const endpoints = defineDomain({
             permissions: [
               {
                 type: "domain",
-                path: "/v1/notifications",
+                target: "udp",
+                path: "/v1/users",
                 method: "POST",
               },
               {
-                type: "domain",
+                type: "gateway",
+                target: "udp",
                 path: "/v1/notifications",
                 method: "GET",
               },
               {
                 type: "gateway",
-                path: "",
-                method: "GET",
+                target: "udp",
+                path: "/v1/notifications",
+                method: "POST",
               },
             ],
           },
@@ -76,9 +105,10 @@ export const endpoints = defineDomain({
             timeoutSeconds: 20,
             permissions: [
               {
-                type: "domain",
+                type: "gateway",
+                target: "udp",
                 path: "/v1/notifications",
-                method: "PATCH",
+                method: "POST",
               },
             ],
           },

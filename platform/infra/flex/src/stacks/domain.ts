@@ -1,5 +1,6 @@
 import { IacDomainConfig, RouteAccess } from "@flex/sdk";
 import {
+  AuthorizationType,
   IdentitySource,
   IResource,
   LambdaIntegration,
@@ -62,7 +63,7 @@ export class FlexDomainStack extends BaseStack {
   #getPublicRestApi() {
     const restApiId = this.import(STAGE_KEYS.ApigwPublicRestId);
     const resourceId = this.import(STAGE_KEYS.ApigwPublicAppRoot);
-    return this.#getRestApi("Public", restApiId, resourceId, "/");
+    return this.#getRestApi("Public", restApiId, resourceId, "/app");
   }
 
   #getPrivateRestApi() {
@@ -157,7 +158,9 @@ export class FlexDomainStack extends BaseStack {
           const resource = this.#addDeepResource(
             privateDomainsRoot,
             resourcePath,
-          ).addMethod(method, new LambdaIntegration(lambda.function));
+          ).addMethod(method, new LambdaIntegration(lambda.function), {
+            authorizationType: AuthorizationType.IAM,
+          });
 
           applyCheckovSkip(
             resource,

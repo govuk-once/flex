@@ -1,33 +1,37 @@
 import { createUdpDomainClient } from "@client";
 import { createLambdaHandler } from "@flex/handlers";
 import {
-  type ContextWithUserId,
+  ContextWithUserId,
   extractUser,
   V2Authorizer,
 } from "@flex/middlewares";
 import { getConfig } from "@flex/params";
-import { jsonResponse, validatePathParams } from "@flex/utils";
-import { configSchema, identityPathSchema } from "@schemas/identity";
-import { createIdentityService } from "@services/identityService";
-import type {
+import { jsonResponse } from "@flex/utils";
+import { deleteIdentityService } from "@services/identityService";
+import {
   APIGatewayProxyResultV2,
   APIGatewayProxyWithLambdaAuthorizerEvent,
 } from "aws-lambda";
 import { status } from "http-status";
+import z from "zod";
+
+const configSchema = z.object({
+  FLEX_PRIVATE_GATEWAY_URL_PARAM_NAME: z.string().min(1),
+  AWS_REGION: z.string().min(1),
+});
 
 export const handler = createLambdaHandler<
   APIGatewayProxyWithLambdaAuthorizerEvent<V2Authorizer> & {
-    pathParameters: { serviceName: string; identifier: string };
+    pathParameters: { serviceName: string };
   },
   APIGatewayProxyResultV2,
   ContextWithUserId
 >(
   async (event, context) => {
-    const userId = context.userId;
-    const { serviceName, identifier } = validatePathParams(
-      identityPathSchema,
-      event.pathParameters,
-    );
+    const {
+      pathParameters: { serviceName },
+      context: { userId },
+    } = { ...event, context };
 
     const config = await getConfig(configSchema);
     const client = createUdpDomainClient({
@@ -35,17 +39,16 @@ export const handler = createLambdaHandler<
       baseUrl: config.FLEX_PRIVATE_GATEWAY_URL,
     });
 
-    await createIdentityService({
-      userId,
+    await deleteIdentityService({
       client,
+      userId,
       service: serviceName,
-      serviceId: identifier,
     });
 
-    return jsonResponse(status.CREATED);
+    return jsonResponse(status.NO_CONTENT);
   },
   {
-    serviceName: "udp-post-identity-service",
+    serviceName: "udp-delete-identity-service",
     middlewares: [extractUser],
   },
 );

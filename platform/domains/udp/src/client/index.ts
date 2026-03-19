@@ -5,7 +5,7 @@ import {
 } from "@flex/flex-fetch";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import { identityBodyRequest } from "../schemas/remote/identity";
+import { CreateIdentityBodyRequest } from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,
@@ -80,7 +80,7 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
       create: (
         serviceName: string,
         identifier: string,
-        body: identityBodyRequest,
+        body: CreateIdentityBodyRequest,
       ): Promise<ApiResult<void>> => {
         const { request } = fetcher(
           `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}`,
@@ -90,6 +90,35 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
             headers: defaultHeaders,
           },
         );
+        return typedFetch(request);
+      },
+      delete: (
+        serviceName: string,
+        identifier: string,
+      ): Promise<ApiResult<void>> => {
+        const { request } = fetcher(
+          `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}`,
+          {
+            method: "DELETE",
+            headers: defaultHeaders,
+          },
+        );
+
+        return typedFetch(request);
+      },
+      get: (serviceName: string, userId: string): Promise<ApiResult<void>> => {
+        const params = new URLSearchParams({ requiredService: serviceName });
+        const request = fetcher(
+          `${UDP_REMOTE_ROUTES.identity}/exchange?${params.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              ...defaultHeaders,
+              "requesting-service": "app",
+              "requesting-service-user-id": userId,
+            },
+          },
+        ).request;
         return typedFetch(request);
       },
     },
