@@ -15,15 +15,7 @@ import {
 
 vi.mock("@flex/logging");
 
-vi.mock("@flex/flex-fetch", async (actual) => ({
-  ...(await actual()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
+vi.mock("@flex/flex-fetch");
 
 describe("createIdentityService", () => {
   const BASE_URL = "https://example.com";

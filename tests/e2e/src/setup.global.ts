@@ -18,23 +18,31 @@ export default async function setup({
 }) {
   const manualApiUrl = process.env.FLEX_API_URL;
   const manualGatewayUrl = process.env.FLEX_PRIVATE_GATEWAY_URL;
+  const manualExecuteApiUrl = process.env.FLEX_PUBLIC_EXECUTE_API_URL;
 
   const envStage = sanitiseStageName(process.env.STAGE);
 
   let stage: string;
   let apiUrl: string;
   let privateGatewayUrl: string;
+  let publicExecuteApiUrl: string;
 
-  if (manualApiUrl || manualGatewayUrl) {
-    if (!manualApiUrl || !manualGatewayUrl || envStage === undefined) {
+  if (manualApiUrl || manualGatewayUrl || manualExecuteApiUrl) {
+    if (
+      !manualApiUrl ||
+      !manualGatewayUrl ||
+      !manualExecuteApiUrl ||
+      envStage === undefined
+    ) {
       throw new Error(
-        "Manual Override Error: To provide a manual URL, you must provide FLEX_API_URL, FLEX_PRIVATE_GATEWAY_URL, and STAGE in your .env or command line.",
+        "Manual Override Error: To provide a manual URL, you must provide FLEX_API_URL, FLEX_PRIVATE_GATEWAY_URL, FLEX_PUBLIC_EXECUTE_API_URL, and STAGE in your .env or command line.",
       );
     }
 
     stage = envStage;
     apiUrl = manualApiUrl;
     privateGatewayUrl = manualGatewayUrl;
+    publicExecuteApiUrl = manualExecuteApiUrl;
   } else {
     stage = envStage ?? sanitiseStageName(process.env.USER) ?? "development";
 
@@ -44,6 +52,7 @@ export default async function setup({
 
     apiUrl = platform.FlexApiUrl;
     privateGatewayUrl = platform.PrivateGatewayUrl;
+    publicExecuteApiUrl = platform.PublicApiExecuteUrl;
   }
 
   const jwtClient = await getJwtClient(stage);
@@ -54,6 +63,7 @@ export default async function setup({
     e2eEnvSchema.parse({
       FLEX_API_URL: apiUrl,
       FLEX_PRIVATE_GATEWAY_URL: privateGatewayUrl,
+      FLEX_PUBLIC_EXECUTE_API_URL: publicExecuteApiUrl,
       STAGE: stage,
       JWT: {
         VALID: validJwtToken,

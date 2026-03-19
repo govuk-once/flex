@@ -351,5 +351,8 @@ export class FlexPlatformStack extends BaseStack {
       value: `https://${subdomainName ?? domainName}`,
     });
     new CfnOutput(this, "PrivateGatewayUrl", { value: privateGatewayUrl });
+    new CfnOutput(this, "PublicApiExecuteUrl", {
+      value: restApi.url.replace(/\/$/, ""),
+    });
   }
 }
