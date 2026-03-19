@@ -1,0 +1,203 @@
+openapi: 3.1.0
+info:
+  title: Flex API
+  version: 1.0.0
+  description: Public API for the GOV.UK Flex platform.
+servers:
+  - url: https://api.staging.flex.service.gov.uk
+    description: Staging
+  - url: "{baseUrl}"
+    description: Ephemeral environment
+    variables:
+      baseUrl:
+        default: https://api.staging.flex.service.gov.uk
+        description: Base URL for the ephemeral environment
+security:
+  - BearerAuth: []
+paths:
+  /udp/v1/identity/{serviceName}/{identifier}:
+    post:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/users:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/users/notifications:
+    patch:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/identity/{serviceName}/{identifier}:
+    post:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/users:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    minLength: 1
+                  notificationId:
+                    type: string
+                    minLength: 1
+                  preferences:
+                    type: object
+                    properties:
+                      notifications:
+                        type: object
+                        properties:
+                          consentStatus:
+                            type: string
+                            enum:
+                              - unknown
+                              - accepted
+                              - denied
+                          notificationId:
+                            type: string
+                            minLength: 1
+                        required:
+                          - consentStatus
+                          - notificationId
+                        additionalProperties: false
+                    required:
+                      - notifications
+                    additionalProperties: false
+                required:
+                  - userId
+                  - notificationId
+                  - preferences
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/users/notifications:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consentStatus:
+                  type: string
+                  enum:
+                    - unknown
+                    - accepted
+                    - denied
+              required:
+                - consentStatus
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consentStatus:
+                    type: string
+                    enum:
+                      - unknown
+                      - accepted
+                      - denied
+                  notificationId:
+                    type: string
+                    minLength: 1
+                required:
+                  - consentStatus
+                  - notificationId
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /hello/v1/hello-public:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /hello/v1/hello-private:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /hello/v1/hello-isolated:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /hello/v1/hello-call-internal:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
