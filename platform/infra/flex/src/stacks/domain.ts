@@ -1,5 +1,6 @@
 import { IacDomainConfig, RouteAccess } from "@flex/sdk";
 import {
+  AuthorizationType,
   IdentitySource,
   IResource,
   LambdaIntegration,
@@ -157,7 +158,9 @@ export class FlexDomainStack extends BaseStack {
           const resource = this.#addDeepResource(
             privateDomainsRoot,
             resourcePath,
-          ).addMethod(method, new LambdaIntegration(lambda.function));
+          ).addMethod(method, new LambdaIntegration(lambda.function), {
+            authorizationType: AuthorizationType.IAM,
+          });
 
           applyCheckovSkip(
             resource,
