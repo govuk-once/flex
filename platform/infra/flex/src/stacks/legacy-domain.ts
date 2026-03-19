@@ -2,6 +2,7 @@ import { IDomain, IDomainEndpoint, Permission } from "@flex/sdk";
 import { Duration } from "aws-cdk-lib";
 import type { IResource, IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
+  AuthorizationType,
   IdentitySource,
   LambdaIntegration,
   Resource,
@@ -236,6 +237,7 @@ export class FlexLegacyDomainStack extends BaseStack {
           const resource = this.#addDeepResource(apiRoot, newPath).addMethod(
             method,
             new LambdaIntegration(domainEndpointFn.function),
+            { authorizationType: AuthorizationType.IAM },
           );
 
           applyCheckovSkip(
