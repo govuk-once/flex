@@ -1,4 +1,3 @@
-import { CfnResource } from "aws-cdk-lib";
 import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
