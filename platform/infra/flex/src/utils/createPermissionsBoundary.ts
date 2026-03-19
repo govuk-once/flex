@@ -3,6 +3,8 @@ import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
+import { applyCheckovSkips } from "./applyCheckovSkip";
+
 /**
  * Creates an IAM Managed Policy for use as a permissions boundary on Domain Service and Service Gateway Lambda function roles.
  * This policy includes the baseline permissions required for Lambda execution, allows invoking the Flex private API, and denies
@@ -90,25 +92,23 @@ export function createPermissionsBoundary(
   // Suppress Checkov checks that flag broad resource scopes in this permissions boundary.
   // A permissions boundary intentionally uses wildcard resources to define the maximum
   // permissions allowed.
-  (policy.node.defaultChild as CfnResource).addMetadata("checkov", {
-    skip: [
-      {
-        id: "CKV_AWS_107",
-        comment:
-          "Permissions boundary: sts:AssumeRole on * is intentional; identity-based policies constrain the actual scope.",
-      },
-      {
-        id: "CKV_AWS_108",
-        comment:
-          "Permissions boundary: secretsmanager:GetSecretValue on * is intentional; identity-based policies constrain the actual scope.",
-      },
-      {
-        id: "CKV_AWS_111",
-        comment:
-          "Permissions boundary: write actions on * are required for Lambda execution baseline; identity-based policies constrain the actual scope.",
-      },
-    ],
-  });
+  applyCheckovSkips(policy, [
+    {
+      id: "CKV_AWS_107",
+      comment:
+        "Permissions boundary: sts:AssumeRole on * is intentional; identity-based policies constrain the actual scope.",
+    },
+    {
+      id: "CKV_AWS_108",
+      comment:
+        "Permissions boundary: secretsmanager:GetSecretValue on * is intentional; identity-based policies constrain the actual scope.",
+    },
+    {
+      id: "CKV_AWS_111",
+      comment:
+        "Permissions boundary: write actions on * are required for Lambda execution baseline; identity-based policies constrain the actual scope.",
+    },
+  ]);
 
   return policy;
 }
