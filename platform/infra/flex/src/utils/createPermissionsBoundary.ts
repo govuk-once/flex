@@ -1,3 +1,4 @@
+import { CfnResource } from "aws-cdk-lib";
 import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
@@ -17,7 +18,7 @@ export function createPermissionsBoundary(
   id: string,
   privateApi: IRestApi,
 ): ManagedPolicy {
-  return new ManagedPolicy(scope, id, {
+  const policy = new ManagedPolicy(scope, id, {
     description:
       "Permissions boundary for Flex Domain Service and Service Gateway Lambda roles. Denies lambda:InvokeFunction and restricts execute-api:Invoke to the Flex private API.",
     statements: [
@@ -83,4 +84,30 @@ export function createPermissionsBoundary(
       }),
     ],
   });
+
+  // Suppress Checkov checks that flag broad resource scopes in this permissions boundary.
+  // A permissions boundary intentionally uses wildcard resources — it defines the maximum
+  // permissions ceiling, and actual role policies constrain access further. These checks are
+  // not meaningful in the context of a permissions boundary policy.
+  (policy.node.defaultChild as CfnResource).addMetadata("checkov", {
+    skip: [
+      {
+        id: "CKV_AWS_107",
+        comment:
+          "Permissions boundary: sts:AssumeRole on * is intentional; identity-based policies constrain the actual scope.",
+      },
+      {
+        id: "CKV_AWS_108",
+        comment:
+          "Permissions boundary: secretsmanager:GetSecretValue on * is intentional; identity-based policies constrain the actual scope.",
+      },
+      {
+        id: "CKV_AWS_111",
+        comment:
+          "Permissions boundary: write actions on * are required for Lambda execution baseline; identity-based policies constrain the actual scope.",
+      },
+    ],
+  });
+
+  return policy;
 }
