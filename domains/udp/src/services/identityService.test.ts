@@ -225,7 +225,7 @@ describe("IdentityService", () => {
         });
 
         expect(logger.error).toHaveBeenCalledWith(
-          "Failed to unlink app ID to service ID",
+          "Failed to verify if user has existing service link",
           expect.objectContaining({
             status: statusCode,
           }),

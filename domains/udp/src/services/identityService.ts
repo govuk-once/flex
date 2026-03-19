@@ -99,7 +99,7 @@ export const getIdentityService = async ({
       return { linked: false };
     }
 
-    logger.error("Failed to unlink app ID to service ID", {
+    logger.error("Failed to verify if user has existing service link", {
       status: exchangeResponse.error.status,
       errorBody: exchangeResponse.error.body,
     });
