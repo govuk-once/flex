@@ -134,6 +134,7 @@ export class FlexPlatformStack extends BaseStack {
   #createRestApi() {
     const restApi = new RestApi(this, "Api", {
       description: "Central API Gateway for the Flex Platform",
+      disableExecuteApiEndpoint: true,
       deployOptions: {
         tracingEnabled: true,
         metricsEnabled: true,
