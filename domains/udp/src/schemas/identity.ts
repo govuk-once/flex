@@ -1,4 +1,5 @@
 import { NonEmptyString } from "@flex/utils";
+import { UserId } from "@flex/utils";
 import { z } from "zod";
 
 export const configSchema = z.object({
@@ -12,10 +13,26 @@ export const identityPathSchema = z.object({
 });
 
 export const identitySchema = z.object({
-  appId: NonEmptyString,
+  appId: UserId,
   accessToken: NonEmptyString.optional(),
   refreshToken: NonEmptyString.optional(),
   idToken: NonEmptyString.optional(),
 });
 
 export type IdentityRequest = z.infer<typeof identitySchema>;
+
+export const identityDeleteSchema = z.object({
+  userId: UserId,
+});
+
+export type IdentityDeleteRequest = z.infer<typeof identityDeleteSchema>;
+
+export const identityGetSchema = z.object({
+  serviceId: NonEmptyString,
+  serviceName: NonEmptyString,
+  accessToken: NonEmptyString.optional(),
+  refreshToken: NonEmptyString.optional(),
+  idToken: NonEmptyString.optional(),
+});
+
+export type IdentityGetSchema = z.infer<typeof identityGetSchema>;

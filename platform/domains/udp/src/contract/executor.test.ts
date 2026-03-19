@@ -15,6 +15,8 @@ const remoteClient = {
   },
   serviceLink: {
     create: vi.fn(),
+    delete: vi.fn(),
+    get: vi.fn(),
   },
 };
 
@@ -104,6 +106,48 @@ describe("Executor", () => {
           "my-service",
           "user-abc-123",
           { appId: "pairwise-999" },
+        );
+      },
+    },
+    {
+      method: "DELETE",
+      path: "/v1/identity/my-service/pairwise-999",
+      operation: "deleteIdentityLink",
+      headers: {
+        "User-Id": "pairwise-999",
+      },
+      configureRemoteClient: () => {
+        remoteClient.serviceLink.delete.mockResolvedValue({
+          ok: true,
+          status: 204,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.serviceLink.delete).toHaveBeenCalledWith(
+          "my-service",
+          "pairwise-999",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/identity/my-awesome-service",
+      operation: "getIdentityLink",
+      headers: {
+        "User-Id": "user-12345",
+      },
+      configureRemoteClient: () => {
+        remoteClient.serviceLink.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { identity: "linked-account-data" },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.serviceLink.get).toHaveBeenCalledWith(
+          "my-awesome-service",
+          "user-12345",
         );
       },
     },
@@ -215,4 +259,34 @@ describe("Executor", () => {
       message: "Invalid JSON body",
     });
   });
+
+  it.for([
+    {
+      method: "GET",
+      path: "/v1/identity/my-service",
+      operation: "getIdentityLink",
+      headers: {},
+      body: undefined,
+    },
+    {
+      method: "GET",
+      path: "/v1/identity/my-service",
+      operation: "getIdentityLink",
+      headers: { "User-Id": "" },
+      body: undefined,
+    },
+  ])(
+    "throws 400 when $headers validation fails",
+    async ({ method, path, headers }, { privateGatewayEvent }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: method,
+        path,
+        headers,
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+    },
+  );
 });

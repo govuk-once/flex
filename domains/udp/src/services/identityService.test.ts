@@ -1,7 +1,10 @@
 import { createUdpDomainClient } from "@client";
 import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
-import { createIdentityService } from "@services/identityService";
+import {
+  createIdentityService,
+  deleteIdentityService,
+} from "@services/identityService";
 import nock from "nock";
 import {
   afterAll,
@@ -14,25 +17,15 @@ import {
 } from "vitest";
 
 vi.mock("@flex/logging");
+vi.mock("@flex/flex-fetch");
 
-vi.mock("@flex/flex-fetch", async (actual) => ({
-  ...(await actual()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
-
-describe("createIdentityService", () => {
+describe("IdentityService", () => {
   const BASE_URL = "https://example.com";
-  const REGION = "eu-west-2";
   const SERVICE = "test-service";
   const IDENTIFIER = "user-123";
 
   const client = createUdpDomainClient({
-    region: REGION,
+    region: "eu-west-2",
     baseUrl: BASE_URL,
   });
 
@@ -53,50 +46,122 @@ describe("createIdentityService", () => {
     nock.cleanAll();
   });
 
-  it("successfully links service ID to app ID", async ({ userId }) => {
-    const expectedPath = `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`;
+  describe("createIdentityService", () => {
+    it("successfully links service ID to user ID", async ({ userId }) => {
+      const expectedPath = `/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`;
 
-    nock(BASE_URL)
-      .post(expectedPath, {
-        appId: userId,
-      })
-      .reply(201, { success: true });
+      nock(BASE_URL)
+        .post(expectedPath, {
+          appId: userId,
+        })
+        .reply(201, { success: true });
 
-    await createIdentityService({
-      client,
-      service: SERVICE,
-      serviceId: IDENTIFIER,
-      appId: userId,
+      await createIdentityService({
+        client,
+        service: SERVICE,
+        serviceId: IDENTIFIER,
+        userId,
+      });
+
+      expect(nock.isDone()).toBe(true);
+
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(logger.info).toHaveBeenCalledWith(
+        "service ID has now been linked to app ID",
+      );
     });
 
-    expect(nock.isDone()).toBe(true);
+    it.for([401, 403, 422, 500, 503])(
+      "throws BadGateway when createServiceLink returns %s",
+      async (statusCode, { userId }) => {
+        nock(BASE_URL)
+          .post(`/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`)
+          .reply(statusCode, {
+            message: "Upstream error",
+            detail: "some details",
+          });
 
-    expect(logger.error).not.toHaveBeenCalled();
-    expect(logger.info).toHaveBeenCalledWith(
-      "service ID has now been linked to app ID",
+        await expect(
+          createIdentityService({
+            client,
+            service: SERVICE,
+            serviceId: IDENTIFIER,
+            userId,
+          }),
+        ).rejects.toMatchObject({
+          status: 502,
+        });
+      },
     );
   });
 
-  it.for([401, 403, 422, 500, 503])(
-    "throws BadGateway when createServiceLink returns %s",
-    async (statusCode, { userId }) => {
+  describe("deleteIdentityService", () => {
+    const SERVICE = "test-service";
+    const SERVICE_ID = "test-service-id";
+
+    const GET_PATH = `/gateways/udp/v1/identity/${SERVICE}`;
+    const DELETE_PATH = `${GET_PATH}/${SERVICE_ID}`;
+
+    it("successfully unlinks service ID from app ID", async () => {
       nock(BASE_URL)
-        .post(`/gateways/udp/v1/identity/${SERVICE}/${IDENTIFIER}`)
-        .reply(statusCode, {
-          message: "Upstream error",
-          detail: "some details",
+        .get(GET_PATH)
+        .matchHeader("User-Id", SERVICE_ID)
+        .reply(200, {
+          serviceId: SERVICE_ID,
+          serviceName: SERVICE,
         });
 
+      nock(BASE_URL).delete(DELETE_PATH).reply(204);
+
+      await deleteIdentityService({
+        client,
+        service: SERVICE,
+        userId: SERVICE_ID,
+      });
+
+      expect(nock.isDone()).toBe(true);
+      expect(logger.info).toHaveBeenCalledWith(
+        "service ID has now been unlinked to app ID",
+      );
+    });
+
+    it("throws NotFound when the initial GET returns 404", async () => {
+      nock(BASE_URL).get(GET_PATH).reply(404);
+
       await expect(
-        createIdentityService({
+        deleteIdentityService({
           client,
           service: SERVICE,
-          serviceId: IDENTIFIER,
-          appId: userId,
+          userId: SERVICE_ID,
         }),
-      ).rejects.toMatchObject({
-        status: 502,
+      ).rejects.toMatchObject({ status: 404 });
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Service link not found during deletion",
+        { service: SERVICE },
+      );
+    });
+
+    it("throws BadGateway when the DELETE call fails", async () => {
+      nock(BASE_URL).get(GET_PATH).reply(200, {
+        serviceId: SERVICE_ID,
+        serviceName: SERVICE,
       });
-    },
-  );
+
+      nock(BASE_URL).delete(DELETE_PATH).reply(500);
+
+      await expect(
+        deleteIdentityService({
+          client,
+          service: SERVICE,
+          userId: SERVICE_ID,
+        }),
+      ).rejects.toMatchObject({ status: 502 });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        "Failed to unlink app ID to service ID",
+        expect.any(Object),
+      );
+    });
+  });
 });
