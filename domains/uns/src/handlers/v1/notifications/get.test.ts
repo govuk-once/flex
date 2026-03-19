@@ -1,39 +1,34 @@
-import { context, it } from "@flex/testing";
+import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { MOCK_NOTIFICATIONS } from "../../../data/notifications";
 import { handler } from "./get";
 
 describe("GET /v1/notifications", () => {
-  const validApiKey = "mock-api-key";
-  const existingUserId = "user-ABC";
-
-  it("returns 200 with all mock notifications when authorised", async ({
-    event,
+  it("returns 200 with all mock notifications", async ({
+    privateGatewayEventWithAuthorizer,
+    context,
   }) => {
     const result = await handler(
-      event.create({
-        headers: { "x-api-key": validApiKey },
-        queryStringParameters: { externalUserId: existingUserId },
-      }),
-      context,
+      privateGatewayEventWithAuthorizer.get("/notifications"),
+      context.create(),
     );
 
     expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body as string) as unknown[];
+    const body = JSON.parse(result.body) as unknown[];
     expect(body).toHaveLength(MOCK_NOTIFICATIONS.length);
   });
 
-  it("returns the correct notification shape", async ({ event }) => {
+  it("returns the correct notification shape", async ({
+    privateGatewayEventWithAuthorizer,
+    context,
+  }) => {
     const result = await handler(
-      event.create({
-        headers: { "x-api-key": validApiKey },
-        queryStringParameters: { externalUserId: existingUserId },
-      }),
-      context,
+      privateGatewayEventWithAuthorizer.get("/notifications"),
+      context.create(),
     );
 
-    const body = JSON.parse(result.body as string) as Record<string, unknown>[];
+    const body = JSON.parse(result.body) as Record<string, unknown>[];
     expect(body[0]).toMatchObject({
       NotificationID: expect.any(String) as unknown,
       NotificationTitle: expect.any(String) as unknown,
@@ -42,14 +37,5 @@ describe("GET /v1/notifications", () => {
       MessageBody: expect.any(String) as unknown,
       DispatchedDateTime: expect.any(String) as unknown,
     });
-  });
-
-  it("returns 400 when externalUserId is missing", async ({ event }) => {
-    const result = await handler(
-      event.create({ headers: { "x-api-key": validApiKey } }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(400);
   });
 });

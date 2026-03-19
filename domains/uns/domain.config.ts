@@ -1,33 +1,58 @@
-import { defineDomain } from "@flex/sdk";
+import { domain } from "@flex/sdk";
+import { z } from "zod";
 
-export const endpoints = defineDomain({
-  domain: "uns",
-  versions: {
+import {
+  NotificationSchema,
+  PatchNotificationBodySchema,
+} from "./src/schemas/notification";
+
+const { config, route, routeContext } = domain({
+  name: "uns",
+  common: {
+    access: "isolated",
+    function: { timeoutSeconds: 30 },
+  },
+  routes: {
     v1: {
-      routes: {
-        "/notifications": {
-          GET: {
-            entry: "handlers/v1/notifications/get.ts",
-            type: "ISOLATED",
+      "/notifications": {
+        GET: {
+          public: {
+            name: "get-notifications",
+            response: z.array(NotificationSchema),
           },
         },
-        "/notifications/{notificationId}": {
-          GET: {
-            entry: "handlers/v1/notifications/[notificationId]/get.ts",
-            type: "ISOLATED",
-          },
-          DELETE: {
-            entry: "handlers/v1/notifications/[notificationId]/delete.ts",
-            type: "ISOLATED",
+      },
+      "/notifications/:notificationId": {
+        GET: {
+          public: {
+            name: "get-notification-by-id",
+            response: NotificationSchema,
           },
         },
-        "/notifications/{notificationId}/status": {
-          PATCH: {
-            entry: "handlers/v1/notifications/[notificationId]/status/patch.ts",
-            type: "ISOLATED",
+        DELETE: {
+          public: {
+            name: "delete-notification",
+          },
+        },
+      },
+      "/notifications/:notificationId/status": {
+        PATCH: {
+          public: {
+            name: "patch-notification-status",
+            body: PatchNotificationBodySchema,
           },
         },
       },
     },
   },
 });
+
+export const getNotificationsContext = routeContext<"GET /v1/notifications">;
+export const getNotificationByIdContext =
+  routeContext<"GET /v1/notifications/:notificationId">;
+export const deleteNotificationContext =
+  routeContext<"DELETE /v1/notifications/:notificationId">;
+export const patchNotificationStatusContext =
+  routeContext<"PATCH /v1/notifications/:notificationId/status">;
+
+export { config, route };

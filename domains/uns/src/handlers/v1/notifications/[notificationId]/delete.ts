@@ -1,41 +1,25 @@
-import { createLambdaHandler } from "@flex/handlers";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyStructuredResultV2,
-} from "aws-lambda";
+import createHttpError from "http-errors";
 
+import { route } from "../../../../../domain.config";
 import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
 
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyStructuredResultV2
->(
-  (event): Promise<APIGatewayProxyStructuredResultV2> => {
-    const notificationId = event.pathParameters?.["notificationId"];
-    if (!notificationId) {
-      return Promise.resolve({
-        statusCode: 400,
-        body: JSON.stringify({
-          message: "Bad Request: notificationId is required",
-        }),
-      });
-    }
+export const handler = route(
+  "DELETE /v1/notifications/:notificationId",
+  ({ pathParams, logger }) => {
+    logger.debug("Delete notification");
 
-    const exists = MOCK_NOTIFICATIONS.some(
+    const { notificationId } = pathParams;
+
+    const notification = MOCK_NOTIFICATIONS.find(
       (n) => n.NotificationID === notificationId,
     );
 
-    if (!exists) {
-      return Promise.resolve({
-        statusCode: 404,
-        body: JSON.stringify({ message: "Not Found" }),
-      });
+    if (!notification) {
+      throw new createHttpError.NotFound();
     }
 
-    return Promise.resolve({
-      statusCode: 204,
-      body: "",
-    });
+    logger.debug("Successful delete notification");
+
+    return Promise.resolve({ status: 204 });
   },
-  { serviceName: "uns-mock-delete-notification", logLevel: "INFO" },
 );

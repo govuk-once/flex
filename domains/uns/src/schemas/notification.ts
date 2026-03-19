@@ -4,12 +4,13 @@ export const NotificationStatusSchema = z.enum([
   "RECEIVED",
   "READ",
   "MARKED_AS_UNREAD",
+  "HIDDEN",
 ]);
 
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 
 export const NotificationSchema = z.object({
-  NotificationID: z.uuid(),
+  NotificationID: z.string(),
   NotificationTitle: z.string(),
   NotificationBody: z.string(),
   MessageTitle: z.string(),

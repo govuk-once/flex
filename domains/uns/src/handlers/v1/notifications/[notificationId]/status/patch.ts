@@ -1,54 +1,28 @@
-import { createLambdaHandler } from "@flex/handlers";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyStructuredResultV2,
-} from "aws-lambda";
+import createHttpError from "http-errors";
 
+import { route } from "../../../../../../domain.config";
 import { MOCK_NOTIFICATIONS } from "../../../../../data/notifications";
-import { PatchNotificationBodySchema } from "../../../../../schemas/notification";
 
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyStructuredResultV2
->(
-  (event): Promise<APIGatewayProxyStructuredResultV2> => {
-    const notificationId = event.pathParameters?.["notificationId"];
-    if (!notificationId) {
-      return Promise.resolve({
-        statusCode: 400,
-        body: JSON.stringify({
-          message: "Bad Request: notificationId is required",
-        }),
-      });
-    }
+export const handler = route(
+  "PATCH /v1/notifications/:notificationId/status",
+  ({ pathParams, body, logger }) => {
+    logger.debug("Patch notification");
 
-    const rawBody: unknown = event.body
-      ? (JSON.parse(event.body) as unknown)
-      : undefined;
+    const { notificationId } = pathParams;
 
-    const parsed = PatchNotificationBodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return Promise.resolve({
-        statusCode: 400,
-        body: JSON.stringify({ message: "Bad Request: invalid body" }),
-      });
-    }
-
-    const exists = MOCK_NOTIFICATIONS.some(
+    const notification = MOCK_NOTIFICATIONS.find(
       (n) => n.NotificationID === notificationId,
     );
 
-    if (!exists) {
-      return Promise.resolve({
-        statusCode: 404,
-        body: JSON.stringify({ message: "Not Found" }),
-      });
+    if (!notification) {
+      throw new createHttpError.NotFound();
     }
 
-    return Promise.resolve({
-      statusCode: 202,
-      body: "",
+    logger.debug("Updating notification status", {
+      notificationId,
+      status: body.Status,
     });
+
+    return Promise.resolve({ status: 202 });
   },
-  { serviceName: "uns-mock-patch-notification-status", logLevel: "INFO" },
 );

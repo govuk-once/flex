@@ -1,48 +1,40 @@
-import { context, it } from "@flex/testing";
+import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
 import { handler } from "./delete";
 
 describe("DELETE /v1/notifications/{notificationId}", () => {
-  const validApiKey = "mock-api-key";
   const existingId = MOCK_NOTIFICATIONS.at(0)?.NotificationID ?? "";
-  const unknownId = "00000000-0000-0000-0000-000000000000";
+  const unknownId = "notification-unknown";
 
   it("returns 204 when a known notification ID is provided", async ({
-    event,
+    privateGatewayEventWithAuthorizer,
+    context,
   }) => {
     const result = await handler(
-      event.create({
-        headers: { "x-api-key": validApiKey },
+      privateGatewayEventWithAuthorizer.create({
+        httpMethod: "DELETE",
         pathParameters: { notificationId: existingId },
       }),
-      context,
+      context.create(),
     );
 
     expect(result.statusCode).toBe(204);
   });
 
   it("returns 404 when the notification ID does not exist", async ({
-    event,
+    privateGatewayEventWithAuthorizer,
+    context,
   }) => {
     const result = await handler(
-      event.create({
-        headers: { "x-api-key": validApiKey },
+      privateGatewayEventWithAuthorizer.create({
+        httpMethod: "DELETE",
         pathParameters: { notificationId: unknownId },
       }),
-      context,
+      context.create(),
     );
 
     expect(result.statusCode).toBe(404);
-  });
-
-  it("returns 400 when notificationId is missing", async ({ event }) => {
-    const result = await handler(
-      event.create({ headers: { "x-api-key": validApiKey } }),
-      context,
-    );
-
-    expect(result.statusCode).toBe(400);
   });
 });
