@@ -2,9 +2,9 @@ import { NonEmptyString } from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
 
-const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
+export const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
 
-const LogLevelSchema = z.enum([
+export const LogLevelSchema = z.enum([
   "TRACE",
   "DEBUG",
   "INFO",
@@ -14,7 +14,7 @@ const LogLevelSchema = z.enum([
   "CRITICAL",
 ]);
 
-const HttpMethodSchema = z.enum([
+export const HttpMethodSchema = z.enum([
   "GET",
   "POST",
   "PUT",
@@ -24,7 +24,7 @@ const HttpMethodSchema = z.enum([
   "OPTIONS",
 ]);
 
-const FunctionConfigSchema = z.object({
+export const FunctionConfigSchema = z.object({
   environment: z.record(NonEmptyString, NonEmptyString).optional(),
   memorySize: z.number().int().min(128).max(10240).optional(),
   timeoutSeconds: z.number().int().min(1).max(900).optional(),
@@ -68,6 +68,18 @@ const DomainResourceSchema = z.object({
   scope: z.enum(["environment", "stage"]).optional(),
 });
 
+export const FlexEnvironmentSchema = z.enum([
+  "development",
+  "staging",
+  "production",
+]);
+
+export const DomainFeatureFlagSchema = z.object({
+  description: NonEmptyString.optional(),
+  default: z.boolean().optional(),
+  environments: z.record(FlexEnvironmentSchema, z.boolean()).optional(),
+});
+
 const MethodRouteConfigSchema = z.object({
   name: NonEmptyString,
   access: RouteAccessSchema.optional(),
@@ -78,6 +90,7 @@ const MethodRouteConfigSchema = z.object({
   response: z.custom<ZodType>().optional(),
   resources: z.array(NonEmptyString).readonly().optional(),
   integrations: z.array(NonEmptyString).readonly().optional(),
+  featureFlags: z.array(NonEmptyString).readonly().optional(),
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
 });
 
@@ -104,6 +117,7 @@ export const DomainConfigSchema = z.object({
   common: DomainConfigCommonSchema.optional(),
   resources: z.record(NonEmptyString, DomainResourceSchema).optional(),
   integrations: z.record(NonEmptyString, DomainIntegrationSchema).optional(),
+  featureFlags: z.record(NonEmptyString, DomainFeatureFlagSchema).optional(),
   owner: NonEmptyString.optional(),
 });
 

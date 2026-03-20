@@ -53,7 +53,21 @@ describe("POC domain", () => {
             notificationId: expect.any(String) as string,
           },
         },
+        newUserProfileEnabled: expect.any(Boolean) as boolean,
       });
+    });
+
+    it("returns the expected newUserProfileEnabled flag value for the current stage", async ({
+      cloudfront,
+    }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
+      });
+
+      expect(result.status).toBe(200);
+      expect(
+        (result.body as Record<string, unknown>).newUserProfileEnabled,
+      ).toBe(true);
     });
 
     it("returns the same notification ID for multiple requests to the same user", async ({

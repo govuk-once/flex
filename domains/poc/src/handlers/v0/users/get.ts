@@ -7,7 +7,7 @@ import { getUsersContext, route } from "../../../../domain.config";
 
 export const handler = route(
   "GET /v0/users",
-  async ({ auth, integrations, logger }) => {
+  async ({ auth, featureFlags, integrations, logger }) => {
     const notificationId = getNotificationId();
 
     const notificationsResult = await integrations.udpGetNotifications({
@@ -21,6 +21,7 @@ export const handler = route(
           userId: auth.pairwiseId,
           notificationId,
           preferences: { notifications: notificationsResult.data },
+          newUserProfileEnabled: featureFlags.newUserProfileEnabled,
         },
       };
     }
@@ -70,6 +71,7 @@ export const handler = route(
         userId: auth.pairwiseId,
         notificationId,
         preferences: { notifications: createNotificationsResult.data },
+        newUserProfileEnabled: featureFlags.newUserProfileEnabled,
       },
     };
   },

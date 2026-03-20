@@ -5,6 +5,7 @@ import type { DomainConfig, DomainResource, HttpMethod } from "../types";
 import {
   getRouteAccess,
   getRouteConfig,
+  getRouteFeatureFlags,
   getRouteIntegrations,
   getRouteLogLevel,
   getRouteResources,
@@ -213,5 +214,126 @@ describe("getRouteResources", () => {
     expect(() => getRouteResources(resources, [key])).toThrow(
       `Environment variable "${key}" not set. Has this resource been provisioned?`,
     );
+  });
+});
+
+describe("getRouteFeatureFlags", () => {
+  const flags = {
+    myFlag: { default: false },
+    envAwareFlag: {
+      default: false,
+      environments: { development: true, staging: true, production: false },
+    },
+  };
+
+  it("returns undefined when there are no domain feature flags", () => {
+    expect(getRouteFeatureFlags(undefined)).toBeUndefined();
+    expect(getRouteFeatureFlags(undefined, ["myFlag"])).toBeUndefined();
+  });
+
+  it("returns undefined when domain feature flags exist but the route has not referenced any", () => {
+    expect(getRouteFeatureFlags(flags)).toBeUndefined();
+    expect(getRouteFeatureFlags(flags, [])).toBeUndefined();
+  });
+
+  it("throws when a route references a flag that has not been defined in the domain", () => {
+    expect(() => getRouteFeatureFlags(flags, ["unknown"])).toThrow(
+      '"unknown" referenced in "featureFlags" but was not defined in domain featureFlags',
+    );
+  });
+
+  describe("resolution order", () => {
+    it("uses the process.env override when set to 'true'", ({ env }) => {
+      env.set({ myFlag: "true" });
+
+      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual(
+        new Map([["myFlag", { value: true }]]),
+      );
+    });
+
+    it("uses the process.env override when set to 'false', even when default is true", ({
+      env,
+    }) => {
+      const flagWithTrueDefault = { myFlag: { default: true } };
+      env.set({ myFlag: "false" });
+
+      expect(
+        getRouteFeatureFlags(flagWithTrueDefault, ["myFlag"]),
+      ).toStrictEqual(new Map([["myFlag", { value: false }]]));
+    });
+
+    it("uses the environment-specific value when no process.env override is set", ({
+      env,
+    }) => {
+      env.set({ STAGE: "staging" });
+
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
+        new Map([["envAwareFlag", { value: true }]]),
+      );
+    });
+
+    it("falls back to the global default when no env override or environment-specific value matches", ({
+      env,
+    }) => {
+      env.set({ STAGE: "staging" });
+
+      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual(
+        new Map([["myFlag", { value: false }]]),
+      );
+    });
+
+    it("falls back to false when no env override, environment value, or default is set", ({
+      env,
+    }) => {
+      const flagWithNoDefault = { myFlag: {} };
+      env.delete("STAGE");
+
+      expect(getRouteFeatureFlags(flagWithNoDefault, ["myFlag"])).toStrictEqual(
+        new Map([["myFlag", { value: false }]]),
+      );
+    });
+  });
+
+  describe("environment resolution", () => {
+    it.for([
+      { stage: "development", expected: true },
+      { stage: "staging", expected: true },
+      { stage: "production", expected: false },
+    ])(
+      "resolves the $stage environment-specific value when STAGE=$stage",
+      ({ stage, expected }, { env }) => {
+        env.set({ STAGE: stage });
+
+        expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
+          new Map([["envAwareFlag", { value: expected }]]),
+        );
+      },
+    );
+
+    it("treats a personal stage as 'development'", ({ env }) => {
+      env.set({ STAGE: "ljones" });
+
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
+        new Map([["envAwareFlag", { value: true }]]),
+      );
+    });
+
+    it("treats an unset STAGE as 'development'", ({ env }) => {
+      env.delete("STAGE");
+
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
+        new Map([["envAwareFlag", { value: true }]]),
+      );
+    });
+
+    it("process.env override takes precedence over the environment-specific value", ({
+      env,
+    }) => {
+      env.set({ STAGE: "staging", envAwareFlag: "false" });
+
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
+        new Map([["envAwareFlag", { value: false }]]),
+      );
+    });
   });
 });

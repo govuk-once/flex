@@ -27,6 +27,17 @@ const { config, route, routeContext } = domain({
       path: "/flex-secret/udp/notification-hash-secret",
     },
   },
+  featureFlags: {
+    newUserProfileEnabled: {
+      description: "Enable the new user profile experience",
+      default: false,
+      environments: {
+        development: true,
+        staging: true,
+        production: false,
+      },
+    },
+  },
   integrations: {
     udpWrite: { type: "gateway", target: "udp", route: "POST /v1/*" },
     udpCreateUser: { type: "gateway", target: "udp", route: "POST /v1/user" },
@@ -69,6 +80,7 @@ const { config, route, routeContext } = domain({
               "udpGetNotifications",
               "udpPostNotifications",
             ],
+            featureFlags: ["newUserProfileEnabled"],
             response: getUserPreferencesResponseSchema,
           },
         },

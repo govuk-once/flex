@@ -71,6 +71,7 @@ export const getUserPreferencesResponseSchema = z.object({
       notificationId,
     }),
   }),
+  newUserProfileEnabled: z.boolean(),
 });
 
 export type GetUserPreferencesResponse = z.infer<

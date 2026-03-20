@@ -18,6 +18,7 @@ import { configureMiddleware } from "./middleware";
 import {
   getRouteAccess,
   getRouteConfig,
+  getRouteFeatureFlags,
   getRouteIntegrations,
   getRouteLogLevel,
   getRouteResources,
@@ -45,6 +46,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const resources = getRouteResources(
       config.resources,
       routeConfig.resources,
+    );
+    const featureFlags = getRouteFeatureFlags(
+      config.featureFlags,
+      routeConfig.featureFlags,
     );
     const headers = mergeHeaders(config.common?.headers, routeConfig.headers);
 
@@ -86,6 +91,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
           bodySchema,
           querySchema,
           resources,
+          featureFlags,
           headers,
           integrations,
         });
