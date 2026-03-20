@@ -8,8 +8,8 @@ Domain description here.
 
 Run these from the repository root:
 
-| Command                                      | Description    |
-| -------------------------------------------- | -------------- |
+| Command                                | Description    |
+| -------------------------------------- | -------------- |
 | `pnpm --filter @flex/dvla-domain lint` | Lint files     |
 | `pnpm --filter @flex/dvla-domain test` | Run tests      |
 | `pnpm --filter @flex/dvla-domain tsc`  | Run type check |
@@ -22,9 +22,9 @@ Alternatively, run `pnpm <command>` from within `domains/dvla/`.
 
 ### Handlers
 
-| Name                           | Access           | Description                            | Code                                  |
-| ------------------------------ | ---------------- | -------------------------------------- | ------------------------------------- |
-| [`GET /hello`](#get-hello)     | Public           | No VPC, fastest cold start             | [View](./src/handlers/hello/get.ts)   |
+| Name                       | Access | Description                | Code                                |
+| -------------------------- | ------ | -------------------------- | ----------------------------------- |
+| [`GET /hello`](#get-hello) | Public | No VPC, fastest cold start | [View](./src/handlers/hello/get.ts) |
 
 ---
 

@@ -1,7 +1,14 @@
+import { NonEmptyString } from "@flex/utils";
 import z from "zod";
 
+/** Request schema */
+export const getLicenceRequestSchema = z.object({
+  id: NonEmptyString,
+  jwt: NonEmptyString,
+});
+
 /**
- * Reference OpenAPI schema:
+ * Response schema | Reference OpenAPI schema:
  *  - https://developer-portal.driver-vehicle-licensing.api.gov.uk/apis/driver-view/driver-view.json
  */
 
@@ -103,7 +110,7 @@ const tachoCardSchema = z.object({
   cardStartOfValidityDate: dateSchema.optional(),
 });
 
-export const viewDriverResponseSchema = z.object({
+export const getLicenceResponseSchema = z.object({
   driver: driverSchema,
   licence: licenceSchema,
   entitlement: z.array(entitlementRecordSchema).optional(),
@@ -145,5 +152,3 @@ export const viewDriverResponseSchema = z.object({
     })
     .optional(),
 });
-
-export type ViewDriverResponse = z.infer<typeof viewDriverResponseSchema>;
