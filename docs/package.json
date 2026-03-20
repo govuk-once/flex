@@ -1,0 +1,17 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "generate-spec": "tsx scripts/generate-openapi.ts"
+  },
+  "dependencies": {
+    "yaml": "2.8.2",
+    "zod-openapi": "5.4.6"
+  },
+  "devDependencies": {
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  }
+}
