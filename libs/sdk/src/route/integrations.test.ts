@@ -135,12 +135,26 @@ describe("createIntegrationInvoker", () => {
       options?: InvokerOptions,
     ) => Promise<IntegrationResult>;
 
-  const invokerConfig: IntegrationInvokerConfig = {
-    method: "POST",
-    basePath: "/domains/test-domain/v1",
-    path: "/endpoint",
-    isWildcard: false,
-  };
+  const invokerConfig = {
+    path: {
+      method: "GET",
+      basePath: "/domains/test-domain/v1",
+      path: "/endpoint",
+      isWildcard: false,
+    },
+    wildcard: {
+      method: "GET",
+      basePath: "/gateways/test-domain/v1",
+      path: "",
+      isWildcard: true,
+    },
+    wildcardWithPrefix: {
+      method: "GET",
+      basePath: "/gateways/test-domain/v1",
+      path: "/prefix",
+      isWildcard: true,
+    },
+  } satisfies Record<string, IntegrationInvokerConfig>;
 
   beforeEach(() => {
     mockFetcher.mockReturnValue({
@@ -151,22 +165,8 @@ describe("createIntegrationInvoker", () => {
   });
 
   describe("Request URL", () => {
-    const invokerPathConfig: IntegrationInvokerConfig = {
-      method: "GET",
-      basePath: "/domains/test-domain/v1",
-      path: "/endpoint",
-      isWildcard: false,
-    };
-
-    const invokerWildcardConfig: IntegrationInvokerConfig = {
-      method: "GET",
-      basePath: "/gateways/test-domain/v1",
-      path: "/",
-      isWildcard: true,
-    };
-
     it("uses the configured path for a fixed path integration", async () => {
-      const caller = createInvoker(invokerPathConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       await caller();
 
@@ -176,19 +176,8 @@ describe("createIntegrationInvoker", () => {
       );
     });
 
-    it("uses the path provided by the caller for a wildcard integration", async () => {
-      const caller = createInvoker(invokerWildcardConfig);
-
-      await caller({ path: "/custom" });
-
-      expect(mockFetcher).toHaveBeenCalledExactlyOnceWith(
-        "/gateways/test-domain/v1/custom",
-        expect.objectContaining({ method: "GET" }),
-      );
-    });
-
-    it("uses the base path when no path is provided for a wildcard integration", async () => {
-      const caller = createInvoker(invokerWildcardConfig);
+    it("uses the base path when no caller path is provided for a root wildcard integration", async () => {
+      const caller = createInvoker(invokerConfig.wildcard);
 
       await caller();
 
@@ -198,8 +187,41 @@ describe("createIntegrationInvoker", () => {
       );
     });
 
+    it("appends the caller path for a root wildcard integration", async () => {
+      const caller = createInvoker(invokerConfig.wildcard);
+
+      await caller({ path: "/custom" });
+
+      expect(mockFetcher).toHaveBeenCalledExactlyOnceWith(
+        "/gateways/test-domain/v1/custom",
+        expect.objectContaining({ method: "GET" }),
+      );
+    });
+
+    it("uses the base path with prefix when no caller path is provided for a prefixed wildcard integration", async () => {
+      const caller = createInvoker(invokerConfig.wildcardWithPrefix);
+
+      await caller();
+
+      expect(mockFetcher).toHaveBeenCalledExactlyOnceWith(
+        "/gateways/test-domain/v1/prefix",
+        expect.objectContaining({ method: "GET" }),
+      );
+    });
+
+    it("appends the caller path for a prefixed wildcard integration", async () => {
+      const caller = createInvoker(invokerConfig.wildcardWithPrefix);
+
+      await caller({ path: "/custom" });
+
+      expect(mockFetcher).toHaveBeenCalledExactlyOnceWith(
+        "/gateways/test-domain/v1/prefix/custom",
+        expect.objectContaining({ method: "GET" }),
+      );
+    });
+
     it("appends caller query parameters to the URL", async () => {
-      const caller = createInvoker(invokerPathConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       await caller({ query: { key: "value" } });
 
@@ -214,7 +236,7 @@ describe("createIntegrationInvoker", () => {
 
   describe("Request Options", () => {
     it("serialises the request body and sets content type when a body is provided", async () => {
-      const caller = createInvoker(invokerConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       await caller({ body: { key: "value" } });
 
@@ -228,7 +250,7 @@ describe("createIntegrationInvoker", () => {
     });
 
     it("omits body and content type when no body is provided", async () => {
-      const caller = createInvoker(invokerConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       await caller();
 
@@ -242,7 +264,7 @@ describe("createIntegrationInvoker", () => {
     });
 
     it("merges caller provided headers with base headers when a body and headers are both provided", async () => {
-      const caller = createInvoker(invokerConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       await caller({
         body: { key: "value" },
@@ -262,7 +284,7 @@ describe("createIntegrationInvoker", () => {
 
     it("uses integration retry config when provided", async () => {
       const caller = createInvoker({
-        ...invokerConfig,
+        ...invokerConfig.path,
         maxRetryDelay: 1,
         retryAttempts: 1,
       });
@@ -278,7 +300,7 @@ describe("createIntegrationInvoker", () => {
 
     it("uses caller retry config over integration retry config when both are provided", async () => {
       const caller = createInvoker({
-        ...invokerConfig,
+        ...invokerConfig.path,
         maxRetryDelay: 1,
         retryAttempts: 1,
       });
@@ -297,7 +319,7 @@ describe("createIntegrationInvoker", () => {
     it("validates the response against the schema when provided", async () => {
       const schema = z.object({ key: z.literal("value") });
 
-      const caller = createInvoker({ ...invokerConfig, schema });
+      const caller = createInvoker({ ...invokerConfig.path, schema });
 
       await caller();
 
@@ -313,7 +335,7 @@ describe("createIntegrationInvoker", () => {
         error: { status: 404, message: "Not found" },
       });
 
-      const caller = createInvoker(invokerConfig);
+      const caller = createInvoker(invokerConfig.path);
 
       expect(await caller()).toMatchObject({
         ok: false,
@@ -348,12 +370,23 @@ describe("parseIntegrationRoute", () => {
       },
     },
     {
-      label: "a wildcard route",
+      label: "a root wildcard route",
       routeKey: "GET /v1/*",
       expected: {
         method: "GET",
         version: "v1",
-        path: "/",
+        path: "",
+        gateway: "public",
+        isWildcard: true,
+      },
+    },
+    {
+      label: "a wildcard with prefix route",
+      routeKey: "POST /v1/identity/*",
+      expected: {
+        method: "POST",
+        version: "v1",
+        path: "/identity",
         gateway: "public",
         isWildcard: true,
       },

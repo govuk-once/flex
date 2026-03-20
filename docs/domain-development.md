@@ -506,7 +506,7 @@ function getNotificationId() {
   const { auth, resources } = getUserContext();
 
   return crypto
-    .createHmac("sha256", resources.notificationSecret)
+    .createHmac("sha256", resources.udpNotificationSecret)
     .update(auth.pairwiseId)
     .digest("base64url");
 }
@@ -553,7 +553,7 @@ Each domain needs to register its own test configuration, which needs to be merg
 This allows each domain to do all of the following:
 
 - Inject the SDK setup file
-- Provide its own local setup file (This is necessary for mocks that need to be defined in the same workspace and where you want to provide your own shared setup/teardown lifecycles)
+- (Optional) Provide its own domain setup file
 - Inject environment variables for use across each test suite
 
 ```typescript
@@ -564,7 +564,11 @@ export default mergeConfig(
   config,
   defineConfig({
     test: {
-      setupFiles: ["@flex/testing/setup/sdk", "./src/tests/setup.ts"],
+      setupFiles: [
+        "@flex/testing/setup/sdk",
+        // If you need to provide your own domain setup file
+        // "./src/tests/setup.ts"
+      ],
       env: {
         AWS_REGION: "eu-west-2",
         exampleKey: "arn:aws:kms:eu-west-2:123456789012:key/test-key",
@@ -577,59 +581,6 @@ export default mergeConfig(
 ```
 
 Deploy-time resources (e.g. `"kms", "ssm"`, etc) must be defined here so they're available when the handler module loads.
-
-2. Add domain setup file (`src/tests/setup.ts`)
-
-This is required if you need to mock certain middleware but can also include setup/teardown lifecycles (A good example would be the `nock` setup/teardown steps).
-
-```typescript
-import nock from "nock";
-import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
-
-vi.mock("@middy/secrets-manager", () => ({
-  default: () => ({ before: vi.fn() }),
-  secret: vi.fn((v: string) => v),
-}));
-
-vi.mock("@middy/ssm", () => ({
-  default: () => ({ before: vi.fn() }),
-}));
-
-beforeAll(() => {
-  nock.disableNetConnect();
-});
-
-afterAll(() => {
-  nock.enableNetConnect();
-});
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-afterEach(() => {
-  expect(nock.isDone()).toBe(true);
-  nock.cleanAll();
-});
-```
-
-> These mocks must live in the domain workspace and won't work as intended if mocked from an external workspace such as `@flex/testing` or `@flex/sdk`.
-
-1. Add dev dependencies
-
-When using resources that are resolved via middleware, you must include those packages in the domain package `devDependencies`:
-
-```json
-{
-  "devDependencies": {
-    "@middy/secrets-manager": "<version>",
-    "@middy/ssm": "<version>"
-    // plus any other middlewares that need to be mocked...
-  }
-}
-```
-
-Without these dev dependencies, the mocks defined in your local setup file (`src/tests/setup.ts`) won't work as intended.
 
 ### Mocking Resources
 
@@ -665,7 +616,7 @@ describe("POST /v1/user [private]", () => {
     context,
   }) => {
     gateway
-      .post("/gateways/udp/v1/user", {
+      .post("/gateways/udp/v1/users", {
         appId: "test-app-id",
         notificationId: "test-notification-id",
       })
@@ -685,7 +636,7 @@ describe("POST /v1/user [private]", () => {
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
-    gateway.post("/gateways/udp/v1/user").reply(500, { message: "Failed" });
+    gateway.post("/gateways/udp/v1/users").reply(500, { message: "Failed" });
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
@@ -809,9 +760,8 @@ STAGE=development pnpm --filter @flex/e2e test:e2e
 2. Define domain configuration in `domain.config.ts`
 3. Update `vitest.config.ts`
    1. Add SDK setup file
-   2. Add local setup file (`src/tests/setup.ts`) and include Middy SSM/Secrets mocks and include the nock lifecycle setup/teardown steps
+   2. (Optional) Add domain setup file (`src/tests/setup.ts`) if you need to define your own setup/teardown steps
    3. Add environment variables
-4. Add `@middy/secrets-manager` and/or `@middy/ssm` as devDependencies if the domain uses resources for these services
 5. Define route handler(s)
 6. Create `README.md`
 7. Deploy (`pnpm run deploy`) and verify (`pnpm --filter @flex/e2e test:e2e`)

@@ -21,10 +21,13 @@ export function parseIntegrationRoute(
 ): ParsedIntegrationRoute {
   const isWildcard = routeKey.endsWith("/*");
 
+  const segments = extractRouteKeySegments(
+    isWildcard ? routeKey.replace(/\*$/, "") : routeKey,
+  );
+
   return {
-    ...extractRouteKeySegments(
-      isWildcard ? routeKey.replace(/\*$/, "") : routeKey,
-    ),
+    ...segments,
+    ...(isWildcard && { path: segments.path.replace(/\/$/, "") }),
     isWildcard,
   };
 }
@@ -73,7 +76,7 @@ function buildFetcherUrl(
   }: Pick<IntegrationInvokerConfig, "basePath" | "isWildcard" | "path">,
   options?: InvokerOptions,
 ) {
-  const pathname = `${basePath}${isWildcard ? (options?.path ?? "") : path}`;
+  const pathname = `${basePath}${path}${isWildcard ? (options?.path ?? "") : ""}`;
 
   if (!options?.query || Object.keys(options.query).length === 0) {
     return pathname;
@@ -90,7 +93,9 @@ function buildFetcherOptions(
   >,
   invokerOptions?: InvokerOptions,
 ): FlexFetchRequestInit {
-  const headers = { ...invokerOptions?.headers };
+  const headers = {
+    ...invokerOptions?.headers,
+  };
 
   const hasBody = invokerOptions?.body !== undefined;
 

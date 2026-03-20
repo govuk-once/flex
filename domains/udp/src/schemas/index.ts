@@ -1,4 +1,14 @@
 export type {
+  CreateServiceIdentityLinkRequest,
+  DeleteServiceIdentityLinkResponse,
+  GetServiceIdentityLinkResponse,
+} from "./identity";
+export {
+  CreateServiceIdentityLinkRequestSchema,
+  DeleteServiceIdentityLinkResponseSchema,
+  GetServiceIdentityLinkResponseSchema,
+} from "./identity";
+export type {
   CreateNotificationPreferencesRequest,
   CreateNotificationPreferencesResponse,
   GetNotificationPreferencesResponse,
@@ -7,7 +17,7 @@ export type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
   UpdateNotificationPreferencesResponse,
-} from "./schemas/notifications";
+} from "./notifications";
 export {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
@@ -18,14 +28,14 @@ export {
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
   UpdateNotificationPreferencesResponseSchema,
-} from "./schemas/notifications";
+} from "./notifications";
 export type {
   CreateUserRequest,
   CreateUserResponse,
   GetUserResponse,
-} from "./schemas/user";
+} from "./user";
 export {
   CreateUserRequestSchema,
   CreateUserResponseSchema,
   GetUserResponseSchema,
-} from "./schemas/user";
+} from "./user";

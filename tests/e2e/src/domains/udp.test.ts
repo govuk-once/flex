@@ -1,81 +1,169 @@
 import { it } from "@flex/testing/e2e";
-import { assert, describe, expect, inject } from "vitest";
+import type {
+  GetUserResponse,
+  UpdateNotificationPreferencesOutboundResponse,
+  UpdateNotificationPreferencesRequest,
+} from "@flex/udp-domain";
+import { describe, expect, inject } from "vitest";
 
 describe("UDP domain", () => {
   const { JWT } = inject("e2eEnv");
 
-  describe("user", () => {
-    const endpoint = `udp/v1/users`;
+  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
 
-    describe("when I create a user", () => {
-      it("returns a 200 and notification ID", async ({ cloudfront }) => {
-        const response = await cloudfront.client.get(endpoint, {
-          headers: { Authorization: `Bearer ${JWT.VALID}` },
-        });
+  describe("/udp/v1/identity/:service", () => {
+    const service = "test-service";
+    const endpoint = `/udp/v1/identity/${service}`;
 
-        expect(response).toMatchObject({
-          status: 200,
-          body: {
-            notificationId: expect.any(String) as string,
-          },
-        });
+    describe("GET", () => {
+      it("rejects unauthenticated requests", async ({ cloudfront }) => {
+        const result = await cloudfront.client.get(endpoint);
+
+        expect(result.status).toBe(401);
+        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       });
 
-      it("returns the same notification ID for the same user", async ({
+      it("returns 200 with service identity link status", async ({
         cloudfront,
       }) => {
-        const request = cloudfront.client.get<{ notificationId: string }>(
-          endpoint,
-          {
-            headers: { Authorization: `Bearer ${JWT.VALID}` },
-          },
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.body).toStrictEqual({
+          linked: expect.any(Boolean) as boolean,
+        });
+      });
+    });
+
+    describe("DELETE", () => {
+      it("rejects unauthenticated requests", async ({ cloudfront }) => {
+        const result = await cloudfront.client.delete(endpoint);
+
+        expect(result.status).toBe(401);
+        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      });
+
+      it("returns 204 when identity is unlinked successfully", async ({
+        cloudfront,
+      }) => {
+        const created = await cloudfront.client.post(
+          `${endpoint}/test-service-id`,
+          { headers: { ...authorization } },
         );
 
-        const [response1, response2] = await Promise.all([request, request]);
+        expect(created.status).toBe(201);
 
-        assert(response1.body != null, "response should not be null");
-        assert(response2.body != null, "response should not be null");
+        const result = await cloudfront.client.delete(endpoint, {
+          headers: { ...authorization },
+        });
 
-        expect(response1.body.notificationId).toBe(
-          response2.body.notificationId,
-        );
+        expect(result.status).toBe(204);
       });
     });
   });
 
-  describe("notifications", () => {
-    const notificationsEndpoint = `udp/v1/users/notifications`;
+  describe("/udp/v1/identity/:service/:id", () => {
+    const service = "test-service";
+    const serviceId = "test-service-id";
+    const endpoint = `/udp/v1/identity/${service}/${serviceId}`;
 
-    describe("when I update my notifications preferences", () => {
-      it("returns user preferences updated successfully", async ({
+    describe("POST", () => {
+      it("rejects unauthenticated requests", async ({ cloudfront }) => {
+        const result = await cloudfront.client.post(endpoint);
+
+        expect(result.status).toBe(401);
+        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      });
+
+      it("returns 201 when identity is linked successfully", async ({
         cloudfront,
       }) => {
-        const response = await cloudfront.client.patch(notificationsEndpoint, {
-          body: {
-            consentStatus: "accepted",
-          },
-          headers: { Authorization: `Bearer ${JWT.VALID}` },
+        const result = await cloudfront.client.post(endpoint, {
+          headers: { ...authorization },
         });
 
-        expect(response.status).toBe(200);
-        expect(response.body).toMatchObject({
+        expect(result.status).toBe(201);
+      });
+    });
+  });
+
+  describe("/udp/v1/users", () => {
+    const endpoint = "/udp/v1/users";
+
+    describe("GET", () => {
+      it("rejects unauthenticated requests", async ({ cloudfront }) => {
+        const result = await cloudfront.client.get(endpoint);
+
+        expect(result.status).toBe(401);
+        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      });
+
+      it("returns 200 with user profile", async ({ cloudfront }) => {
+        const result = await cloudfront.client.get<GetUserResponse>(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.body).toStrictEqual({
+          userId: expect.any(String) as string,
+          notificationId: expect.any(String) as string,
+          notifications: {
+            consentStatus: expect.any(String) as string,
+            notificationId: expect.any(String) as string,
+          },
+        });
+      });
+    });
+  });
+
+  describe("/udp/v1/users/notifications", () => {
+    const endpoint = "/udp/v1/users/notifications";
+
+    describe("PATCH", () => {
+      it("rejects unauthenticated requests", async ({ cloudfront }) => {
+        const result = await cloudfront.client.patch(endpoint);
+
+        expect(result.status).toBe(401);
+        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
+      });
+
+      it("returns 200 with updated user notification preferences", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.patch<
+          UpdateNotificationPreferencesRequest,
+          UpdateNotificationPreferencesOutboundResponse
+        >(endpoint, {
+          headers: { ...authorization },
+          body: { consentStatus: "accepted" },
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.body).toStrictEqual({
           consentStatus: "accepted",
           notificationId: expect.any(String) as string,
         });
       });
 
-      it("rejects invalid payloads", async ({ cloudfront }) => {
-        const response = await cloudfront.client.patch(notificationsEndpoint, {
-          body: {
-            consentStatus: "yes",
-          },
-          headers: { Authorization: `Bearer ${JWT.VALID}` },
-        });
+      it.for([
+        {
+          body: { consentStatus: "invalid" },
+          reason: "includes an unrecognised consent status",
+        },
+        { body: {}, reason: "is empty" },
+      ])(
+        "rejects request when body $reason",
+        async ({ body }, { cloudfront }) => {
+          const result = await cloudfront.client.patch(endpoint, {
+            headers: { ...authorization },
+            body,
+          });
 
-        expect(response).toMatchObject({
-          status: 400,
-        });
-      });
+          expect(result.status).toBe(400);
+        },
+      );
     });
   });
 });

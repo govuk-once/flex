@@ -27,7 +27,7 @@ export function configureMiddleware({
     .use(
       httpErrorHandler({
         logger: (error: Error) => {
-          logger.error("Unhandled error", { error });
+          logger.error("Unhandled error", { detail: error });
         },
       }),
     )

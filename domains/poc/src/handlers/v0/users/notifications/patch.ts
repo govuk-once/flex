@@ -1,21 +1,26 @@
 import crypto from "node:crypto";
 
 import type { NotificationId } from "@flex/udp-domain";
+import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
-import {
-  route,
-  updateUserNotificationsContext,
-} from "../../../../../domain.config";
+import { route, routeContext } from "../../../../../domain.config";
+
+const context = routeContext<"PATCH /v0/users/notifications">;
 
 export const handler = route(
   "PATCH /v0/users/notifications",
   async ({ auth, body, integrations, logger }) => {
+    const userId = auth.pairwiseId as UserId;
+
     const notificationId = getNotificationId();
 
-    const result = await integrations.udpPostNotifications({
+    const result = await integrations.udpCreateNotificationPreferences({
       body: { ...body, notificationId },
-      headers: { "requesting-service-user-id": auth.pairwiseId },
+      headers: {
+        "requesting-service": "app",
+        "requesting-service-user-id": userId,
+      },
     });
 
     if (!result.ok) {
@@ -34,7 +39,7 @@ export const handler = route(
 );
 
 function getNotificationId() {
-  const { auth, resources } = updateUserNotificationsContext();
+  const { auth, resources } = context();
 
   return crypto
     .createHmac("sha256", resources.udpNotificationSecret)

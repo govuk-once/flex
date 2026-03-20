@@ -1,4 +1,4 @@
-import { it } from "@flex/testing";
+import { createUserId, it } from "@flex/testing";
 import nock from "nock";
 import { describe, expect, vi } from "vitest";
 
@@ -14,16 +14,18 @@ vi.mock("node:crypto", () => ({
 }));
 
 describe("PATCH /v0/users/notifications", () => {
-  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
+  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/users/notifications";
+
+  const userId = createUserId("test-pairwise-id");
 
   it("updates user notifications successfully and returns 204 with updated notifications", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    gateway
+    api
       .post("/gateways/udp/v1/notifications")
-      .matchHeader("requesting-service-user-id", "test-pairwise-id")
+      .matchHeader("requesting-service-user-id", userId)
       .reply(200, {
         consentStatus: "accepted",
         notificationId: "derived-notification-id",
@@ -67,11 +69,11 @@ describe("PATCH /v0/users/notifications", () => {
     },
   );
 
-  it("returns 500 when updating user notifications fails", async ({
+  it("returns 502 when updating user notifications fails", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    gateway.post("/gateways/udp/v1/notifications").reply(500);
+    api.post("/gateways/udp/v1/notifications").reply(500);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.patch(endpoint, {
@@ -82,6 +84,6 @@ describe("PATCH /v0/users/notifications", () => {
         .create(),
     );
 
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(502);
   });
 });
