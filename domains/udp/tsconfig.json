@@ -1,18 +1,14 @@
 {
   "extends": "@flex/config/tsconfig.json",
-  "include": [
-    "src/**/*.ts",
-    "vitest.config.ts",
-    "domain.config.ts",
-    "domain.private.config.ts"
-  ],
+  "include": ["src/**/*.ts", "vitest.config.ts", "domain.config.ts"],
   "compilerOptions": {
     "paths": {
+      "@domain": ["./domain.config.ts"],
+      "@schemas": ["./src/schemas/index.ts"],
       "@schemas/*": ["./src/schemas/*"],
-      "@services/*": ["./src/services/*"],
-      "@client": ["./src/client"],
-      "@types": ["./src/types/index.ts"],
-      "@test/fixtures": ["./src/test/fixtures.ts"]
+      "@utils": ["./src/utils/index.ts"],
+      "@utils/*": ["./src/utils/*"],
+      "@tests/fixtures": ["./src/tests/fixtures.ts"]
     }
   }
 }

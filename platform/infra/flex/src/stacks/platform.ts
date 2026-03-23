@@ -13,6 +13,7 @@ import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import {
   AnyPrincipal,
   Effect,
+  PermissionsBoundary,
   PolicyDocument,
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
@@ -28,6 +29,7 @@ import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
 const { env } = getEnvConfig();
@@ -335,6 +337,13 @@ export class FlexPlatformStack extends BaseStack {
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi();
+
+    const permissionsBoundary = createPermissionsBoundary(
+      this,
+      "PlatformPermissionsBoundary",
+      privateGateway,
+    );
+    PermissionsBoundary.of(this).apply(permissionsBoundary);
 
     this.exports({
       [STAGE_KEYS.ApigwPublicRestId]: restApi.restApiId,

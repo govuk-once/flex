@@ -1,33 +1,31 @@
-export type { NotificationId } from "./schemas/common";
-export { notificationId } from "./schemas/common";
-export type { IdentityRequest } from "./schemas/identity";
-export { identitySchema } from "./schemas/identity";
 export type {
-  CreateNotificationRequest,
-  CreateNotificationResponse,
-  GetNotificationResponse,
-  GetUserPreferencesResponse,
-  NotificationSecretContext,
-  UpdateNotificationOutboundRequest,
-  UpdateNotificationRequest,
-  UpdateNotificationResponse,
+  CreateNotificationPreferencesRequest,
+  CreateNotificationPreferencesResponse,
+  GetNotificationPreferencesResponse,
+  NotificationId,
+  UpdateNotificationPreferencesOutboundRequest,
+  UpdateNotificationPreferencesOutboundResponse,
+  UpdateNotificationPreferencesRequest,
+  UpdateNotificationPreferencesResponse,
 } from "./schemas/notifications";
 export {
-  createNotificationRequestSchema,
-  createNotificationResponseSchema,
-  getNotificationResponseSchema,
-  getUserPreferencesResponseSchema,
-  updateNotificationOutboundRequestSchema,
-  updateNotificationRequestSchema,
-  updateNotificationResponseSchema,
+  CreateNotificationPreferencesRequestSchema,
+  CreateNotificationPreferencesResponseSchema,
+  GetNotificationPreferencesResponseSchema,
+  NotificationIdBranded,
+  NotificationPreferencesConsentStatus,
+  UpdateNotificationPreferencesOutboundRequestSchema,
+  UpdateNotificationPreferencesOutboundResponseSchema,
+  UpdateNotificationPreferencesRequestSchema,
+  UpdateNotificationPreferencesResponseSchema,
 } from "./schemas/notifications";
 export type {
   CreateUserRequest,
   CreateUserResponse,
-  UserProfileResponse,
+  GetUserResponse,
 } from "./schemas/user";
 export {
-  createUserRequestSchema,
-  createUserResponseSchema,
-  userProfileResponseSchema,
+  CreateUserRequestSchema,
+  CreateUserResponseSchema,
+  GetUserResponseSchema,
 } from "./schemas/user";

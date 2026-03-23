@@ -9,7 +9,6 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/handlers": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "@flex/udp-domain": "workspace:*",

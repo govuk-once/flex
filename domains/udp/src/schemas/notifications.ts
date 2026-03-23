@@ -1,79 +1,76 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { notificationId } from "./common";
+export const NotificationIdBranded = NonEmptyString.brand<"NotificationId">();
 
-export const CONSENT_STATUS_SCHEMA = z.enum(["unknown", "accepted", "denied"]);
+export type NotificationId = z.output<typeof NotificationIdBranded>;
 
-export const createNotificationRequestSchema = z.object({
-  consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId,
+export const NotificationPreferencesConsentStatus = z.enum([
+  "unknown",
+  "accepted",
+  "denied",
+]);
+
+export const CreateNotificationPreferencesRequestSchema = z.object({
+  consentStatus: NotificationPreferencesConsentStatus,
+  notificationId: NotificationIdBranded,
 });
 
-export type CreateNotificationRequest = z.infer<
-  typeof createNotificationRequestSchema
+export type CreateNotificationPreferencesRequest = z.output<
+  typeof CreateNotificationPreferencesRequestSchema
 >;
 
-export const createNotificationResponseSchema = z.object({
-  consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId,
+export const CreateNotificationPreferencesResponseSchema = z.object({
+  consentStatus: NotificationPreferencesConsentStatus,
+  notificationId: NotificationIdBranded,
 });
 
-export type CreateNotificationResponse = z.infer<
-  typeof createNotificationResponseSchema
+export type CreateNotificationPreferencesResponse = z.output<
+  typeof CreateNotificationPreferencesResponseSchema
 >;
 
-export const getNotificationResponseSchema = z.object({
-  consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId,
+export const GetNotificationPreferencesResponseSchema = z.object({
+  consentStatus: NotificationPreferencesConsentStatus,
+  notificationId: NotificationIdBranded,
 });
 
-export type GetNotificationResponse = z.infer<
-  typeof getNotificationResponseSchema
+export type GetNotificationPreferencesResponse = z.output<
+  typeof GetNotificationPreferencesResponseSchema
 >;
 
-export const updateNotificationRequestSchema = z.object({
-  consentStatus: CONSENT_STATUS_SCHEMA,
+export const UpdateNotificationPreferencesRequestSchema = z.object({
+  consentStatus: NotificationPreferencesConsentStatus,
 });
 
-export type UpdateNotificationRequest = z.infer<
-  typeof updateNotificationRequestSchema
+export type UpdateNotificationPreferencesRequest = z.output<
+  typeof UpdateNotificationPreferencesRequestSchema
 >;
 
-export const updateNotificationOutboundRequestSchema =
-  updateNotificationRequestSchema.extend({
-    notificationId,
+export const UpdateNotificationPreferencesResponseSchema = z.object({
+  consentStatus: NotificationPreferencesConsentStatus,
+});
+
+export type UpdateNotificationPreferencesResponse = z.output<
+  typeof UpdateNotificationPreferencesResponseSchema
+>;
+
+export const UpdateNotificationPreferencesOutboundRequestSchema =
+  UpdateNotificationPreferencesRequestSchema.extend({
+    notificationId: NotificationIdBranded,
   });
 
-export type UpdateNotificationOutboundRequest = z.infer<
-  typeof updateNotificationOutboundRequestSchema
+export type UpdateNotificationPreferencesOutboundRequest = z.output<
+  typeof UpdateNotificationPreferencesOutboundRequestSchema
 >;
 
-export const updateNotificationResponseSchema = z.object({
-  consentStatus: CONSENT_STATUS_SCHEMA,
-  notificationId,
-});
-
-export type UpdateNotificationResponse = z.infer<
-  typeof updateNotificationResponseSchema
->;
-
-export type NotificationSecretContext = {
-  notificationSecretKey: string;
-};
-
-export const getUserPreferencesResponseSchema = z.object({
-  userId: NonEmptyString,
-  notificationId,
-  preferences: z.object({
-    notifications: z.object({
-      consentStatus: CONSENT_STATUS_SCHEMA,
-      notificationId,
+export const UpdateNotificationPreferencesOutboundResponseSchema =
+  UpdateNotificationPreferencesResponseSchema.extend({
+    notificationId: NotificationIdBranded,
+    featureFlags: z.object({
+      newUserProfileEnabled: z.boolean(),
     }),
-  }),
-  newUserProfileEnabled: z.boolean(),
-});
+  });
 
-export type GetUserPreferencesResponse = z.infer<
-  typeof getUserPreferencesResponseSchema
+export type UpdateNotificationPreferencesOutboundResponse = z.output<
+  typeof UpdateNotificationPreferencesOutboundResponseSchema
 >;

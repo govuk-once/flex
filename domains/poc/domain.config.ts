@@ -1,15 +1,13 @@
 import { domain } from "@flex/sdk";
 import {
-  createNotificationRequestSchema,
-  createNotificationResponseSchema,
-  createUserRequestSchema,
-  getNotificationResponseSchema,
-  getUserPreferencesResponseSchema,
-  updateNotificationRequestSchema,
-  updateNotificationResponseSchema,
+  CreateNotificationPreferencesRequestSchema,
+  CreateNotificationPreferencesResponseSchema,
+  CreateUserRequestSchema,
+  UpdateNotificationPreferencesOutboundResponseSchema,
+  UpdateNotificationPreferencesRequestSchema,
 } from "@flex/udp-domain";
 
-const { config, route, routeContext } = domain({
+export const { config, route, routeContext } = domain({
   name: "poc",
   common: {
     access: "isolated",
@@ -39,84 +37,64 @@ const { config, route, routeContext } = domain({
     },
   },
   integrations: {
-    udpWrite: { type: "gateway", target: "udp", route: "POST /v1/*" },
-    udpCreateUser: { type: "gateway", target: "udp", route: "POST /v1/user" },
-    udpGetNotifications: {
+    udpCreateIdentityLink: {
       type: "gateway",
       target: "udp",
-      route: "GET /v1/notifications",
-      response: getNotificationResponseSchema,
+      route: "POST /v1/identity/*",
     },
-    udpPostNotifications: {
+    udpCreateNotificationPreferences: {
       type: "gateway",
       target: "udp",
       route: "POST /v1/notifications",
-      body: createNotificationRequestSchema,
-      response: createNotificationResponseSchema,
+      body: CreateNotificationPreferencesRequestSchema,
+      response: CreateNotificationPreferencesResponseSchema,
+    },
+    udpCreateUser: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/users",
+      body: CreateUserRequestSchema,
     },
   },
   routes: {
     v0: {
-      "/identity/:serviceName/:identifier": {
+      "/identity/:service/:id": {
         POST: {
           public: {
             name: "create-identity-link",
             resources: ["flexPrivateGatewayUrl"],
-            integrations: ["udpWrite"],
+            integrations: ["udpCreateIdentityLink"],
+            function: { timeoutSeconds: 20 },
           },
         },
       },
       "/users": {
-        GET: {
-          public: {
-            name: "get-user-preferences",
-            resources: [
-              "flexPrivateGatewayUrl",
-              "encryptionKeyArn",
-              "udpNotificationSecret",
-            ],
-            integrations: [
-              "udpWrite",
-              "udpGetNotifications",
-              "udpPostNotifications",
-            ],
-            featureFlags: ["newUserProfileEnabled"],
-            response: getUserPreferencesResponseSchema,
-          },
-        },
         POST: {
           private: {
-            name: "create-user",
+            name: "udp-create-user",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["udpCreateUser"],
-            body: createUserRequestSchema,
+            body: CreateUserRequestSchema,
           },
         },
       },
       "/users/notifications": {
         PATCH: {
           public: {
-            name: "update-user-notifications",
+            name: "update-user-notification-preferences",
             resources: [
               "flexPrivateGatewayUrl",
               "encryptionKeyArn",
               "udpNotificationSecret",
             ],
-            integrations: ["udpPostNotifications"],
-            body: updateNotificationRequestSchema,
-            response: updateNotificationResponseSchema,
+            integrations: ["udpCreateNotificationPreferences"],
+            featureFlags: ["newUserProfileEnabled"],
+            function: { timeoutSeconds: 20 },
+            body: UpdateNotificationPreferencesRequestSchema,
+            response: UpdateNotificationPreferencesOutboundResponseSchema,
           },
         },
       },
     },
   },
 });
-
-export const createIdentityContext =
-  routeContext<"POST /v0/identity/:serviceName/:identifier">;
-export const getUsersContext = routeContext<"GET /v0/users">;
-export const createUserContext = routeContext<"POST /v0/users [private]">;
-export const updateUserNotificationsContext =
-  routeContext<"PATCH /v0/users/notifications">;
-
-export { config, route };

@@ -1,15 +1,18 @@
 import { it } from "@flex/testing/e2e";
-import type { GetUserPreferencesResponse } from "@flex/udp-domain";
+import type {
+  UpdateNotificationPreferencesOutboundResponse,
+  UpdateNotificationPreferencesRequest,
+} from "@flex/udp-domain";
 import { describe, expect, inject } from "vitest";
 
 describe("POC domain", () => {
   const { JWT } = inject("e2eEnv");
 
-  describe("POST /poc/v0/identity/:serviceName/:identifier", () => {
+  describe("POST /poc/v0/identity/:service/:id", () => {
     const endpoint = `/poc/v0/identity/test-service/test-id`;
 
     it("rejects unauthenticated requests", async ({ cloudfront }) => {
-      const result = await cloudfront.client.get(endpoint);
+      const result = await cloudfront.client.post(endpoint);
 
       expect(result.status).toBe(401);
       expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
@@ -26,70 +29,6 @@ describe("POC domain", () => {
     });
   });
 
-  describe("GET /poc/v0/users", () => {
-    const endpoint = `/poc/v0/users`;
-
-    it("rejects unauthenticated requests", async ({ cloudfront }) => {
-      const result = await cloudfront.client.get(endpoint);
-
-      expect(result.status).toBe(401);
-      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    });
-
-    it("returns 200 with user profile and notification ID", async ({
-      cloudfront,
-    }) => {
-      const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${JWT.VALID}` },
-      });
-
-      expect(result.status).toBe(200);
-      expect(result.body).toEqual({
-        userId: expect.any(String) as string,
-        notificationId: expect.any(String) as string,
-        preferences: {
-          notifications: {
-            consentStatus: expect.any(String) as string,
-            notificationId: expect.any(String) as string,
-          },
-        },
-        newUserProfileEnabled: expect.any(Boolean) as boolean,
-      });
-    });
-
-    it("returns the expected newUserProfileEnabled flag value for the current stage", async ({
-      cloudfront,
-    }) => {
-      const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${JWT.VALID}` },
-      });
-
-      expect(result.status).toBe(200);
-      expect(
-        (result.body as Record<string, unknown>).newUserProfileEnabled,
-      ).toBe(true);
-    });
-
-    it("returns the same notification ID for multiple requests to the same user", async ({
-      cloudfront,
-    }) => {
-      const headers = { Authorization: `Bearer ${JWT.VALID}` };
-
-      const [first, second] = await Promise.all([
-        cloudfront.client.get<GetUserPreferencesResponse>(endpoint, {
-          headers,
-        }),
-        cloudfront.client.get<GetUserPreferencesResponse>(endpoint, {
-          headers,
-        }),
-      ]);
-
-      expect(first.status).toBe(200);
-      expect(second.status).toBe(200);
-      expect(first.body?.notificationId).toBe(second.body?.notificationId);
-    });
-  });
-
   describe("PATCH /poc/v0/users/notifications", () => {
     const endpoint = `/poc/v0/users/notifications`;
 
@@ -103,15 +42,21 @@ describe("POC domain", () => {
     it("returns 200 with updated notification preferences", async ({
       cloudfront,
     }) => {
-      const result = await cloudfront.client.patch(endpoint, {
+      const result = await cloudfront.client.patch<
+        UpdateNotificationPreferencesRequest,
+        UpdateNotificationPreferencesOutboundResponse
+      >(endpoint, {
         headers: { Authorization: `Bearer ${JWT.VALID}` },
         body: { consentStatus: "accepted" },
       });
 
       expect(result.status).toBe(200);
-      expect(result.body).toEqual({
+      expect(result.body).toStrictEqual({
         consentStatus: "accepted",
         notificationId: expect.any(String) as string,
+        featureFlags: {
+          newUserProfileEnabled: expect.any(Boolean) as boolean,
+        },
       });
     });
 

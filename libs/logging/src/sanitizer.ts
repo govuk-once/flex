@@ -1,6 +1,6 @@
 const REDACTED = "***REDACTED***";
 
-const defaultKeyPatterns: Array<RegExp> = [
+const secretKeyPatterns: Array<RegExp> = [
   /secret/i,
   /token/i,
   /password/i,
@@ -15,8 +15,36 @@ const defaultKeyPatterns: Array<RegExp> = [
   /signing/i,
 ];
 
-const defaultValuePatterns: Array<RegExp> = [
+const piiKeyPatterns: Array<RegExp> = [
+  /\bemail\b/i,
+  /\bphone\b/i,
+  /\bmobile\b/i,
+  /\bforename\b/i,
+  /\bsurname\b/i,
+  /\bfirst.?name\b/i,
+  /\blast.?name\b/i,
+  /\bfull.?name\b/i,
+  /\bdate.?of.?birth\b/i,
+  /\bdob\b/i,
+  /\bnino\b/i,
+  /\bnational.?insurance\b/i,
+  /\bpostcode\b/i,
+  /\bzip.?code\b/i,
+  /\bsort.?code\b/i,
+  /\baccount.?number\b/i,
+  /\bip.?address\b/i,
+];
+
+const secretValuePatterns: Array<RegExp> = [
   /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/, // JWT tokens
+];
+
+const piiValuePatterns: Array<RegExp> = [
+  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email addresses
+  /(?:\+44|0)\d{9,10}/, // UK phone numbers
+  /\b[A-Z]{2}\d{6}[A-D]\b/, // National Insurance numbers
+  /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i, // UK postcodes
+  /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, // IPv4 addresses
 ];
 
 const secretValues: string[] = [];
@@ -36,12 +64,41 @@ function rebuildSecretRegex(): void {
   secretValuesRegex = new RegExp(pattern, "gi");
 }
 
+function isPiiDebugEnabled(): boolean {
+  if (process.env.FLEX_ENVIRONMENT === "production") return false;
+  return process.env.FLEX_LOG_PII_DEBUG === "true";
+}
+
 function matchesKeyPattern(key: string): boolean {
-  return defaultKeyPatterns.some((pattern) => pattern.test(key));
+  if (secretKeyPatterns.some((pattern) => pattern.test(key))) return true;
+  if (isPiiDebugEnabled()) return false;
+  return piiKeyPatterns.some((pattern) => pattern.test(key));
 }
 
 function matchesValuePattern(value: string): boolean {
-  return defaultValuePatterns.some((pattern) => pattern.test(value));
+  if (secretValuePatterns.some((pattern) => pattern.test(value))) return true;
+  if (isPiiDebugEnabled()) return false;
+  return piiValuePatterns.some((pattern) => pattern.test(value));
+}
+
+/**
+ * Marks a key name as sensitive so its value is redacted from logs.
+ * Accepts a RegExp or a string (converted to a case-insensitive regex).
+ * Follows PII rules: bypassed by FLEX_LOG_PII_DEBUG in non-production.
+ */
+export function addSensitiveKey(pattern: RegExp | string): void {
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+  piiKeyPatterns.push(regex);
+}
+
+/**
+ * Adds a pattern to detect sensitive data in log values.
+ * Accepts a RegExp or a string (converted to a case-insensitive regex).
+ * Follows PII rules: bypassed by FLEX_LOG_PII_DEBUG in non-production.
+ */
+export function addSensitivePattern(pattern: RegExp | string): void {
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+  piiValuePatterns.push(regex);
 }
 
 /**
