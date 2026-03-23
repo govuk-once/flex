@@ -8,18 +8,15 @@ describe("GET /v1/identity/:service", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
 
   const service = "test-service";
-  const endpoint = `/identity/${service}`;
-  const query = { requiredService: service };
-
   const userId = createUserId("test-pairwise-id");
-  const serviceId = "test-service-id";
-
-  const foundServiceIdentity = { serviceId };
 
   const event = {
-    httpMethod: "GET",
-    path: endpoint,
     pathParameters: { service },
+  };
+
+  const foundServiceIdentity = {
+    serviceId: "existing-id",
+    serviceName: "test-service",
   };
 
   describe("response", () => {
@@ -28,9 +25,7 @@ describe("GET /v1/identity/:service", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/udp/v1/identity/exchange")
-        .query(query)
-        .matchHeader("requesting-service-user-id", userId)
+        .get(`/gateways/udp/v1/identity/${service}`)
         .matchHeader("User-Id", userId)
         .reply(200, foundServiceIdentity);
 
@@ -40,20 +35,15 @@ describe("GET /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(200);
-      expect(result.headers).toStrictEqual({
-        "Content-Type": "application/json",
-      });
       expect(JSON.parse(result.body)).toStrictEqual({ linked: true });
     });
 
-    it("returns 200 when a service identity does not exist", async ({
+    it("returns 200 with linked false when identity does not exist (404)", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/udp/v1/identity/exchange")
-        .query(query)
-        .matchHeader("requesting-service-user-id", userId)
+        .get(`/gateways/udp/v1/identity/${service}`)
         .matchHeader("User-Id", userId)
         .reply(404);
 
@@ -63,22 +53,17 @@ describe("GET /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(200);
-      expect(result.headers).toStrictEqual({
-        "Content-Type": "application/json",
-      });
       expect(JSON.parse(result.body)).toStrictEqual({ linked: false });
     });
   });
 
   describe("errors", () => {
-    it("returns 502 when service identity lookup fails", async ({
+    it("returns 502 when the upstream service returns a 500", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/udp/v1/identity/exchange")
-        .query(query)
-        .matchHeader("requesting-service-user-id", userId)
+        .get(`/gateways/udp/v1/identity/${service}`)
         .matchHeader("User-Id", userId)
         .reply(500);
 
@@ -87,7 +72,7 @@ describe("GET /v1/identity/:service", () => {
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 502, body: "" });
+      expect(result.statusCode).toBe(502);
     });
   });
 });

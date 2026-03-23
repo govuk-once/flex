@@ -11,13 +11,8 @@ export const handler = route(
     const userId = auth.pairwiseId as UserId;
 
     const result = await integrations.udpGetIdentity({
-      path: `/exchange`,
-      headers: {
-        "requesting-service": "app",
-        "requesting-service-user-id": userId,
-        "User-Id": userId,
-      },
-      query: { requiredService: service },
+      path: `/${service}`,
+      headers: { "User-Id": userId },
     });
 
     if (!result.ok) {
