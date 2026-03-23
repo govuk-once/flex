@@ -45,6 +45,9 @@ describe("PATCH /v0/users/notifications", () => {
       JSON.stringify({
         consentStatus: "accepted",
         notificationId: "derived-notification-id",
+        featureFlags: {
+          newUserProfileEnabled: true,
+        },
       }),
     );
   });
