@@ -6,26 +6,22 @@ import type {
   Context,
 } from "aws-lambda";
 import type { ZodType } from "zod";
-
-// ----------------------------------------------------------------------------
-// Flex Function
-// ----------------------------------------------------------------------------
-
-// Add more fields if needed, based on Nodejsfunction
-export interface FunctionConfig {
-  environment?: Readonly<Record<string, string>>;
-  memorySize?: number;
-  timeoutSeconds?: number;
-}
-
-// ----------------------------------------------------------------------------
-// Headers
-// ----------------------------------------------------------------------------
-
-export interface HeaderConfig {
-  readonly name: string;
-  readonly required?: boolean;
-}
+import type {
+  DomainResource,
+  FunctionConfig,
+  HeaderConfig,
+  HttpMethod,
+  LogLevel,
+  RouteAccess,
+} from "./config/schema";
+export type {
+  DomainResource,
+  FunctionConfig,
+  HeaderConfig,
+  HttpMethod,
+  LogLevel,
+  RouteAccess,
+} from "./config/schema";
 
 type MergeRouteHeaders<
   Config extends DomainConfig,
@@ -62,12 +58,6 @@ type ResolveHeaders<Headers> = keyof Headers extends never
 // ----------------------------------------------------------------------------
 // Resources
 // ----------------------------------------------------------------------------
-
-export interface DomainResource<T extends string = string> {
-  readonly type: T;
-  readonly path: string;
-  readonly scope?: "environment" | "stage";
-}
 
 interface DomainResourceCommonOptions {
   scope?: "environment" | "stage";
@@ -375,27 +365,7 @@ export type GatewayRouteConfig<
 // Domain Config
 // ----------------------------------------------------------------------------
 
-export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
-
 type HttpMethodWithBody = Extract<HttpMethod, "POST" | "PUT" | "PATCH">;
-
-export type LogLevel =
-  | "TRACE"
-  | "DEBUG"
-  | "INFO"
-  | "WARN"
-  | "ERROR"
-  | "SILENT"
-  | "CRITICAL";
-
-export type RouteAccess = "public" | "private" | "isolated";
 
 interface DomainConfigCommon {
   readonly access?: RouteAccess;

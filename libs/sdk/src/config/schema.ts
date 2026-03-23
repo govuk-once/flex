@@ -2,9 +2,9 @@ import { NonEmptyString } from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
 
-const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
+export const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
 
-const LogLevelSchema = z.enum([
+export const LogLevelSchema = z.enum([
   "TRACE",
   "DEBUG",
   "INFO",
@@ -14,7 +14,7 @@ const LogLevelSchema = z.enum([
   "CRITICAL",
 ]);
 
-const HttpMethodSchema = z.enum([
+export const HttpMethodSchema = z.enum([
   "GET",
   "POST",
   "PUT",
@@ -24,13 +24,13 @@ const HttpMethodSchema = z.enum([
   "OPTIONS",
 ]);
 
-const FunctionConfigSchema = z.object({
+export const FunctionConfigSchema = z.object({
   environment: z.record(NonEmptyString, NonEmptyString).optional(),
   memorySize: z.number().int().min(128).max(10240).optional(),
   timeoutSeconds: z.number().int().min(1).max(900).optional(),
 });
 
-const HeaderConfigSchema = z.object({
+export const HeaderConfigSchema = z.object({
   name: NonEmptyString,
   required: z.boolean().optional(),
 });
@@ -62,7 +62,7 @@ const DomainConfigCommonSchema = z.object({
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
 });
 
-const DomainResourceSchema = z.object({
+export const DomainResourceSchema = z.object({
   type: z.enum(["secret", "ssm", "ssm:runtime", "kms"]),
   path: NonEmptyString,
   scope: z.enum(["environment", "stage"]).optional(),
@@ -107,4 +107,10 @@ export const DomainConfigSchema = z.object({
   owner: NonEmptyString.optional(),
 });
 
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
+export type LogLevel = z.infer<typeof LogLevelSchema>;
+export type RouteAccess = z.infer<typeof RouteAccessSchema>;
+export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
+export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
+export type DomainResource = z.infer<typeof DomainResourceSchema>;
 export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
