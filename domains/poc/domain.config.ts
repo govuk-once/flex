@@ -3,9 +3,10 @@ import {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
-  UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
 } from "@flex/udp-domain";
+
+import { UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema } from "./schemas/notifications";
 
 export const { config, route, routeContext } = domain({
   name: "poc",
@@ -91,7 +92,8 @@ export const { config, route, routeContext } = domain({
             featureFlags: ["newUserProfileEnabled"],
             function: { timeoutSeconds: 20 },
             body: UpdateNotificationPreferencesRequestSchema,
-            response: UpdateNotificationPreferencesOutboundResponseSchema,
+            response:
+              UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema,
           },
         },
       },

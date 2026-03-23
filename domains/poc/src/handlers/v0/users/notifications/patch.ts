@@ -33,9 +33,11 @@ export const handler = route(
 
     return {
       status: 200,
-      data: result.data,
-      featureFlags: {
-        newUserProfileEnabled: featureFlags.newUserProfileEnabled,
+      data: {
+        ...result.data,
+        featureFlags: {
+          newUserProfileEnabled: featureFlags.newUserProfileEnabled,
+        },
       },
     };
   },

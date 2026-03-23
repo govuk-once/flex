@@ -66,9 +66,6 @@ export type UpdateNotificationPreferencesOutboundRequest = z.output<
 export const UpdateNotificationPreferencesOutboundResponseSchema =
   UpdateNotificationPreferencesResponseSchema.extend({
     notificationId: NotificationIdBranded,
-    featureFlags: z.object({
-      newUserProfileEnabled: z.boolean(),
-    }),
   });
 
 export type UpdateNotificationPreferencesOutboundResponse = z.output<
