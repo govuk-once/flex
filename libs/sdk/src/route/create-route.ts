@@ -1,4 +1,5 @@
 import { logger, setLogLevel, setLogServiceName } from "@flex/logging";
+import createHttpError from "http-errors";
 
 import type {
   DomainConfig,
@@ -133,6 +134,15 @@ export function createRouteHandler<const Config extends DomainConfig>(
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message }),
           };
+        }
+
+        if (createHttpError.isHttpError(error)) {
+          const { message, statusCode } = error;
+          const level = statusCode >= 500 ? "error" : "warn";
+
+          logger[level](message, { statusCode });
+
+          return { statusCode, body: "" };
         }
 
         throw error;

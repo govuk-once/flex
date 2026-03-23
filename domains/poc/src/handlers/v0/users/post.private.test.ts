@@ -1,30 +1,25 @@
-import { it } from "@flex/testing";
+import { createUserId, it } from "@flex/testing";
 import nock from "nock";
 import { describe, expect } from "vitest";
 
 import { handler } from "./post.private";
 
 describe("POST /v0/users [private]", () => {
-  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
+  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/users";
+
+  const userId = createUserId("test-pairwise-id");
+  const notificationId = "test-notification-id";
 
   it("returns 204 when user is created successfully", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    gateway
-      .post("/gateways/udp/v1/user", {
-        notificationId: "test-notification-id",
-        userId: "test-user-id",
-      })
-      .reply(204);
+    api.post("/gateways/udp/v1/users", { userId, notificationId }).reply(204);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: {
-          notificationId: "test-notification-id",
-          userId: "test-user-id",
-        },
+        body: { userId, notificationId },
       }),
       context
         .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
@@ -55,24 +50,21 @@ describe("POST /v0/users [private]", () => {
     },
   );
 
-  it("returns 500 when user creation fails", async ({
+  it("returns 502 when user creation fails", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    gateway.post("/gateways/udp/v1/user").reply(500);
+    api.post("/gateways/udp/v1/users").reply(500);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: {
-          notificationId: "test-notification-id",
-          userId: "test-user-id",
-        },
+        body: { userId, notificationId },
       }),
       context
         .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
         .create(),
     );
 
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(502);
   });
 });

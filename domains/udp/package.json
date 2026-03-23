@@ -12,19 +12,8 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parser": "2.31.0",
-    "@aws-sdk/client-secrets-manager": "3.985.0",
-    "@flex/flex-fetch": "workspace:*",
-    "@flex/handlers": "workspace:*",
-    "@flex/logging": "workspace:*",
-    "@flex/middlewares": "workspace:*",
-    "@flex/params": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/http-header-normalizer": "7.0.2",
-    "@middy/http-json-body-parser": "7.0.2",
-    "@middy/secrets-manager": "7.0.2",
-    "@smithy/util-utf8": "^4.2.0",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
     "zod": "4.3.6"
@@ -32,7 +21,6 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@middy/core": "7.0.2",
     "@types/aws-lambda": "8.10.160",
     "@types/http-errors": "2.0.5",
     "@types/ramda": "0.31.1",
