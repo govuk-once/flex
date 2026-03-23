@@ -45,7 +45,7 @@ async function updateNotifications(
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User notification preferences updated successfully");
+  logger.info("User notification preferences updated successfully");
 
   return result.data;
 }

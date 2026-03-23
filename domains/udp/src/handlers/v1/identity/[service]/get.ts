@@ -24,7 +24,7 @@ export const handler = route(
       const { error } = result;
 
       if (error.status === 404) {
-        logger.debug(`Service identity is not linked`, { service, userId });
+        logger.info(`Service identity is not linked`, { service, userId });
 
         return {
           status: 200,

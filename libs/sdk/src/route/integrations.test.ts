@@ -249,18 +249,17 @@ describe("createIntegrationInvoker", () => {
       expect(headers).toStrictEqual({ "Content-Type": "application/json" });
     });
 
-    it("omits body and content type when no body is provided", async () => {
+    it("omits body when the caller does not provide a body", async () => {
       const caller = createInvoker(invokerConfig.path);
 
       await caller();
 
-      const [, { body, headers }] = mockFetcher.mock.lastCall as [
+      const [, { body }] = mockFetcher.mock.lastCall as [
         string,
         InvokerOptions,
       ];
 
       expect(body).toBeUndefined();
-      expect(headers).toBeUndefined();
     });
 
     it("merges caller provided headers with base headers when a body and headers are both provided", async () => {

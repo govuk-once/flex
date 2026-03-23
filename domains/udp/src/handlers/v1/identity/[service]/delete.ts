@@ -50,7 +50,7 @@ async function getServiceIdentityLink(): Promise<GetServiceIdentityLinkResponse>
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("Service identity link found");
+  logger.info("Service identity link found");
 
   return result.data;
 }

@@ -94,14 +94,11 @@ function buildFetcherOptions(
   invokerOptions?: InvokerOptions,
 ): FlexFetchRequestInit {
   const headers = {
+    "Content-Type": "application/json",
     ...invokerOptions?.headers,
   };
 
   const hasBody = invokerOptions?.body !== undefined;
-
-  if (hasBody) {
-    headers["Content-Type"] = "application/json";
-  }
 
   return {
     method,

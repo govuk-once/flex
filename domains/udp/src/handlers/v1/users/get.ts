@@ -59,7 +59,7 @@ async function getNotifications(
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("Found existing user notification preferences");
+  logger.info("Found existing user notification preferences");
 
   return result.data;
 }
@@ -76,7 +76,7 @@ async function createUser(userId: UserId, notificationId: NotificationId) {
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User created successfully");
+  logger.info("User created successfully");
 }
 
 async function createNotifications(
@@ -100,7 +100,7 @@ async function createNotifications(
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User notification preferences created successfully");
+  logger.info("User notification preferences created successfully");
 
   return result.data;
 }
