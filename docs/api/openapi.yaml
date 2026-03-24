@@ -1,0 +1,332 @@
+openapi: 3.1.0
+info:
+  title: Flex API
+  version: 1.0.0
+  description: Public API for the GOV.UK Flex platform.
+servers:
+  - url: https://api.staging.flex.service.gov.uk
+    description: Staging
+  - url: "{baseUrl}"
+    description: Ephemeral environment
+    variables:
+      baseUrl:
+        default: https://api.staging.flex.service.gov.uk
+        description: Base URL for the ephemeral environment
+security:
+  - BearerAuth: []
+paths:
+  /uns/v1/notifications:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    NotificationID:
+                      type: string
+                      minLength: 1
+                    NotificationTitle:
+                      type: string
+                      minLength: 1
+                    NotificationBody:
+                      type: string
+                      minLength: 1
+                    MessageTitle:
+                      type: string
+                      minLength: 1
+                    MessageBody:
+                      type: string
+                      minLength: 1
+                    DispatchedDateTime:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    Status:
+                      type: string
+                      enum:
+                        - RECEIVED
+                        - READ
+                        - MARKED_AS_UNREAD
+                        - HIDDEN
+                  required:
+                    - NotificationID
+                    - NotificationTitle
+                    - NotificationBody
+                    - MessageTitle
+                    - MessageBody
+                    - DispatchedDateTime
+                  additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /uns/v1/notifications/{notificationId}:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  NotificationID:
+                    type: string
+                    minLength: 1
+                  NotificationTitle:
+                    type: string
+                    minLength: 1
+                  NotificationBody:
+                    type: string
+                    minLength: 1
+                  MessageTitle:
+                    type: string
+                    minLength: 1
+                  MessageBody:
+                    type: string
+                    minLength: 1
+                  DispatchedDateTime:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  Status:
+                    type: string
+                    enum:
+                      - RECEIVED
+                      - READ
+                      - MARKED_AS_UNREAD
+                      - HIDDEN
+                required:
+                  - NotificationID
+                  - NotificationTitle
+                  - NotificationBody
+                  - MessageTitle
+                  - MessageBody
+                  - DispatchedDateTime
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+    delete:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /uns/v1/notifications/{notificationId}/status:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Status:
+                  type: string
+                  enum:
+                    - RECEIVED
+                    - READ
+                    - MARKED_AS_UNREAD
+              required:
+                - Status
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/identity/{service}:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+    delete:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/identity/{service}/{id}:
+    post:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/users:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    minLength: 1
+                  notificationId:
+                    type: string
+                    minLength: 1
+                  notifications:
+                    type: object
+                    properties:
+                      consentStatus:
+                        type: string
+                        enum:
+                          - unknown
+                          - accepted
+                          - denied
+                      notificationId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - consentStatus
+                      - notificationId
+                    additionalProperties: false
+                required:
+                  - userId
+                  - notificationId
+                  - notifications
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/users/notifications:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consentStatus:
+                  type: string
+                  enum:
+                    - unknown
+                    - accepted
+                    - denied
+              required:
+                - consentStatus
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consentStatus:
+                    type: string
+                    enum:
+                      - unknown
+                      - accepted
+                      - denied
+                  notificationId:
+                    type: string
+                    minLength: 1
+                required:
+                  - consentStatus
+                  - notificationId
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/identity/{service}/{id}:
+    post:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/users/notifications:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consentStatus:
+                  type: string
+                  enum:
+                    - unknown
+                    - accepted
+                    - denied
+              required:
+                - consentStatus
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consentStatus:
+                    type: string
+                    enum:
+                      - unknown
+                      - accepted
+                      - denied
+                  notificationId:
+                    type: string
+                    minLength: 1
+                required:
+                  - consentStatus
+                  - notificationId
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
