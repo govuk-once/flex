@@ -220,9 +220,9 @@ describe("getRouteFeatureFlags", () => {
     myFlag: { default: false },
     envAwareFlag: {
       default: false,
-      environments: ["development" as const, "staging" as const],
+      environments: ["development", "staging"],
     },
-  };
+  } satisfies DomainConfig["featureFlags"];
 
   it("returns undefined when there are no domain feature flags", () => {
     expect(getRouteFeatureFlags(undefined)).toBeUndefined();
