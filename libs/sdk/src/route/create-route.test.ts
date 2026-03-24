@@ -223,9 +223,9 @@ describe("createRouteHandler", () => {
 
     it("registers middleware with the resolved route config", () => {
       const resources = {
-        testKey: { type: "kms", value: "test-key-value" },
-        testParam: { type: "ssm:runtime", value: "/path/to/param" },
-        testSecret: { type: "secret", value: "test-secret-value" },
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm:runtime" as const, value: "/path/to/param" },
+        testSecret: { type: "secret" as const, value: "test-secret-value" },
       };
 
       vi.mocked(getRouteResources).mockReturnValue(resources);

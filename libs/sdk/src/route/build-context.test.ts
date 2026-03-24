@@ -198,8 +198,8 @@ describe("buildHandlerContext", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       const resources = {
-        testKey: { type: "kms", value: "test-key-value" },
-        testParam: { type: "ssm", value: "test-param-value" },
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm" as const, value: "test-param-value" },
       };
 
       const store = buildHandlerContext(
@@ -219,9 +219,9 @@ describe("buildHandlerContext", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       const resources = {
-        testKey: { type: "kms", value: "test-key-value" },
-        testParam: { type: "ssm", value: "test-param-value" },
-        testSecret: { type: "secret", value: "test-secret-name" },
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm" as const, value: "test-param-value" },
+        testSecret: { type: "secret" as const, value: "test-secret-name" },
       };
 
       const store = buildHandlerContext(
@@ -242,7 +242,7 @@ describe("buildHandlerContext", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       const resources = {
-        testSecret: { type: "secret", value: "test-secret-name" },
+        testSecret: { type: "secret" as const, value: "test-secret-name" },
       };
 
       expect(() =>
