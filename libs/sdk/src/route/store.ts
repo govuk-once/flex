@@ -11,6 +11,7 @@ export interface RouteStore {
   readonly pathParams?: Readonly<Record<string, string>>;
   readonly queryParams?: Readonly<Record<string, unknown>>;
   readonly resources?: Readonly<Record<string, string>>;
+  readonly featureFlags?: Readonly<Record<string, boolean>>;
   readonly headers?: Readonly<Record<string, string | undefined>>;
   readonly integrations?: DomainIntegrations;
 }

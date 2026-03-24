@@ -197,10 +197,10 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testParam: { type: "ssm", value: "test-param-value" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -218,11 +218,11 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testParam: { type: "ssm", value: "test-param-value" },
+        testSecret: { type: "secret", value: "test-secret-name" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -241,9 +241,9 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testSecret: { type: "secret", value: "test-secret-name" },
+      };
 
       expect(() =>
         buildHandlerContext(
@@ -334,6 +334,36 @@ describe("buildHandlerContext", () => {
       );
 
       expect(store.integrations).toBeUndefined();
+    });
+  });
+
+  describe("Feature Flags", () => {
+    it("includes feature flags in the context when the route references domain feature flags", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const featureFlags = { flagA: true, flagB: false };
+
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        { ...contextOptions, featureFlags },
+      );
+
+      expect(store.featureFlags).toStrictEqual({ flagA: true, flagB: false });
+    });
+
+    it("omits feature flags from the context when the route does not reference any", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        contextOptions,
+      );
+
+      expect(store.featureFlags).toBeUndefined();
     });
   });
 });

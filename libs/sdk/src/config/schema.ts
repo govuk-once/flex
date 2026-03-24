@@ -68,6 +68,18 @@ export const DomainResourceSchema = z.object({
   scope: z.enum(["environment", "stage"]).optional(),
 });
 
+export const FlexEnvironmentSchema = z.enum([
+  "development",
+  "staging",
+  "production",
+]);
+
+export const DomainFeatureFlagSchema = z.object({
+  description: NonEmptyString.optional(),
+  default: z.boolean().optional(),
+  environments: z.array(FlexEnvironmentSchema).optional(),
+});
+
 const MethodRouteConfigSchema = z.object({
   name: NonEmptyString,
   access: RouteAccessSchema.optional(),
@@ -78,6 +90,7 @@ const MethodRouteConfigSchema = z.object({
   response: z.custom<ZodType>().optional(),
   resources: z.array(NonEmptyString).readonly().optional(),
   integrations: z.array(NonEmptyString).readonly().optional(),
+  featureFlags: z.array(NonEmptyString).readonly().optional(),
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
 });
 
@@ -104,13 +117,6 @@ export const DomainConfigSchema = z.object({
   common: DomainConfigCommonSchema.optional(),
   resources: z.record(NonEmptyString, DomainResourceSchema).optional(),
   integrations: z.record(NonEmptyString, DomainIntegrationSchema).optional(),
+  featureFlags: z.record(NonEmptyString, DomainFeatureFlagSchema).optional(),
   owner: NonEmptyString.optional(),
 });
-
-export type HttpMethod = z.infer<typeof HttpMethodSchema>;
-export type LogLevel = z.infer<typeof LogLevelSchema>;
-export type RouteAccess = z.infer<typeof RouteAccessSchema>;
-export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
-export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
-export type DomainResource = z.infer<typeof DomainResourceSchema>;
-export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;

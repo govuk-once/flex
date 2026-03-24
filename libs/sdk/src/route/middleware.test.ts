@@ -136,9 +136,9 @@ describe("configureMiddleware", () => {
     it("registers middleware to the handler", () => {
       vi.mocked(secret).mockImplementationOnce((v) => `secret:${v}`);
 
-      const resources = new Map<string, ResolvedResource>([
-        ["testSecret", { type: "secret", value: "/path/to/secret" }],
-      ]);
+      const resources: Record<string, ResolvedResource> = {
+        testSecret: { type: "secret", value: "/path/to/secret" },
+      };
 
       configureMiddleware({ ...options, resources });
 
@@ -157,18 +157,18 @@ describe("configureMiddleware", () => {
     });
 
     it("omits middleware when resources is empty", () => {
-      configureMiddleware({ ...options, resources: new Map() });
+      configureMiddleware({ ...options, resources: {} });
 
       expect(secretsManager).not.toHaveBeenCalled();
       expect(secret).not.toHaveBeenCalled();
     });
 
     it("omits middleware when only non-secret resources exist", () => {
-      const resources = new Map<string, ResolvedResource>([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testResolvedParam", { type: "ssm", value: "test-param-value" }],
-        ["testParam", { type: "ssm:runtime", value: "/path/to/param" }],
-      ]);
+      const resources: Record<string, ResolvedResource> = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testResolvedParam: { type: "ssm", value: "test-param-value" },
+        testParam: { type: "ssm:runtime", value: "/path/to/param" },
+      };
 
       configureMiddleware({ ...options, resources });
 
@@ -179,10 +179,10 @@ describe("configureMiddleware", () => {
 
   describe("SSM Middleware", () => {
     it("registers middleware to the handler", () => {
-      const resources = new Map<string, ResolvedResource>([
-        ["resolvedParam", { type: "ssm", value: "resolved-value" }],
-        ["testParam", { type: "ssm:runtime", value: "/path/to/param" }],
-      ]);
+      const resources: Record<string, ResolvedResource> = {
+        resolvedParam: { type: "ssm", value: "resolved-value" },
+        testParam: { type: "ssm:runtime", value: "/path/to/param" },
+      };
 
       configureMiddleware({ ...options, resources });
 
@@ -199,17 +199,17 @@ describe("configureMiddleware", () => {
     });
 
     it("omits middleware when resources is empty", () => {
-      configureMiddleware({ ...options, resources: new Map() });
+      configureMiddleware({ ...options, resources: {} });
 
       expect(ssm).not.toHaveBeenCalled();
     });
 
     it("omits middleware when only non-ssm (runtime) resources exist", () => {
-      const resources = new Map<string, ResolvedResource>([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testResolvedParam", { type: "ssm", value: "test-param-value" }],
-        ["testSecret", { type: "secret", value: "/path/to/secret" }],
-      ]);
+      const resources: Record<string, ResolvedResource> = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testResolvedParam: { type: "ssm", value: "test-param-value" },
+        testSecret: { type: "secret", value: "/path/to/secret" },
+      };
 
       configureMiddleware({ ...options, resources });
 
