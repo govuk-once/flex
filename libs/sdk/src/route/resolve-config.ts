@@ -61,10 +61,10 @@ export interface ResolvedResource {
 export function getRouteResources(
   resources: DomainConfig["resources"],
   resourceKeys?: readonly string[],
-): ReadonlyMap<string, ResolvedResource> | undefined {
+): Readonly<Record<string, ResolvedResource>> | undefined {
   if (!resources || !resourceKeys?.length) return;
 
-  return new Map(
+  return Object.fromEntries(
     resourceKeys.map((key) => {
       const resource = resources[key];
 
@@ -87,22 +87,21 @@ export function getRouteResources(
   );
 }
 
-export interface ResolvedFeatureFlag {
-  value: boolean;
-}
-
 const NAMED_ENVIRONMENTS: ReadonlySet<string> = new Set([
   "development",
   "staging",
   "production",
 ]);
 
+function isFlexEnvironment(
+  value: string | undefined,
+): value is FlexEnvironment {
+  return !!value && NAMED_ENVIRONMENTS.has(value);
+}
+
 function resolveCurrentEnvironment(): FlexEnvironment {
   const stage = process.env.STAGE;
-  if (stage && NAMED_ENVIRONMENTS.has(stage)) {
-    return stage as FlexEnvironment;
-  }
-  return "development";
+  return isFlexEnvironment(stage) ? stage : "development";
 }
 
 /**
@@ -121,12 +120,12 @@ function resolveCurrentEnvironment(): FlexEnvironment {
 export function getRouteFeatureFlags(
   featureFlags: DomainConfig["featureFlags"],
   flagKeys?: readonly string[],
-): ReadonlyMap<string, ResolvedFeatureFlag> | undefined {
+): Readonly<Record<string, boolean>> | undefined {
   if (!featureFlags || !flagKeys?.length) return;
 
   const currentEnvironment = resolveCurrentEnvironment();
 
-  return new Map(
+  return Object.fromEntries(
     flagKeys.map((key) => {
       const flag = featureFlags[key] as DomainFeatureFlag | undefined;
 
@@ -140,9 +139,11 @@ export function getRouteFeatureFlags(
       const value =
         envOverride !== undefined
           ? envOverride === "true"
-          : (flag.environments?.[currentEnvironment] ?? flag.default ?? false);
+          : flag.environments?.includes(currentEnvironment)
+            ? true
+            : (flag.default ?? false);
 
-      return [key, { value }] as const;
+      return [key, value] as const;
     }),
   );
 }

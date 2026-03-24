@@ -11,7 +11,7 @@ import type {
 } from "../types";
 import { RequestBodyParseError } from "../utils/errors";
 import { resolveHeaders } from "./headers";
-import type { ResolvedFeatureFlag, ResolvedResource } from "./resolve-config";
+import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
 
 export interface BuildContextOptions {
@@ -19,8 +19,8 @@ export interface BuildContextOptions {
   logger: Logger;
   bodySchema?: ZodType;
   querySchema?: ZodType;
-  resources?: ReadonlyMap<string, ResolvedResource>;
-  featureFlags?: ReadonlyMap<string, ResolvedFeatureFlag>;
+  resources?: Readonly<Record<string, ResolvedResource>>;
+  featureFlags?: Readonly<Record<string, boolean>>;
   headers?: Readonly<Record<string, HeaderConfig>>;
   integrations?: DomainIntegrations;
 }
@@ -48,9 +48,7 @@ export function buildHandlerContext(
   const resources = resourcesProp
     ? extractResources(context, resourcesProp)
     : undefined;
-  const featureFlags = featureFlagsProp
-    ? extractFeatureFlags(featureFlagsProp)
-    : undefined;
+  const featureFlags = featureFlagsProp;
 
   return {
     logger,
@@ -110,24 +108,12 @@ function extractRequestBody(body: LambdaEvent["body"], schema?: ZodType) {
   }
 }
 
-function extractFeatureFlags(
-  featureFlags: ReadonlyMap<string, ResolvedFeatureFlag>,
-) {
-  if (!featureFlags.size) return;
-
-  return Object.fromEntries(
-    Array.from(featureFlags).map(([key, { value }]) => [key, value]),
-  );
-}
-
 function extractResources(
   context: LambdaContext,
-  resources: ReadonlyMap<string, ResolvedResource>,
+  resources: Readonly<Record<string, ResolvedResource>>,
 ) {
-  if (!resources.size) return;
-
   return Object.fromEntries(
-    Array.from(resources).map(([key, { type, value }]) => {
+    Object.entries(resources).map(([key, { type, value }]) => {
       if (type === "kms" || type === "ssm") return [key, value];
 
       const contextValue = (context as unknown as Record<string, unknown>)[key];

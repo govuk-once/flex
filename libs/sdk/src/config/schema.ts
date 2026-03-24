@@ -77,7 +77,7 @@ export const FlexEnvironmentSchema = z.enum([
 export const DomainFeatureFlagSchema = z.object({
   description: NonEmptyString.optional(),
   default: z.boolean().optional(),
-  environments: z.record(FlexEnvironmentSchema, z.boolean()).optional(),
+  environments: z.array(FlexEnvironmentSchema).optional(),
 });
 
 const MethodRouteConfigSchema = z.object({

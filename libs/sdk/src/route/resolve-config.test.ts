@@ -191,13 +191,11 @@ describe("getRouteResources", () => {
 
     expect(
       getRouteResources(resources, ["testKey", "testParam", "testSecret"]),
-    ).toStrictEqual(
-      new Map([
-        ["testKey", { type: "kms", value: "test-key" }],
-        ["testParam", { type: "ssm", value: "test-param" }],
-        ["testSecret", { type: "secret", value: "test-secret" }],
-      ]),
-    );
+    ).toStrictEqual({
+      testKey: { type: "kms", value: "test-key" },
+      testParam: { type: "ssm", value: "test-param" },
+      testSecret: { type: "secret", value: "test-secret" },
+    });
   });
 
   it("throws when a route references a resource that has not been defined in the domain", () => {
@@ -222,7 +220,7 @@ describe("getRouteFeatureFlags", () => {
     myFlag: { default: false },
     envAwareFlag: {
       default: false,
-      environments: { development: true, staging: true, production: false },
+      environments: ["development" as const, "staging" as const],
     },
   };
 
@@ -246,9 +244,9 @@ describe("getRouteFeatureFlags", () => {
     it("uses the process.env override when set to 'true'", ({ env }) => {
       env.set({ myFlag: "true" });
 
-      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual(
-        new Map([["myFlag", { value: true }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual({
+        myFlag: true,
+      });
     });
 
     it("uses the process.env override when set to 'false', even when default is true", ({
@@ -259,7 +257,7 @@ describe("getRouteFeatureFlags", () => {
 
       expect(
         getRouteFeatureFlags(flagWithTrueDefault, ["myFlag"]),
-      ).toStrictEqual(new Map([["myFlag", { value: false }]]));
+      ).toStrictEqual({ myFlag: false });
     });
 
     it("uses the environment-specific value when no process.env override is set", ({
@@ -267,9 +265,9 @@ describe("getRouteFeatureFlags", () => {
     }) => {
       env.set({ STAGE: "staging" });
 
-      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
-        new Map([["envAwareFlag", { value: true }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+        envAwareFlag: true,
+      });
     });
 
     it("falls back to the global default when no env override or environment-specific value matches", ({
@@ -277,9 +275,9 @@ describe("getRouteFeatureFlags", () => {
     }) => {
       env.set({ STAGE: "staging" });
 
-      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual(
-        new Map([["myFlag", { value: false }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual({
+        myFlag: false,
+      });
     });
 
     it("falls back to false when no env override, environment value, or default is set", ({
@@ -289,7 +287,9 @@ describe("getRouteFeatureFlags", () => {
       env.delete("STAGE");
 
       expect(getRouteFeatureFlags(flagWithNoDefault, ["myFlag"])).toStrictEqual(
-        new Map([["myFlag", { value: false }]]),
+        {
+          myFlag: false,
+        },
       );
     });
   });
@@ -304,26 +304,26 @@ describe("getRouteFeatureFlags", () => {
       ({ stage, expected }, { env }) => {
         env.set({ STAGE: stage });
 
-        expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
-          new Map([["envAwareFlag", { value: expected }]]),
-        );
+        expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+          envAwareFlag: expected,
+        });
       },
     );
 
     it("treats a personal stage as 'development'", ({ env }) => {
       env.set({ STAGE: "ljones" });
 
-      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
-        new Map([["envAwareFlag", { value: true }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+        envAwareFlag: true,
+      });
     });
 
     it("treats an unset STAGE as 'development'", ({ env }) => {
       env.delete("STAGE");
 
-      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
-        new Map([["envAwareFlag", { value: true }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+        envAwareFlag: true,
+      });
     });
 
     it("process.env override takes precedence over the environment-specific value", ({
@@ -331,9 +331,9 @@ describe("getRouteFeatureFlags", () => {
     }) => {
       env.set({ STAGE: "staging", envAwareFlag: "false" });
 
-      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual(
-        new Map([["envAwareFlag", { value: false }]]),
-      );
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+        envAwareFlag: false,
+      });
     });
   });
 });

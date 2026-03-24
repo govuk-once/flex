@@ -30,11 +30,7 @@ export const { config, route, routeContext } = domain({
     newUserProfileEnabled: {
       description: "Enable the new user profile experience",
       default: false,
-      environments: {
-        development: true,
-        staging: true,
-        production: false,
-      },
+      environments: ["development", "staging"],
     },
   },
   integrations: {

@@ -197,10 +197,10 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testParam: { type: "ssm", value: "test-param-value" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -218,11 +218,11 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testParam: { type: "ssm", value: "test-param-value" },
+        testSecret: { type: "secret", value: "test-secret-name" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -241,9 +241,9 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testSecret: { type: "secret", value: "test-secret-name" },
+      };
 
       expect(() =>
         buildHandlerContext(
@@ -342,10 +342,7 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const featureFlags = new Map([
-        ["flagA", { value: true }],
-        ["flagB", { value: false }],
-      ]);
+      const featureFlags = { flagA: true, flagB: false };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
