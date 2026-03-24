@@ -6,6 +6,7 @@ import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import secretsManagerMiddleware, { secret } from "@middy/secrets-manager";
 import ssmMiddleware from "@middy/ssm";
+import { APIGatewayProxyResult, Context } from "aws-lambda";
 
 import type { LambdaEvent, LambdaResult } from "../types";
 import type { ResolvedResource } from "./resolve-config";
@@ -22,7 +23,12 @@ export function configureMiddleware({
   logLevel,
   hasRequestBody,
   resources,
-}: MiddlewareOptions) {
+}: MiddlewareOptions): middy.MiddyfiedHandler<
+  LambdaEvent,
+  APIGatewayProxyResult,
+  Error,
+  Context
+> {
   const middyHandler = middy<LambdaEvent, LambdaResult>()
     .use(
       httpErrorHandler({
