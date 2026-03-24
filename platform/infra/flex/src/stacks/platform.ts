@@ -298,10 +298,10 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     createDvlaServiceGateway(this, {
-      gatewaysResource: gatewaysRoot,
-      privateEgressSg,
       vpc,
       consumerConfigArn: dvlaConsumerConfigArn,
+      gatewaysResource: gatewaysRoot,
+      privateEgressSg,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash

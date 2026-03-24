@@ -993,6 +993,9 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../libs/config
+      '@flex/dvla-domain':
+        specifier: workspace:*
+        version: link:../../domains/dvla
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
