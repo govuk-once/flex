@@ -15,7 +15,165 @@ servers:
 security:
   - BearerAuth: []
 paths:
-  /udp/v1/identity/{serviceName}/{identifier}:
+  /uns/v1/notifications:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    NotificationID:
+                      type: string
+                      minLength: 1
+                    NotificationTitle:
+                      type: string
+                      minLength: 1
+                    NotificationBody:
+                      type: string
+                      minLength: 1
+                    MessageTitle:
+                      type: string
+                      minLength: 1
+                    MessageBody:
+                      type: string
+                      minLength: 1
+                    DispatchedDateTime:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                    Status:
+                      type: string
+                      enum:
+                        - RECEIVED
+                        - READ
+                        - MARKED_AS_UNREAD
+                        - HIDDEN
+                  required:
+                    - NotificationID
+                    - NotificationTitle
+                    - NotificationBody
+                    - MessageTitle
+                    - MessageBody
+                    - DispatchedDateTime
+                  additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /uns/v1/notifications/{notificationId}:
+    get:
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  NotificationID:
+                    type: string
+                    minLength: 1
+                  NotificationTitle:
+                    type: string
+                    minLength: 1
+                  NotificationBody:
+                    type: string
+                    minLength: 1
+                  MessageTitle:
+                    type: string
+                    minLength: 1
+                  MessageBody:
+                    type: string
+                    minLength: 1
+                  DispatchedDateTime:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$
+                  Status:
+                    type: string
+                    enum:
+                      - RECEIVED
+                      - READ
+                      - MARKED_AS_UNREAD
+                      - HIDDEN
+                required:
+                  - NotificationID
+                  - NotificationTitle
+                  - NotificationBody
+                  - MessageTitle
+                  - MessageBody
+                  - DispatchedDateTime
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+    delete:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /uns/v1/notifications/{notificationId}/status:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Status:
+                  type: string
+                  enum:
+                    - RECEIVED
+                    - READ
+                    - MARKED_AS_UNREAD
+              required:
+                - Status
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/identity/{service}:
+    get:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+    delete:
+      responses:
+        "200":
+          description: Successful response
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/identity/{service}/{id}:
     post:
       responses:
         "200":
@@ -31,39 +189,6 @@ paths:
       responses:
         "200":
           description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /udp/v1/users/notifications:
-    patch:
-      responses:
-        "200":
-          description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /poc/v0/identity/{serviceName}/{identifier}:
-    post:
-      responses:
-        "200":
-          description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /poc/v0/users:
-    get:
-      responses:
-        "200":
-          description: Successful response
           content:
             application/json:
               schema:
@@ -75,33 +200,81 @@ paths:
                   notificationId:
                     type: string
                     minLength: 1
-                  preferences:
+                  notifications:
                     type: object
                     properties:
-                      notifications:
-                        type: object
-                        properties:
-                          consentStatus:
-                            type: string
-                            enum:
-                              - unknown
-                              - accepted
-                              - denied
-                          notificationId:
-                            type: string
-                            minLength: 1
-                        required:
-                          - consentStatus
-                          - notificationId
-                        additionalProperties: false
+                      consentStatus:
+                        type: string
+                        enum:
+                          - unknown
+                          - accepted
+                          - denied
+                      notificationId:
+                        type: string
+                        minLength: 1
                     required:
-                      - notifications
+                      - consentStatus
+                      - notificationId
                     additionalProperties: false
                 required:
                   - userId
                   - notificationId
-                  - preferences
+                  - notifications
                 additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /udp/v1/users/notifications:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consentStatus:
+                  type: string
+                  enum:
+                    - unknown
+                    - accepted
+                    - denied
+              required:
+                - consentStatus
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consentStatus:
+                    type: string
+                    enum:
+                      - unknown
+                      - accepted
+                      - denied
+                  notificationId:
+                    type: string
+                    minLength: 1
+                required:
+                  - consentStatus
+                  - notificationId
+                additionalProperties: false
+        "401":
+          description: Unauthorised
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal server error
+  /poc/v0/identity/{service}/{id}:
+    post:
+      responses:
+        "200":
+          description: Successful response
         "401":
           description: Unauthorised
         "403":
@@ -145,50 +318,6 @@ paths:
                   - consentStatus
                   - notificationId
                 additionalProperties: false
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /hello/v1/hello-public:
-    get:
-      responses:
-        "200":
-          description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /hello/v1/hello-private:
-    get:
-      responses:
-        "200":
-          description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /hello/v1/hello-isolated:
-    get:
-      responses:
-        "200":
-          description: Successful response
-        "401":
-          description: Unauthorised
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal server error
-  /hello/v1/hello-call-internal:
-    get:
-      responses:
-        "200":
-          description: Successful response
         "401":
           description: Unauthorised
         "403":

@@ -14,16 +14,8 @@ const domainsRoot = path.join(projectRoot, "domains");
 const outputPath = path.join(projectRoot, "docs/api/openapi.yaml");
 
 // ---------------------------------------------------------------------------
-// Types (mirrors the two domain config patterns in this repo)
+// Types
 // ---------------------------------------------------------------------------
-
-interface LegacyDomain {
-  domain: string;
-  versions: Record<
-    string,
-    { routes: Record<string, Record<string, unknown>> }
-  >;
-}
 
 interface NewPublicRouteConfig {
   name: string;
@@ -113,34 +105,8 @@ async function generatePaths(): Promise<Record<string, Record<string, unknown>>>
     }
 
     // ------------------------------------------------------------------
-    // Pattern 1: defineDomain() — exported as `endpoints`
+    // domain() pattern — exported as `config`
     //
-    // Used by: hello, udp
-    // All routes in domain.config.ts are on the public API gateway.
-    // The `type` field controls Lambda network access only, not visibility.
-    // ------------------------------------------------------------------
-    if (mod.endpoints && typeof mod.endpoints === "object") {
-      const legacy = mod.endpoints as LegacyDomain;
-
-      for (const [version, versionConfig] of Object.entries(legacy.versions)) {
-        for (const [routePath, methods] of Object.entries(
-          versionConfig.routes,
-        )) {
-          for (const [method] of Object.entries(methods)) {
-            const normalized = normalizePathParams(routePath);
-            const fullPath = `/${legacy.domain}/${version}${normalized}`;
-
-            paths[fullPath] ??= {};
-            paths[fullPath][method.toLowerCase()] = buildOperation();
-          }
-        }
-      }
-    }
-
-    // ------------------------------------------------------------------
-    // Pattern 2: domain() — exported as `config`
-    //
-    // Used by: poc
     // Route visibility is determined by presence of a `public` key.
     // Zod schemas may be attached to `public.body`, `public.response`,
     // and `public.query`.
