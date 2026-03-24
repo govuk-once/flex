@@ -41,7 +41,7 @@ jobs:
           pnpm install
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@b1257c400167d727708335212f95607835cd03fd # v5.1.1
+        uses: aws-actions/configure-aws-credentials@f86e2d2212ab16dbfe0af747dcde6fd35ff06eef # v5.1.1
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.AWS_REGION }}
