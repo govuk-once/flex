@@ -25,6 +25,7 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { Environment, getEnvConfig } from "../base/env";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { createDvlaServiceGateway } from "../constructs/gateways/dvla";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
@@ -275,11 +276,14 @@ export class FlexPlatformStack extends BaseStack {
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
+    const dvlaConserumConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
     const udpConsumerRoleArn = this.import(ENV_KEYS.UdpConfigRoleArn);
 
     const vpc = this.importVpc(ENV_KEYS.Vpc);
+    const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
     const privateIsolatedSg = this.importSecurityGroup(
       ENV_KEYS.SgPrivateIsolated,
     );
@@ -291,6 +295,13 @@ export class FlexPlatformStack extends BaseStack {
       consumerRoleArn: udpConsumerRoleArn,
       privateIsolatedSg,
       vpc,
+    });
+
+    createDvlaServiceGateway(this, {
+      vpc,
+      consumerConfigArn: dvlaConserumConfigArn,
+      gatewaysResource: gatewaysRoot,
+      privateEgressSg,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
