@@ -29,7 +29,7 @@ Alternatively, run `pnpm <command>` from within `platform/domains/dvla/`.
 ### Behaviour
 
 - Acts as the ACL boundary between Flex and the remote DVLA API
-- Proxies requests to the remote service with SigV4 auth
+- Proxies requests to the remote service
 - Translates remote responses into a stable internal contract
 - Not callable directly by domain lambdas; access goes through the private API
 
