@@ -34,7 +34,7 @@ export function buildHandlerContext(
     bodySchema,
     querySchema,
     resources: resourcesProp,
-    featureFlags: featureFlagsProp,
+    featureFlags,
     headers,
     integrations,
   }: BuildContextOptions,
@@ -48,7 +48,6 @@ export function buildHandlerContext(
   const resources = resourcesProp
     ? extractResources(context, resourcesProp)
     : undefined;
-  const featureFlags = featureFlagsProp;
 
   return {
     logger,
