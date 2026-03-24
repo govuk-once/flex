@@ -8,10 +8,10 @@ export type DiagramStep =
   | "service"
   | "udp"
   | "dvla"
-  | "dwp"
+  | "uns"
   | "complete";
 
-export type DiagramVariant = "user" | "dvla" | "dwp";
+export type DiagramVariant = "user" | "dvla" | "uns";
 export type AccentColor = "blue" | "yellow" | "purple";
 
 interface ColorTokens {
@@ -82,14 +82,14 @@ interface Props {
 
 // user: app → public → private → udp
 // dvla: app → public → private → service → dvla
-// dwp:  app → public → private → service → dwp
+// uns:  app → public → private → service → uns
 const USER_ORDER: DiagramStep[] = ["app", "public", "private", "service", "udp", "complete"];
 const DVLA_ORDER: DiagramStep[] = ["app", "public", "private", "service", "dvla", "complete"];
-const DWP_ORDER: DiagramStep[]  = ["app", "public", "private", "service", "dwp",  "complete"];
+const UNS_ORDER: DiagramStep[]  = ["app", "public", "private", "service", "uns",  "complete"];
 
 function orderFor(variant: DiagramVariant): DiagramStep[] {
   if (variant === "dvla") return DVLA_ORDER;
-  if (variant === "dwp")  return DWP_ORDER;
+  if (variant === "uns")  return UNS_ORDER;
   return USER_ORDER;
 }
 
@@ -102,9 +102,9 @@ function isActive(node: DiagramStep, activeStep: DiagramStep, variant: DiagramVa
   return order.indexOf(activeStep) >= ni;
 }
 
-function variantDomain(variant: DiagramVariant): "udp" | "dvla" | "dwp" {
+function variantDomain(variant: DiagramVariant): "udp" | "dvla" | "uns" {
   if (variant === "dvla") return "dvla";
-  if (variant === "dwp") return "dwp";
+  if (variant === "uns") return "uns";
   return "udp";
 }
 
@@ -154,7 +154,7 @@ function DomainChip({
 }
 
 // Expanded domain block with tiny lambda sub-blocks (used in Public / Private gateways)
-const LAMBDA_COUNTS: Record<"udp" | "dvla" | "dwp", number> = { udp: 4, dvla: 4, dwp: 3 };
+const LAMBDA_COUNTS: Record<"udp" | "dvla" | "uns", number> = { udp: 4, dvla: 4, uns: 3 };
 
 function DomainBlock({
   label,
@@ -167,7 +167,7 @@ function DomainBlock({
   dimmed?: boolean;
   colors: ColorTokens;
 }) {
-  const domain = label.toLowerCase() as "udp" | "dvla" | "dwp";
+  const domain = label.toLowerCase() as "udp" | "dvla" | "uns";
   const count = LAMBDA_COUNTS[domain] ?? 4;
 
   if (dimmed) {
@@ -260,13 +260,13 @@ function GatewayBox({
             <>
               <DomainBlock label="UDP"  active={active && domain === "udp"}  dimmed={isFutureInactive} colors={colors} />
               <DomainBlock label="DVLA" active={active && domain === "dvla"} dimmed={isFutureInactive} colors={colors} />
-              <DomainBlock label="DWP"  active={active && domain === "dwp"}  dimmed={isFutureInactive} colors={colors} />
+              <DomainBlock label="UNS"  active={active && domain === "uns"}  dimmed={isFutureInactive} colors={colors} />
             </>
           ) : (
             <>
               <DomainChip label="UDP"  active={active && domain === "udp"}  dimmed={isFutureInactive} colors={colors} />
               <DomainChip label="DVLA" active={active && domain === "dvla"} dimmed={isFutureInactive} colors={colors} />
-              <DomainChip label="DWP"  active={active && domain === "dwp"}  dimmed={isFutureInactive} colors={colors} />
+              <DomainChip label="UNS"  active={active && domain === "uns"}  dimmed={isFutureInactive} colors={colors} />
             </>
           )}
         </div>
@@ -358,7 +358,7 @@ const TOOLTIPS: Record<string, string> = {
   service: "The OGD connector. Each government department plugs their data source in here. Flex handles the security and conformance; the department just connects.",
   udp: "User Data Platform — the primary data store for citizen profiles, notification preferences, and consent. Accessed over a private tunnel.",
   dvla: "Driver and Vehicle Licensing Agency. Driving licence data routed through the Service Gateway. No direct connection from the app.",
-  dwp: "Department for Work and Pensions. Benefits and payment data routed through the same Service Gateway pattern.",
+  uns: "Unified Notifications Service. Notification preferences and delivery data routed through the same Service Gateway pattern.",
 };
 
 export default function ArchitectureDiagram({
@@ -369,7 +369,7 @@ export default function ArchitectureDiagram({
   const a = (node: DiagramStep) => isActive(node, activeStep, variant);
   const isUser = variant === "user";
   const colors = ACCENT[accentColor];
-  const deptActive = a("udp") || a("dvla") || a("dwp");
+  const deptActive = a("udp") || a("dvla") || a("uns");
 
   return (
     <div className="flex flex-col items-center p-5 bg-white rounded-2xl shadow-sm border border-slate-100 w-full gap-0">
@@ -432,7 +432,7 @@ export default function ArchitectureDiagram({
         </div>
       </div>
 
-      {/* Arrows: Flex → Government Departments (aligned with group box interior) */}
+      {/* Arrows: Flex → Government Departments */}
       <div className="flex w-full px-3 gap-2">
         <div className="flex-1 flex justify-center">
           <VArrow active={a("udp")} colors={colors} />
@@ -441,7 +441,7 @@ export default function ArchitectureDiagram({
           <VArrow active={a("dvla")} colors={colors} />
         </div>
         <div className="flex-1 flex justify-center">
-          <VArrow active={a("dwp")} colors={colors} />
+          <VArrow active={a("uns")} colors={colors} />
         </div>
       </div>
 
@@ -454,7 +454,7 @@ export default function ArchitectureDiagram({
         <p className={`text-[9px] font-semibold uppercase tracking-widest text-center mb-2 transition-colors duration-300 ${
           deptActive ? colors.groupText : "text-slate-300"
         }`}>
-          Government Departments
+          Remote Data Source
         </p>
         <div className="flex gap-2">
           <div className="flex-1">
@@ -464,7 +464,7 @@ export default function ArchitectureDiagram({
             <Box label="DVLA" sublabel="driving licence" active={a("dvla")} future={isUser} tooltip={TOOLTIPS.dvla} colors={colors} />
           </div>
           <div className="flex-1">
-            <Box label="DWP" sublabel="benefits" active={a("dwp")} future={isUser} tooltip={TOOLTIPS.dwp} colors={colors} />
+            <Box label="UNS" sublabel="notifications" active={a("uns")} future={isUser} tooltip={TOOLTIPS.uns} colors={colors} />
           </div>
         </div>
       </div>

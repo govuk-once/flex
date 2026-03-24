@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 import ArchitectureDiagram, {
   type AccentColor,
   type DiagramStep,
+  type DiagramVariant,
 } from "../components/ArchitectureDiagram";
+
+interface Field {
+  label: string;
+  value: string;
+}
 
 interface DepartmentData {
   id: string;
@@ -14,41 +21,7 @@ interface DepartmentData {
   iconColour: string;
   connectBtnClass: string;
   step: DiagramStep;
-  fields: { label: string; value: string }[];
 }
-
-const DEPARTMENTS: DepartmentData[] = [
-  {
-    id: "dvla",
-    name: "DVLA",
-    accent: "yellow",
-    cardColour: "bg-yellow-50 border-yellow-200",
-    iconColour: "bg-yellow-400 text-yellow-900",
-    connectBtnClass: "bg-yellow-500 hover:bg-yellow-600 shadow-yellow-200",
-    step: "dvla",
-    fields: [
-      { label: "Licence number", value: "JONES751116JA9AB" },
-      { label: "Categories", value: "B (car)  ·  A1 (motorcycle)" },
-      { label: "Valid until", value: "14 Apr 2031" },
-      { label: "Status", value: "Full licence" },
-    ],
-  },
-  {
-    id: "dwp",
-    name: "DWP",
-    accent: "purple",
-    cardColour: "bg-purple-50 border-purple-200",
-    iconColour: "bg-purple-500 text-white",
-    connectBtnClass: "bg-purple-500 hover:bg-purple-600 shadow-purple-200",
-    step: "dwp",
-    fields: [
-      { label: "Benefit", value: "Universal Credit" },
-      { label: "Monthly amount", value: "£658.19" },
-      { label: "Next payment", value: "3 Apr 2026" },
-      { label: "Reference", value: "UC-2024-88341" },
-    ],
-  },
-];
 
 function Spinner() {
   return (
@@ -59,7 +32,13 @@ function Spinner() {
   );
 }
 
-function DepartmentCard({ dept }: { dept: DepartmentData }) {
+function DepartmentCard({
+  dept,
+  fields,
+}: {
+  dept: DepartmentData;
+  fields: Field[];
+}) {
   return (
     <div className={`border-2 rounded-2xl p-4 ${dept.cardColour}`}>
       <div className="flex items-center gap-3 mb-3">
@@ -75,7 +54,7 @@ function DepartmentCard({ dept }: { dept: DepartmentData }) {
         </div>
       </div>
       <div className="space-y-1.5">
-        {dept.fields.map((f) => (
+        {fields.map((f) => (
           <div key={f.label} className="flex justify-between items-baseline gap-2">
             <p className="text-xs text-slate-400 flex-shrink-0">{f.label}</p>
             <p className="text-xs font-mono text-slate-700 text-right">{f.value}</p>
@@ -124,13 +103,43 @@ function ConnectButton({
   );
 }
 
+function DepartmentSkeleton() {
+  return (
+    <div className="border-2 border-slate-100 rounded-2xl p-4 bg-white animate-pulse">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-slate-100 flex-shrink-0" />
+        <div className="space-y-2 flex-1">
+          <div className="h-3 bg-slate-100 rounded w-1/3" />
+          <div className="h-2 bg-slate-100 rounded w-1/4" />
+        </div>
+        <div className="h-8 w-20 bg-slate-100 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function ServicesPage() {
-  const [diagramVariant, setDiagramVariant] = useState<"dvla" | "dwp">("dvla");
+  const [departments, setDepartments] = useState<DepartmentData[]>([]);
+  const [depsLoading, setDepsLoading] = useState(true);
+
+  const [diagramVariant, setDiagramVariant] = useState<DiagramVariant>("dvla");
   const [diagramStep, setDiagramStep] = useState<DiagramStep>("idle");
   const [accentColor, setAccentColor] = useState<AccentColor>("blue");
-  const [connected, setConnected] = useState<Set<string>>(new Set());
+
+  // Map of department id → live fields fetched after connecting
+  const [connectedFields, setConnectedFields] = useState<Map<string, Field[]>>(new Map());
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    fetch("/api/departments")
+      .then((r) => r.json())
+      .then((data: DepartmentData[]) => setDepartments(data))
+      .catch(() => setDepartments([]))
+      .finally(() => setDepsLoading(false));
+  }, []);
 
   const clearAnimTimers = () => {
     animTimers.current.forEach(clearTimeout);
@@ -139,26 +148,48 @@ export default function ServicesPage() {
 
   useEffect(() => () => clearAnimTimers(), []);
 
-  const handleConnect = (dept: DepartmentData) => {
+  const handleConnect = async (dept: DepartmentData) => {
     if (connecting) return;
+
     setConnecting(dept.id);
-    setDiagramVariant(dept.id as "dvla" | "dwp");
+    setConnectError(null);
+    setDiagramVariant(dept.id as DiagramVariant);
     setAccentColor(dept.accent);
     clearAnimTimers();
 
-    // Animate the path to this department only
+    // Kick off animation and live-data fetch in parallel
     setDiagramStep("app");
     animTimers.current.push(
-      setTimeout(() => setDiagramStep("public"),       500),
-      setTimeout(() => setDiagramStep("private"),     1000),
-      setTimeout(() => setDiagramStep("service"),     1500),
-      setTimeout(() => setDiagramStep(dept.step),     2000),
-      setTimeout(() => setDiagramStep("complete"),    2400),
-      setTimeout(() => {
-        setConnected((prev) => new Set([...prev, dept.id]));
-        setConnecting(null);
-      }, 2600),
+      setTimeout(() => setDiagramStep("public"),  500),
+      setTimeout(() => setDiagramStep("private"), 1000),
+      setTimeout(() => setDiagramStep("service"), 1500),
+      setTimeout(() => setDiagramStep(dept.step), 2000),
     );
+
+    try {
+      const res = await fetch(`/api/${dept.id}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+
+      const fields: Field[] = Array.isArray(data.fields) ? data.fields : [];
+
+      // Wait for the animation to reach the department node before completing
+      await new Promise<void>((resolve) => setTimeout(resolve, 2200));
+
+      setDiagramStep("complete");
+      setConnectedFields((prev) => new Map([...prev, [dept.id, fields]]));
+    } catch (err) {
+      clearAnimTimers();
+      setDiagramStep("idle");
+      setConnectError(
+        err instanceof Error ? err.message : "Connection failed",
+      );
+    } finally {
+      setConnecting(null);
+    }
   };
 
   return (
@@ -214,16 +245,33 @@ export default function ServicesPage() {
               Government departments
             </p>
 
-            {DEPARTMENTS.map((dept) =>
-              connected.has(dept.id) ? (
-                <DepartmentCard key={dept.id} dept={dept} />
-              ) : (
-                <ConnectButton
-                  key={dept.id}
-                  dept={dept}
-                  onConnect={() => handleConnect(dept)}
-                  connecting={connecting === dept.id}
-                />
+            {connectError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <p className="text-xs text-red-600">{connectError}</p>
+              </div>
+            )}
+
+            {depsLoading ? (
+              <>
+                <DepartmentSkeleton />
+                <DepartmentSkeleton />
+              </>
+            ) : (
+              departments.map((dept) =>
+                connectedFields.has(dept.id) ? (
+                  <DepartmentCard
+                    key={dept.id}
+                    dept={dept}
+                    fields={connectedFields.get(dept.id)!}
+                  />
+                ) : (
+                  <ConnectButton
+                    key={dept.id}
+                    dept={dept}
+                    onConnect={() => handleConnect(dept)}
+                    connecting={connecting === dept.id}
+                  />
+                ),
               )
             )}
 

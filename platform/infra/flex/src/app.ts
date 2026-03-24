@@ -3,6 +3,7 @@ import { Environment, getEnvConfig } from "./base/env";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCoreStack } from "./stacks/core/stack";
+import { FlexDemoAppStack } from "./stacks/demo-app";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexLegacyDomainStack } from "./stacks/legacy-domain";
@@ -64,6 +65,10 @@ new FlexCertStack(app, `${stage}-FlexCertStack`, {
 new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   domainName,
   subdomainName,
+});
+
+new FlexDemoAppStack(app, `${stage}-FlexDemoApp`, {
+  flexApiBaseUrl: `https://${subdomainName ?? domainName}`,
 });
 
 const legacyDomainConfigs = await getLegacyDomainConfigs();
