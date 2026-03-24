@@ -44,6 +44,7 @@ vi.mock("./resolve-config", () => ({
   getRouteLogLevel: vi.fn(),
   getRouteResources: vi.fn(),
   getRouteIntegrations: vi.fn(),
+  getRouteFeatureFlags: vi.fn(),
 }));
 vi.mock("./response", () => ({
   toApiGatewayResponse: vi.fn(),
@@ -221,11 +222,11 @@ describe("createRouteHandler", () => {
     });
 
     it("registers middleware with the resolved route config", () => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm:runtime", value: "/path/to/param" }],
-        ["testSecret", { type: "secret", value: "test-secret-value" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms", value: "test-key-value" },
+        testParam: { type: "ssm:runtime", value: "/path/to/param" },
+        testSecret: { type: "secret", value: "test-secret-value" },
+      };
 
       vi.mocked(getRouteResources).mockReturnValue(resources);
       vi.mocked(getRouteLogLevel).mockReturnValue("DEBUG");

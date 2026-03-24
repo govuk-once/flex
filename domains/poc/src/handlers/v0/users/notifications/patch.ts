@@ -10,7 +10,7 @@ const context = routeContext<"PATCH /v0/users/notifications">;
 
 export const handler = route(
   "PATCH /v0/users/notifications",
-  async ({ auth, body, integrations, logger }) => {
+  async ({ auth, body, integrations, logger, featureFlags }) => {
     const userId = auth.pairwiseId as UserId;
 
     const notificationId = getNotificationId();
@@ -33,7 +33,12 @@ export const handler = route(
 
     return {
       status: 200,
-      data: result.data,
+      data: {
+        ...result.data,
+        featureFlags: {
+          newUserProfileEnabled: featureFlags.newUserProfileEnabled,
+        },
+      },
     };
   },
 );

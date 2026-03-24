@@ -2,8 +2,10 @@ import type { ZodType } from "zod";
 
 import type {
   DomainConfig,
+  DomainFeatureFlag,
   DomainIntegrations,
   DomainResource,
+  FlexEnvironment,
   HeaderConfig,
   HttpMethod,
   LogLevel,
@@ -26,6 +28,7 @@ interface ResolvedRouteConfig {
   readonly response?: ZodType;
   readonly resources?: readonly string[];
   readonly integrations?: readonly string[];
+  readonly featureFlags?: readonly string[];
   readonly headers?: Readonly<Record<string, HeaderConfig>>;
 }
 
@@ -58,10 +61,10 @@ export interface ResolvedResource {
 export function getRouteResources(
   resources: DomainConfig["resources"],
   resourceKeys?: readonly string[],
-): ReadonlyMap<string, ResolvedResource> | undefined {
+): Readonly<Record<string, ResolvedResource>> | undefined {
   if (!resources || !resourceKeys?.length) return;
 
-  return new Map(
+  return Object.fromEntries(
     resourceKeys.map((key) => {
       const resource = resources[key];
 
@@ -80,6 +83,67 @@ export function getRouteResources(
       }
 
       return [key, { type: resource.type, value }] as const;
+    }),
+  );
+}
+
+const NAMED_ENVIRONMENTS: ReadonlySet<string> = new Set([
+  "development",
+  "staging",
+  "production",
+]);
+
+function isFlexEnvironment(
+  value: string | undefined,
+): value is FlexEnvironment {
+  return !!value && NAMED_ENVIRONMENTS.has(value);
+}
+
+function resolveCurrentEnvironment(): FlexEnvironment {
+  const stage = process.env.STAGE;
+  return isFlexEnvironment(stage) ? stage : "development";
+}
+
+/**
+ * Resolves feature flag values.
+ *
+ * Resolution order (first defined wins):
+ * 1. `process.env[key]`: explicit runtime override ("true" / "false")
+ * 2. `environments[currentEnvironment]`: environment-specific value
+ * 3. `default`: global fallback
+ * 4. `false`
+ *
+ * The current environment is read from `process.env.STAGE`. Any stage that is
+ * not one of "development", "staging", or "production" (e.g. a personal stage)
+ * is treated as "development".
+ */
+export function getRouteFeatureFlags(
+  featureFlags: DomainConfig["featureFlags"],
+  flagKeys?: readonly string[],
+): Readonly<Record<string, boolean>> | undefined {
+  if (!featureFlags || !flagKeys?.length) return;
+
+  const currentEnvironment = resolveCurrentEnvironment();
+
+  return Object.fromEntries(
+    flagKeys.map((key) => {
+      const flag = featureFlags[key] as DomainFeatureFlag | undefined;
+
+      if (!flag) {
+        throw new Error(
+          `"${key}" referenced in "featureFlags" but was not defined in domain featureFlags`,
+        );
+      }
+
+      const envOverride = process.env[key];
+      const value =
+        envOverride !== undefined
+          ? envOverride === "true"
+          : flag.environments?.includes(currentEnvironment)
+            ? true
+            : (flag.default ?? false);
+
+      return [key, value] as const;
     }),
   );
 }

@@ -14,7 +14,7 @@ export interface MiddlewareOptions {
   readonly logger: Logger;
   readonly logLevel: string;
   readonly hasRequestBody: boolean;
-  readonly resources?: ReadonlyMap<string, ResolvedResource>;
+  readonly resources?: Readonly<Record<string, ResolvedResource>>;
 }
 
 export function configureMiddleware({
@@ -44,10 +44,9 @@ export function configureMiddleware({
       .use(httpJsonBodyParser<LambdaEvent>());
   }
 
-  if (resources && resources.size > 0) {
-    const secrets = Array.from(resources).filter(
-      ([_, { type }]) => type === "secret",
-    );
+  if (resources && Object.keys(resources).length > 0) {
+    const entries = Object.entries(resources);
+    const secrets = entries.filter(([_, { type }]) => type === "secret");
 
     if (secrets.length > 0) {
       middyHandler.use(
@@ -60,9 +59,7 @@ export function configureMiddleware({
       );
     }
 
-    const params = Array.from(resources).filter(
-      ([_, { type }]) => type === "ssm:runtime",
-    );
+    const params = entries.filter(([_, { type }]) => type === "ssm:runtime");
 
     if (params.length > 0) {
       middyHandler.use(

@@ -54,6 +54,9 @@ describe("POC domain", () => {
       expect(result.body).toStrictEqual({
         consentStatus: "accepted",
         notificationId: expect.any(String) as string,
+        featureFlags: {
+          newUserProfileEnabled: expect.any(Boolean) as boolean,
+        },
       });
     });
 
