@@ -7,24 +7,31 @@ import type {
 } from "aws-lambda";
 import type { z, ZodType } from "zod";
 
-import type {
-  DomainResource,
-  FunctionConfig,
-  HeaderConfig,
-  HttpMethod,
-  LogLevel,
-  RouteAccess,
-  DomainFeatureFlag,
+import {
+  DomainConfigSchema,
+  DomainFeatureFlagSchema,
+  DomainResourceSchema,
+  FlexEnvironmentSchema,
+  FunctionConfigSchema,
+  HeaderConfigSchema,
   HttpMethodSchema,
   LogLevelSchema,
   RouteAccessSchema,
-  FunctionConfigSchema,
-  HeaderConfigSchema,
-  DomainResourceSchema,
-  DomainConfigSchema,
-  DomainFeatureFlagSchema,
-  FlexEnvironmentSchema
 } from "./config/schema";
+
+// ----------------------------------------------------------------------------
+// Exported inferred types
+// ----------------------------------------------------------------------------
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
+export type LogLevel = z.infer<typeof LogLevelSchema>;
+export type RouteAccess = z.infer<typeof RouteAccessSchema>;
+export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
+export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
+export type DomainResource = z.infer<typeof DomainResourceSchema>;
+export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
+export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
+export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
+export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 // ----------------------------------------------------------------------------
 // Headers
@@ -612,17 +619,3 @@ export type InferRouteContext<
   Config extends DomainConfig,
   Route extends DomainRoutes<Config>,
 > = RouteContext<Route, Config, ResolveRouteConfig<Config, Route>>;
-
-// ----------------------------------------------------------------------------
-// Exported inferred types
-// ----------------------------------------------------------------------------
-export type HttpMethod = z.infer<typeof HttpMethodSchema>;
-export type LogLevel = z.infer<typeof LogLevelSchema>;
-export type RouteAccess = z.infer<typeof RouteAccessSchema>;
-export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
-export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
-export type DomainResource = z.infer<typeof DomainResourceSchema>;
-export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
-export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
-export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
-export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
