@@ -7,6 +7,10 @@ import ArchitectureDiagram, {
   type DiagramStep,
   type DiagramVariant,
 } from "../components/ArchitectureDiagram";
+import LinkingDiagram, { type LinkStep } from "../components/LinkingDiagram";
+import MacButton from "../components/MacButton";
+
+const SHOW_ARCH_DIAGRAM = process.env.NEXT_PUBLIC_SHOW_ARCH_DIAGRAM !== "false";
 
 interface Field {
   label: string;
@@ -118,6 +122,23 @@ function DepartmentSkeleton() {
   );
 }
 
+// Timings (ms) for the Link ID journey phases, triggered on DVLA connect
+const LINK_ANIM: Array<{ step: LinkStep; delay: number }> = [
+  // Phase 1 — register link ID
+  { step: "reg_app",     delay: 0 },
+  { step: "reg_public",  delay: 800 },
+  { step: "reg_private", delay: 1600 },
+  { step: "reg_udp",     delay: 2400 },
+  { step: "reg_done",    delay: 3200 },
+  // Phase 2 — fetch data using link ID
+  { step: "fetch_app",     delay: 4400 },
+  { step: "fetch_public",  delay: 5200 },
+  { step: "fetch_private", delay: 6000 },
+  { step: "fetch_service", delay: 6800 },
+  { step: "fetch_data",    delay: 7800 },
+  { step: "fetch_done",    delay: 9000 },
+];
+
 export default function ServicesPage() {
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [depsLoading, setDepsLoading] = useState(true);
@@ -126,10 +147,14 @@ export default function ServicesPage() {
   const [diagramStep, setDiagramStep] = useState<DiagramStep>("idle");
   const [accentColor, setAccentColor] = useState<AccentColor>("blue");
 
+  const [linkStep, setLinkStep] = useState<LinkStep>("idle");
+
   // Map of department id → live fields fetched after connecting
   const [connectedFields, setConnectedFields] = useState<Map<string, Field[]>>(new Map());
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
+
+  const [archMinimized, setArchMinimized] = useState(false);
 
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -148,6 +173,58 @@ export default function ServicesPage() {
 
   useEffect(() => () => clearAnimTimers(), []);
 
+  const runArchAnim = (step: DiagramStep) => {
+    setDiagramStep("app");
+    animTimers.current.push(
+      setTimeout(() => setDiagramStep("public"),  1000),
+      setTimeout(() => setDiagramStep("private"), 2000),
+      setTimeout(() => setDiagramStep("service"), 3000),
+      setTimeout(() => setDiagramStep(step),      4000),
+    );
+  };
+
+  const replayAll = () => {
+    if (connecting) return;
+    clearAnimTimers();
+    setDiagramVariant("dvla");
+    setAccentColor("yellow");
+    setLinkStep("idle");
+    runArchAnim("dvla");
+    for (const { step, delay } of LINK_ANIM) {
+      animTimers.current.push(setTimeout(() => setLinkStep(step), delay));
+    }
+    animTimers.current.push(setTimeout(() => setDiagramStep("complete"), 9500));
+  };
+
+  const replayPhase1 = () => {
+    if (connecting) return;
+    clearAnimTimers();
+    setDiagramVariant("dvla");
+    setAccentColor("yellow");
+    setLinkStep("idle");
+    runArchAnim("dvla");
+    const phase1 = LINK_ANIM.filter(({ step }) => step.startsWith("reg_"));
+    for (const { step, delay } of phase1) {
+      animTimers.current.push(setTimeout(() => setLinkStep(step), delay));
+    }
+  };
+
+  const replayPhase2 = () => {
+    if (connecting) return;
+    clearAnimTimers();
+    setDiagramVariant("dvla");
+    setAccentColor("yellow");
+    // Pre-set to reg_done so identity table shows as written before phase 2 starts
+    setLinkStep("reg_done");
+    runArchAnim("dvla");
+    const phase2 = LINK_ANIM.filter(({ step }) => step.startsWith("fetch_"));
+    const offset = phase2[0].delay;
+    for (const { step, delay } of phase2) {
+      animTimers.current.push(setTimeout(() => setLinkStep(step), delay - offset));
+    }
+    animTimers.current.push(setTimeout(() => setDiagramStep("complete"), phase2[phase2.length - 1].delay - offset + 500));
+  };
+
   const handleConnect = async (dept: DepartmentData) => {
     if (connecting) return;
 
@@ -157,14 +234,22 @@ export default function ServicesPage() {
     setAccentColor(dept.accent);
     clearAnimTimers();
 
-    // Kick off animation and live-data fetch in parallel
+    // Architecture diagram animation
     setDiagramStep("app");
     animTimers.current.push(
-      setTimeout(() => setDiagramStep("public"),  500),
-      setTimeout(() => setDiagramStep("private"), 1000),
-      setTimeout(() => setDiagramStep("service"), 1500),
-      setTimeout(() => setDiagramStep(dept.step), 2000),
+      setTimeout(() => setDiagramStep("public"),  1000),
+      setTimeout(() => setDiagramStep("private"), 2000),
+      setTimeout(() => setDiagramStep("service"), 3000),
+      setTimeout(() => setDiagramStep(dept.step), 4000),
     );
+
+    // Link ID journey animation — only for DVLA
+    if (dept.id === "dvla") {
+      setLinkStep("idle");
+      for (const { step, delay } of LINK_ANIM) {
+        animTimers.current.push(setTimeout(() => setLinkStep(step), delay));
+      }
+    }
 
     try {
       const res = await fetch(`/api/${dept.id}`);
@@ -176,14 +261,15 @@ export default function ServicesPage() {
 
       const fields: Field[] = Array.isArray(data.fields) ? data.fields : [];
 
-      // Wait for the animation to reach the department node before completing
-      await new Promise<void>((resolve) => setTimeout(resolve, 2200));
+      // Wait for the full Link ID animation to complete before showing result
+      await new Promise<void>((resolve) => setTimeout(resolve, 9200));
 
       setDiagramStep("complete");
       setConnectedFields((prev) => new Map([...prev, [dept.id, fields]]));
     } catch (err) {
       clearAnimTimers();
       setDiagramStep("idle");
+      setLinkStep("idle");
       setConnectError(
         err instanceof Error ? err.message : "Connection failed",
       );
@@ -194,27 +280,40 @@ export default function ServicesPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-6">
-      <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 w-full max-w-4xl">
+      <div className="flex flex-col xl:flex-row items-center xl:items-start gap-8 w-full max-w-7xl">
 
-        {/* Architecture diagram */}
-        <div className="w-full lg:w-[420px] lg:pt-12 flex-shrink-0">
-          <ArchitectureDiagram
-            variant={diagramVariant}
-            activeStep={diagramStep}
-            accentColor={accentColor}
-          />
+        {/* Left: Architecture diagram (feature-flagged) */}
+        {SHOW_ARCH_DIAGRAM && (
+          <div className={`xl:pt-12 flex-shrink-0 transition-all duration-300 ${archMinimized ? "w-10" : "w-full xl:w-[380px]"}`}>
+            {archMinimized ? (
+              <MacButton minimized label="architecture" onToggle={() => setArchMinimized(false)} />
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <MacButton minimized={false} label="architecture" onToggle={() => setArchMinimized(true)} />
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Architecture</p>
+                </div>
 
-          <div className="mt-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-              The pattern
-            </p>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Any government department follows the same path. Flex handles the security, private networking, and conformance — the department just connects their data source to the Service Gateway.
-            </p>
+                <ArchitectureDiagram
+                  variant={diagramVariant}
+                  activeStep={diagramStep}
+                  accentColor={accentColor}
+                />
+
+                <div className="mt-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                    The pattern
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    Any government department follows the same path. Flex handles the security, private networking, and conformance — the department just connects their data source to the Service Gateway.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        )}
 
-        {/* Phone frame */}
+        {/* Centre: Phone frame */}
         <div className="w-[375px] flex-shrink-0 bg-white rounded-[44px] shadow-2xl overflow-hidden border-[10px] border-slate-800">
           {/* Notch */}
           <div className="bg-slate-800 flex justify-center pb-2 pt-1">
@@ -242,7 +341,7 @@ export default function ServicesPage() {
           {/* Connected services list */}
           <div className="overflow-y-auto max-h-[580px] px-5 py-5 space-y-3">
             <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">
-              Government departments
+              Consent
             </p>
 
             {connectError && (
@@ -278,6 +377,52 @@ export default function ServicesPage() {
             <div className="h-2" />
           </div>
         </div>
+
+        {/* Right: Link ID journey diagram (shown for DVLA) */}
+        <div className="w-full xl:w-[460px] xl:pt-12 flex-shrink-0">
+          <LinkingDiagram activeStep={linkStep} />
+
+          <div className="mt-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              Link ID journey
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              When you consent to DVLA, Flex stores a link ID against your profile in UDP. On every subsequent request, the Service Gateway resolves that link automatically — the app never holds DVLA credentials.
+            </p>
+          </div>
+
+          {/* Demo replay controls */}
+          <div className="mt-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Replay</p>
+            <div className="flex gap-1.5">
+              <button
+                onClick={replayAll}
+                disabled={!!connecting}
+                className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-40 transition-colors active:scale-95"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M10.5 6A4.5 4.5 0 116 1.5v1.25L8.5 0 11 2.75 8.5 5V3.6A3.4 3.4 0 1010.5 6z" />
+                </svg>
+                Full
+              </button>
+              <button
+                onClick={replayPhase1}
+                disabled={!!connecting}
+                className="flex-1 text-xs font-semibold px-3 py-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 disabled:opacity-40 transition-colors active:scale-95"
+              >
+                Phase 1
+              </button>
+              <button
+                onClick={replayPhase2}
+                disabled={!!connecting}
+                className="flex-1 text-xs font-semibold px-3 py-2 rounded-lg bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 disabled:opacity-40 transition-colors active:scale-95"
+              >
+                Phase 2
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </main>
   );

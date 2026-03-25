@@ -12,15 +12,15 @@ const DEPARTMENTS = [
     connectBtnClass: "bg-yellow-500 hover:bg-yellow-600 shadow-yellow-200",
     step: "dvla",
   },
-  {
-    id: "uns",
-    name: "UNS",
-    accent: "purple",
-    cardColour: "bg-purple-50 border-purple-200",
-    iconColour: "bg-purple-500 text-white",
-    connectBtnClass: "bg-purple-500 hover:bg-purple-600 shadow-purple-200",
-    step: "uns",
-  },
+  // {
+  //   id: "uns",
+  //   name: "UNS",
+  //   accent: "purple",
+  //   cardColour: "bg-purple-50 border-purple-200",
+  //   iconColour: "bg-purple-500 text-white",
+  //   connectBtnClass: "bg-purple-500 hover:bg-purple-600 shadow-purple-200",
+  //   step: "uns",
+  // },
 ];
 
 export async function GET() {

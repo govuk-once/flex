@@ -351,6 +351,30 @@ function VArrow({ active, colors }: { active: boolean; colors: ColorTokens }) {
   );
 }
 
+function VArrowUnbuilt() {
+  return (
+    <div className="relative flex flex-col items-center py-0.5 group/unbuilt">
+      <div className="w-px h-2 border-l-2 border-dashed border-slate-300" />
+      <div className="relative flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 border-dashed border-slate-300 z-10">
+        <svg className="w-2.5 h-2.5 text-slate-400" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M2 2l6 6M8 2l-6 6" />
+        </svg>
+      </div>
+      <div className="w-px h-2 border-l-2 border-dashed border-slate-300" />
+      <svg className="w-3 h-3 text-slate-300" viewBox="0 0 12 12" fill="currentColor">
+        <path d="M6 10L1 4h10z" />
+      </svg>
+      {/* Tooltip */}
+      <div className="absolute z-50 left-1/2 -translate-x-1/2 bottom-[calc(100%+6px)] w-36 pointer-events-none opacity-0 group-hover/unbuilt:opacity-100 transition-opacity">
+        <div className="bg-slate-800 text-white text-xs rounded-lg px-2.5 py-1.5 leading-relaxed shadow-lg text-center">
+          Not built yet
+        </div>
+        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-slate-800" />
+      </div>
+    </div>
+  );
+}
+
 const TOOLTIPS: Record<string, string> = {
   app: "The citizen-facing GOV.UK app. Makes a single API call into Flex — it never talks directly to any government department.",
   public: "The front door into Flex. Authenticates the request, enforces rate limits, and routes traffic into the private network. Never exposed beyond this point.",
@@ -441,7 +465,7 @@ export default function ArchitectureDiagram({
           <VArrow active={a("dvla")} colors={colors} />
         </div>
         <div className="flex-1 flex justify-center">
-          <VArrow active={a("uns")} colors={colors} />
+          <VArrowUnbuilt />
         </div>
       </div>
 
@@ -458,13 +482,13 @@ export default function ArchitectureDiagram({
         </p>
         <div className="flex gap-2">
           <div className="flex-1">
-            <Box label="UDP" sublabel="data store" active={a("udp")} future={!isUser} tooltip={TOOLTIPS.udp} colors={colors} />
+            <Box label="UDP" sublabel="data store" active={a("udp")} tooltip={TOOLTIPS.udp} colors={colors} />
           </div>
           <div className="flex-1">
-            <Box label="DVLA" sublabel="driving licence" active={a("dvla")} future={isUser} tooltip={TOOLTIPS.dvla} colors={colors} />
+            <Box label="DVLA" sublabel="driving licence" active={a("dvla")} tooltip={TOOLTIPS.dvla} colors={colors} />
           </div>
           <div className="flex-1">
-            <Box label="UNS" sublabel="notifications" active={a("uns")} future={isUser} tooltip={TOOLTIPS.uns} colors={colors} />
+            <Box label="UNS" sublabel="notifications" active={a("uns")} future={true} tooltip={TOOLTIPS.uns} colors={colors} />
           </div>
         </div>
       </div>
@@ -477,7 +501,7 @@ export default function ArchitectureDiagram({
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-4 border-t-2 border-dashed border-slate-300" />
-          <span>Future</span>
+          <span>Future / not built</span>
         </div>
       </div>
     </div>

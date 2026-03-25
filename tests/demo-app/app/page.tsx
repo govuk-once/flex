@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import ArchitectureDiagram, {
   type DiagramStep,
 } from "./components/ArchitectureDiagram";
+import ProfileJourneyDiagram, {
+  type ProfileStep,
+} from "./components/ProfileJourneyDiagram";
+import MacButton from "./components/MacButton";
+
+const SHOW_ARCH_DIAGRAM = process.env.NEXT_PUBLIC_SHOW_ARCH_DIAGRAM !== "false";
 
 // User flow step order matches DiagramStep for 'user' variant
 // idle → app → public → private → udp → complete
@@ -100,8 +106,11 @@ export default function Home() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
 
+  const [archMinimized, setArchMinimized] = useState(false);
+
   // Diagram animation state
   const [diagramStep, setDiagramStep] = useState<DiagramStep>("idle");
+  const [profileStep, setProfileStep] = useState<ProfileStep>("idle");
   const animTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearAnimTimers = () => {
@@ -111,12 +120,26 @@ export default function Home() {
 
   const runAnimation = () => {
     clearAnimTimers();
+
+    // Architecture diagram
     setDiagramStep("app");
     animTimers.current.push(
-      setTimeout(() => setDiagramStep("public"),  400),
-      setTimeout(() => setDiagramStep("private"),  800),
-      setTimeout(() => setDiagramStep("service"), 1200),
-      setTimeout(() => setDiagramStep("udp"),     1600)
+      setTimeout(() => setDiagramStep("public"),   800),
+      setTimeout(() => setDiagramStep("private"), 1600),
+      setTimeout(() => setDiagramStep("service"), 2400),
+      setTimeout(() => setDiagramStep("udp"),     3200),
+    );
+
+    // Profile journey — GET → decision diamond → CREATE (first-call path)
+    setProfileStep("get_app");
+    animTimers.current.push(
+      setTimeout(() => setProfileStep("get_flex"),          800),
+      setTimeout(() => setProfileStep("get_udp"),          1600),
+      setTimeout(() => setProfileStep("decision"),         2400),
+      setTimeout(() => setProfileStep("not_found"),        3400),
+      setTimeout(() => setProfileStep("create_identity"),  4200),
+      setTimeout(() => setProfileStep("create_data"),      5000),
+      setTimeout(() => setProfileStep("create_done"),      6000),
     );
   };
 
@@ -124,7 +147,8 @@ export default function Home() {
     clearAnimTimers();
     setDiagramStep("complete");
     animTimers.current.push(
-      setTimeout(() => setDiagramStep("idle"), 8000)
+      setTimeout(() => setDiagramStep("idle"),    8000),
+      setTimeout(() => setProfileStep("idle"),    8000),
     );
   };
 
@@ -166,8 +190,8 @@ export default function Home() {
 
     runAnimation();
 
-    // Ensure animation plays through before result lands
-    const minDelay = new Promise<void>((r) => setTimeout(r, 1700));
+    // Ensure animation plays through before result lands (must exceed longest profile step: 6000ms)
+    const minDelay = new Promise<void>((r) => setTimeout(r, 6400));
 
     try {
       const [res] = await Promise.all([
@@ -187,6 +211,7 @@ export default function Home() {
         );
         clearAnimTimers();
         setDiagramStep("idle");
+        setProfileStep("idle");
       } else {
         setProfile(data);
         finishAnimation();
@@ -195,6 +220,7 @@ export default function Home() {
       setProfileError("Network error — could not reach the API");
       clearAnimTimers();
       setDiagramStep("idle");
+      setProfileStep("idle");
     } finally {
       setProfileLoading(false);
     }
@@ -204,12 +230,24 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-6">
-      <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 w-full max-w-4xl">
+      <div className="flex flex-col xl:flex-row items-center xl:items-start gap-8 w-full max-w-6xl">
 
-        {/* Architecture diagram */}
-        <div className="w-full lg:w-[420px] lg:pt-12 flex-shrink-0">
-          <ArchitectureDiagram variant="user" activeStep={diagramStep} />
-        </div>
+        {/* Left: Architecture diagram (feature-flagged) */}
+        {SHOW_ARCH_DIAGRAM && (
+          <div className={`xl:pt-12 flex-shrink-0 transition-all duration-300 ${archMinimized ? "w-10" : "w-full xl:w-[380px]"}`}>
+            {archMinimized ? (
+              <MacButton minimized label="architecture" onToggle={() => setArchMinimized(false)} />
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <MacButton minimized={false} label="architecture" onToggle={() => setArchMinimized(true)} />
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Architecture</p>
+                </div>
+                <ArchitectureDiagram variant="user" activeStep={diagramStep} />
+              </>
+            )}
+          </div>
+        )}
 
         {/* Phone frame */}
         <div className="w-[375px] flex-shrink-0 bg-white rounded-[44px] shadow-2xl overflow-hidden border-[10px] border-slate-800">
@@ -354,6 +392,21 @@ export default function Home() {
             <div className="h-2" />
           </div>
         </div>
+
+        {/* Right: Profile journey diagram */}
+        <div className="w-full xl:w-[380px] xl:pt-12 flex-shrink-0">
+          <ProfileJourneyDiagram activeStep={profileStep} />
+
+          <div className="mt-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              The pattern
+            </p>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Flex checks UDP for an existing profile. If none is found, it creates one automatically — the app always gets a profile back with a single call.
+            </p>
+          </div>
+        </div>
+
       </div>
     </main>
   );
