@@ -10,6 +10,9 @@ export default mergeConfig(
       setupFiles: ["@flex/testing/setup/sdk"],
       env: {
         AWS_REGION: "eu-west-2",
+        gdsGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com/api",
+        gdsApiKey: "/flex-secret/gds/api-key",
+        unsNotificationSecret: "/flex-secret/uns/notification-hash-secret",
       },
     },
   }),

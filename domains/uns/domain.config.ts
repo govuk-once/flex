@@ -12,6 +12,21 @@ export const { config, route, routeContext } = domain({
     access: "isolated",
     function: { timeoutSeconds: 30 },
   },
+  resources: {
+    gdsGatewayUrl: {
+      type: "ssm",
+      path: "/gds/apigw/gateway-url",
+      scope: "stage",
+    },
+    gdsApiKey: {
+      type: "secret",
+      path: "/flex-secret/gds/api-key",
+    },
+    unsNotificationSecret: {
+      type: "secret",
+      path: "/flex-secret/uns/notification-hash-secret",
+    },
+  },
   routes: {
     v1: {
       "/notifications": {
@@ -19,6 +34,7 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "get-notifications",
             response: z.array(NotificationSchema),
+            resources: ["gdsGatewayUrl", "gdsApiKey", "unsNotificationSecret"],
           },
         },
       },
@@ -46,3 +62,5 @@ export const { config, route, routeContext } = domain({
     },
   },
 });
+
+export const getNotificationsContext = routeContext<"GET /v1/notifications">;
