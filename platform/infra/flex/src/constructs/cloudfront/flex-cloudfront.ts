@@ -10,6 +10,7 @@ import {
   FunctionEventType,
   OriginRequestPolicy,
   PriceClass,
+  SecurityPolicyProtocol,
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { RestApiOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
@@ -201,6 +202,7 @@ export class FlexCloudfront extends Construct {
     this.distribution = new Distribution(this, "Distribution", {
       comment: "Flex Platform CloudFront Distribution for Structural Checks",
       priceClass: PriceClass.PRICE_CLASS_100,
+      minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
       defaultBehavior: {
         origin: new RestApiOrigin(restApi, {
           originPath: "/prod",
