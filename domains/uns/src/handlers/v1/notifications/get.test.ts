@@ -34,7 +34,7 @@ describe("GET /v1/notifications", () => {
     context,
   }) => {
     gateway
-      .get("/api/notifications")
+      .get("/notifications")
       .query({ externalUserID: "test-external-user-id" })
       .reply(200, [notification]);
 
@@ -68,7 +68,7 @@ describe("GET /v1/notifications", () => {
     context,
   }) => {
     gateway
-      .get("/api/notifications")
+      .get("/notifications")
       .query({ externalUserID: "test-external-user-id" })
       .reply(200, []);
 
@@ -90,7 +90,7 @@ describe("GET /v1/notifications", () => {
     context,
   }) => {
     gateway
-      .get("/api/notifications")
+      .get("/notifications")
       .query({ externalUserID: "test-external-user-id" })
       .reply(500);
 

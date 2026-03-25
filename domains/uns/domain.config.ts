@@ -13,9 +13,9 @@ export const { config, route, routeContext } = domain({
     function: { timeoutSeconds: 30 },
   },
   resources: {
-    gdsGatewayUrl: {
+    flexPrivateGatewayUrl: {
       type: "ssm",
-      path: "/gds/apigw/gateway-url",
+      path: "/flex/apigw/private/gateway-url",
       scope: "stage",
     },
     unsNotificationSecret: {
@@ -30,7 +30,7 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "get-notifications",
             response: z.array(NotificationSchema),
-            resources: ["gdsGatewayUrl", "unsNotificationSecret"],
+            resources: ["flexPrivateGatewayUrl", "unsNotificationSecret"],
           },
         },
       },

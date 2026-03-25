@@ -14,7 +14,7 @@ export const handler = route("GET /v1/notifications", async ({ logger }) => {
   );
 
   const url = new URL(
-    `${resources.gdsGatewayUrl.replace(/\/$/, "")}/notifications`,
+    `${resources.flexPrivateGatewayUrl.replace(/\/$/, "")}/notifications`,
   );
   url.searchParams.set("externalUserID", externalUserId);
 
