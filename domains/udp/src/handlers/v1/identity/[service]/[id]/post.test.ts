@@ -3,6 +3,7 @@ import type {
   CreateServiceIdentityLinkRequest,
   GetServiceIdentityLinkResponse,
 } from "@schemas/identity";
+import status from "http-status";
 import nock from "nock";
 import { describe, expect } from "vitest";
 
@@ -29,19 +30,19 @@ describe("POST /v1/identity/:service/:id", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       // 1. Initial check returns 404 (not linked)
-      api.get(`/gateways/udp/v1/identity/${service}`).reply(404);
+      api.get(`/gateways/udp/v1/identity/${service}`).reply(status.NOT_FOUND);
 
       // 2. Then create the new link
       api
         .post(`/gateways/udp/v1/identity/${service}/${serviceId}`, body)
-        .reply(201);
+        .reply(status.CREATED);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create(event),
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 201, body: "" });
+      expect(result).toStrictEqual({ statusCode: status.CREATED, body: "" });
     });
 
     it("returns 204 when the identity is already linked with the same ID", async ({
@@ -49,21 +50,22 @@ describe("POST /v1/identity/:service/:id", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       const existingLink: GetServiceIdentityLinkResponse = {
-        serviceId: serviceId, // Same ID as requested
+        serviceId: serviceId,
         serviceName: service,
       };
 
       // 1. Initial check finds existing link
-      api.get(`/gateways/udp/v1/identity/${service}`).reply(200, existingLink);
+      api
+        .get(`/gateways/udp/v1/identity/${service}`)
+        .reply(status.OK, existingLink);
 
-      // No POST or DELETE should occur
-
+      /** No POST or DELETE should occur */
       const result = await handler(
         privateGatewayEventWithAuthorizer.create(event),
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 204, body: "" });
+      expect(result).toStrictEqual({ statusCode: status.NO_CONTENT, body: "" });
     });
 
     it("returns 201 after unlinking an old ID if a different ID exists", async ({
@@ -77,22 +79,26 @@ describe("POST /v1/identity/:service/:id", () => {
       };
 
       // 1. Initial check finds an OLD ID
-      api.get(`/gateways/udp/v1/identity/${service}`).reply(200, existingLink);
+      api
+        .get(`/gateways/udp/v1/identity/${service}`)
+        .reply(status.OK, existingLink);
 
       // 2. Logic should trigger a DELETE for the old link
-      api.delete(`/gateways/udp/v1/identity/${service}/${oldId}`).reply(204);
+      api
+        .delete(`/gateways/udp/v1/identity/${service}/${oldId}`)
+        .reply(status.NO_CONTENT);
 
       // 3. Then create the NEW link
       api
         .post(`/gateways/udp/v1/identity/${service}/${serviceId}`, body)
-        .reply(201);
+        .reply(status.CREATED);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create(event),
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 201, body: "" });
+      expect(result).toStrictEqual({ statusCode: status.CREATED, body: "" });
     });
   });
 
@@ -102,31 +108,39 @@ describe("POST /v1/identity/:service/:id", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       // Logic fails at the first step
-      api.get(`/gateways/udp/v1/identity/${service}`).reply(500);
+      api
+        .get(`/gateways/udp/v1/identity/${service}`)
+        .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create(event),
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 502, body: "" });
+      expect(result).toStrictEqual({
+        statusCode: status.BAD_GATEWAY,
+        body: "",
+      });
     });
 
     it("returns 502 when the creation (post) fails", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      api.get(`/gateways/udp/v1/identity/${service}`).reply(404);
+      api.get(`/gateways/udp/v1/identity/${service}`).reply(status.NOT_FOUND);
       api
         .post(`/gateways/udp/v1/identity/${service}/${serviceId}`, body)
-        .reply(500);
+        .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create(event),
         context.create(),
       );
 
-      expect(result).toStrictEqual({ statusCode: 502, body: "" });
+      expect(result).toStrictEqual({
+        statusCode: status.BAD_GATEWAY,
+        body: "",
+      });
     });
   });
 });
