@@ -170,6 +170,7 @@ export class FlexPlatformStack extends BaseStack {
     );
 
     const cfnApi = restApi.node.defaultChild as CfnRestApi;
+    cfnApi.endpointAccessMode = "BASIC";
     cfnApi.securityPolicy = "SecurityPolicy_TLS13_1_2_2021_06";
 
     const healthEndpoint = restApi.root
