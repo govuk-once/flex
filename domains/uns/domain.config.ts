@@ -18,10 +18,6 @@ export const { config, route, routeContext } = domain({
       path: "/gds/apigw/gateway-url",
       scope: "stage",
     },
-    gdsApiKey: {
-      type: "secret",
-      path: "/flex-secret/gds/api-key",
-    },
     unsNotificationSecret: {
       type: "secret",
       path: "/flex-secret/uns/notification-hash-secret",
@@ -34,7 +30,7 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "get-notifications",
             response: z.array(NotificationSchema),
-            resources: ["gdsGatewayUrl", "gdsApiKey", "unsNotificationSecret"],
+            resources: ["gdsGatewayUrl", "unsNotificationSecret"],
           },
         },
       },

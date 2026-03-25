@@ -17,7 +17,7 @@ describe("GET /v1/notifications", () => {
   const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/notifications";
 
-  const gdsNotification = {
+  const notification = {
     NotificationID: "notification-1",
     NotificationTitle: "Your application has been received",
     NotificationBody:
@@ -36,13 +36,12 @@ describe("GET /v1/notifications", () => {
     gateway
       .get("/api/notifications")
       .query({ externalUserID: "test-external-user-id" })
-      .reply(200, [gdsNotification]);
+      .reply(200, [notification]);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          gdsApiKey: "test-api-key",
           unsNotificationSecret: "test-secret",
         })
         .create(),
@@ -77,7 +76,6 @@ describe("GET /v1/notifications", () => {
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          gdsApiKey: "test-api-key",
           unsNotificationSecret: "test-secret",
         })
         .create(),
@@ -100,7 +98,6 @@ describe("GET /v1/notifications", () => {
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          gdsApiKey: "test-api-key",
           unsNotificationSecret: "test-secret",
         })
         .create(),
