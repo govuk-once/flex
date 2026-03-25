@@ -42,7 +42,7 @@ describe("GET /v1/notifications", () => {
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          unsNotificationSecret: "test-secret",
+          unsNotificationSecret: "dummy", // pragma: allowlist secret
         })
         .create(),
     );
@@ -76,7 +76,7 @@ describe("GET /v1/notifications", () => {
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          unsNotificationSecret: "test-secret",
+          unsNotificationSecret: "dummy", // pragma: allowlist secret
         })
         .create(),
     );
@@ -98,7 +98,7 @@ describe("GET /v1/notifications", () => {
       privateGatewayEventWithAuthorizer.get(endpoint),
       context
         .withSecret({
-          unsNotificationSecret: "test-secret",
+          unsNotificationSecret: "dummy", // pragma: allowlist secret
         })
         .create(),
     );
