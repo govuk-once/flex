@@ -1,46 +1,20 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
-import createHttpError from "http-errors";
+import status from "http-status";
 
-export const handler = route(
-  "GET /v1/identity/:service",
-  async ({ auth, integrations, logger, pathParams }) => {
-    const { service } = pathParams;
+import { getServiceIdentityLink } from "../../../../services/identity";
 
-    // TODO: Add to SDK auth or keep alias for this domain only?
-    const userId = auth.pairwiseId as UserId;
+export const handler = route("GET /v1/identity/:service", async () => {
+  const data = await getServiceIdentityLink();
 
-    const result = await integrations.udpGetIdentity({
-      path: `/${service}`,
-      headers: { "User-Id": userId },
-    });
-
-    if (!result.ok) {
-      const { error } = result;
-
-      if (error.status === 404) {
-        logger.debug(`Service identity is not linked`, { service, userId });
-
-        return {
-          status: 200,
-          data: { linked: false },
-        };
-      }
-
-      logger.error(`Service identity does not exist`, {
-        service,
-        userId,
-        error,
-      });
-
-      throw new createHttpError.BadGateway();
-    }
-
-    logger.info("Service identity link found", { service, userId });
-
+  if (!data) {
     return {
-      status: 200,
-      data: { linked: true },
+      status: status.OK,
+      data: { linked: false },
     };
-  },
-);
+  }
+
+  return {
+    status: status.OK,
+    data: { linked: true },
+  };
+});

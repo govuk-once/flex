@@ -77,7 +77,11 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "create-service-identity-link",
             resources: ["privateGatewayUrl"],
-            integrations: ["udpCreateIdentity"],
+            integrations: [
+              "udpCreateIdentity",
+              "udpDeleteIdentity",
+              "udpGetIdentity",
+            ],
           },
         },
       },
