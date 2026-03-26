@@ -10,10 +10,11 @@ import createHttpError from "http-errors";
 type PostRoute = "POST /v1/identity/:service/:id";
 type DeleteRoute = "DELETE /v1/identity/:service";
 type GetRoute = "GET /v1/identity/:service";
+type GetRoutePrivate = "GET /v1/identity/:service [private]";
 
 type PostIdentityRoutes = PostRoute;
 type DeleteIdentityRoutes = PostRoute | DeleteRoute;
-type GetIdentityRoutes = GetRoute | DeleteIdentityRoutes;
+type GetIdentityRoutes = GetRoute | GetRoutePrivate | DeleteIdentityRoutes;
 
 const postCtx = routeContext<PostIdentityRoutes>;
 const deleteCtx = routeContext<DeleteIdentityRoutes>;
@@ -74,10 +75,11 @@ export async function deleteServiceIdentity(
   logger.info("Service identity unlinked successfully");
 }
 
-export async function getServiceIdentityLink(): Promise<GetServiceIdentityLinkResponse | null> {
-  const { auth, integrations, logger, pathParams } = getCtx();
+export async function getServiceIdentityLink(
+  userId: UserId,
+): Promise<GetServiceIdentityLinkResponse | null> {
+  const { integrations, logger, pathParams } = getCtx();
   const { service } = pathParams;
-  const userId = auth.pairwiseId as UserId;
 
   const result =
     await integrations.udpGetIdentity<GetServiceIdentityLinkResponse>({

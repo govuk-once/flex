@@ -11,13 +11,11 @@ type GetDvlaLicenceContext = InferRouteContext<
 >;
 
 export const handler = route("GET /v1/driving-licence", async (ctx) => {
-  const userLinkingId = process.env.flexDvlaTestUser;
-  if (!userLinkingId) {
-    ctx.logger.error("Failed to get user linkingId");
-    throw new createHttpError.BadGateway();
-  }
+  const [userLinkingId, auth] = await Promise.all([
+    getUserLinkingId(ctx),
+    getDvlaAuthToken(ctx),
+  ]);
 
-  const auth = await getDvlaAuthToken(ctx);
   const licenceKey = await getDvlaLicenceKey(ctx, auth, userLinkingId);
   const data = await getDvlaLicence(ctx, auth, licenceKey);
 
@@ -26,6 +24,25 @@ export const handler = route("GET /v1/driving-licence", async (ctx) => {
     data,
   };
 });
+
+async function getUserLinkingId(ctx: GetDvlaLicenceContext): Promise<string> {
+  const userLinkingIdResult = await ctx.integrations.udpGetLinkingId({
+    path: "/dvla",
+    headers: { "User-Id": ctx.auth.pairwiseId },
+  });
+
+  if (!userLinkingIdResult.ok) {
+    if (userLinkingIdResult.error.status === status.NOT_FOUND) {
+      ctx.logger.debug("Service linked for DVLA NotFound");
+      throw new createHttpError.NotFound();
+    }
+
+    ctx.logger.debug("Call to UDP failed", userLinkingIdResult.error.message);
+    throw new createHttpError.BadGateway();
+  }
+
+  return userLinkingIdResult.data.serviceId;
+}
 
 async function getDvlaAuthToken(ctx: GetDvlaLicenceContext): Promise<string> {
   const { integrations, logger } = ctx;

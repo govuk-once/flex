@@ -1,3 +1,4 @@
+export { GetServiceIdentityLinkResponseSchema } from "./schemas/identity";
 export type {
   CreateNotificationPreferencesRequest,
   CreateNotificationPreferencesResponse,

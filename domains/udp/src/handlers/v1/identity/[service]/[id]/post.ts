@@ -1,4 +1,5 @@
 import { route } from "@domain";
+import { UserId } from "@flex/utils";
 import status from "http-status";
 
 import {
@@ -9,9 +10,9 @@ import {
 
 export const handler = route(
   "POST /v1/identity/:service/:id",
-  async ({ pathParams }) => {
+  async ({ pathParams, auth }) => {
     const { id: requestedId } = pathParams;
-    const existing = await getServiceIdentityLink();
+    const existing = await getServiceIdentityLink(auth.pairwiseId as UserId);
 
     if (existing) {
       const isDifferentId = existing.serviceId !== requestedId;

@@ -13,6 +13,7 @@
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {
+    "@aws-lambda-powertools/parameters": "2.31.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/udp-domain": "workspace:*",

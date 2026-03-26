@@ -5,6 +5,7 @@ import {
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
   GetNotificationPreferencesResponseSchema,
+  GetServiceIdentityLinkResponseSchema,
   GetUserResponseSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
@@ -62,6 +63,18 @@ export const { config, route, routeContext } = domain({
             name: "get-service-identity",
             resources: ["privateGatewayUrl"],
             integrations: ["udpGetIdentity"],
+          },
+          private: {
+            name: "get-service-identity",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetIdentity"],
+            headers: {
+              userId: {
+                name: "User-Id",
+                required: true,
+              },
+            },
+            response: GetServiceIdentityLinkResponseSchema,
           },
         },
         DELETE: {
