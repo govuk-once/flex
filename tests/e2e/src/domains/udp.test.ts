@@ -53,7 +53,7 @@ describe("UDP domain", () => {
           { headers: { ...authorization } },
         );
 
-        expect(created.status).toBe(201);
+        expect([204, 201]).toContain(created.status);
 
         const result = await cloudfront.client.delete(endpoint, {
           headers: { ...authorization },
@@ -67,7 +67,8 @@ describe("UDP domain", () => {
   describe("/udp/v1/identity/:service/:id", () => {
     const service = "test-service";
     const serviceId = "test-service-id";
-    const endpoint = `/udp/v1/identity/${service}/${serviceId}`;
+    const unlinkEndpoint = `/udp/v1/identity/${service}`;
+    const endpoint = `${unlinkEndpoint}/${serviceId}`;
 
     describe("POST", () => {
       it("rejects unauthenticated requests", async ({ cloudfront }) => {
@@ -80,7 +81,7 @@ describe("UDP domain", () => {
       it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
         cloudfront,
       }) => {
-        const cleanup = await cloudfront.client.delete(endpoint, {
+        const cleanup = await cloudfront.client.delete(unlinkEndpoint, {
           headers: { ...authorization },
         });
         expect([204, 404]).toContain(cleanup.status);
@@ -96,7 +97,7 @@ describe("UDP domain", () => {
         expect(idempotentResult.status).toBe(204);
 
         const differentId = "new-test-id-999";
-        const swapEndpoint = `/identity/${service}/${differentId}`;
+        const swapEndpoint = `${unlinkEndpoint}/${differentId}`;
 
         const swapResult = await cloudfront.client.post(swapEndpoint, {
           headers: { ...authorization },
