@@ -191,7 +191,7 @@ function UnsWipNode({ visible }: { visible: boolean }) {
   return (
     <div className={`w-full flex items-center gap-2 transition-opacity duration-500 ${visible ? "opacity-100" : "opacity-30"}`}>
       <div className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center">
-        <p className="text-[9px] font-mono text-slate-500 truncate">notification_ref</p>
+        <p className="text-[9px] font-mono text-slate-500 truncate">one_signal_id</p>
       </div>
       <svg className="w-5 h-3 flex-shrink-0 text-slate-300" viewBox="0 0 20 12" fill="currentColor">
         <path d="M0 5h14v2H0zM13 0l7 6-7 6V0z" />
@@ -295,14 +295,14 @@ export default function ProfileJourneyDiagram({ activeStep = "idle" }: Props) {
             }`}>
               <TableHeader title="Identity" active={identityActive} />
               <TableColHeaders cols={["udpId", "extId"]} />
-              <TableRow cells={["udp-01…", "app-9f…"]} active={identityActive} />
+              <TableRow cells={["udp-01…", "d6a…"]} active={identityActive} />
             </div>
             <div className={`flex-1 rounded-lg border-2 overflow-hidden transition-all duration-300 ${
               dataActive ? "border-indigo-300" : "border-slate-200"
             }`}>
               <TableHeader title="Data" active={dataActive} />
               <TableColHeaders cols={["key", "value"]} />
-              <TableRow cells={["notif_ref", "UNS-042"]} active={dataActive} />
+              <TableRow cells={["one_signal_id", "dNVRHHR-Ik3vzs_QBsIv2WB7nCr-sROc6jIXxOqPRQQ"]} active={dataActive} />
               <TableRow cells={["consent", "accepted"]} active={dataActive} />
             </div>
           </div>

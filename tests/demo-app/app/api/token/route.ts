@@ -7,7 +7,9 @@ export async function GET() {
   try {
     const client = await getJwtClient(stage);
     const token = await client.getToken();
-    return NextResponse.json({ token, stage });
+    return NextResponse.json({ token, stage }, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error";

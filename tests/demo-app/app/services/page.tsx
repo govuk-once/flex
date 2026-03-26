@@ -100,7 +100,7 @@ function ConnectButton({
             <span>Connecting…</span>
           </>
         ) : (
-          "Connect"
+          "Consent"
         )}
       </button>
     </div>

@@ -79,7 +79,7 @@ function ProfileCard({ profile }: { profile: UserProfile }) {
           </span>
         </div>
         <div>
-          <p className="text-xs text-gray-400">Notification Ref</p>
+          <p className="text-xs text-gray-400">One Signal ID</p>
           <p className="text-xs font-mono text-gray-600 break-all mt-0.5">
             {profile.notifications.notificationId}
           </p>
@@ -146,10 +146,7 @@ export default function Home() {
   const finishAnimation = () => {
     clearAnimTimers();
     setDiagramStep("complete");
-    animTimers.current.push(
-      setTimeout(() => setDiagramStep("idle"),    8000),
-      setTimeout(() => setProfileStep("idle"),    8000),
-    );
+    // Diagram stays highlighted until the user triggers another request
   };
 
   useEffect(() => () => clearAnimTimers(), []);
