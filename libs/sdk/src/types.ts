@@ -8,29 +8,34 @@ import type {
 import type { z, ZodType } from "zod";
 
 import {
+  DomainConfigSchema,
   DomainFeatureFlagSchema,
+  DomainResourceSchema,
   FlexEnvironmentSchema,
   FunctionConfigSchema,
+  HeaderConfigSchema,
   HttpMethodSchema,
   LogLevelSchema,
   RouteAccessSchema,
 } from "./config/schema";
 
 // ----------------------------------------------------------------------------
-// Flex Function
+// Exported inferred types
 // ----------------------------------------------------------------------------
-
-// Add more fields if needed, based on Nodejsfunction
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
+export type LogLevel = z.infer<typeof LogLevelSchema>;
+export type RouteAccess = z.infer<typeof RouteAccessSchema>;
 export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
+export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
+export type DomainResource = z.infer<typeof DomainResourceSchema>;
+export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
+export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
+export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
+export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 // ----------------------------------------------------------------------------
 // Headers
 // ----------------------------------------------------------------------------
-
-export interface HeaderConfig {
-  readonly name: string;
-  readonly required?: boolean;
-}
 
 type MergeRouteHeaders<
   Config extends DomainConfig,
@@ -63,23 +68,6 @@ type ResolveHeaders<Headers> = keyof Headers extends never
           : string;
       };
     };
-
-// ----------------------------------------------------------------------------
-// Resources
-// ----------------------------------------------------------------------------
-
-export interface DomainResource<T extends string = string> {
-  readonly type: T;
-  readonly path: string;
-  readonly scope?: "environment" | "stage";
-}
-
-// ----------------------------------------------------------------------------
-// Feature Flags
-// ----------------------------------------------------------------------------
-
-export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
-export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 interface DomainResourceCommonOptions {
   scope?: "environment" | "stage";
@@ -404,13 +392,7 @@ export type GatewayRouteConfig<
 // Domain Config
 // ----------------------------------------------------------------------------
 
-export type HttpMethod = z.infer<typeof HttpMethodSchema>;
-
 type HttpMethodWithBody = Extract<HttpMethod, "POST" | "PUT" | "PATCH">;
-
-export type LogLevel = z.infer<typeof LogLevelSchema>;
-
-export type RouteAccess = z.infer<typeof RouteAccessSchema>;
 
 interface DomainConfigCommon {
   readonly access?: RouteAccess;

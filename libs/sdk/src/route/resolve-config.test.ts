@@ -162,10 +162,7 @@ describe("getRouteLogLevel", () => {
 
 describe("getRouteResources", () => {
   const resources: {
-    [key: string]:
-      | DomainResource<"kms">
-      | DomainResource<"ssm">
-      | DomainResource<"secret">;
+    [key: string]: DomainResource;
   } = {
     testKey: { type: "kms", path: "/path/to/key" },
     testParam: { type: "ssm", path: "/path/to/param" },
