@@ -77,14 +77,32 @@ describe("UDP domain", () => {
         expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
       });
 
-      it("returns 201 when identity is linked successfully", async ({
+      it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
         cloudfront,
       }) => {
-        const result = await cloudfront.client.post(endpoint, {
+        const cleanup = await cloudfront.client.delete(endpoint, {
+          headers: { ...authorization },
+        });
+        expect([204, 404]).toContain(cleanup.status);
+
+        const createResult = await cloudfront.client.post(endpoint, {
+          headers: { ...authorization },
+        });
+        expect(createResult.status).toBe(201);
+
+        const idempotentResult = await cloudfront.client.post(endpoint, {
+          headers: { ...authorization },
+        });
+        expect(idempotentResult.status).toBe(204);
+
+        const differentId = "new-test-id-999";
+        const swapEndpoint = `/identity/${service}/${differentId}`;
+
+        const swapResult = await cloudfront.client.post(swapEndpoint, {
           headers: { ...authorization },
         });
 
-        expect(result.status).toBe(201);
+        expect(swapResult.status).toBe(201);
       });
     });
   });
