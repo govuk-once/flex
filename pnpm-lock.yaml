@@ -54,6 +54,9 @@ importers:
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
+      '@flex/udp-domain':
+        specifier: workspace:*
+        version: link:../udp
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161
@@ -990,6 +993,9 @@ importers:
         specifier: workspace:*
         version: link:../../libs/utils
     devDependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.31.0
+        version: 2.31.0(@aws-sdk/client-secrets-manager@3.985.0)(@aws-sdk/client-ssm@3.990.0)(@middy/core@7.0.2)
       '@flex/config':
         specifier: workspace:*
         version: link:../../libs/config

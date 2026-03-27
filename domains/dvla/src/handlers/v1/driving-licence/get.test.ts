@@ -9,10 +9,20 @@ describe("GET /v1/driving-licence", () => {
   const testLinkingId = "test-user-linking-id";
   const testAuthToken = "test-id-token";
   const testProductKey = "prod-123";
+  const testPairwiseId = "test-pairwise-id";
 
   beforeEach(() => {
     vi.stubEnv("flexDvlaTestUser", testLinkingId);
   });
+
+  const mockUdpSuccess = () =>
+    api
+      .get("/domains/udp/v1/identity/dvla")
+      .matchHeader("User-Id", testPairwiseId)
+      .reply(200, {
+        serviceId: testLinkingId,
+        serviceName: "dvla",
+      });
 
   const mockAuthSuccess = () =>
     api.get("/gateways/dvla/v1/authenticate").reply(200, {
@@ -50,6 +60,7 @@ describe("GET /v1/driving-licence", () => {
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
+    mockUdpSuccess();
     mockAuthSuccess();
     mockCustomerSuccess();
     const mockLicenceData = {
@@ -80,24 +91,27 @@ describe("GET /v1/driving-licence", () => {
   });
 
   describe("Error scenarios", () => {
-    it("returns 502 if flexDvlaTestUser env var is missing", async ({
+    it("returns 404 if the user has no DVLA linking ID in UDP", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      vi.stubEnv("flexDvlaTestUser", "");
+      api.get("/domains/udp/v1/identity/dvla").reply(404, {
+        error: { message: "Not Found" },
+      });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(404);
     });
 
     it("returns 502 if DVLA authentication fails", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
+      mockUdpSuccess();
       api.get("/gateways/dvla/v1/authenticate").reply(500);
 
       const result = await handler(
@@ -112,6 +126,7 @@ describe("GET /v1/driving-licence", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
+      mockUdpSuccess();
       mockAuthSuccess();
 
       api
@@ -135,6 +150,7 @@ describe("GET /v1/driving-licence", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
+      mockUdpSuccess();
       mockAuthSuccess();
       mockCustomerSuccess();
 

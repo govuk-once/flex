@@ -21,6 +21,20 @@ export const e2eEnvSchema = z.object({
     .describe(
       "Environment name (<username>, pr-<number>, development, staging, production)",
     ),
+  ENVIRONMENT: z
+    .string()
+    .optional()
+    .transform((v) => {
+      const stage =
+        sanitiseStageName(v ?? process.env.STAGE ?? process.env.USER) ??
+        "development";
+      const allowed = ["development", "staging", "production"];
+
+      return allowed.includes(stage) ? stage : "development";
+    })
+    .describe(
+      "Strict environment tier for SSM (development, staging, or production)",
+    ),
 });
 
 export type E2EEnv = z.output<typeof e2eEnvSchema>;
