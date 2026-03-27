@@ -69,6 +69,11 @@ const remoteClient = {
       status: 200,
       data: MOCK_REMOTE_NOTIFICATIONS,
     }),
+    delete: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      data: undefined,
+    }),
   },
   serviceLink: {
     create: vi.fn(),
@@ -245,6 +250,34 @@ describe("UDP Service Gateway", () => {
     expect(remoteClient.serviceLink.delete).toHaveBeenCalledWith(
       serviceName,
       userId,
+    );
+  });
+
+  it("dispatches DELETE /v1/notifications and deletes notification preferences", async ({
+    privateGatewayEvent,
+    env,
+  }) => {
+    env.set({
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+    });
+
+    const requestingServiceUserId = "pairwise-123";
+
+    const response = await handler(
+      privateGatewayEvent.delete("/gateways/udp/v1/notifications", {
+        body: undefined,
+        headers: { "requesting-service-user-id": requestingServiceUserId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 204,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(remoteClient.notifications.delete).toHaveBeenCalledWith(
+      requestingServiceUserId,
     );
   });
 

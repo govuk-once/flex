@@ -12,6 +12,7 @@ const remoteClient = {
   notifications: {
     get: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
   },
   serviceLink: {
     create: vi.fn(),
@@ -87,6 +88,23 @@ describe("Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.notifications.get).toHaveBeenCalledWith("123");
+      },
+    },
+    {
+      method: "DELETE",
+      path: "/v1/notifications",
+      operation: "deleteNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: undefined,
+      configureRemoteClient: () => {
+        remoteClient.notifications.delete.mockResolvedValue({
+          ok: true,
+          status: 204,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.notifications.delete).toHaveBeenCalledWith("123");
       },
     },
     {
