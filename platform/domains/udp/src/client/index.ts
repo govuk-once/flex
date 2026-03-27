@@ -59,6 +59,18 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
         return typedFetch(request, notificationsResponseSchema);
       },
 
+      delete: (requestingServiceUserId: string): Promise<ApiResult<void>> => {
+        const { request } = fetcher(UDP_REMOTE_ROUTES.notifications, {
+          method: "DELETE",
+          headers: {
+            ...defaultHeaders,
+            "requesting-service": "app",
+            "requesting-service-user-id": requestingServiceUserId,
+          },
+        });
+        return typedFetch(request);
+      },
+
       update: (
         body: CreateOrUpdateNotificationsRequest,
         requestingServiceUserId: string,
