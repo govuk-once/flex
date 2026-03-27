@@ -11,7 +11,7 @@ vi.mock("@flex/logging");
 
 describe("buildHandlerContext", () => {
   const contextOptions: BuildContextOptions = {
-    access: "isolated",
+    gateway: "private",
     logger,
   };
 
@@ -23,7 +23,7 @@ describe("buildHandlerContext", () => {
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
         context.create(),
-        { ...contextOptions, access: "public" },
+        { ...contextOptions, gateway: "public" },
       );
 
       expect(store.logger).toBe(logger);
@@ -31,39 +31,29 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Auth", () => {
-    it("includes auth in the context when route access is private or isolated (non-public)", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const isolatedHandlerStore = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
-        contextOptions,
-      );
-
-      expect(isolatedHandlerStore.auth).toStrictEqual({
-        pairwiseId: "test-pairwise-id",
-      });
-
-      const privateHandlerStore = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
-        { ...contextOptions, access: "private" },
-      );
-
-      expect(privateHandlerStore.auth).toStrictEqual({
-        pairwiseId: "test-pairwise-id",
-      });
-    });
-
-    it("omits auth from the context when route access is public", ({
+    it("includes auth in the context when gateway is public", ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.authenticated(),
         context.create(),
-        { ...contextOptions, access: "public" },
+        { ...contextOptions, gateway: "public" },
+      );
+
+      expect(store.auth).toStrictEqual({
+        pairwiseId: "test-pairwise-id",
+      });
+    });
+
+    it("omits auth from the context when gateway is private", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.authenticated(),
+        context.create(),
+        { ...contextOptions, gateway: "private" },
       );
 
       expect(store.auth).toBeUndefined();
@@ -77,7 +67,7 @@ describe("buildHandlerContext", () => {
         buildHandlerContext(
           privateGatewayEventWithAuthorizer.unauthenticated(),
           context.create(),
-          contextOptions,
+          { ...contextOptions, gateway: "public" },
         ),
       ).toThrow("Pairwise ID not found");
     });
