@@ -6,7 +6,6 @@ import type {
   HeaderConfig,
   LambdaContext,
   LambdaEvent,
-  RouteAccess,
   RouteAuth,
 } from "../types";
 import { RequestBodyParseError } from "../utils/errors";
@@ -15,7 +14,7 @@ import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
 
 export interface BuildContextOptions {
-  access: RouteAccess;
+  gateway: "public" | "private";
   logger: Logger;
   bodySchema?: ZodType;
   querySchema?: ZodType;
@@ -29,7 +28,7 @@ export function buildHandlerContext(
   event: LambdaEvent,
   context: LambdaContext,
   {
-    access,
+    gateway,
     logger,
     bodySchema,
     querySchema,
@@ -48,10 +47,9 @@ export function buildHandlerContext(
   const resources = resourcesProp
     ? extractResources(context, resourcesProp)
     : undefined;
-
   return {
     logger,
-    ...(access !== "public" && { auth: extractAuth(event.requestContext) }),
+    ...(gateway === "public" && { auth: extractAuth(event.requestContext) }),
     ...(body !== undefined && { body }),
     ...(pathParams && { pathParams }),
     ...(queryParams && { queryParams }),

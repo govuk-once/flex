@@ -11,6 +11,7 @@ import createHttpError from "http-errors";
 const context = routeContext<"GET /v1/users">;
 
 export const handler = route("GET /v1/users", async ({ auth, resources }) => {
+  const { logger } = context();
   // TODO: Add to SDK auth or keep alias for this domain only?
   const userId = auth.pairwiseId as UserId;
 
@@ -27,6 +28,8 @@ export const handler = route("GET /v1/users", async ({ auth, resources }) => {
       data: { notificationId, notifications, userId },
     };
   }
+
+  logger.info("No user found creating user");
 
   await createUser(userId, notificationId);
 
