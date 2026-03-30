@@ -1,7 +1,8 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { viewDriverResponseSchema } from "@flex/dvla-domain";
-import { it } from "@flex/testing/e2e";
 import { beforeAll, describe, expect, inject } from "vitest";
+
+import { it } from "../extend/it";
 
 describe("DVLA domain", () => {
   const { JWT, ENVIRONMENT } = inject("e2eEnv");
@@ -26,12 +27,9 @@ describe("DVLA domain", () => {
     describe("GET", () => {
       it("returns 200 and valid data when identity is linked", async ({
         cloudfront,
+        withIdentityLink,
       }) => {
-        const postLinkingId = `/udp/v1/identity/dvla/${linkingId}`;
-        const setupResult = await cloudfront.client.post(postLinkingId, {
-          headers: { ...authorization },
-        });
-        expect([201, 204]).toContain(setupResult.status);
+        await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.get(endpoint, {
           headers: { ...authorization },
@@ -42,12 +40,11 @@ describe("DVLA domain", () => {
         expect(validation.success).toBe(true);
       });
 
-      it("returns 404 when user is not linked", async ({ cloudfront }) => {
-        const postLinkingId = "/udp/v1/identity/dvla";
-        const setupResult = await cloudfront.client.delete(postLinkingId, {
-          headers: { ...authorization },
-        });
-        expect([204, 404]).toContain(setupResult.status);
+      it("returns 404 when user is not linked", async ({
+        cloudfront,
+        withCleanIdentity,
+      }) => {
+        await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.get(endpoint, {
           headers: { ...authorization },
