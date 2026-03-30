@@ -1,9 +1,4 @@
-import {
-  injectLambdaContext,
-  logger,
-  setLogLevel,
-  setLogServiceName,
-} from "@flex/logging";
+import { injectLambdaContext, logger, setLogServiceName } from "@flex/logging";
 import middy, { MiddlewareObj, MiddyfiedHandler } from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import type { Context } from "aws-lambda";
@@ -75,7 +70,7 @@ export function createLambdaHandler<
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
   setLogServiceName(config.serviceName);
   if (config.logLevel) {
-    setLogLevel(config.logLevel);
+    logger.setLogLevel(config.logLevel as never);
   }
   const logLevel = logger.getLevelName();
 
