@@ -109,6 +109,7 @@ export function getRouteAccess(common?: RouteAccess, route?: RouteAccess) {
   return route ?? common ?? "isolated";
 }
 
-export function getRouteLogLevel(common?: LogLevel, route?: LogLevel) {
+export function getRouteLogLevel(common?: LogLevel, route?: LogLevel): LogLevel {
+  if (process.env.FLEX_ENVIRONMENT === "production") return "INFO";
   return route ?? common ?? "INFO";
 }

@@ -12,11 +12,4 @@ describe("logging", () => {
     mod.setLogServiceName("new-service");
     expect(mod.logger).toBe(original);
   });
-
-  it("preserves logger instance across setLogLevel calls", async () => {
-    const mod = await import(".");
-    const original = mod.logger;
-    mod.setLogLevel("DEBUG");
-    expect(mod.logger).toBe(original);
-  });
 });

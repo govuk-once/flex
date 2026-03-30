@@ -26,9 +26,6 @@ export class FlexPublicFunction extends Construct {
       environment: {
         ...functionProps.environment,
         FLEX_ENVIRONMENT: stage,
-        ...(stage === "production" && {
-          FLEX_LOG_LEVEL_CEILING: "INFO",
-        }),
       },
       logGroup,
     });

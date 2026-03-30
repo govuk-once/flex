@@ -1,25 +1,17 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
-import type { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
-import { clampLogLevel } from "./logLevel";
 import {
   addSecretValue,
   addSensitiveKey,
   addSensitivePattern,
 } from "./sanitizer";
 
-const effectiveLevel = clampLogLevel(
-  process.env.POWERTOOLS_LOG_LEVEL ?? process.env.LOG_LEVEL ?? "INFO",
-  process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
-  process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
-);
-
 const formatter = new FlexLogFormatter();
 
 export const logger = new Logger({
-  logLevel: effectiveLevel as LogLevel,
+  logLevel: "INFO",
   logFormatter: formatter,
 });
 
@@ -29,19 +21,6 @@ export const logger = new Logger({
  */
 export function setLogServiceName(name: string): void {
   formatter.setServiceName(name);
-}
-
-/**
- * Sets the log level on the logger instance (clamped between floor and ceiling).
- * Called by createLambdaHandler — domain devs should not call this directly.
- */
-export function setLogLevel(level: string): void {
-  const clamped = clampLogLevel(
-    level,
-    process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
-    process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
-  );
-  logger.setLogLevel(clamped as LogLevel);
 }
 
 /**
