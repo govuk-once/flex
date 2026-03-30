@@ -157,6 +157,13 @@ describe("getRouteLogLevel", () => {
   it('defaults to "INFO" log level when common and route log levels are not defined', () => {
     expect(getRouteLogLevel()).toBe("INFO");
   });
+
+  it('locks log level to "INFO" in production regardless of domain config', ({
+    env,
+  }) => {
+    env.set({ FLEX_ENVIRONMENT: "production" });
+    expect(getRouteLogLevel(common, route)).toBe("INFO");
+  });
 });
 
 describe("getRouteResources", () => {
