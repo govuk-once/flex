@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-import { consentStatusSchema, notificationIdSchema } from "../common";
+import { consentStatusSchema, pushIdSchema } from "../common";
 
 export const inboundCreateOrUpdateNotificationsRequestSchema = z.object({
   consentStatus: consentStatusSchema,
-  notificationId: notificationIdSchema,
+  pushId: pushIdSchema,
 });
 
 export type InboundCreateOrUpdateNotificationsRequest = z.infer<
@@ -13,7 +13,7 @@ export type InboundCreateOrUpdateNotificationsRequest = z.infer<
 
 export const domainNotificationsResponseSchema = z.object({
   consentStatus: consentStatusSchema,
-  notificationId: z.string(),
+  pushId: z.string(),
 });
 
 export type DomainNotificationsResponse = z.infer<

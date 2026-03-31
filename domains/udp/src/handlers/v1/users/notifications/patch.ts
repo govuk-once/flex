@@ -1,10 +1,10 @@
 import { route, routeContext } from "@domain";
 import type { UserId } from "@flex/utils";
 import type {
-  NotificationId,
+  PushId,
   UpdateNotificationPreferencesOutboundResponse,
 } from "@schemas/notifications";
-import { getNotificationId } from "@utils";
+import { getPushId } from "@utils";
 import createHttpError from "http-errors";
 
 const context = routeContext<"PATCH /v1/users/notifications">;
@@ -17,7 +17,7 @@ export const handler = route(
 
     const notifications = await updateNotifications(
       userId,
-      getNotificationId(userId, resources.udpNotificationSecret),
+      getPushId(userId, resources.udpNotificationSecret),
     );
 
     return { status: 200, data: notifications };
@@ -26,7 +26,7 @@ export const handler = route(
 
 async function updateNotifications(
   userId: UserId,
-  notificationId: NotificationId,
+  pushId: PushId,
 ): Promise<UpdateNotificationPreferencesOutboundResponse> {
   const { body, integrations, logger } = context();
 
@@ -35,7 +35,7 @@ async function updateNotifications(
       "requesting-service": "app",
       "requesting-service-user-id": userId,
     },
-    body: { consentStatus: body.consentStatus, notificationId },
+    body: { consentStatus: body.consentStatus, pushId },
   });
 
   if (!result.ok) {

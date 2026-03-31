@@ -36,7 +36,7 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
 
 const MOCK_EXPECTED_DOMAIN_NOTIFICATIONS: DomainNotificationsResponse = {
   consentStatus: "accepted",
-  notificationId: "mock-notification-id",
+  pushId: "mock-notification-id",
 };
 
 const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
@@ -46,7 +46,7 @@ const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
 const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
   data: {
     consentStatus: "accepted",
-    notificationId: "mock-notification-id",
+    pushId: "mock-notification-id",
   },
 };
 
@@ -113,7 +113,7 @@ describe("UDP Service Gateway", () => {
       method: "POST",
       path: "/v1/users",
       operation: "createUser",
-      body: { notificationId: "123", userId: "456" },
+      body: { pushId: "123", userId: "456" },
       expected: MOCK_EXPECTED_DOMAIN_USER,
     },
   ])(

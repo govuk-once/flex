@@ -9,17 +9,17 @@ describe("POST /v0/users [private]", () => {
   const endpoint = "/users";
 
   const userId = createUserId("test-pairwise-id");
-  const notificationId = "test-notification-id";
+  const pushId = "test-notification-id";
 
   it("returns 204 when user is created successfully", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
-    api.post("/gateways/udp/v1/users", { userId, notificationId }).reply(204);
+    api.post("/gateways/udp/v1/users", { userId, pushId }).reply(204);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { userId, notificationId },
+        body: { userId, pushId },
       }),
       context
         .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
@@ -31,7 +31,7 @@ describe("POST /v0/users [private]", () => {
 
   it.for([
     {
-      body: { notificationId: "test-notification-id" },
+      body: { pushId: "test-notification-id" },
       reason: "missing user ID",
     },
     { body: { userId: "test-user-id" }, reason: "missing notification ID" },
@@ -58,7 +58,7 @@ describe("POST /v0/users [private]", () => {
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { userId, notificationId },
+        body: { userId, pushId },
       }),
       context
         .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret

@@ -28,7 +28,7 @@ describe("PATCH /v0/users/notifications", () => {
       .matchHeader("requesting-service-user-id", userId)
       .reply(200, {
         consentStatus: "accepted",
-        notificationId: "derived-notification-id",
+        pushId: "derived-notification-id",
       });
 
     const result = await handler(
@@ -44,7 +44,7 @@ describe("PATCH /v0/users/notifications", () => {
     expect(result.body).toBe(
       JSON.stringify({
         consentStatus: "accepted",
-        notificationId: "derived-notification-id",
+        pushId: "derived-notification-id",
         featureFlags: {
           newUserProfileEnabled: true,
         },

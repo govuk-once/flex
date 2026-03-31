@@ -2,7 +2,7 @@ import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 export const remoteCreateUserRequestSchema = z.object({
-  notificationId: NonEmptyString,
+  pushId: NonEmptyString,
   appId: NonEmptyString,
 });
 
