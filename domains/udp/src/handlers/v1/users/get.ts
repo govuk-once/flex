@@ -2,10 +2,10 @@ import { route, routeContext } from "@domain";
 import { UserId } from "@flex/utils";
 import type {
   GetNotificationPreferencesResponse,
-  NotificationId,
+  PushId,
   UpdateNotificationPreferencesOutboundResponse,
 } from "@schemas/notifications";
-import { getNotificationId } from "@utils/get-notification-id";
+import { getPushId } from "@utils/get-push-it";
 import createHttpError from "http-errors";
 
 const context = routeContext<"GET /v1/users">;
@@ -15,29 +15,26 @@ export const handler = route("GET /v1/users", async ({ auth, resources }) => {
   // TODO: Add to SDK auth or keep alias for this domain only?
   const userId = auth.pairwiseId as UserId;
 
-  const notificationId = getNotificationId(
-    userId,
-    resources.udpNotificationSecret,
-  );
+  const pushId = getPushId(userId, resources.udpNotificationSecret);
 
   const notifications = await getNotifications(userId);
 
   if (notifications) {
     return {
       status: 200,
-      data: { notificationId, notifications, userId },
+      data: { notifications, userId },
     };
   }
 
   logger.info("No user found creating user");
 
-  await createUser(userId, notificationId);
+  await createUser(userId, pushId);
 
-  const created = await createNotifications(userId, notificationId);
+  const created = await createNotifications(userId, pushId);
 
   return {
     status: 200,
-    data: { userId, notificationId, notifications: created },
+    data: { userId, notifications: created },
   };
 });
 
@@ -67,11 +64,11 @@ async function getNotifications(
   return result.data;
 }
 
-async function createUser(userId: UserId, notificationId: NotificationId) {
+async function createUser(userId: UserId, pushId: PushId) {
   const { integrations, logger } = context();
 
   const result = await integrations.createUser({
-    body: { userId, notificationId },
+    body: { userId, pushId },
   });
 
   if (!result.ok) {
@@ -84,7 +81,7 @@ async function createUser(userId: UserId, notificationId: NotificationId) {
 
 async function createNotifications(
   userId: UserId,
-  notificationId: NotificationId,
+  pushId: PushId,
 ): Promise<UpdateNotificationPreferencesOutboundResponse> {
   const { integrations, logger } = context();
 
@@ -93,7 +90,7 @@ async function createNotifications(
       "requesting-service": "app",
       "requesting-service-user-id": userId,
     },
-    body: { consentStatus: "unknown", notificationId },
+    body: { consentStatus: "unknown", pushId },
   });
 
   if (!result.ok) {

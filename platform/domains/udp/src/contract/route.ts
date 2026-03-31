@@ -34,7 +34,7 @@ export const ROUTE_CONTRACTS = {
     toRemote: async (event) => {
       const data = await parseAndMapBody(inboundCreateUserRequestSchema, event);
       return {
-        notificationId: data.notificationId,
+        pushId: data.pushId,
         appId: data.userId,
       };
     },

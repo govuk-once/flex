@@ -3,14 +3,14 @@ import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
 } from "@schemas/notifications";
-import { createNotificationId } from "@tests/fixtures";
-import { getNotificationId } from "@utils/get-notification-id";
+import { createPushId } from "@tests/fixtures";
+import { getPushId } from "@utils/get-push-it";
 import nock from "nock";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
-vi.mock("@utils/get-notification-id");
+vi.mock("@utils/get-push-it");
 
 describe("PATCH /v1/users/notifications", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
@@ -24,7 +24,7 @@ describe("PATCH /v1/users/notifications", () => {
   };
   const updatedNotifications: UpdateNotificationPreferencesOutboundResponse = {
     consentStatus: "accepted",
-    notificationId: createNotificationId("updated-id"),
+    pushId: createPushId("updated-id"),
   };
 
   describe("request validation", () => {
@@ -68,7 +68,7 @@ describe("PATCH /v1/users/notifications", () => {
           .create(),
       );
 
-      expect(vi.mocked(getNotificationId)).toHaveBeenCalledExactlyOnceWith(
+      expect(vi.mocked(getPushId)).toHaveBeenCalledExactlyOnceWith(
         userId,
         secrets.udpNotificationSecret,
       );

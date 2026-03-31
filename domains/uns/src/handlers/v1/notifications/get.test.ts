@@ -30,7 +30,7 @@ describe("GET /v1/notifications", () => {
 
     const body = JSON.parse(result.body) as Record<string, unknown>[];
     expect(body[0]).toMatchObject({
-      NotificationID: expect.any(String) as unknown,
+      PushId: expect.any(String) as unknown,
       NotificationTitle: expect.any(String) as unknown,
       NotificationBody: expect.any(String) as unknown,
       MessageTitle: expect.any(String) as unknown,

@@ -94,10 +94,9 @@ describe("UDP domain", () => {
         expect(result.status).toBe(200);
         expect(result.body).toStrictEqual({
           userId: expect.any(String) as string,
-          notificationId: expect.any(String) as string,
           notifications: {
             consentStatus: expect.any(String) as string,
-            notificationId: expect.any(String) as string,
+            pushId: expect.any(String) as string,
           },
         });
       });
@@ -123,7 +122,7 @@ describe("UDP domain", () => {
         expect(result.status).toBe(200);
         expect(result.body).toStrictEqual({
           consentStatus: "accepted",
-          notificationId: expect.any(String) as string,
+          pushId: expect.any(String) as string,
         });
       });
 

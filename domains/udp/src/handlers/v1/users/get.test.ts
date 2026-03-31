@@ -4,14 +4,14 @@ import type {
   UpdateNotificationPreferencesOutboundResponse,
 } from "@schemas/notifications";
 import type { CreateUserRequest } from "@schemas/user";
-import { createNotificationId } from "@tests/fixtures";
-import { getNotificationId } from "@utils/get-notification-id";
+import { createPushId } from "@tests/fixtures";
+import { getPushId } from "@utils/get-push-it";
 import nock from "nock";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
 
-vi.mock("@utils/get-notification-id");
+vi.mock("@utils/get-push-it");
 
 describe("GET /v1/users", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
@@ -20,20 +20,20 @@ describe("GET /v1/users", () => {
   const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
   const userId = createUserId("test-pairwise-id");
-  const notificationId = createNotificationId();
+  const pushId = createPushId();
 
-  const user: CreateUserRequest = { userId, notificationId };
+  const user: CreateUserRequest = { userId, pushId };
 
   const foundNotificationPreferences: UpdateNotificationPreferencesOutboundResponse =
     {
       consentStatus: "accepted",
-      notificationId: createNotificationId("existing-id"),
+      pushId: createPushId("existing-id"),
     };
 
   const createdNotificationPreferences: CreateNotificationPreferencesResponse =
     {
       consentStatus: "unknown",
-      notificationId: createNotificationId("created-id"),
+      pushId: createPushId("created-id"),
     };
 
   describe("response", () => {
@@ -53,7 +53,7 @@ describe("GET /v1/users", () => {
           .create(),
       );
 
-      expect(vi.mocked(getNotificationId)).toHaveBeenCalledExactlyOnceWith(
+      expect(vi.mocked(getPushId)).toHaveBeenCalledExactlyOnceWith(
         userId,
         secrets.udpNotificationSecret,
       );
@@ -64,7 +64,6 @@ describe("GET /v1/users", () => {
       });
       expect(JSON.parse(result.body)).toStrictEqual({
         userId,
-        notificationId,
         notifications: foundNotificationPreferences,
       });
     });
@@ -96,7 +95,6 @@ describe("GET /v1/users", () => {
       });
       expect(JSON.parse(result.body)).toStrictEqual({
         userId,
-        notificationId,
         notifications: createdNotificationPreferences,
       });
     });

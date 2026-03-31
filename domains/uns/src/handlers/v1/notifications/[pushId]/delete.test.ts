@@ -2,37 +2,35 @@ import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
-import { handler } from "./get";
+import { handler } from "./delete";
 
-describe("GET /v1/notifications/{notificationId}", () => {
-  const existingId = MOCK_NOTIFICATIONS.at(0)?.NotificationID ?? "";
+describe("DELETE /v1/notifications/{pushId}", () => {
+  const existingId = MOCK_NOTIFICATIONS.at(0)?.PushId ?? "";
   const unknownId = "notification-unknown";
 
-  it("returns 200 with the matching notification", async ({
+  it("returns 204 when a known push IT is provided", async ({
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({
-        pathParameters: { notificationId: existingId },
+        httpMethod: "DELETE",
+        pathParameters: { pushId: existingId },
       }),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body) as {
-      NotificationID: string;
-    };
-    expect(body.NotificationID).toBe(existingId);
+    expect(result.statusCode).toBe(204);
   });
 
-  it("returns 404 when the notification ID does not exist", async ({
+  it("returns 404 when the push IT does not exist", async ({
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({
-        pathParameters: { notificationId: unknownId },
+        httpMethod: "DELETE",
+        pathParameters: { pushId: unknownId },
       }),
       context.create(),
     );
