@@ -2,7 +2,7 @@ import type { Notification } from "../schemas/notification";
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
   {
-    PushId: "notification-1",
+    NotificationID: "notification-1",
     Status: "RECEIVED",
     NotificationTitle: "Your application has been received",
     NotificationBody:
@@ -13,7 +13,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-10T09:00:00.000Z",
   },
   {
-    PushId: "notification-2",
+    NotificationID: "notification-2",
     Status: "RECEIVED",
     NotificationTitle: "Action required: verify your identity",
     NotificationBody:
@@ -24,7 +24,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-11T14:30:00.000Z",
   },
   {
-    PushId: "notification-3",
+    NotificationID: "notification-3",
     Status: "READ",
     NotificationTitle: "Your documents have been approved",
     NotificationBody:
@@ -34,7 +34,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-12T11:15:00.000Z",
   },
   {
-    PushId: "notification-4",
+    NotificationID: "notification-4",
     Status: "RECEIVED",
     NotificationTitle: "Your payment has been processed",
     NotificationBody:
@@ -44,7 +44,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-12T16:45:00.000Z",
   },
   {
-    PushId: "notification-5",
+    NotificationID: "notification-5",
     Status: "READ",
     NotificationTitle: "Reminder: your appointment is tomorrow",
     NotificationBody:
@@ -55,7 +55,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-13T08:00:00.000Z",
   },
   {
-    PushId: "notification-6",
+    NotificationID: "notification-6",
     Status: "RECEIVED",
     NotificationTitle: "New message from HMRC",
     NotificationBody:
@@ -66,7 +66,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-13T10:20:00.000Z",
   },
   {
-    PushId: "notification-7",
+    NotificationID: "notification-7",
     Status: "MARKED_AS_UNREAD",
     NotificationTitle: "Your Universal Credit payment date has changed",
     NotificationBody:
@@ -77,7 +77,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-09T13:00:00.000Z",
   },
   {
-    PushId: "notification-8",
+    NotificationID: "notification-8",
     Status: "READ",
     NotificationTitle: "Your driving licence renewal is due",
     NotificationBody:
@@ -88,7 +88,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-08T09:30:00.000Z",
   },
   {
-    PushId: "notification-9",
+    NotificationID: "notification-9",
     Status: "RECEIVED",
     NotificationTitle: "Action required: update your address",
     NotificationBody:
@@ -99,7 +99,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     DispatchedDateTime: "2026-03-13T11:55:00.000Z",
   },
   {
-    PushId: "notification-10",
+    NotificationID: "notification-10",
     Status: "READ",
     NotificationTitle: "Your passport application is being processed",
     NotificationBody:
@@ -111,4 +111,4 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-export const MOCK_PUSH_IDS = MOCK_NOTIFICATIONS.map((n) => n.PushId);
+export const MOCK_PUSH_IDS = MOCK_NOTIFICATIONS.map((n) => n.NotificationID);

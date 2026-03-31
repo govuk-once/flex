@@ -11,7 +11,7 @@ export const NotificationStatusSchema = z.enum([
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 
 export const NotificationSchema = z.object({
-  PushId: NonEmptyString,
+  NotificationID: NonEmptyString,
   NotificationTitle: NonEmptyString,
   NotificationBody: NonEmptyString,
   MessageTitle: NonEmptyString,

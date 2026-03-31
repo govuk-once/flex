@@ -22,7 +22,7 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/notifications/:pushId": {
+      "/notifications/:notificationId": {
         GET: {
           public: {
             name: "get-notification-by-id",
@@ -35,7 +35,7 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/notifications/:pushId/status": {
+      "/notifications/:notificationId/status": {
         PATCH: {
           public: {
             name: "patch-notification-status",

@@ -4,13 +4,13 @@ import type {
   UpdateNotificationPreferencesRequest,
 } from "@schemas/notifications";
 import { createPushId } from "@tests/fixtures";
-import { getPushId } from "@utils/get-push-it";
+import { getPushId } from "@utils/get-push-id";
 import nock from "nock";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
-vi.mock("@utils/get-push-it");
+vi.mock("@utils/get-push-id");
 
 describe("PATCH /v1/users/notifications", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");

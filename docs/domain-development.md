@@ -490,7 +490,7 @@ import { getUserContext, route, routeContext } from "path/to/domain.config";
 
 export const handler = route("GET /v1/user", async ({ auth, logger }) => {
   // Helpers access context via routeContext and are valid because they are called inside AsyncLocalStorage scope
-  const notificationId = getNotificationId();
+  const pushId = getNotificationId();
   const preferences = await getUserPreferences();
 
   // You can call `routeContext` directly if you prefer not to create aliases
@@ -498,7 +498,7 @@ export const handler = route("GET /v1/user", async ({ auth, logger }) => {
 
   return {
     status: 200,
-    data: { userId: auth.pairwiseId, notificationId, preferences },
+    data: { userId: auth.pairwiseId, pushId, preferences },
   };
 });
 
@@ -522,7 +522,7 @@ async function getUserPreferences() {
 
 // ERROR: Called at module scope so will throw as it is outside handler execution and cannot access AsyncLocalStorage context
 const { auth, integrations } = getUserContext(); // throws
-const notificationId = getNotificationId(); // throws
+const pushId = getNotificationId(); // throws
 ```
 
 > Route context is only accessible during handler execution. Any attempt to call it outside a route's execution context will throw an error. See [AsyncLocalStorage](https://nodejs.org/docs/latest-v24.x/api/async_context.html#asynclocalstoragegetstore)
@@ -618,13 +618,13 @@ describe("POST /v1/user [private]", () => {
     gateway
       .post("/gateways/udp/v1/users", {
         appId: "test-app-id",
-        notificationId: "test-notification-id",
+        pushId: "test-notification-id",
       })
       .reply(200, {});
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { appId: "test-app-id", notificationId: "test-notification-id" },
+        body: { appId: "test-app-id", pushId: "test-notification-id" },
       }),
       context.create(),
     );
@@ -640,7 +640,7 @@ describe("POST /v1/user [private]", () => {
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { appId: "test-app-id", notificationId: "test-notification-id" },
+        body: { appId: "test-app-id", pushId: "test-notification-id" },
       }),
       context.create(),
     );

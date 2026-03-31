@@ -1,1 +1,1 @@
-export { getPushId } from "./get-push-it";
+export { getPushId } from "./get-push-id";

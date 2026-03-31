@@ -4,13 +4,15 @@ import { route } from "../../../../../domain.config";
 import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
 
 export const handler = route(
-  "GET /v1/notifications/:pushId",
+  "GET /v1/notifications/:notificationId",
   ({ pathParams, logger }) => {
     logger.debug("Fetching notification");
 
-    const { pushId } = pathParams;
+    const { notificationId } = pathParams;
 
-    const notification = MOCK_NOTIFICATIONS.find((n) => n.PushId === pushId);
+    const notification = MOCK_NOTIFICATIONS.find(
+      (n) => n.NotificationID === notificationId,
+    );
 
     if (!notification) {
       throw new createHttpError.NotFound();

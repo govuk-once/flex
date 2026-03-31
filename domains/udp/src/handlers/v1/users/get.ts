@@ -5,7 +5,7 @@ import type {
   PushId,
   UpdateNotificationPreferencesOutboundResponse,
 } from "@schemas/notifications";
-import { getPushId } from "@utils/get-push-it";
+import { getPushId } from "@utils/get-push-id";
 import createHttpError from "http-errors";
 
 const context = routeContext<"GET /v1/users">;
