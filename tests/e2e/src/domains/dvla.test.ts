@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
 
-describe("DVLA domain", () => {
+describe.sequential("DVLA domain", () => {
   const { JWT, ENVIRONMENT } = inject("e2eEnv");
   const authorization = { Authorization: `Bearer ${JWT.VALID}` };
 
