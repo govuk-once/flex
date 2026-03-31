@@ -111,4 +111,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-export const MOCK_PUSH_IDS = MOCK_NOTIFICATIONS.map((n) => n.NotificationID);
+export const MOCK_NOTIFICATION_IDS = MOCK_NOTIFICATIONS.map(
+  (n) => n.NotificationID,
+);
