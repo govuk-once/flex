@@ -16,6 +16,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@aws-sdk/client-secrets-manager": "3.985.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.160",

@@ -7,7 +7,6 @@ import { deriveExternalUserId } from "../../../utils/derive-external-user-id";
 
 export const handler = route("GET /v1/notifications", async ({ logger }) => {
   const { auth, resources } = getNotificationsContext();
-
   const externalUserId = deriveExternalUserId(
     auth.pairwiseId,
     resources.unsNotificationSecret,
