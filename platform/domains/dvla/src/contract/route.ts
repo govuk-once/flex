@@ -17,7 +17,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => { },
+    toRemote: () => {},
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {

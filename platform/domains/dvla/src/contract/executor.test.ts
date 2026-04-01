@@ -15,6 +15,9 @@ const remoteClient = {
   customer: {
     get: vi.fn(),
   },
+  notification: {
+    post: vi.fn(),
+  },
 };
 
 describe("DVLA Executor", () => {
@@ -72,6 +75,25 @@ describe("DVLA Executor", () => {
       assertRemoteClientCall: () => {
         expect(remoteClient.customer.get).toHaveBeenCalledWith(
           "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/test-notification/test-id-123",
+      operation: "postNotification",
+      headers: { auth: "Bearer jwt-123" },
+      configureRemoteClient: () => {
+        remoteClient.notification.post.mockResolvedValue({
+          ok: true,
+          status: 202,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.notification.post).toHaveBeenCalledWith(
+          "test-id-123",
           "Bearer jwt-123",
         );
       },
