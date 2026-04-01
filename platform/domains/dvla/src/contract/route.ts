@@ -7,7 +7,7 @@ import { RouteContract } from "./types";
 
 export const DVLA_REMOTE_ROUTES = {
   authenticate: `/thirdparty-access/v1`,
-  linking: `/govuk-app-service/v1`,
+  app: `/govuk-app-service/v1`,
   licence: `/full-driver-enquiry/v1`,
 } as const;
 
@@ -17,7 +17,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => {},
+    toRemote: () => { },
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -57,6 +57,25 @@ export const ROUTE_CONTRACTS = {
       return { id, jwt };
     },
     callRemote: (client, data) => client.customer.get(data.id, data.jwt),
+  },
+  "POST:/v1/test-notification/:id": {
+    operation: "postTestNotification",
+    method: "POST",
+    inboundPath: "/v1/test-notification",
+    remotePath: "/v1/test-notification",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const id = pathParams[3];
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing customer linking id in path",
+        );
+      }
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.notification.post(data.id, data.jwt),
   },
 } as const satisfies Record<string, RouteContract>;
 

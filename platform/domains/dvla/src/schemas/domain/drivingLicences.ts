@@ -1,10 +1,4 @@
-import { NonEmptyString } from "@flex/utils";
 import z from "zod";
-
-export const getLicenceRequestSchema = z.object({
-  id: NonEmptyString,
-  jwt: NonEmptyString,
-});
 
 /**
  * Reference OpenAPI schema:
