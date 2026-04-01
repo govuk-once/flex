@@ -10,7 +10,7 @@ describe("POC domain", () => {
   const { JWT } = inject("e2eEnv");
 
   describe("POST /poc/v0/identity/:service/:id", () => {
-    const service = "test-service";
+    const service = "test-service-poc";
     const endpoint = `/poc/v0/identity/${service}/test-id`;
 
     it("returns 201 when identity is linked successfully", async ({
