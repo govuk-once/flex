@@ -20,6 +20,11 @@ export const { config, route, routeContext } = domain({
     encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
   },
   integrations: {
+    dvlaTestNotification: {
+      type: "gateway",
+      target: "dvla",
+      route: "POST /v1/test-notification/*",
+    },
     dvlaRetrieveCustomer: {
       type: "gateway",
       target: "dvla",
@@ -58,6 +63,19 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             response: viewDriverResponseSchema,
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/test-notification": {
+        POST: {
+          public: {
+            name: "post-test-notification",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaTestNotification",
+              "udpGetLinkingId",
+            ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },

@@ -60,20 +60,33 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
     },
     customer: {
       get: (id: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.linking}/retrieve-customer`,
-          {
-            method: "POST",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-              Authorization: jwt.trim(),
-            },
-            body: JSON.stringify({
-              linkingId: id,
-            }),
+        const request = fetcher(`${DVLA_REMOTE_ROUTES.app}/retrieve-customer`, {
+          method: "POST",
+          headers: {
+            ...defaultHeaders,
+            "X-API-KEY": config.apiKey,
+            Authorization: jwt.trim(),
           },
-        ).request;
+          body: JSON.stringify({
+            linkingId: id,
+          }),
+        }).request;
+        return typedFetch(request);
+      },
+    },
+    notification: {
+      post: (id: string, jwt: string): Promise<ApiResult<void>> => {
+        const request = fetcher(`${DVLA_REMOTE_ROUTES.app}/test-notification`, {
+          method: "POST",
+          headers: {
+            ...defaultHeaders,
+            "X-API-KEY": config.apiKey,
+            Authorization: jwt.trim(),
+          },
+          body: JSON.stringify({
+            linkingId: id,
+          }),
+        }).request;
         return typedFetch(request);
       },
     },

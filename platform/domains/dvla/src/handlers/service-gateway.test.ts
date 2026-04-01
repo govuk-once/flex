@@ -66,6 +66,13 @@ const remoteClient = {
       data: MOCK_CUSTOMER_RESPONSE,
     }),
   },
+  notification: {
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: undefined,
+    }),
+  },
 };
 
 describe("DVLA Service Gateway", () => {
@@ -138,6 +145,32 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.customer.get).toHaveBeenCalledWith(linkingId, jwt);
+  });
+
+  it("dispatches POST /v1/notification/:id and returns success", async ({
+    privateGatewayEvent,
+  }) => {
+    const linkingId = "notif-123";
+    const jwt = "test-token";
+
+    const response = await handler(
+      privateGatewayEvent.post(
+        `/gateways/dvla/v1/test-notification/${linkingId}`,
+        {
+          headers: { auth: jwt },
+          body: {},
+        },
+      ),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: undefined,
+    });
+
+    expect(remoteClient.notification.post).toHaveBeenCalledWith(linkingId, jwt);
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({

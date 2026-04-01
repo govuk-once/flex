@@ -1,12 +1,9 @@
 import z from "zod";
 
-import {
-  getCustomerRequestSchema,
-  getCustomerResponseSchema,
-} from "../domain/customer";
+import { commonRequestSchema } from "../common";
+import { getCustomerResponseSchema } from "../domain/customer";
 
-export type GetCustomerRequestSchema = z.infer<typeof getCustomerRequestSchema>;
-
+export type GetCustomerRequestSchema = z.infer<typeof commonRequestSchema>;
 export type GetCustomerResponseSchema = z.infer<
   typeof getCustomerResponseSchema
 >;
