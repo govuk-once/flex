@@ -106,6 +106,8 @@ export class FlexDomainStack extends BaseStack {
     );
     PermissionsBoundary.of(this).apply(permissionsBoundary);
 
+    const hasPublicRoutes = routes.some((r) => r.gateway === "public");
+
     const authorizerFnArn = this.import(STAGE_KEYS.ApigwPublicAuthorizerFn);
 
     const authorizerFn = Function.fromFunctionAttributes(this, "AuthorizerFn", {
@@ -113,10 +115,12 @@ export class FlexDomainStack extends BaseStack {
       sameEnvironment: true,
     });
 
-    const authorizer = new TokenAuthorizer(this, "LambdaAuthorizer", {
-      handler: authorizerFn,
-      identitySource: IdentitySource.header("Authorization"),
-    });
+    const authorizer = hasPublicRoutes
+      ? new TokenAuthorizer(this, "LambdaAuthorizer", {
+          handler: authorizerFn,
+          identitySource: IdentitySource.header("Authorization"),
+        })
+      : undefined;
 
     routes.forEach(
       ({ gateway, handlerPath, method, path, routeConfig, version }) => {
