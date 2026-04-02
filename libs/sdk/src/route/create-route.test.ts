@@ -1,4 +1,4 @@
-import { logger, setLogServiceName } from "@flex/logging";
+import { logger, setLogLevel, setLogServiceName } from "@flex/logging";
 import { it } from "@flex/testing";
 import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
@@ -29,7 +29,8 @@ import type { RouteStore } from "./store";
 import { getRouteStore } from "./store";
 
 vi.mock("@flex/logging", () => ({
-  logger: { error: vi.fn(), warn: vi.fn(), setLogLevel: vi.fn() },
+  logger: { error: vi.fn(), warn: vi.fn() },
+  setLogLevel: vi.fn(),
   setLogServiceName: vi.fn(),
 }));
 
@@ -216,7 +217,7 @@ describe("createRouteHandler", () => {
     it("sets the logger log level from the resolved route config", () => {
       registerRoute();
 
-      expect(logger.setLogLevel).toHaveBeenCalledExactlyOnceWith("INFO");
+      expect(setLogLevel).toHaveBeenCalledExactlyOnceWith("INFO");
     });
 
     it("registers middleware with the resolved route config", () => {

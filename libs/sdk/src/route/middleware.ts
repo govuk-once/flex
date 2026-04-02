@@ -1,4 +1,4 @@
-import type { Logger } from "@flex/logging";
+import type { FullLogger, Logger } from "@flex/logging";
 import { injectLambdaContext } from "@flex/logging";
 import middy from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
@@ -6,6 +6,7 @@ import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import secretsManagerMiddleware, { secret } from "@middy/secrets-manager";
 import ssmMiddleware from "@middy/ssm";
+import { APIGatewayProxyResult, Context } from "aws-lambda";
 
 import type { LambdaEvent, LambdaResult } from "../types";
 import type { ResolvedResource } from "./resolve-config";
@@ -22,7 +23,15 @@ export function configureMiddleware({
   logLevel,
   hasRequestBody,
   resources,
-}: MiddlewareOptions) {
+}: MiddlewareOptions): middy.MiddyfiedHandler<
+  LambdaEvent,
+  APIGatewayProxyResult,
+  Error,
+  Context,
+  {
+    [key: string]: unknown;
+  }
+> {
   const middyHandler = middy<LambdaEvent, LambdaResult>()
     .use(
       httpErrorHandler({
@@ -32,7 +41,7 @@ export function configureMiddleware({
       }),
     )
     .use(
-      injectLambdaContext(logger, {
+      injectLambdaContext(logger as FullLogger, {
         logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
         correlationIdPath: "requestContext.requestId",
       }),
