@@ -12,7 +12,12 @@ import type {
 } from "../types";
 import { cache } from "../utils/cache";
 import { clearTmp } from "../utils/cleanup";
-import { HeaderValidationError, RequestBodyParseError } from "../utils/errors";
+import {
+  AuthorizationError,
+  HeaderValidationError,
+  QueryParametersParseError,
+  RequestBodyParseError,
+} from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { mergeHeaders } from "./headers";
 import { buildDomainIntegrations } from "./integrations";
@@ -47,10 +52,6 @@ export function createRouteHandler<const Config extends DomainConfig>(
       config.resources,
       routeConfig.resources,
     );
-    const featureFlags = getRouteFeatureFlags(
-      config.featureFlags,
-      routeConfig.featureFlags,
-    );
     const headers = mergeHeaders(config.common?.headers, routeConfig.headers);
 
     const { gateway, method, version } = routeKeySegments;
@@ -80,10 +81,12 @@ export function createRouteHandler<const Config extends DomainConfig>(
       context: LambdaContext,
     ): Promise<LambdaResult> => {
       try {
-        const integrations = getRouteIntegrations(
-          cachedBuildDomainIntegrations(),
-          routeConfig.integrations,
-        );
+        const integrations = routeConfig.integrations?.length
+          ? getRouteIntegrations(
+              cachedBuildDomainIntegrations(),
+              routeConfig.integrations,
+            )
+          : undefined;
 
         const store = buildHandlerContext(event, context, {
           gateway,
@@ -91,7 +94,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
           bodySchema,
           querySchema,
           resources,
-          featureFlags,
+          featureFlags: getRouteFeatureFlags(
+            config.featureFlags,
+            routeConfig.featureFlags,
+          ),
           headers,
           integrations,
         });
@@ -133,6 +139,30 @@ export function createRouteHandler<const Config extends DomainConfig>(
           const { message, statusCode } = error;
 
           logger.warn("Invalid request body", { message });
+
+          return {
+            statusCode,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message }),
+          };
+        }
+
+        if (error instanceof QueryParametersParseError) {
+          const { message, statusCode, errors } = error;
+
+          logger.warn("Invalid query parameters", { errors });
+
+          return {
+            statusCode,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, errors }),
+          };
+        }
+
+        if (error instanceof AuthorizationError) {
+          const { message, statusCode } = error;
+
+          logger.error("Authorization failed", { detail: message });
 
           return {
             statusCode,
