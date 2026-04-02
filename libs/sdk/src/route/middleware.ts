@@ -30,8 +30,8 @@ export function configureMiddleware({
   const middyHandler = middy<LambdaEvent, LambdaResult>()
     .use(
       httpErrorHandler({
-        logger: (error: Error) => {
-          logger.error("Unhandled error", { detail: error });
+        logger: ({ name, message, stack }: Error) => {
+          logger.error("Unhandled error", { detail: { name, message, stack } });
         },
       }),
     )

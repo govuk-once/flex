@@ -65,7 +65,11 @@ describe("configureMiddleware", () => {
       middlewareLogger(error);
 
       expect(logger.error).toHaveBeenCalledExactlyOnceWith("Unhandled error", {
-        detail: error,
+        detail: {
+          name: "Error",
+          message: "Uncaught test error",
+          stack: expect.any(String) as string,
+        },
       });
     });
   });
