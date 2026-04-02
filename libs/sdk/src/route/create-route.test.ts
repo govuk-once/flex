@@ -27,11 +27,7 @@ import { extractRouteKeySegments } from "./route-key";
 import type { RouteStore } from "./store";
 import { getRouteStore } from "./store";
 
-vi.mock("@flex/logging", () => ({
-  logger: { error: vi.fn(), warn: vi.fn() },
-  setLogLevel: vi.fn(),
-  setLogServiceName: vi.fn(),
-}));
+vi.mock("@flex/logging");
 
 vi.mock("./build-context", () => ({ buildHandlerContext: vi.fn() }));
 vi.mock("./headers", () => ({ mergeHeaders: vi.fn() }));
@@ -328,6 +324,11 @@ describe("createRouteHandler", () => {
     });
 
     it("caches domain integrations across subsequent invocations", async () => {
+      vi.mocked(getRouteConfig).mockReturnValue({
+        ...routeConfig,
+        integrations: ["testIntegration"],
+      });
+
       const handler = registerRoute();
 
       await handler(mockEvent, mockContext);

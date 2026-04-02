@@ -1,5 +1,6 @@
 import type { Logger } from "@flex/logging";
 import type { ZodType } from "zod";
+import { ZodError } from "zod";
 
 import type {
   DomainIntegrations,
@@ -8,7 +9,11 @@ import type {
   LambdaEvent,
   RouteAuth,
 } from "../types";
-import { RequestBodyParseError } from "../utils/errors";
+import {
+  AuthorizationError,
+  QueryParametersParseError,
+  RequestBodyParseError,
+} from "../utils/errors";
 import { resolveHeaders } from "./headers";
 import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
@@ -63,7 +68,7 @@ export function buildHandlerContext(
 function extractAuth(requestContext: LambdaEvent["requestContext"]): RouteAuth {
   const { pairwiseId } = requestContext.authorizer;
 
-  if (!pairwiseId) throw new Error("Pairwise ID not found");
+  if (!pairwiseId) throw new AuthorizationError();
 
   return {
     pairwiseId,
@@ -90,9 +95,17 @@ function extractQueryParams(
 ) {
   if (!schema) return;
 
-  return schema.parse(queryStringParameters ?? {}) as Readonly<
-    Record<string, unknown>
-  >;
+  try {
+    return schema.parse(queryStringParameters ?? {}) as Readonly<
+      Record<string, unknown>
+    >;
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new QueryParametersParseError(error);
+    }
+
+    throw error;
+  }
 }
 
 function extractRequestBody(body: LambdaEvent["body"], schema?: ZodType) {
