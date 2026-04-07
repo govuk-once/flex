@@ -181,7 +181,9 @@ describe("createLambdaHandler", () => {
         await handler(event, context);
 
         expect(logging.setLogServiceName).toHaveBeenCalledOnce();
-        expect(logging.setLogLevel).toHaveBeenCalledExactlyOnceWith(logLevel);
+        expect(logging.setLogLevel).toHaveBeenCalledExactlyOnceWith(
+          logLevel.toUpperCase(),
+        );
         expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
           expect.anything(),
           expect.objectContaining({ logEvent: expected }),

@@ -78,7 +78,7 @@ export function createLambdaHandler<
   if (config.logLevel) {
     setLogLevel(config.logLevel.toUpperCase() as never);
   }
-  const logLevel = logger.getLevelName();
+  const logLevel = config.logLevel?.toUpperCase() ?? "INFO";
 
   const middyHandler = middy<TEvent, TResult, Error, TContext>()
     .use(httpErrorHandler())
