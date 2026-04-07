@@ -76,7 +76,7 @@ export function createLambdaHandler<
 ): MiddyfiedHandler<TEvent, TResult, Error, TContext> {
   setLogServiceName(config.serviceName);
   if (config.logLevel) {
-    setLogLevel(config.logLevel as never);
+    setLogLevel(config.logLevel.toUpperCase() as never);
   }
   const logLevel = logger.getLevelName();
 
