@@ -21,6 +21,7 @@ import { CreateUserRequest, CreateUserResponse } from "../schemas/remote/user";
 export type RouteOperation =
   | "getNotificationPreferences"
   | "updateNotificationPreferences"
+  | "deleteNotificationPreferences"
   | "createUser"
   | "createIdentityLink"
   | "deleteIdentityLink"
@@ -53,6 +54,14 @@ export type GetNotificationPreferencesRouteContract = BaseRouteContract<
   RequestingServiceUserIdHeader,
   NotificationsResponse,
   DomainNotificationsResponse
+>;
+
+export type DeleteNotificationPreferencesRouteContract = BaseRouteContract<
+  "deleteNotificationPreferences",
+  "DELETE",
+  RequestingServiceUserIdHeader,
+  void,
+  void
 >;
 
 export type UpdateNotificationPreferencesRouteContract = BaseRouteContract<
@@ -98,6 +107,7 @@ export type GetIdentityLinkRouteContract = BaseRouteContract<
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
+  | DeleteNotificationPreferencesRouteContract
   | CreateUserRouteContract
   | CreateIdentityLinkRouteContract
   | DeleteIdentityLinkRouteContract

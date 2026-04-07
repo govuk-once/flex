@@ -1,0 +1,9 @@
+{
+  "extends": "@flex/config/tsconfig.json",
+  "include": ["src/**/*.ts", "vitest.config.ts", "domain.config.ts"],
+  "compilerOptions": {
+    "paths": {
+      "@domain": ["./domain.config.ts"]
+    }
+  }
+}

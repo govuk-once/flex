@@ -16,7 +16,6 @@ import { mergeHeaders } from "./headers";
 import { buildDomainIntegrations } from "./integrations";
 import { configureMiddleware } from "./middleware";
 import {
-  getRouteAccess,
   getRouteConfig,
   getRouteIntegrations,
   getRouteLogLevel,
@@ -39,11 +38,11 @@ vi.mock("./headers", () => ({ mergeHeaders: vi.fn() }));
 vi.mock("./integrations", () => ({ buildDomainIntegrations: vi.fn() }));
 vi.mock("./middleware", () => ({ configureMiddleware: vi.fn() }));
 vi.mock("./resolve-config", () => ({
-  getRouteAccess: vi.fn(),
   getRouteConfig: vi.fn(),
   getRouteLogLevel: vi.fn(),
   getRouteResources: vi.fn(),
   getRouteIntegrations: vi.fn(),
+  getRouteFeatureFlags: vi.fn(),
 }));
 vi.mock("./response", () => ({
   toApiGatewayResponse: vi.fn(),
@@ -119,7 +118,6 @@ describe("createRouteHandler", () => {
     } as never);
     vi.mocked(extractRouteKeySegments).mockReturnValue(routeKeySegments);
     vi.mocked(getRouteConfig).mockReturnValue(routeConfig);
-    vi.mocked(getRouteAccess).mockReturnValue("isolated");
     vi.mocked(getRouteLogLevel).mockReturnValue("INFO");
     vi.mocked(buildHandlerContext).mockReturnValue(mockStore);
     vi.mocked(toApiGatewayResponse).mockReturnValue({
@@ -151,20 +149,6 @@ describe("createRouteHandler", () => {
         path: "/test",
         version: "v1",
       });
-    });
-
-    it("resolves access from common and route-level config", () => {
-      vi.mocked(getRouteConfig).mockReturnValue({
-        ...routeConfig,
-        access: "private",
-      });
-
-      registerRoute();
-
-      expect(getRouteAccess).toHaveBeenCalledExactlyOnceWith(
-        "public",
-        "private",
-      );
     });
 
     it("resolves log level from common and route-level config", () => {
@@ -221,11 +205,11 @@ describe("createRouteHandler", () => {
     });
 
     it("registers middleware with the resolved route config", () => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm:runtime", value: "/path/to/param" }],
-        ["testSecret", { type: "secret", value: "test-secret-value" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm:runtime" as const, value: "/path/to/param" },
+        testSecret: { type: "secret" as const, value: "test-secret-value" },
+      };
 
       vi.mocked(getRouteResources).mockReturnValue(resources);
       vi.mocked(getRouteLogLevel).mockReturnValue("DEBUG");
@@ -273,7 +257,6 @@ describe("createRouteHandler", () => {
 
   describe("Core Handler", () => {
     it("builds the handler context from the event, context and resolved route config", async () => {
-      vi.mocked(getRouteAccess).mockReturnValue("private");
       vi.mocked(mergeHeaders).mockReturnValue({ test: { name: "x-test" } });
 
       await invokeRoute();
@@ -282,7 +265,7 @@ describe("createRouteHandler", () => {
         mockEvent,
         mockContext,
         expect.objectContaining({
-          access: "private",
+          gateway: "public",
           logger,
           headers: { test: { name: "x-test" } },
         }),

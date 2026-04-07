@@ -2,7 +2,7 @@ import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 export const inboundCreateUserRequestSchema = z.object({
-  notificationId: NonEmptyString,
+  pushId: NonEmptyString,
   userId: NonEmptyString,
 });
 

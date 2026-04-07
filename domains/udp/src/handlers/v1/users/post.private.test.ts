@@ -1,8 +1,8 @@
 import { createUserId, it } from "@flex/testing";
 import { UserId } from "@flex/utils";
-import type { NotificationId } from "@schemas/notifications";
+import type { PushId } from "@schemas/notifications";
 import type { CreateUserRequest } from "@schemas/user";
-import { createNotificationId } from "@tests/fixtures";
+import { createPushId } from "@tests/fixtures";
 import nock from "nock";
 import { describe, expect } from "vitest";
 
@@ -13,20 +13,20 @@ describe("POST /v1/users [private]", () => {
   const endpoint = "/users";
 
   const userId = createUserId();
-  const notificationId = createNotificationId();
+  const pushId = createPushId();
 
-  const body: CreateUserRequest = { userId, notificationId };
+  const body: CreateUserRequest = { userId, pushId };
 
   describe("request validation", () => {
     it.for<{ body: Partial<CreateUserRequest>; reason: string }>([
       { body: { userId }, reason: "is missing notification ID" },
-      { body: { notificationId }, reason: "is missing user ID" },
+      { body: { pushId }, reason: "is missing user ID" },
       {
-        body: { notificationId, userId: 123 as unknown as UserId },
+        body: { pushId, userId: 123 as unknown as UserId },
         reason: "contains invalid user ID",
       },
       {
-        body: { userId, notificationId: 123 as unknown as NotificationId },
+        body: { userId, pushId: 123 as unknown as PushId },
         reason: "contains invalid notification ID",
       },
       { body: {}, reason: "is empty" },

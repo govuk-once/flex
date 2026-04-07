@@ -6,7 +6,6 @@ import type {
   HeaderConfig,
   LambdaContext,
   LambdaEvent,
-  RouteAccess,
   RouteAuth,
 } from "../types";
 import { RequestBodyParseError } from "../utils/errors";
@@ -15,11 +14,12 @@ import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";
 
 export interface BuildContextOptions {
-  access: RouteAccess;
+  gateway: "public" | "private";
   logger: Logger;
   bodySchema?: ZodType;
   querySchema?: ZodType;
-  resources?: ReadonlyMap<string, ResolvedResource>;
+  resources?: Readonly<Record<string, ResolvedResource>>;
+  featureFlags?: Readonly<Record<string, boolean>>;
   headers?: Readonly<Record<string, HeaderConfig>>;
   integrations?: DomainIntegrations;
 }
@@ -28,11 +28,12 @@ export function buildHandlerContext(
   event: LambdaEvent,
   context: LambdaContext,
   {
-    access,
+    gateway,
     logger,
     bodySchema,
     querySchema,
     resources: resourcesProp,
+    featureFlags,
     headers,
     integrations,
   }: BuildContextOptions,
@@ -46,14 +47,14 @@ export function buildHandlerContext(
   const resources = resourcesProp
     ? extractResources(context, resourcesProp)
     : undefined;
-
   return {
     logger,
-    ...(access !== "public" && { auth: extractAuth(event.requestContext) }),
+    ...(gateway === "public" && { auth: extractAuth(event.requestContext) }),
     ...(body !== undefined && { body }),
     ...(pathParams && { pathParams }),
     ...(queryParams && { queryParams }),
     ...(resources && { resources }),
+    ...(featureFlags && { featureFlags }),
     ...(headers && { headers: resolveHeaders(headers, event.headers) }),
     ...(integrations && { integrations }),
   };
@@ -106,12 +107,10 @@ function extractRequestBody(body: LambdaEvent["body"], schema?: ZodType) {
 
 function extractResources(
   context: LambdaContext,
-  resources: ReadonlyMap<string, ResolvedResource>,
+  resources: Readonly<Record<string, ResolvedResource>>,
 ) {
-  if (resources.size === 0) return;
-
   return Object.fromEntries(
-    Array.from(resources).map(([key, { type, value }]) => {
+    Object.entries(resources).map(([key, { type, value }]) => {
       if (type === "kms" || type === "ssm") return [key, value];
 
       const contextValue = (context as unknown as Record<string, unknown>)[key];

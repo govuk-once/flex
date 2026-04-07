@@ -6,7 +6,7 @@ import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
 import secretsManagerMiddleware, { secret } from "@middy/secrets-manager";
 import ssmMiddleware from "@middy/ssm";
-import { APIGatewayProxyResult, Context } from "aws-lambda";
+import { APIGatewayProxyResult } from "aws-lambda";
 
 import type { LambdaEvent, LambdaResult } from "../types";
 import type { ResolvedResource } from "./resolve-config";
@@ -15,7 +15,7 @@ export interface MiddlewareOptions {
   readonly logger: Logger;
   readonly logLevel: string;
   readonly hasRequestBody: boolean;
-  readonly resources?: ReadonlyMap<string, ResolvedResource>;
+  readonly resources?: Readonly<Record<string, ResolvedResource>>;
 }
 
 export function configureMiddleware({
@@ -25,12 +25,7 @@ export function configureMiddleware({
   resources,
 }: MiddlewareOptions): middy.MiddyfiedHandler<
   LambdaEvent,
-  APIGatewayProxyResult,
-  Error,
-  Context,
-  {
-    [key: string]: unknown;
-  }
+  APIGatewayProxyResult
 > {
   const middyHandler = middy<LambdaEvent, LambdaResult>()
     .use(
@@ -53,10 +48,9 @@ export function configureMiddleware({
       .use(httpJsonBodyParser<LambdaEvent>());
   }
 
-  if (resources && resources.size > 0) {
-    const secrets = Array.from(resources).filter(
-      ([_, { type }]) => type === "secret",
-    );
+  if (resources && Object.keys(resources).length > 0) {
+    const entries = Object.entries(resources);
+    const secrets = entries.filter(([_, { type }]) => type === "secret");
 
     if (secrets.length > 0) {
       middyHandler.use(
@@ -69,9 +63,7 @@ export function configureMiddleware({
       );
     }
 
-    const params = Array.from(resources).filter(
-      ([_, { type }]) => type === "ssm:runtime",
-    );
+    const params = entries.filter(([_, { type }]) => type === "ssm:runtime");
 
     if (params.length > 0) {
       middyHandler.use(

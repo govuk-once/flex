@@ -1,39 +1,33 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
-import type { CreateServiceIdentityLinkRequest } from "@schemas/identity";
-import createHttpError from "http-errors";
+import { UserId } from "@flex/utils";
+import status from "http-status";
+
+import {
+  deleteServiceIdentity,
+  getServiceIdentityLink,
+  postServiceIdentity,
+} from "../../../../../services/identity";
 
 export const handler = route(
   "POST /v1/identity/:service/:id",
-  async ({ auth, integrations, logger, pathParams }) => {
-    const { service, id: serviceId } = pathParams;
+  async ({ pathParams, auth }) => {
+    const { id: requestedId } = pathParams;
+    const existing = await getServiceIdentityLink(auth.pairwiseId as UserId);
 
-    // TODO: Add to SDK auth or keep alias for this domain only?
-    const userId = auth.pairwiseId as UserId;
+    if (existing) {
+      const isDifferentId = existing.serviceId !== requestedId;
 
-    const result =
-      await integrations.udpCreateIdentity<CreateServiceIdentityLinkRequest>({
-        path: `/${service}/${serviceId}`,
-        body: { appId: userId },
-      });
+      /** If user is already linked return 204 */
+      if (!isDifferentId) {
+        return { status: status.NO_CONTENT };
+      }
 
-    if (!result.ok) {
-      logger.error(`Failed to link service identity`, {
-        userId,
-        service,
-        serviceId,
-        error: result.error,
-      });
-
-      throw new createHttpError.BadGateway();
+      /** Remove old link if user is already linked and has a new linking ID */
+      await deleteServiceIdentity(existing.serviceName, existing.serviceId);
     }
 
-    logger.info("Service identity linked successfully", {
-      userId,
-      service,
-      serviceId,
-    });
+    await postServiceIdentity();
 
-    return { status: 201 };
+    return { status: status.CREATED };
   },
 );

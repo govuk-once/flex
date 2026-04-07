@@ -5,27 +5,37 @@ import type {
   APIGatewayProxyResult,
   Context,
 } from "aws-lambda";
-import type { ZodType } from "zod";
+import type { z, ZodType } from "zod";
+
+import {
+  DomainConfigSchema,
+  DomainFeatureFlagSchema,
+  DomainResourceSchema,
+  FlexEnvironmentSchema,
+  FunctionConfigSchema,
+  HeaderConfigSchema,
+  HttpMethodSchema,
+  LogLevelSchema,
+  RouteAccessSchema,
+} from "./config/schema";
 
 // ----------------------------------------------------------------------------
-// Flex Function
+// Exported inferred types
 // ----------------------------------------------------------------------------
-
-// Add more fields if needed, based on Nodejsfunction
-export interface FunctionConfig {
-  environment?: Readonly<Record<string, string>>;
-  memorySize?: number;
-  timeoutSeconds?: number;
-}
+export type HttpMethod = z.infer<typeof HttpMethodSchema>;
+export type LogLevel = z.infer<typeof LogLevelSchema>;
+export type RouteAccess = z.infer<typeof RouteAccessSchema>;
+export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
+export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
+export type DomainResource = z.infer<typeof DomainResourceSchema>;
+export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
+export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
+export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
+export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 // ----------------------------------------------------------------------------
 // Headers
 // ----------------------------------------------------------------------------
-
-export interface HeaderConfig {
-  readonly name: string;
-  readonly required?: boolean;
-}
 
 type MergeRouteHeaders<
   Config extends DomainConfig,
@@ -58,16 +68,6 @@ type ResolveHeaders<Headers> = keyof Headers extends never
           : string;
       };
     };
-
-// ----------------------------------------------------------------------------
-// Resources
-// ----------------------------------------------------------------------------
-
-export interface DomainResource<T extends string = string> {
-  readonly type: T;
-  readonly path: string;
-  readonly scope?: "environment" | "stage";
-}
 
 interface DomainResourceCommonOptions {
   scope?: "environment" | "stage";
@@ -230,6 +230,14 @@ export type InferIntegrationKeys<Config extends DomainConfig> = Config extends {
   ? IntegrationKey
   : never;
 
+export type InferFeatureFlagKeys<Config extends DomainConfig> = Config extends {
+  readonly featureFlags: Readonly<
+    Record<infer FeatureFlagKey extends string, DomainFeatureFlag>
+  >;
+}
+  ? FeatureFlagKey
+  : never;
+
 type ExtractPathParams<Path extends string> =
   Path extends `${string}:${infer PathParam}/${infer RemainingPath}`
     ? PathParam | ExtractPathParams<`/${RemainingPath}`>
@@ -349,25 +357,34 @@ export type GatewayRouteConfig<
   Method extends HttpMethod,
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
+  FeatureFlagKeys extends string = string,
 > =
   | {
-      readonly public: MethodRouteConfig<Method, ResourceKeys, IntegrationKeys>;
+      readonly public: MethodRouteConfig<
+        Method,
+        ResourceKeys,
+        IntegrationKeys,
+        FeatureFlagKeys
+      >;
       readonly private?: MethodRouteConfig<
         Method,
         ResourceKeys,
-        IntegrationKeys
+        IntegrationKeys,
+        FeatureFlagKeys
       >;
     }
   | {
       readonly public?: MethodRouteConfig<
         Method,
         ResourceKeys,
-        IntegrationKeys
+        IntegrationKeys,
+        FeatureFlagKeys
       >;
       readonly private: MethodRouteConfig<
         Method,
         ResourceKeys,
-        IntegrationKeys
+        IntegrationKeys,
+        FeatureFlagKeys
       >;
     };
 
@@ -375,27 +392,7 @@ export type GatewayRouteConfig<
 // Domain Config
 // ----------------------------------------------------------------------------
 
-export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
-
 type HttpMethodWithBody = Extract<HttpMethod, "POST" | "PUT" | "PATCH">;
-
-export type LogLevel =
-  | "TRACE"
-  | "DEBUG"
-  | "INFO"
-  | "WARN"
-  | "ERROR"
-  | "SILENT"
-  | "CRITICAL";
-
-export type RouteAccess = "public" | "private" | "isolated";
 
 interface DomainConfigCommon {
   readonly access?: RouteAccess;
@@ -408,6 +405,7 @@ type MethodRouteConfig<
   Method extends HttpMethod,
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
+  FeatureFlagKeys extends string = string,
 > = {
   readonly name: string;
   readonly access?: RouteAccess;
@@ -418,40 +416,52 @@ type MethodRouteConfig<
   readonly response?: ZodType;
   readonly resources?: readonly ResourceKeys[];
   readonly integrations?: readonly IntegrationKeys[];
+  readonly featureFlags?: readonly FeatureFlagKeys[];
   readonly headers?: Readonly<Record<string, HeaderConfig>>;
 };
 
 type PathRoutes<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
+  FeatureFlagKeys extends string = string,
 > = {
   readonly [Method in HttpMethod]?: GatewayRouteConfig<
     Method,
     ResourceKeys,
-    IntegrationKeys
+    IntegrationKeys,
+    FeatureFlagKeys
   >;
 };
 
 type VersionRoutes<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
-> = Readonly<Record<string, PathRoutes<ResourceKeys, IntegrationKeys>>>;
+  FeatureFlagKeys extends string = string,
+> = Readonly<
+  Record<string, PathRoutes<ResourceKeys, IntegrationKeys, FeatureFlagKeys>>
+>;
 
 export interface DomainConfig<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
+  FeatureFlagKeys extends string = string,
 > {
   readonly name: string;
   readonly routes: Readonly<
     Record<
       string,
-      VersionRoutes<NoInfer<ResourceKeys>, NoInfer<IntegrationKeys>>
+      VersionRoutes<
+        NoInfer<ResourceKeys>,
+        NoInfer<IntegrationKeys>,
+        NoInfer<FeatureFlagKeys>
+      >
     >
   >;
   readonly common?: DomainConfigCommon;
   readonly owner?: string;
   readonly resources?: Readonly<Record<ResourceKeys, DomainResource>>;
   readonly integrations?: Readonly<Record<IntegrationKeys, DomainIntegration>>;
+  readonly featureFlags?: Readonly<Record<FeatureFlagKeys, DomainFeatureFlag>>;
 }
 
 export interface DomainResult<Config extends DomainConfig> {
@@ -482,6 +492,14 @@ type WithResources<RouteConfig> = RouteConfig extends {
   ? [ResourceKey] extends [never]
     ? unknown
     : { readonly resources: { readonly [Key in ResourceKey]: string } }
+  : unknown;
+
+type WithFeatureFlags<RouteConfig> = RouteConfig extends {
+  readonly featureFlags: readonly (infer FeatureFlagKey extends string)[];
+}
+  ? [FeatureFlagKey] extends [never]
+    ? unknown
+    : { readonly featureFlags: { readonly [Key in FeatureFlagKey]: boolean } }
   : unknown;
 
 type WithIntegrations<
@@ -576,6 +594,7 @@ type RouteContext<
   ResolveRouteAccess<Config, RouteConfig>
 > &
   WithResources<RouteConfig> &
+  WithFeatureFlags<RouteConfig> &
   WithIntegrations<Config, RouteConfig> &
   WithHeaders<Config, RouteConfig> &
   WithPathParams<ExtractRoutePath<Route>> &

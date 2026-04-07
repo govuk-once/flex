@@ -1,9 +1,9 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-export const NotificationIdBranded = NonEmptyString.brand<"NotificationId">();
+export const PushIdBranded = NonEmptyString.brand<"PushId">();
 
-export type NotificationId = z.output<typeof NotificationIdBranded>;
+export type PushId = z.output<typeof PushIdBranded>;
 
 export const NotificationPreferencesConsentStatus = z.enum([
   "unknown",
@@ -13,7 +13,7 @@ export const NotificationPreferencesConsentStatus = z.enum([
 
 export const CreateNotificationPreferencesRequestSchema = z.object({
   consentStatus: NotificationPreferencesConsentStatus,
-  notificationId: NotificationIdBranded,
+  pushId: PushIdBranded,
 });
 
 export type CreateNotificationPreferencesRequest = z.output<
@@ -22,7 +22,7 @@ export type CreateNotificationPreferencesRequest = z.output<
 
 export const CreateNotificationPreferencesResponseSchema = z.object({
   consentStatus: NotificationPreferencesConsentStatus,
-  notificationId: NotificationIdBranded,
+  pushId: PushIdBranded,
 });
 
 export type CreateNotificationPreferencesResponse = z.output<
@@ -31,7 +31,7 @@ export type CreateNotificationPreferencesResponse = z.output<
 
 export const GetNotificationPreferencesResponseSchema = z.object({
   consentStatus: NotificationPreferencesConsentStatus,
-  notificationId: NotificationIdBranded,
+  pushId: PushIdBranded,
 });
 
 export type GetNotificationPreferencesResponse = z.output<
@@ -56,7 +56,7 @@ export type UpdateNotificationPreferencesResponse = z.output<
 
 export const UpdateNotificationPreferencesOutboundRequestSchema =
   UpdateNotificationPreferencesRequestSchema.extend({
-    notificationId: NotificationIdBranded,
+    pushId: PushIdBranded,
   });
 
 export type UpdateNotificationPreferencesOutboundRequest = z.output<
@@ -65,7 +65,7 @@ export type UpdateNotificationPreferencesOutboundRequest = z.output<
 
 export const UpdateNotificationPreferencesOutboundResponseSchema =
   UpdateNotificationPreferencesResponseSchema.extend({
-    notificationId: NotificationIdBranded,
+    pushId: PushIdBranded,
   });
 
 export type UpdateNotificationPreferencesOutboundResponse = z.output<

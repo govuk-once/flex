@@ -11,7 +11,7 @@ vi.mock("@flex/logging");
 
 describe("buildHandlerContext", () => {
   const contextOptions: BuildContextOptions = {
-    access: "isolated",
+    gateway: "private",
     logger,
   };
 
@@ -23,7 +23,7 @@ describe("buildHandlerContext", () => {
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
         context.create(),
-        { ...contextOptions, access: "public" },
+        { ...contextOptions, gateway: "public" },
       );
 
       expect(store.logger).toBe(logger);
@@ -31,39 +31,29 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Auth", () => {
-    it("includes auth in the context when route access is private or isolated (non-public)", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const isolatedHandlerStore = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
-        contextOptions,
-      );
-
-      expect(isolatedHandlerStore.auth).toStrictEqual({
-        pairwiseId: "test-pairwise-id",
-      });
-
-      const privateHandlerStore = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
-        { ...contextOptions, access: "private" },
-      );
-
-      expect(privateHandlerStore.auth).toStrictEqual({
-        pairwiseId: "test-pairwise-id",
-      });
-    });
-
-    it("omits auth from the context when route access is public", ({
+    it("includes auth in the context when gateway is public", ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.authenticated(),
         context.create(),
-        { ...contextOptions, access: "public" },
+        { ...contextOptions, gateway: "public" },
+      );
+
+      expect(store.auth).toStrictEqual({
+        pairwiseId: "test-pairwise-id",
+      });
+    });
+
+    it("omits auth from the context when gateway is private", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.authenticated(),
+        context.create(),
+        { ...contextOptions, gateway: "private" },
       );
 
       expect(store.auth).toBeUndefined();
@@ -77,7 +67,7 @@ describe("buildHandlerContext", () => {
         buildHandlerContext(
           privateGatewayEventWithAuthorizer.unauthenticated(),
           context.create(),
-          contextOptions,
+          { ...contextOptions, gateway: "public" },
         ),
       ).toThrow("Pairwise ID not found");
     });
@@ -197,10 +187,10 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm" as const, value: "test-param-value" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -218,11 +208,11 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testKey", { type: "kms", value: "test-key-value" }],
-        ["testParam", { type: "ssm", value: "test-param-value" }],
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testKey: { type: "kms" as const, value: "test-key-value" },
+        testParam: { type: "ssm" as const, value: "test-param-value" },
+        testSecret: { type: "secret" as const, value: "test-secret-name" },
+      };
 
       const store = buildHandlerContext(
         privateGatewayEventWithAuthorizer.create(),
@@ -241,9 +231,9 @@ describe("buildHandlerContext", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      const resources = new Map([
-        ["testSecret", { type: "secret", value: "test-secret-name" }],
-      ]);
+      const resources = {
+        testSecret: { type: "secret" as const, value: "test-secret-name" },
+      };
 
       expect(() =>
         buildHandlerContext(
@@ -334,6 +324,36 @@ describe("buildHandlerContext", () => {
       );
 
       expect(store.integrations).toBeUndefined();
+    });
+  });
+
+  describe("Feature Flags", () => {
+    it("includes feature flags in the context when the route references domain feature flags", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const featureFlags = { flagA: true, flagB: false };
+
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        { ...contextOptions, featureFlags },
+      );
+
+      expect(store.featureFlags).toStrictEqual({ flagA: true, flagB: false });
+    });
+
+    it("omits feature flags from the context when the route does not reference any", ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      const store = buildHandlerContext(
+        privateGatewayEventWithAuthorizer.create(),
+        context.create(),
+        contextOptions,
+      );
+
+      expect(store.featureFlags).toBeUndefined();
     });
   });
 });
