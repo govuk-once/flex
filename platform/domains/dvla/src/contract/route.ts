@@ -1,8 +1,8 @@
+import { normalizeInboundPath } from "@flex/sdk-service-gw";
 import { getHeader } from "@flex/utils";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 
-import { normalizeInboundPath } from "../utils/normalizeInboundPath";
 import { RouteContract } from "./types";
 
 export const DVLA_REMOTE_ROUTES = {
@@ -27,7 +27,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/licence",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
+      const pathParams = normalizeInboundPath(event.path, "dvla").split("/");
       const id = pathParams[3];
       if (!id) {
         throw new createHttpError.BadRequest(
@@ -46,7 +46,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/customer",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
+      const pathParams = normalizeInboundPath(event.path, "dvla").split("/");
       const id = pathParams[3];
       if (!id) {
         throw new createHttpError.BadRequest(
@@ -65,7 +65,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/test-notification",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
+      const pathParams = normalizeInboundPath(event.path, "dvla").split("/");
       const id = pathParams[3];
       if (!id) {
         throw new createHttpError.BadRequest(

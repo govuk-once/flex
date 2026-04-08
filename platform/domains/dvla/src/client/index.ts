@@ -1,8 +1,8 @@
 import { ApiResult, typedFetch } from "@flex/flex-fetch";
+import { createPublicFetch } from "@flex/sdk-service-gw";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";
-import { createPublicFetch } from "../utils/createPublicFetch";
-import { ConsumerConfig } from "../utils/getConsumerConfig";
+import { ConsumerConfig } from "../schemas/config";
 
 /**
  * Remote client for the DVLA API.

@@ -1,19 +1,14 @@
 import { createLambdaHandler } from "@flex/handlers";
 import { logger } from "@flex/logging";
 import { getConfig } from "@flex/params";
-import { jsonResponse, NonEmptyString } from "@flex/utils";
+import { getConsumerConfig } from "@flex/sdk-service-gw";
+import { jsonResponse } from "@flex/utils";
 import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
-import z from "zod";
 
 import { createDvlaRemoteClient } from "../client";
 import { execute } from "../contract/executor";
-import { getConsumerConfig } from "../utils/getConsumerConfig";
-
-const configSchema = z.object({
-  AWS_REGION: NonEmptyString,
-  FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN: NonEmptyString,
-});
+import { configSchema, consumerConfigSchema } from "../schemas/config";
 
 /**
  * DVLA Service Gateway – internal-only, invoked via the private API gateway.
@@ -30,6 +25,7 @@ export const handler = createLambdaHandler<
       const config = await getConfig(configSchema);
       const consumerConfig = await getConsumerConfig(
         config.FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN,
+        consumerConfigSchema,
       );
 
       const remoteClient = createDvlaRemoteClient(consumerConfig);

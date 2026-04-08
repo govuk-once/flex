@@ -1,9 +1,9 @@
 import type { ApiResult } from "@flex/flex-fetch";
+import { normalizeInboundPath } from "@flex/sdk-service-gw";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 
 import type { DvlaRemoteClient } from "../client";
-import { normalizeInboundPath } from "../utils/normalizeInboundPath";
 import { ROUTE_CONTRACTS } from "./route";
 import { RouteContract } from "./types";
 
@@ -65,7 +65,7 @@ export async function execute(
 ): Promise<ApiResult<unknown>> {
   const mapping = matchToRouteContract(
     event.httpMethod,
-    normalizeInboundPath(event.path),
+    normalizeInboundPath(event.path, "dvla"),
   );
 
   if (!mapping) {
