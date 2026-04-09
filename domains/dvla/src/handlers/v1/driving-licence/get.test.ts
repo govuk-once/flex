@@ -31,7 +31,14 @@ describe("GET /v1/driving-licence", () => {
       passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
     });
 
-  const mockCustomerSuccess = () =>
+  const mockCustomerSuccess = (
+    products?: {
+      productType: string;
+      productKey: string;
+      productIdentifier: string;
+      dateAdded: string;
+    }[],
+  ) =>
     api
       .get(`/gateways/dvla/v1/customer/${testLinkingId}`)
       .matchHeader("auth", testAuthToken)
@@ -45,7 +52,7 @@ describe("GET /v1/driving-licence", () => {
             lastName: "DOE",
             dateOfBirth: "1990-01-01",
           },
-          products: [
+          products: products ?? [
             {
               productType: "Driving Licence",
               productKey: testProductKey,
@@ -128,22 +135,14 @@ describe("GET /v1/driving-licence", () => {
     }) => {
       mockUdpSuccess();
       mockAuthSuccess();
-
-      api
-        .get(`/gateways/dvla/v1/customer/${testLinkingId}`)
-        .matchHeader("auth", testAuthToken)
-        .reply(200, {
-          customer: {
-            products: [{ productType: "Passport", productKey: "abc" }],
-          },
-        });
+      mockCustomerSuccess([]);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(422);
     });
 
     it("returns 502 if licence retrieval fails", async ({
