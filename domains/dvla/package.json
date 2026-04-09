@@ -23,6 +23,7 @@
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/udp-domain": "workspace:*",
+    "@flex/dvla/service-gateway": "workspace:*",
     "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
     "eslint": "10.0.3",

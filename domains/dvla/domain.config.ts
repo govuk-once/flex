@@ -1,3 +1,7 @@
+import {
+  RetrieveCustomerSummaryByLinkingIdResponse,
+  RetrieveDriverSummaryByLinkingIdResponse,
+} from "@flex/dvla/service-gateway/src/index";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 
@@ -43,6 +47,18 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/authenticate",
       response: authenticateResponseSchema,
     },
+    dvlaCustomerSummary: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/customer-summary/*",
+      response: RetrieveCustomerSummaryByLinkingIdResponse,
+    },
+    dvlaDriverSummary: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/driver-summary/*",
+      response: RetrieveDriverSummaryByLinkingIdResponse,
+    },
     udpGetLinkingId: {
       type: "domain",
       target: "udp",
@@ -74,6 +90,32 @@ export const { config, route, routeContext } = domain({
             integrations: [
               "dvlaAuthenticate",
               "dvlaTestNotification",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/customer-summary": {
+        GET: {
+          public: {
+            name: "get-customer-summary",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaCustomerSummary",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/driver-summary": {
+        GET: {
+          public: {
+            name: "get-driver-summary",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaDriverSummary",
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
