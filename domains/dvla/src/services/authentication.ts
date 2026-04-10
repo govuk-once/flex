@@ -5,7 +5,10 @@ import { status } from "http-status";
 
 type CommonDvlaContext = InferRouteContext<
   typeof config,
-  "GET /v1/driving-licence" | "POST /v1/test-notification"
+  | "GET /v1/customer-summary"
+  | "GET /v1/driver-summary"
+  | "GET /v1/driving-licence"
+  | "POST /v1/test-notification"
 >;
 
 export async function getUserLinkingId(

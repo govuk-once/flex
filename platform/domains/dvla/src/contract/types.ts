@@ -8,6 +8,14 @@ import {
   GetCustomerResponseSchema,
 } from "../schemas/remote/customer";
 import {
+  GetCustomerSummaryRequestSchema,
+  GetCustomerSummaryResponseSchema,
+} from "../schemas/remote/customerSummary";
+import {
+  GetDriverSummaryRequestSchema,
+  GetDriverSummaryResponseSchema,
+} from "../schemas/remote/driverSummary";
+import {
   GetLicenceRequestSchema,
   GetLicenceResponseSchema,
 } from "../schemas/remote/drivingLicences";
@@ -17,7 +25,9 @@ export type RouteOperation =
   | "getAuthenticate"
   | "getRetrieveCustomer"
   | "getRetrieveDrivingLicences"
-  | "postTestNotification";
+  | "postTestNotification"
+  | "getDriverSummary"
+  | "getCustomerSummary";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -64,6 +74,22 @@ export type GetDrivingLicenceRetrieveRouteContract = BaseRouteContract<
   GetLicenceResponseSchema
 >;
 
+export type GetDriverSummaryRouteContract = BaseRouteContract<
+  "getDriverSummary",
+  "GET",
+  GetDriverSummaryRequestSchema,
+  unknown,
+  GetDriverSummaryResponseSchema
+>;
+
+export type GetCustomerSummaryRouteContract = BaseRouteContract<
+  "getCustomerSummary",
+  "GET",
+  GetCustomerSummaryRequestSchema,
+  unknown,
+  GetCustomerSummaryResponseSchema
+>;
+
 export type PostDrivingTestNotification = BaseRouteContract<
   "postTestNotification",
   "POST",
@@ -75,5 +101,7 @@ export type PostDrivingTestNotification = BaseRouteContract<
 export type RouteContract =
   | GetAuthenticateRouteContract
   | GetCustomerRetrieveRouteContract
+  | GetCustomerSummaryRouteContract
+  | GetDriverSummaryRouteContract
   | GetDrivingLicenceRetrieveRouteContract
   | PostDrivingTestNotification;

@@ -41,7 +41,18 @@ const MOCK_LICENCE_RESPONSE = {
 
 const MOCK_CUSTOMER_RESPONSE = {
   linkingId: "test-linking-id",
-  customer: { customerId: "cust-123" },
+  customerResponse: {
+    customer: { customerId: "cust-123" },
+  },
+};
+
+const MOCK_DRIVER_SUMMARY_RESPONSE = {
+  linkingId: "test-linking-id",
+  hasErrors: false,
+  driverViewResponse: {
+    driver: { drivingLicenceNumber: "SMITH999", lastName: "DOE" },
+    licence: { status: "Valid", type: "Full" },
+  },
 };
 
 const remoteClient = {
@@ -64,6 +75,13 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_CUSTOMER_RESPONSE,
+    }),
+  },
+  driver: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_DRIVER_SUMMARY_RESPONSE,
     }),
   },
   notification: {
@@ -171,6 +189,33 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.notification.post).toHaveBeenCalledWith(linkingId, jwt);
+  });
+
+  it("dispatches GET /v1/driver-summary/:id and returns driver summary", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+
+    const response = await handler(
+      privateGatewayEvent.get(
+        "/gateways/dvla/v1/driver-summary/test-linking-id",
+        {
+          headers: { auth: jwt },
+        },
+      ),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_DRIVER_SUMMARY_RESPONSE),
+    });
+
+    expect(remoteClient.driver.get).toHaveBeenCalledWith(
+      "test-linking-id",
+      jwt,
+    );
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({
