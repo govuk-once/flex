@@ -1,47 +1,58 @@
-import { Logger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
 import type { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
-import { clampLogLevel } from "./logLevel";
+import { Logger } from "./logger";
 import {
   addSecretValue,
   addSensitiveKey,
   addSensitivePattern,
 } from "./sanitizer";
 
-const effectiveLevel = clampLogLevel(
-  process.env.POWERTOOLS_LOG_LEVEL ?? process.env.LOG_LEVEL ?? "INFO",
-  process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
-  process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
-);
-
 const formatter = new FlexLogFormatter();
 
-export const logger = new Logger({
-  logLevel: effectiveLevel as LogLevel,
-  logFormatter: formatter,
-});
+let cachedLogger: Logger | null = null;
 
 /**
- * Sets the service name on the log formatter.
- * Called by createLambdaHandler — domain devs should not call this directly.
+ * Returns the cached logger instance or initializes a new one if not already created.
+ * Does not allow re-initialization with a different service name or log level after the logger has been created.
+ * If the logger is not initialized and required parameters are missing, it will initialize with default values and log a warning without caching the logger.
+ *
+ * @param serviceName - The name of the service to be used in logs. Required on first initialization.
+ * @param logLevel - The log level to be used. Required on first initialization.
+ * @returns The logger instance.
+ * @throws Error if the logger is not initialized and required parameters are missing.
  */
-export function setLogServiceName(name: string): void {
-  formatter.setServiceName(name);
-}
+export function logger(serviceName?: string, logLevel?: LogLevel): Logger {
+  const serviceNameOrDefault = serviceName ?? "unknown-service";
+  const logLevelOrDefault = logLevel ?? "INFO";
 
-/**
- * Sets the log level on the logger instance (clamped between floor and ceiling).
- * Called by createLambdaHandler — domain devs should not call this directly.
- */
-export function setLogLevel(level: string): void {
-  const clamped = clampLogLevel(
-    level,
-    process.env.FLEX_LOG_LEVEL_FLOOR ?? "INFO",
-    process.env.FLEX_LOG_LEVEL_CEILING ?? "TRACE",
-  );
-  logger.setLogLevel(clamped as LogLevel);
+  if (!cachedLogger && (!serviceName || !logLevel)) {
+    const newLogger = new Logger({
+      serviceName: serviceNameOrDefault,
+      logLevel: logLevelOrDefault,
+      logFormatter: formatter,
+    });
+    newLogger.warn(
+      "Logger is not fully initialized. Service name and log level should be provided on first initialization for optimal logging. Using defaults for now.",
+      { attemptedServiceName: serviceName, attemptedLogLevel: logLevel },
+    );
+
+    return newLogger;
+  }
+
+  if (cachedLogger && (serviceName || logLevel)) {
+    cachedLogger.warn(
+      "Logger has already been initialized. Subsequent calls to logger() with parameters are ignored. The initial service name and log level will be used.",
+      { attemptedServiceName: serviceName, attemptedLogLevel: logLevel },
+    );
+  }
+
+  return (cachedLogger ??= new Logger({
+    serviceName: serviceNameOrDefault,
+    logLevel: logLevelOrDefault,
+    logFormatter: formatter,
+  }));
 }
 
 /**
@@ -49,7 +60,7 @@ export function setLogLevel(level: string): void {
  * Domain developers use this to decorate logs with request-specific data.
  */
 export function createChildLogger(context?: Record<string, unknown>): Logger {
-  return logger.createChild({ persistentKeys: context });
+  return logger().createChild({ persistentKeys: context });
 }
 
 export {
@@ -58,4 +69,4 @@ export {
   addSensitivePattern,
   injectLambdaContext,
 };
-export type { Logger };
+export type { Logger, LogLevel };

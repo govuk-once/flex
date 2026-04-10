@@ -83,7 +83,7 @@ export const handler = createLambdaHandler<
   APIGatewayProxyResultV2
 >(
   async (event) => {
-    logger.info("Handling request", { path: event.rawPath });
+    logger().info("Handling request", { path: event.rawPath });
 
     return {
       statusCode: 200,
