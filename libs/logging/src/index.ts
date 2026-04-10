@@ -1,63 +1,66 @@
-import { Logger as FullLogger } from "@aws-lambda-powertools/logger";
 import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
 import type { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
+import { Logger } from "./logger";
 import {
   addSecretValue,
   addSensitiveKey,
   addSensitivePattern,
 } from "./sanitizer";
 
-type Logger = Omit<FullLogger, "setLogLevel">;
-
 const formatter = new FlexLogFormatter();
 
-const _logger = new FullLogger({
-  logLevel: "INFO",
-  logFormatter: formatter,
-});
+let cachedLogger: Logger | null = null;
 
 /**
- * Logger instance for domain developers. Log level management is restricted
- * to the SDK - use setLogLevel (called by createLambdaHandler) instead.
+ * Returns the cached logger instance or initializes a new one if not already created.
+ * Does not allow re-initialization with a different service name or log level after the logger has been created.
+ * If the logger is not initialized and required parameters are missing, it will initialize with default values and log a warning without caching the logger.
+ *
+ * @param serviceName - The name of the service to be used in logs. Required on first initialization.
+ * @param logLevel - The log level to be used. Required on first initialization.
+ * @returns The logger instance.
+ * @throws Error if the logger is not initialized and required parameters are missing.
  */
-export const logger: Omit<Logger, "setLogLevel"> = _logger;
+export function logger(serviceName?: string, logLevel?: LogLevel): Logger {
+  const serviceNameOrDefault = serviceName ?? "unknown-service";
+  const logLevelOrDefault = logLevel ?? "INFO";
 
-/**
- * Sets the service name on the log formatter.
- * Called by createLambdaHandler — domain devs should not call this directly.
- */
-export function setLogServiceName(name: string): void {
-  formatter.setServiceName(name);
-}
-
-/**
- * Sets the log level from the domain config.
- * Called by createLambdaHandler
- */
-let logLevelSet = false;
-export function setLogLevel(level: string): void {
-  if (logLevelSet) {
-    _logger.warn(
-      "Attempted to set log level after it was already set. This call will be ignored.",
-      { attemptedLevel: level },
+  if (!cachedLogger && (!serviceName || !logLevel)) {
+    const newLogger = new Logger({
+      serviceName: serviceNameOrDefault,
+      logLevel: logLevelOrDefault,
+      logFormatter: formatter,
+    });
+    newLogger.warn(
+      "Logger is not fully initialized. Service name and log level should be provided on first initialization for optimal logging. Using defaults for now.",
+      { attemptedServiceName: serviceName, attemptedLogLevel: logLevel },
     );
-    return;
+
+    return newLogger;
   }
 
-  logLevelSet = true;
-  _logger.setLogLevel(level as LogLevel);
+  if (cachedLogger && (serviceName || logLevel)) {
+    cachedLogger.warn(
+      "Logger has already been initialized. Subsequent calls to logger() with parameters are ignored. The initial service name and log level will be used.",
+      { attemptedServiceName: serviceName, attemptedLogLevel: logLevel },
+    );
+  }
+
+  return (cachedLogger ??= new Logger({
+    serviceName: serviceNameOrDefault,
+    logLevel: logLevelOrDefault,
+    logFormatter: formatter,
+  }));
 }
 
 /**
  * Creates a child logger with additional persistent context.
  * Domain developers use this to decorate logs with request-specific data.
  */
-export function createChildLogger(
-  context?: Record<string, unknown>,
-): Omit<Logger, "setLogLevel"> {
-  return _logger.createChild({ persistentKeys: context });
+export function createChildLogger(context?: Record<string, unknown>): Logger {
+  return logger().createChild({ persistentKeys: context });
 }
 
 export {
@@ -66,4 +69,4 @@ export {
   addSensitivePattern,
   injectLambdaContext,
 };
-export type { FullLogger, Logger };
+export type { Logger, LogLevel };

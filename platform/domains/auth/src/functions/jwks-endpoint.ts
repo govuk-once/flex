@@ -52,7 +52,7 @@ export const handler = async (): Promise<APIGatewayProxyResultV2> => {
       body: JSON.stringify(jwks),
     };
   } catch (error) {
-    logger.error("Error fetching or validating JWKS", { error });
+    logger().error("Error fetching or validating JWKS", { error });
 
     return {
       statusCode: 500,

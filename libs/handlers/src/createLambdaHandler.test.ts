@@ -10,9 +10,15 @@ import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createLambdaHandler } from "./createLambdaHandler";
 
-vi.spyOn(logging, "setLogServiceName");
-vi.spyOn(logging, "setLogLevel");
-vi.spyOn(logging, "injectLambdaContext");
+vi.mock("@flex/logging", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@flex/logging")>();
+  const logger = actual.logger("test-service", "INFO");
+  return {
+    ...actual,
+    injectLambdaContext: vi.fn(actual.injectLambdaContext),
+    logger: vi.fn(() => logger),
+  };
+});
 
 const baseLoggerOptions = {
   serviceName: "test-service",
@@ -152,10 +158,11 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logging.setLogServiceName).toHaveBeenCalledExactlyOnceWith(
-        "test-service",
+      expect(logging.logger).toHaveBeenCalledExactlyOnceWith(
+        baseLoggerOptions.serviceName,
+        "INFO",
       );
-      expect(logging.setLogLevel).not.toHaveBeenCalled();
+
       expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         expect.any(Object),
         expect.objectContaining({ logEvent: false }),
@@ -180,10 +187,6 @@ describe("createLambdaHandler", () => {
 
         await handler(event, context);
 
-        expect(logging.setLogServiceName).toHaveBeenCalledOnce();
-        expect(logging.setLogLevel).toHaveBeenCalledExactlyOnceWith(
-          logLevel.toUpperCase(),
-        );
         expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
           expect.anything(),
           expect.objectContaining({ logEvent: expected }),
@@ -202,7 +205,6 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logging.setLogServiceName).toHaveBeenCalledOnce();
       expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         expect.anything(),
         expect.objectContaining({
