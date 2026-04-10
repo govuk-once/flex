@@ -1,7 +1,7 @@
 import {
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
-} from "@flex/dvla/service-gateway/src/index";
+} from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 

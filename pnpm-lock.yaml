@@ -51,7 +51,7 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../libs/config
-      '@flex/dvla/service-gateway':
+      '@flex/dvla-service-gateway':
         specifier: workspace:*
         version: link:../../platform/domains/dvla
       '@flex/testing':

@@ -1,5 +1,5 @@
 {
-  "name": "@flex/dvla/service-gateway",
+  "name": "@flex/dvla-service-gateway",
   "version": "1.0.0",
   "type": "module",
   "private": true,

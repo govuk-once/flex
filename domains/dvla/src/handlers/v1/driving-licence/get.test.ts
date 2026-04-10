@@ -6,23 +6,20 @@ import { handler } from "./get";
 
 describe("GET /v1/driving-licence", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const testLinkingId = "test-user-linking-id";
   const testAuthToken = "test-id-token";
   const testProductKey = "prod-123";
-  const testPairwiseId = "test-pairwise-id";
+  const testLinkingId = "550e8400-e29b-41d4-a716-446655440000";
+  const testCustomerId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 
   beforeEach(() => {
     vi.stubEnv("flexDvlaTestUser", testLinkingId);
   });
 
   const mockUdpSuccess = () =>
-    api
-      .get("/domains/udp/v1/identity/dvla")
-      .matchHeader("User-Id", testPairwiseId)
-      .reply(200, {
-        serviceId: testLinkingId,
-        serviceName: "dvla",
-      });
+    api.get("/domains/udp/v1/identity/dvla").reply(200, {
+      serviceId: testLinkingId,
+      serviceName: "dvla",
+    });
 
   const mockAuthSuccess = () =>
     api.get("/gateways/dvla/v1/authenticate").reply(200, {
@@ -31,35 +28,22 @@ describe("GET /v1/driving-licence", () => {
       passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
     });
 
-  const mockCustomerSuccess = (
-    products?: {
-      productType: string;
-      productKey: string;
-      productIdentifier: string;
-      dateAdded: string;
-    }[],
-  ) =>
+  const mockCustomerSuccess = () =>
     api
-      .get(`/gateways/dvla/v1/customer/${testLinkingId}`)
+      .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
       .matchHeader("auth", testAuthToken)
       .reply(200, {
         linkingId: testLinkingId,
-        customer: {
-          customerId: "cust-999",
-          recordStatus: "Substantive",
-          customerType: "Individual",
-          individualDetails: {
-            lastName: "DOE",
-            dateOfBirth: "1990-01-01",
+        customerResponse: {
+          customer: {
+            customerId: testCustomerId,
+            products: [
+              {
+                productType: "Driving Licence",
+                productKey: testProductKey,
+              },
+            ],
           },
-          products: products ?? [
-            {
-              productType: "Driving Licence",
-              productKey: testProductKey,
-              productIdentifier: "DL-12345",
-              dateAdded: "2026-01-01T00:00:00Z",
-            },
-          ],
         },
       });
 
@@ -70,12 +54,12 @@ describe("GET /v1/driving-licence", () => {
     mockUdpSuccess();
     mockAuthSuccess();
     mockCustomerSuccess();
+
     const mockLicenceData = {
       driver: {
         drivingLicenceNumber: "SMITH999999AB9YZ",
         firstNames: "JANE",
         lastName: "DOE",
-        dateOfBirth: "1990-01-01",
       },
       licence: {
         type: "Full",
@@ -98,20 +82,55 @@ describe("GET /v1/driving-licence", () => {
   });
 
   describe("Error scenarios", () => {
-    it("returns 404 if the user has no DVLA linking ID in UDP", async ({
+    it("returns 422 if the customer record is incomplete (missing customer object)", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      api.get("/domains/udp/v1/identity/dvla").reply(404, {
-        error: { message: "Not Found" },
-      });
+      mockUdpSuccess();
+      mockAuthSuccess();
+
+      api
+        .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
+        .reply(200, {
+          linkingId: testLinkingId,
+          hasErrors: false,
+          customerResponse: {
+            customer: {},
+          },
+        });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(404);
+      expect(result.statusCode).toBe(422);
+    });
+
+    it("returns 422 if the products array is missing or empty", async ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      mockUdpSuccess();
+      mockAuthSuccess();
+
+      api
+        .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
+        .reply(200, {
+          customerResponse: {
+            customer: {
+              customerId: testCustomerId,
+              products: [],
+            },
+          },
+        });
+
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.create({}),
+        context.create(),
+      );
+
+      expect(result.statusCode).toBe(422);
     });
 
     it("returns 502 if DVLA authentication fails", async ({
@@ -129,31 +148,13 @@ describe("GET /v1/driving-licence", () => {
       expect(result.statusCode).toBe(502);
     });
 
-    it("returns 422 if the customer has no Driving Licence product", async ({
+    it("returns 502 if customer-summary call fails", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
       mockUdpSuccess();
       mockAuthSuccess();
-      mockCustomerSuccess([]);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({}),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(422);
-    });
-
-    it("returns 502 if licence retrieval fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      mockUdpSuccess();
-      mockAuthSuccess();
-      mockCustomerSuccess();
-
-      api.get(`/gateways/dvla/v1/licence/${testProductKey}`).reply(404);
+      api.get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`).reply(500);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
