@@ -6,7 +6,6 @@ import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 
 import { authenticateResponseSchema } from "./src/schemas/authenticate";
-import { getCustomerResponseSchema } from "./src/schemas/customer";
 import { viewDriverResponseSchema } from "./src/schemas/driversLicence";
 
 export const { config, route, routeContext } = domain({
@@ -28,12 +27,6 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "dvla",
       route: "POST /v1/test-notification/*",
-    },
-    dvlaRetrieveCustomer: {
-      type: "gateway",
-      target: "dvla",
-      route: "GET /v1/customer/*",
-      response: getCustomerResponseSchema,
     },
     dvlaRetrieveLicence: {
       type: "gateway",
@@ -75,7 +68,7 @@ export const { config, route, routeContext } = domain({
             integrations: [
               "dvlaAuthenticate",
               "dvlaRetrieveLicence",
-              "dvlaRetrieveCustomer",
+              "dvlaCustomerSummary",
               "udpGetLinkingId",
             ],
             response: viewDriverResponseSchema,

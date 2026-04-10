@@ -1,115 +1,141 @@
 import z from "zod";
 
-import { AddressUnion, EligibilitySchema, TaskResponseSchema } from "../common";
+import { applications_response } from "../common";
 
-const VehicleFullResponseSchema = z.object({
-  registrationNumber: z.string(),
-  recordType: z
-    .enum([
-      "Full Main",
-      "Retained",
-      "Void",
-      "CT Void",
-      "MOD Void",
-      "BFG Void",
-      "CT Pending",
-      "Fat Skeleton",
-    ])
-    .optional(),
-  vehicleId: z.number(),
-  chassisVin: z.string(),
-  make: z.string(),
-  model: z.string(),
-  fuelType: z.string().optional(),
-  taxStatus: z
-    .enum(["Not Taxed for on Road Use", "SORN", "Untaxed", "Taxed"])
-    .optional(),
-  motStatus: z.string(),
-  colour: z.string(),
-  numberOfPreviousKeepers: z.number(),
-  taxRates: z
-    .array(
-      z.object({
-        description: z.string().optional(),
-        vedBand: z.string().optional(),
-        rate12Months: z.number().optional(),
-        rate06Months: z.number().optional(),
-        hasError: z.boolean().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const ProductSchema = z.object({
-  productType: z.enum(["Driving Licence", "Vehicle"]),
-  productKey: z.string(),
-  productIdentifier: z.string(),
-  productSummary: z.union([
-    z.object({
-      licenceExpiryDate: z.string().optional(),
-      licenceType: z.enum(["Full", "Provisional"]),
-      licenceStatus: z.string(),
-    }),
-    z.object({
-      numberOfPreviousKeepers: z.number(),
-      make: z.string().optional(),
-      model: z.string().optional(),
-    }),
-  ]),
-  dateAdded: z.string(),
-});
-
-export const RetrieveCustomerSummaryByLinkingIdResponse = z.object({
-  linkingId: z.uuid(),
-  hasErrors: z.boolean(),
-  customerResponse: z.object({
-    customer: z.object({
-      customerId: z.uuid(),
-      recordStatus: z.enum(["Pending", "Substantive", "Retaining", "Deleting"]),
-      customerType: z.enum(["Individual", "Organisation"]),
-      individualDetails: z.object({
-        lastName: z.string(),
-        dateOfBirth: z.string(),
-        firstNames: z.string().optional(),
-        title: z.string().optional(),
-      }),
-      address: AddressUnion.optional(),
-      emailAddress: z.string().optional(),
-      phoneNumber: z.string().optional(),
-      suppressions: z.array(
-        z.object({
-          suppressionType: z.enum(["DVLA", "Customer"]),
-          suppressionDate: z.string(),
-        }),
-      ),
-      products: z.array(ProductSchema).optional(),
-      applications: z
-        .array(
-          z.object({
-            applicationType: z.string(),
-            applicationId: z.uuid(),
-            applicationKey: z.string(),
-            applicationState: z.object({
-              status: z.string(),
-              timeUpdated: z.string(),
-            }),
-          }),
-        )
-        .optional(),
-    }),
-  }),
-  driversEligibilityResponse: EligibilitySchema.optional(),
-  driversSuppressionResponse: z
+const retrieve_customer_response = z.object({
+  customer: z
     .object({
-      drivingLicenceNumber: z.string(),
-      suppressionStatus: z.array(
-        z.object({
-          role: z.string(),
-          suppressed: z.boolean(),
-        }),
-      ),
+      customerId: z.uuid(),
+      customerNumber: z.string().nullish(),
+      identityId: z.string().nullish(),
+      recordStatus: z
+        .enum(["Pending", "Substantive", "Retaining", "Deleting"])
+        .nullish(),
+      customerType: z.enum(["Individual", "Organisation"]).nullish(),
+      address: z
+        .union([
+          z.object({ structuredAddress: z.any() }),
+          z.object({ unstructuredAddress: z.any() }),
+          z.object({ bfpoAddress: z.any() }),
+          z.object({ internationalAddress: z.any() }),
+        ])
+        .nullish(),
+      emailAddress: z.string().nullish(),
+      phoneNumber: z.string().nullish(),
+      individualDetails: z
+        .object({
+          title: z.string().nullish(),
+          firstNames: z.string().nullish(),
+          lastName: z.string().nullish(),
+          dateOfBirth: z.string().nullish(),
+          notifiedOfDeath: z.any().nullish(),
+        })
+        .partial()
+        .nullish(),
+      products: z
+        .array(
+          z
+            .object({
+              productType: z.enum(["Driving Licence", "Vehicle"]).nullish(),
+              productKey: z.string().nullish(),
+              productIdentifier: z.string().nullish(),
+              productSummary: z
+                .union([
+                  z.object({
+                    licenceExpiryDate: z.string().nullish(),
+                    licenceValidFrom: z.string().nullish(),
+                    licenceType: z.enum(["Full", "Provisional"]).nullish(),
+                    licenceStatus: z.string().nullish(),
+                  }),
+                  z.object({
+                    numberOfPreviousKeepers: z.number().nullish(),
+                    make: z.string().nullish(),
+                    model: z.string().nullish(),
+                    colour: z.string().nullish(),
+                    secondaryColour: z.string().nullish(),
+                  }),
+                ])
+                .nullish(),
+              dateAdded: z.string().nullish(),
+            })
+            .partial()
+            .loose(),
+        )
+        .nullish(),
     })
-    .optional(),
-  applicationTaskResponse: TaskResponseSchema.optional(),
-  vehicleResponse: z.array(VehicleFullResponseSchema).optional(),
+    .partial()
+    .loose(),
 });
+
+const vehicle_full_response = z
+  .object({
+    registrationNumber: z.string().nullish(),
+    recordType: z.string().nullish(),
+    vehicleId: z.number().int().nullish(),
+    chassisVin: z.string().nullish(),
+    make: z.string().nullish(),
+    model: z.string().nullish(),
+    manufacturerVehicleType: z.string().nullish(),
+    typeApprovalVariant: z.string().nullish(),
+    typeApprovalVersion: z.string().nullish(),
+    typeApprovalCategory: z.string().nullish(),
+    typeApprovalNumber: z.string().nullish(),
+    engineNumber: z.string().nullish(),
+    euroStatus: z.string().nullish(),
+    dateOfManufacture: z.string().nullish(),
+    dateOfFirstRegistration: z.string().nullish(),
+    engineCapacity: z.number().int().nullish(),
+    maxNetPower: z.number().int().nullish(),
+    bodyType: z.string().nullish(),
+    seatingCapacity: z.number().int().nullish(),
+    standingCapacity: z.number().int().nullish(),
+    autonomousVehicle: z.boolean().nullish(),
+    dateOfLiability: z.string().nullish(),
+    taxClass: z.string().nullish(),
+    motStatus: z.string().nullish(),
+    colour: z.string().nullish(),
+    fuelType: z.string().nullish(),
+    wheelplan: z.string().nullish(),
+    revenueWeight: z.number().int().nullish(),
+    massInService: z.number().int().nullish(),
+    maxPermissibleMass: z.number().int().nullish(),
+    powerToWeightRatio: z.number().nullish(),
+    roadFriendlySuspensionApplied: z.boolean().nullish(),
+    realDrivingEmissions: z.string().nullish(),
+    numberOfPreviousKeepers: z.number().int().nullish(),
+    keeper: z
+      .object({
+        companyName: z.string().nullish(),
+        fleetNumber: z.string().nullish(),
+        title: z.string().nullish(),
+        firstNames: z.string().nullish(),
+        lastName: z.string().nullish(),
+        start: z.string().nullish(),
+        inTrade: z.boolean().nullish(),
+        sensitiveKeeper: z.boolean().nullish(),
+        address: z
+          .union([
+            z.object({ structuredAddress: z.any() }),
+            z.object({ unstructuredAddress: z.any() }),
+            z.object({ bfpoAddress: z.any() }),
+            z.object({ internationalAddress: z.any() }),
+          ])
+          .nullish(),
+      })
+      .partial()
+      .nullish(),
+  })
+  .partial()
+  .loose();
+
+export const RetrieveCustomerSummaryByLinkingIdResponse = z
+  .object({
+    linkingId: z.uuid().nullish(),
+    customerResponse: retrieve_customer_response.nullish(),
+    driversEligibilityResponse: applications_response.nullish(),
+    driversSuppressionResponse: z.any().nullish(),
+    applicationTaskResponse: z.any().nullish(),
+    vehicleResponse: z.array(vehicle_full_response).nullish(),
+    hasErrors: z.boolean().nullish(),
+  })
+  .loose();
