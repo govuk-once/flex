@@ -1,25 +1,38 @@
 import createHttpError from "http-errors";
 
-import { route } from "../../../../../domain.config";
-import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
+import { deleteNotificationContext, route } from "../../../../../domain.config";
+import { deriveExternalUserId } from "../../../../utils/derive-external-user-id";
 
 export const handler = route(
   "DELETE /v1/notifications/:notificationId",
-  ({ pathParams, logger }) => {
-    logger.debug("Delete notification");
-
+  async ({ pathParams, logger }) => {
     const { notificationId } = pathParams;
-
-    const notification = MOCK_NOTIFICATIONS.find(
-      (n) => n.NotificationID === notificationId,
+    const { auth, resources } = deleteNotificationContext();
+    const externalUserId = deriveExternalUserId(
+      auth.pairwiseId,
+      resources.unsNotificationSecret,
     );
 
-    if (!notification) {
+    const url = new URL(
+      `${resources.flexPrivateGatewayUrl.replace(/\/$/, "")}/notifications/${notificationId}`,
+    );
+    url.searchParams.set("externalUserID", externalUserId);
+
+    const response = await fetch(url.toString(), {
+      method: "DELETE",
+    });
+
+    if (response.status === 404) {
       throw new createHttpError.NotFound();
     }
 
-    logger.debug("Successful delete notification");
+    if (!response.ok) {
+      logger.error("Fatal error on UNS delete notification", {
+        status: response.status,
+      });
+      throw new createHttpError.InternalServerError();
+    }
 
-    return Promise.resolve({ status: 204 });
+    return { status: 204 };
   },
 );
