@@ -88,7 +88,6 @@ describe("GET /v1/customer-summary", () => {
       mockUdpSuccess();
       mockAuthSuccess();
 
-      // Mocking a DVLA error (e.g., 404 or 500 from the integration)
       api
         .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
         .reply(404, { message: "Not Found" });
