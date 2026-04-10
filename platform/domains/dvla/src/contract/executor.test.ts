@@ -18,6 +18,9 @@ const remoteClient = {
   notification: {
     post: vi.fn(),
   },
+  driver: {
+    get: vi.fn(),
+  },
 };
 
 describe("DVLA Executor", () => {
@@ -75,6 +78,28 @@ describe("DVLA Executor", () => {
       assertRemoteClientCall: () => {
         expect(remoteClient.customer.get).toHaveBeenCalledWith(
           "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/driver-summary/550e8400-e29b-41d4-a716-446655440000",
+      operation: "getDriver",
+      headers: { auth: "Bearer jwt-123" },
+      configureRemoteClient: () => {
+        remoteClient.driver.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            linkingId: "550e8400-e29b-41d4-a716-446655440000",
+            driverViewResponse: { driver: {}, licence: {} },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.driver.get).toHaveBeenCalledWith(
+          "550e8400-e29b-41d4-a716-446655440000",
           "Bearer jwt-123",
         );
       },
