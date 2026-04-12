@@ -704,11 +704,11 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       axios:
-        specifier: 1.13.6
-        version: 1.13.6
+        specifier: 1.15.0
+        version: 1.15.0
       axios-cookiejar-support:
         specifier: 6.0.5
-        version: 6.0.5(axios@1.13.6)(tough-cookie@6.0.1)(undici@7.24.0)
+        version: 6.0.5(axios@1.15.0)(tough-cookie@6.0.1)(undici@7.24.0)
       cheerio:
         specifier: 1.2.0
         version: 1.2.0
@@ -2641,8 +2641,8 @@ packages:
       axios: '>=0.20.0'
       tough-cookie: '>=4.0.0'
 
-  axios@1.13.6:
-    resolution: {integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==}
+  axios@1.15.0:
+    resolution: {integrity: sha512-wWyJDlAatxk30ZJer+GeCWS209sA42X+N5jU2jy6oHTp7ufw8uzUTVFBX9+wTfAlhiJXGS0Bq7X6efruWjuK9Q==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -4187,8 +4187,9 @@ packages:
     resolution: {integrity: sha512-vGrhOavPSTz4QVNuBNdcNXePNdNMaO1xj9yBeH1ScQPjk/rhg9sSlCXPhMkFuaNNW/syTvYqsnbIJxMBfRbbag==}
     engines: {node: '>= 8'}
 
-  proxy-from-env@1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+  proxy-from-env@2.1.0:
+    resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
+    engines: {node: '>=10'}
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -7025,19 +7026,19 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  axios-cookiejar-support@6.0.5(axios@1.13.6)(tough-cookie@6.0.1)(undici@7.24.0):
+  axios-cookiejar-support@6.0.5(axios@1.15.0)(tough-cookie@6.0.1)(undici@7.24.0):
     dependencies:
-      axios: 1.13.6
+      axios: 1.15.0
       http-cookie-agent: 7.0.3(tough-cookie@6.0.1)(undici@7.24.0)
       tough-cookie: 6.0.1
     transitivePeerDependencies:
       - undici
 
-  axios@1.13.6:
+  axios@1.15.0:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.5
-      proxy-from-env: 1.1.0
+      proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
 
@@ -8747,7 +8748,7 @@ snapshots:
       '@yarnpkg/lockfile': 1.1.0
       '@yarnpkg/parsers': 3.0.2
       '@zkochan/js-yaml': 0.0.7
-      axios: 1.13.6
+      axios: 1.15.0
       cli-cursor: 3.1.0
       cli-spinners: 2.6.1
       cliui: 8.0.1
@@ -8967,7 +8968,7 @@ snapshots:
 
   propagate@2.0.1: {}
 
-  proxy-from-env@1.1.0: {}
+  proxy-from-env@2.1.0: {}
 
   punycode@2.3.1: {}
 
