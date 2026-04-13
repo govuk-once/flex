@@ -11,7 +11,14 @@ import type { MiddlewareOptions } from "./middleware";
 import { configureMiddleware } from "./middleware";
 import type { ResolvedResource } from "./resolve-config";
 
-vi.mock("@flex/logging");
+vi.mock("@flex/logging", () => ({
+  injectLambdaContext: vi.fn(),
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 vi.mock("@middy/http-error-handler");
 vi.mock("@middy/http-header-normalizer");
 vi.mock("@middy/http-json-body-parser");
@@ -28,7 +35,7 @@ const mockMiddy = vi.hoisted(() => {
 vi.mock("@middy/core", () => ({ default: vi.fn(() => mockMiddy) }));
 
 const options: MiddlewareOptions = {
-  logger,
+  logger: logger,
   logLevel: "INFO",
   hasRequestBody: false,
 };

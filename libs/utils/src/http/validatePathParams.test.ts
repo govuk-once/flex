@@ -6,16 +6,13 @@ import { z } from "zod";
 import { NonEmptyString } from "../schemas/common";
 import { validatePathParams } from "./validatePathParams";
 
-vi.mock("@flex/logging", () => {
-  const logger = {
+vi.mock("@flex/logging", () => ({
+  logger: {
     error: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
-  };
-  return {
-    logger: vi.fn(() => logger),
-  };
-});
+  },
+}));
 
 const testSchema = z.object({
   serviceName: NonEmptyString,
@@ -35,7 +32,7 @@ describe("validatePathParams", () => {
 
     const result = validatePathParams(testSchema, data);
 
-    expect(logger().error).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
     expect(result).toEqual({ serviceName: "test", identifier: "123" });
   });
 
@@ -50,7 +47,7 @@ describe("validatePathParams", () => {
     },
   ])("$description", ({ data }) => {
     expect(() => validatePathParams(testSchema, data)).toThrow();
-    expect(logger().error).toHaveBeenCalledExactlyOnceWith(
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(
       expect.stringContaining("[Path Parameters] Validation failed"),
     );
   });

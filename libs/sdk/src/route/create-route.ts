@@ -1,4 +1,4 @@
-import { logger as getLogger } from "@flex/logging";
+import { logger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import type {
@@ -52,7 +52,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
     );
     const headers = mergeHeaders(config.common?.headers, routeConfig.headers);
 
-    const { gateway, method, version } = routeKeySegments;
+    const { gateway, method } = routeKeySegments;
 
     const verboseLogs = logLevel === "DEBUG" || logLevel === "TRACE";
     const hasRequestBody =
@@ -62,10 +62,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const querySchema = routeConfig.query;
     const responseSchema = routeConfig.response;
 
-    const logger = getLogger(
-      `${config.name}-${gateway}-${version}-${routeConfig.name}`,
-      logLevel,
-    );
+    logger.setLogLevel(logLevel);
 
     const middyHandler = configureMiddleware({
       logger,

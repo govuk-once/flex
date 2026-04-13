@@ -27,15 +27,7 @@ import { extractRouteKeySegments } from "./route-key";
 import type { RouteStore } from "./store";
 import { getRouteStore } from "./store";
 
-const mockLoggerInstance = vi.hoisted(() => ({
-  error: vi.fn(),
-  warn: vi.fn(),
-}));
-
-vi.mock("@flex/logging", () => ({
-  logger: vi.fn().mockReturnValue(mockLoggerInstance),
-}));
-
+vi.mock("@flex/logging");
 vi.mock("./build-context", () => ({ buildHandlerContext: vi.fn() }));
 vi.mock("./headers", () => ({ mergeHeaders: vi.fn() }));
 vi.mock("./integrations", () => ({ buildDomainIntegrations: vi.fn() }));
@@ -116,8 +108,6 @@ describe("createRouteHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(logger).mockReturnValue(mockLoggerInstance as never);
-
     vi.mocked(configureMiddleware).mockReturnValue({
       handler: mockMiddyHandler,
     } as never);
@@ -195,24 +185,6 @@ describe("createRouteHandler", () => {
       );
     });
 
-    it("sets the logger service name from the domain config", () => {
-      registerRoute();
-
-      expect(logger).toHaveBeenCalledExactlyOnceWith(
-        "test-domain-public-v1-test-route",
-        expect.any(String),
-      );
-    });
-
-    it("sets the logger log level from the resolved route config", () => {
-      registerRoute();
-
-      expect(logger).toHaveBeenCalledExactlyOnceWith(
-        expect.any(String),
-        "INFO",
-      );
-    });
-
     it("registers middleware with the resolved route config", () => {
       const resources = {
         testKey: { type: "kms" as const, value: "test-key-value" },
@@ -226,7 +198,7 @@ describe("createRouteHandler", () => {
       registerRoute();
 
       expect(configureMiddleware).toHaveBeenCalledExactlyOnceWith({
-        logger: mockLoggerInstance,
+        logger: logger,
         logLevel: "DEBUG",
         hasRequestBody: false,
         resources,
@@ -275,7 +247,7 @@ describe("createRouteHandler", () => {
         mockContext,
         expect.objectContaining({
           gateway: "public",
-          logger: mockLoggerInstance,
+          logger: logger,
           headers: { test: { name: "x-test" } },
         }),
       );
@@ -417,7 +389,7 @@ describe("createRouteHandler", () => {
 
       await invokeRoute();
 
-      expect(mockLoggerInstance.error).toHaveBeenCalledExactlyOnceWith(
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
         "Response validation failed",
         { errors: [{ message: "Invalid field" }] },
       );
@@ -449,7 +421,7 @@ describe("createRouteHandler", () => {
 
         const isVerbose = ["DEBUG", "TRACE"].includes(logLevel);
 
-        expect(mockLoggerInstance.error).toHaveBeenCalledExactlyOnceWith(
+        expect(logger.error).toHaveBeenCalledExactlyOnceWith(
           "Response validation failed",
           {
             errors: [{ message: "Invalid field" }],
@@ -470,7 +442,7 @@ describe("createRouteHandler", () => {
 
       const result = await invokeRoute();
 
-      expect(mockLoggerInstance.warn).toHaveBeenCalledExactlyOnceWith(
+      expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
         "Missing required headers",
         { headers: ["x-required"] },
       );
@@ -491,7 +463,7 @@ describe("createRouteHandler", () => {
 
       const result = await invokeRoute();
 
-      expect(mockLoggerInstance.warn).toHaveBeenCalledExactlyOnceWith(
+      expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
         "Invalid request body",
         { message: error.message },
       );

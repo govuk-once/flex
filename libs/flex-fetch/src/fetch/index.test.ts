@@ -6,16 +6,13 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { flexFetch } from "./index";
 
-vi.mock("@flex/logging", () => {
-  const logger = {
+vi.mock("@flex/logging", () => ({
+  logger: {
     error: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
-  };
-  return {
-    logger: vi.fn(() => logger),
-  };
-});
+  },
+}));
 
 describe("flex-fetch", () => {
   beforeEach(() => {
@@ -198,12 +195,12 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow(err);
 
-    expect(logger().error).toBeCalledTimes(1);
-    expect(logger().error).toBeCalledWith("flex-fetch failed", {
+    expect(logger.error).toBeCalledTimes(1);
+    expect(logger.error).toBeCalledWith("flex-fetch failed", {
       url: "https://example.com/data",
       error: err,
     });
-    expect(logger().debug).toBeCalledWith("options", expect.any(Object));
+    expect(logger.debug).toBeCalledWith("options", expect.any(Object));
   });
 
   it("correctly logs the request URL when a Request object is provided", async () => {
@@ -217,8 +214,8 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    expect(logger().error).toBeCalledTimes(1);
-    expect(logger().error).toBeCalledWith(
+    expect(logger.error).toBeCalledTimes(1);
+    expect(logger.error).toBeCalledWith(
       "flex-fetch failed",
       expect.objectContaining({
         url: "https://example.com/data",
@@ -238,7 +235,7 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    expect(logger().debug).toBeCalledWith(
+    expect(logger.debug).toBeCalledWith(
       "options",
       expect.objectContaining({
         mode: "cors",

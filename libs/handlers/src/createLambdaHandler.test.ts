@@ -12,17 +12,13 @@ import { createLambdaHandler } from "./createLambdaHandler";
 
 vi.mock("@flex/logging", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@flex/logging")>();
-  const logger = actual.logger("test-service", "INFO");
   return {
     ...actual,
     injectLambdaContext: vi.fn(actual.injectLambdaContext),
-    logger: vi.fn(() => logger),
   };
 });
 
-const baseLoggerOptions = {
-  serviceName: "test-service",
-} as const;
+const baseLoggerOptions = {} as const;
 
 describe("createLambdaHandler", () => {
   beforeEach(() => {
@@ -158,13 +154,8 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
-      expect(logging.logger).toHaveBeenCalledExactlyOnceWith(
-        baseLoggerOptions.serviceName,
-        "INFO",
-      );
-
       expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
-        expect.any(Object),
+        logging.logger,
         expect.objectContaining({ logEvent: false }),
       );
     });

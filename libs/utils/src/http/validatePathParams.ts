@@ -17,7 +17,7 @@ export function validatePathParams<T>(
   if (!result.success) {
     const errorDetail = JSON.stringify(z.treeifyError(result.error));
 
-    logger().error(`[${contextName}] Validation failed: ${errorDetail}`);
+    logger.error(`[${contextName}] Validation failed: ${errorDetail}`);
 
     throw new createHttpError.BadRequest(
       `Invalid ${contextName}: ${errorDetail}`,

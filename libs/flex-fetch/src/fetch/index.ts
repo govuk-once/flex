@@ -39,8 +39,8 @@ export function flexFetch(
   options?: FlexFetchRequestInit,
   fetcher: typeof fetch = fetch,
 ): { request: Promise<Response>; abort: () => void } {
-  logger().debug("flex-fetch called", { url });
-  logger().debug("flex-fetch options", { options });
+  logger.debug("flex-fetch called", { url });
+  logger.debug("flex-fetch options", { options });
 
   const { retryAttempts, maxRetryDelay, ...fetchOptions } = options ?? {};
 
@@ -66,22 +66,22 @@ export function flexFetch(
         maxDelay: retryDelayNormalised,
         jitter: "full",
         retry(error, attemptNumber) {
-          logger().warn("flex-fetch retrying request", {
+          logger.warn("flex-fetch retrying request", {
             url,
             error,
             attemptNumber,
           });
-          logger().debug("options", fetchOptions);
+          logger.debug("options", fetchOptions);
           return !controller.signal.aborted;
         },
       },
     ).catch((error: unknown) => {
       const requestUrl = url instanceof Request ? url.url : url.toString();
-      logger().error("flex-fetch failed", {
+      logger.error("flex-fetch failed", {
         url: requestUrl,
         error,
       });
-      logger().debug("options", fetchOptions);
+      logger.debug("options", fetchOptions);
       throw error;
     }),
     abort: () => {

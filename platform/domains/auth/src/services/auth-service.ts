@@ -50,7 +50,7 @@ export async function createAuthService() {
         );
       }
 
-      logger().info("JWT verified", { pairwiseId: username });
+      logger.info("JWT verified", { pairwiseId: username });
 
       return username;
     },

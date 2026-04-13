@@ -28,7 +28,7 @@ async function populateParameterFields<T extends object>(
   );
 
   const parameterStoreKeys = parameterNames.map(([_, value]) => value);
-  logger().debug("Fetching SSM parameters", {
+  logger.debug("Fetching SSM parameters", {
     parameterNames: parameterStoreKeys,
   });
 
@@ -42,7 +42,7 @@ async function populateParameterFields<T extends object>(
 
     if (typeof parameterValue !== "string") {
       const message = `Parameter ${parameterName} not found or is not a string`;
-      logger().error(message);
+      logger.error(message);
       throw new Error(message);
     }
 
@@ -68,7 +68,7 @@ export async function getConfig<T extends object>(
   validator: z.ZodType<T>,
 ): Promise<Simplify<WithoutPropSuffix<T, "_PARAM_NAME">>> {
   if (cachedConfig.has(validator)) {
-    logger().info("Returning cached configuration");
+    logger.info("Returning cached configuration");
 
     // This is safe because we only set values of this type in the cache.
     return cachedConfig.get(validator) as Simplify<
@@ -76,14 +76,14 @@ export async function getConfig<T extends object>(
     >;
   }
 
-  logger().info(
+  logger.info(
     "cachedConfig not found, building configuration from process.env and SSM",
   );
   const rawConfigSchemaCheck = validator.safeParse(process.env);
 
   if (!rawConfigSchemaCheck.success) {
     const message = `Invalid raw configuration: ${JSON.stringify(z.treeifyError(rawConfigSchemaCheck.error))}`;
-    logger().error(message);
+    logger.error(message);
     throw new Error(message);
   }
 
