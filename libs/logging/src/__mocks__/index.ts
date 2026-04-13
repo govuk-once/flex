@@ -18,6 +18,7 @@ export const logger: Record<string, Mock | Record<string, Mock>> = {
     critical: vi.fn(),
   }),
   appendKeys: vi.fn(),
+  setLogLevel: vi.fn(),
 };
 
 export const setLogServiceName: Mock = vi.fn();

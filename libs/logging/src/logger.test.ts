@@ -1,45 +1,58 @@
 import { Logger as PowerToolsLogger } from "@aws-lambda-powertools/logger";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Logger } from "./logger";
+import { FlexLogFormatter } from "./formatter";
+import { logger } from "./logger";
 
-vi.mock("@aws-lambda-powertools/logger", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@aws-lambda-powertools/logger")>();
+vi.mock("./formatter", () => ({
+  FlexLogFormatter: class {
+    setServiceName() {}
+  },
+}));
 
-  const LoggerSpy = vi.fn(actual.Logger);
-  Object.setPrototypeOf(LoggerSpy.prototype, actual.Logger.prototype);
+describe("FlexLogger", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
 
-  return { ...actual, Logger: LoggerSpy };
-});
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    logger.setLogLevel("INFO");
+  });
 
-describe("Logger", () => {
-  it("should create a logger instance with the specified service name and log level", () => {
-    new Logger({
-      serviceName: "test-service",
-      logLevel: "INFO",
+  it("initialises with INFO log level", () => {
+    expect(logger.getLevelName()).toBe("INFO");
+  });
+
+  describe("setLogLevel", () => {
+    it("delegates to PowerTools in non-production", () => {
+      const spy = vi.spyOn(PowerToolsLogger.prototype, "setLogLevel");
+
+      logger.setLogLevel("DEBUG");
+
+      expect(spy).toHaveBeenCalledExactlyOnceWith("DEBUG");
+      expect(logger.getLevelName()).toBe("DEBUG");
     });
 
-    expect(PowerToolsLogger).toBeCalledWith({
-      serviceName: "test-service",
-      logLevel: "INFO",
+    it("is a no-op in production", () => {
+      vi.stubEnv("FLEX_ENVIRONMENT", "production");
+      const spy = vi.spyOn(PowerToolsLogger.prototype, "setLogLevel");
+
+      logger.setLogLevel("DEBUG");
+
+      expect(spy).not.toHaveBeenCalled();
+      expect(logger.getLevelName()).toBe("INFO");
     });
   });
 
-  it("should not allow changing log level", () => {
-    const baseSetLogLevel = vi.spyOn(
-      Object.getPrototypeOf(PowerToolsLogger.prototype),
-      "setLogLevel",
-    );
+  describe("setServiceName", () => {
+    it("delegates to the formatter", () => {
+      const spy = vi.spyOn(FlexLogFormatter.prototype, "setServiceName");
 
-    const logger = new Logger({
-      serviceName: "test-service",
-      logLevel: "INFO",
+      logger.setServiceName("my-service");
+
+      expect(spy).toHaveBeenCalledExactlyOnceWith("my-service");
     });
-
-    logger.setLogLevel("DEBUG");
-
-    expect(baseSetLogLevel).not.toHaveBeenCalled();
-    expect(logger.getLevelName()).toBe("INFO");
   });
 });

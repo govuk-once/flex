@@ -6,29 +6,32 @@ describe("logging", () => {
     vi.unstubAllEnvs();
   });
 
-  it("preserves logger instance across setLogServiceName calls", async () => {
+  it("exports a logger singleton", async () => {
     const mod = await import(".");
-    const original = mod.logger("new-service", "DEBUG");
-    expect(mod.logger()).toBe(original);
+    expect(mod.logger).toBeDefined();
+    expect(typeof mod.logger.info).toBe("function");
   });
 
-  it("sets log level on first call", async () => {
+  it("returns the same instance on every access", async () => {
     const mod = await import(".");
-    mod.logger("new-service", "DEBUG");
-    expect(mod.logger().getLevelName()).toBe("DEBUG");
+    expect(mod.logger).toBe(mod.logger);
   });
 
-  it("ignores subsequent calls after log level has been set", async () => {
+  it("defaults to INFO log level", async () => {
     const mod = await import(".");
-    mod.logger("new-service", "DEBUG");
-    expect(mod.logger("new-service", "INFO").getLevelName()).toBe("DEBUG");
+    expect(mod.logger.getLevelName()).toBe("INFO");
   });
 
-  it("warns when log level is set more than once", async () => {
+  it("allows changing log level in non-production", async () => {
     const mod = await import(".");
-    const instance = mod.logger("new-service", "DEBUG");
-    const warnSpy = vi.spyOn(instance, "warn");
-    mod.logger("new-service", "WARN");
-    expect(warnSpy).toHaveBeenCalledOnce();
+    mod.logger.setLogLevel("DEBUG");
+    expect(mod.logger.getLevelName()).toBe("DEBUG");
+  });
+
+  it("ignores setLogLevel in production", async () => {
+    vi.stubEnv("FLEX_ENVIRONMENT", "production");
+    const mod = await import(".");
+    mod.logger.setLogLevel("DEBUG");
+    expect(mod.logger.getLevelName()).toBe("INFO");
   });
 });
