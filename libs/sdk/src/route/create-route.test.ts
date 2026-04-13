@@ -185,6 +185,20 @@ describe("createRouteHandler", () => {
       );
     });
 
+    it("sets the logger service name from the domain config", () => {
+      registerRoute();
+
+      expect(logger.setServiceName).toHaveBeenCalledExactlyOnceWith(
+        "test-domain-public-v1-test-route",
+      );
+    });
+
+    it("sets the logger log level from the resolved route config", () => {
+      registerRoute();
+
+      expect(logger.setLogLevel).toHaveBeenCalledExactlyOnceWith("INFO");
+    });
+
     it("registers middleware with the resolved route config", () => {
       const resources = {
         testKey: { type: "kms" as const, value: "test-key-value" },
@@ -198,7 +212,7 @@ describe("createRouteHandler", () => {
       registerRoute();
 
       expect(configureMiddleware).toHaveBeenCalledExactlyOnceWith({
-        logger: logger,
+        logger,
         logLevel: "DEBUG",
         hasRequestBody: false,
         resources,
@@ -247,7 +261,7 @@ describe("createRouteHandler", () => {
         mockContext,
         expect.objectContaining({
           gateway: "public",
-          logger: logger,
+          logger,
           headers: { test: { name: "x-test" } },
         }),
       );

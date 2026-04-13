@@ -52,7 +52,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
     );
     const headers = mergeHeaders(config.common?.headers, routeConfig.headers);
 
-    const { gateway, method } = routeKeySegments;
+    const { gateway, method, version } = routeKeySegments;
 
     const verboseLogs = logLevel === "DEBUG" || logLevel === "TRACE";
     const hasRequestBody =
@@ -63,6 +63,9 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const responseSchema = routeConfig.response;
 
     logger.setLogLevel(logLevel);
+    logger.setServiceName(
+      `${config.name}-${gateway}-${version}-${routeConfig.name}`,
+    );
 
     const middyHandler = configureMiddleware({
       logger,

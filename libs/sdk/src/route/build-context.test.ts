@@ -7,18 +7,12 @@ import { RequestBodyParseError } from "../utils/errors";
 import type { BuildContextOptions } from "./build-context";
 import { buildHandlerContext } from "./build-context";
 
-vi.mock("@flex/logging", () => ({
-  logger: {
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
+vi.mock("@flex/logging");
 
 describe("buildHandlerContext", () => {
   const contextOptions: BuildContextOptions = {
     gateway: "private",
-    logger: logger,
+    logger,
   };
 
   describe("Logger", () => {
