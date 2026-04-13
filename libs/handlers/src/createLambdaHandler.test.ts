@@ -10,21 +10,19 @@ import { beforeEach, describe, expect, vi } from "vitest";
 
 import { createLambdaHandler } from "./createLambdaHandler";
 
-vi.mock("@flex/logging", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@flex/logging")>();
-  return {
-    ...actual,
-    injectLambdaContext: vi.fn(actual.injectLambdaContext),
-  };
+vi.spyOn(logging.logger, "setServiceName");
+vi.spyOn(logging.logger, "setLogLevel");
+vi.spyOn(logging, "injectLambdaContext");
+
+const baseLoggerOptions = {
+  serviceName: "test-service",
+} as const;
+
+beforeEach(() => {
+  vi.clearAllMocks();
 });
 
-const baseLoggerOptions = {} as const;
-
 describe("createLambdaHandler", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("basic handler creation", () => {
     it("creates a middy handler from a simple handler function", async ({
       response,
@@ -154,6 +152,9 @@ describe("createLambdaHandler", () => {
 
       await handler(event, context);
 
+      expect(logging.logger.setServiceName).toHaveBeenCalledExactlyOnceWith(
+        "test-service",
+      );
       expect(logging.injectLambdaContext).toHaveBeenCalledExactlyOnceWith(
         logging.logger,
         expect.objectContaining({ logEvent: false }),
