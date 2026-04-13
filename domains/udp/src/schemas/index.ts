@@ -37,5 +37,6 @@ export type {
 export {
   CreateUserRequestSchema,
   CreateUserResponseSchema,
+  GetUserPushIdResponseSchema,
   GetUserResponseSchema,
 } from "./user";

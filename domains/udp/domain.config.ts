@@ -1,5 +1,4 @@
 import { domain } from "@flex/sdk";
-import { GetUserPushIdResponseSchema } from "@schemas/user";
 
 import {
   CreateNotificationPreferencesRequestSchema,
@@ -7,6 +6,7 @@ import {
   CreateUserRequestSchema,
   GetNotificationPreferencesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
+  GetUserPushIdResponseSchema,
   GetUserResponseSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
