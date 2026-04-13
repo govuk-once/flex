@@ -6,13 +6,7 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { flexFetch } from "./index";
 
-vi.mock("@flex/logging", () => ({
-  logger: {
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
+vi.mock("@flex/logging");
 
 describe("flex-fetch", () => {
   beforeEach(() => {

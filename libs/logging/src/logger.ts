@@ -22,7 +22,6 @@ class FlexLogger extends PowerToolsLogger {
     }
     super.setLogLevel(level);
   }
-
   setServiceName(name: string): void {
     this.#formatter.setServiceName(name);
   }

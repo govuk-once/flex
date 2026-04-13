@@ -6,13 +6,7 @@ import { z } from "zod";
 import { NonEmptyString } from "../schemas/common";
 import { validatePathParams } from "./validatePathParams";
 
-vi.mock("@flex/logging", () => ({
-  logger: {
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-  },
-}));
+vi.mock("@flex/logging");
 
 const testSchema = z.object({
   serviceName: NonEmptyString,
