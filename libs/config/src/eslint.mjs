@@ -137,6 +137,7 @@ export const config = [
       ...vitest.configs.recommended.rules,
       "@typescript-eslint/unbound-method": "off",
       "vitest/no-standalone-expect": "off",
+      "vitest/no-focused-tests": ["error", { fixable: false }],
     },
     settings: {
       vitest: { vitestImports: ["@flex/e2e", "@flex/testing"] },
