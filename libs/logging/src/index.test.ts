@@ -12,11 +12,6 @@ describe("logging", () => {
     expect(typeof mod.logger.info).toBe("function");
   });
 
-  it("returns the same instance on every access", async () => {
-    const mod = await import(".");
-    expect(mod.logger).toBe(mod.logger);
-  });
-
   it("defaults to INFO log level", async () => {
     const mod = await import(".");
     expect(mod.logger.getLevelName()).toBe("INFO");
