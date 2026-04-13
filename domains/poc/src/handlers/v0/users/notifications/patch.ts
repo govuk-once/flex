@@ -1,22 +1,24 @@
-import crypto from "node:crypto";
-
-import type { PushId } from "@flex/udp-domain";
 import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
-import { route, routeContext } from "../../../../../domain.config";
-
-const context = routeContext<"PATCH /v0/users/notifications">;
+import { route } from "../../../../../domain.config";
 
 export const handler = route(
   "PATCH /v0/users/notifications",
   async ({ auth, body, integrations, logger, featureFlags }) => {
     const userId = auth.pairwiseId as UserId;
 
-    const pushId = getPushId();
+    const pushIdResponse = await integrations.udpGetPushId({
+      headers: { "User-Id": userId },
+    });
+
+    if (!pushIdResponse.ok) {
+      logger.debug("Call to get push id failed", pushIdResponse.error.message);
+      throw new createHttpError.BadGateway();
+    }
 
     const result = await integrations.udpCreateNotificationPreferences({
-      body: { ...body, pushId },
+      body: { ...body, pushId: pushIdResponse.data.pushId },
       headers: {
         "requesting-service": "app",
         "requesting-service-user-id": userId,
@@ -42,12 +44,3 @@ export const handler = route(
     };
   },
 );
-
-function getPushId() {
-  const { auth, resources } = context();
-
-  return crypto
-    .createHmac("sha256", resources.udpNotificationSecret)
-    .update(auth.pairwiseId)
-    .digest("base64url") as PushId;
-}

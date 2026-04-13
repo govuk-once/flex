@@ -1,4 +1,5 @@
 import { domain } from "@flex/sdk";
+import { GetUserPushIdResponseSchema } from "@schemas/user";
 
 import {
   CreateNotificationPreferencesRequestSchema,
@@ -122,6 +123,21 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpCreateUser"],
             body: CreateUserRequestSchema,
+          },
+        },
+      },
+      "/users/push-id": {
+        GET: {
+          private: {
+            name: "get-user-notification-push-id",
+            resources: ["udpNotificationSecret"],
+            headers: {
+              userId: {
+                name: "User-Id",
+                required: true,
+              },
+            },
+            response: GetUserPushIdResponseSchema,
           },
         },
       },
