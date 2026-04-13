@@ -1,4 +1,4 @@
-import type { FullLogger, Logger } from "@flex/logging";
+import type { Logger } from "@flex/logging";
 import { injectLambdaContext } from "@flex/logging";
 import middy from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
@@ -36,7 +36,7 @@ export function configureMiddleware({
       }),
     )
     .use(
-      injectLambdaContext(logger as FullLogger, {
+      injectLambdaContext(logger, {
         logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
         correlationIdPath: "requestContext.requestId",
       }),

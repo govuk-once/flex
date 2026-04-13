@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Logger } from "./logger";
-
 describe("logging", () => {
   beforeEach(() => {
     vi.resetModules();
