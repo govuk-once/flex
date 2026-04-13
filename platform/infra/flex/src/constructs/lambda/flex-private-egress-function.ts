@@ -36,9 +36,6 @@ export class FlexPrivateEgressFunction extends Construct {
       environment: {
         ...functionProps.environment,
         FLEX_ENVIRONMENT: stage,
-        ...(stage === "production" && {
-          FLEX_LOG_LEVEL_CEILING: "INFO",
-        }),
       },
       logGroup,
       securityGroups: [privateEgressSg],

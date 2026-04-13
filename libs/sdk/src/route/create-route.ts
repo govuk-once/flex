@@ -1,4 +1,4 @@
-import { logger, setLogLevel, setLogServiceName } from "@flex/logging";
+import { logger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import type {
@@ -62,10 +62,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const querySchema = routeConfig.query;
     const responseSchema = routeConfig.response;
 
-    setLogServiceName(
+    logger.setLogLevel(logLevel);
+    logger.setServiceName(
       `${config.name}-${gateway}-${version}-${routeConfig.name}`,
     );
-    setLogLevel(logLevel);
 
     const middyHandler = configureMiddleware({
       logger,
