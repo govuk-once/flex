@@ -13,7 +13,7 @@ import {
  * Domain developers use this to decorate logs with request-specific data.
  */
 export function createChildLogger(context?: Record<string, unknown>): Logger {
-  return logger.createChild({ persistentKeys: context });
+  return logger.createChild({ persistentKeys: context }) as Logger;
 }
 
 export {
