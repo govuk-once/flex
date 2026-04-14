@@ -130,7 +130,11 @@ export const { config, route, routeContext } = domain({
         GET: {
           private: {
             name: "get-user-notification-push-id",
-            resources: ["udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
             headers: {
               userId: {
                 name: "User-Id",
