@@ -36,7 +36,7 @@ async function getDvlaLicenceKey(
 ): Promise<string> {
   const { integrations, logger } = ctx;
 
-  const response = await integrations.dvlaRetrieveCustomer({
+  const response = await integrations.dvlaCustomerSummary({
     path: `/${linkingId}`,
     headers: { auth: auth },
   });
@@ -46,11 +46,20 @@ async function getDvlaLicenceKey(
       status: response.error.status,
       errorBody: response.error.body,
     });
-
     throw new createHttpError.BadGateway();
   }
 
-  const drivingLicenceProduct = response.data.customer.products.find(
+  const customer = response.data.customerResponse?.customer;
+  const products = customer?.products;
+
+  if (!customer || !products) {
+    logger.error("Customer record or products missing from DVLA response", {
+      linkingId,
+    });
+    throw new createHttpError.UnprocessableEntity("Customer record incomplete");
+  }
+
+  const drivingLicenceProduct = products.find(
     (p) => p.productType === "Driving Licence",
   );
 
@@ -58,7 +67,7 @@ async function getDvlaLicenceKey(
 
   if (!productKey) {
     logger.error("No Driving Licence product key found in DVLA reference", {
-      customerId: response.data.customer.customerId,
+      customerId: customer.customerId,
     });
     throw new createHttpError.UnprocessableEntity(
       "Driving Licence record missing",

@@ -60,17 +60,20 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
     },
     customer: {
       get: (id: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(`${DVLA_REMOTE_ROUTES.app}/retrieve-customer`, {
-          method: "POST",
-          headers: {
-            ...defaultHeaders,
-            "X-API-KEY": config.apiKey,
-            Authorization: jwt.trim(),
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.app}/retrieve-customer-summary`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
+            },
+            body: JSON.stringify({
+              linkingId: id,
+            }),
           },
-          body: JSON.stringify({
-            linkingId: id,
-          }),
-        }).request;
+        ).request;
         return typedFetch(request);
       },
     },
@@ -87,6 +90,25 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
             linkingId: id,
           }),
         }).request;
+        return typedFetch(request);
+      },
+    },
+    driver: {
+      get: (id: string, jwt: string): Promise<ApiResult<void>> => {
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.app}/retrieve-driver-summary`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
+            },
+            body: JSON.stringify({
+              linkingId: id,
+            }),
+          },
+        ).request;
         return typedFetch(request);
       },
     },
