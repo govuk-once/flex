@@ -27,4 +27,8 @@ export const GetUserResponseSchema = z.object({
   }),
 });
 
+export const GetUserPushIdResponseSchema = z.object({
+  pushId: PushIdBranded,
+});
+
 export type GetUserResponse = z.output<typeof GetUserResponseSchema>;

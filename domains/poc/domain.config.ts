@@ -3,6 +3,7 @@ import {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
+  GetUserPushIdResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
 } from "@flex/udp-domain";
 
@@ -52,6 +53,12 @@ export const { config, route, routeContext } = domain({
       route: "POST /v1/users",
       body: CreateUserRequestSchema,
     },
+    udpGetPushId: {
+      type: "domain",
+      target: "udp",
+      route: "GET /v1/users/push-id",
+      response: GetUserPushIdResponseSchema,
+    },
   },
   routes: {
     v0: {
@@ -84,7 +91,7 @@ export const { config, route, routeContext } = domain({
               "encryptionKeyArn",
               "udpNotificationSecret",
             ],
-            integrations: ["udpCreateNotificationPreferences"],
+            integrations: ["udpCreateNotificationPreferences", "udpGetPushId"],
             featureFlags: ["newUserProfileEnabled"],
             function: { timeoutSeconds: 20 },
             body: UpdateNotificationPreferencesRequestSchema,

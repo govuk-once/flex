@@ -6,6 +6,7 @@ import {
   CreateUserRequestSchema,
   GetNotificationPreferencesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
+  GetUserPushIdResponseSchema,
   GetUserResponseSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
@@ -122,6 +123,25 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpCreateUser"],
             body: CreateUserRequestSchema,
+          },
+        },
+      },
+      "/users/push-id": {
+        GET: {
+          private: {
+            name: "get-user-notification-push-id",
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
+            headers: {
+              userId: {
+                name: "User-Id",
+                required: true,
+              },
+            },
+            response: GetUserPushIdResponseSchema,
           },
         },
       },
