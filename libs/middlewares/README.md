@@ -38,47 +38,6 @@ Fetches secrets from AWS Secrets Manager and makes them available in the handler
 
 Throws if any secret ID is `undefined`.
 
-### Usage
-
-```typescript
-import { createLambdaHandler } from "@flex/handlers";
-import { createSecretsMiddleware } from "@flex/middlewares";
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
-
-const secrets = {
-  apiKey: process.env.MY_API_KEY_SECRET_ID, // pragma: allowlist secret
-  databasePassword: process.env.MY_DB_PASSWORD_SECRET_ID, // pragma: allowlist secret
-};
-
-type SecretsContext = typeof secrets;
-
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResultV2,
-  SecretsContext
->(
-  async (event, context) => {
-    // Type-safe access to secrets via context
-    const { apiKey, databasePassword } = context;
-
-    // business logic using secrets
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Success" }),
-    };
-  },
-  {
-    logLevel: "INFO",
-    serviceName: "service-name",
-    middlewares: [createSecretsMiddleware({ secrets })],
-  },
-);
-```
-
 #### With Options
 
 Pass additional configuration to the underlying [`@middy/secrets-manager`](https://middy.js.org/docs/middlewares/secrets-manager/):
@@ -106,43 +65,12 @@ Extracts the pairwise ID from the Lambda authorizer context and makes it availab
 
 Throws if the pairwise ID is not found in the authorizer context.
 
-### Usage
-
-```typescript
-import { createLambdaHandler } from "@flex/handlers";
-import type { ContextWithPairwiseId, V2Authorizer } from "@flex/middlewares";
-import { extractUser } from "@flex/middlewares";
-import type {
-  APIGatewayProxyEventV2WithLambdaAuthorizer,
-  APIGatewayProxyResultV2,
-} from "aws-lambda";
-
-export const handler = createLambdaHandler<
-  APIGatewayProxyEventV2WithLambdaAuthorizer<V2Authorizer>,
-  APIGatewayProxyResultV2,
-  ContextWithPairwiseId
->(
-  async (event, context) => {
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ userId: context.pairwiseId }),
-    };
-  },
-  {
-    logLevel: "INFO",
-    serviceName: "service-name",
-    middlewares: [extractUser],
-  },
-);
-```
-
 ---
 
 ## Related
 
 **FLEX:**
 
-- [@flex/handlers - With FLEX Middleware](/libs/handlers/README.md#with-flex-middleware)
 - [Platform Development Guide](/docs/platform-development.md)
 
 **External:**

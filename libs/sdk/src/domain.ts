@@ -4,7 +4,6 @@ import { createRouteContext, createRouteHandler } from "./route";
 import type {
   DomainConfig,
   DomainResult,
-  HttpMethod,
   InferFeatureFlagKeys,
   InferIntegrationKeys,
   InferResourceKeys,
@@ -32,15 +31,6 @@ export function domain<
 // Hello/UDP Domains
 // ----------------------------------------------------------------------------
 
-const permissionsSchema = z.object({
-  type: z.enum(["domain", "gateway"]),
-  path: z.string(),
-  method: z.string(),
-  target: z.string(),
-});
-
-export type Permission = z.infer<typeof permissionsSchema>;
-
 const handlerConfigSchema = z.object({
   entry: z.string(),
   type: z.enum(["PUBLIC", "PRIVATE", "ISOLATED"]),
@@ -48,7 +38,16 @@ const handlerConfigSchema = z.object({
   envEphemeral: z.record(z.string(), z.string()).optional(),
   envSecret: z.record(z.string(), z.string()).optional(),
   kmsKeys: z.record(z.string(), z.string()).optional(),
-  permissions: z.array(permissionsSchema).optional(),
+  permissions: z
+    .array(
+      z.object({
+        type: z.enum(["domain", "gateway"]),
+        path: z.string(),
+        method: z.string(),
+        target: z.string(),
+      }),
+    )
+    .optional(),
   timeoutSeconds: z.number().optional(),
 });
 
@@ -73,20 +72,3 @@ export const domainSchema = z.object({
   owner: z.string().optional(),
   versions: z.record(z.string(), z.object({ routes: versionRouteSchema })),
 });
-
-type InferredDomain = z.infer<typeof domainSchema>;
-export type IDomainEndpoint = z.infer<typeof handlerConfigSchema>;
-
-export type IDomain = Omit<InferredDomain, "versions"> & {
-  versions: Record<
-    string,
-    {
-      routes: Record<string, Partial<Record<HttpMethod, IDomainEndpoint>>>;
-    }
-  >;
-};
-
-export function defineDomain<const T extends IDomain>(config: T) {
-  domainSchema.parse(config);
-  return config;
-}

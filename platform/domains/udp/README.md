@@ -39,7 +39,6 @@ Alternatively, run `pnpm <command>` from within `platform/domains/udp/`.
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
 - [UDP Service Gateway construct](/platform/infra/flex/src/constructs/gateways/udp.ts)

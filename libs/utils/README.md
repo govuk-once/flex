@@ -197,7 +197,6 @@ const { serviceName, identifier } = validatePathParams(
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/testing](/libs/testing/README.md)
 
 **External:**

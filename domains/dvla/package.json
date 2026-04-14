@@ -12,7 +12,6 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/handlers": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",

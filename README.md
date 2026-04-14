@@ -69,7 +69,6 @@ flex/
 | Package                                            | Description                                                  |
 | -------------------------------------------------- | ------------------------------------------------------------ |
 | [`@flex/config`](/libs/config/README.md)           | Shared ESLint, TypeScript and Vitest configuration           |
-| [`@flex/handlers`](/libs/handlers/README.md)       | Lambda handler factory with Middy middleware                 |
 | [`@flex/logging`](/libs/logging/README.md)         | Structured logging via AWS Lambda Powertools                 |
 | [`@flex/middlewares`](/libs/middlewares/README.md) | Shared Middy middleware                                      |
 | [`@flex/params`](/libs/params/README.md)           | Environment variable validation and SSM parameter resolution |

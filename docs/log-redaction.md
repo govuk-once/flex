@@ -141,7 +141,6 @@ The toggle is protected by two independent mechanisms:
 **FLEX:**
 
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/handlers](/libs/handlers/README.md)
 - [Domain Development Guide](/docs/domain-development.md)
 
 **External:**
