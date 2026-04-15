@@ -1,6 +1,5 @@
-import type { NotificationId } from "@schemas/notifications";
+import type { PushId } from "@schemas/notifications";
 
-export const createNotificationId = (id = "test-notification-id") =>
-  id as NotificationId;
+export const createPushId = (id = "test-notification-id") => id as PushId;
 
-export const notificationId = createNotificationId();
+export const pushId = createPushId();

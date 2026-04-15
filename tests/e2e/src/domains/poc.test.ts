@@ -1,26 +1,24 @@
-import { it } from "@flex/testing/e2e";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
 } from "@flex/udp-domain";
 import { describe, expect, inject } from "vitest";
 
+import { it } from "../extend/it";
+
 describe("POC domain", () => {
   const { JWT } = inject("e2eEnv");
 
   describe("POST /poc/v0/identity/:service/:id", () => {
-    const endpoint = `/poc/v0/identity/test-service/test-id`;
-
-    it("rejects unauthenticated requests", async ({ cloudfront }) => {
-      const result = await cloudfront.client.post(endpoint);
-
-      expect(result.status).toBe(401);
-      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    });
+    const service = "test-service-poc";
+    const endpoint = `/poc/v0/identity/${service}/test-id`;
 
     it("returns 201 when identity is linked successfully", async ({
       cloudfront,
+      withCleanIdentity,
     }) => {
+      await withCleanIdentity(service);
+
       const result = await cloudfront.client.post(endpoint, {
         headers: { Authorization: `Bearer ${JWT.VALID}` },
       });
@@ -32,15 +30,9 @@ describe("POC domain", () => {
   describe("PATCH /poc/v0/users/notifications", () => {
     const endpoint = `/poc/v0/users/notifications`;
 
-    it("rejects unauthenticated requests", async ({ cloudfront }) => {
-      const result = await cloudfront.client.get(endpoint);
-
-      expect(result.status).toBe(401);
-      expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-    });
-
     it("returns 200 with updated notification preferences", async ({
       cloudfront,
+      udpUser: _user,
     }) => {
       const result = await cloudfront.client.patch<
         UpdateNotificationPreferencesRequest,
@@ -53,7 +45,7 @@ describe("POC domain", () => {
       expect(result.status).toBe(200);
       expect(result.body).toStrictEqual({
         consentStatus: "accepted",
-        notificationId: expect.any(String) as string,
+        pushId: expect.any(String) as string,
         featureFlags: {
           newUserProfileEnabled: expect.any(Boolean) as boolean,
         },

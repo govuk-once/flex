@@ -36,7 +36,7 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
 
 const MOCK_EXPECTED_DOMAIN_NOTIFICATIONS: DomainNotificationsResponse = {
   consentStatus: "accepted",
-  notificationId: "mock-notification-id",
+  pushId: "mock-notification-id",
 };
 
 const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
@@ -46,7 +46,7 @@ const MOCK_EXPECTED_DOMAIN_USER: CreateUserResponse = {
 const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
   data: {
     consentStatus: "accepted",
-    notificationId: "mock-notification-id",
+    pushId: "mock-notification-id",
   },
 };
 
@@ -68,6 +68,11 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_REMOTE_NOTIFICATIONS,
+    }),
+    delete: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      data: undefined,
     }),
   },
   serviceLink: {
@@ -108,7 +113,7 @@ describe("UDP Service Gateway", () => {
       method: "POST",
       path: "/v1/users",
       operation: "createUser",
-      body: { notificationId: "123", userId: "456" },
+      body: { pushId: "123", userId: "456" },
       expected: MOCK_EXPECTED_DOMAIN_USER,
     },
   ])(
@@ -245,6 +250,34 @@ describe("UDP Service Gateway", () => {
     expect(remoteClient.serviceLink.delete).toHaveBeenCalledWith(
       serviceName,
       userId,
+    );
+  });
+
+  it("dispatches DELETE /v1/notifications and deletes notification preferences", async ({
+    privateGatewayEvent,
+    env,
+  }) => {
+    env.set({
+      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
+    });
+
+    const requestingServiceUserId = "pairwise-123";
+
+    const response = await handler(
+      privateGatewayEvent.delete("/gateways/udp/v1/notifications", {
+        body: undefined,
+        headers: { "requesting-service-user-id": requestingServiceUserId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 204,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(remoteClient.notifications.delete).toHaveBeenCalledWith(
+      requestingServiceUserId,
     );
   });
 

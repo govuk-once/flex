@@ -4,6 +4,10 @@ import createHttpError from "http-errors";
 import { status } from "http-status";
 
 import { ViewDriverResponse } from "../../../schemas/driversLicence";
+import {
+  getDvlaAuthToken,
+  getUserLinkingId,
+} from "../../../services/authentication";
 
 type GetDvlaLicenceContext = InferRouteContext<
   typeof config,
@@ -11,13 +15,11 @@ type GetDvlaLicenceContext = InferRouteContext<
 >;
 
 export const handler = route("GET /v1/driving-licence", async (ctx) => {
-  const userLinkingId = process.env.flexDvlaTestUser;
-  if (!userLinkingId) {
-    ctx.logger.error("Failed to get user linkingId");
-    throw new createHttpError.BadGateway();
-  }
+  const [userLinkingId, auth] = await Promise.all([
+    getUserLinkingId(ctx),
+    getDvlaAuthToken(ctx),
+  ]);
 
-  const auth = await getDvlaAuthToken(ctx);
   const licenceKey = await getDvlaLicenceKey(ctx, auth, userLinkingId);
   const data = await getDvlaLicence(ctx, auth, licenceKey);
 
@@ -26,23 +28,6 @@ export const handler = route("GET /v1/driving-licence", async (ctx) => {
     data,
   };
 });
-
-async function getDvlaAuthToken(ctx: GetDvlaLicenceContext): Promise<string> {
-  const { integrations, logger } = ctx;
-
-  const response = await integrations.dvlaAuthenticate({});
-
-  if (!response.ok) {
-    logger.error("Failed to authenticate with DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-
-    throw new createHttpError.BadGateway();
-  }
-
-  return response.data["id-token"];
-}
 
 async function getDvlaLicenceKey(
   ctx: GetDvlaLicenceContext,

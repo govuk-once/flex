@@ -1,17 +1,8 @@
 import { createUserId, it } from "@flex/testing";
 import nock from "nock";
-import { describe, expect, vi } from "vitest";
+import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
-
-vi.mock("node:crypto", () => ({
-  default: {
-    createHmac: vi.fn(() => ({
-      update: vi.fn().mockReturnThis(),
-      digest: vi.fn().mockReturnValue("test-notification-id"),
-    })),
-  },
-}));
 
 describe("PATCH /v0/users/notifications", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
@@ -19,16 +10,25 @@ describe("PATCH /v0/users/notifications", () => {
 
   const userId = createUserId("test-pairwise-id");
 
+  const mockUdpGetPushIdSuccess = () =>
+    api
+      .get("/domains/udp/v1/users/push-id")
+      .matchHeader("User-Id", userId)
+      .reply(200, {
+        pushId: "derived-notification-id",
+      });
+
   it("updates user notifications successfully and returns 204 with updated notifications", async ({
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
+    mockUdpGetPushIdSuccess();
     api
       .post("/gateways/udp/v1/notifications")
       .matchHeader("requesting-service-user-id", userId)
       .reply(200, {
         consentStatus: "accepted",
-        notificationId: "derived-notification-id",
+        pushId: "derived-notification-id",
       });
 
     const result = await handler(
@@ -44,7 +44,7 @@ describe("PATCH /v0/users/notifications", () => {
     expect(result.body).toBe(
       JSON.stringify({
         consentStatus: "accepted",
-        notificationId: "derived-notification-id",
+        pushId: "derived-notification-id",
         featureFlags: {
           newUserProfileEnabled: true,
         },
@@ -76,6 +76,7 @@ describe("PATCH /v0/users/notifications", () => {
     context,
     privateGatewayEventWithAuthorizer,
   }) => {
+    mockUdpGetPushIdSuccess();
     api.post("/gateways/udp/v1/notifications").reply(500);
 
     const result = await handler(

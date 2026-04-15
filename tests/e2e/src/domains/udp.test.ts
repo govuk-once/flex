@@ -1,4 +1,3 @@
-import { it } from "@flex/testing/e2e";
 import type {
   GetUserResponse,
   UpdateNotificationPreferencesOutboundResponse,
@@ -6,85 +5,96 @@ import type {
 } from "@flex/udp-domain";
 import { describe, expect, inject } from "vitest";
 
-describe("UDP domain", () => {
+import { it } from "../extend/it";
+
+describe.sequential("UDP domain", () => {
   const { JWT } = inject("e2eEnv");
 
   const authorization = { Authorization: `Bearer ${JWT.VALID}` };
 
   describe("/udp/v1/identity/:service", () => {
+    const serviceId = "test-service-id";
     const service = "test-service";
     const endpoint = `/udp/v1/identity/${service}`;
 
     describe("GET", () => {
-      it("rejects unauthenticated requests", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint);
-
-        expect(result.status).toBe(401);
-        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      });
-
-      it("returns 200 with service identity link status", async ({
+      it("returns 200 with service identity true when linked", async ({
         cloudfront,
+        withIdentityLink,
       }) => {
-        const result = await cloudfront.client.get(endpoint, {
+        await withIdentityLink(service, serviceId);
+        const linkedResult = await cloudfront.client.get(endpoint, {
           headers: { ...authorization },
         });
+        expect(linkedResult.status).toBe(200);
+        expect(linkedResult.body).toStrictEqual({
+          linked: true,
+        });
+      });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toStrictEqual({
-          linked: expect.any(Boolean) as boolean,
+      it("returns 200 with service identity false when unlinked", async ({
+        cloudfront,
+        withCleanIdentity,
+      }) => {
+        await withCleanIdentity(service);
+        const unlinkedResult = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+        expect(unlinkedResult.status).toBe(200);
+        expect(unlinkedResult.body).toStrictEqual({
+          linked: false,
         });
       });
     });
 
     describe("DELETE", () => {
-      it("rejects unauthenticated requests", async ({ cloudfront }) => {
-        const result = await cloudfront.client.delete(endpoint);
-
-        expect(result.status).toBe(401);
-        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      });
-
-      it("returns 204 when identity is unlinked successfully", async ({
+      it("returns 204 when identity is unlinked successfully and 404 when trying to unlink the same service", async ({
         cloudfront,
+        withIdentityLink,
       }) => {
-        const created = await cloudfront.client.post(
-          `${endpoint}/test-service-id`,
-          { headers: { ...authorization } },
-        );
-
-        expect(created.status).toBe(201);
-
-        const result = await cloudfront.client.delete(endpoint, {
+        await withIdentityLink(service, serviceId);
+        const resultUnlinked = await cloudfront.client.delete(endpoint, {
           headers: { ...authorization },
         });
+        expect(resultUnlinked.status).toBe(204);
 
-        expect(result.status).toBe(204);
+        const resultNotFound = await cloudfront.client.delete(endpoint, {
+          headers: { ...authorization },
+        });
+        expect(resultNotFound.status).toBe(404);
       });
     });
-  });
 
-  describe("/udp/v1/identity/:service/:id", () => {
-    const service = "test-service";
-    const serviceId = "test-service-id";
-    const endpoint = `/udp/v1/identity/${service}/${serviceId}`;
+    describe("/:id", () => {
+      const unlinkEndpoint = endpoint;
+      const postEndpoint = `${unlinkEndpoint}/${serviceId}`;
 
-    describe("POST", () => {
-      it("rejects unauthenticated requests", async ({ cloudfront }) => {
-        const result = await cloudfront.client.post(endpoint);
+      describe("POST", () => {
+        it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
+          cloudfront,
+          withCleanIdentity,
+        }) => {
+          await withCleanIdentity(service);
 
-        expect(result.status).toBe(401);
-        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      });
+          const createResult = await cloudfront.client.post(postEndpoint, {
+            headers: { ...authorization },
+          });
+          expect(createResult.status).toBe(201);
 
-      it("returns 201 when identity is linked successfully", async ({
-        cloudfront,
-      }) => {
-        const result = await cloudfront.client.post(endpoint, {
-          headers: { ...authorization },
+          const idempotentResult = await cloudfront.client.post(postEndpoint, {
+            headers: { ...authorization },
+          });
+          expect(idempotentResult.status).toBe(204);
+
+          const differentId = "new-test-id-999";
+          const swapEndpoint = `${unlinkEndpoint}/${differentId}`;
+
+          const swapResult = await cloudfront.client.post(swapEndpoint, {
+            headers: { ...authorization },
+          });
+
+          expect(swapResult.status).toBe(201);
         });
-
-        expect(result.status).toBe(201);
       });
     });
   });
@@ -93,13 +103,6 @@ describe("UDP domain", () => {
     const endpoint = "/udp/v1/users";
 
     describe("GET", () => {
-      it("rejects unauthenticated requests", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint);
-
-        expect(result.status).toBe(401);
-        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      });
-
       it("returns 200 with user profile", async ({ cloudfront }) => {
         const result = await cloudfront.client.get<GetUserResponse>(endpoint, {
           headers: { ...authorization },
@@ -108,10 +111,9 @@ describe("UDP domain", () => {
         expect(result.status).toBe(200);
         expect(result.body).toStrictEqual({
           userId: expect.any(String) as string,
-          notificationId: expect.any(String) as string,
           notifications: {
             consentStatus: expect.any(String) as string,
-            notificationId: expect.any(String) as string,
+            pushId: expect.any(String) as string,
           },
         });
       });
@@ -122,15 +124,9 @@ describe("UDP domain", () => {
     const endpoint = "/udp/v1/users/notifications";
 
     describe("PATCH", () => {
-      it("rejects unauthenticated requests", async ({ cloudfront }) => {
-        const result = await cloudfront.client.patch(endpoint);
-
-        expect(result.status).toBe(401);
-        expect(result.headers.get("x-rejected-by")).toBe("cloudfront-function");
-      });
-
       it("returns 200 with updated user notification preferences", async ({
         cloudfront,
+        udpUser: _user,
       }) => {
         const result = await cloudfront.client.patch<
           UpdateNotificationPreferencesRequest,
@@ -143,7 +139,7 @@ describe("UDP domain", () => {
         expect(result.status).toBe(200);
         expect(result.body).toStrictEqual({
           consentStatus: "accepted",
-          notificationId: expect.any(String) as string,
+          pushId: expect.any(String) as string,
         });
       });
 

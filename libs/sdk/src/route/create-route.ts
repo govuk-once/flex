@@ -1,4 +1,4 @@
-import { logger, setLogLevel, setLogServiceName } from "@flex/logging";
+import { logger } from "@flex/logging";
 import createHttpError from "http-errors";
 
 import type {
@@ -17,7 +17,6 @@ import { mergeHeaders } from "./headers";
 import { buildDomainIntegrations } from "./integrations";
 import { configureMiddleware } from "./middleware";
 import {
-  getRouteAccess,
   getRouteConfig,
   getRouteFeatureFlags,
   getRouteIntegrations,
@@ -39,7 +38,6 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const routeKeySegments = extractRouteKeySegments(routeKey);
 
     const routeConfig = getRouteConfig(config, routeKeySegments);
-    const access = getRouteAccess(config.common?.access, routeConfig.access);
     const logLevel = getRouteLogLevel(
       config.common?.logLevel,
       routeConfig.logLevel,
@@ -64,10 +62,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
     const querySchema = routeConfig.query;
     const responseSchema = routeConfig.response;
 
-    setLogServiceName(
+    logger.setLogLevel(logLevel);
+    logger.setServiceName(
       `${config.name}-${gateway}-${version}-${routeConfig.name}`,
     );
-    setLogLevel(logLevel);
 
     const middyHandler = configureMiddleware({
       logger,
@@ -87,7 +85,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
         );
 
         const store = buildHandlerContext(event, context, {
-          access,
+          gateway,
           logger,
           bodySchema,
           querySchema,

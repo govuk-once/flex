@@ -5,6 +5,8 @@ import {
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
   GetNotificationPreferencesResponseSchema,
+  GetServiceIdentityLinkResponseSchema,
+  GetUserPushIdResponseSchema,
   GetUserResponseSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
@@ -63,6 +65,18 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpGetIdentity"],
           },
+          private: {
+            name: "get-service-identity",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetIdentity"],
+            headers: {
+              userId: {
+                name: "User-Id",
+                required: true,
+              },
+            },
+            response: GetServiceIdentityLinkResponseSchema,
+          },
         },
         DELETE: {
           public: {
@@ -77,7 +91,11 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "create-service-identity-link",
             resources: ["privateGatewayUrl"],
-            integrations: ["udpCreateIdentity"],
+            integrations: [
+              "udpCreateIdentity",
+              "udpDeleteIdentity",
+              "udpGetIdentity",
+            ],
           },
         },
       },
@@ -105,6 +123,25 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpCreateUser"],
             body: CreateUserRequestSchema,
+          },
+        },
+      },
+      "/users/push-id": {
+        GET: {
+          private: {
+            name: "get-user-notification-push-id",
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
+            headers: {
+              userId: {
+                name: "User-Id",
+                required: true,
+              },
+            },
+            response: GetUserPushIdResponseSchema,
           },
         },
       },

@@ -7,7 +7,10 @@ import { createIdentityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
-import type { RouteContract } from "./types";
+import type {
+  DeleteNotificationPreferencesRouteContract,
+  RouteContract,
+} from "./types";
 
 const INTERNAL_ROUTES = {
   user: "/v1/users",
@@ -31,7 +34,7 @@ export const ROUTE_CONTRACTS = {
     toRemote: async (event) => {
       const data = await parseAndMapBody(inboundCreateUserRequestSchema, event);
       return {
-        notificationId: data.notificationId,
+        pushId: data.pushId,
         appId: data.userId,
       };
     },
@@ -57,6 +60,21 @@ export const ROUTE_CONTRACTS = {
       client.notifications.update(data, data.requestingServiceUserId),
     toDomain: (remote) => remote.data,
   },
+  "DELETE:/v1/notifications": {
+    operation: "deleteNotificationPreferences",
+    method: "DELETE",
+    inboundPath: INTERNAL_ROUTES.notifications,
+    remotePath: UDP_REMOTE_ROUTES.notifications,
+    toRemote: (event) => {
+      const requestingServiceUserId = assertRequiredHeaderAndReturn(
+        event,
+        "requesting-service-user-id",
+      );
+      return Promise.resolve({ requestingServiceUserId });
+    },
+    callRemote: (client, data) =>
+      client.notifications.delete(data.requestingServiceUserId),
+  } satisfies DeleteNotificationPreferencesRouteContract,
   "GET:/v1/notifications": {
     operation: "getNotificationPreferences",
     method: "GET",

@@ -1,1 +1,1 @@
-export { getNotificationId } from "./get-notification-id";
+export { getPushId } from "./get-push-id";

@@ -1,4 +1,5 @@
 import { domain } from "@flex/sdk";
+import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 
 import { authenticateResponseSchema } from "./src/schemas/authenticate";
 import { getCustomerResponseSchema } from "./src/schemas/customer";
@@ -16,14 +17,14 @@ export const { config, route, routeContext } = domain({
       path: "/flex/apigw/private/gateway-url",
       scope: "stage",
     },
-    flexDvlaTestUser: {
-      type: "ssm",
-      path: "/flex-param/dvla/test-user",
-      scope: "environment",
-    },
     encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
   },
   integrations: {
+    dvlaTestNotification: {
+      type: "gateway",
+      target: "dvla",
+      route: "POST /v1/test-notification/*",
+    },
     dvlaRetrieveCustomer: {
       type: "gateway",
       target: "dvla",
@@ -42,6 +43,12 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/authenticate",
       response: authenticateResponseSchema,
     },
+    udpGetLinkingId: {
+      type: "domain",
+      target: "udp",
+      route: "GET /v1/identity/*",
+      response: GetServiceIdentityLinkResponseSchema,
+    },
   },
   routes: {
     v1: {
@@ -53,13 +60,23 @@ export const { config, route, routeContext } = domain({
               "dvlaAuthenticate",
               "dvlaRetrieveLicence",
               "dvlaRetrieveCustomer",
+              "udpGetLinkingId",
             ],
             response: viewDriverResponseSchema,
-            resources: [
-              "flexPrivateGatewayUrl",
-              "encryptionKeyArn",
-              "flexDvlaTestUser",
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/test-notification": {
+        POST: {
+          public: {
+            name: "post-test-notification",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaTestNotification",
+              "udpGetLinkingId",
             ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
       },

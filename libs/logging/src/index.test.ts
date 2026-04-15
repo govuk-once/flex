@@ -6,17 +6,27 @@ describe("logging", () => {
     vi.unstubAllEnvs();
   });
 
-  it("preserves logger instance across setLogServiceName calls", async () => {
+  it("exports a logger singleton", async () => {
     const mod = await import(".");
-    const original = mod.logger;
-    mod.setLogServiceName("new-service");
-    expect(mod.logger).toBe(original);
+    expect(mod.logger).toBeDefined();
+    expect(typeof mod.logger.info).toBe("function");
   });
 
-  it("preserves logger instance across setLogLevel calls", async () => {
+  it("defaults to INFO log level", async () => {
     const mod = await import(".");
-    const original = mod.logger;
-    mod.setLogLevel("DEBUG");
-    expect(mod.logger).toBe(original);
+    expect(mod.logger.getLevelName()).toBe("INFO");
+  });
+
+  it("allows changing log level in non-production", async () => {
+    const mod = await import(".");
+    mod.logger.setLogLevel("DEBUG");
+    expect(mod.logger.getLevelName()).toBe("DEBUG");
+  });
+
+  it("ignores setLogLevel in production", async () => {
+    vi.stubEnv("FLEX_ENVIRONMENT", "production");
+    const mod = await import(".");
+    mod.logger.setLogLevel("DEBUG");
+    expect(mod.logger.getLevelName()).toBe("INFO");
   });
 });

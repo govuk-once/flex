@@ -11,15 +11,17 @@ import {
   GetLicenceRequestSchema,
   GetLicenceResponseSchema,
 } from "../schemas/remote/drivingLicences";
+import { PostTestNotificationRequestSchema } from "../schemas/remote/testNotification";
 
 export type RouteOperation =
   | "getAuthenticate"
   | "getRetrieveCustomer"
-  | "getRetrieveDrivingLicences";
+  | "getRetrieveDrivingLicences"
+  | "postTestNotification";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
-  TMethod extends "GET",
+  TMethod extends "GET" | "POST",
   TRemoteRequest,
   TRemoteResponse,
   TDomainResponse,
@@ -62,7 +64,16 @@ export type GetDrivingLicenceRetrieveRouteContract = BaseRouteContract<
   GetLicenceResponseSchema
 >;
 
+export type PostDrivingTestNotification = BaseRouteContract<
+  "postTestNotification",
+  "POST",
+  PostTestNotificationRequestSchema,
+  unknown,
+  unknown
+>;
+
 export type RouteContract =
-  | GetDrivingLicenceRetrieveRouteContract
   | GetAuthenticateRouteContract
-  | GetCustomerRetrieveRouteContract;
+  | GetCustomerRetrieveRouteContract
+  | GetDrivingLicenceRetrieveRouteContract
+  | PostDrivingTestNotification;

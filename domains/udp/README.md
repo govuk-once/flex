@@ -49,7 +49,7 @@ Returns a deterministic derived ID for the authenticated user.
 
 ```json
 {
-  "notificationId": "base64url-encoded-derived-id"
+  "pushId": "base64url-encoded-derived-id"
 }
 ```
 

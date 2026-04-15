@@ -2,13 +2,13 @@ import { NonEmptyString, UserId } from "@flex/utils";
 import { z } from "zod";
 
 import {
-  NotificationIdBranded,
   NotificationPreferencesConsentStatus,
+  PushIdBranded,
 } from "./notifications";
 
 export const CreateUserRequestSchema = z.object({
   userId: UserId,
-  notificationId: NotificationIdBranded,
+  pushId: PushIdBranded,
 });
 
 export type CreateUserRequest = z.output<typeof CreateUserRequestSchema>;
@@ -21,11 +21,14 @@ export type CreateUserResponse = z.output<typeof CreateUserResponseSchema>;
 
 export const GetUserResponseSchema = z.object({
   userId: UserId,
-  notificationId: NotificationIdBranded,
   notifications: z.object({
     consentStatus: NotificationPreferencesConsentStatus,
-    notificationId: NotificationIdBranded,
+    pushId: PushIdBranded,
   }),
+});
+
+export const GetUserPushIdResponseSchema = z.object({
+  pushId: PushIdBranded,
 });
 
 export type GetUserResponse = z.output<typeof GetUserResponseSchema>;

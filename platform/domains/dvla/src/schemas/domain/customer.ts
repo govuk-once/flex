@@ -1,10 +1,4 @@
-import { NonEmptyString } from "@flex/utils";
 import z from "zod";
-
-export const getCustomerRequestSchema = z.object({
-  id: NonEmptyString,
-  jwt: NonEmptyString,
-});
 
 const StructuredAddressSchema = z.object({
   structuredAddress: z.object({

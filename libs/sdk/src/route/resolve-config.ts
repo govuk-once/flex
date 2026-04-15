@@ -173,6 +173,9 @@ export function getRouteAccess(common?: RouteAccess, route?: RouteAccess) {
   return route ?? common ?? "isolated";
 }
 
-export function getRouteLogLevel(common?: LogLevel, route?: LogLevel) {
+export function getRouteLogLevel(
+  common?: LogLevel,
+  route?: LogLevel,
+): LogLevel {
   return route ?? common ?? "INFO";
 }

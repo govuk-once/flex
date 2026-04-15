@@ -2,6 +2,7 @@ import { CfnOutput, Duration } from "aws-cdk-lib";
 import {
   AccessLogFormat,
   AuthorizationType,
+  CfnRestApi,
   EndpointType,
   LogGroupLogDestination,
   MethodLoggingLevel,
@@ -167,6 +168,10 @@ export class FlexPlatformStack extends BaseStack {
       "CKV_AWS_120",
       "Disabled for now and will renable when caching strategy is defined",
     );
+
+    const cfnApi = restApi.node.defaultChild as CfnRestApi;
+    cfnApi.endpointAccessMode = "BASIC";
+    cfnApi.securityPolicy = "SecurityPolicy_TLS13_1_2_2021_06";
 
     const healthEndpoint = restApi.root
       .addResource("health")

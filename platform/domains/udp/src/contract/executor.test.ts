@@ -12,6 +12,7 @@ const remoteClient = {
   notifications: {
     get: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
   },
   serviceLink: {
     create: vi.fn(),
@@ -30,7 +31,7 @@ describe("Executor", () => {
       method: "POST",
       path: "/v1/users",
       operation: "createUser",
-      body: { userId: "456", notificationId: "5678" },
+      body: { userId: "456", pushId: "5678" },
       configureRemoteClient: () => {
         remoteClient.user.create.mockResolvedValue({
           ok: true,
@@ -41,7 +42,7 @@ describe("Executor", () => {
       assertRemoteClientCall: () => {
         expect(remoteClient.user.create).toHaveBeenCalledWith({
           appId: "456",
-          notificationId: "5678",
+          pushId: "5678",
         });
       },
     },
@@ -50,20 +51,20 @@ describe("Executor", () => {
       path: "/v1/notifications",
       operation: "updateNotifications",
       headers: { "requesting-service-user-id": "123" },
-      body: { consentStatus: "accepted", notificationId: "abc" },
+      body: { consentStatus: "accepted", pushId: "abc" },
       configureRemoteClient: () => {
         remoteClient.notifications.update.mockResolvedValue({
           ok: true,
           status: 200,
           data: {
-            data: { consentStatus: "accepted", notificationId: "abc" },
+            data: { consentStatus: "accepted", pushId: "abc" },
           },
         });
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.notifications.update).toHaveBeenCalledWith(
           {
-            data: { consentStatus: "accepted", notificationId: "abc" },
+            data: { consentStatus: "accepted", pushId: "abc" },
             requestingServiceUserId: "123",
           },
           "123",
@@ -81,12 +82,29 @@ describe("Executor", () => {
           ok: true,
           status: 200,
           data: {
-            data: { consentStatus: "accepted", notificationId: "abc" },
+            data: { consentStatus: "accepted", pushId: "abc" },
           },
         });
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.notifications.get).toHaveBeenCalledWith("123");
+      },
+    },
+    {
+      method: "DELETE",
+      path: "/v1/notifications",
+      operation: "deleteNotifications",
+      headers: { "requesting-service-user-id": "123" },
+      body: undefined,
+      configureRemoteClient: () => {
+        remoteClient.notifications.delete.mockResolvedValue({
+          ok: true,
+          status: 204,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.notifications.delete).toHaveBeenCalledWith("123");
       },
     },
     {
@@ -182,7 +200,7 @@ describe("Executor", () => {
       method: "POST",
       path: "/v1/users",
       operation: "createUser",
-      body: { userId: null, notificationId: "5678" },
+      body: { userId: null, pushId: "5678" },
     },
     {
       method: "POST",

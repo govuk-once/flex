@@ -12,7 +12,7 @@ export type {
   CreateNotificationPreferencesRequest,
   CreateNotificationPreferencesResponse,
   GetNotificationPreferencesResponse,
-  NotificationId,
+  PushId,
   UpdateNotificationPreferencesOutboundRequest,
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
@@ -22,8 +22,8 @@ export {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
   GetNotificationPreferencesResponseSchema,
-  NotificationIdBranded,
   NotificationPreferencesConsentStatus,
+  PushIdBranded,
   UpdateNotificationPreferencesOutboundRequestSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
@@ -37,5 +37,6 @@ export type {
 export {
   CreateUserRequestSchema,
   CreateUserResponseSchema,
+  GetUserPushIdResponseSchema,
   GetUserResponseSchema,
 } from "./user";

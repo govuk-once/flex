@@ -79,7 +79,8 @@ function importResource(
           : importFlexParameter(scope, path),
       };
     default:
-      throw new Error(`Unsupported resource type: ${type}`);
+      // This should never happen due to schema validation, but we need this to satisfy the return type
+      throw new Error(`Unsupported resource type: ${type as string}`);
   }
 }
 
@@ -142,7 +143,8 @@ export function grantRouteResources(
         target.addEnvironment(key, construct.parameterName);
         break;
       default:
-        throw new Error("Unsupported resource type");
+        // This should never happen due to schema validation
+        throw new Error(`Unsupported resource type: ${type as string}`);
     }
   });
 }

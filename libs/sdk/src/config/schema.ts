@@ -30,7 +30,7 @@ export const FunctionConfigSchema = z.object({
   timeoutSeconds: z.number().int().min(1).max(900).optional(),
 });
 
-const HeaderConfigSchema = z.object({
+export const HeaderConfigSchema = z.object({
   name: NonEmptyString,
   required: z.boolean().optional(),
 });
@@ -62,7 +62,7 @@ const DomainConfigCommonSchema = z.object({
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
 });
 
-const DomainResourceSchema = z.object({
+export const DomainResourceSchema = z.object({
   type: z.enum(["secret", "ssm", "ssm:runtime", "kms"]),
   path: NonEmptyString,
   scope: z.enum(["environment", "stage"]).optional(),
@@ -120,5 +120,3 @@ export const DomainConfigSchema = z.object({
   featureFlags: z.record(NonEmptyString, DomainFeatureFlagSchema).optional(),
   owner: NonEmptyString.optional(),
 });
-
-export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
