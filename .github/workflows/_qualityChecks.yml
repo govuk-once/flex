@@ -77,3 +77,9 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
+
+      - name: Run Dependency Review
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.0
+        with:
+          fail-on-severity: high # Will fail on newly introduced vulnerabilities
+          license-check: false
