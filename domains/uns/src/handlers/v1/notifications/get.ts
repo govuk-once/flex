@@ -3,20 +3,27 @@ import { z } from "zod";
 
 import { getNotificationsContext, route } from "../../../../domain.config";
 import { NotificationSchema } from "../../../schemas/notification";
-import { deriveExternalUserId } from "../../../utils/derive-external-user-id";
 
 export const handler = route("GET /v1/notifications", async ({ logger }) => {
-  const { auth, resources } = getNotificationsContext();
+  const { auth, resources, integrations } = getNotificationsContext();
 
-  const externalUserId = deriveExternalUserId(
-    auth.pairwiseId,
-    resources.unsNotificationSecret,
-  );
+  const pushIdResponse = await integrations.udpGetPushId({
+    headers: { "User-Id": auth.pairwiseId}
+  });
+
+  if(!pushIdResponse.ok) {
+    logger.error("Failed to retrieve push Id from UDP", {
+      status: pushIdResponse.error.status
+    });
+     throw new createHttpError.InternalServerError();
+  }
+
+  const pushId = pushIdResponse.data;
 
   const url = new URL(
-    `${resources.flexPrivateGatewayUrl.replace(/\/$/, "")}/notifications`,
+    `${resources.unsFlexPrivateGatewayUrl.replace(/\/$/, "")}/notifications`,
   );
-  url.searchParams.set("externalUserID", externalUserId);
+  url.searchParams.set("externalUserID", pushId);
 
   const response = await fetch(url.toString());
 

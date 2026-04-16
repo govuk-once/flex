@@ -271,6 +271,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
+      '@flex/udp-domain':
+        specifier: workspace:*
+        version: link:../udp
       '@flex/utils':
         specifier: workspace:*
         version: link:../../libs/utils

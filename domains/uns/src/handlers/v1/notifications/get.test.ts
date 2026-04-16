@@ -1,21 +1,13 @@
 import { it } from "@flex/testing";
 import nock from "nock";
-import { describe, expect, vi } from "vitest";
+import { describe, expect } from "vitest";
 
 import { handler } from "./get";
-
-vi.mock("node:crypto", () => ({
-  default: {
-    createHmac: vi.fn(() => ({
-      update: vi.fn().mockReturnThis(),
-      digest: vi.fn().mockReturnValue("test-external-user-id"),
-    })),
-  },
-}));
 
 describe("GET /v1/notifications", () => {
   const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/notifications";
+  const pushId = "test-push-id";
 
   const notification = {
     NotificationID: "notification-1",
@@ -33,18 +25,15 @@ describe("GET /v1/notifications", () => {
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
+    gateway.get("/gateway/udp/v1/users/push-id").reply(200, { pushId });
     gateway
       .get("/notifications")
-      .query({ externalUserID: "test-external-user-id" })
+      .query({ pushId })
       .reply(200, [notification]);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context
-        .withSecret({
-          unsNotificationSecret: "dummy", // pragma: allowlist secret
-        })
-        .create(),
+      context.create(),
     );
 
     expect(result.statusCode).toBe(200);
@@ -67,18 +56,12 @@ describe("GET /v1/notifications", () => {
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
-    gateway
-      .get("/notifications")
-      .query({ externalUserID: "test-external-user-id" })
-      .reply(200, []);
+    gateway.get("/gateway/udp/v1/users/push-id").reply(200, { pushId });
+    gateway.get("/notifications").reply(200, []);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context
-        .withSecret({
-          unsNotificationSecret: "dummy", // pragma: allowlist secret
-        })
-        .create(),
+      context.create(),
     );
 
     expect(result.statusCode).toBe(200);
@@ -89,18 +72,14 @@ describe("GET /v1/notifications", () => {
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
+    gateway.get("/gateway/udp/v1/users/push-id").reply(500);
     gateway
       .get("/notifications")
-      .query({ externalUserID: "test-external-user-id" })
       .reply(500);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context
-        .withSecret({
-          unsNotificationSecret: "dummy", // pragma: allowlist secret
-        })
-        .create(),
+      context.create(),
     );
 
     expect(result.statusCode).toBe(500);

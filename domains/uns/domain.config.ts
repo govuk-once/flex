@@ -5,6 +5,7 @@ import {
   NotificationSchema,
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
+import { GetUserPushIdResponseSchema } from "@flex/udp-domain";
 
 export const { config, route, routeContext } = domain({
   name: "uns",
@@ -13,14 +14,18 @@ export const { config, route, routeContext } = domain({
     function: { timeoutSeconds: 30 },
   },
   resources: {
-    flexPrivateGatewayUrl: {
+    unsFlexPrivateGatewayUrl: {
       type: "ssm",
-      path: "/flex/apigw/private/gateway-url",
+      path: "/uns/flex/privateGatewayUrl",
       scope: "stage",
     },
-    unsNotificationSecret: {
-      type: "secret",
-      path: "/flex-secret/uns/notification-hash-secret",
+    integrations: {
+      udpGetPushId: {
+        type: "gateway",
+        target: "udp",
+        route: "GET /v1/users/push-id",
+        response: GetUserPushIdResponseSchema,
+      }
     },
   },
   routes: {
@@ -30,7 +35,8 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "get-notifications",
             response: z.array(NotificationSchema),
-            resources: ["flexPrivateGatewayUrl", "unsNotificationSecret"],
+            resources: ["unsFlexPrivateGatewayUrl"],
+            integrations: ["udpGetPushId"],
           },
         },
       },
@@ -58,5 +64,3 @@ export const { config, route, routeContext } = domain({
     },
   },
 });
-
-export const getNotificationsContext = routeContext<"GET /v1/notifications">;
