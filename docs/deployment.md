@@ -134,6 +134,7 @@ Core infrastructure includes:
 5. Run unit tests
 6. Run security scan using checkov
 7. Run sonarqube static analysis
+8. Run dependency review gates
 
 ### Build and Deploy
 
