@@ -11,6 +11,7 @@ import type {
   RouteHandler,
 } from "../types";
 import { cache } from "../utils/cache";
+import { clearTmp } from "../utils/cleanup";
 import { HeaderValidationError, RequestBodyParseError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { mergeHeaders } from "./headers";
@@ -150,6 +151,8 @@ export function createRouteHandler<const Config extends DomainConfig>(
         }
 
         throw error;
+      } finally {
+        clearTmp();
       }
     };
 

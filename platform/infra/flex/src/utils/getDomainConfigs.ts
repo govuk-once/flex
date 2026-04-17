@@ -1,12 +1,7 @@
 import { glob } from "node:fs/promises";
 import path from "node:path";
 
-import {
-  DomainConfigSchema,
-  domainSchema,
-  IacDomainConfig,
-  IDomain,
-} from "@flex/sdk";
+import { DomainConfigSchema, IacDomainConfig } from "@flex/sdk";
 import { findProjectRoot } from "@flex/utils";
 import { createJiti } from "jiti";
 import z from "zod";
@@ -29,41 +24,6 @@ async function loadDomainConfig<T extends z.ZodType>(
   } catch {
     return;
   }
-}
-
-/**
- * Legacy config loader
- */
-
-interface LegacyDomainConfigs {
-  publicDomain: IDomain;
-  privateDomain?: IDomain;
-}
-
-const legacySchema = z.object({
-  endpoints: domainSchema,
-});
-
-export async function getLegacyDomainConfigs() {
-  const domains: LegacyDomainConfigs[] = [];
-
-  for await (const entry of glob("*/domain.config.ts", { cwd: domainsRoot })) {
-    const domainDir = path.dirname(path.join(domainsRoot, entry));
-
-    const [publicConfig, privateConfig] = await Promise.all([
-      loadDomainConfig(legacySchema, domainDir, "domain.config.ts"),
-      loadDomainConfig(legacySchema, domainDir, "domain.private.config.ts"),
-    ]);
-
-    if (!publicConfig) continue;
-
-    domains.push({
-      publicDomain: publicConfig.endpoints,
-      privateDomain: privateConfig?.endpoints,
-    });
-  }
-
-  return domains;
 }
 
 /**

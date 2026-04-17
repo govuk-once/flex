@@ -9,7 +9,6 @@
     "test:e2e": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/handlers": "workspace:*",
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {

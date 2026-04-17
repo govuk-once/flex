@@ -5,12 +5,8 @@ import { FlexCertStack } from "./stacks/cert";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
-import { FlexLegacyDomainStack } from "./stacks/legacy-domain";
 import { FlexPlatformStack } from "./stacks/platform";
-import {
-  getDomainConfigs,
-  getLegacyDomainConfigs,
-} from "./utils/getDomainConfigs";
+import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
 const { env, persistent, stage } = getEnvConfig();
@@ -66,26 +62,11 @@ new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   subdomainName,
 });
 
-const legacyDomainConfigs = await getLegacyDomainConfigs();
 const domainConfigs = await getDomainConfigs();
 const targetDomain = process.env.domain;
 
 const deployedDomains: string[] = [];
-const legacyDomainStacks: FlexLegacyDomainStack[] = [];
 const domainStacks: FlexDomainStack[] = [];
-
-for (const { publicDomain, privateDomain } of legacyDomainConfigs) {
-  const domainName = publicDomain.domain;
-  if (targetDomain && targetDomain !== domainName) continue;
-
-  const stackName = `${stage}-legacy-${domainName}`;
-  const stack = new FlexLegacyDomainStack(app, stackName, {
-    publicDomain,
-    privateDomain,
-  });
-  legacyDomainStacks.push(stack);
-  deployedDomains.push(stackName);
-}
 
 for (const domainConfig of domainConfigs) {
   const domainName = domainConfig.name;
@@ -99,12 +80,6 @@ for (const domainConfig of domainConfigs) {
 
 new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, {
   deployedDomains,
-  publicRouteBindings: [
-    ...legacyDomainStacks.flatMap((s) => s.publicRouteBindings),
-    ...domainStacks.flatMap((s) => s.publicRouteBindings),
-  ],
-  privateRouteBindings: [
-    ...legacyDomainStacks.flatMap((s) => s.privateRouteBindings),
-    ...domainStacks.flatMap((s) => s.privateRouteBindings),
-  ],
+  publicRouteBindings: domainStacks.flatMap((s) => s.publicRouteBindings),
+  privateRouteBindings: domainStacks.flatMap((s) => s.privateRouteBindings),
 });

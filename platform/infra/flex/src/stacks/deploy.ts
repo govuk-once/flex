@@ -9,6 +9,7 @@ import {
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { CfnPause } from "../constructs/infra/CfnPause";
 import { STAGE_KEYS } from "../ssm-keys";
 
 interface RouteBinding {
@@ -93,12 +94,15 @@ export class FlexApiDeploymentStack extends BaseStack {
       buildRoutesHash(publicRouteBindings),
     );
 
+    const pause = new CfnPause(this, "DeployGap", 6);
+    pause.resource.node.addDependency(publicDeploy);
+
     const privateRestApiId = this.import(STAGE_KEYS.ApigwPrivateRestId);
     const privateDeploy = this.#deployApi(
       "Private",
       privateRestApiId,
       buildRoutesHash(privateRouteBindings),
     );
-    privateDeploy.node.addDependency(publicDeploy);
+    privateDeploy.node.addDependency(pause.resource);
   }
 }

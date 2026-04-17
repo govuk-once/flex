@@ -156,7 +156,6 @@ TODO: Description
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
 - [@platform/flex: POC Domain](/platform/infra/flex/src/stack.ts)

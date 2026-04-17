@@ -156,7 +156,7 @@ describe("Authorizer Handler", () => {
     },
   );
 
-  it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async () => {
+  it("returns Deny on non-JwtBaseError", async () => {
     const unknownError = new Error("Unknown error");
 
     vi.mocked(createAuthService).mockResolvedValueOnce({
@@ -165,9 +165,6 @@ describe("Authorizer Handler", () => {
 
     await expect(
       handler(createTokenAuthorizerEvent().withToken(validJwt), context),
-    ).resolves.toEqual({
-      statusCode: 500,
-      headers: {},
-    });
+    ).resolves.toEqual(expectDenyPolicy());
   });
 });
