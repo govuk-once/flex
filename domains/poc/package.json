@@ -21,11 +21,11 @@
     "@flex/testing": "workspace:*",
     "@middy/secrets-manager": "7.0.2",
     "@middy/ssm": "7.0.2",
-    "@types/aws-lambda": "8.10.160",
+    "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
     "eslint": "9.39.2",
     "nock": "14.0.11",
     "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "vitest": "4.1.4"
   }
 }

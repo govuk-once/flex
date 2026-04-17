@@ -18,10 +18,10 @@
   },
   "dependencies": {
     "@eslint/js": "9.39.2",
-    "@eslint/json": "1.0.1",
+    "@eslint/json": "1.2.0",
     "@eslint/markdown": "7.5.1",
-    "@html-eslint/eslint-plugin": "0.55.0",
-    "@vitest/coverage-v8": "4.0.18",
+    "@html-eslint/eslint-plugin": "0.59.0",
+    "@vitest/coverage-v8": "4.1.4",
     "@vitest/eslint-plugin": "1.6.10",
     "eslint-config-prettier": "10.1.8",
     "eslint-gitignore": "0.1.0",
@@ -30,13 +30,13 @@
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "find-up": "8.0.0",
-    "globals": "17.3.0",
-    "typescript-eslint": "8.56.0"
+    "globals": "17.5.0",
+    "typescript-eslint": "8.58.2"
   },
   "devDependencies": {
-    "@types/node": "25.2.2",
+    "@types/node": "25.6.0",
     "eslint": "9.39.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "vitest": "4.1.4"
   }
 }
