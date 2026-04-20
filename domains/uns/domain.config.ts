@@ -5,12 +5,28 @@ import {
   NotificationSchema,
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
+import { GetUserPushIdResponseSchema } from "@flex/udp-domain";
 
 export const { config, route, routeContext } = domain({
   name: "uns",
   common: {
     access: "isolated",
     function: { timeoutSeconds: 30 },
+  },
+  resources: {
+    unsFlexPrivateGatewayUrl: {
+      type: "ssm",
+      path: "/uns/flex/privateGatewayUrl",
+      scope: "stage",
+    },
+    integrations: {
+      udpGetPushId: {
+        type: "gateway",
+        target: "udp",
+        route: "GET /v1/users/push-id",
+        response: GetUserPushIdResponseSchema,
+      }
+    },
   },
   routes: {
     v1: {
@@ -19,6 +35,8 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "get-notifications",
             response: z.array(NotificationSchema),
+            resources: ["unsFlexPrivateGatewayUrl"],
+            integrations: ["udpGetPushId"],
           },
         },
       },
