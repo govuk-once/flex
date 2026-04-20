@@ -238,6 +238,9 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
+      '@aws-sdk/client-secrets-manager':
+        specifier: 3.985.0
+        version: 3.985.0
       '@flex/config':
         specifier: workspace:*
         version: link:../../libs/config
@@ -253,6 +256,9 @@ importers:
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
+      nock:
+        specifier: 14.0.11
+        version: 14.0.11
       typescript:
         specifier: 5.9.3
         version: 5.9.3
