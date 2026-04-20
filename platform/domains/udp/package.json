@@ -10,24 +10,24 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.31.0",
+    "@aws-lambda-powertools/parameters": "2.33.0",
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/params": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/core": "7.0.2",
+    "@middy/core": "7.2.3",
     "http-errors": "2.0.1",
     "zod": "4.3.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.160",
+    "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
-    "@vitest/coverage-v8": "4.0.18",
-    "eslint": "9.39.2",
-    "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "@vitest/coverage-v8": "4.1.4",
+    "eslint": "10.2.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }

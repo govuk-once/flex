@@ -3,7 +3,7 @@ import { it } from "@flex/testing";
 import httpErrorHandler from "@middy/http-error-handler";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
-import secretsManager, { secret } from "@middy/secrets-manager";
+import secretsManager, { secretsManagerParam } from "@middy/secrets-manager";
 import ssm from "@middy/ssm";
 import { assert, beforeEach, describe, expect, vi } from "vitest";
 
@@ -25,7 +25,10 @@ const mockMiddy = vi.hoisted(() => {
   return instance;
 });
 
-vi.mock("@middy/core", () => ({ default: vi.fn(() => mockMiddy) }));
+vi.mock("@middy/core", () => ({
+  default: vi.fn(() => mockMiddy),
+  secretsManagerParam: vi.fn((id: string) => ({ id })),
+}));
 
 const options: MiddlewareOptions = {
   logger,
@@ -134,7 +137,9 @@ describe("configureMiddleware", () => {
 
   describe("Secrets Manager Middleware", () => {
     it("registers middleware to the handler", () => {
-      vi.mocked(secret).mockImplementationOnce((v) => `secret:${v}`);
+      vi.mocked(secretsManagerParam).mockImplementationOnce(
+        (v: string) => `secret:${v}`,
+      );
 
       const resources: Record<string, ResolvedResource> = {
         testSecret: { type: "secret", value: "/path/to/secret" },
@@ -146,21 +151,23 @@ describe("configureMiddleware", () => {
         fetchData: { testSecret: "secret:/path/to/secret" }, // pragma: allowlist secret
         setToContext: true,
       });
-      expect(secret).toHaveBeenCalledExactlyOnceWith("/path/to/secret");
+      expect(secretsManagerParam).toHaveBeenCalledExactlyOnceWith(
+        "/path/to/secret",
+      );
     });
 
     it("omits middleware when no secret resources are provided", () => {
       configureMiddleware(options);
 
       expect(secretsManager).not.toHaveBeenCalled();
-      expect(secret).not.toHaveBeenCalled();
+      expect(secretsManagerParam).not.toHaveBeenCalled();
     });
 
     it("omits middleware when resources is empty", () => {
       configureMiddleware({ ...options, resources: {} });
 
       expect(secretsManager).not.toHaveBeenCalled();
-      expect(secret).not.toHaveBeenCalled();
+      expect(secretsManagerParam).not.toHaveBeenCalled();
     });
 
     it("omits middleware when only non-secret resources exist", () => {
@@ -173,7 +180,7 @@ describe("configureMiddleware", () => {
       configureMiddleware({ ...options, resources });
 
       expect(secretsManager).not.toHaveBeenCalled();
-      expect(secret).not.toHaveBeenCalled();
+      expect(secretsManagerParam).not.toHaveBeenCalled();
     });
   });
 

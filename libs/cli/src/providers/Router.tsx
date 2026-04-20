@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { createContext, PropsWithChildren, use, useState } from "react";
 
 export const Routes = {
   HOME: "/home",
@@ -17,17 +17,9 @@ const RouterContext = createContext<RouterContextProps>({
 });
 
 export function RouterProvider({ children }: PropsWithChildren) {
-  const [route, setRouteInternal] = useState<string>(Routes.HOME);
+  const [route, setRoute] = useState<string>(Routes.HOME);
 
-  const setRoute = (r: string) => {
-    setRouteInternal(r);
-  };
-
-  return (
-    <RouterContext.Provider value={{ route, setRoute }}>
-      {children}
-    </RouterContext.Provider>
-  );
+  return <RouterContext value={{ route, setRoute }}>{children}</RouterContext>;
 }
 
-export const useRouter = () => useContext(RouterContext);
+export const useRouter = () => use(RouterContext);

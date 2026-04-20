@@ -1,5 +1,5 @@
 import { MiddlewareObj } from "@middy/core";
-import secretsManager, { secret } from "@middy/secrets-manager";
+import secretsManager, { secretsManagerParam } from "@middy/secrets-manager";
 import type { Context } from "aws-lambda";
 
 type SecretsManagerOptions = Parameters<typeof secretsManager>[0];
@@ -27,7 +27,7 @@ export function createSecretsMiddleware<
         if (!secretId) {
           throw new Error(`Secret id for "${key}" is not defined`);
         }
-        return [key, secret(secretId)];
+        return [key, secretsManagerParam(secretId)];
       }),
     ),
     setToContext: true,

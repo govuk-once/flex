@@ -3,11 +3,7 @@ import { getConfig } from "@flex/params";
 import { clearTmp } from "@flex/sdk";
 import { jsonResponse, NonEmptyString } from "@flex/utils";
 import middy, { MiddyfiedHandler } from "@middy/core";
-import type {
-  APIGatewayProxyEvent,
-  APIGatewayProxyResultV2,
-  Context,
-} from "aws-lambda";
+import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
@@ -28,9 +24,7 @@ const configSchema = z.object({
  */
 export const handler: MiddyfiedHandler<
   APIGatewayProxyEvent,
-  APIGatewayProxyResultV2,
-  Error,
-  Context
+  APIGatewayProxyResultV2
 > = middy<APIGatewayProxyEvent, APIGatewayProxyResultV2>()
   .use(
     injectLambdaContext(logger, {

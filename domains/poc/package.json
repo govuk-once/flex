@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@flex/sdk": "workspace:*",
-    "@flex/utils": "workspace:*",
     "@flex/udp-domain": "workspace:*",
+    "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
     "zod": "4.3.6"
@@ -19,13 +19,13 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@middy/secrets-manager": "7.0.2",
-    "@middy/ssm": "7.0.2",
-    "@types/aws-lambda": "8.10.160",
+    "@middy/secrets-manager": "7.2.3",
+    "@middy/ssm": "7.2.3",
+    "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
-    "eslint": "9.39.2",
-    "nock": "14.0.11",
-    "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "eslint": "10.2.1",
+    "nock": "14.0.12",
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }
