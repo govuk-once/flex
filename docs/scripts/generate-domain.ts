@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { jsonSchemaToZod } from "json-schema-to-zod";
 
-const projectRoot = path.resolve(import.meta.dirname, "../..");
+import { extractRefName, groupBy, projectRoot, toExpressPath } from "./utils";
 
 interface OpenApiSpec {
   paths?: Record<string, Record<string, OpenApiOperation>>;
@@ -32,18 +32,19 @@ interface RouteDefinition {
   responseSchemaName?: string;
 }
 
+const VALID_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+
 export function parseOpenApiSpec(spec: OpenApiSpec): RouteDefinition[] {
   const routes: RouteDefinition[] = [];
 
   Object.entries(spec.paths ?? {}).forEach(([routePath, methods]) => {
     Object.entries(methods).forEach(([method, operation]) => {
       const httpMethod = method.toUpperCase();
-      if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(httpMethod))
-        return;
+      if (!VALID_METHODS.includes(httpMethod)) return;
 
       const name =
-        operation.operationId ?? `${httpMethod.toLowerCase()}-${slugify(routePath)}`;
-      const flexPath = routePath.replace(/\{(\w+)\}/g, ":$1");
+        operation.operationId ??
+        `${httpMethod.toLowerCase()}-${slugify(routePath)}`;
 
       const bodyRef = extractSchemaRef(
         operation.requestBody?.content?.["application/json"]?.schema,
@@ -54,7 +55,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): RouteDefinition[] {
 
       routes.push({
         method: httpMethod,
-        path: flexPath,
+        path: toExpressPath(routePath),
         name,
         access: "public",
         bodySchemaName: bodyRef,
@@ -72,7 +73,7 @@ function extractSchemaRef(
   if (!schema) return undefined;
 
   const ref = schema["$ref"] as string | undefined;
-  if (ref) return ref.split("/").pop();
+  if (ref) return extractRefName(ref);
 
   return undefined;
 }
@@ -97,7 +98,7 @@ function resolveRefs(
   const record = obj as Record<string, unknown>;
 
   if (typeof record["$ref"] === "string") {
-    const refName = (record["$ref"] as string).split("/").pop();
+    const refName = extractRefName(record["$ref"] as string);
     if (refName && schemas[refName]) {
       return resolveRefs(schemas[refName], schemas);
     }
@@ -169,7 +170,7 @@ export function generateDomainConfig(
   Object.entries(byVersion).forEach(([version, versionRoutes]) => {
     lines.push(`    ${version}: {`);
 
-    const byPath = groupByPath(versionRoutes);
+    const byPath = groupBy(versionRoutes, (r) => r.path);
 
     Object.entries(byPath).forEach(([routePath, pathRoutes]) => {
       lines.push(`      "${routePath}": {`);
@@ -222,21 +223,10 @@ function groupRoutesByVersion(
   return groups;
 }
 
-function groupByPath(
-  routes: RouteDefinition[],
-): Record<string, RouteDefinition[]> {
-  const groups: Record<string, RouteDefinition[]> = {};
-
-  routes.forEach((route) => {
-    groups[route.path] ??= [];
-    groups[route.path].push(route);
-  });
-
-  return groups;
-}
-
 function usage(): never {
-  console.error("Usage: generate-domain --from <openapi.json> --name <domain>");
+  console.error(
+    "Usage: generate-domain --from <openapi.json> --name <domain>",
+  );
   process.exit(1);
 }
 

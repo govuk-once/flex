@@ -3,7 +3,8 @@ import path from "node:path";
 
 import { generateOpenApiSpec } from "@flex/sdk/openapi";
 
-const projectRoot = path.resolve(import.meta.dirname, "../..");
+import { projectRoot } from "./utils";
+
 const domainsRoot = path.join(projectRoot, "domains");
 const outputDir = path.join(projectRoot, "docs/api");
 
