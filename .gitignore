@@ -18,6 +18,7 @@ coverage/
 
 # OpenAPI auto generated files
 **/*api.json
+docs/api/
 
 # CDK
 **/cdk.out/

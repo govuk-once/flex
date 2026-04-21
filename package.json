@@ -9,7 +9,10 @@
     "lint": "nx affected --target=lint",
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
-    "jwt": "tsx scripts/generateToken.ts"
+    "jwt": "tsx scripts/generateToken.ts",
+    "generate-spec": "pnpm --filter @flex/docs run generate-spec",
+    "docs:preview": "pnpm run generate-spec && npx serve docs/api",
+    "generate-domain": "pnpm --filter @flex/docs run generate-domain --"
   },
   "devDependencies": {
     "@flex/cli": "workspace:*",

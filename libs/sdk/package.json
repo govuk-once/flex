@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./openapi": "./src/openapi/generate-openapi.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",

@@ -802,3 +802,4 @@ domain=<domain_name> pnpm run deploy
 - [Deployment Guide](/docs/deployment.md)
 - [Developer Reference](/docs/developer-reference.md)
 - [Documentation Guide](/docs/documentation-guide.md)
+- [Developer Reference: API Documentation](/docs/developer-reference.md#api-documentation)

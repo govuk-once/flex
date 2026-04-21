@@ -63,6 +63,101 @@ getPlatformEntry("domain", "handler.ts");
 
 ---
 
+## API Documentation
+
+FLEX supports bidirectional API contract workflows. Zod schemas in domain configs are the runtime source of truth and can generate OpenAPI specs. Conversely, an OpenAPI spec can scaffold a new domain with generated Zod schemas and config.
+
+### Generating OpenAPI specs from domain configs (Zod → OpenAPI)
+
+```bash
+pnpm run generate-spec
+```
+
+This discovers all `domain.config.ts` files under `domains/`, extracts routes and Zod schemas, and outputs OpenAPI 3.1.0 JSON specs to `docs/api/`. Each domain gets its own file (e.g. `dvla.json`, `udp.json`) plus an `index.html` with Swagger UI for browsing.
+
+Only domains using the `domain()` pattern are supported. Legacy `defineDomain()` domains are skipped.
+
+The generator is incremental — it compares file modification times and only regenerates specs for domains whose config has changed. Use `--force` to regenerate all.
+
+```bash
+pnpm run generate-spec -- --force
+```
+
+#### Previewing locally
+
+```bash
+pnpm -w run docs:preview
+```
+
+This generates specs and serves them on `http://localhost:3000` with Swagger UI. Use the dropdown to switch between domains.
+
+#### CI/CD
+
+On merge to `main`, the `api-docs.yml` workflow regenerates all specs and deploys to GitHub Pages. The workflow triggers when domain configs, schemas, or the generator scripts change.
+
+### Scaffolding a domain from an OpenAPI spec (OpenAPI → Zod)
+
+```bash
+pnpm -w run generate-domain --from spec.json --name my-domain
+```
+
+This creates:
+
+- `domains/my-domain/domain.config.ts` — routes, methods, and schema references matching the FLEX `domain()` pattern
+- `domains/my-domain/src/schemas/schemas.ts` — Zod schemas generated from the JSON Schema definitions in the spec, with `$ref` pointers resolved
+
+If the domain already exists, both files are overwritten. Use `git diff` to review changes before committing.
+
+Path parameters are converted from OpenAPI style (`{id}`) to Express style (`:id`). Routes are grouped by version prefix (e.g. `/v1/...`). Routes without a version default to `v1`.
+
+#### Example
+
+Given an OpenAPI spec with:
+
+```json
+{
+  "paths": {
+    "/v1/users/me/settings/topics": {
+      "get": {
+        "operationId": "get-topics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TopicsResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+The generator produces:
+
+```typescript
+// domain.config.ts
+export const { config, route, routeContext } = domain({
+  name: "topics",
+  routes: {
+    v1: {
+      "/users/me/settings/topics": {
+        GET: {
+          public: {
+            name: "get-topics",
+            response: TopicsResponse,
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+---
+
 ## Related
 
 **FLEX:**
