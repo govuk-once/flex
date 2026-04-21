@@ -12,17 +12,17 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "3.985.0",
-    "@middy/core": "7.0.2",
+    "@aws-sdk/client-secrets-manager": "3.1032.0",
     "@flex/utils": "workspace:*",
-    "@middy/secrets-manager": "7.0.2"
+    "@middy/core": "7.2.3",
+    "@middy/secrets-manager": "7.2.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.160",
-    "eslint": "9.39.2",
-    "typescript": "5.9.3",
-    "vitest": "4.0.18"
+    "@types/aws-lambda": "8.10.161",
+    "eslint": "10.2.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }

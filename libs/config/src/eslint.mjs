@@ -1,11 +1,11 @@
 import js from "@eslint/js";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
+import eslintReact from "@eslint-react/eslint-plugin";
 import html from "@html-eslint/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
-import reactPlugin from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import { findUpSync } from "find-up";
@@ -84,19 +84,10 @@ export const config = [
   },
   {
     files: ["**/*.tsx"],
-    plugins: {
-      react: reactPlugin,
-    },
-    languageOptions: {
-      parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-    },
+    ...eslintReact.configs["recommended-typescript"],
   },
   {
-    files: ["**/*.tsx"],
+    files: ["**/*.tsx", "libs/cli/*.ts"],
     ...reactHooks.configs.flat.recommended,
   },
   {

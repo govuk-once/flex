@@ -5,7 +5,6 @@ import { JwtExpiredError } from "aws-jwt-verify/error";
 import type {
   APIGatewayAuthorizerResult,
   APIGatewayTokenAuthorizerEvent,
-  Context,
 } from "aws-lambda";
 
 import { createPolicy } from "./createPolicy";
@@ -16,9 +15,7 @@ import { createAuthService } from "./services/auth-service";
  */
 const handler: MiddyfiedHandler<
   APIGatewayTokenAuthorizerEvent,
-  APIGatewayAuthorizerResult,
-  Error,
-  Context
+  APIGatewayAuthorizerResult
 > = middy<APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult>()
   .use(
     injectLambdaContext(logger, {

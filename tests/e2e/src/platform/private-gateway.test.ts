@@ -1,5 +1,6 @@
-import { it } from "@flex/testing/e2e";
 import { describe, expect } from "vitest";
+
+import { it } from "../extend/it";
 
 describe("private gateway", () => {
   it("rejects direct access from public internet (403 Forbidden)", async ({

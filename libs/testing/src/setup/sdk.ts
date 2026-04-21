@@ -13,7 +13,7 @@ vi.mock("@flex/flex-fetch", async (importOriginal) => ({
 
 vi.mock("@middy/secrets-manager", () => ({
   default: () => ({ before: vi.fn() }),
-  secret: vi.fn((v: string) => v),
+  secretsManagerParam: vi.fn((v: string) => v),
 }));
 
 vi.mock("@middy/ssm", () => ({

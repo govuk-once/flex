@@ -36,6 +36,7 @@ function SelectInputItem({ label, spacer }: SelectInputItemProps) {
   return (
     <Box paddingBottom={spacer ? 1 : 0}>
       {label.split("").map((item, index) => (
+        // eslint-disable-next-line @eslint-react/no-array-index-key
         <Text key={index} bold={index === 0}>
           {item}
         </Text>

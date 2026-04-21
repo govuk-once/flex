@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import secretsManager, { secret } from "@middy/secrets-manager";
+import secretsManager, { secretsManagerParam } from "@middy/secrets-manager";
 import { describe, expect, vi } from "vitest";
 
 import { createSecretsMiddleware } from ".";
@@ -7,7 +7,7 @@ import { createSecretsMiddleware } from ".";
 vi.mock("@middy/secrets-manager", () => ({
   __esModule: true,
   default: vi.fn().mockReturnValue({} as unknown),
-  secret: vi.fn((id: string) => ({ id })),
+  secretsManagerParam: vi.fn((id: string) => ({ id })),
 }));
 
 describe("createSecretsMiddleware", () => {
@@ -32,8 +32,8 @@ describe("createSecretsMiddleware", () => {
         setToContext: true,
       }),
     );
-    expect(secret).toHaveBeenCalledWith("my-secret-id");
-    expect(secret).toHaveBeenCalledWith("another-secret-id");
+    expect(secretsManagerParam).toHaveBeenCalledWith("my-secret-id");
+    expect(secretsManagerParam).toHaveBeenCalledWith("another-secret-id");
   });
 
   it("throws an error when a secret id is undefined", () => {

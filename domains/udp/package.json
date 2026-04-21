@@ -21,14 +21,13 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.160",
+    "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
     "@types/ramda": "0.31.1",
-    "eslint": "9.39.2",
-    "nock": "14.0.11",
+    "eslint": "10.2.1",
+    "nock": "14.0.12",
     "ramda": "0.32.0",
-    "typescript": "5.9.3",
-    "vite-tsconfig-paths": "6.1.1",
-    "vitest": "4.0.18"
+    "typescript": "6.0.3",
+    "vitest": "4.1.4"
   }
 }
