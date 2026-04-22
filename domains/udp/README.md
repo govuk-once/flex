@@ -116,7 +116,6 @@ const id = generateDerivedId({
 
 **FLEX:**
 
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@platform/flex: UDP Domain](/platform/infra/flex/src/constructs/udp.ts)
 - [Domain Development Guide](/docs/domain-development.md)

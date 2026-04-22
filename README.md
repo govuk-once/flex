@@ -70,8 +70,6 @@ flex/
 | -------------------------------------------------- | ------------------------------------------------------------ |
 | [`@flex/config`](/libs/config/README.md)           | Shared ESLint, TypeScript and Vitest configuration           |
 | [`@flex/logging`](/libs/logging/README.md)         | Structured logging via AWS Lambda Powertools                 |
-| [`@flex/middlewares`](/libs/middlewares/README.md) | Shared Middy middleware                                      |
-| [`@flex/params`](/libs/params/README.md)           | Environment variable validation and SSM parameter resolution |
 | [`@flex/sdk`](/libs/sdk/README.md)                 | Declarative domain configuration and route handler factory   |
 | [`@flex/testing`](/libs/testing/README.md)         | Test fixtures, helpers and extended test functions           |
 | [`@flex/utils`](/libs/utils/README.md)             | Shared schemas, types and HTTP utilities                     |

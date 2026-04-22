@@ -167,7 +167,6 @@ Document the handler's logic:
 **FLEX:**
 
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
@@ -423,7 +422,6 @@ Brief description of what this service does.
 
 - [@flex/config](/libs/config/README.md)
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [Domain Development Guide](/docs/domain-development.md)

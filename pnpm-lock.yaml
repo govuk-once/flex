@@ -441,74 +441,6 @@ importers:
         specifier: 4.1.4
         version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  libs/middlewares:
-    dependencies:
-      '@aws-sdk/client-secrets-manager':
-        specifier: 3.1032.0
-        version: 3.1032.0
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@middy/core':
-        specifier: 7.2.3
-        version: 7.2.3
-      '@middy/secrets-manager':
-        specifier: 7.2.3
-        version: 7.2.3(@aws-sdk/client-secrets-manager@3.1032.0)
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../testing
-      '@types/aws-lambda':
-        specifier: 8.10.161
-        version: 8.10.161
-      eslint:
-        specifier: 10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 4.1.4
-        version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  libs/params:
-    dependencies:
-      '@aws-lambda-powertools/parameters':
-        specifier: 2.33.0
-        version: 2.33.0(@aws-sdk/client-secrets-manager@3.1032.0)(@aws-sdk/client-ssm@3.1032.0)(@middy/core@7.2.3)
-      '@flex/logging':
-        specifier: workspace:*
-        version: link:../logging
-      zod:
-        specifier: 4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../testing
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../utils
-      '@types/node':
-        specifier: 25.6.0
-        version: 25.6.0
-      eslint:
-        specifier: 10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 4.1.4
-        version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
   libs/sdk:
     dependencies:
       '@flex/flex-fetch':
@@ -714,9 +646,6 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
-      '@flex/params':
-        specifier: workspace:*
-        version: link:../../../libs/params
       '@middy/core':
         specifier: 7.2.3
         version: 7.2.3
@@ -772,9 +701,6 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
-      '@flex/params':
-        specifier: workspace:*
-        version: link:../../../libs/params
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
@@ -827,9 +753,6 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
-      '@flex/params':
-        specifier: workspace:*
-        version: link:../../../libs/params
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk

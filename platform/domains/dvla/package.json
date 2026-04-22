@@ -16,7 +16,6 @@
     "@aws-lambda-powertools/parameters": "2.33.0",
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
-    "@flex/params": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.2.3",

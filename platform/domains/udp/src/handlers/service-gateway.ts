@@ -1,5 +1,4 @@
 import { injectLambdaContext, logger } from "@flex/logging";
-import { getConfig } from "@flex/params";
 import { clearTmp } from "@flex/sdk";
 import { jsonResponse } from "@flex/utils";
 import middy, { MiddyfiedHandler } from "@middy/core";
@@ -37,7 +36,7 @@ export const handler: MiddyfiedHandler<
     logger.setLogLevel("INFO");
 
     try {
-      const config = await getConfig(configSchema);
+      const config = configSchema.parse(process.env);
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN,
       );

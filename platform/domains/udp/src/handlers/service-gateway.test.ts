@@ -1,6 +1,5 @@
-import { getConfig } from "@flex/params";
 import { context, it } from "@flex/testing";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { createUdpRemoteClient } from "../client";
 import { DomainNotificationsResponse } from "../schemas/domain/notifications";
@@ -16,10 +15,6 @@ vi.mock("../utils/getConsumerConfig", () => ({
 
 vi.mock("../client", () => ({
   createUdpRemoteClient: vi.fn(),
-}));
-
-vi.mock("@flex/params", () => ({
-  getConfig: vi.fn(),
 }));
 
 const TEST_SECRET_ARN =
@@ -84,13 +79,16 @@ const remoteClient = {
 
 describe("UDP Service Gateway", () => {
   beforeEach(() => {
+    vi.stubEnv("AWS_REGION", "eu-west-2");
+    vi.stubEnv("FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN", TEST_SECRET_ARN);
+
     vi.clearAllMocks();
-    vi.mocked(getConfig).mockResolvedValue({
-      AWS_REGION: "eu-west-2",
-      FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
     vi.mocked(getConsumerConfig).mockResolvedValue(TEST_CONSUMER_CONFIG);
     vi.mocked(createUdpRemoteClient).mockReturnValue(remoteClient);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it.for([
