@@ -6,8 +6,8 @@ import {
   GetNotificationResponseSchema,
   GetNotificationsResponseSchema,
   NotificationRequestSchema,
+  NotificationsPatchRequestSchema,
   NotificationsRequestSchema,
-  PatchNotificationStatusResponseSchema,
 } from "../schemas/remote/notification";
 
 export type RouteOperation =
@@ -64,9 +64,9 @@ export type DeleteNotificationsByIdRouteContract = BaseRouteContract<
 export type PatchNotificationsByIdRouteContract = BaseRouteContract<
   "patchNotificationById",
   "PATCH",
-  NotificationsRequestSchema,
+  NotificationsPatchRequestSchema,
   unknown,
-  PatchNotificationStatusResponseSchema
+  unknown
 >;
 
 export type RouteContract =

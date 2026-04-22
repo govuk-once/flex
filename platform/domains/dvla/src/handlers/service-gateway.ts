@@ -73,9 +73,9 @@ function mapRemoteErrorToGatewayResponse(error: {
 }): APIGatewayProxyResultV2 {
   logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
-    logger.debug("UDP upstream service unavailable", { error });
+    logger.debug("DVLA upstream service unavailable", { error });
     return jsonResponse(502, {
-      message: "UDP upstream service unavailable",
+      message: "DVLA upstream service unavailable",
     });
   }
 

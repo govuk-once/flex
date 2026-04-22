@@ -35,6 +35,11 @@ export const { config, route, routeContext } = domain({
     },
   },
   integrations: {
+    unsGetNotifications: {
+      type: "gateway",
+      target: "uns",
+      route: "GET /v1/notifications",
+    },
     udpCreateIdentityLink: {
       type: "gateway",
       target: "udp",

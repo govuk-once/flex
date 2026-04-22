@@ -16,7 +16,7 @@ const configSchema = z.object({
 });
 
 /**
- * DVLA Service Gateway – internal-only, invoked via the private API gateway.
+ * UNS Service Gateway – internal-only, invoked via the private API gateway.
  *
  * Receives Flex requests, routes to typed remote client methods, validates and
  * translates remote responses to internal contract. No direct invocation from domain lambdas.

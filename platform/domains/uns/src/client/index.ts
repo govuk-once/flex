@@ -1,6 +1,7 @@
 import { ApiResult, typedFetch } from "@flex/flex-fetch";
 
 import { UNS_REMOTE_ROUTES } from "../contract/route";
+import { NotificationPatchBody } from "../schemas/remote/notification";
 import { createPublicFetch } from "../utils/createPublicFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
@@ -18,7 +19,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
   };
 
   return {
-    notifications: {
+    notification: {
       get: (
         pushId: string,
         notificationId: string,
@@ -56,6 +57,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
       patch: (
         pushId: string,
         notificationId: string,
+        body: NotificationPatchBody,
       ): Promise<ApiResult<void>> => {
         const params = new URLSearchParams({ externalUserID: pushId });
         const request = fetcher(
@@ -66,12 +68,13 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
               ...defaultHeaders,
               "X-API-KEY": config.apiKey,
             },
+            body: JSON.stringify(body),
           },
         ).request;
         return typedFetch(request);
       },
     },
-    notification: {
+    notifications: {
       get: (pushId: string): Promise<ApiResult<void>> => {
         const params = new URLSearchParams({ externalUserID: pushId });
         const request = fetcher(`${UNS_REMOTE_ROUTES.notification}?${params}`, {

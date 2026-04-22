@@ -21,7 +21,7 @@ export type EventOverrides = DeepPartial<APIGatewayProxyEventV2>;
 
 export type EventRequestOptions<TBody = never> = {
   headers?: Record<string, string>;
-  params?: QueryParams;
+  queryStringParameters?: QueryParams;
 } & ([TBody] extends [never] ? { body?: never } : { body: TBody });
 
 const baseEvent: APIGatewayProxyEventV2 = {
@@ -62,10 +62,10 @@ function buildEventRequest<T>(
   path: string,
   options: EventRequestOptions<T>,
 ) {
-  const { body, headers, params } = options;
+  const { body, headers, queryStringParameters } = options;
 
   const [rawPath = "/"] = path.split("?");
-  const [rawQueryString, queryStringParameters] = extractQueryParams(params);
+  const [rawQueryString, params] = extractQueryParams(queryStringParameters);
   const routeKey = `${method} ${rawPath}`;
 
   return buildEvent({
@@ -78,7 +78,7 @@ function buildEventRequest<T>(
       http: { method, path: rawPath },
       routeKey,
     },
-    queryStringParameters,
+    queryStringParameters: params,
   });
 }
 
@@ -359,7 +359,7 @@ export type RestApiEventOverrides = DeepPartial<APIGatewayProxyEvent>;
 
 export type RestApiEventRequestOptions<TBody = never> = {
   headers?: Record<string, string>;
-  params?: QueryParams;
+  queryStringParameters?: QueryParams;
 } & ([TBody] extends [never] ? { body?: never } : { body: TBody });
 
 const baseRestApiEvent: APIGatewayProxyEvent = {
@@ -429,6 +429,13 @@ export function createRestApiEvent() {
       buildRestApiEvent({
         ...options,
         httpMethod: "POST",
+        path,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      }),
+    patch: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
+      buildRestApiEvent({
+        ...options,
+        httpMethod: "PATCH",
         path,
         body: options.body ? JSON.stringify(options.body) : undefined,
       }),

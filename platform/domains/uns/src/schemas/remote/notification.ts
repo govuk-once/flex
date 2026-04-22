@@ -1,11 +1,12 @@
 import z from "zod";
 
 import {
+  NotificationPatchSchema,
   NotificationRequestSchema,
   NotificationSchema,
+  NotificationsPatchRequestSchema,
   NotificationsRequestSchema,
   NotificationsSchema,
-  NotificationStatusSchema,
 } from "../domain/notification";
 
 export type NotificationRequestSchema = z.infer<
@@ -16,9 +17,11 @@ export type NotificationsRequestSchema = z.infer<
   typeof NotificationsRequestSchema
 >;
 
-export type PatchNotificationStatusResponseSchema = z.infer<
-  typeof NotificationStatusSchema
+export type NotificationsPatchRequestSchema = z.infer<
+  typeof NotificationsPatchRequestSchema
 >;
+
+export type NotificationPatchBody = z.infer<typeof NotificationPatchSchema>;
 
 export type GetNotificationResponseSchema = z.infer<typeof NotificationSchema>;
 

@@ -16,6 +16,16 @@ export const NotificationStatusSchema = z.enum([
   "MARKED_AS_UNREAD",
 ]);
 
+export const NotificationPatchSchema = z.object({
+  Status: NotificationStatusSchema,
+});
+
+export const NotificationsPatchRequestSchema = z.object({
+  pushId: NonEmptyString,
+  notificationId: NonEmptyString,
+  body: NotificationPatchSchema,
+});
+
 export const NotificationSchema = z.object({
   NotificationID: z.string(),
   Status: NotificationStatusSchema,

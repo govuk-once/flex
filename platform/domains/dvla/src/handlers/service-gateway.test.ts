@@ -241,7 +241,7 @@ describe("DVLA Service Gateway", () => {
       statusCode: 502,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: "UDP upstream service unavailable",
+        message: "DVLA upstream service unavailable",
       }),
     });
   });
