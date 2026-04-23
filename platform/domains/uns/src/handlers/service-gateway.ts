@@ -1,7 +1,8 @@
-import { createLambdaHandler } from "@flex/handlers";
-import { logger } from "@flex/logging";
+import { injectLambdaContext, logger } from "@flex/logging";
 import { getConfig } from "@flex/params";
+import { clearTmp } from "@flex/sdk";
 import { jsonResponse, NonEmptyString } from "@flex/utils";
+import middy, { MiddyfiedHandler } from "@middy/core";
 import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
@@ -21,11 +22,20 @@ const configSchema = z.object({
  * Receives Flex requests, routes to typed remote client methods, validates and
  * translates remote responses to internal contract. No direct invocation from domain lambdas.
  */
-export const handler = createLambdaHandler<
+export const handler: MiddyfiedHandler<
   APIGatewayProxyEvent,
   APIGatewayProxyResultV2
->(
-  async (event) => {
+> = middy<APIGatewayProxyEvent, APIGatewayProxyResultV2>()
+  .use(
+    injectLambdaContext(logger, {
+      clearState: true,
+      correlationIdPath: "requestContext.requestId",
+    }),
+  )
+  .handler(async (event) => {
+    logger.setServiceName("uns-service-gateway");
+    logger.setLogLevel("INFO");
+
     try {
       const config = await getConfig(configSchema);
       const consumerConfig = await getConsumerConfig(
@@ -51,12 +61,10 @@ export const handler = createLambdaHandler<
       return jsonResponse(500, {
         message: "Internal server error",
       });
+    } finally {
+      clearTmp();
     }
-  },
-  {
-    serviceName: "uns-service-gateway",
-  },
-);
+  });
 
 function mapRemoteErrorToGatewayResponse(error: {
   status: number;

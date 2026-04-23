@@ -885,9 +885,15 @@ importers:
       '@flex/params':
         specifier: workspace:*
         version: link:../../../libs/params
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../../libs/sdk
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
+      '@middy/core':
+        specifier: 7.2.3
+        version: 7.2.3
       http-errors:
         specifier: 2.0.1
         version: 2.0.1
