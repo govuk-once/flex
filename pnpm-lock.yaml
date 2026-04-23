@@ -1014,6 +1014,9 @@ importers:
       '@flex/dvla-domain':
         specifier: workspace:*
         version: link:../../domains/dvla
+      '@flex/poc-domain':
+        specifier: workspace:*
+        version: link:../../domains/poc
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing

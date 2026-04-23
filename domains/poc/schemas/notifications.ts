@@ -19,3 +19,7 @@ export const NotificationsResponseSchema = z.array(
     MessageBody: z.string(),
   }),
 );
+
+export type NotificationsResponseResponse = z.output<
+  typeof NotificationsResponseSchema
+>;

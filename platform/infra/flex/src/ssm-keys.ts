@@ -16,7 +16,6 @@ export const ENV_KEYS = {
   SgPrivateEgress: `/${env}/flex/sg/private-egress`,
   SgPrivateIsolated: `/${env}/flex/sg/private-isolated`,
   DvlaConfigSecretArn: `/${env}/flex-param/dvla/consumer-config-secret-arn`,
-  // TODO store in param repo
   UnsConfigSecretArn: `/${env}/flex-param/uns/consumer-config-secret-arn`,
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
   UdpConfigRoleArn: `/${env}/flex-param/udp/consumer-role-arn`,
