@@ -419,33 +419,49 @@ function buildRestApiEvent(overrides: RestApiEventOverrides = {}) {
 export function createRestApiEvent() {
   return {
     create: (overrides?: RestApiEventOverrides) => buildRestApiEvent(overrides),
-    get: (path: string, options: RestApiEventRequestOptions = {}) =>
-      buildRestApiEvent({
+
+    get: (path: string, options: RestApiEventRequestOptions = {}) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEvent({
         ...options,
         httpMethod: "GET",
         path,
-      }),
-    post: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
-      buildRestApiEvent({
+        queryStringParameters: params as Record<string, string>,
+      });
+    },
+
+    post: <T>(path: string, options: RestApiEventRequestOptions<T>) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEvent({
         ...options,
         httpMethod: "POST",
         path,
+        queryStringParameters: params as Record<string, string>,
         body: options.body ? JSON.stringify(options.body) : undefined,
-      }),
-    patch: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
-      buildRestApiEvent({
+      });
+    },
+
+    patch: <T>(path: string, options: RestApiEventRequestOptions<T>) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEvent({
         ...options,
         httpMethod: "PATCH",
         path,
+        queryStringParameters: params as Record<string, string>,
         body: options.body ? JSON.stringify(options.body) : undefined,
-      }),
-    delete: <T>(path: string, options: RestApiEventRequestOptions<T>) =>
-      buildRestApiEvent({
+      });
+    },
+
+    delete: <T>(path: string, options: RestApiEventRequestOptions<T>) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEvent({
         ...options,
         httpMethod: "DELETE",
         path,
+        queryStringParameters: params as Record<string, string>,
         body: options.body ? JSON.stringify(options.body) : undefined,
-      }),
+      });
+    },
   } as const;
 }
 
@@ -488,40 +504,52 @@ export function createRestApiEventWithAuthorizer<
   return {
     create: (overrides?: RestApiEventWithAuthorizerOverrides<T>) =>
       buildRestApiEventWithAuthorizer<T>(overrides),
-    get: (path: string, options: RestApiEventRequestOptions = {}) =>
-      buildRestApiEventWithAuthorizer({
+    get: (path: string, options: RestApiEventRequestOptions = {}) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEventWithAuthorizer({
         ...options,
         httpMethod: "GET",
         path,
-      }),
-    delete: (path: string, options: RestApiEventRequestOptions = {}) =>
-      buildRestApiEventWithAuthorizer({
+        queryStringParameters: params as Record<string, string>,
+      });
+    },
+    delete: (path: string, options: RestApiEventRequestOptions = {}) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEventWithAuthorizer({
         ...options,
         httpMethod: "DELETE",
         path,
-      }),
+        queryStringParameters: params as Record<string, string>,
+      });
+    },
     post: <TReqBody>(
       path: string,
       options: RestApiEventRequestOptions<TReqBody>,
-    ) =>
-      buildRestApiEventWithAuthorizer({
+    ) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEventWithAuthorizer({
         ...options,
         headers: { "Content-Type": "application/json", ...options.headers },
         httpMethod: "POST",
         path,
+        queryStringParameters: params as Record<string, string>,
         body: options.body ? JSON.stringify(options.body) : undefined,
-      }),
+      });
+    },
     patch: <TReqBody>(
       path: string,
       options: RestApiEventRequestOptions<TReqBody>,
-    ) =>
-      buildRestApiEventWithAuthorizer({
+    ) => {
+      const [, params] = extractQueryParams(options.queryStringParameters);
+      return buildRestApiEventWithAuthorizer({
         ...options,
         headers: { "Content-Type": "application/json", ...options.headers },
         httpMethod: "PATCH",
         path,
+        queryStringParameters: params as Record<string, string>,
         body: options.body ? JSON.stringify(options.body) : undefined,
-      }),
+      });
+    },
     authenticated: (
       overrides?: RestApiEventWithAuthorizerOverrides<T>,
       pairwiseId = "test-pairwise-id",
