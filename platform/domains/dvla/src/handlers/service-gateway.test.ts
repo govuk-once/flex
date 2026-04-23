@@ -1,6 +1,5 @@
-import { getConfig } from "@flex/params";
 import { context, it } from "@flex/testing";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { createDvlaRemoteClient } from "../client";
 import type { ConsumerConfig } from "../utils/getConsumerConfig";
@@ -13,10 +12,6 @@ vi.mock("../utils/getConsumerConfig", () => ({
 
 vi.mock("../client", () => ({
   createDvlaRemoteClient: vi.fn(),
-}));
-
-vi.mock("@flex/params", () => ({
-  getConfig: vi.fn(),
 }));
 
 const TEST_SECRET_ARN =
@@ -95,13 +90,16 @@ const remoteClient = {
 
 describe("DVLA Service Gateway", () => {
   beforeEach(() => {
+    vi.stubEnv("AWS_REGION", "eu-west-2");
+    vi.stubEnv("FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", TEST_SECRET_ARN);
+
     vi.clearAllMocks();
-    vi.mocked(getConfig).mockResolvedValue({
-      AWS_REGION: "eu-west-2",
-      FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN: TEST_SECRET_ARN,
-    });
     vi.mocked(getConsumerConfig).mockResolvedValue(TEST_CONSUMER_CONFIG);
     vi.mocked(createDvlaRemoteClient).mockReturnValue(remoteClient);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("dispatches GET /v1/authenticate and returns auth token", async ({
@@ -285,23 +283,6 @@ describe("DVLA Service Gateway", () => {
       statusCode: 404,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: "Route not found" }),
-    });
-  });
-
-  it("returns 500 for unexpected exceptions", async ({
-    privateGatewayEvent,
-  }) => {
-    vi.mocked(getConfig).mockRejectedValue(new Error("Secrets crash"));
-
-    const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/authenticate"),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Internal server error" }),
     });
   });
 });

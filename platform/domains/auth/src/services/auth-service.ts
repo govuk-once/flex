@@ -1,19 +1,25 @@
 import { logger } from "@flex/logging";
-import { getConfig } from "@flex/params";
 import { JwtVerifier } from "aws-jwt-verify";
 import { validateCognitoJwtFields } from "aws-jwt-verify/cognito-verifier";
 import { FailedAssertionError } from "aws-jwt-verify/error";
 import type { APIGatewayTokenAuthorizerEvent } from "aws-lambda";
+import z from "zod";
 
-import { configSchema } from "../config";
+export const configSchema = z.object({
+  AWS_REGION: z.string().min(1),
+  USERPOOL_ID: z.string().min(1),
+  CLIENT_ID: z.string().min(1),
+  JWKS_URI: z.url(),
+});
 
 function extractToken(event: APIGatewayTokenAuthorizerEvent) {
   return event.authorizationToken.split(" ")[1];
 }
 
-export async function createAuthService() {
-  const { AWS_REGION, CLIENT_ID, JWKS_URI, USERPOOL_ID } =
-    await getConfig(configSchema);
+export function createAuthService() {
+  const { AWS_REGION, CLIENT_ID, JWKS_URI, USERPOOL_ID } = configSchema.parse(
+    process.env,
+  );
 
   const verifier = JwtVerifier.create({
     issuer: `https://cognito-idp.${AWS_REGION}.amazonaws.com/${USERPOOL_ID}`,

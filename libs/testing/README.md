@@ -559,7 +559,6 @@ Zod schema for validating CDK stack outputs.
 
 **FLEX:**
 
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/utils](/libs/utils/README.md)
 
 **External:**

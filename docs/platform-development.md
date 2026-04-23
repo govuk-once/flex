@@ -543,8 +543,6 @@ Changes to `@flex/config` affect all packages:
 
 - [@flex/config](/libs/config/README.md)
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
-- [@flex/params](/libs/params/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

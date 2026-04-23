@@ -57,7 +57,6 @@ The authorizer validates Cognito access tokens and extracts user identity:
 **FLEX:**
 
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

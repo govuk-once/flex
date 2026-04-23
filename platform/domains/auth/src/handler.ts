@@ -31,8 +31,7 @@ const handler: MiddyfiedHandler<
       logger.setLogLevel("INFO");
 
       try {
-        const authService = await createAuthService();
-        const pairwiseId = await authService.extractPairwiseId(event);
+        const pairwiseId = await createAuthService().extractPairwiseId(event);
         logger.debug("Extracted pairwise ID from JWT", { pairwiseId });
 
         return createPolicy("Allow", "*", { pairwiseId });
