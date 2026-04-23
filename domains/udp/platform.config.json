@@ -1,0 +1,69 @@
+{
+  "common": {
+    "access": "isolated",
+    "function": { "timeoutSeconds": 20 }
+  },
+  "resources": {
+    "privateGatewayUrl": {
+      "type": "ssm",
+      "path": "/flex/apigw/private/gateway-url",
+      "scope": "stage"
+    },
+    "encryptionKey": { "type": "kms", "path": "/flex-secret/encryption-key" },
+    "udpNotificationSecret": {
+      "type": "secret",
+      "path": "/flex-secret/udp/notification-hash-secret"
+    }
+  },
+  "integrations": {
+    "createUser": {
+      "type": "domain",
+      "route": "POST /v1/users"
+    },
+    "udpGetIdentity": { "type": "gateway", "route": "GET /v1/identity/*" },
+    "udpCreateIdentity": { "type": "gateway", "route": "POST /v1/identity/*" },
+    "udpDeleteIdentity": { "type": "gateway", "route": "DELETE /v1/identity/*" },
+    "udpGetNotificationPreferences": {
+      "type": "gateway",
+      "route": "GET /v1/notifications"
+    },
+    "udpCreateNotificationPreferences": {
+      "type": "gateway",
+      "route": "POST /v1/notifications"
+    },
+    "udpCreateUser": {
+      "type": "gateway",
+      "route": "POST /v1/users"
+    }
+  },
+  "routeConfig": {
+    "get-service-identity": {
+      "resources": ["privateGatewayUrl"],
+      "integrations": ["udpGetIdentity"]
+    },
+    "delete-service-identity": {
+      "resources": ["privateGatewayUrl"],
+      "integrations": ["udpDeleteIdentity", "udpGetIdentity"]
+    },
+    "create-service-identity-link": {
+      "resources": ["privateGatewayUrl"],
+      "integrations": ["udpCreateIdentity", "udpDeleteIdentity", "udpGetIdentity"]
+    },
+    "get-user-notification-preferences": {
+      "resources": ["privateGatewayUrl", "encryptionKey", "udpNotificationSecret"],
+      "integrations": ["createUser", "udpCreateNotificationPreferences", "udpGetNotificationPreferences"],
+      "function": { "timeoutSeconds": 25 }
+    },
+    "create-user": {
+      "resources": ["privateGatewayUrl"],
+      "integrations": ["udpCreateUser"]
+    },
+    "get-user-notification-push-id": {
+      "resources": ["udpNotificationSecret", "encryptionKey", "privateGatewayUrl"]
+    },
+    "update-user-notification-preferences": {
+      "resources": ["privateGatewayUrl", "encryptionKey", "udpNotificationSecret"],
+      "integrations": ["udpCreateNotificationPreferences"]
+    }
+  }
+}

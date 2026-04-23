@@ -1,0 +1,64 @@
+{
+  "common": {
+    "access": "private",
+    "function": { "timeoutSeconds": 30 }
+  },
+  "resources": {
+    "flexPrivateGatewayUrl": {
+      "type": "ssm",
+      "path": "/flex/apigw/private/gateway-url",
+      "scope": "stage"
+    },
+    "encryptionKeyArn": { "type": "kms", "path": "/flex-secret/encryption-key" }
+  },
+  "integrations": {
+    "dvlaAuthenticate": {
+      "type": "gateway",
+      "target": "dvla",
+      "route": "GET /v1/authenticate"
+    },
+    "dvlaRetrieveLicence": {
+      "type": "gateway",
+      "target": "dvla",
+      "route": "GET /v1/licence/*"
+    },
+    "dvlaTestNotification": {
+      "type": "gateway",
+      "target": "dvla",
+      "route": "POST /v1/test-notification/*"
+    },
+    "dvlaCustomerSummary": {
+      "type": "gateway",
+      "target": "dvla",
+      "route": "GET /v1/customer-summary/*"
+    },
+    "dvlaDriverSummary": {
+      "type": "gateway",
+      "target": "dvla",
+      "route": "GET /v1/driver-summary/*"
+    },
+    "udpGetLinkingId": {
+      "type": "domain",
+      "target": "udp",
+      "route": "GET /v1/identity/*"
+    }
+  },
+  "routeConfig": {
+    "get-users-drivers-licence": {
+      "resources": ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+      "integrations": ["dvlaAuthenticate", "dvlaRetrieveLicence", "dvlaCustomerSummary", "udpGetLinkingId"]
+    },
+    "post-test-notification": {
+      "resources": ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+      "integrations": ["dvlaAuthenticate", "dvlaTestNotification", "udpGetLinkingId"]
+    },
+    "get-customer-summary": {
+      "resources": ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+      "integrations": ["dvlaAuthenticate", "dvlaCustomerSummary", "udpGetLinkingId"]
+    },
+    "get-driver-summary": {
+      "resources": ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+      "integrations": ["dvlaAuthenticate", "dvlaDriverSummary", "udpGetLinkingId"]
+    }
+  }
+}

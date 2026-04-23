@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "unstructuredAddress": {
+      "type": "object",
+      "properties": {
+        "line1": { "type": "string", "minLength": 1, "maxLength": 45 },
+        "line2": { "type": "string", "maxLength": 45 },
+        "line3": { "type": "string", "maxLength": 45 },
+        "line4": { "type": "string", "maxLength": 45 },
+        "line5": { "type": "string", "maxLength": 45 },
+        "postcode": { "type": "string" }
+      }
+    }
+  }
+}

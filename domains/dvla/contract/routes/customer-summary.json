@@ -1,0 +1,11 @@
+{
+  "get": {
+    "operationId": "get-customer-summary",
+    "summary": "Get customer summary by linking ID",
+    "x-flex-access": "public",
+    "responses": {
+      "200": { "description": "Customer summary" },
+      "502": { "description": "Upstream service error" }
+    }
+  }
+}

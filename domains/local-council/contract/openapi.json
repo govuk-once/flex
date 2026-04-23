@@ -1,0 +1,85 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Local Council Domain API",
+    "version": "1.0.0",
+    "description": "Local authority data management"
+  },
+  "paths": {
+    "/v1/local-council/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "description": "User's UDP ID", "schema": { "type": "string", "minLength": 1 } }
+      ],
+      "get": {
+        "operationId": "get-local-authority",
+        "summary": "Retrieve a local authority by user ID",
+        "x-flex-access": "private",
+        "responses": {
+          "200": {
+            "description": "Local authority found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LocalAuthority" }
+              }
+            }
+          },
+          "404": { "description": "Not found" },
+          "502": { "description": "Upstream service error" }
+        }
+      },
+      "post": {
+        "operationId": "upsert-local-authority",
+        "summary": "Create or update a local authority",
+        "x-flex-access": "private",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LocalAuthority" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Saved" },
+          "400": { "description": "Validation failed" },
+          "502": { "description": "Upstream service error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tier": {
+        "type": "string",
+        "enum": ["county", "district", "unitary", "metropolitan", "london_borough"]
+      },
+      "AuthorityFields": {
+        "type": "object",
+        "required": ["name", "homepage_url", "tier", "slug"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "homepage_url": { "type": "string", "format": "uri" },
+          "tier": { "$ref": "#/components/schemas/Tier" },
+          "slug": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" }
+        }
+      },
+      "LocalAuthority": {
+        "type": "object",
+        "required": ["local_authority"],
+        "properties": {
+          "local_authority": {
+            "allOf": [
+              { "$ref": "#/components/schemas/AuthorityFields" },
+              {
+                "type": "object",
+                "properties": {
+                  "parent": { "$ref": "#/components/schemas/AuthorityFields" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

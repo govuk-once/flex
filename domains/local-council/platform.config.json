@@ -1,0 +1,35 @@
+{
+  "common": {
+    "access": "isolated",
+    "function": { "timeoutSeconds": 30 }
+  },
+  "resources": {
+    "flexPrivateGatewayUrl": {
+      "type": "ssm",
+      "path": "/flex/apigw/private/gateway-url",
+      "scope": "stage"
+    }
+  },
+  "integrations": {
+    "udpSaveLocalAuthority": {
+      "type": "gateway",
+      "target": "udp",
+      "route": "POST /v1/local-council/*"
+    },
+    "udpGetLocalAuthority": {
+      "type": "gateway",
+      "target": "udp",
+      "route": "GET /v1/local-council/*"
+    }
+  },
+  "routeConfig": {
+    "get-local-authority": {
+      "resources": ["flexPrivateGatewayUrl"],
+      "integrations": ["udpGetLocalAuthority"]
+    },
+    "upsert-local-authority": {
+      "resources": ["flexPrivateGatewayUrl"],
+      "integrations": ["udpSaveLocalAuthority"]
+    }
+  }
+}

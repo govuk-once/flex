@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "required": ["driver", "licence"],
+  "properties": {
+    "driver": { "$ref": "driver.json" },
+    "licence": { "$ref": "licence.json" },
+    "entitlement": {
+      "type": "array",
+      "items": { "$ref": "entitlement.json" }
+    },
+    "endorsements": {
+      "type": "array",
+      "items": { "$ref": "endorsement.json" }
+    }
+  }
+}

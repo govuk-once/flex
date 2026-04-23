@@ -1,0 +1,18 @@
+{
+  "get": {
+    "operationId": "get-users-drivers-licence",
+    "summary": "Get user's driving licence details",
+    "x-flex-access": "public",
+    "responses": {
+      "200": {
+        "description": "Driver licence details",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "../schemas/view-driver-response.json" }
+          }
+        }
+      },
+      "502": { "description": "Upstream service error" }
+    }
+  }
+}

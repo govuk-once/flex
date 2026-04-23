@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "offenceCode": { "type": "string" },
+    "offenceLegalLiteral": { "type": "string" },
+    "offenceDate": { "type": "string" },
+    "convictionDate": { "type": "string" },
+    "penaltyPoints": { "type": "integer" },
+    "penaltyPointsExpiryDate": { "type": "string" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "categoryCode": { "type": "string" },
+    "categoryLegalLiteral": { "type": "string" },
+    "categoryType": { "type": "string", "enum": ["Provisional", "Full"] },
+    "fromDate": { "type": "string" },
+    "expiryDate": { "type": "string" },
+    "restrictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["restrictionCode"],
+        "properties": {
+          "restrictionCode": { "type": "string" },
+          "restrictionLiteral": { "type": "string" }
+        }
+      }
+    }
+  }
+}

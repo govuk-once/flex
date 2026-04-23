@@ -1,0 +1,147 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "UDP Domain API",
+    "version": "1.0.0",
+    "description": "Unified Data Platform — identity, users, and notification preferences"
+  },
+  "paths": {
+    "/v1/identity/{service}": {
+      "parameters": [
+        { "name": "service", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+      ],
+      "get": {
+        "operationId": "get-service-identity",
+        "summary": "Get service identity link for authenticated user",
+        "x-flex-access": "public",
+        "responses": {
+          "200": { "description": "Identity link found" }
+        }
+      },
+      "delete": {
+        "operationId": "delete-service-identity",
+        "summary": "Delete service identity link",
+        "x-flex-access": "public",
+        "responses": {
+          "204": { "description": "Deleted" }
+        }
+      }
+    },
+    "/v1/identity/{service}/{id}": {
+      "parameters": [
+        { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+      ],
+      "post": {
+        "operationId": "create-service-identity-link",
+        "summary": "Create a service identity link",
+        "x-flex-access": "public",
+        "responses": {
+          "200": { "description": "Link created" }
+        }
+      }
+    },
+    "/v1/users": {
+      "get": {
+        "operationId": "get-user-notification-preferences",
+        "summary": "Get user and notification preferences",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "User preferences",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetUserResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "create-user",
+        "summary": "Create a new user",
+        "x-flex-access": "private",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User created" }
+        }
+      }
+    },
+    "/v1/users/push-id": {
+      "get": {
+        "operationId": "get-user-notification-push-id",
+        "summary": "Get user's push notification ID",
+        "x-flex-access": "private",
+        "parameters": [
+          { "name": "User-Id", "in": "header", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Push ID",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetUserPushIdResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/notifications": {
+      "patch": {
+        "operationId": "update-user-notification-preferences",
+        "summary": "Update notification preferences",
+        "x-flex-access": "public",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateNotificationPreferencesRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated preferences",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateNotificationPreferencesOutboundResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetUserResponse": {
+        "type": "object",
+        "description": "User with notification preferences"
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "description": "New user payload"
+      },
+      "GetUserPushIdResponse": {
+        "type": "object",
+        "description": "Push notification ID for a user"
+      },
+      "UpdateNotificationPreferencesRequest": {
+        "type": "object",
+        "description": "Notification preference update payload"
+      },
+      "UpdateNotificationPreferencesOutboundResponse": {
+        "type": "object",
+        "description": "Updated notification preferences"
+      }
+    }
+  }
+}
