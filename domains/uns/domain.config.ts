@@ -21,7 +21,7 @@ export const { config, route, routeContext } = domain({
     },
     integrations: {
       udpGetPushId: {
-        type: "gateway",
+        type: "domain",
         target: "udp",
         route: "GET /v1/users/push-id",
         response: GetUserPushIdResponseSchema,
