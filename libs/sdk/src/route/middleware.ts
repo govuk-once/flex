@@ -4,7 +4,9 @@ import middy from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpJsonBodyParser from "@middy/http-json-body-parser";
-import secretsManagerMiddleware, { secret } from "@middy/secrets-manager";
+import secretsManagerMiddleware, {
+  secretsManagerParam,
+} from "@middy/secrets-manager";
 import ssmMiddleware from "@middy/ssm";
 import { APIGatewayProxyResult } from "aws-lambda";
 
@@ -56,7 +58,10 @@ export function configureMiddleware({
       middyHandler.use(
         secretsManagerMiddleware({
           fetchData: Object.fromEntries(
-            secrets.map(([key, { value }]) => [key, secret(value)]),
+            secrets.map(([key, { value }]) => [
+              key,
+              secretsManagerParam(value),
+            ]),
           ),
           setToContext: true,
         }),

@@ -103,12 +103,6 @@ export default config;
 - Export modules and types from `src/index.ts`
 - Always keep the `README.md` up to date for discoverability
 
-```typescript
-// src/index.ts
-export { createLambdaHandler } from "./createLambdaHandler";
-export type { LambdaHandlerConfig } from "./createLambdaHandler";
-```
-
 ### Multiple Entry Points
 
 Packages can have multiple exports (e.g., `@flex/testing`):
@@ -165,7 +159,6 @@ platform/domains/<domain>/
     "test": "vitest"
   },
   "dependencies": {
-    "@flex/handlers": "workspace:*",
     "@flex/logging": "workspace:*",
     "http-errors": "<version>",
     "zod": "<version>"
@@ -549,10 +542,7 @@ Changes to `@flex/config` affect all packages:
 **FLEX:**
 
 - [@flex/config](/libs/config/README.md)
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/logging](/libs/logging/README.md)
-- [@flex/middlewares](/libs/middlewares/README.md)
-- [@flex/params](/libs/params/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

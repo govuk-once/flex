@@ -7,3 +7,15 @@ export const UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema 
       newUserProfileEnabled: z.boolean(),
     }),
   });
+
+export const NotificationsResponseSchema = z.array(
+  z.object({
+    NotificationID: z.string(),
+    Status: z.enum(["RECEIVED", "READ", "MARKED_AS_UNREAD"]),
+    NotificationTitle: z.string(),
+    NotificationBody: z.string(),
+    DispatchedDateTime: z.iso.datetime(),
+    MessageTitle: z.string(),
+    MessageBody: z.string(),
+  }),
+);

@@ -35,7 +35,7 @@ describe("flex-fetch", () => {
     expect(resBody).toStrictEqual(okResponse);
     expect(nock.isDone()).toBe(true);
 
-    expect(backoffSpy).not.toBeCalled();
+    expect(backoffSpy).not.toHaveBeenCalled();
   });
 
   it("uses backOff when retryAttempts is provided and eventually succeeds", async () => {
@@ -63,8 +63,8 @@ describe("flex-fetch", () => {
 
     expect(nock.isDone()).toBe(true);
 
-    expect(backoffSpy).toBeCalledTimes(1);
-    expect(backoffSpy).toBeCalledWith(
+    expect(backoffSpy).toHaveBeenCalledTimes(1);
+    expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         numOfAttempts: 3,
@@ -85,7 +85,7 @@ describe("flex-fetch", () => {
     });
     await expect(request1).rejects.toThrow();
 
-    expect(backoffSpy).toBeCalledWith(
+    expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         maxDelay: 10,
@@ -98,7 +98,7 @@ describe("flex-fetch", () => {
     });
     await expect(request2).rejects.toThrow();
 
-    expect(backoffSpy).toBeCalledWith(
+    expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         maxDelay: 1000,
@@ -121,9 +121,9 @@ describe("flex-fetch", () => {
 
     setTimeout(abort, 100);
 
-    await expect(request).rejects.toThrowError("This operation was aborted");
+    await expect(request).rejects.toThrow("This operation was aborted");
     expect(nock.isDone()).toBe(true);
-    expect(backoffSpy).not.toBeCalled();
+    expect(backoffSpy).not.toHaveBeenCalled();
   });
 
   it("stops retries when aborted during retry", async () => {
@@ -147,10 +147,10 @@ describe("flex-fetch", () => {
     vi.unstubAllGlobals();
     setTimeout(abort, 200);
 
-    await expect(request).rejects.toThrowError();
+    await expect(request).rejects.toThrow();
 
     expect(nock.isDone()).toBe(true);
-    expect(backoffSpy).toBeCalledWith(
+    expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -171,7 +171,7 @@ describe("flex-fetch", () => {
     });
 
     await expect(request).rejects.toThrow();
-    expect(backoffSpy).toBeCalledWith(
+    expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         numOfAttempts: 6,
@@ -189,12 +189,12 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow(err);
 
-    expect(logger.error).toBeCalledTimes(1);
-    expect(logger.error).toBeCalledWith("flex-fetch failed", {
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith("flex-fetch failed", {
       url: "https://example.com/data",
       error: err,
     });
-    expect(logger.debug).toBeCalledWith("options", expect.any(Object));
+    expect(logger.debug).toHaveBeenCalledWith("options", expect.any(Object));
   });
 
   it("correctly logs the request URL when a Request object is provided", async () => {
@@ -208,8 +208,8 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    expect(logger.error).toBeCalledTimes(1);
-    expect(logger.error).toBeCalledWith(
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
       "flex-fetch failed",
       expect.objectContaining({
         url: "https://example.com/data",
@@ -229,7 +229,7 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow();
 
-    expect(logger.debug).toBeCalledWith(
+    expect(logger.debug).toHaveBeenCalledWith(
       "options",
       expect.objectContaining({
         mode: "cors",

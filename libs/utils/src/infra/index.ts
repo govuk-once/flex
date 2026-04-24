@@ -63,6 +63,7 @@ export async function getStackOutputs(stackName: string) {
     // Important: throw a fresh Error so Vitest serializes only safe text.
     throw new Error(
       `Unable to resolve CloudFormation outputs for stack "${stackName}". ${toSafeMessage(error)}`,
+      { cause: error },
     );
   }
 }

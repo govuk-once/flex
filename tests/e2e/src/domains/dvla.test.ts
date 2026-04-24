@@ -86,4 +86,68 @@ describe.sequential("DVLA domain", () => {
       });
     });
   });
+
+  describe("/dvla/v1/driver-summary", () => {
+    const endpoint = "/dvla/v1/driver-summary";
+
+    describe("GET", () => {
+      it("returns 200 when identity is linked and driver-summary is fetched", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
+
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(200);
+      });
+
+      it("returns 404 when user has no identity link", async ({
+        cloudfront,
+        withCleanIdentity,
+      }) => {
+        await withCleanIdentity("dvla");
+
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(404);
+      });
+    });
+  });
+
+  describe("/dvla/v1/customer-summary", () => {
+    const endpoint = "/dvla/v1/customer-summary";
+
+    describe("GET", () => {
+      it("returns 200 when identity is linked and customer-summary is fetched", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
+
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(200);
+      });
+
+      it("returns 404 when user has no identity link", async ({
+        cloudfront,
+        withCleanIdentity,
+      }) => {
+        await withCleanIdentity("dvla");
+
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(404);
+      });
+    });
+  });
 });

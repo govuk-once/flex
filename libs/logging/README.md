@@ -71,7 +71,7 @@ This prevents domain code from suppressing errors (`SILENT`) or flooding product
 
 ## `setLogServiceName`
 
-Sets the service name on the log formatter. Called by `createLambdaHandler` from `@flex/handlers` — domain developers should not call this directly.
+Sets the service name on the log formatter. Domain developers should not call this directly.
 
 ```typescript
 setLogServiceName("my-service");
@@ -81,7 +81,7 @@ setLogServiceName("my-service");
 
 ## `setLogLevel`
 
-Sets the log level on the logger instance. The level is clamped between floor and ceiling. Called by `createLambdaHandler` from `@flex/handlers` — domain developers should not call this directly.
+Sets the log level on the logger instance. The level is clamped between floor and ceiling. Domain developers should not call this directly.
 
 ```typescript
 setLogLevel("DEBUG");
@@ -124,8 +124,6 @@ addSecretValue(apiKey);
 ## `injectLambdaContext`
 
 Re-exported Middy middleware from AWS Lambda Powertools. Automatically adds Lambda context to all log entries.
-
-This middleware is applied automatically by `createLambdaHandler` from `@flex/handlers`.
 
 ---
 
@@ -202,7 +200,6 @@ This provides `logger` with all methods as `vi.fn()` spies, plus stubs for `setL
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md#with-logging)
 - [Auth Handler](/platform/domains/auth/README.md)
 - [Viewer Request Handler](/platform/domains/viewer-request-cff/README.md)
 

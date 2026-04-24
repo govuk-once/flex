@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext } from "react";
+import { createContext, PropsWithChildren, use } from "react";
 
 import { useStdoutDimensions } from "../hooks/use-stdout-dimensions";
 
@@ -30,7 +30,7 @@ export function LayoutProvider({ children }: PropsWithChildren) {
   const bodyHeight = rows - 3;
 
   return (
-    <LayoutContext.Provider
+    <LayoutContext
       value={{
         isSmall,
         isSingleColumn,
@@ -41,8 +41,8 @@ export function LayoutProvider({ children }: PropsWithChildren) {
       }}
     >
       {children}
-    </LayoutContext.Provider>
+    </LayoutContext>
   );
 }
 
-export const useLayout = () => useContext(LayoutContext);
+export const useLayout = () => use(LayoutContext);

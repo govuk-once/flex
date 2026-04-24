@@ -39,7 +39,6 @@ Alternatively, run `pnpm <command>` from within `platform/domains/dvla/`.
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
 - [DVLA Service Gateway construct](/platform/infra/flex/src/constructs/gateways/dvla.ts)

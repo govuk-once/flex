@@ -14,7 +14,7 @@ import {
   JwtParseError,
 } from "aws-jwt-verify/error";
 import nock from "nock";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
 import { createAuthService } from "./services/auth-service";
@@ -22,17 +22,6 @@ import { createAuthService } from "./services/auth-service";
 const TEST_USERPOOL_ID = "eu-west-2_testUserPoolId";
 const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
 const JWKS_PATH = `/${TEST_USERPOOL_ID}/.well-known/jwks.json`;
-
-vi.mock("@flex/params", () => {
-  return {
-    getConfig: vi.fn(() => ({
-      AWS_REGION: "eu-west-2",
-      USERPOOL_ID: TEST_USERPOOL_ID,
-      CLIENT_ID: "testClientId",
-      JWKS_URI: `${COGNITO_BASE_URL}${JWKS_PATH}`,
-    })),
-  };
-});
 
 vi.mock("./services/auth-service", async (importOriginal) => {
   const actual =
@@ -64,8 +53,17 @@ function expectDenyPolicy(context?: Record<string, string>) {
 
 describe("Authorizer Handler", () => {
   beforeEach(() => {
+    vi.stubEnv("AWS_REGION", "eu-west-2");
+    vi.stubEnv("USERPOOL_ID", TEST_USERPOOL_ID);
+    vi.stubEnv("CLIENT_ID", "testClientId");
+    vi.stubEnv("JWKS_URI", `${COGNITO_BASE_URL}${JWKS_PATH}`);
+
     vi.clearAllMocks();
     nock.cleanAll();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("returns an allow policy containing the pairwise ID when the username can be extracted from a valid JWT", async ({
@@ -146,7 +144,7 @@ describe("Authorizer Handler", () => {
   ])(
     "returns Deny with expected context for $label",
     async ({ error, expectedContext }) => {
-      vi.mocked(createAuthService).mockResolvedValueOnce({
+      vi.mocked(createAuthService).mockReturnValueOnce({
         extractPairwiseId: vi.fn().mockRejectedValue(error),
       });
 
@@ -156,18 +154,15 @@ describe("Authorizer Handler", () => {
     },
   );
 
-  it("rethrows non-JwtBaseError (unknown errors are not turned into Deny)", async () => {
+  it("returns Deny on non-JwtBaseError", async () => {
     const unknownError = new Error("Unknown error");
 
-    vi.mocked(createAuthService).mockResolvedValueOnce({
+    vi.mocked(createAuthService).mockReturnValueOnce({
       extractPairwiseId: vi.fn().mockRejectedValue(unknownError),
     });
 
     await expect(
       handler(createTokenAuthorizerEvent().withToken(validJwt), context),
-    ).resolves.toEqual({
-      statusCode: 500,
-      headers: {},
-    });
+    ).resolves.toEqual(expectDenyPolicy());
   });
 });

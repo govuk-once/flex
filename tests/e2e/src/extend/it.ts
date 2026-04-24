@@ -1,5 +1,5 @@
 import type { ApiResponse } from "@flex/testing/e2e";
-import { it as baseIt } from "@flex/testing/e2e";
+import { extendIt } from "@flex/testing/e2e";
 import type { GetUserResponse } from "@flex/udp-domain";
 import { inject } from "vitest";
 
@@ -12,7 +12,7 @@ interface UdpFixtures {
   ) => Promise<ApiResponse<unknown>>;
 }
 
-export const it = baseIt.extend<UdpFixtures>({
+export const it = extendIt().extend<UdpFixtures>({
   udpUser: async ({ cloudfront }, use) => {
     const { JWT } = inject("e2eEnv");
     const result = await cloudfront.client.get<GetUserResponse>(

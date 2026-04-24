@@ -20,6 +20,14 @@ const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
     pattern: /^POST:\/v1\/test-notification\/[^/]+$/,
     contract: ROUTE_CONTRACTS["POST:/v1/test-notification/:id"],
   },
+  {
+    pattern: /^GET:\/v1\/driver-summary\/[^/]+$/,
+    contract: ROUTE_CONTRACTS["GET:/v1/driver-summary/:id"],
+  },
+  {
+    pattern: /^GET:\/v1\/customer-summary\/[^/]+$/,
+    contract: ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"],
+  },
 ];
 
 export function matchToRouteContract(

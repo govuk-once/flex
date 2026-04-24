@@ -2,7 +2,7 @@ import { exec } from "child_process";
 import {
   createContext,
   PropsWithChildren,
-  useContext,
+  use,
   useEffect,
   useState,
 } from "react";
@@ -47,11 +47,7 @@ export function AwsSessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  return (
-    <AwsSessionContext.Provider value={{ identity }}>
-      {children}
-    </AwsSessionContext.Provider>
-  );
+  return <AwsSessionContext value={{ identity }}>{children}</AwsSessionContext>;
 }
 
-export const useAwsSession = () => useContext(AwsSessionContext);
+export const useAwsSession = () => use(AwsSessionContext);

@@ -46,7 +46,6 @@ Returns a message from a public Lambda (no VPC attachment).
 
 **FLEX:**
 
-- [@flex/handlers](/libs/handlers/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)
 - [@platform/flex: Hello Domain](/platform/infra/flex/src/stack.ts)
