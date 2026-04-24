@@ -1,0 +1,148 @@
+{
+  "name": "dvla",
+  "version": "1.0.0",
+  "description": "Driving licence, customer summary, and driver summary endpoints",
+  "x-flex-default-errors": [502],
+  "routes": {
+    "GET /v1/driving-licence [public]": {
+      "name": "get-users-drivers-licence",
+      "summary": "Get user's driving licence details",
+      "response": "ViewDriverResponse"
+    },
+    "POST /v1/test-notification [public]": {
+      "name": "post-test-notification",
+      "summary": "Send a test notification via DVLA"
+    },
+    "GET /v1/customer-summary [public]": {
+      "name": "get-customer-summary",
+      "summary": "Get customer summary by linking ID"
+    },
+    "GET /v1/driver-summary [public]": {
+      "name": "get-driver-summary",
+      "summary": "Get driver summary by linking ID"
+    }
+  },
+  "schemas": {
+    "Address": {
+      "unstructuredAddress?": {
+        "line1?": { "type": "string", "minLength": 1, "maxLength": 45 },
+        "line2?": { "type": "string", "maxLength": 45 },
+        "line3?": { "type": "string", "maxLength": 45 },
+        "line4?": { "type": "string", "maxLength": 45 },
+        "line5?": { "type": "string", "maxLength": 45 },
+        "postcode?": "string"
+      }
+    },
+    "Driver": {
+      "drivingLicenceNumber!": { "type": "string", "minLength": 5, "maxLength": 16 },
+      "firstNames?": "string",
+      "lastName?": "string",
+      "gender?": "enum:Male,Female",
+      "dateOfBirth?": "string",
+      "address?": "Address",
+      "disqualifiedUntil?": "string",
+      "disqualifiedForLife?": "boolean",
+      "disqualifiedPendingSentence?": "boolean"
+    },
+    "Licence": {
+      "type!": "enum:Provisional,Full",
+      "status!": "enum:Valid,Disqualified,Revoked,Surrendered,Expired,Exchanged,Refused",
+      "statusQualifier?": "enum:For re-assessment only,Photo licence invitation sent,Short period disqualification,Until test passed,Until extended test passed,Pending sentence,For life"
+    },
+    "EntitlementRecord": {
+      "categoryCode?": "string",
+      "categoryLegalLiteral?": "string",
+      "categoryType?": "enum:Provisional,Full",
+      "fromDate?": "string",
+      "expiryDate?": "string",
+      "restrictions?": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["restrictionCode"],
+          "properties": {
+            "restrictionCode": { "type": "string" },
+            "restrictionLiteral": { "type": "string" }
+          }
+        }
+      }
+    },
+    "Endorsement": {
+      "offenceCode?": "string",
+      "offenceLegalLiteral?": "string",
+      "offenceDate?": "string",
+      "convictionDate?": "string",
+      "penaltyPoints?": "integer",
+      "penaltyPointsExpiryDate?": "string",
+      "disqualification?": {
+        "type?": "string",
+        "forLife?": "boolean",
+        "years?": "integer",
+        "months?": "integer",
+        "days?": "integer",
+        "startDate?": "string",
+        "disqualifiedPendingSentence?": "boolean"
+      },
+      "disqualificationRemovalDate?": "string",
+      "disqualificationReimposedDate?": "string",
+      "disqualificationSuspendedPendingAppealDate?": "string",
+      "sentenceDate?": "string"
+    },
+    "ViewDriverResponse": {
+      "driver!": "Driver",
+      "licence!": "Licence",
+      "entitlement?": "EntitlementRecord[]",
+      "endorsements?": "Endorsement[]",
+      "testPass?": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "categoryCode": { "type": "string" },
+            "categoryLegalLiteral": { "type": "string" },
+            "testDate": { "type": "string" },
+            "status": { "type": "string" },
+            "withAutomaticTransmission": { "type": "boolean" }
+          }
+        }
+      },
+      "token?": {
+        "validFromDate?": "string",
+        "validToDate?": "string",
+        "issueNumber?": "string"
+      },
+      "cpc?": {
+        "cpcs?": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lgvValidTo": { "type": "string" },
+              "pcvValidTo": { "type": "string" },
+              "national": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "holder?": {
+        "tachoCards?": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardNumber": { "type": "string" },
+              "cardStatus": { "type": "string" },
+              "cardExpiryDate": { "type": "string" },
+              "cardStartOfValidityDate": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "AuthenticateResponse": {
+      "id-token!": "string!",
+      "apiKeyExpiry!": "string!",
+      "passwordExpiry!": "string!"
+    }
+  }
+}

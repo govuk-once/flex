@@ -1,0 +1,44 @@
+{
+  "name": "uns",
+  "version": "1.0.0",
+  "description": "Unified Notification Service",
+  "routes": {
+    "GET /v1/notifications [public]": {
+      "name": "get-notifications",
+      "summary": "List all notifications",
+      "response": "Notification[]"
+    },
+    "GET /v1/notifications/:notificationId [public]": {
+      "name": "get-notification-by-id",
+      "summary": "Get a single notification",
+      "response": "Notification",
+      "errors": [404]
+    },
+    "DELETE /v1/notifications/:notificationId [public]": {
+      "name": "delete-notification",
+      "summary": "Delete a notification",
+      "errors": [404]
+    },
+    "PATCH /v1/notifications/:notificationId/status [public]": {
+      "name": "patch-notification-status",
+      "summary": "Update notification status",
+      "body": "PatchNotificationBody",
+      "errors": [400, 404]
+    }
+  },
+  "schemas": {
+    "NotificationStatus": "enum:RECEIVED,READ,MARKED_AS_UNREAD,HIDDEN",
+    "Notification": {
+      "NotificationID!": "string!",
+      "NotificationTitle!": "string!",
+      "NotificationBody!": "string!",
+      "MessageTitle!": "string!",
+      "MessageBody!": "string!",
+      "DispatchedDateTime!": "datetime!",
+      "Status?": "NotificationStatus"
+    },
+    "PatchNotificationBody": {
+      "Status!": "enum:RECEIVED,READ,MARKED_AS_UNREAD"
+    }
+  }
+}

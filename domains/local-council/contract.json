@@ -1,0 +1,34 @@
+{
+  "name": "local-council",
+  "version": "1.0.0",
+  "description": "Local authority data management",
+  "x-flex-default-errors": [400, 502],
+  "routes": {
+    "GET /v1/local-council/:id [private]": {
+      "name": "get-local-authority",
+      "summary": "Retrieve a local authority by user ID",
+      "response": "LocalAuthority",
+      "errors": [404]
+    },
+    "POST /v1/local-council/:id [private]": {
+      "name": "upsert-local-authority",
+      "summary": "Create or update a local authority",
+      "body": "LocalAuthority"
+    }
+  },
+  "schemas": {
+    "Tier": "enum:county,district,unitary,metropolitan,london_borough",
+    "AuthorityFields": {
+      "name!": "string!",
+      "homepage_url!": "url!",
+      "tier!": "Tier",
+      "slug!": "slug"
+    },
+    "LocalAuthority": {
+      "local_authority!": {
+        "...": "AuthorityFields",
+        "parent?": "AuthorityFields"
+      }
+    }
+  }
+}

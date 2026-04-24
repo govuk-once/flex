@@ -1,0 +1,74 @@
+{
+  "name": "udp",
+  "version": "1.0.0",
+  "description": "Unified Data Platform — identity, users, and notification preferences",
+  "routes": {
+    "GET /v1/identity/:service [public]": {
+      "name": "get-service-identity",
+      "summary": "Get service identity link"
+    },
+    "DELETE /v1/identity/:service [public]": {
+      "name": "delete-service-identity",
+      "summary": "Delete service identity link"
+    },
+    "POST /v1/identity/:service/:id [public]": {
+      "name": "create-service-identity-link",
+      "summary": "Create a service identity link"
+    },
+    "GET /v1/users [public]": {
+      "name": "get-user-notification-preferences",
+      "summary": "Get user and notification preferences",
+      "response": "GetUserResponse"
+    },
+    "POST /v1/users [private]": {
+      "name": "create-user",
+      "summary": "Create a new user",
+      "body": "CreateUserRequest"
+    },
+    "GET /v1/users/push-id [private]": {
+      "name": "get-user-notification-push-id",
+      "summary": "Get user's push notification ID",
+      "headers": { "userId": { "name": "User-Id", "required": true } },
+      "response": "GetUserPushIdResponse"
+    },
+    "PATCH /v1/users/notifications [public]": {
+      "name": "update-user-notification-preferences",
+      "summary": "Update notification preferences",
+      "body": "UpdateNotificationPreferencesRequest",
+      "response": "UpdateNotificationPreferencesOutboundResponse"
+    }
+  },
+  "schemas": {
+    "ConsentStatus": "enum:unknown,accepted,denied",
+    "PushId": "string!",
+    "UserId": "string!",
+    "GetServiceIdentityLinkResponse": {
+      "serviceId!": "string!",
+      "serviceName!": "string!",
+      "accessToken?": "string!",
+      "idToken?": "string!",
+      "refreshToken?": "string!"
+    },
+    "CreateUserRequest": {
+      "userId!": "UserId",
+      "pushId!": "PushId"
+    },
+    "GetUserResponse": {
+      "userId!": "UserId",
+      "notifications!": {
+        "consentStatus!": "ConsentStatus",
+        "pushId!": "PushId"
+      }
+    },
+    "GetUserPushIdResponse": {
+      "pushId!": "PushId"
+    },
+    "UpdateNotificationPreferencesRequest": {
+      "consentStatus!": "ConsentStatus"
+    },
+    "UpdateNotificationPreferencesOutboundResponse": {
+      "consentStatus!": "ConsentStatus",
+      "pushId!": "PushId"
+    }
+  }
+}

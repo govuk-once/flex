@@ -1,9 +1,0 @@
-{
-  "type": "object",
-  "required": ["id-token", "apiKeyExpiry", "passwordExpiry"],
-  "properties": {
-    "id-token": { "type": "string", "minLength": 1 },
-    "apiKeyExpiry": { "type": "string", "minLength": 1 },
-    "passwordExpiry": { "type": "string", "minLength": 1 }
-  }
-}
