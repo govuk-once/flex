@@ -15,7 +15,7 @@ export const NotificationsResponseSchema = z.array(
     NotificationTitle: z.string(),
     NotificationBody: z.string(),
     DispatchedDateTime: z.iso.datetime(),
-    MessageTitle: z.string(),
-    MessageBody: z.string(),
+    MessageTitle: z.string().optional(),
+    MessageBody: z.string().optional(),
   }),
 );
