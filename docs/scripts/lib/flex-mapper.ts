@@ -206,14 +206,21 @@ export function mapResource(value: JsonValue): JsonValue {
   return result;
 }
 
+const INTEGRATION_TYPE_ALIASES: Record<string, string> = {
+  gateway: "gateway",
+  gtw: "gateway",
+  domain: "domain",
+  dom: "domain",
+};
+
 export function mapIntegration(value: JsonValue): JsonValue {
   if (typeof value !== "string") return value;
 
   const parts = value.split(":");
   if (parts.length < 2) return value;
 
-  const type = parts[0];
-  if (type !== "gateway" && type !== "domain") return value;
+  const type = INTEGRATION_TYPE_ALIASES[parts[0]];
+  if (!type) return value;
 
   if (parts.length === 3) {
     return { type, target: parts[1], route: parts[2] };
@@ -225,6 +232,10 @@ export function mapIntegration(value: JsonValue): JsonValue {
 export function mapContract(input: JsonObject): JsonObject {
   const result: JsonObject = { ...input };
 
+  // Extract default errors from info
+  const info = result.info as JsonObject | undefined;
+  const defaultErrors = (info?.["x-flex-default-errors"] ?? []) as number[];
+
   if (result.paths && typeof result.paths === "object") {
     const paths: JsonObject = {};
     Object.entries(result.paths as JsonObject).forEach(([path, pathItem]) => {
@@ -235,7 +246,12 @@ export function mapContract(input: JsonObject): JsonObject {
       const mapped: JsonObject = {};
       Object.entries(pathItem as JsonObject).forEach(([method, value]) => {
         if (["get", "post", "put", "patch", "delete"].includes(method) && typeof value === "object" && value !== null) {
-          mapped[method] = mapRouteOperation(value as JsonObject);
+          const op = value as JsonObject;
+          // Inject default errors if route doesn't specify its own
+          if (defaultErrors.length > 0 && !op.errors && !op.responses) {
+            op.errors = defaultErrors as unknown as JsonValue;
+          }
+          mapped[method] = mapRouteOperation(op);
         } else {
           mapped[method] = value;
         }
@@ -294,6 +310,56 @@ export function mapPlatformConfig(input: JsonObject): JsonObject {
       integrations[key] = mapIntegration(value);
     });
     result.integrations = integrations;
+  }
+
+  // Resolve common route defaults into routeConfig
+  if (result.routeConfig && typeof result.routeConfig === "object") {
+    const common = (result.common ?? {}) as JsonObject;
+    const commonResources = (common.resources ?? []) as string[];
+    const commonIntegrations = (common.integrations ?? []) as string[];
+
+    const routeConfig: JsonObject = {};
+    Object.entries(result.routeConfig as JsonObject).forEach(([key, value]) => {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        routeConfig[key] = value;
+        return;
+      }
+
+      const route = { ...(value as JsonObject) };
+
+      // Handle +resources (append to common)
+      if (Array.isArray(route["+resources"])) {
+        route.resources = [
+          ...commonResources,
+          ...(route["+resources"] as string[]),
+        ] as unknown as JsonValue;
+        delete route["+resources"];
+      } else if (!route.resources && commonResources.length > 0) {
+        route.resources = [...commonResources] as unknown as JsonValue;
+      }
+
+      // Handle +integrations (append to common)
+      if (Array.isArray(route["+integrations"])) {
+        route.integrations = [
+          ...commonIntegrations,
+          ...(route["+integrations"] as string[]),
+        ] as unknown as JsonValue;
+        delete route["+integrations"];
+      } else if (!route.integrations && commonIntegrations.length > 0) {
+        route.integrations = [...commonIntegrations] as unknown as JsonValue;
+      }
+
+      routeConfig[key] = route;
+    });
+    result.routeConfig = routeConfig;
+
+    // Remove resources/integrations from common (they're route-level concerns)
+    if (common.resources) {
+      const cleanCommon = { ...(result.common as JsonObject) };
+      delete cleanCommon.resources;
+      delete cleanCommon.integrations;
+      result.common = cleanCommon;
+    }
   }
 
   return result;

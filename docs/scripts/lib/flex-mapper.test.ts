@@ -250,6 +250,22 @@ describe("mapIntegration", () => {
     });
   });
 
+  it("expands gtw alias to gateway", () => {
+    expect(mapIntegration("gtw:dvla:GET /v1/auth")).toEqual({
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/auth",
+    });
+  });
+
+  it("expands dom alias to domain", () => {
+    expect(mapIntegration("dom:udp:POST /v1/users")).toEqual({
+      type: "domain",
+      target: "udp",
+      route: "POST /v1/users",
+    });
+  });
+
   it("passes through standard object", () => {
     const standard = { type: "gateway", target: "dvla", route: "GET /v1/auth" };
     expect(mapIntegration(standard)).toEqual(standard);
@@ -358,6 +374,57 @@ describe("mapContract", () => {
     });
   });
 
+  it("applies x-flex-default-errors to routes without explicit errors", () => {
+    const result = mapContract({
+      openapi: "3.1.0",
+      info: {
+        title: "Test",
+        version: "1.0.0",
+        "x-flex-default-errors": [502],
+      },
+      paths: {
+        "/v1/items": {
+          get: {
+            operationId: "get-items",
+            response: "Item",
+          },
+        },
+      },
+    });
+
+    const paths = result.paths as Record<string, Record<string, unknown>>;
+    const get = paths["/v1/items"].get as Record<string, unknown>;
+    const responses = get.responses as Record<string, Record<string, unknown>>;
+    expect(responses["502"]).toEqual({
+      description: "Upstream service error",
+    });
+  });
+
+  it("does not override explicit errors with defaults", () => {
+    const result = mapContract({
+      openapi: "3.1.0",
+      info: {
+        title: "Test",
+        version: "1.0.0",
+        "x-flex-default-errors": [502],
+      },
+      paths: {
+        "/v1/items": {
+          get: {
+            operationId: "get-items",
+            errors: [404],
+          },
+        },
+      },
+    });
+
+    const paths = result.paths as Record<string, Record<string, unknown>>;
+    const get = paths["/v1/items"].get as Record<string, unknown>;
+    const responses = get.responses as Record<string, Record<string, unknown>>;
+    expect(responses["404"]).toBeDefined();
+    expect(responses["502"]).toBeUndefined();
+  });
+
   it("passes through standard OpenAPI unchanged", () => {
     const standard = {
       openapi: "3.1.0",
@@ -452,6 +519,83 @@ describe("mapPlatformConfig", () => {
       target: "udp",
       route: "POST /v1/items/*",
     });
+  });
+
+  it("applies common resources and integrations to routes without explicit ones", () => {
+    const result = mapPlatformConfig({
+      common: {
+        access: "private",
+        timeout: 30,
+        resources: ["gwUrl", "key"],
+        integrations: ["auth", "linkId"],
+      },
+      routeConfig: {
+        "get-item": {},
+      },
+    });
+
+    const route = (result.routeConfig as Record<string, Record<string, unknown>>)["get-item"];
+    expect(route.resources).toEqual(["gwUrl", "key"]);
+    expect(route.integrations).toEqual(["auth", "linkId"]);
+  });
+
+  it("merges +resources and +integrations with common defaults", () => {
+    const result = mapPlatformConfig({
+      common: {
+        access: "private",
+        resources: ["gwUrl"],
+        integrations: ["auth"],
+      },
+      routeConfig: {
+        "get-item": {
+          "+resources": ["extraKey"],
+          "+integrations": ["fetchData"],
+        },
+      },
+    });
+
+    const route = (result.routeConfig as Record<string, Record<string, unknown>>)["get-item"];
+    expect(route.resources).toEqual(["gwUrl", "extraKey"]);
+    expect(route.integrations).toEqual(["auth", "fetchData"]);
+    expect(route["+resources"]).toBeUndefined();
+    expect(route["+integrations"]).toBeUndefined();
+  });
+
+  it("explicit resources/integrations override common defaults", () => {
+    const result = mapPlatformConfig({
+      common: {
+        access: "private",
+        resources: ["gwUrl", "key"],
+        integrations: ["auth"],
+      },
+      routeConfig: {
+        "special-route": {
+          resources: ["onlyThis"],
+          integrations: ["onlyThat"],
+        },
+      },
+    });
+
+    const route = (result.routeConfig as Record<string, Record<string, unknown>>)["special-route"];
+    expect(route.resources).toEqual(["onlyThis"]);
+    expect(route.integrations).toEqual(["onlyThat"]);
+  });
+
+  it("removes resources/integrations from common after resolving", () => {
+    const result = mapPlatformConfig({
+      common: {
+        access: "private",
+        resources: ["gwUrl"],
+      },
+      routeConfig: {
+        "get-item": {},
+      },
+    });
+
+    const common = result.common as Record<string, unknown>;
+    expect(common.resources).toBeUndefined();
+    expect(common.integrations).toBeUndefined();
+    expect(common.access).toBe("private");
   });
 
   it("passes through standard platform config unchanged", () => {
