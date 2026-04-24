@@ -67,7 +67,7 @@ jobs:
         run: pnpm run tsc
 
       - name: Unit Tests
-        run: pnpm run test
+        run: pnpm run test -- --coverage
 
       - name: Infrastructure as Code (IaC) Linting with checkov
         run: pnpm run checkov

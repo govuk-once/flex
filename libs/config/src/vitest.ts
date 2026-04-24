@@ -9,6 +9,14 @@ export const config = defineConfig({
     coverage: {
       provider: "v8",
       reportsDirectory: "./coverage",
+      reporter: ["text", "lcov"],
+      include: ["src/**/*.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "src/**/__mocks__/**",
+        "src/**/__tests__/**",
+      ],
     },
   },
 });
