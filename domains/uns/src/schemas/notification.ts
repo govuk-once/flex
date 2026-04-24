@@ -22,6 +22,10 @@ export const NotificationSchema = z.object({
 
 export type Notification = z.infer<typeof NotificationSchema>;
 
+export const NotificationsResponseSchema = z.array(NotificationSchema);
+
+export type NotificationsResponse = z.infer<typeof NotificationsResponseSchema>;
+
 export const PatchNotificationBodySchema = z.object({
   Status: z.enum(["RECEIVED", "READ", "MARKED_AS_UNREAD"]),
 });

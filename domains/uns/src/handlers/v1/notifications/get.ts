@@ -1,34 +1,32 @@
 import createHttpError from "http-errors";
 import { z } from "zod";
 
-import { getNotificationsContext, route } from "../../../../domain.config";
+import { route } from "../../../../domain.config";
 import { NotificationSchema } from "../../../schemas/notification";
 
-export const handler = route("GET /v1/notifications", async ({ logger }) => {
-  const { auth, resources, integrations } = getNotificationsContext();
-
-  const pushIdResponse = await integrations.udpGetPushId({
-    headers: { "User-Id": auth.pairwiseId}
+export const handler = route("GET /v1/notifications", async (ctx) => {
+  const pushIdResponse = await ctx.integrations.udpGetPushId({
+    headers: { "User-Id": ctx.auth.pairwiseId },
   });
 
-  if(!pushIdResponse.ok) {
-    logger.error("Failed to retrieve push Id from UDP", {
-      status: pushIdResponse.error.status
+  if (!pushIdResponse.ok) {
+    ctx.logger.error("Failed to retrieve push Id from UDP", {
+      status: pushIdResponse.error.status,
     });
-     throw new createHttpError.InternalServerError();
+    throw new createHttpError.InternalServerError();
   }
 
-  const pushId = pushIdResponse.data;
+  const pushId = pushIdResponse.data.pushId;
 
   const url = new URL(
-    `${resources.unsFlexPrivateGatewayUrl.replace(/\/$/, "")}/notifications`,
+    `${ctx.resources.unsFlexPrivateGatewayUrl.replace(/\/$/, "")}/notifications`,
   );
   url.searchParams.set("externalUserID", pushId);
 
   const response = await fetch(url.toString());
 
   if (!response.ok) {
-    logger.error("Returned failed response fetching notifications", {
+    ctx.logger.error("Returned failed response fetching notifications", {
       status: response.status,
     });
     throw new createHttpError.InternalServerError();
@@ -38,7 +36,7 @@ export const handler = route("GET /v1/notifications", async ({ logger }) => {
   const parsed = z.array(NotificationSchema).safeParse(rawBody);
 
   if (!parsed.success) {
-    logger.error("Unexpected response", {
+    ctx.logger.error("Unexpected response", {
       error: parsed.error.message,
     });
     throw new createHttpError.InternalServerError();
