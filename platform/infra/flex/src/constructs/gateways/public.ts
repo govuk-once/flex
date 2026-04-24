@@ -8,30 +8,34 @@ import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
-interface DvlaServiceGatewayProps {
-  gatewaysResource: IResource;
+interface ServiceGatewayProps {
   consumerConfigArn: string;
-  vpc: IVpc;
+  gatewaysResource: IResource;
   privateEgressSg: ISecurityGroup;
+  secretArnEnvVarName: string;
+  service: string;
+  vpc: IVpc;
 }
 
-export function createDvlaServiceGateway(
+export function createServiceGateway(
   scope: Construct,
   {
+    consumerConfigArn,
     gatewaysResource,
     privateEgressSg,
+    secretArnEnvVarName,
+    service,
     vpc,
-    consumerConfigArn,
-  }: DvlaServiceGatewayProps,
+  }: ServiceGatewayProps,
 ) {
-  const dvlaServiceGateway = new FlexPrivateEgressFunction(
+  const serviceGateway = new FlexPrivateEgressFunction(
     scope,
-    "dvlaServiceGateway",
+    `${service}ServiceGateway`,
     {
-      entry: getPlatformEntry("dvla", "handlers/service-gateway.ts"),
-      domain: "dvla",
+      entry: getPlatformEntry(service, "handlers/service-gateway.ts"),
+      domain: service,
       environment: {
-        FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN: consumerConfigArn,
+        [secretArnEnvVarName]: consumerConfigArn,
       },
       timeout: Duration.seconds(30),
       privateEgressSg,
@@ -39,7 +43,7 @@ export function createDvlaServiceGateway(
     },
   );
 
-  dvlaServiceGateway.function.addToRolePolicy(
+  serviceGateway.function.addToRolePolicy(
     new PolicyStatement({
       effect: Effect.ALLOW,
       actions: ["secretsmanager:GetSecretValue"],
@@ -48,9 +52,9 @@ export function createDvlaServiceGateway(
   );
 
   createPrivateGatewayRoute(
-    "dvla/{proxy+}",
+    `${service}/{proxy+}`,
     "ANY",
-    dvlaServiceGateway.function,
+    serviceGateway.function,
     gatewaysResource,
   );
 }

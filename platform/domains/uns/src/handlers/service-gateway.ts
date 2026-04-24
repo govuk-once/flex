@@ -6,17 +6,17 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import { createDvlaRemoteClient } from "../client";
+import { createUnsRemoteClient } from "../client";
 import { execute } from "../contract/executor";
 import { getConsumerConfig } from "../utils/getConsumerConfig";
 
 const configSchema = z.object({
   AWS_REGION: NonEmptyString,
-  FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN: NonEmptyString,
+  FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN: NonEmptyString,
 });
 
 /**
- * DVLA Service Gateway – internal-only, invoked via the private API gateway.
+ * UNS Service Gateway – internal-only, invoked via the private API gateway.
  *
  * Receives Flex requests, routes to typed remote client methods, validates and
  * translates remote responses to internal contract. No direct invocation from domain lambdas.
@@ -32,16 +32,16 @@ export const handler: MiddyfiedHandler<
     }),
   )
   .handler(async (event) => {
-    logger.setServiceName("dvla-service-gateway");
+    logger.setServiceName("uns-service-gateway");
     logger.setLogLevel("INFO");
 
     try {
       const config = configSchema.parse(process.env);
       const consumerConfig = await getConsumerConfig(
-        config.FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN,
+        config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
 
-      const remoteClient = createDvlaRemoteClient(consumerConfig);
+      const remoteClient = createUnsRemoteClient(consumerConfig);
       const result = await execute(event, remoteClient);
 
       if (!result.ok) {
@@ -72,9 +72,9 @@ function mapRemoteErrorToGatewayResponse(error: {
 }): APIGatewayProxyResultV2 {
   logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
-    logger.debug("DVLA upstream service unavailable", { error });
+    logger.debug("UNS upstream service unavailable", { error });
     return jsonResponse(502, {
-      message: "DVLA upstream service unavailable",
+      message: "UNS upstream service unavailable",
     });
   }
 

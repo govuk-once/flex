@@ -7,7 +7,10 @@ import {
   UpdateNotificationPreferencesRequestSchema,
 } from "@flex/udp-domain";
 
-import { UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema } from "./schemas/notifications";
+import {
+  NotificationsResponseSchema,
+  UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema,
+} from "./schemas/notifications";
 
 export const { config, route, routeContext } = domain({
   name: "poc",
@@ -35,6 +38,12 @@ export const { config, route, routeContext } = domain({
     },
   },
   integrations: {
+    unsGetNotifications: {
+      type: "gateway",
+      target: "uns",
+      route: "GET /v1/notifications",
+      response: NotificationsResponseSchema,
+    },
     udpCreateIdentityLink: {
       type: "gateway",
       target: "udp",
@@ -97,6 +106,20 @@ export const { config, route, routeContext } = domain({
             body: UpdateNotificationPreferencesRequestSchema,
             response:
               UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema,
+          },
+        },
+        GET: {
+          public: {
+            name: "get-user-notifications",
+            resources: [
+              "flexPrivateGatewayUrl",
+              "encryptionKeyArn",
+              "udpNotificationSecret",
+            ],
+            integrations: ["unsGetNotifications", "udpGetPushId"],
+            featureFlags: ["newUserProfileEnabled"],
+            function: { timeoutSeconds: 20 },
+            response: NotificationsResponseSchema,
           },
         },
       },

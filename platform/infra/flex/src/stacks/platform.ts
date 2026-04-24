@@ -26,7 +26,7 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { Environment, getEnvConfig } from "../base/env";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
-import { createDvlaServiceGateway } from "../constructs/gateways/dvla";
+import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
@@ -282,6 +282,7 @@ export class FlexPlatformStack extends BaseStack {
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
     const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+    const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecretArn);
 
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
@@ -302,11 +303,22 @@ export class FlexPlatformStack extends BaseStack {
       vpc,
     });
 
-    createDvlaServiceGateway(this, {
+    createServiceGateway(this, {
       vpc,
       consumerConfigArn: dvlaConsumerConfigArn,
       gatewaysResource: gatewaysRoot,
       privateEgressSg,
+      secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
+      service: "dvla",
+    });
+
+    createServiceGateway(this, {
+      vpc,
+      consumerConfigArn: unsConsumerConfigArn,
+      gatewaysResource: gatewaysRoot,
+      privateEgressSg,
+      secretArnEnvVarName: "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
+      service: "uns",
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash

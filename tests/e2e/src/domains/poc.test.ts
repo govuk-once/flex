@@ -1,3 +1,4 @@
+import { NotificationsResponseSchema } from "@flex/poc-domain";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
@@ -69,5 +70,23 @@ describe("POC domain", () => {
         expect(result.status).toBe(400);
       },
     );
+  });
+
+  describe("GET /poc/v0/users/notifications", () => {
+    const endpoint = `/poc/v0/users/notifications`;
+
+    it("returns 200 for GET user notifications", async ({
+      cloudfront,
+      udpUser: _user,
+    }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { Authorization: `Bearer ${JWT.VALID}` },
+      });
+
+      expect(result.status).toBe(200);
+
+      const validation = NotificationsResponseSchema.safeParse(result.body);
+      expect(validation.success).toBe(true);
+    });
   });
 });

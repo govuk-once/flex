@@ -28,6 +28,7 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpConfigRoleArn,
   ENV_KEYS.UdpConfigSecretArn,
   ENV_KEYS.DvlaConfigSecretArn,
+  ENV_KEYS.UnsConfigSecretArn,
 ]);
 
 if (persistent) {
