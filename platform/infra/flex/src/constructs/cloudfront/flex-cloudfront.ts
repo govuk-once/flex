@@ -177,6 +177,7 @@ export class FlexCloudfront extends Construct {
     const accessLogBucket = new Bucket(this, "AccessLogBucket", {
       publicReadAccess: false,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
       accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
       versioned: true,
