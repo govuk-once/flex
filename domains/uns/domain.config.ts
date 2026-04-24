@@ -16,7 +16,7 @@ export const { config, route } = domain({
   resources: {
     flexPrivateGatewayUrl: {
       type: "ssm",
-      path: "/uns/flex/privateGatewayUrl",
+      path: "/flex/privateGatewayUrl",
       scope: "stage",
     },
     unsFlexPrivateGatewayUrl: {
