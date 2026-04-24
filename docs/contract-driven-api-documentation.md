@@ -127,11 +127,16 @@ The generator:
 
 ## Breaking Change Detection
 
-When a domain's `contract/openapi.json` changes on a PR, CI runs `oasdiff` to compare against main:
+When a domain's contract changes on a PR, CI generates the resolved single-file spec first, then runs `oasdiff` to compare against the previously committed resolved spec:
 
 ```
-oasdiff breaking main:domains/dvla/contract/openapi.json branch:domains/dvla/contract/openapi.json
+pnpm -w run generate
+oasdiff breaking main:domains/dvla/contract/openapi.resolved.json branch:domains/dvla/contract/openapi.resolved.json
 ```
+
+Multi-file specs with `$ref` cannot be compared directly via git-ref syntax. The `openapi.resolved.json` (generated, committed) is the portable single-file version used for diffing and sharing with external parties.
+
+**Dual-access routes:** When a route has both public and private variants, use `x-flex-private-override` on the operation to define the private additions (extra headers, response schema). The generator produces both route entries in `domain.config.ts`:
 
 Breaking changes include:
 

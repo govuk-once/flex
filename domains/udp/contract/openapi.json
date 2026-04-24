@@ -14,6 +14,12 @@
         "operationId": "get-service-identity",
         "summary": "Get service identity link for authenticated user",
         "x-flex-access": "public",
+        "x-flex-private-override": {
+          "headers": {
+            "userId": { "name": "User-Id", "required": true }
+          },
+          "response": { "$ref": "#/components/schemas/GetServiceIdentityLinkResponse" }
+        },
         "responses": {
           "200": { "description": "Identity link found" }
         }
@@ -122,25 +128,73 @@
   },
   "components": {
     "schemas": {
-      "GetUserResponse": {
+      "ConsentStatus": {
+        "type": "string",
+        "enum": ["unknown", "accepted", "denied"]
+      },
+      "PushId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "UserId": {
+        "type": "string",
+        "minLength": 1
+      },
+      "GetServiceIdentityLinkResponse": {
         "type": "object",
-        "description": "User with notification preferences"
+        "required": ["serviceId", "serviceName"],
+        "properties": {
+          "serviceId": { "type": "string", "minLength": 1 },
+          "serviceName": { "type": "string", "minLength": 1 },
+          "accessToken": { "type": "string", "minLength": 1 },
+          "idToken": { "type": "string", "minLength": 1 },
+          "refreshToken": { "type": "string", "minLength": 1 }
+        }
       },
       "CreateUserRequest": {
         "type": "object",
-        "description": "New user payload"
+        "required": ["userId", "pushId"],
+        "properties": {
+          "userId": { "$ref": "#/components/schemas/UserId" },
+          "pushId": { "$ref": "#/components/schemas/PushId" }
+        }
+      },
+      "GetUserResponse": {
+        "type": "object",
+        "required": ["userId", "notifications"],
+        "properties": {
+          "userId": { "$ref": "#/components/schemas/UserId" },
+          "notifications": {
+            "type": "object",
+            "required": ["consentStatus", "pushId"],
+            "properties": {
+              "consentStatus": { "$ref": "#/components/schemas/ConsentStatus" },
+              "pushId": { "$ref": "#/components/schemas/PushId" }
+            }
+          }
+        }
       },
       "GetUserPushIdResponse": {
         "type": "object",
-        "description": "Push notification ID for a user"
+        "required": ["pushId"],
+        "properties": {
+          "pushId": { "$ref": "#/components/schemas/PushId" }
+        }
       },
       "UpdateNotificationPreferencesRequest": {
         "type": "object",
-        "description": "Notification preference update payload"
+        "required": ["consentStatus"],
+        "properties": {
+          "consentStatus": { "$ref": "#/components/schemas/ConsentStatus" }
+        }
       },
       "UpdateNotificationPreferencesOutboundResponse": {
         "type": "object",
-        "description": "Updated notification preferences"
+        "required": ["consentStatus", "pushId"],
+        "properties": {
+          "consentStatus": { "$ref": "#/components/schemas/ConsentStatus" },
+          "pushId": { "$ref": "#/components/schemas/PushId" }
+        }
       }
     }
   }

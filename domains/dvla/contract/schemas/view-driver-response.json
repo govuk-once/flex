@@ -11,6 +11,60 @@
     "endorsements": {
       "type": "array",
       "items": { "$ref": "endorsement.json" }
+    },
+    "testPass": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "categoryCode": { "type": "string" },
+          "categoryLegalLiteral": { "type": "string" },
+          "testDate": { "type": "string" },
+          "status": { "type": "string" },
+          "withAutomaticTransmission": { "type": "boolean" }
+        }
+      }
+    },
+    "token": {
+      "type": "object",
+      "properties": {
+        "validFromDate": { "type": "string" },
+        "validToDate": { "type": "string" },
+        "issueNumber": { "type": "string" }
+      }
+    },
+    "cpc": {
+      "type": "object",
+      "properties": {
+        "cpcs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lgvValidTo": { "type": "string" },
+              "pcvValidTo": { "type": "string" },
+              "national": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "holder": {
+      "type": "object",
+      "properties": {
+        "tachoCards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cardNumber": { "type": "string" },
+              "cardStatus": { "type": "string" },
+              "cardExpiryDate": { "type": "string" },
+              "cardStartOfValidityDate": { "type": "string" }
+            }
+          }
+        }
+      }
     }
   }
 }
