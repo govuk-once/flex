@@ -12,6 +12,7 @@ export const handler = route("GET /v1/notifications", async (ctx) => {
   if (!pushIdResponse.ok) {
     ctx.logger.error("Failed to retrieve push Id from UDP", {
       status: pushIdResponse.error.status,
+      errorBody: "Internal Server Error",
     });
     throw new createHttpError.InternalServerError();
   }
@@ -28,6 +29,7 @@ export const handler = route("GET /v1/notifications", async (ctx) => {
   if (!response.ok) {
     ctx.logger.error("Returned failed response fetching notifications", {
       status: response.status,
+      errorBody: "Internal Server Error",
     });
     throw new createHttpError.InternalServerError();
   }
@@ -38,6 +40,7 @@ export const handler = route("GET /v1/notifications", async (ctx) => {
   if (!parsed.success) {
     ctx.logger.error("Unexpected response", {
       error: parsed.error.message,
+      errorBody: "Internal Server Error",
     });
     throw new createHttpError.InternalServerError();
   }

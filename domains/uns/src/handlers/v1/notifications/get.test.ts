@@ -26,7 +26,7 @@ describe("GET /v1/notifications", () => {
     context,
   }) => {
     gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
-    gateway.get("/notifications").query({ pushId }).reply(200, [notification]);
+    gateway.get("/notifications").query({ externalUserID: pushId }).reply(200, [notification]);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
@@ -56,7 +56,7 @@ describe("GET /v1/notifications", () => {
     gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
     gateway
       .get("/notifications")
-      .query({ ExternalUserID: pushId })
+      .query({ externalUserID: pushId })
       .reply(200, []);
 
     const result = await handler(
@@ -72,8 +72,7 @@ describe("GET /v1/notifications", () => {
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
-    gateway.get("/gateway/udp/v1/users/push-id").reply(500);
-    gateway.get("/notifications").reply(500);
+    gateway.get("/gateways/udp/v1/users/push-id").reply(500);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
