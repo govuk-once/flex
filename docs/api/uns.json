@@ -1,0 +1,160 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "uns",
+    "version": "1.0.0",
+    "description": "Unified Notification Service"
+  },
+  "paths": {
+    "/v1/notifications": {
+      "get": {
+        "name": "get-notifications",
+        "summary": "List all notifications",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/notifications/:notificationId": {
+      "get": {
+        "name": "get-notification-by-id",
+        "summary": "Get a single notification",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "name": "delete-notification",
+        "summary": "Delete a notification",
+        "x-flex-access": "public",
+        "responses": {
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/v1/notifications/:notificationId/status": {
+      "patch": {
+        "name": "patch-notification-status",
+        "summary": "Update notification status",
+        "x-flex-access": "public",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchNotificationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NotificationStatus": {
+        "type": "string",
+        "enum": [
+          "RECEIVED",
+          "READ",
+          "MARKED_AS_UNREAD",
+          "HIDDEN"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "required": [
+          "NotificationID",
+          "NotificationTitle",
+          "NotificationBody",
+          "MessageTitle",
+          "MessageBody",
+          "DispatchedDateTime"
+        ],
+        "properties": {
+          "NotificationID": {
+            "type": "string",
+            "minLength": 1
+          },
+          "NotificationTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "NotificationBody": {
+            "type": "string",
+            "minLength": 1
+          },
+          "MessageTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "MessageBody": {
+            "type": "string",
+            "minLength": 1
+          },
+          "DispatchedDateTime": {
+            "type": "string",
+            "format": "date-time",
+            "minLength": 1
+          },
+          "Status": {
+            "$ref": "#/components/schemas/NotificationStatus"
+          }
+        }
+      },
+      "PatchNotificationBody": {
+        "type": "object",
+        "required": [
+          "Status"
+        ],
+        "properties": {
+          "Status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "READ",
+              "MARKED_AS_UNREAD"
+            ],
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

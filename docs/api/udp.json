@@ -1,0 +1,246 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "udp",
+    "version": "1.0.0",
+    "description": "Unified Data Platform — identity, users, and notification preferences"
+  },
+  "paths": {
+    "/v1/identity/:service": {
+      "get": {
+        "name": "get-service-identity",
+        "summary": "Get service identity link",
+        "x-flex-access": "public"
+      },
+      "delete": {
+        "name": "delete-service-identity",
+        "summary": "Delete service identity link",
+        "x-flex-access": "public"
+      }
+    },
+    "/v1/identity/:service/:id": {
+      "post": {
+        "name": "create-service-identity-link",
+        "summary": "Create a service identity link",
+        "x-flex-access": "public"
+      }
+    },
+    "/v1/users": {
+      "get": {
+        "name": "get-user-notification-preferences",
+        "summary": "Get user and notification preferences",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "name": "create-user",
+        "summary": "Create a new user",
+        "x-flex-access": "private",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/push-id": {
+      "get": {
+        "name": "get-user-notification-push-id",
+        "summary": "Get user's push notification ID",
+        "headers": {
+          "userId": {
+            "name": "User-Id",
+            "required": true
+          }
+        },
+        "x-flex-access": "private",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserPushIdResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/notifications": {
+      "patch": {
+        "name": "update-user-notification-preferences",
+        "summary": "Update notification preferences",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateNotificationPreferencesOutboundResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferencesRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConsentStatus": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "accepted",
+          "denied"
+        ]
+      },
+      "PushId": {
+        "type": "string"
+      },
+      "UserId": {
+        "type": "string"
+      },
+      "GetServiceIdentityLinkResponse": {
+        "type": "object",
+        "required": [
+          "serviceId",
+          "serviceName",
+          "accessToken",
+          "idToken",
+          "refreshToken"
+        ],
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "serviceName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accessToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "idToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "refreshToken": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": [
+          "userId",
+          "pushId"
+        ],
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      },
+      "GetUserResponse": {
+        "type": "object",
+        "required": [
+          "userId",
+          "notifications"
+        ],
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "notifications": {
+            "type": "object",
+            "required": [
+              "consentStatus",
+              "pushId"
+            ],
+            "properties": {
+              "consentStatus": {
+                "$ref": "#/components/schemas/ConsentStatus"
+              },
+              "pushId": {
+                "$ref": "#/components/schemas/PushId"
+              }
+            }
+          }
+        }
+      },
+      "GetUserPushIdResponse": {
+        "type": "object",
+        "required": [
+          "pushId"
+        ],
+        "properties": {
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      },
+      "UpdateNotificationPreferencesRequest": {
+        "type": "object",
+        "required": [
+          "consentStatus"
+        ],
+        "properties": {
+          "consentStatus": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          }
+        }
+      },
+      "UpdateNotificationPreferencesOutboundResponse": {
+        "type": "object",
+        "required": [
+          "consentStatus",
+          "pushId"
+        ],
+        "properties": {
+          "consentStatus": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          },
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      }
+    }
+  }
+}

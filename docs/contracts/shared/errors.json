@@ -1,0 +1,27 @@
+{
+  "ValidationError": {
+    "type": "object",
+    "properties": {
+      "message": { "type": "string" },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string" },
+            "expected": { "type": "string" },
+            "received": { "type": "string" },
+            "path": { "type": "array", "items": { "type": "string" } },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "GatewayError": {
+    "type": "object",
+    "properties": {
+      "message": { "type": "string" }
+    }
+  }
+}

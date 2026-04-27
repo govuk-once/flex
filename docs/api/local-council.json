@@ -1,0 +1,124 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "local-council",
+    "version": "1.0.0",
+    "description": "Local authority data management",
+    "x-flex-default-errors": [
+      400,
+      502
+    ]
+  },
+  "paths": {
+    "/v1/local-council/:id": {
+      "get": {
+        "name": "get-local-authority",
+        "summary": "Retrieve a local authority by user ID",
+        "x-flex-access": "private",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalAuthority"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "post": {
+        "name": "upsert-local-authority",
+        "summary": "Create or update a local authority",
+        "x-flex-access": "private",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalAuthority"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "502": {
+            "description": "Upstream service error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tier": {
+        "type": "string",
+        "enum": [
+          "county",
+          "district",
+          "unitary",
+          "metropolitan",
+          "london_borough"
+        ]
+      },
+      "AuthorityFields": {
+        "type": "object",
+        "required": [
+          "name",
+          "homepage_url",
+          "tier",
+          "slug"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "homepage_url": {
+            "type": "string",
+            "format": "uri",
+            "minLength": 1
+          },
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z]+(-[a-z]+)*$",
+            "minLength": 1
+          }
+        }
+      },
+      "LocalAuthority": {
+        "type": "object",
+        "required": [
+          "local_authority"
+        ],
+        "properties": {
+          "local_authority": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuthorityFields"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "parent": {
+                    "$ref": "#/components/schemas/AuthorityFields"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

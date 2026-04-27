@@ -1,0 +1,17 @@
+{
+  "name": "@flex/docs",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest --passWithNoTests"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "json-schema-to-zod": "2.8.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18",
+    "zod": "4.3.6"
+  }
+}
