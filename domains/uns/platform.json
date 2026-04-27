@@ -1,6 +1,6 @@
 {
   "common": {
     "access": "isolated",
-    "function": { "timeoutSeconds": 30 }
+    "timeout": 30
   }
 }

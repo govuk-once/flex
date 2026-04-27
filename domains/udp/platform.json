@@ -1,40 +1,21 @@
 {
   "common": {
     "access": "isolated",
-    "function": { "timeoutSeconds": 20 }
+    "timeout": 20
   },
   "resources": {
-    "privateGatewayUrl": {
-      "type": "ssm",
-      "path": "/flex/apigw/private/gateway-url",
-      "scope": "stage"
-    },
-    "encryptionKey": { "type": "kms", "path": "/flex-secret/encryption-key" },
-    "udpNotificationSecret": {
-      "type": "secret",
-      "path": "/flex-secret/udp/notification-hash-secret"
-    }
+    "privateGatewayUrl": "ssm:/flex/apigw/private/gateway-url:stage",
+    "encryptionKey": "kms:/flex-secret/encryption-key",
+    "udpNotificationSecret": "secret:/flex-secret/udp/notification-hash-secret"
   },
   "integrations": {
-    "createUser": {
-      "type": "domain",
-      "route": "POST /v1/users"
-    },
-    "udpGetIdentity": { "type": "gateway", "route": "GET /v1/identity/*" },
-    "udpCreateIdentity": { "type": "gateway", "route": "POST /v1/identity/*" },
-    "udpDeleteIdentity": { "type": "gateway", "route": "DELETE /v1/identity/*" },
-    "udpGetNotificationPreferences": {
-      "type": "gateway",
-      "route": "GET /v1/notifications"
-    },
-    "udpCreateNotificationPreferences": {
-      "type": "gateway",
-      "route": "POST /v1/notifications"
-    },
-    "udpCreateUser": {
-      "type": "gateway",
-      "route": "POST /v1/users"
-    }
+    "createUser": "dom:POST /v1/users",
+    "udpGetIdentity": "gtw:GET /v1/identity/*",
+    "udpCreateIdentity": "gtw:POST /v1/identity/*",
+    "udpDeleteIdentity": "gtw:DELETE /v1/identity/*",
+    "udpGetNotificationPreferences": "gtw:GET /v1/notifications",
+    "udpCreateNotificationPreferences": "gtw:POST /v1/notifications",
+    "udpCreateUser": "gtw:POST /v1/users"
   },
   "routeConfig": {
     "get-service-identity": {

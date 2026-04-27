@@ -1,233 +1,353 @@
 # Contract-Driven API Documentation
 
-Proposal for how FLEX domains define, share, and validate API contracts.
+How FLEX domains define, share, and validate API contracts.
 
 ---
 
 ## The Problem
 
-Today, API contracts live implicitly inside `domain.config.ts` as Zod schemas. This creates several issues:
+API contracts used to live implicitly inside `domain.config.ts` as Zod schemas. That created several issues:
 
 - **Consumers can't read the contract** without understanding TypeScript and Zod
-- **No single document** that both producer and consumer can review and agree on
+- **No single document** that producer and consumer both agree on
 - **Schema changes are invisible** — a developer changes a Zod schema and the consumer discovers the break at runtime
 - **No standard format** for sharing API documentation with frontend teams, testers, or external stakeholders
-- **Documentation is manual** — Confluence pages written by hand, which drift from the actual implementation
+- **Documentation is manual** — Confluence pages written by hand, drifting from the implementation
 
 ---
 
 ## The Approach
 
-Split each domain into two source-of-truth files:
+Each domain has two source-of-truth files at its root:
 
-| File | Owned by | Contains | Format |
-|------|----------|----------|--------|
-| `openapi.json` | Both parties (agreed contract) | Routes, methods, schemas, access levels, headers, query params | OpenAPI 3.1.0 JSON |
-| `platform.config.json` | Developer only | Resources, integrations, common settings, per-route wiring | JSON |
+| File | Owned by | Contains |
+|------|----------|----------|
+| `contract.json` | Both parties (agreed contract) | Routes, schemas, access levels, headers, query params, errors |
+| `platform.json` | Developer only | Resources, integrations, common settings, per-route wiring |
 
-A generator merges them into the read-only `domain.config.ts` that the SDK consumes. No other code changes needed — the SDK, handlers, CDK, and tests all work as before.
+A generator reads both, expands any FLEX shorthand to standard JSON Schema / OpenAPI, and writes the resolved standard OpenAPI spec for each domain to `docs/api/<domain>.json` for consumers.
 
 ### File Structure
 
-Each domain is self-contained — contract, platform config, generated code, and handlers all in one place.
-
 ```
 domains/dvla/
-  contract/
-    openapi.json                  ← contract (agreed between consumer and producer)
-    schemas/
-      driver.json                 ← one schema per file, composed via $ref
-      licence.json
-      view-driver-response.json   ← refs driver.json, licence.json, etc.
-      ...
-    routes/
-      driving-licence.json        ← one route per file, refs schemas
-      ...
-  platform.config.json              ← infrastructure wiring (developer only)
-  domain.config.ts                ← GENERATED (read-only, used by SDK)
+  contract.json             ← agreed contract (consumer-facing)
+  platform.json             ← infrastructure wiring (developer-facing)
+  domain.config.ts          ← (existing) consumed by the SDK
   src/
-    generated/
-      schemas.ts                  ← GENERATED (Zod from contract JSON Schema)
-    handlers/
-      ...                         ← handler code (unchanged)
+    handlers/...            ← handler code (unchanged)
 
-platform/domains/dvla/
-  contract/
-    external/
-      driver-view.json            ← vendored external API spec
-  src/
-    contract/
-      route.ts                    ← ROUTE_CONTRACTS (existing, stays as-is)
-    ...
-
-docs/                             ← aggregation package (CI/CD generates content)
+docs/
+  api/
+    dvla.json               ← GENERATED standard OpenAPI 3.1 (shared with consumers)
+    udp.json
+    uns.json
+    local-council.json
   contracts/
     shared/
-      errors.json                 ← shared error schemas referenced across domains
-  api/                            ← GENERATED unified spec for /docs endpoint
+      errors.json           ← shared error schemas referenced across domains
   scripts/
-    generate.ts                   ← discovers contracts from all domains, aggregates
+    generate.ts             ← runs the mapper across every domain
+    lib/
+      flex-mapper.ts        ← FLEX shorthand → standard JSON Schema/OpenAPI
+      flex-mapper.test.ts   ← every supported rule, asserted
 ```
 
 ### What Goes Where
 
-**openapi.json** — everything the consumer cares about:
+**`contract.json`** — everything the consumer cares about:
 
-- Route paths and HTTP methods
-- Request body and response schemas (JSON Schema)
-- Query parameters and headers
-- Path parameters
+- Routes (path, method, access level, request body, response, errors)
+- Schemas (request/response data types)
 - Operation names
-- Access level (`x-flex-access: "public"` or `"private"`)
-- Error responses
+- Default errors that apply to every route
 
-**platform.config.json** — everything only the developer cares about:
+**`platform.json`** — everything only the developer cares about:
 
 - `resources` — SSM parameters, KMS keys, secrets
 - `integrations` — upstream service calls (gateway/domain targets)
-- `routeConfig` — which resources and integrations each route uses, keyed by `operationId` from the OpenAPI spec
-- `common` — default access level, Lambda timeout, log level
+- `routeConfig` — which resources and integrations each route uses
+- `common` — default access level, Lambda timeout, defaults that flow into every route
 
-### Why Two Files Instead of One
+### Why Two Files
 
-`domain.config.ts` currently mixes contract (what the API looks like) with infrastructure (how it's wired internally). This coupling means:
+The previous approach mixed contract (what the API looks like) with infrastructure (how it's wired internally). Splitting them means:
 
-- Changing a schema requires editing the same file as changing an SSM path
-- The consumer can't review the contract without seeing infrastructure details
-- There's no way to diff "what changed in the API" vs "what changed in the wiring"
-
-Splitting them makes each concern independently reviewable, diffable, and ownable.
+- Schema changes are reviewed without infrastructure noise
+- Consumers can read `contract.json` without seeing SSM paths
+- Diffs cleanly answer "what changed in the API" vs "what changed in the wiring"
 
 ---
 
-## Generator Flow
+## Two Ways To Write Contracts
 
-```
-contract/openapi.json + platform.config.json
-            │
-            ▼
-        generator
-            │
-            ├── domain.config.ts                (SDK-compatible, read-only)
-            ├── src/generated/schemas.ts         (Zod schemas, read-only)
-            ├── contract/openapi.resolved.json   (single-file spec for external parties)
-            └── docs/api/openapi.json            (unified spec for /docs endpoint)
-```
+Both `contract.json` and `platform.json` accept **either standard JSON Schema / OpenAPI** or the **FLEX shorthand**, freely mixed inside the same file. The mapper detects which form a node is in and only expands the shorthand; standard JSON Schema passes through untouched.
 
-The generator:
+This means:
 
-1. Reads `contract/openapi.json` — extracts routes, schemas, access levels, headers, query params
-2. Resolves all `$ref` pointers and produces `openapi.resolved.json` (portable single file)
-3. Converts JSON Schema → Zod via `json-schema-to-zod`
-4. Reads `platform.config.json` — extracts resources, integrations, route wiring
-5. Merges them into `domain.config.ts` matching the exact structure the SDK expects
-6. Aggregates all domain specs into a single unified OpenAPI spec for /docs endpoint
+- A consumer who only knows OpenAPI can read or write the standard form.
+- A developer who wants something more compact can use the shorthand.
+- A field that needs unusual constraints (e.g. `pattern`, `minLength`, `maxLength`, `oneOf`, `anyOf`) drops down into standard JSON Schema while neighbouring fields stay in shorthand.
 
----
+### Why Shorthand
 
-## Breaking Change Detection
+OpenAPI / JSON Schema is verbose. A required string is six lines. A nullable enum with five values is fifteen lines. The shorthand exists to make domain authors productive when 80% of fields are simple (`required string`, `optional integer`, `array of Foo`, `enum of three values`).
 
-When a domain's contract changes on a PR, CI generates the resolved single-file spec first, then runs `oasdiff` to compare against the previously committed resolved spec:
+The shorthand is also intentionally *thin* — every shorthand token maps to standard JSON Schema. There's no FLEX-specific runtime behaviour. A consumer reading `docs/api/<domain>.json` sees nothing but vanilla OpenAPI.
 
-```
-pnpm -w run generate
-oasdiff breaking main:domains/dvla/contract/openapi.resolved.json branch:domains/dvla/contract/openapi.resolved.json
-```
+### When To Use Each
 
-Multi-file specs with `$ref` cannot be compared directly via git-ref syntax. The `openapi.resolved.json` (generated, committed) is the portable single-file version used for diffing and sharing with external parties.
+| Situation | Use |
+|---|---|
+| Every field of a schema is simple | Shorthand |
+| One field needs a regex pattern, length bound, or `oneOf` | Standard JSON Schema **for that field**, shorthand for the rest |
+| You're hand-translating an external vendor spec | Standard (avoid loss of detail) |
+| New domain you own end-to-end | Shorthand |
 
-**Dual-access routes:** When a route has both public and private variants, use `x-flex-private-override` on the operation to define the private additions (extra headers, response schema). The generator produces both route entries in `domain.config.ts`:
-
-Breaking changes include:
-
-- Removing an endpoint
-- Removing a required field from a response
-- Adding a required field to a request body
-- Changing a field type
-- Narrowing an enum (removing values)
-
-If breaking changes are detected, CI fails. The developer must either:
-
-1. Fix the contract to be non-breaking
-2. Add a `breaking-change-acknowledged` label to the PR after communicating with consumers
-
-Non-breaking changes (adding optional fields, new endpoints, widening enums) pass automatically.
+The mapper's pass-through rule for "standard schema" triggers as soon as a node contains `type`, `$ref`, `allOf`, `oneOf`, or `anyOf`. Anything else is treated as a shorthand object.
 
 ---
 
-## API Documentation Endpoint
+## FLEX Shorthand Reference
 
-A unified OpenAPI spec is generated from all domain `openapi.json` files and served via a platform-level `/docs` endpoint on API Gateway with Swagger UI. Teams visit one URL and can browse all domain APIs, switch between domains via a dropdown, and test endpoints directly.
+### Schemas
 
-The spec is updated on each deployment so documentation always reflects what is live.
+#### Primitive types
 
----
+```json
+"name": "string"
+"age": "integer"
+"price": "number"
+"active": "boolean"
+```
 
-## Why This Approach
+#### String formats
 
-### vs. Zod-first (current approach)
+```json
+"site": "url"
+"birthday": "date"
+"createdAt": "datetime"
+"contact": "email"
+"id": "uuid"
+"slug": "slug"
+```
 
-| | Zod-first | Contract-first |
-|---|---|---|
-| Source of truth | TypeScript code | OpenAPI JSON |
-| Consumer can read it | No (needs TS/Zod knowledge) | Yes (standard format) |
-| Breaking change detection | Not possible without generating a spec first | Direct diff with `oasdiff` |
-| Sharing with external teams | Manual Confluence docs | Auto-generated Swagger UI |
-| Schema reuse across languages | Not portable | JSON Schema is language-agnostic |
-| Developer experience | Write Zod directly | Write JSON, Zod is generated |
-| Runtime validation | Zod schemas | Same — generated Zod schemas validate at runtime |
+#### Required vs optional
 
-### vs. AWS API Gateway Portal
+A `!` suffix on the **key** marks the field as required. No suffix = optional (matches JSON Schema's natural default).
 
-API Gateway Portal is an alternative for documentation hosting. The `/docs` endpoint approach:
+```json
+{
+  "name!": "string",        ← required
+  "nickname": "string"      ← optional
+}
+```
 
-- Self-contained within the platform
-- Updated automatically on deployment
-- Accessible to anyone with platform access
-- Can migrate to API Gateway Portal or Backstage later by pointing them at the same `openapi.json` files
+A `!` suffix on the **value** is shorthand for "required and non-empty" — for strings it also injects `minLength: 1`. You can use either form; using one is enough.
 
-### vs. Pact (consumer-driven contracts)
+```json
+"name!": "string"           ← required, minLength: 1
+"name": "string!"           ← same result
+```
 
-Pact requires consumers to generate pact files and a broker to coordinate. As discussed by the team, this adds complexity that isn't justified yet. The `oasdiff` approach gives producer-side contract validation without the full Pact setup. If the frontend team starts generating pacts in future, the `openapi.json` files provide the foundation.
+#### Enums
+
+```json
+"status": "enum:active,inactive,banned"
+```
+
+Becomes:
+```json
+"status": { "type": "string", "enum": ["active", "inactive", "banned"] }
+```
+
+#### References to other schemas
+
+A capitalised name is treated as a `$ref`:
+
+```json
+"address": "Address"
+```
+
+Becomes:
+```json
+"address": { "$ref": "#/components/schemas/Address" }
+```
+
+#### Arrays
+
+Append `[]` to a primitive or a schema name:
+
+```json
+"tags": "string[]"
+"drivers": "Driver[]"
+```
+
+Becomes:
+```json
+"tags": { "type": "array", "items": { "type": "string" } }
+"drivers": { "type": "array", "items": { "$ref": "#/components/schemas/Driver" } }
+```
+
+#### Nested objects
+
+Nest plain objects directly. The mapper recurses.
+
+```json
+"address": {
+  "line1!": "string",
+  "postcode": "string"
+}
+```
+
+#### Composition / spread
+
+Use the `"..."` key to spread another schema as `allOf`:
+
+```json
+"DerivedAuthority": {
+  "...": "AuthorityFields",
+  "extra": "string"
+}
+```
+
+Becomes a JSON Schema `allOf` combining `AuthorityFields` with the inline object.
+
+A spread-only schema (no extra fields) collapses to a plain `$ref`.
+
+### Routes
+
+A route key encodes method, path, and access level in one string:
+
+```json
+"GET /v1/driving-licence [public]": {
+  "name": "get-users-drivers-licence",
+  "summary": "...",
+  "response": "ViewDriverResponse"
+}
+```
+
+The mapper splits this into `paths["/v1/driving-licence"].get` with `x-flex-access: "public"`.
+
+#### Response / body shorthand
+
+```json
+"response": "Driver"           ← becomes responses[200] with $ref
+"response": "Driver[]"         ← becomes array response
+"body": "CreateDriverBody"     ← becomes requestBody with $ref
+```
+
+#### Errors
+
+```json
+"errors": [400, 404, 502]
+```
+
+Each integer becomes a `responses[code]` entry with a stock description (`Bad request`, `Not found`, `Upstream service error`, …).
+
+#### Default errors for the whole domain
+
+```json
+"x-flex-default-errors": [502]
+```
+
+Apply to every route that doesn't declare its own `errors` array.
+
+### Platform
+
+#### Resource shorthand
+
+```json
+"resources": {
+  "gwUrl": "ssm:/flex/apigw/private/gateway-url:stage",
+  "encryptionKey": "kms:/flex-secret/encryption-key",
+  "hashSecret": "secret:/flex-secret/hash-secret"
+}
+```
+
+Format: `<type>:<path>[:scope]` where `type` is `ssm`, `kms`, or `secret`.
+
+#### Integration shorthand
+
+```json
+"integrations": {
+  "dvlaAuthenticate": "gtw:dvla:GET /v1/authenticate",
+  "udpGetLinkingId": "dom:udp:GET /v1/identity/*"
+}
+```
+
+- `gtw:` and `gateway:` are equivalent (gateway calls).
+- `dom:` and `domain:` are equivalent (domain-to-domain calls).
+- Format: `<type>:<target>:<route>` or `<type>:<route>` if there's no separate target.
+
+#### Common defaults
+
+```json
+"common": {
+  "access": "private",
+  "timeout": 30,
+  "resources": ["gwUrl", "encryptionKey"],
+  "integrations": ["dvlaAuthenticate"]
+}
+```
+
+`timeout` is shorthand for `function: { timeoutSeconds: 30 }`. The `resources` and `integrations` arrays under `common` flow into every route in `routeConfig` automatically.
+
+#### Per-route extension and override
+
+```json
+"routeConfig": {
+  "get-customer-summary": {
+    "+resources": ["extraKey"],     ← appends to common.resources
+    "+integrations": ["extraCall"]  ← appends to common.integrations
+  },
+  "special-route": {
+    "resources": ["onlyThis"],      ← replaces common.resources
+    "integrations": ["onlyThat"]
+  }
+}
+```
+
+`+resources` / `+integrations` add to the common defaults; explicit `resources` / `integrations` replace them.
 
 ---
 
 ## Generator
 
 ```bash
-pnpm -w run generate
+cd docs && pnpm exec tsx scripts/generate.ts
 ```
 
-Reads all `domains/*/contract/openapi.json` + `domains/*/platform.config.json` and produces:
-- `domains/*/domain.config.ts` — read-only, consumed by SDK
-- `domains/*/src/generated/schemas.ts` — Zod from contract JSON Schema
-- `docs/api/openapi.json` — unified spec for /docs endpoint
+Discovers every `domains/*/contract.json`, runs it through the mapper, and writes the resolved standard OpenAPI 3.1 spec to `docs/api/<domain>.json`.
+
+The output files are what get shared with consumers — they're plain OpenAPI, no FLEX-specific tokens.
 
 ---
 
-## Migration Path
+## Why This Approach
 
-1. Generate `openapi.json` for each existing domain from current Zod schemas
-2. Create `platform.config.json` for each domain (extract resources, integrations, routeConfig)
-3. Verify the generator produces identical `domain.config.ts` to the current one
-4. Switch to contract-first workflow — edit `openapi.json` and `platform.config.json`, run generator
-5. Add `oasdiff` to CI pipeline
-6. Deploy unified spec to `/docs` endpoint on API Gateway
+### vs. Zod-first (previous approach)
 
-Existing domains migrate incrementally. New domains start contract-first from day one.
+| | Zod-first | Contract-first |
+|---|---|---|
+| Source of truth | TypeScript code | JSON (OpenAPI / shorthand) |
+| Consumer can read it | No (needs TS/Zod) | Yes (standard OpenAPI in `docs/api/`) |
+| Sharing with external teams | Manual Confluence docs | Auto-generated OpenAPI files |
+| Schema reuse across languages | Not portable | JSON Schema is language-agnostic |
+| Developer experience | Write Zod directly | Write JSON, regenerate |
+
+### vs. Pact (consumer-driven contracts)
+
+Pact requires consumers to generate pact files and a broker to coordinate. That adds operational complexity and isn't justified for the current consumer set. Producer-side OpenAPI gives most of the value with none of the broker setup; if consumers later start producing pacts, the OpenAPI files are a clean foundation to reconcile against.
 
 ---
 
-## Example: DVLA Domain
+## Roadmap
 
-**Domain layer:**
-- `domains/dvla/contract/openapi.json` — entry point with `$ref` to split schemas and routes
-- `domains/dvla/contract/schemas/` — one JSON Schema file per data type
-- `domains/dvla/contract/routes/` — one file per endpoint
-- `domains/dvla/platform.config.json` — resources (SSM, KMS), integrations referencing contracts by operationId
+The pieces below are intended but not yet implemented:
 
-**Service gateway layer:**
-- `platform/domains/dvla/contract/external/` — vendored external API specs (from DVLA developer portal)
-- `platform/domains/dvla/src/contract/route.ts` — ROUTE_CONTRACTS (existing, business logic stays human-written)
-
-**Other domains:** `local-council`, `udp`, `uns` — each with `contract/openapi.json` and `platform.config.json` in their domain directory.
+- **Generated `domain.config.ts` overlay** — replace the hand-written file with one generated from `contract.json` + `platform.json` so the SDK consumes the same single source of truth.
+- **Generated Zod schemas** — `src/generated/schemas.ts` per domain, produced via `json-schema-to-zod`, used for runtime validation in handlers.
+- **Unified `/docs` endpoint** — aggregate all `docs/api/*.json` into one spec served via Swagger UI on API Gateway.
+- **`oasdiff` in CI** — fail PRs that introduce breaking contract changes unless the developer adds a `breaking-change-acknowledged` label.
+- **External vendor specs** — vendored OpenAPI from upstream APIs (e.g. DVLA developer portal) under `platform/domains/<name>/contract/external/` for service gateway consumers.

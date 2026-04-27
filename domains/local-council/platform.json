@@ -1,26 +1,14 @@
 {
   "common": {
     "access": "isolated",
-    "function": { "timeoutSeconds": 30 }
+    "timeout": 30
   },
   "resources": {
-    "flexPrivateGatewayUrl": {
-      "type": "ssm",
-      "path": "/flex/apigw/private/gateway-url",
-      "scope": "stage"
-    }
+    "flexPrivateGatewayUrl": "ssm:/flex/apigw/private/gateway-url:stage"
   },
   "integrations": {
-    "udpSaveLocalAuthority": {
-      "type": "gateway",
-      "target": "udp",
-      "route": "POST /v1/local-council/*"
-    },
-    "udpGetLocalAuthority": {
-      "type": "gateway",
-      "target": "udp",
-      "route": "GET /v1/local-council/*"
-    }
+    "udpSaveLocalAuthority": "gtw:udp:POST /v1/local-council/*",
+    "udpGetLocalAuthority": "gtw:udp:GET /v1/local-council/*"
   },
   "routeConfig": {
     "get-local-authority": {
