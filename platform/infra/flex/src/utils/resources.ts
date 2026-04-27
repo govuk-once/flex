@@ -6,6 +6,7 @@ import type { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
+import { applyCheckovSkip } from "./applyCheckovSkip";
 import { createHash } from "./create-hash";
 import { getParamName, getStageParamName } from "./getParamName";
 
@@ -147,4 +148,10 @@ export function grantRouteResources(
         throw new Error(`Unsupported resource type: ${type as string}`);
     }
   });
+
+  applyCheckovSkip(
+    target,
+    "CKV_AWS_45",
+    "Resources resolved at runtime can contain terms that sound suspicious but are not actual secret values",
+  );
 }

@@ -76,47 +76,7 @@ importers:
         specifier: 4.1.4
         version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  domains/local-council:
-    dependencies:
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../libs/utils
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
-      zod:
-        specifier: 4.3.6
-        version: 4.3.6
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../../libs/config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../../libs/testing
-      '@types/aws-lambda':
-        specifier: 8.10.161
-        version: 8.10.161
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
-      eslint:
-        specifier: 10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      nock:
-        specifier: 14.0.12
-        version: 14.0.12
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 4.1.4
-        version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  domains/poc:
+  domains/example:
     dependencies:
       '@flex/sdk':
         specifier: workspace:*
@@ -149,6 +109,46 @@ importers:
       '@middy/ssm':
         specifier: 7.2.3
         version: 7.2.3(@aws-sdk/client-ssm@3.1032.0)
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
+      eslint:
+        specifier: 10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      nock:
+        specifier: 14.0.12
+        version: 14.0.12
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.4
+        version: 4.1.4(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  domains/local-council:
+    dependencies:
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../libs/testing
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161
@@ -934,9 +934,9 @@ importers:
       '@flex/dvla-domain':
         specifier: workspace:*
         version: link:../../domains/dvla
-      '@flex/poc-domain':
+      '@flex/example-domain':
         specifier: workspace:*
-        version: link:../../domains/poc
+        version: link:../../domains/example
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
