@@ -91,6 +91,7 @@ function applyPublicRules(scope: Construct, vpc: Vpc) {
     subnetSelection: { subnetType: SubnetType.PUBLIC },
   });
 
+  addVpcLoopback80(prefix, publicNacl, vpc);
   addInboundDenies90to100(prefix, publicNacl);
   allowEphemeralReturn200to300(prefix, publicNacl);
   allowAllOutbound32000(prefix, publicNacl);
