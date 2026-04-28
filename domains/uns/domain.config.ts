@@ -19,11 +19,6 @@ export const { config, route } = domain({
       path: "/flex/apigw/private/gateway-url",
       scope: "stage",
     },
-    unsFlexPrivateGatewayUrl: {
-      type: "ssm",
-      path: "/uns/flex/privateGatewayUrl",
-      scope: "stage",
-    },
   },
   integrations: {
     unsGetNotifications: {
@@ -46,7 +41,7 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: ["flexPrivateGatewayUrl", "unsFlexPrivateGatewayUrl"],
+            resources: ["flexPrivateGatewayUrl"],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
