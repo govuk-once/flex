@@ -26,6 +26,12 @@ export const { config, route } = domain({
     },
   },
   integrations: {
+    unsGetNotifications: {
+      type: "gateway",
+      target: "uns",
+      route: "GET /v1/notifications",
+      response: NotificationsResponseSchema,
+    },
     udpGetPushId: {
       type: "gateway",
       target: "udp",
@@ -40,8 +46,8 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: ["unsFlexPrivateGatewayUrl"],
-            integrations: ["udpGetPushId"],
+            resources: ["flexPrivateGatewayUrl", "unsFlexPrivateGatewayUrl"],
+            integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
       },

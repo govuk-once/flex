@@ -27,7 +27,7 @@ describe("GET /v1/notifications", () => {
   }) => {
     gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
     gateway
-      .get("/notifications")
+      .get("/gateways/uns/v1/notifications")
       .query({ externalUserID: pushId })
       .reply(200, [notification]);
 
@@ -58,7 +58,7 @@ describe("GET /v1/notifications", () => {
   }) => {
     gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
     gateway
-      .get("/notifications")
+      .get("/gateways/uns/v1/notifications")
       .query({ externalUserID: pushId })
       .reply(200, []);
 
@@ -71,17 +71,17 @@ describe("GET /v1/notifications", () => {
     expect(JSON.parse(result.body)).toStrictEqual([]);
   });
 
-  it("returns 500 when none successful response is returned", async ({
+  it("returns 502 when none successful response is returned", async ({
     privateGatewayEventWithAuthorizer,
     context,
   }) => {
-    gateway.get("/gateways/udp/v1/users/push-id").reply(500);
+    gateway.get("/gateways/udp/v1/users/push-id").reply(502);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(502);
   });
 });
