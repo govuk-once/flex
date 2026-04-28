@@ -1,0 +1,21 @@
+name: Branch Quality Checks
+
+on:
+  push:
+    branches-ignore: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualityChecks:
+    name: Quality Checks
+    uses: ./.github/workflows/_qualityChecks.yml
+    with:
+      AWS_REGION: 'eu-west-2'
+      STAGE: 'development'
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+      SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
+      SONAR_URL: ${{ secrets.SONAR_URL }}
