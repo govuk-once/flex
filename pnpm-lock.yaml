@@ -949,6 +949,9 @@ importers:
       '@flex/udp-domain':
         specifier: workspace:*
         version: link:../../domains/udp
+      '@flex/uns-domain':
+        specifier: workspace:*
+        version: link:../../domains/uns
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161
