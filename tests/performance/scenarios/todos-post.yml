@@ -1,0 +1,23 @@
+config:
+  target: "{{ $env.BASE_URL }}"
+  processor: "./processor.ts"
+  phases:
+    - duration: 120
+      arrivalRate: 5
+      maxVusers: 25
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1500
+      - http.error_rate: 1
+
+scenarios:
+  - name: todos-post
+    beforeScenario: generateJwt
+    flow:
+      - post:
+          url: "/app/example/v0/todos/todo-1/duplicate"
+          headers:
+            Authorization: "Bearer {{ jwt }}"
+            Content-Type: "application/json"
+          expect:
+            - statusCode: 201

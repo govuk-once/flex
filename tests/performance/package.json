@@ -1,0 +1,26 @@
+{
+  "name": "@flex/performance-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:todos-list": "artillery run --output results/todos-list.json scenarios/todos-list.yml",
+    "test:todos-get": "artillery run --output results/todos-get.json scenarios/todos-get.yml",
+    "test:todos-post": "artillery run --output results/todos-post.json scenarios/todos-post.yml",
+    "report": "tsx report.ts && open results/combined-report.html",
+    "test:perf": "pnpm test:todos-list; pnpm test:todos-get; pnpm test:todos-post; pnpm report",
+    "test:smoke": "pnpm test:smoke:todos-list; pnpm test:smoke:todos-get; pnpm test:smoke:todos-post; pnpm report",
+    "test:smoke:todos-list": "artillery run --config smoke-cloudwatch.config.yml --output results/smoke-todos-list.json scenarios/todos-list.yml",
+    "test:smoke:todos-get": "artillery run --config smoke-cloudwatch.config.yml --output results/smoke-todos-get.json scenarios/todos-get.yml",
+    "test:smoke:todos-post": "artillery run --config smoke-cloudwatch.config.yml --output results/smoke-todos-post.json scenarios/todos-post.yml"
+  },
+  "dependencies": {
+    "@flex/testing": "workspace:*",
+    "@flex/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@types/node": "25.6.0",
+    "artillery": "2.0.23",
+    "typescript": "6.0.3"
+  }
+}

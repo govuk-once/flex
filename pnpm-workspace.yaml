@@ -4,6 +4,7 @@ packages:
   - platform/domains/*
   - platform/infra/*
   - tests/*
+  - tests/performance/*
 
 ignoredBuiltDependencies:
   - msw
@@ -11,8 +12,8 @@ ignoredBuiltDependencies:
 minimumReleaseAge: 2880
 
 onlyBuiltDependencies:
-  - '@swc/core'
+  - "@swc/core"
   - esbuild
   - nx
 
-savePrefix: ''
+savePrefix: ""
