@@ -37,9 +37,9 @@ function addInboundDenies90to100(prefix: string, nacl: NetworkAcl) {
   });
 }
 
-function addVpcLoopback190(prefix: string, nacl: NetworkAcl, vpc: Vpc) {
+function addVpcLoopback80(prefix: string, nacl: NetworkAcl, vpc: Vpc) {
   nacl.addEntry(`${prefix}AllowOutboundToVpc`, {
-    ruleNumber: 190,
+    ruleNumber: 80,
     cidr: AclCidr.ipv4(vpc.vpcCidrBlock),
     traffic: AclTraffic.allTraffic(),
     direction: TrafficDirection.EGRESS,
@@ -47,7 +47,7 @@ function addVpcLoopback190(prefix: string, nacl: NetworkAcl, vpc: Vpc) {
   });
 
   nacl.addEntry(`${prefix}AllowInboundFromVpc`, {
-    ruleNumber: 190,
+    ruleNumber: 80,
     cidr: AclCidr.ipv4(vpc.vpcCidrBlock),
     traffic: AclTraffic.allTraffic(),
     direction: TrafficDirection.INGRESS,
@@ -104,8 +104,8 @@ function applyPrivateEgressRules(scope: Construct, vpc: Vpc) {
     subnetSelection: { subnetType: SubnetType.PRIVATE_WITH_EGRESS },
   });
 
+  addVpcLoopback80(prefix, privateEgressNacl, vpc);
   addInboundDenies90to100(prefix, privateEgressNacl);
-  addVpcLoopback190(prefix, privateEgressNacl, vpc);
   allowEphemeralReturn200to300(prefix, privateEgressNacl);
   allowAllOutbound32000(prefix, privateEgressNacl);
 }
@@ -118,8 +118,8 @@ function applyPrivateIsolatedRules(scope: Construct, vpc: Vpc) {
     subnetSelection: { subnetType: SubnetType.PRIVATE_ISOLATED },
   });
 
+  addVpcLoopback80(prefix, privateIsolatedNacl, vpc);
   addInboundDenies90to100(prefix, privateIsolatedNacl);
-  addVpcLoopback190(prefix, privateIsolatedNacl, vpc);
 }
 
 export function createVpc(scope: Construct) {
