@@ -12,7 +12,6 @@ jobs:
     with:
       AWS_REGION: 'eu-west-2'
       STAGE: 'development'
-      FULL_COVERAGE: true
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
       SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}

@@ -10,10 +10,6 @@ on:
         description: "Development stage"
         type: string
         required: true
-      FULL_COVERAGE:
-        description: "Run all projects' tests with coverage (used on main to seed SonarCloud); PRs use nx affected"
-        type: boolean
-        default: false
     secrets:
       ROLE_TO_ASSUME:
         description: "AWS deployment role to assume"
@@ -71,12 +67,7 @@ jobs:
         run: pnpm run tsc
 
       - name: Unit Tests
-        run: |
-          if [ "${{ inputs.FULL_COVERAGE }}" = "true" ]; then
-            pnpm exec nx run-many --target=test --all --run --coverage
-          else
-            pnpm run test -- --coverage
-          fi
+        run: pnpm exec nx run-many --target=test --all --run --coverage
 
       - name: Infrastructure as Code (IaC) Linting with checkov
         run: pnpm run checkov
