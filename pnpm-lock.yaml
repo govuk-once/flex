@@ -6,6 +6,10 @@ settings:
 
 overrides:
   undici: 7.24.0
+  playwright: 1.55.1
+  '@playwright/test': 1.55.1
+  playwright-core: 1.55.1
+  '@playwright/browser-chromium': 1.55.1
 
 importers:
 
@@ -2664,12 +2668,12 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@playwright/browser-chromium@1.52.0':
-    resolution: {integrity: sha512-n2/e2Q0dFACFg/1JZ0t2IYLorDdno6q1QwKnNbPICHwCkAtW7+fSMqCvJ9FSMWSyPugxZqIFhownSpyATxtiTw==}
+  '@playwright/browser-chromium@1.55.1':
+    resolution: {integrity: sha512-T4Iyhcv38bdOrtCxpjHA6WaQk4EHeud38J+SnLaOoIuGFPK7zNgSqEuilqTGB6xqfcVHYKHWePkXcYFVOux8ew==}
     engines: {node: '>=18'}
 
-  '@playwright/test@1.52.0':
-    resolution: {integrity: sha512-uh6W7sb55hl7D6vsAeA+V2p5JnlAqzhqFyF0VcJkKZXkgnFcVG9PziERRHQfPLfNGx1C292a4JqbWzhR8L4R1g==}
+  '@playwright/test@1.55.1':
+    resolution: {integrity: sha512-IVAh/nOJaw6W9g+RJVlIQJ6gSiER+ae6mKQ5CX1bERzQgbC1VSeBlwdvczT7pxb0GWiyrxH4TGKbMfDb4Sq/ig==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -6232,13 +6236,13 @@ packages:
     resolution: {integrity: sha512-KrEAOa2aGlEyV+gN2jMXwSQhZ5gUR4WwivtPjSktYzh7srb70pYvVGV0uLfmoCx75fUQtqTairuoxayHLtvo9w==}
     engines: {node: '>=16.20.0'}
 
-  playwright-core@1.52.0:
-    resolution: {integrity: sha512-l2osTgLXSMeuLZOML9qYODUQoPPnUsKsb5/P6LJ2e6uPKXUdPK5WYhN4z03G+YNbWmGDY4YENauNu4ZKczreHg==}
+  playwright-core@1.55.1:
+    resolution: {integrity: sha512-Z6Mh9mkwX+zxSlHqdr5AOcJnfp+xUWLCt9uKV18fhzA8eyxUd8NUWzAjxUh55RZKSYwDGX0cfaySdhZJGMoJ+w==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.52.0:
-    resolution: {integrity: sha512-JAwMNMBlxJ2oD1kce4KPtMkDeKGHQstdpFPcPH3maElAXon/QZeTvtsfXmTMRyO9TslfoYOXkSsvao2nE1ilTw==}
+  playwright@1.55.1:
+    resolution: {integrity: sha512-cJW4Xd/G3v5ovXtJJ52MAOclqeac9S/aGGgRzLabuF8TnIb6xHvMzKIa6JmrRzUkeXJgfL1MhukP0NK6l39h3A==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -9875,13 +9879,13 @@ snapshots:
 
   '@pkgr/core@0.2.9': {}
 
-  '@playwright/browser-chromium@1.52.0':
+  '@playwright/browser-chromium@1.55.1':
     dependencies:
-      playwright-core: 1.52.0
+      playwright-core: 1.55.1
 
-  '@playwright/test@1.52.0':
+  '@playwright/test@1.55.1':
     dependencies:
-      playwright: 1.52.0
+      playwright: 1.55.1
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -11176,10 +11180,10 @@ snapshots:
 
   artillery-engine-playwright@1.20.0:
     dependencies:
-      '@playwright/browser-chromium': 1.52.0
-      '@playwright/test': 1.52.0
+      '@playwright/browser-chromium': 1.55.1
+      '@playwright/test': 1.55.1
       debug: 4.4.3(supports-color@8.1.1)
-      playwright: 1.52.0
+      playwright: 1.55.1
     transitivePeerDependencies:
       - supports-color
 
@@ -14456,11 +14460,11 @@ snapshots:
 
   pkce-challenge@6.0.0: {}
 
-  playwright-core@1.52.0: {}
+  playwright-core@1.55.1: {}
 
-  playwright@1.52.0:
+  playwright@1.55.1:
     dependencies:
-      playwright-core: 1.52.0
+      playwright-core: 1.55.1
     optionalDependencies:
       fsevents: 2.3.2
 
