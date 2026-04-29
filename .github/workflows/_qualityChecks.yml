@@ -67,7 +67,7 @@ jobs:
         run: pnpm run tsc
 
       - name: Unit Tests
-        run: pnpm run test
+        run: pnpm exec nx run-many --target=test --all --run --coverage
 
       - name: Infrastructure as Code (IaC) Linting with checkov
         run: pnpm run checkov
