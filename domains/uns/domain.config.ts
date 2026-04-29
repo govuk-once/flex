@@ -14,10 +14,15 @@ export const { config, route } = domain({
     function: { timeoutSeconds: 30 },
   },
   resources: {
-    flexPrivateGatewayUrl: {
+    encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
+    privateGatewayUrl: {
       type: "ssm",
       path: "/flex/apigw/private/gateway-url",
       scope: "stage",
+    },
+    udpNotificationSecret: {
+      type: "secret",
+      path: "/flex-secret/udp/notification-hash-secret",
     },
   },
   integrations: {
@@ -41,7 +46,11 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: ["flexPrivateGatewayUrl"],
+            resources: [
+              "encryptionKey",
+              "privateGatewayUrl",
+              "udpNotificationSecret",
+            ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },

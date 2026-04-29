@@ -5,16 +5,17 @@ import { it } from "../extend/it";
 
 describe("UNS domain", () => {
   const { JWT } = inject("e2eEnv");
+  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
 
   describe("GET /uns/v1/notifications", () => {
     const endpoint = `/uns/v1/notifications`;
 
     it("returns 200 for GET all notifications", async ({
       cloudfront,
-      udpUser: _user,
+      udpUser: _,
     }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${JWT.VALID}` },
+        headers: { ...authorization },
       });
 
       expect(result.status).toBe(200);
