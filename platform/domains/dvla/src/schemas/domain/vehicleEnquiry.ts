@@ -1,4 +1,4 @@
-import { NonEmptyString } from "@flex/utils";
+import { NonEmptyString, WholeNumber } from "@flex/utils";
 import z from "zod";
 
 export const vehicleEnquiryRequestBodySchema = z.object({
@@ -6,22 +6,20 @@ export const vehicleEnquiryRequestBodySchema = z.object({
 });
 
 export const vehicleEnquiryResponseSchema = z.object({
-  registrationNumber: z.string().describe("Registration number of the vehicle"),
+  registrationNumber: NonEmptyString.describe(
+    "Registration number of the vehicle",
+  ),
 
   taxStatus: z
     .enum(["Not Taxed for on Road Use", "SORN", "Taxed", "Untaxed"])
     .optional()
     .describe("Tax status of the vehicle"),
 
-  taxDueDate: z
-    .string()
-    .pipe(z.coerce.date())
+  taxDueDate: NonEmptyString.pipe(z.coerce.date())
     .optional()
     .describe("Date of tax liability"),
 
-  artEndDate: z
-    .string()
-    .pipe(z.coerce.date())
+  artEndDate: NonEmptyString.pipe(z.coerce.date())
     .optional()
     .describe("Additional Rate of Tax End Date"),
 
@@ -35,76 +33,58 @@ export const vehicleEnquiryResponseSchema = z.object({
     .optional()
     .describe("MOT Status of the vehicle"),
 
-  motExpiryDate: z
-    .string()
-    .pipe(z.coerce.date())
+  motExpiryDate: NonEmptyString.pipe(z.coerce.date())
     .optional()
     .describe("Mot Expiry Date"),
 
-  make: z.string().optional().describe("Vehicle make"),
+  make: NonEmptyString.optional().describe("Vehicle make"),
 
-  monthOfFirstDvlaRegistration: z
-    .string()
-    .optional()
-    .describe("Month of First DVLA Registration (YYYY-MM)"),
+  monthOfFirstDvlaRegistration: NonEmptyString.optional().describe(
+    "Month of First DVLA Registration (YYYY-MM)",
+  ),
 
-  monthOfFirstRegistration: z
-    .string()
-    .optional()
-    .describe("Month of First Registration (YYYY-MM)"),
+  monthOfFirstRegistration: NonEmptyString.optional().describe(
+    "Month of First Registration (YYYY-MM)",
+  ),
 
-  yearOfManufacture: z
-    .number()
-    .int()
-    .optional()
-    .describe("Year of Manufacture"),
+  yearOfManufacture: WholeNumber.optional().describe("Year of Manufacture"),
 
-  engineCapacity: z
-    .number()
-    .int()
-    .optional()
-    .describe("Engine capacity in cubic centimetres"),
+  engineCapacity: WholeNumber.optional().describe(
+    "Engine capacity in cubic centimetres",
+  ),
 
-  co2Emissions: z
-    .number()
-    .int()
-    .optional()
-    .describe("Carbon Dioxide emissions in grams per kilometre"),
+  co2Emissions: WholeNumber.optional().describe(
+    "Carbon Dioxide emissions in grams per kilometre",
+  ),
 
-  fuelType: z.string().optional().describe("Fuel type (Method of Propulsion)"),
+  fuelType: NonEmptyString.optional().describe(
+    "Fuel type (Method of Propulsion)",
+  ),
 
   markedForExport: z
     .boolean()
     .optional()
     .describe("True only if vehicle has been export marked"),
 
-  colour: z.string().optional().describe("Vehicle colour"),
+  colour: NonEmptyString.optional().describe("Vehicle colour"),
 
-  typeApproval: z
-    .string()
-    .optional()
-    .describe("Vehicle Type Approval Category"),
+  typeApproval: NonEmptyString.optional().describe(
+    "Vehicle Type Approval Category",
+  ),
 
-  wheelplan: z.string().optional().describe("Vehicle wheel plan"),
+  wheelplan: NonEmptyString.optional().describe("Vehicle wheel plan"),
 
-  revenueWeight: z
-    .number()
-    .int()
-    .optional()
-    .describe("Revenue weight in kilograms"),
+  revenueWeight: WholeNumber.optional().describe("Revenue weight in kilograms"),
 
-  realDrivingEmissions: z
-    .string()
-    .optional()
-    .describe("Real Driving Emissions value"),
+  realDrivingEmissions: NonEmptyString.optional().describe(
+    "Real Driving Emissions value",
+  ),
 
-  dateOfLastV5CIssued: z
-    .string()
-    .pipe(z.coerce.date())
+  dateOfLastV5CIssued: NonEmptyString.pipe(z.coerce.date())
     .optional()
     .describe("Date of last V5C issued"),
 
-  euroStatus: z.string().optional().describe("Euro Status"),
+  euroStatus: NonEmptyString.optional().describe("Euro Status"),
 
   automatedVehicle: z.boolean().optional().describe("Automated Vehicle (AV)"),
 });

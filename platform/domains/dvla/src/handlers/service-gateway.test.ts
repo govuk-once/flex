@@ -258,7 +258,7 @@ describe("DVLA Service Gateway", () => {
 
     const response = await handler(
       privateGatewayEvent.get("/gateways/dvla/v1/vehicle-enquiry", {
-        headers: { registrationNumber },
+        queryStringParameters: { registrationNumber },
       }),
       context,
     );
@@ -282,7 +282,7 @@ describe("DVLA Service Gateway", () => {
 
     expect(response).toEqual({
       statusCode: 400,
-      body: '{"message":"Missing registrationNumber header"}',
+      body: '{"message":"Missing registrationNumber query parameter"}',
       headers: {
         "Content-Type": "application/json",
       },

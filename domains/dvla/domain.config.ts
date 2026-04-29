@@ -1,6 +1,7 @@
 import {
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
+  vehicleEnquiryRequestBodySchema,
   vehicleEnquiryResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
@@ -126,12 +127,7 @@ export const { config, route, routeContext } = domain({
         GET: {
           public: {
             name: "get-vehicle-enquiry",
-            headers: {
-              registrationNumber: {
-                name: "registrationNumber",
-                required: true,
-              },
-            },
+            query: vehicleEnquiryRequestBodySchema,
             integrations: [
               "dvlaAuthenticate",
               "dvlaDriverSummary",

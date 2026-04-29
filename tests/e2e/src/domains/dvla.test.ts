@@ -25,21 +25,20 @@ describe.sequential("DVLA domain", () => {
     const endpoint = "/dvla/v1/driving-licence";
 
     describe("GET", () => {
-      // TODO: Failing test exceeds 30s timeout
-      it.todo(
-        "returns 200 and valid data when identity is linked",
-        async ({ cloudfront, withIdentityLink }) => {
-          await withIdentityLink("dvla", linkingId);
+      it("returns 200 and valid data when identity is linked", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
 
-          const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
-          });
-          expect(result.status).toBe(200);
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+        expect(result.status).toBe(200);
 
-          const validation = viewDriverResponseSchema.safeParse(result.body);
-          expect(validation.success).toBe(true);
-        },
-      );
+        const validation = viewDriverResponseSchema.safeParse(result.body);
+        expect(validation.success).toBe(true);
+      });
 
       it("returns 404 when user is not linked", async ({
         cloudfront,
@@ -165,6 +164,8 @@ describe.sequential("DVLA domain", () => {
         const result = await cloudfront.client.get(endpoint, {
           headers: {
             ...authorization,
+          },
+          params: {
             registrationNumber: validReg,
           },
         });
@@ -190,6 +191,8 @@ describe.sequential("DVLA domain", () => {
         const result = await cloudfront.client.get(endpoint, {
           headers: {
             ...authorization,
+          },
+          params: {
             registrationNumber: notFoundReg,
           },
         });
@@ -203,6 +206,8 @@ describe.sequential("DVLA domain", () => {
         const result = await cloudfront.client.get(endpoint, {
           headers: {
             ...authorization,
+          },
+          params: {
             registrationNumber: "ER19ERR",
           },
         });

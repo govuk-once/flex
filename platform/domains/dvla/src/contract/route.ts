@@ -122,10 +122,13 @@ export const ROUTE_CONTRACTS = {
     inboundPath: "/v1/vehicle-enquiry",
     remotePath: "/v1/vehicle-enquiry",
     toRemote: (event) => {
-      const registrationNumber = assertRequiredHeaderAndReturn(
-        event,
-        "registrationNumber",
-      );
+      const registrationNumber =
+        event.queryStringParameters?.registrationNumber;
+      if (!registrationNumber) {
+        throw new createHttpError.BadRequest(
+          "Missing registrationNumber query parameter",
+        );
+      }
       return { registrationNumber };
     },
     callRemote: (client, data) => client.vehicle.get(data.registrationNumber),
