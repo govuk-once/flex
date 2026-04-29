@@ -8,8 +8,10 @@ export default mergeConfig(
       setupFiles: ["@flex/testing/setup/sdk"],
       env: {
         AWS_REGION: "eu-west-2",
-        flexPrivateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
+        encryptionKey: "arn:aws:kms:eu-west-2:123456789012:key/test-key",
+        privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
         unsFlexPrivateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
+        udpNotificationSecret: "test-notification-name", // pragma: allowlist secret
       },
     },
   }),

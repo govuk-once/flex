@@ -1,13 +1,16 @@
-import { it } from "@flex/testing";
+import { createUserId, it } from "@flex/testing";
 import nock from "nock";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
+
+vi.mock("@utils/get-push-id");
 
 describe("GET /v1/notifications", () => {
   const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/notifications";
-  const pushId = "test-push-id";
+  const pushId = createUserId("test-pairwise-id");
+  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
   const notification = {
     NotificationID: "notification-1",
@@ -33,7 +36,7 @@ describe("GET /v1/notifications", () => {
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
+      context.withSecret(secrets).create(), // pragma: allowlist secret
     );
 
     expect(result.statusCode).toBe(200);
@@ -64,7 +67,7 @@ describe("GET /v1/notifications", () => {
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
+      context.withSecret(secrets).create(), // pragma: allowlist secret
     );
 
     expect(result.statusCode).toBe(200);
@@ -79,7 +82,7 @@ describe("GET /v1/notifications", () => {
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
+      context.withSecret(secrets).create(), // pragma: allowlist secret
     );
 
     expect(result.statusCode).toBe(502);
