@@ -16,6 +16,7 @@
     "@flex/config": "workspace:*",
     "@flex/dvla-domain": "workspace:*",
     "@flex/example-domain": "workspace:*",
+    "@flex/dvla-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/udp-domain": "workspace:*",
     "@types/aws-lambda": "8.10.161",

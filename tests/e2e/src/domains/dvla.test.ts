@@ -1,5 +1,6 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { viewDriverResponseSchema } from "@flex/dvla-domain";
+import { vehicleEnquiryResponseSchema } from "@flex/dvla-service-gateway";
 import { beforeAll, describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
@@ -148,6 +149,65 @@ describe.sequential("DVLA domain", () => {
         });
 
         expect(result.status).toBe(404);
+      });
+    });
+  });
+
+  describe("/dvla/v1/vehicle-enquiry", () => {
+    const endpoint = "/dvla/v1/vehicle-enquiry";
+    const validReg = "AA19AAA";
+    const notFoundReg = "ER19NFD";
+
+    describe("GET", () => {
+      it("returns 200 and valid vehicle data for a known registration", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(endpoint, {
+          headers: {
+            ...authorization,
+            registrationNumber: validReg,
+          },
+        });
+
+        expect(result.status).toBe(200);
+
+        const validation = vehicleEnquiryResponseSchema.safeParse(result.body);
+
+        expect(validation.success).toBe(true);
+      });
+
+      it("returns 400 when registrationNumber header is missing", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(endpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(400);
+      });
+
+      it("returns 404 when vehicle is not found", async ({ cloudfront }) => {
+        const result = await cloudfront.client.get(endpoint, {
+          headers: {
+            ...authorization,
+            registrationNumber: notFoundReg,
+          },
+        });
+
+        expect(result.status).toBe(404);
+      });
+
+      it("returns 502 when upstream returns a 500 error", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(endpoint, {
+          headers: {
+            ...authorization,
+            registrationNumber: "ER19ERR",
+          },
+        });
+
+        expect(result.status).toBe(502);
       });
     });
   });
