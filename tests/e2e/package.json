@@ -18,7 +18,6 @@
     "@flex/example-domain": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/udp-domain": "workspace:*",
-    "@flex/poc-domain": "workspace:*",
     "@flex/uns-domain": "workspace:*",
     "@types/aws-lambda": "8.10.161",
     "@types/node": "25.6.0",
