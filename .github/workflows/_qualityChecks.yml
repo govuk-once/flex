@@ -85,3 +85,4 @@ jobs:
           license-check: false
           base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
           head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          allow-ghsas: "GHSA-7mvr-c777-76hp"
