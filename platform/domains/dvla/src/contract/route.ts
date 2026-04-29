@@ -9,6 +9,7 @@ export const DVLA_REMOTE_ROUTES = {
   authenticate: `/thirdparty-access/v1`,
   app: `/govuk-app-service/v1`,
   licence: `/full-driver-enquiry/v1`,
+  vehicleEnquiry: `/vehicle-enquiry/v1`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -17,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => {},
+    toRemote: () => { },
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -114,6 +115,20 @@ export const ROUTE_CONTRACTS = {
       return { id, jwt };
     },
     callRemote: (client, data) => client.customer.get(data.id, data.jwt),
+  },
+  "GET:/v1/vehicle-enquiry": {
+    operation: "getVehicleEnquiryService",
+    method: "GET",
+    inboundPath: "/v1/vehicle-enquiry",
+    remotePath: "/v1/vehicle-enquiry",
+    toRemote: (event) => {
+      const registrationNumber = assertRequiredHeaderAndReturn(
+        event,
+        "registrationNumber",
+      );
+      return { registrationNumber };
+    },
+    callRemote: (client, data) => client.vehicle.get(data.registrationNumber),
   },
 } as const satisfies Record<string, RouteContract>;
 

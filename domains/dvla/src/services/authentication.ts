@@ -8,6 +8,7 @@ type CommonDvlaContext = InferRouteContext<
   | "GET /v1/customer-summary"
   | "GET /v1/driver-summary"
   | "GET /v1/driving-licence"
+  | "GET /v1/vehicle-enquiry"
   | "POST /v1/test-notification"
 >;
 

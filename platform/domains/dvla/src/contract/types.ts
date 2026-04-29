@@ -20,6 +20,10 @@ import {
   GetLicenceResponseSchema,
 } from "../schemas/remote/drivingLicences";
 import { PostTestNotificationRequestSchema } from "../schemas/remote/testNotification";
+import {
+  VehicleEnquiryRequestBodySchema,
+  VehicleEnquiryResponseSchema,
+} from "../schemas/remote/vehicleEnquiry";
 
 export type RouteOperation =
   | "getAuthenticate"
@@ -27,7 +31,8 @@ export type RouteOperation =
   | "getRetrieveDrivingLicences"
   | "postTestNotification"
   | "getDriverSummary"
-  | "getCustomerSummary";
+  | "getCustomerSummary"
+  | "getVehicleEnquiryService";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -90,6 +95,14 @@ export type GetCustomerSummaryRouteContract = BaseRouteContract<
   GetCustomerSummaryResponseSchema
 >;
 
+export type GetVehicleEnquiryServiceRouteContract = BaseRouteContract<
+  "getVehicleEnquiryService",
+  "GET",
+  VehicleEnquiryRequestBodySchema,
+  unknown,
+  VehicleEnquiryResponseSchema
+>;
+
 export type PostDrivingTestNotification = BaseRouteContract<
   "postTestNotification",
   "POST",
@@ -104,4 +117,5 @@ export type RouteContract =
   | GetCustomerSummaryRouteContract
   | GetDriverSummaryRouteContract
   | GetDrivingLicenceRetrieveRouteContract
-  | PostDrivingTestNotification;
+  | PostDrivingTestNotification
+  | GetVehicleEnquiryServiceRouteContract;
