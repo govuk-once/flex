@@ -33,7 +33,7 @@ export const { config, route } = domain({
       response: NotificationsResponseSchema,
     },
     udpGetPushId: {
-      type: "gateway",
+      type: "domain",
       target: "udp",
       route: "GET /v1/users/push-id",
       response: GetUserPushIdResponseSchema,
