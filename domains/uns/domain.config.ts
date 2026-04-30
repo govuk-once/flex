@@ -35,7 +35,7 @@ export const { config, route } = domain({
     unsPatchNotification: {
       type: "gateway",
       target: "uns",
-      route: "GET /v1/notifications/:notificationId/status",
+      route: "PATCH /v1/notifications/*",
     },
     udpGetPushId: {
       type: "domain",
@@ -83,7 +83,7 @@ export const { config, route } = domain({
               "privateGatewayUrl",
               "udpNotificationSecret",
             ],
-            integrations: ["unsGetNotifications", "udpGetPushId"],
+            integrations: ["unsPatchNotification", "udpGetPushId"],
           },
         },
       },

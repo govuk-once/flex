@@ -28,13 +28,17 @@ export const handler = route(
       }
     }
 
-    const response = await ctx.integrations.unsGetNotifications({
+    const { notificationId } = ctx.pathParams;
+
+    const response = await ctx.integrations.unsPatchNotification({
       query: { externalUserID: pushIdResponse.data.pushId },
+      path: `/${notificationId}/status`,
+      body: ctx.body
     });
 
     if (!response.ok) {
       const { status: errorStatus, body: errorBody } = response.error;
-      ctx.logger.error("Call to get notifications failed", {
+      ctx.logger.error("Call to patch notification failed", {
         status: errorStatus,
         errorBody,
       });
