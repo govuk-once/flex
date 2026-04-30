@@ -39,13 +39,13 @@ export const vehicleEnquiryResponseSchema = z.object({
 
   make: NonEmptyString.optional().describe("Vehicle make"),
 
-  monthOfFirstDvlaRegistration: NonEmptyString.optional().describe(
-    "Month of First DVLA Registration (YYYY-MM)",
-  ),
+  monthOfFirstDvlaRegistration: NonEmptyString.regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .optional()
+    .describe("Month of First DVLA Registration (YYYY-MM)"),
 
-  monthOfFirstRegistration: NonEmptyString.optional().describe(
-    "Month of First Registration (YYYY-MM)",
-  ),
+  monthOfFirstRegistration: NonEmptyString.regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .optional()
+    .describe("Month of First Registration (YYYY-MM)"),
 
   yearOfManufacture: WholeNumber.optional().describe("Year of Manufacture"),
 
