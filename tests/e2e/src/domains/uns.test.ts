@@ -9,14 +9,11 @@ describe("UNS domain", () => {
 
   describe("GET /uns/v1/notifications", () => {
     const endpoint = `/uns/v1/notifications`;
-    const serviceId = "test-service-id";
-    const service = "test-service";
 
     it("returns 200 for GET all notifications", async ({
       cloudfront,
-      withIdentityLink,
+      udpUser: _,
     }) => {
-      await withIdentityLink(service, serviceId);
       const result = await cloudfront.client.get(endpoint, {
         headers: { ...authorization },
       });

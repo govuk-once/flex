@@ -8,7 +8,7 @@ export const handler = route("GET /v1/notifications", async (ctx) => {
   });
 
   if (!pushIdResponse.ok) {
-    ctx.logger.debug(
+    ctx.logger.error(
       "Call to get push id failed",
       pushIdResponse.error.message,
     );
@@ -20,7 +20,7 @@ export const handler = route("GET /v1/notifications", async (ctx) => {
   });
 
   if (!response.ok) {
-    ctx.logger.debug(
+    ctx.logger.error(
       "Call to get notifications failed",
       response.error.message,
     );
