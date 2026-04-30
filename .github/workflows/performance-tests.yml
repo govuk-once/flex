@@ -1,6 +1,9 @@
 name: Performance Tests
 
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       STAGE:
@@ -27,8 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.STAGE }}
     env:
-      STAGE: ${{ inputs.STAGE }}
-      AWS_REGION: ${{ inputs.AWS_REGION }}
+      STAGE: ${{ github.event.inputs.STAGE || 'development' }}
+      AWS_REGION: ${{ github.event.inputs.AWS_REGION || 'eu-west-2' }}
     strategy:
       matrix:
         scenario: [todos-list, todos-get, todos-post]
@@ -119,3 +122,17 @@ jobs:
             tests/performance/results/*.json
             tests/performance/results/*.html
           retention-days: 30
+
+      - name: Read Summary for PR
+        id: pr_comment
+        run: |
+          cat tests/performance/results/pr-summary.md >> $GITHUB_STEP_SUMMARY
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat tests/performance/results/pr-summary.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: perf-report
+          message: ${{ steps.pr_comment.outputs.body }}

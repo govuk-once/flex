@@ -154,3 +154,29 @@ const cards = files.map((file) => {
 const out = resolve(resultsDir, "combined-report.html");
 writeFileSync(out, buildHtml(cards, new Date().toISOString()));
 console.log(`Report written to ${out}`);
+
+function buildMarkdownSummary(reports: {name: string, report: ArtilleryReport}[]): string {
+  let md = `### 🚀 Performance Test Results\n\n`;
+  md += `| Scenario | p95 | Errors | Status |\n`;
+  md += `| :--- | :--- | :--- | :--- |\n`;
+
+  for (const { name, report } of reports) {
+    const rt = report.aggregate.summaries["http.response_time"] || { p95: 0 };
+    const errs = report.aggregate.counters["http.requests"] - (report.aggregate.counters["http.codes.200"] || 0);
+
+    const threshold = 1000;
+    const status = rt.p95 <= threshold ? "✅ Pass" : "❌ Fail";
+
+    md += `| ${name} | ${Math.round(rt.p95)}ms | ${errs} | ${status} |\n`;
+  }
+
+  md += `\n[View Full HTML Report in Artifacts](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+  return md;
+}
+
+const reports = files.map(file => ({
+  name: basename(file, ".json"),
+  report: JSON.parse(readFileSync(resolve(resultsDir, file), "utf-8"))
+}));
+
+writeFileSync(resolve(resultsDir, "pr-summary.md"), buildMarkdownSummary(reports));
