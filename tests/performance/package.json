@@ -6,7 +6,7 @@
     "test:todos-list": "artillery run --output results/todos-list.json scenarios/todos-list.yml",
     "test:todos-get": "artillery run --output results/todos-get.json scenarios/todos-get.yml",
     "test:todos-post": "artillery run --output results/todos-post.json scenarios/todos-post.yml",
-    "report": "tsx report.ts && open results/combined-report.html",
+    "report": "tsx report.ts",
     "test:perf": "pnpm test:todos-list; pnpm test:todos-get; pnpm test:todos-post; pnpm report",
     "test:smoke": "pnpm test:smoke:todos-list; pnpm test:smoke:todos-get; pnpm test:smoke:todos-post; pnpm report",
     "test:smoke:todos-list": "artillery run --config smoke-cloudwatch.config.yml --output results/smoke-todos-list.json scenarios/todos-list.yml",
