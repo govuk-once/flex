@@ -7,7 +7,7 @@ import { handler } from "./get";
 vi.mock("@utils/get-push-id");
 
 describe("GET /v1/notifications", () => {
- const api = nock("https://execute-api.eu-west-2.amazonaws.com");
+  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const userId = createUserId("test-pairwise-id");
   const testPushId = "push-12345";
 
