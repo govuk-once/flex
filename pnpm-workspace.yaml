@@ -8,10 +8,6 @@ packages:
 
 ignoredBuiltDependencies:
   - msw
-  - playwright
-  - playwright-core
-  - "@playwright/browser-chromium"
-  - "@playwright/test"
 
 minimumReleaseAge: 2880
 
