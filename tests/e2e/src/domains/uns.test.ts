@@ -1,8 +1,8 @@
 import { NotificationsResponseSchema } from "@flex/uns-domain";
 import { describe, expect, inject } from "vitest";
 
-import { it } from "../extend/it";
 import { PatchNotificationBody } from "../../../../domains/uns/src/schemas/notification";
+import { it } from "../extend/it";
 
 describe("UNS domain", () => {
   const { JWT } = inject("e2eEnv");
@@ -31,8 +31,8 @@ describe("UNS domain", () => {
     });
   });
 
-   describe("PATCH /uns/v1/notifications/:notificationId/status", () => {
-    const notificationId = "not-1"
+  describe("PATCH /uns/v1/notifications/:notificationId/status", () => {
+    const notificationId = "not-1";
     const endpoint = `/uns/v1/notifications/${notificationId}/status`;
     const notFoundEndpoint = `/uns/v1/notifications/NoNOTHere/status`;
 
@@ -40,26 +40,36 @@ describe("UNS domain", () => {
       cloudfront,
       udpUser: _,
     }) => {
-      const result = await cloudfront.client.patch<PatchNotificationBody, unknown>(endpoint, {
+      const result = await cloudfront.client.patch<
+        PatchNotificationBody,
+        unknown
+      >(endpoint, {
         headers: { ...authorization },
-        body: { Status: "READ" }
+        body: { Status: "READ" },
       });
 
       expect(result.status).toBe(202);
     });
 
     it("returns 401 when no auth is provided", async ({ cloudfront }) => {
-      const result = await cloudfront.client.patch<PatchNotificationBody, unknown>(endpoint, {
-         body: { Status: "READ" }
+      const result = await cloudfront.client.patch<
+        PatchNotificationBody,
+        unknown
+      >(endpoint, {
+        body: { Status: "READ" },
       });
       expect(result.status).toBe(401);
     });
 
-        
-    it("returns 404 when a notification does not exist", async ({ cloudfront }) => {
-      const result = await cloudfront.client.patch<PatchNotificationBody, unknown>(notFoundEndpoint, {
+    it("returns 404 when a notification does not exist", async ({
+      cloudfront,
+    }) => {
+      const result = await cloudfront.client.patch<
+        PatchNotificationBody,
+        unknown
+      >(notFoundEndpoint, {
         headers: { ...authorization },
-        body: { Status: "READ" }
+        body: { Status: "READ" },
       });
       expect(result.status).toBe(404);
     });
