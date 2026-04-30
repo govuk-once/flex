@@ -2,9 +2,9 @@ import { route } from "@domain";
 import createHttpError from "http-errors";
 import { status } from "http-status";
 
-export const handler = route("GET /v1/vehicle-enquiry", async (ctx) => {
+export const handler = route("GET /v1/vehicle-enquiry/:reg", async (ctx) => {
   const response = await ctx.integrations.dvlaVehicleEnquiry({
-    query: { registrationNumber: ctx.queryParams.registrationNumber },
+    path: `/${ctx.pathParams.reg}`,
   });
 
   if (!response.ok) {

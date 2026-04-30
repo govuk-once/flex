@@ -257,9 +257,10 @@ describe("DVLA Service Gateway", () => {
     });
 
     const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/vehicle-enquiry", {
-        queryStringParameters: { registrationNumber },
-      }),
+      privateGatewayEvent.get(
+        `/gateways/dvla/v1/vehicle-enquiry/${registrationNumber}`,
+        {},
+      ),
       context,
     );
 
@@ -270,23 +271,6 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.vehicle.get).toHaveBeenCalledWith(registrationNumber);
-  });
-
-  it("returns 400 when registrationNumber header is missing", async ({
-    privateGatewayEvent,
-  }) => {
-    const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/vehicle-enquiry"),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 400,
-      body: '{"message":"Missing registrationNumber query parameter"}',
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({

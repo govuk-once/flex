@@ -5,7 +5,7 @@ import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
-describe("GET /v1/vehicle-enquiry", () => {
+describe("GET /v1/vehicle-enquiry/:reg", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const testRegistration = "AA11ABC";
 
@@ -22,13 +22,12 @@ describe("GET /v1/vehicle-enquiry", () => {
     };
 
     api
-      .get("/gateways/dvla/v1/vehicle-enquiry")
-      .query({ registrationNumber: testRegistration })
+      .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
       .reply(status.OK, mockVehicleData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({
-        queryStringParameters: { registrationNumber: testRegistration },
+        pathParameters: { reg: testRegistration },
       }),
       context.create(),
     );
@@ -43,13 +42,12 @@ describe("GET /v1/vehicle-enquiry", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/dvla/v1/vehicle-enquiry")
-        .query(true)
+        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
         .reply(status.BAD_REQUEST, { message: "Invalid VRM" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          queryStringParameters: { registrationNumber: "INVALID" },
+          pathParameters: { reg: testRegistration },
         }),
         context.create(),
       );
@@ -62,13 +60,12 @@ describe("GET /v1/vehicle-enquiry", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/dvla/v1/vehicle-enquiry")
-        .query(true)
+        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
         .reply(status.NOT_FOUND, { message: "Vehicle not found" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          queryStringParameters: { registrationNumber: "NOTFOUND" },
+          pathParameters: { reg: testRegistration },
         }),
         context.create(),
       );
@@ -81,13 +78,12 @@ describe("GET /v1/vehicle-enquiry", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/dvla/v1/vehicle-enquiry")
-        .query(true)
+        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
         .reply(status.TOO_MANY_REQUESTS);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          queryStringParameters: { registrationNumber: testRegistration },
+          pathParameters: { reg: testRegistration },
         }),
         context.create(),
       );
@@ -100,13 +96,12 @@ describe("GET /v1/vehicle-enquiry", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       api
-        .get("/gateways/dvla/v1/vehicle-enquiry")
-        .query(true)
+        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
         .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          queryStringParameters: { registrationNumber: testRegistration },
+          pathParameters: { reg: testRegistration },
         }),
         context.create(),
       );

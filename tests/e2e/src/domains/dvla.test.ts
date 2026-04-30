@@ -153,7 +153,7 @@ describe.sequential("DVLA domain", () => {
   });
 
   describe("/dvla/v1/vehicle-enquiry", () => {
-    const endpoint = "/dvla/v1/vehicle-enquiry";
+    const baseEndpoint = "/dvla/v1/vehicle-enquiry";
     const validReg = "AA19AAA";
     const notFoundReg = "ER19NFD";
 
@@ -161,41 +161,28 @@ describe.sequential("DVLA domain", () => {
       it("returns 200 and valid vehicle data for a known registration", async ({
         cloudfront,
       }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: {
-            ...authorization,
+        const result = await cloudfront.client.get(
+          `${baseEndpoint}/${validReg}`,
+          {
+            headers: { ...authorization },
           },
-          params: {
-            registrationNumber: validReg,
-          },
-        });
+        );
 
         expect(result.status).toBe(200);
 
         const validation = vehicleEnquiryResponseSchema.safeParse(result.body);
-
         expect(validation.success).toBe(true);
       });
 
-      it("returns 400 when registrationNumber header is missing", async ({
+      it("returns 404 for a non-existent vehicle registration", async ({
         cloudfront,
       }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
-        });
-
-        expect(result.status).toBe(400);
-      });
-
-      it("returns 404 when vehicle is not found", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: {
-            ...authorization,
+        const result = await cloudfront.client.get(
+          `${baseEndpoint}/${notFoundReg}`,
+          {
+            headers: { ...authorization },
           },
-          params: {
-            registrationNumber: notFoundReg,
-          },
-        });
+        );
 
         expect(result.status).toBe(404);
       });
@@ -203,13 +190,8 @@ describe.sequential("DVLA domain", () => {
       it("returns 502 when upstream returns a 500 error", async ({
         cloudfront,
       }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: {
-            ...authorization,
-          },
-          params: {
-            registrationNumber: "ER19ERR",
-          },
+        const result = await cloudfront.client.get(`${baseEndpoint}/ER19ERR`, {
+          headers: { ...authorization },
         });
 
         expect(result.status).toBe(502);

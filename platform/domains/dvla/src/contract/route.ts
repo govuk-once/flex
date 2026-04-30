@@ -18,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => {},
+    toRemote: () => { },
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -122,11 +122,12 @@ export const ROUTE_CONTRACTS = {
     inboundPath: "/v1/vehicle-enquiry",
     remotePath: "/v1/vehicle-enquiry",
     toRemote: (event) => {
-      const registrationNumber =
-        event.queryStringParameters?.registrationNumber;
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const registrationNumber = pathParams[3];
+
       if (!registrationNumber) {
         throw new createHttpError.BadRequest(
-          "Missing registrationNumber query parameter",
+          "Missing registrationNumber form path",
         );
       }
       return { registrationNumber };

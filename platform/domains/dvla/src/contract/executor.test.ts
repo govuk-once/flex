@@ -128,9 +128,8 @@ describe("DVLA Executor", () => {
     },
     {
       method: "GET",
-      path: "/v1/vehicle-enquiry",
+      path: "/v1/vehicle-enquiry/AA11ABC",
       operation: "getVehicle",
-      queryParams: { registrationNumber: "AA11ABC" },
       configureRemoteClient: () => {
         remoteClient.vehicle.get.mockResolvedValue({
           ok: true,
@@ -145,14 +144,7 @@ describe("DVLA Executor", () => {
   ])(
     "should resolve request for $method $path to $operation",
     async (
-      {
-        method,
-        path,
-        headers,
-        queryParams,
-        configureRemoteClient,
-        assertRemoteClientCall,
-      },
+      { method, path, headers, configureRemoteClient, assertRemoteClientCall },
       { privateGatewayEvent },
     ) => {
       configureRemoteClient();
@@ -161,7 +153,6 @@ describe("DVLA Executor", () => {
         httpMethod: method,
         path,
         headers,
-        queryStringParameters: queryParams,
       });
 
       const result = await execute(event, remoteClient);
