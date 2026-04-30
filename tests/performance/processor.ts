@@ -15,11 +15,4 @@ export async function generateJwt(context: {
     cachedJwt = await gen.getToken();
   }
   context.vars["jwt"] = cachedJwt;
-
-  if (process.env.DEBUG_JWT) {
-    const claims = JSON.parse(
-      Buffer.from(cachedJwt.split(".")[1], "base64url").toString(),
-    );
-    console.log("[DEBUG_JWT]", JSON.stringify(claims, null, 2));
-  }
 }
