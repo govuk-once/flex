@@ -23,6 +23,11 @@ interface ArtilleryReport {
     firstMetricAt: number;
     lastMetricAt: number;
   };
+  config: {
+    ensure?: {
+      thresholds?: Record<string, number>[];
+    };
+  };
 }
 
 function ms(value: number): string {
@@ -49,7 +54,16 @@ function buildCard(name: string, report: ArtilleryReport): string {
     .reduce((sum, [, v]) => sum + v, 0);
   const errorRate = responses > 0 ? ((errors / responses) * 100).toFixed(2) : "0.00";
   const rps = (rates["http.request_rate"] ?? 0).toFixed(1);
-  const p95Class = statusClass(rt.p95, name.includes("post") ? 1500 : 1000);
+
+  const p95ThresholdObj = report.config.ensure?.thresholds?.find(t =>
+    Object.keys(t).some(k => k.includes("p95"))
+  );
+
+  const p95Threshold = p95ThresholdObj
+    ? Object.values(p95ThresholdObj)[0]
+    : 1000;
+
+  const p95Class = statusClass(rt.p95, p95Threshold);
 
   const statusCodes = Object.entries(counters)
     .filter(([k]) => k.startsWith("http.codes."))
