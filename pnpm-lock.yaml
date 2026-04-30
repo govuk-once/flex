@@ -934,6 +934,9 @@ importers:
       '@flex/dvla-domain':
         specifier: workspace:*
         version: link:../../domains/dvla
+      '@flex/dvla-service-gateway':
+        specifier: workspace:*
+        version: link:../../platform/domains/dvla
       '@flex/example-domain':
         specifier: workspace:*
         version: link:../../domains/example

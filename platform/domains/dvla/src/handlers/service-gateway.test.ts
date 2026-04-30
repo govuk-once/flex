@@ -21,6 +21,7 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   apiUrl: "https://dvla-remote.example.test",
   apiKey: "dvla-test-key", // pragma: allowlist secret
   apiUsername: "dvla-user",
+  apiPublicKey: "dvla-test-public-key", // pragma: allowlist secret
   apiPassword: "dvla-password", // pragma: allowlist secret
 };
 
@@ -48,6 +49,27 @@ const MOCK_DRIVER_SUMMARY_RESPONSE = {
     driver: { drivingLicenceNumber: "SMITH999", lastName: "DOE" },
     licence: { status: "Valid", type: "Full" },
   },
+};
+
+const MOCK_VEHICLE_RESPONSE = {
+  registrationNumber: "AA11ABC",
+  taxStatus: "Taxed",
+  taxDueDate: "2025-12-01",
+  motStatus: "Valid",
+  motExpiryDate: "2025-06-15",
+  make: "FORD",
+  yearOfManufacture: 2022,
+  engineCapacity: 1998,
+  co2Emissions: 120,
+  fuelType: "PETROL",
+  markedForExport: false,
+  colour: "BLUE",
+  typeApproval: "M1",
+  wheelplan: "2 AXLE RIGID BODY",
+  revenueWeight: 1600,
+  dateOfLastV5CIssued: "2023-01-10",
+  euroStatus: "EURO 6",
+  automatedVehicle: false,
 };
 
 const remoteClient = {
@@ -84,6 +106,13 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: undefined,
+    }),
+  },
+  vehicle: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_VEHICLE_RESPONSE,
     }),
   },
 };
@@ -214,6 +243,34 @@ describe("DVLA Service Gateway", () => {
       "test-linking-id",
       jwt,
     );
+  });
+
+  it("dispatches GET /v1/vehicle-enquiry and returns full vehicle details", async ({
+    privateGatewayEvent,
+  }) => {
+    const registrationNumber = "AA11ABC";
+
+    remoteClient.vehicle.get.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_VEHICLE_RESPONSE,
+    });
+
+    const response = await handler(
+      privateGatewayEvent.get(
+        `/gateways/dvla/v1/vehicle-enquiry/${registrationNumber}`,
+        {},
+      ),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_VEHICLE_RESPONSE),
+    });
+
+    expect(remoteClient.vehicle.get).toHaveBeenCalledWith(registrationNumber);
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({

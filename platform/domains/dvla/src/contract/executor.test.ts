@@ -21,6 +21,9 @@ const remoteClient = {
   driver: {
     get: vi.fn(),
   },
+  vehicle: {
+    get: vi.fn(),
+  },
 };
 
 describe("DVLA Executor", () => {
@@ -121,6 +124,21 @@ describe("DVLA Executor", () => {
           "test-id-123",
           "Bearer jwt-123",
         );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/vehicle-enquiry/AA11ABC",
+      operation: "getVehicle",
+      configureRemoteClient: () => {
+        remoteClient.vehicle.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { registrationNumber: "AA11ABC", make: "FORD" },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.vehicle.get).toHaveBeenCalledWith("AA11ABC");
       },
     },
   ])(
