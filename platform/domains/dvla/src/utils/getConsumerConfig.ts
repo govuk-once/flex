@@ -5,6 +5,7 @@ import { z } from "zod";
 const consumerConfigSchema = z.object({
   apiUrl: NonEmptyString,
   apiKey: NonEmptyString,
+  apiPublicKey: NonEmptyString,
   apiUsername: NonEmptyString,
   apiPassword: NonEmptyString,
 });

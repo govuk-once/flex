@@ -112,6 +112,24 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
         return typedFetch(request);
       },
     },
+    vehicle: {
+      get: (reg: string): Promise<ApiResult<void>> => {
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.vehicleEnquiry}/vehicles`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiPublicKey,
+            },
+            body: JSON.stringify({
+              registrationNumber: reg,
+            }),
+          },
+        ).request;
+        return typedFetch(request);
+      },
+    },
   };
 }
 

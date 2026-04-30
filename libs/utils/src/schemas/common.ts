@@ -19,6 +19,9 @@ export type Jwt = z.output<typeof Jwt>;
 export const NonEmptyString = z.string().min(1);
 export type NonEmptyString = z.output<typeof NonEmptyString>;
 
+export const WholeNumber = z.number().int();
+export type WholeNumber = z.output<typeof WholeNumber>;
+
 export const Slug = z.string().refine((v) => /^[a-z]+(-[a-z]+)*$/.test(v), {
   error: "Must be a lowercase slug",
 });

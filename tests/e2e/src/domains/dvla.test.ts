@@ -1,5 +1,6 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { viewDriverResponseSchema } from "@flex/dvla-domain";
+import { vehicleEnquiryResponseSchema } from "@flex/dvla-service-gateway";
 import { beforeAll, describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
@@ -147,6 +148,53 @@ describe.sequential("DVLA domain", () => {
         });
 
         expect(result.status).toBe(404);
+      });
+    });
+  });
+
+  describe("/dvla/v1/vehicle-enquiry", () => {
+    const baseEndpoint = "/dvla/v1/vehicle-enquiry";
+    const validReg = "AA19AAA";
+    const notFoundReg = "ER19NFD";
+
+    describe("GET", () => {
+      it("returns 200 and valid vehicle data for a known registration", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(
+          `${baseEndpoint}/${validReg}`,
+          {
+            headers: { ...authorization },
+          },
+        );
+
+        expect(result.status).toBe(200);
+
+        const validation = vehicleEnquiryResponseSchema.safeParse(result.body);
+        expect(validation.success).toBe(true);
+      });
+
+      it("returns 404 for a non-existent vehicle registration", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(
+          `${baseEndpoint}/${notFoundReg}`,
+          {
+            headers: { ...authorization },
+          },
+        );
+
+        expect(result.status).toBe(404);
+      });
+
+      it("returns 502 when upstream returns a 500 error", async ({
+        cloudfront,
+      }) => {
+        const result = await cloudfront.client.get(`${baseEndpoint}/ER19ERR`, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(502);
       });
     });
   });

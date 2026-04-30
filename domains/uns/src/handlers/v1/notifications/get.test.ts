@@ -1,87 +1,88 @@
-import { it } from "@flex/testing";
+import { createUserId, it } from "@flex/testing";
 import nock from "nock";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
 
+vi.mock("@utils/get-push-id");
+
 describe("GET /v1/notifications", () => {
-  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const endpoint = "/notifications";
-  const pushId = "test-push-id";
+  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
+  const userId = createUserId("test-pairwise-id");
+  const testPushId = "push-12345";
 
-  const notification = {
-    NotificationID: "notification-1",
-    NotificationTitle: "Your application has been received",
-    NotificationBody:
-      "We have received your application and will be in touch shortly.",
-    MessageTitle: "Your application has been received",
-    MessageBody:
-      "We have received your application and will be in touch shortly.",
-    DispatchedDateTime: "2026-01-01T00:00:00.000Z",
-    Status: "RECEIVED",
-  };
+  const mockNotificationsData = [
+    {
+      NotificationID: "123456",
+      Status: "READ",
+      NotificationTitle: "test title",
+      NotificationBody: "test body",
+      DispatchedDateTime: "2026-01-01T00:00:00Z",
+      MessageTitle: "message title",
+      MessageBody: "message body",
+    },
+  ];
 
-  it("returns 200 with notifications mapped successfully", async ({
-    privateGatewayEventWithAuthorizer,
+  const mockUdpPushIdSuccess = () =>
+    api
+      .get("/domains/udp/v1/users/push-id")
+      .matchHeader("User-Id", userId)
+      .reply(200, { pushId: testPushId });
+
+  const mockUnsNotificationsSuccess = () =>
+    api
+      .get("/gateways/uns/v1/notifications")
+      .query({ externalUserID: testPushId })
+      .reply(200, mockNotificationsData);
+
+  it("returns 200 and notifications data on success", async ({
     context,
+    privateGatewayEventWithAuthorizer,
   }) => {
-    gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
-    gateway
-      .get("/notifications")
-      .query({ externalUserID: pushId })
-      .reply(200, [notification]);
+    mockUdpPushIdSuccess();
+    mockUnsNotificationsSuccess();
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
+      privateGatewayEventWithAuthorizer.authenticated({}, userId),
+      context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
     );
 
     expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body) as Record<string, unknown>[];
-    expect(body).toHaveLength(1);
-    expect(body[0]).toMatchObject({
-      NotificationID: "notification-1",
-      NotificationTitle: "Your application has been received",
-      NotificationBody:
-        "We have received your application and will be in touch shortly.",
-      MessageTitle: "Your application has been received",
-      MessageBody:
-        "We have received your application and will be in touch shortly.",
-      DispatchedDateTime: "2026-01-01T00:00:00.000Z",
-      Status: "RECEIVED",
+    expect(JSON.parse(result.body)).toStrictEqual(mockNotificationsData);
+  });
+
+  describe("Error scenarios", () => {
+    it("returns 502 if UDP push ID lookup fails", async ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      api.get("/domains/udp/v1/users/push-id").reply(500);
+
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.authenticated({}, userId),
+        context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
+      );
+
+      expect(result.statusCode).toBe(502);
     });
-  });
 
-  it("returns 200 with an empty array when no notifications are returned", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    gateway.get("/gateways/udp/v1/users/push-id").reply(200, { pushId });
-    gateway
-      .get("/notifications")
-      .query({ externalUserID: pushId })
-      .reply(200, []);
+    it("returns 502 if UNS notifications lookup fails", async ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      mockUdpPushIdSuccess();
 
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
-    );
+      api
+        .get("/gateways/uns/v1/notifications")
+        .query({ externalUserID: testPushId })
+        .reply(404);
 
-    expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual([]);
-  });
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.authenticated({}, userId),
+        context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
+      );
 
-  it("returns 500 when none successful response is returned", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    gateway.get("/gateways/udp/v1/users/push-id").reply(500);
-
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.get(endpoint),
-      context.create(),
-    );
-
-    expect(result.statusCode).toBe(500);
+      expect(result.statusCode).toBe(502);
+    });
   });
 });

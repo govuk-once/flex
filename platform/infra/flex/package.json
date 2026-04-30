@@ -15,8 +15,8 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "3.1032.0",
     "@flex/sdk": "workspace:*",
-    "aws-cdk": "2.1118.2",
-    "aws-cdk-lib": "2.250.0",
+    "aws-cdk": "2.1119.0",
+    "aws-cdk-lib": "2.251.0",
     "constructs": "10.6.0",
     "graphology": "0.26.0",
     "graphology-dag": "0.4.1",

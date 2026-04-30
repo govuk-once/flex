@@ -69,7 +69,7 @@ describe("buildHandlerContext", () => {
           context.create(),
           { ...contextOptions, gateway: "public" },
         ),
-      ).toThrow("Pairwise ID not found");
+      ).toThrow("Failed to extract the pairwise ID from the request context");
     });
   });
 
