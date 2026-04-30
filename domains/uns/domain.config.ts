@@ -49,7 +49,9 @@ export const { config, route } = domain({
         GET: {
           public: {
             name: "get-notification-by-id",
-            response: NotificationSchema,
+            response: NotificationsResponseSchema,
+            resources: ["unsFlexPrivateGatewayUrl"],
+            integrations: ["udpGetPushId"],
           },
         },
         DELETE: {
