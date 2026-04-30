@@ -29,20 +29,27 @@ jobs:
     env:
       STAGE: ${{ inputs.STAGE }}
       AWS_REGION: ${{ inputs.AWS_REGION }}
+    strategy:
+      matrix:
+        scenario: [todos-list, todos-get, todos-post]
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10 # match lockfile
+
       - name: Setup node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: ".nvmrc"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: |
-          npm install -g pnpm@latest-10
-          pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@bc9489585819302995bb108bbd899b7975f40303 # v5.1.1
@@ -62,27 +69,53 @@ jobs:
       - name: Run todos-list scenario
         continue-on-error: true
         working-directory: tests/performance
-        run: artillery run --config cloudwatch.config.yml --output results/todos-list.json scenarios/todos-list.yml
+        run: pnpm test:${{ matrix.scenario }}
 
-      - name: Run todos-get scenario
-        continue-on-error: true
-        working-directory: tests/performance
-        run: artillery run --config cloudwatch.config.yml --output results/todos-get.json scenarios/todos-get.yml
+      - name: Upload JSON result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: results-${{ matrix.scenario }}
+          path: tests/performance/results/${{ matrix.scenario }}.json
 
-      - name: Run todos-post scenario
-        continue-on-error: true
-        working-directory: tests/performance
-        run: artillery run --config cloudwatch.config.yml --output results/todos-post.json scenarios/todos-post.yml
+  generate-report:
+    needs: performance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10 # match lockfile
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download All Results
+        uses: actions/download-artifact@v4
+        with:
+          path: tests/performance/results
+          pattern: results-*
+          merge-multiple: true #
 
       - name: Generate HTML reports
         continue-on-error: true
         working-directory: tests/performance
         run: pnpm report
 
-      - name: Upload results
+      - name: Upload Combined Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: performance-results-${{ inputs.STAGE }}-${{ github.run_id }}
-          path: tests/performance/results/**
+          path: |
+            tests/performance/results/*.json
+            tests/performance/results/*.html
           retention-days: 30
