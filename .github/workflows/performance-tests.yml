@@ -61,11 +61,21 @@ jobs:
 
       - name: Fetch BASE_URL from SSM
         run: |
-          BASE_URL=$(aws ssm get-parameter \
-            --name "/${{ inputs.STAGE }}/flex/apigw/public/app-root" \
+          DOMAIN_NAME=$(aws ssm get-parameter \
+            --name "/infra/dns/hostedzonename" \
             --query "Parameter.Value" \
             --output text)
-          echo "BASE_URL=$BASE_URL" >> $GITHUB_ENV
+
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Detected Pull Request. Prepending PR number to domain."
+            FULL_URL="https://${{ github.event.number }}.${DOMAIN_NAME}"
+          else
+            echo "Detected Manual/Branch run. Using persistent domain."
+            FULL_URL="https://${DOMAIN_NAME}"
+          fi
+
+          echo "BASE_URL=$FULL_URL" >> $GITHUB_ENV
+          echo "Final Target URL: $FULL_URL"
 
       - name: Run todos-list scenario
         continue-on-error: true
