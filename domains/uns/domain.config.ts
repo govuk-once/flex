@@ -43,6 +43,11 @@ export const { config, route } = domain({
       route: "GET /v1/notifications/*",
       response: NotificationSchema,
     },
+    unsDeleteNotification: {
+      type: "gateway",
+      target: "uns",
+      route: "DELETE /v1/notifications/*",
+    },
     udpGetPushId: {
       type: "domain",
       target: "udp",
@@ -82,6 +87,12 @@ export const { config, route } = domain({
         DELETE: {
           public: {
             name: "delete-notification",
+            resources: [
+              "encryptionKey",
+              "privateGatewayUrl",
+              "udpNotificationSecret",
+            ],
+            integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
         },
       },

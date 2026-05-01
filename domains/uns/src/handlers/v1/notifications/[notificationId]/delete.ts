@@ -1,25 +1,60 @@
 import createHttpError from "http-errors";
+import { status } from "http-status";
 
 import { route } from "../../../../../domain.config";
-import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
 
 export const handler = route(
   "DELETE /v1/notifications/:notificationId",
-  ({ pathParams, logger }) => {
-    logger.debug("Delete notification");
+  async (ctx) => {
+    const pushIdResponse = await ctx.integrations.udpGetPushId({
+      headers: { "User-Id": ctx.auth.pairwiseId },
+    });
 
-    const { notificationId } = pathParams;
-
-    const notification = MOCK_NOTIFICATIONS.find(
-      (n) => n.NotificationID === notificationId,
-    );
-
-    if (!notification) {
-      throw new createHttpError.NotFound();
+    if (!pushIdResponse.ok) {
+      const { status: errorStatus, body: errorBody } = pushIdResponse.error;
+      ctx.logger.error("Call to get push id failed", {
+        status: errorStatus,
+        errorBody,
+      });
+      switch (errorStatus) {
+        case status.BAD_REQUEST:
+          throw new createHttpError.BadRequest();
+        case status.NOT_FOUND:
+          throw new createHttpError.NotFound();
+        case status.TOO_MANY_REQUESTS:
+          throw new createHttpError.TooManyRequests();
+        default:
+          throw new createHttpError.BadGateway();
+      }
     }
 
-    logger.debug("Successful delete notification");
+    const { notificationId } = ctx.pathParams;
 
-    return Promise.resolve({ status: 204 });
+    const response = await ctx.integrations.unsDeleteNotification({
+      query: { externalUserID: pushIdResponse.data.pushId },
+      path: `/${notificationId}`,
+    });
+
+    if (!response.ok) {
+      const { status: errorStatus, body: errorBody } = response.error;
+      ctx.logger.error("Call to patch notification failed", {
+        status: errorStatus,
+        errorBody,
+      });
+      switch (errorStatus) {
+        case status.BAD_REQUEST:
+          throw new createHttpError.BadRequest();
+        case status.NOT_FOUND:
+          throw new createHttpError.NotFound();
+        case status.TOO_MANY_REQUESTS:
+          throw new createHttpError.TooManyRequests();
+        default:
+          throw new createHttpError.BadGateway();
+      }
+    }
+
+    return {
+      status: 204,
+    };
   },
 );
