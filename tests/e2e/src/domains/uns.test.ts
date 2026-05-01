@@ -64,6 +64,9 @@ describe("UNS domain", () => {
       const result = await cloudfront.client.get(notFoundEndpoint, {
         headers: { ...authorization },
       });
+      expect(result.status).toBe(404);
+    });
+  });
 
   describe("PATCH /uns/v1/notifications/:notificationId/status", () => {
     const notificationId = "d4e04ac4-5696-45b7-8e8c-0060883a84f5";
@@ -94,7 +97,7 @@ describe("UNS domain", () => {
       });
       expect(result.status).toBe(401);
     });
-    
+
     it("returns 404 when a notification does not exist", async ({
       cloudfront,
     }) => {
