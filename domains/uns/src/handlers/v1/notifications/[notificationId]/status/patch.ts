@@ -33,7 +33,7 @@ export const handler = route(
     const response = await ctx.integrations.unsPatchNotification({
       query: { externalUserID: pushIdResponse.data.pushId },
       path: `/${notificationId}/status`,
-      body: ctx.body
+      body: ctx.body,
     });
 
     if (!response.ok) {

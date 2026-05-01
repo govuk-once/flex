@@ -28,7 +28,9 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
 
   const mockUnsPatchNotFound = () =>
     api
-      .patch(`/gateways/uns/v1/notifications/${mockUnknownNotificationid}/status`)
+      .patch(
+        `/gateways/uns/v1/notifications/${mockUnknownNotificationid}/status`,
+      )
       .query({ externalUserID: testPushId })
       .reply(404);
 
@@ -43,9 +45,10 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
       privateGatewayEventWithAuthorizer.authenticated(
         {
           body: JSON.stringify({ Status: "READ" }),
-          pathParameters: { notificationId: mockNotificationId }
-        }, 
-      userId),
+          pathParameters: { notificationId: mockNotificationId },
+        },
+        userId,
+      ),
       context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
     );
 
@@ -60,12 +63,13 @@ describe("PATCH /v1/notifications/{notificationId}/status", () => {
     mockUnsPatchNotFound();
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.authenticated(        
+      privateGatewayEventWithAuthorizer.authenticated(
         {
           body: JSON.stringify({ Status: "READ" }),
-          pathParameters: { notificationId: mockUnknownNotificationid }
-        }, 
-      userId),
+          pathParameters: { notificationId: mockUnknownNotificationid },
+        },
+        userId,
+      ),
       context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
     );
     expect(result.statusCode).toBe(404);
