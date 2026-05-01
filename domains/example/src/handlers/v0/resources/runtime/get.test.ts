@@ -3,8 +3,8 @@ import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
-describe("GET /v0/resources/runtim", () => {
-  const endpoint = "/resources/runtim";
+describe("GET /v0/resources/runtime", () => {
+  const endpoint = "/resources/runtime";
   const params = { privateGatewaysRoot: "param-value" };
 
   describe("response", () => {

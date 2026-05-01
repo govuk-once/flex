@@ -1,0 +1,126 @@
+name: Performance Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      STAGE:
+        description: "Target stage"
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - staging
+      AWS_REGION:
+        description: "AWS region"
+        required: true
+        type: string
+        default: eu-west-2
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  performance:
+    name: Performance Tests (${{ inputs.STAGE }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.STAGE }}
+    env:
+      STAGE: ${{ github.event.inputs.STAGE || 'development' }}
+      AWS_REGION: ${{ github.event.inputs.AWS_REGION || 'eu-west-2' }}
+    strategy:
+      matrix:
+        scenario: [todos-list, todos-get, todos-post]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@bc9489585819302995bb108bbd899b7975f40303 # v5.1.1
+        with:
+          role-to-assume: ${{ inputs.STAGE == 'staging' && secrets.STAGING_DEPLOYMENT_ROLE || secrets.DEV_DEPLOYMENT_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: ${{ github.run_id }}
+
+      - name: Fetch BASE_URL from SSM
+        run: |
+          DOMAIN_NAME=$(aws ssm get-parameter \
+            --name "/infra/dns/hostedzonename" \
+            --query "Parameter.Value" \
+            --output text)
+
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Detected Pull Request. Prepending PR number to domain."
+            FULL_URL="https://${{ inputs.STAGE }}.${DOMAIN_NAME}"
+          else
+            echo "Detected Manual/Branch run. Using persistent domain."
+            FULL_URL="https://${DOMAIN_NAME}"
+          fi
+
+          echo "BASE_URL=$FULL_URL" >> $GITHUB_ENV
+
+      - name: Run scenario
+        continue-on-error: true
+        working-directory: tests/performance
+        run: pnpm test:${{ matrix.scenario }}
+
+      - name: Upload JSON result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: results-${{ matrix.scenario }}
+          path: tests/performance/results/${{ matrix.scenario }}.json
+
+  generate-report:
+    needs: performance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download All Results
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          path: tests/performance/results
+          pattern: results-*
+          merge-multiple: true #
+
+      - name: Generate HTML reports
+        continue-on-error: true
+        working-directory: tests/performance
+        run: pnpm report
+
+      - name: Upload Combined Report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: performance-results-${{ inputs.STAGE }}-${{ github.run_id }}
+          path: |
+            tests/performance/results/*.json
+            tests/performance/results/*.html
+          retention-days: 30
