@@ -86,8 +86,10 @@ describe("UNS domain", () => {
       expect(result.status).toBe(401);
     });
 
-    it("returns 404 when no auth is provided", async ({ cloudfront }) => {
-      const result = await cloudfront.client.get(endpoint);
+    it("returns 404 when no not found", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { ...authorization },
+      });
       expect(result.status).toBe(404);
     });
   });
