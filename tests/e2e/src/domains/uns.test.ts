@@ -1,4 +1,7 @@
-import { NotificationsResponseSchema, PatchNotificationBody } from "@flex/uns-domain";
+import {
+  NotificationsResponseSchema,
+  PatchNotificationBody,
+} from "@flex/uns-domain";
 import { describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
