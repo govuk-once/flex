@@ -1,7 +1,6 @@
-import { NotificationsResponseSchema } from "@flex/uns-domain";
+import { NotificationsResponseSchema, PatchNotificationBody } from "@flex/uns-domain";
 import { describe, expect, inject } from "vitest";
 
-import { PatchNotificationBody } from "../../../../domains/uns/src/schemas/notification";
 import { it } from "../extend/it";
 
 describe("UNS domain", () => {
