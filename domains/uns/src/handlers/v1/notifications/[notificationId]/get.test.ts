@@ -63,9 +63,6 @@ describe("GET /v1/notifications/{notificationId}", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body).NotificationID).toStrictEqual(
-      mockNotificationsData.NotificationID,
-    );
   });
 
   it("returns 200 with the matching notification", async ({

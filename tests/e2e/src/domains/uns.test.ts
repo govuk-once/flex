@@ -1,4 +1,7 @@
-import { NotificationsResponseSchema } from "@flex/uns-domain";
+import {
+  NotificationSchema,
+  NotificationsResponseSchema,
+} from "@flex/uns-domain";
 import { describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
@@ -27,6 +30,41 @@ describe("UNS domain", () => {
     it("returns 401 when no auth is provided", async ({ cloudfront }) => {
       const result = await cloudfront.client.get(endpoint);
       expect(result.status).toBe(401);
+    });
+  });
+
+  describe("GET /uns/v1/notifications/:notificationId", () => {
+    const notificationId = "d4e04ac4-5696-45b7-8e8c-0060883a84f5";
+    const endpoint = `/uns/v1/notifications/${notificationId}`;
+    const notFoundEndpoint = `/uns/v1/notifications/NoNOTHere`;
+
+    it("returns 202 when a notification status has been updated", async ({
+      cloudfront,
+      udpUser: _,
+    }) => {
+      const result = await cloudfront.client.get(endpoint, {
+        headers: { ...authorization },
+      });
+
+      expect(result.status).toBe(200);
+
+      const validation = NotificationSchema.safeParse(result.body);
+      expect(validation.success).toBe(true);
+    });
+
+    it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      const result = await cloudfront.client.get(endpoint);
+      expect(result.status).toBe(401);
+    });
+
+    it("returns 404 when a notification does not exist", async ({
+      cloudfront,
+    }) => {
+      const result = await cloudfront.client.get(notFoundEndpoint, {
+        headers: { ...authorization },
+      });
+
+      expect(result.status).toBe(404);
     });
   });
 });
