@@ -32,7 +32,7 @@ describe("UNS domain", () => {
   });
 
   describe("PATCH /uns/v1/notifications/:notificationId/status", () => {
-    const notificationId = "not-1";
+    const notificationId = "d4e04ac4-5696-45b7-8e8c-0060883a84f5";
     const endpoint = `/uns/v1/notifications/${notificationId}/status`;
     const notFoundEndpoint = `/uns/v1/notifications/NoNOTHere/status`;
 
