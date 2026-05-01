@@ -1,25 +1,50 @@
 import createHttpError from "http-errors";
+import { status } from "http-status";
 
 import { route } from "../../../../../domain.config";
-import { MOCK_NOTIFICATIONS } from "../../../../data/notifications";
 
 export const handler = route(
   "GET /v1/notifications/:notificationId",
-  ({ pathParams, logger }) => {
-    logger.debug("Fetching notification");
-
-    const { notificationId } = pathParams;
-
-    const notification = MOCK_NOTIFICATIONS.find(
-      (n) => n.NotificationID === notificationId,
-    );
-
-    if (!notification) {
-      throw new createHttpError.NotFound();
+  async (ctx) => {
+    const pushIdResponse = await ctx.integrations.udpGetPushId({
+      headers: { "User-Id": ctx.auth.pairwiseId },
+    });
+    if (!pushIdResponse.ok) {
+      ctx.logger.error(
+        "Call to get push id failed",
+        pushIdResponse.error.message,
+      );
+      throw new createHttpError.BadGateway();
     }
 
-    logger.debug("Successful get notification");
+    const { notificationId } = ctx.pathParams;
 
-    return Promise.resolve({ status: 200, data: notification });
+    const response = await ctx.integrations.unsGetNotificationById({
+      query: { externalUserID: pushIdResponse.data.pushId },
+      path: `/${notificationId}`,
+    });
+
+    if (!response.ok) {
+      const { status: errorStatus, body: errorBody } = response.error;
+      ctx.logger.error("Call to get notifications failed", {
+        status: errorStatus,
+        errorBody,
+      });
+      switch (errorStatus) {
+        case status.BAD_REQUEST:
+          throw new createHttpError.BadRequest();
+        case status.NOT_FOUND:
+          throw new createHttpError.NotFound();
+        case status.TOO_MANY_REQUESTS:
+          throw new createHttpError.TooManyRequests();
+        default:
+          throw new createHttpError.BadGateway();
+      }
+    }
+
+    return {
+      status: 200,
+      data: response.data,
+    };
   },
 );
