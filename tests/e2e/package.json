@@ -6,6 +6,7 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
+    "lint:fix": "npx eslint --fix .",
     "test:e2e": "vitest --passWithNoTests"
   },
   "dependencies": {

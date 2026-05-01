@@ -1,1 +1,1 @@
-export { NotificationsResponseSchema } from "./schemas/notification";
+export * from "./schemas/notification";
