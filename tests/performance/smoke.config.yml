@@ -1,0 +1,5 @@
+config:
+  phases:
+    - duration: 15
+      arrivalRate: 1
+      maxVusers: 1

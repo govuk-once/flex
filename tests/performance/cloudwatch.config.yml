@@ -1,0 +1,17 @@
+config:
+  target: "{{ $env.BASE_URL }}"
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "{{ $env.AWS_REGION }}"
+        namespace: flex/performance-tests
+        dimensions:
+          - name: Stage
+            value: "{{ $env.STAGE }}"
+        traces:
+          serviceName: flex-api
+          sampleRate: 1
+          useRequestNames: true
+          annotations:
+            tool: Artillery
+            stage: "{{ $env.STAGE }}"
