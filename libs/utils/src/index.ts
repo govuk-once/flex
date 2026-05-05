@@ -1,3 +1,11 @@
+export type { Stage } from "./environments";
+export {
+  Environment,
+  EnvironmentSchema,
+  getEnvConfig,
+  isPersistentEnvironment,
+  isStageAllowed,
+} from "./environments";
 export { getHeader } from "./http/getHeader";
 export type { QueryParams } from "./http/query-params";
 export { extractQueryParams } from "./http/query-params";

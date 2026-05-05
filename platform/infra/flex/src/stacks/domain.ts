@@ -1,4 +1,5 @@
 import { IacDomainConfig, RouteAccess } from "@flex/sdk";
+import type { Stage } from "@flex/utils";
 import {
   AuthorizationType,
   IdentitySource,
@@ -74,7 +75,12 @@ export class FlexDomainStack extends BaseStack {
     return this.#getRestApi("Private", restApiId, resourceId, "/domains");
   }
 
-  constructor(scope: Construct, id: string, config: IacDomainConfig) {
+  constructor(
+    scope: Construct,
+    id: string,
+    config: IacDomainConfig,
+    stage: Stage,
+  ) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -88,7 +94,7 @@ export class FlexDomainStack extends BaseStack {
       },
     });
 
-    const routes = flattenRoutes(config.routes);
+    const routes = flattenRoutes(config, stage);
     const [resourceReferences, integrationReferences] = resolveRouteReferences(
       routes,
       { resources: config.resources, integrations: config.integrations },

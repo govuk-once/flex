@@ -1,3 +1,4 @@
+import { getEnvConfig } from "@flex/utils";
 import * as cdk from "aws-cdk-lib";
 import {
   InterfaceVpcEndpoint,
@@ -11,7 +12,6 @@ import Graph, { DirectedGraph } from "graphology";
 import { willCreateCycle } from "graphology-dag";
 
 import { createHash } from "../utils/create-hash";
-import { getEnvConfig } from "./env";
 import { BaseStackProps, TagOptions } from "./types";
 
 const { env, stage } = getEnvConfig();

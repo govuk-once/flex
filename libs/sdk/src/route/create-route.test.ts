@@ -9,7 +9,7 @@ import type {
   LambdaEvent,
   LogLevel,
 } from "../types";
-import { HeaderValidationError, RequestBodyParseError } from "../utils";
+import { HeaderValidationError, RequestBodyParseError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { createRouteContext, createRouteHandler } from "./create-route";
 import { mergeHeaders } from "./headers";

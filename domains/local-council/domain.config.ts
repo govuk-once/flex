@@ -7,6 +7,7 @@ import {
 
 export const { config, route, routeContext } = domain({
   name: "local-council",
+  environments: ["development", "staging"],
   common: {
     access: "isolated",
     function: { timeoutSeconds: 30 },

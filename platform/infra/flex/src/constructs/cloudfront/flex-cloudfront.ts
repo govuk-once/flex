@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 
+import { getEnvConfig } from "@flex/utils";
 import { Duration, Stack } from "aws-cdk-lib";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
@@ -32,7 +33,6 @@ import {
 } from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 
-import { getEnvConfig } from "../../base/env";
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../../utils/getEntry";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";

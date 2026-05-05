@@ -1,11 +1,13 @@
+import { Environment, getEnvConfig } from "@flex/utils";
+
 import { SsmApp } from "./base";
-import { Environment, getEnvConfig } from "./base/env";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexPlatformStack } from "./stacks/platform";
+import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
 
@@ -33,7 +35,7 @@ app.addExternalExports(region, [
 
 if (persistent) {
   new FlexCoreStack(app, `${env}-FlexCore`);
-} else if (env === Environment.DEVELOPMENT) {
+} else if (env === Environment.development) {
   // Add these as external deps as we reuse the development env vpc
   app.addExternalExports(region, [
     ENV_KEYS.CacheEndpoint,
@@ -63,18 +65,21 @@ new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   subdomainName,
 });
 
-const domainConfigs = await getDomainConfigs();
+const allDomainConfigs = await getDomainConfigs();
+const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);
+
 const targetDomain = process.env.domain;
 
 const deployedDomains: string[] = [];
 const domainStacks: FlexDomainStack[] = [];
 
-for (const domainConfig of domainConfigs) {
-  const domainName = domainConfig.name;
-  if (targetDomain && targetDomain !== domainName) continue;
+for (const domain of deployableDomainConfigs) {
+  if (targetDomain && targetDomain !== domain.name) continue;
 
-  const stackName = `${stage}-${domainName}`;
-  const stack = new FlexDomainStack(app, stackName, domainConfig);
+  const stackName = `${stage}-${domain.name}`;
+
+  const stack = new FlexDomainStack(app, stackName, domain, stage);
+
   domainStacks.push(stack);
   deployedDomains.push(stackName);
 }

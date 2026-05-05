@@ -7,11 +7,9 @@ import {
   UpdateNotificationPreferencesRequestSchema,
   UpdateNotificationPreferencesResponseSchema,
 } from "@flex/udp-domain";
+import { NotificationsResponseSchema } from "@flex/uns-domain";
 
-import {
-  NotificationsResponseSchema,
-  UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema,
-} from "./src/schemas/notifications";
+import { UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema } from "./src/schemas/notifications";
 import {
   CreateTodoRequestSchema,
   CreateTodoResponseSchema,
@@ -22,6 +20,7 @@ import {
 
 export const { config, route, routeContext } = domain({
   name: "example",
+  environments: ["development"],
   common: {
     access: "isolated",
     logLevel: "INFO",
@@ -127,6 +126,7 @@ export const { config, route, routeContext } = domain({
         DELETE: {
           public: {
             name: "delete-todo",
+            environments: [],
           },
         },
       },
@@ -167,6 +167,7 @@ export const { config, route, routeContext } = domain({
         GET: {
           public: {
             name: "get-runtime-resource",
+            environments: [],
             resources: ["privateGatewaysRoot"],
           },
         },

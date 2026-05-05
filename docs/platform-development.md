@@ -207,8 +207,8 @@ platform/infra/<name>/
 
 ```typescript
 import * as cdk from "aws-cdk-lib";
+import { getEnvConfig } from "@flex/utils";
 
-import { getEnvConfig } from "./base/env";
 import { ExampleStack } from "./stack";
 
 const { stage } = getEnvConfig();
@@ -251,7 +251,7 @@ export class ExampleStack extends BaseStack {
 Use `getEnvConfig()` and prefix your stack with either the stage or env. Use env in the case where you want to reference a persistent environment only e.g the VPC stack.
 
 ```typescript
-import { getEnvConfig } from "./base/env";
+import { getEnvConfig } from "@flex/utils";
 
 const { env, stage } = getEnvConfig();
 
@@ -264,7 +264,7 @@ new ExampleStack(app, `${stage}-ExampleStack`);
 Use `getEnvConfig()` to access environment details:
 
 ```typescript
-import { getEnvConfig } from "./base/env";
+import { getEnvConfig } from "@flex/utils";
 
 const { stage, environment, persistent } = getEnvConfig();
 

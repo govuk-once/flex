@@ -2,7 +2,7 @@ import nock from "nock";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
 
 vi.mock("@flex/flex-fetch", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@flex/flex-fetch")>()),
+  ...(await importOriginal()),
   createSigv4Fetcher:
     ({ baseUrl }: { baseUrl: string }) =>
     (path: string, options?: RequestInit) => ({

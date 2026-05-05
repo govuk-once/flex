@@ -49,8 +49,8 @@ Deploys the application layer infrastructure.
 
 ```typescript
 import * as cdk from "aws-cdk-lib";
+import { getEnvConfig } from "@flex/utils";
 
-import { getEnvConfig } from "./base/env";
 import { FlexPlatformStack } from "./stack";
 
 const { env, stage } = getEnvConfig();

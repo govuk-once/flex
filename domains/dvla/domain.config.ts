@@ -13,6 +13,7 @@ import { viewDriverResponseSchema } from "./src/schemas/driversLicence";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",
+  environments: ["development", "staging"],
   common: {
     access: "private",
     function: { timeoutSeconds: 30 },

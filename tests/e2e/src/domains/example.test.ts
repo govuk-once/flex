@@ -1,13 +1,23 @@
-import { NotificationsResponseSchema } from "@flex/example-domain";
+import { config as exampleConfig } from "@flex/example-domain/config";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
 } from "@flex/udp-domain";
+import { config as udpConfig } from "@flex/udp-domain/config";
+import { NotificationsResponseSchema } from "@flex/uns-domain";
 import { describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
+import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 
-describe("Example domain", () => {
+// TODO: Fine for now, but need a better solution for tests with cross-domain dependencies
+const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users");
+const udpCreateIdentityDeployed = () =>
+  isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
+const udpDeleteIdentityDeployed = () =>
+  isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
+
+describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
   const { JWT } = inject("e2eEnv");
 
   const authorization = { Authorization: `Bearer ${JWT.VALID}` };
@@ -15,63 +25,71 @@ describe("Example domain", () => {
   describe("/example/v0/todos", () => {
     const endpoint = "/example/v0/todos";
 
-    describe("GET", () => {
-      it("returns 200 with list of todos", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/todos"))(
+      "GET",
+      () => {
+        it("returns 200 with list of todos", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: { ...authorization },
+          });
+
+          expect(result.status).toBe(200);
+          expect(result.body).toStrictEqual({
+            todos: expect.any(Array) as unknown[],
+            total: expect.any(Number) as number,
+          });
         });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toStrictEqual({
-          todos: expect.any(Array) as unknown[],
-          total: expect.any(Number) as number,
-        });
-      });
+        it("returns 200 with filtered results", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(
+            `${endpoint}?priority=low&limit=1`,
+            { headers: { ...authorization } },
+          );
 
-      it("returns 200 with filtered results", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(
-          `${endpoint}?priority=low&limit=1`,
-          { headers: { ...authorization } },
-        );
-
-        expect(result.status).toBe(200);
-        expect(result.body).toMatchObject({
-          todos: expect.any(Array) as unknown[],
-          total: expect.any(Number) as number,
+          expect(result.status).toBe(200);
+          expect(result.body).toMatchObject({
+            todos: expect.any(Array) as unknown[],
+            total: expect.any(Number) as number,
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   describe("/example/v0/todos/:id", () => {
-    const endpoint = "/example/v0/todos";
-    const todoId = "todo-1";
+    const endpoint = (id = "todo-1") => `/example/v0/todos/${id}`;
 
-    describe("GET", () => {
-      it("returns 200 with existing todo", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(`${endpoint}/${todoId}`, {
-          headers: { ...authorization },
-        });
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/todos/:id"))(
+      "GET",
+      () => {
+        it("returns 200 with existing todo", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint(), {
+            headers: { ...authorization },
+          });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toMatchObject({
-          id: expect.any(String) as string,
-          title: expect.any(String) as string,
-          completed: expect.any(Boolean) as boolean,
-          priority: expect.any(String) as string,
-          createdAt: expect.any(String) as string,
+          expect(result.status).toBe(200);
+          expect(result.body).toMatchObject({
+            id: expect.any(String) as string,
+            title: expect.any(String) as string,
+            completed: expect.any(Boolean) as boolean,
+            priority: expect.any(String) as string,
+            createdAt: expect.any(String) as string,
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   describe("/example/v0/todos/:id/duplicate", () => {
-    describe("POST", () => {
+    const endpoint = (id = "todo-1") => `example/v0/todos/${id}/duplicate`;
+
+    describe.runIf(
+      isRouteDeployed(exampleConfig, "POST /v0/todos/:id/duplicate"),
+    )("POST", () => {
       it("returns 201 with duplicated todo", async ({ cloudfront }) => {
-        const result = await cloudfront.client.post(
-          "/example/v0/todos/todo-1/duplicate",
-          { headers: { ...authorization } },
-        );
+        const result = await cloudfront.client.post(endpoint(), {
+          headers: { ...authorization },
+        });
 
         expect(result.status).toBe(201);
         expect(result.body).toMatchObject({
@@ -88,63 +106,72 @@ describe("Example domain", () => {
   describe("/example/v0/headers", () => {
     const endpoint = "/example/v0/headers";
 
-    describe("GET", () => {
-      it("returns 200 with resolved headers", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: {
-            ...authorization,
-            "x-example-id": "example-123",
-            "x-request-id": "request-123",
-            "x-correlation-id": "correlation-123",
-          },
-        });
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/headers"))(
+      "GET",
+      () => {
+        it("returns 200 with resolved headers", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: {
+              ...authorization,
+              "x-example-id": "example-123",
+              "x-request-id": "request-123",
+              "x-correlation-id": "correlation-123",
+            },
+          });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toStrictEqual({
-          requestId: "request-123",
-          correlationId: "correlation-123",
-          exampleId: "example-123",
+          expect(result.status).toBe(200);
+          expect(result.body).toStrictEqual({
+            requestId: "request-123",
+            correlationId: "correlation-123",
+            exampleId: "example-123",
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   describe("/example/v0/resources", () => {
     const endpoint = "/example/v0/resources";
 
-    describe("GET", () => {
-      it("returns 200 with resolved resources", async ({ cloudfront }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
-        });
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/resources"))(
+      "GET",
+      () => {
+        it("returns 200 with resolved resources", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: { ...authorization },
+          });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toMatchObject({
-          ssm: { param: expect.any(Number) as number },
-          secret: { secret: expect.any(Number) as number },
-          kms: { key: expect.any(Number) as number },
+          expect(result.status).toBe(200);
+          expect(result.body).toMatchObject({
+            ssm: { param: expect.any(Number) as number },
+            secret: { secret: expect.any(Number) as number },
+            kms: { key: expect.any(Number) as number },
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   describe("/example/v0/resources/runtime", () => {
     const endpoint = "/example/v0/resources/runtime";
 
-    describe("GET", () => {
-      it("returns 200 with resolved runtime resources", async ({
-        cloudfront,
-      }) => {
-        const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
-        });
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/resources/runtime"))(
+      "GET",
+      () => {
+        it("returns 200 with resolved runtime resources", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: { ...authorization },
+          });
 
-        expect(result.status).toBe(200);
-        expect(result.body).toMatchObject({
-          ssm: { param: expect.any(Number) as number },
+          expect(result.status).toBe(200);
+          expect(result.body).toMatchObject({
+            ssm: { param: expect.any(Number) as number },
+          });
         });
-      });
-    });
+      },
+    );
   });
 
   describe("/example/v0/identity/:service", () => {
@@ -152,7 +179,11 @@ describe("Example domain", () => {
     const serviceId = "test-service-id";
     const endpoint = `/example/v0/identity/${service}`;
 
-    describe("GET", () => {
+    describe.runIf(
+      isRouteDeployed(exampleConfig, "GET /v0/identity/:service") &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
+    )("GET", () => {
       it.todo(
         "returns 200 with linked set to true when identity exists",
         async ({ cloudfront, withIdentityLink }) => {
@@ -186,7 +217,10 @@ describe("Example domain", () => {
   describe("/example/v0/notifications", () => {
     const endpoint = "/example/v0/notifications";
 
-    describe("PATCH", () => {
+    describe.runIf(
+      isRouteDeployed(exampleConfig, "PATCH /v0/notifications") &&
+        udpGetUsersDeployed(),
+    )("PATCH", () => {
       it("returns 200 with updated notifications", async ({
         cloudfront,
         udpUser: _,
@@ -208,7 +242,10 @@ describe("Example domain", () => {
   describe("/example/v0/users/notifications", () => {
     const endpoint = "/example/v0/users/notifications";
 
-    describe("GET", () => {
+    describe.runIf(
+      isRouteDeployed(exampleConfig, "GET /v0/users/notifications") &&
+        udpGetUsersDeployed(),
+    )("GET", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
         udpUser: _,
@@ -224,10 +261,13 @@ describe("Example domain", () => {
       });
     });
 
-    describe("PATCH", () => {
+    describe.runIf(
+      isRouteDeployed(exampleConfig, "PATCH /v0/users/notifications") &&
+        udpGetUsersDeployed(),
+    )("PATCH", () => {
       it("returns 200 with updated notification preferences", async ({
         cloudfront,
-        udpUser: _user,
+        udpUser: _,
       }) => {
         const result = await cloudfront.client.patch<
           UpdateNotificationPreferencesRequest,

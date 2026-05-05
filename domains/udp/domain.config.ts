@@ -14,6 +14,7 @@ import {
 
 export const { config, route, routeContext } = domain({
   name: "udp",
+  environments: ["development", "staging"],
   common: {
     access: "isolated",
     function: { timeoutSeconds: 20 },

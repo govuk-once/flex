@@ -1,3 +1,4 @@
+import { Environment, getEnvConfig } from "@flex/utils";
 import { CfnOutput, Duration } from "aws-cdk-lib";
 import {
   AccessLogFormat,
@@ -24,7 +25,6 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
-import { Environment, getEnvConfig } from "../base/env";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
@@ -112,7 +112,7 @@ export class FlexPlatformStack extends BaseStack {
 
   #getAuthorizerFunction() {
     // Only in the development env we stub the JWKS service
-    if (env === Environment.DEVELOPMENT) {
+    if (env === Environment.development) {
       const stubUserPoolId = this.import(ENV_KEYS.AuthUserPoolIdStub);
       const stubClientId = this.import(ENV_KEYS.AuthClientIdStub);
 

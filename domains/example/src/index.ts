@@ -1,11 +1,5 @@
-export type {
-  NotificationsResponse,
-  UpdateNotificationPreferencesOutboundResponseWithFeatureFlag,
-} from "./schemas/notifications";
-export {
-  NotificationsResponseSchema,
-  UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema,
-} from "./schemas/notifications";
+export type { UpdateNotificationPreferencesOutboundResponseWithFeatureFlag } from "./schemas/notifications";
+export { UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema } from "./schemas/notifications";
 export type {
   CreateTodoRequest,
   CreateTodoResponse,
