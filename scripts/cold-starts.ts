@@ -499,11 +499,11 @@ function renderMarkdown(report: Report): string {
   );
   lines.push("");
 
-  lines.push("## Top 10 slowest");
+  lines.push("## All lambdas (slowest first)");
   lines.push("");
   lines.push("| # | Lambda | Domain | Tier | Mem | Code | Init |");
   lines.push("|---|--------|--------|------|-----|------|------|");
-  report.lambdas.slice(0, 10).forEach((entry, i) => {
+  report.lambdas.forEach((entry, i) => {
     lines.push(
       `| ${String(i + 1)} | \`${shortName(entry.functionName)}\` | ${entry.domain} | ${entry.accessTier} | ${String(entry.memorySize)} MB | ${formatBytes(entry.codeSize)} | ${formatMs(entry.initDurationMs)} |`,
     );
