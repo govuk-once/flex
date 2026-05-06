@@ -23,7 +23,9 @@ import {
 import { sanitiseStageName } from "@flex/utils";
 
 const PROBE_ENV_KEY = "COLD_START_PROBE";
-const LOG_INGEST_WAIT_SECONDS = 15;
+const LOG_INGEST_WAIT_SECONDS = 30;
+const QUERY_RETRY_ATTEMPTS = 4;
+const QUERY_RETRY_GAP_SECONDS = 10;
 const PROBE_CONCURRENCY = 5;
 const QUERY_CONCURRENCY = 5;
 const REPORTS_DIR = "reports";
@@ -235,15 +237,17 @@ async function probeLambda(
   }
 }
 
+interface QueryResult {
+  initDurationMs: number | null;
+  billedDurationMs: number | null;
+  queryError?: string;
+}
+
 async function queryInitDuration(
   probed: ProbedLambda,
   startTimeUnix: number,
   client: CloudWatchLogsClient,
-): Promise<{
-  initDurationMs: number | null;
-  billedDurationMs: number | null;
-  queryError?: string;
-}> {
+): Promise<QueryResult> {
   if (probed.probeError) {
     return {
       initDurationMs: null,
@@ -252,6 +256,26 @@ async function queryInitDuration(
     };
   }
 
+  // Logs Insights ingestion can lag by 30s+ for fresh invocations.
+  // Retry the query a few times if it returns empty before giving up.
+  for (let attempt = 0; attempt < QUERY_RETRY_ATTEMPTS; attempt += 1) {
+    if (attempt > 0) await sleep(QUERY_RETRY_GAP_SECONDS * 1000);
+    const result = await runOneQuery(probed, startTimeUnix, client);
+    if (result.queryError !== undefined) return result;
+    if (result.initDurationMs !== null) return result;
+  }
+  return {
+    initDurationMs: null,
+    billedDurationMs: null,
+    queryError: `no REPORT line after ${String(QUERY_RETRY_ATTEMPTS)} retries`,
+  };
+}
+
+async function runOneQuery(
+  probed: ProbedLambda,
+  startTimeUnix: number,
+  client: CloudWatchLogsClient,
+): Promise<QueryResult> {
   try {
     const start = await client.send(
       new StartQueryCommand({
