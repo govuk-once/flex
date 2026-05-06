@@ -182,6 +182,25 @@ importers:
         specifier: 4.1.5
         version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.8(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  domains/perf:
+    dependencies:
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
+      eslint:
+        specifier: 10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
   domains/udp:
     dependencies:
       '@flex/sdk':

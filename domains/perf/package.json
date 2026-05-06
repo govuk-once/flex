@@ -1,0 +1,20 @@
+{
+  "name": "@flex/perf-domain",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@flex/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@types/aws-lambda": "8.10.161",
+    "eslint": "10.2.1",
+    "typescript": "6.0.3"
+  }
+}
