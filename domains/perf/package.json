@@ -9,6 +9,7 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "3.1038.0",
     "@flex/sdk": "workspace:*"
   },
   "devDependencies": {

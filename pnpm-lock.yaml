@@ -184,6 +184,9 @@ importers:
 
   domains/perf:
     dependencies:
+      '@aws-sdk/client-ssm':
+        specifier: 3.1038.0
+        version: 3.1038.0
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
