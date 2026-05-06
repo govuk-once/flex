@@ -55,6 +55,7 @@ interface ProbedLambda {
   readonly codeSize: number;
   readonly timeoutSeconds: number;
   readonly logGroupName: string;
+  readonly invokeRequestId?: string;
   readonly probeError?: string;
 }
 
@@ -199,6 +200,8 @@ async function fetchMetadata(
   }
 }
 
+const REQUEST_ID_PATTERN = /START RequestId:\s+([0-9a-f-]+)/i;
+
 async function probeLambda(
   lambda: DiscoveredLambda,
   client: LambdaClient,
@@ -207,6 +210,8 @@ async function probeLambda(
   // still want memory / code size / VPC info in the report.
   const metadata = await fetchMetadata(lambda, client);
   const probeStamp = String(Date.now());
+  let invokeRequestId: string | undefined;
+  let probeError: string | undefined;
 
   try {
     await client.send(
@@ -221,20 +226,61 @@ async function probeLambda(
       { client, maxWaitTime: 60 },
       { FunctionName: lambda.functionName },
     );
-    await client.send(
+    const invokeResult = await client.send(
       new InvokeCommand({
         FunctionName: lambda.functionName,
         Payload: Buffer.from("{}"),
         InvocationType: "RequestResponse",
+        // Tail returns up to 4KB of the invocation log, base64-encoded.
+        // The first line is `START RequestId: <id>` — we use that to
+        // filter the Logs Insights query to the exact invocation we
+        // triggered, avoiding races with unrelated traffic.
+        LogType: "Tail",
       }),
     );
-    return metadata.probed;
+    invokeRequestId = extractRequestIdFromLogTail(invokeResult.LogResult);
   } catch (error) {
-    return {
-      ...metadata.probed,
-      probeError: error instanceof Error ? error.message : String(error),
-    };
+    probeError = error instanceof Error ? error.message : String(error);
+  } finally {
+    // Restore the original env so we leave no trace and don't create
+    // CloudFormation drift. Done in finally so a failed invoke still
+    // cleans up. Restore failure surfaces on its own as a probe error.
+    try {
+      await client.send(
+        new UpdateFunctionConfigurationCommand({
+          FunctionName: lambda.functionName,
+          Environment: { Variables: { ...metadata.existingEnv } },
+        }),
+      );
+      await waitUntilFunctionUpdated(
+        { client, maxWaitTime: 60 },
+        { FunctionName: lambda.functionName },
+      );
+    } catch (restoreError) {
+      const message =
+        restoreError instanceof Error
+          ? restoreError.message
+          : String(restoreError);
+      probeError = probeError
+        ? `${probeError}; restore failed: ${message}`
+        : `restore failed: ${message}`;
+    }
   }
+
+  return {
+    ...metadata.probed,
+    invokeRequestId,
+    probeError,
+  };
+}
+
+function extractRequestIdFromLogTail(
+  logResultBase64: string | undefined,
+): string | undefined {
+  if (!logResultBase64) return undefined;
+  const tail = Buffer.from(logResultBase64, "base64").toString("utf8");
+  const match = tail.match(REQUEST_ID_PATTERN);
+  return match?.[1];
 }
 
 interface QueryResult {
@@ -276,14 +322,22 @@ async function runOneQuery(
   startTimeUnix: number,
   client: CloudWatchLogsClient,
 ): Promise<QueryResult> {
+  // When we have the exact RequestId from the Invoke API call, filter
+  // by it — that uniquely identifies the cold start we triggered and
+  // is immune to races with unrelated traffic. Fall back to "latest
+  // REPORT in window" if we couldn't extract the RequestId (defensive;
+  // shouldn't happen for normal invocations).
+  const queryString = probed.invokeRequestId
+    ? `fields @timestamp, @initDuration, @billedDuration | filter @type = "REPORT" and @requestId = "${probed.invokeRequestId}" | limit 1`
+    : 'fields @timestamp, @initDuration, @billedDuration | filter @type = "REPORT" and ispresent(@initDuration) | sort @timestamp desc | limit 1';
+
   try {
     const start = await client.send(
       new StartQueryCommand({
         logGroupName: probed.logGroupName,
         startTime: startTimeUnix,
         endTime: Math.floor(Date.now() / 1000),
-        queryString:
-          'fields @timestamp, @initDuration, @billedDuration | filter @type = "REPORT" and ispresent(@initDuration) | sort @timestamp desc | limit 1',
+        queryString,
       }),
     );
     const queryId = start.queryId;
