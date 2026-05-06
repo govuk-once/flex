@@ -24,10 +24,11 @@ import { sanitiseStageName } from "@flex/utils";
 
 const PROBE_ENV_KEY = "COLD_START_PROBE";
 const LOG_INGEST_WAIT_SECONDS = 30;
-const QUERY_RETRY_ATTEMPTS = 4;
+const QUERY_RETRY_ATTEMPTS = 6;
 const QUERY_RETRY_GAP_SECONDS = 10;
 const PROBE_CONCURRENCY = 5;
 const QUERY_CONCURRENCY = 5;
+const SAMPLES_DEFAULT = 20;
 const REPORTS_DIR = "reports";
 
 const SKIP_STACK_SUFFIXES = [
@@ -39,6 +40,7 @@ const SKIP_STACK_SUFFIXES = [
 
 interface CliArgs {
   readonly stage: string;
+  readonly samples: number;
 }
 
 interface DiscoveredLambda {
@@ -55,24 +57,27 @@ interface ProbedLambda {
   readonly codeSize: number;
   readonly timeoutSeconds: number;
   readonly logGroupName: string;
-  readonly invokeRequestId?: string;
+  readonly invokeRequestIds: readonly string[];
   readonly probeError?: string;
 }
 
 interface CompletedLambda extends ProbedLambda {
-  readonly initDurationMs: number | null;
-  readonly billedDurationMs: number | null;
+  readonly initDurations: readonly number[];
+  readonly billedDurations: readonly number[];
   readonly queryError?: string;
 }
 
 interface PercentileSummary {
+  readonly min: number;
   readonly p50: number;
   readonly p99: number;
   readonly max: number;
+  readonly mean: number;
 }
 
 interface GroupSummary {
   readonly lambdaCount: number;
+  readonly sampleCount: number;
   readonly initDurationMs: PercentileSummary;
 }
 
@@ -97,7 +102,14 @@ function parseArgs(argv: readonly string[]): CliArgs {
       "could not resolve target stage; pass --stage <name> or set STAGE / USER",
     );
   }
-  return { stage };
+  const samplesRaw = readFlag(argv, "--samples") ?? process.env.SAMPLES;
+  const samples = samplesRaw ? Number(samplesRaw) : SAMPLES_DEFAULT;
+  if (!Number.isInteger(samples) || samples < 1) {
+    throw new Error(
+      `invalid --samples value "${String(samplesRaw)}"; must be a positive integer`,
+    );
+  }
+  return { stage, samples };
 }
 
 function readFlag(argv: readonly string[], flag: string): string | undefined {
@@ -181,6 +193,7 @@ async function fetchMetadata(
         timeoutSeconds: cfg?.Timeout ?? 0,
         logGroupName:
           cfg?.LoggingConfig?.LogGroup ?? `/aws/lambda/${lambda.functionName}`,
+        invokeRequestIds: [],
       },
     };
   } catch (error) {
@@ -194,6 +207,7 @@ async function fetchMetadata(
         codeSize: 0,
         timeoutSeconds: 0,
         logGroupName: `/aws/lambda/${lambda.functionName}`,
+        invokeRequestIds: [],
         probeError: `GetFunction failed: ${error instanceof Error ? error.message : String(error)}`,
       },
     };
@@ -204,41 +218,47 @@ const REQUEST_ID_PATTERN = /START RequestId:\s+([0-9a-f-]+)/i;
 
 async function probeLambda(
   lambda: DiscoveredLambda,
+  samples: number,
   client: LambdaClient,
 ): Promise<ProbedLambda> {
   // Always collect metadata first; if any subsequent step fails we
   // still want memory / code size / VPC info in the report.
   const metadata = await fetchMetadata(lambda, client);
-  const probeStamp = String(Date.now());
-  let invokeRequestId: string | undefined;
+  const invokeRequestIds: string[] = [];
   let probeError: string | undefined;
 
   try {
-    await client.send(
-      new UpdateFunctionConfigurationCommand({
-        FunctionName: lambda.functionName,
-        Environment: {
-          Variables: { ...metadata.existingEnv, [PROBE_ENV_KEY]: probeStamp },
-        },
-      }),
-    );
-    await waitUntilFunctionUpdated(
-      { client, maxWaitTime: 60 },
-      { FunctionName: lambda.functionName },
-    );
-    const invokeResult = await client.send(
-      new InvokeCommand({
-        FunctionName: lambda.functionName,
-        Payload: Buffer.from("{}"),
-        InvocationType: "RequestResponse",
-        // Tail returns up to 4KB of the invocation log, base64-encoded.
-        // The first line is `START RequestId: <id>` — we use that to
-        // filter the Logs Insights query to the exact invocation we
-        // triggered, avoiding races with unrelated traffic.
-        LogType: "Tail",
-      }),
-    );
-    invokeRequestId = extractRequestIdFromLogTail(invokeResult.LogResult);
+    for (let i = 0; i < samples; i += 1) {
+      // Each sample needs a unique env value so AWS provisions a fresh
+      // container (= forced cold start) on the next invoke.
+      const probeStamp = `${String(Date.now())}-${String(i)}`;
+      await client.send(
+        new UpdateFunctionConfigurationCommand({
+          FunctionName: lambda.functionName,
+          Environment: {
+            Variables: { ...metadata.existingEnv, [PROBE_ENV_KEY]: probeStamp },
+          },
+        }),
+      );
+      await waitUntilFunctionUpdated(
+        { client, maxWaitTime: 60 },
+        { FunctionName: lambda.functionName },
+      );
+      const invokeResult = await client.send(
+        new InvokeCommand({
+          FunctionName: lambda.functionName,
+          Payload: Buffer.from("{}"),
+          InvocationType: "RequestResponse",
+          // Tail returns up to 4KB of the invocation log, base64-encoded.
+          // The first line is `START RequestId: <id>` — we use that to
+          // filter the Logs Insights query to the exact invocation we
+          // triggered, avoiding races with unrelated traffic.
+          LogType: "Tail",
+        }),
+      );
+      const id = extractRequestIdFromLogTail(invokeResult.LogResult);
+      if (id) invokeRequestIds.push(id);
+    }
   } catch (error) {
     probeError = error instanceof Error ? error.message : String(error);
   } finally {
@@ -269,7 +289,7 @@ async function probeLambda(
 
   return {
     ...metadata.probed,
-    invokeRequestId,
+    invokeRequestIds,
     probeError,
   };
 }
@@ -284,37 +304,44 @@ function extractRequestIdFromLogTail(
 }
 
 interface QueryResult {
-  initDurationMs: number | null;
-  billedDurationMs: number | null;
+  initDurations: number[];
+  billedDurations: number[];
   queryError?: string;
 }
 
-async function queryInitDuration(
+async function queryInitDurations(
   probed: ProbedLambda,
   startTimeUnix: number,
   client: CloudWatchLogsClient,
 ): Promise<QueryResult> {
-  if (probed.probeError) {
+  if (probed.invokeRequestIds.length === 0) {
     return {
-      initDurationMs: null,
-      billedDurationMs: null,
-      queryError: `probe failed: ${probed.probeError}`,
+      initDurations: [],
+      billedDurations: [],
+      queryError: probed.probeError
+        ? `probe failed: ${probed.probeError}`
+        : "no request IDs captured",
     };
   }
 
   // Logs Insights ingestion can lag by 30s+ for fresh invocations.
-  // Retry the query a few times if it returns empty before giving up.
+  // Retry until all sample REPORTs are visible or attempts run out.
+  let lastResult: QueryResult = { initDurations: [], billedDurations: [] };
   for (let attempt = 0; attempt < QUERY_RETRY_ATTEMPTS; attempt += 1) {
     if (attempt > 0) await sleep(QUERY_RETRY_GAP_SECONDS * 1000);
-    const result = await runOneQuery(probed, startTimeUnix, client);
-    if (result.queryError !== undefined) return result;
-    if (result.initDurationMs !== null) return result;
+    lastResult = await runOneQuery(probed, startTimeUnix, client);
+    if (lastResult.queryError !== undefined) return lastResult;
+    if (lastResult.initDurations.length === probed.invokeRequestIds.length) {
+      return lastResult;
+    }
   }
-  return {
-    initDurationMs: null,
-    billedDurationMs: null,
-    queryError: `no REPORT line after ${String(QUERY_RETRY_ATTEMPTS)} retries`,
-  };
+  if (lastResult.initDurations.length < probed.invokeRequestIds.length) {
+    return {
+      ...lastResult,
+      queryError: `only ${String(lastResult.initDurations.length)}/${String(probed.invokeRequestIds.length)} REPORT lines after ${String(QUERY_RETRY_ATTEMPTS)} retries`,
+    };
+  }
+  return lastResult;
 }
 
 async function runOneQuery(
@@ -322,14 +349,11 @@ async function runOneQuery(
   startTimeUnix: number,
   client: CloudWatchLogsClient,
 ): Promise<QueryResult> {
-  // When we have the exact RequestId from the Invoke API call, filter
-  // by it — that uniquely identifies the cold start we triggered and
-  // is immune to races with unrelated traffic. Fall back to "latest
-  // REPORT in window" if we couldn't extract the RequestId (defensive;
-  // shouldn't happen for normal invocations).
-  const queryString = probed.invokeRequestId
-    ? `fields @timestamp, @initDuration, @billedDuration | filter @type = "REPORT" and @requestId = "${probed.invokeRequestId}" | limit 1`
-    : 'fields @timestamp, @initDuration, @billedDuration | filter @type = "REPORT" and ispresent(@initDuration) | sort @timestamp desc | limit 1';
+  // We always have at least one captured RequestId here (callers guard
+  // against the empty case). Filter by the full set so we get every
+  // sample REPORT in one query and are immune to races with other traffic.
+  const idList = probed.invokeRequestIds.map((id) => `"${id}"`).join(", ");
+  const queryString = `fields @initDuration, @billedDuration, @requestId | filter @type = "REPORT" and @requestId in [${idList}] | limit ${String(probed.invokeRequestIds.length)}`;
 
   try {
     const start = await client.send(
@@ -343,8 +367,8 @@ async function runOneQuery(
     const queryId = start.queryId;
     if (!queryId) {
       return {
-        initDurationMs: null,
-        billedDurationMs: null,
+        initDurations: [],
+        billedDurations: [],
         queryError: "Logs Insights returned no queryId",
       };
     }
@@ -357,35 +381,37 @@ async function runOneQuery(
         new GetQueryResultsCommand({ queryId }),
       );
       if (result.status === "Complete") {
-        const row = result.results?.[0] ?? [];
-        const initDuration = readFieldNumber(row, "@initDuration");
-        const billedDuration = readFieldNumber(row, "@billedDuration");
-        return {
-          initDurationMs: initDuration,
-          billedDurationMs: billedDuration,
-        };
+        const initDurations: number[] = [];
+        const billedDurations: number[] = [];
+        result.results?.forEach((row) => {
+          const init = readFieldNumber(row, "@initDuration");
+          const billed = readFieldNumber(row, "@billedDuration");
+          if (init !== null) initDurations.push(init);
+          if (billed !== null) billedDurations.push(billed);
+        });
+        return { initDurations, billedDurations };
       }
       if (
         result.status &&
         ["Failed", "Cancelled", "Timeout"].includes(result.status)
       ) {
         return {
-          initDurationMs: null,
-          billedDurationMs: null,
+          initDurations: [],
+          billedDurations: [],
           queryError: `query ${result.status}`,
         };
       }
     }
 
     return {
-      initDurationMs: null,
-      billedDurationMs: null,
+      initDurations: [],
+      billedDurations: [],
       queryError: "query did not complete within 30s",
     };
   } catch (error) {
     return {
-      initDurationMs: null,
-      billedDurationMs: null,
+      initDurations: [],
+      billedDurations: [],
       queryError: error instanceof Error ? error.message : String(error),
     };
   }
@@ -415,13 +441,18 @@ async function runInBatches<T, R>(
   return results;
 }
 
-function summarise(durations: readonly number[]): PercentileSummary {
-  if (durations.length === 0) return { p50: 0, p99: 0, max: 0 };
-  const sorted = [...durations].sort((a, b) => a - b);
+function summarise(values: readonly number[]): PercentileSummary {
+  if (values.length === 0) {
+    return { min: 0, p50: 0, p99: 0, max: 0, mean: 0 };
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const sum = values.reduce((acc, v) => acc + v, 0);
   return {
+    min: sorted[0] ?? 0,
     p50: pickPercentile(sorted, 0.5),
     p99: pickPercentile(sorted, 0.99),
     max: sorted[sorted.length - 1] ?? 0,
+    mean: sum / values.length,
   };
 }
 
@@ -434,15 +465,14 @@ function pickPercentile(sorted: readonly number[], pct: number): number {
   return sorted[index] ?? 0;
 }
 
-function groupSummary(
-  group: readonly CompletedLambda[],
-): GroupSummary {
-  const durations = group
-    .map((entry) => entry.initDurationMs)
-    .filter((value): value is number => value !== null);
+function groupSummary(group: readonly CompletedLambda[]): GroupSummary {
+  // Pool every sample across every Lambda in the group — that's a
+  // truer aggregate than per-Lambda summaries-of-summaries.
+  const pooled = group.flatMap((entry) => entry.initDurations);
   return {
     lambdaCount: group.length,
-    initDurationMs: summarise(durations),
+    sampleCount: pooled.length,
+    initDurationMs: summarise(pooled),
   };
 }
 
@@ -450,9 +480,11 @@ function buildReport(
   stage: string,
   lambdas: readonly CompletedLambda[],
 ): Report {
-  const sortedLambdas = [...lambdas].sort(
-    (a, b) => (b.initDurationMs ?? -1) - (a.initDurationMs ?? -1),
-  );
+  const sortedLambdas = [...lambdas].sort((a, b) => {
+    const aP50 = summarise(a.initDurations).p50;
+    const bP50 = summarise(b.initDurations).p50;
+    return bP50 - aP50;
+  });
   const byDomain = groupBy(sortedLambdas, (l) => l.domain);
   const byAccessTier = groupBy(sortedLambdas, (l) => l.accessTier);
 
@@ -493,41 +525,44 @@ function renderMarkdown(report: Report): string {
   lines.push(`# Cold start report — ${report.stage}`);
   lines.push("");
   lines.push(`Generated: ${report.generatedAt}`);
-  lines.push(`Lambdas probed: ${String(report.summary.lambdaCount)}`);
   lines.push(
-    `Init duration p50/p99/max: ${formatMs(report.summary.initDurationMs.p50)} / ${formatMs(report.summary.initDurationMs.p99)} / ${formatMs(report.summary.initDurationMs.max)}`,
+    `Lambdas probed: ${String(report.summary.lambdaCount)} (${String(report.summary.sampleCount)} samples total)`,
+  );
+  lines.push(
+    `Init duration min/p50/p99/max: ${formatMs(report.summary.initDurationMs.min)} / ${formatMs(report.summary.initDurationMs.p50)} / ${formatMs(report.summary.initDurationMs.p99)} / ${formatMs(report.summary.initDurationMs.max)}`,
   );
   lines.push("");
 
-  lines.push("## All lambdas (slowest first)");
+  lines.push("## All lambdas (slowest first by p50)");
   lines.push("");
-  lines.push("| # | Lambda | Domain | Tier | Mem | Code | Init |");
-  lines.push("|---|--------|--------|------|-----|------|------|");
+  lines.push("| # | Lambda | Domain | Tier | Mem | Code | N | min | p50 | mean | max |");
+  lines.push("|---|--------|--------|------|-----|------|---|-----|-----|------|-----|");
   report.lambdas.forEach((entry, i) => {
+    const s = summarise(entry.initDurations);
     lines.push(
-      `| ${String(i + 1)} | \`${shortName(entry.functionName)}\` | ${entry.domain} | ${entry.accessTier} | ${String(entry.memorySize)} MB | ${formatBytes(entry.codeSize)} | ${formatMs(entry.initDurationMs)} |`,
+      `| ${String(i + 1)} | \`${shortName(entry.functionName)}\` | ${entry.domain} | ${entry.accessTier} | ${String(entry.memorySize)} MB | ${formatBytes(entry.codeSize)} | ${String(entry.initDurations.length)} | ${formatMs(s.min)} | ${formatMs(s.p50)} | ${formatMs(s.mean)} | ${formatMs(s.max)} |`,
     );
   });
   lines.push("");
 
   lines.push("## By domain");
   lines.push("");
-  lines.push("| Domain | Lambdas | p50 | p99 | max |");
-  lines.push("|--------|---------|-----|-----|-----|");
+  lines.push("| Domain | Lambdas | Samples | min | p50 | p99 | max |");
+  lines.push("|--------|---------|---------|-----|-----|-----|-----|");
   Object.entries(report.byDomain).forEach(([domain, summary]) => {
     lines.push(
-      `| ${domain} | ${String(summary.lambdaCount)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
+      `| ${domain} | ${String(summary.lambdaCount)} | ${String(summary.sampleCount)} | ${formatMs(summary.initDurationMs.min)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
     );
   });
   lines.push("");
 
   lines.push("## By access tier");
   lines.push("");
-  lines.push("| Tier | Lambdas | p50 | p99 | max |");
-  lines.push("|------|---------|-----|-----|-----|");
+  lines.push("| Tier | Lambdas | Samples | min | p50 | p99 | max |");
+  lines.push("|------|---------|---------|-----|-----|-----|-----|");
   Object.entries(report.byAccessTier).forEach(([tier, summary]) => {
     lines.push(
-      `| ${tier} | ${String(summary.lambdaCount)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
+      `| ${tier} | ${String(summary.lambdaCount)} | ${String(summary.sampleCount)} | ${formatMs(summary.initDurationMs.min)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
     );
   });
   lines.push("");
@@ -574,8 +609,10 @@ function reportFilename(stage: string, ext: string): string {
 }
 
 async function main(argv: readonly string[]): Promise<number> {
-  const { stage } = parseArgs(argv);
-  process.stdout.write(`probing cold starts for stage: ${stage}\n`);
+  const { stage, samples } = parseArgs(argv);
+  process.stdout.write(
+    `probing cold starts for stage: ${stage} (samples per lambda: ${String(samples)})\n`,
+  );
 
   process.stdout.write("→ discovering lambdas…\n");
   const discovered = await discoverLambdas(stage);
@@ -591,14 +628,16 @@ async function main(argv: readonly string[]): Promise<number> {
   const probeStartedAt = Math.floor(Date.now() / 1000);
 
   process.stdout.write(
-    `→ probing (concurrency ${String(PROBE_CONCURRENCY)})…\n`,
+    `→ probing (concurrency ${String(PROBE_CONCURRENCY)}, ${String(samples)} samples each)…\n`,
   );
   const probed = await runInBatches(discovered, PROBE_CONCURRENCY, (lambda) =>
-    probeLambda(lambda, lambdaClient),
+    probeLambda(lambda, samples, lambdaClient),
   );
   probed.forEach((entry) => {
     const status = entry.probeError ? "✗" : "✓";
-    process.stdout.write(`  ${status} ${shortName(entry.functionName)}\n`);
+    process.stdout.write(
+      `  ${status} ${shortName(entry.functionName)} (${String(entry.invokeRequestIds.length)}/${String(samples)})\n`,
+    );
   });
 
   process.stdout.write(
@@ -614,7 +653,7 @@ async function main(argv: readonly string[]): Promise<number> {
     probed,
     QUERY_CONCURRENCY,
     async (entry) => {
-      const result = await queryInitDuration(
+      const result = await queryInitDurations(
         entry,
         probeStartedAt,
         logsClient,
@@ -630,10 +669,11 @@ async function main(argv: readonly string[]): Promise<number> {
   writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   writeFileSync(markdownPath, renderMarkdown(report), "utf8");
 
-  process.stdout.write("\ntop 10 slowest:\n");
+  process.stdout.write("\ntop 10 slowest (by p50):\n");
   report.lambdas.slice(0, 10).forEach((entry, i) => {
+    const s = summarise(entry.initDurations);
     process.stdout.write(
-      `  ${String(i + 1).padStart(2, " ")}. ${formatMs(entry.initDurationMs).padStart(7, " ")}  ${shortName(entry.functionName)}\n`,
+      `  ${String(i + 1).padStart(2, " ")}. p50 ${formatMs(s.p50).padStart(7, " ")}  (min ${formatMs(s.min)} max ${formatMs(s.max)} n=${String(entry.initDurations.length)})  ${shortName(entry.functionName)}\n`,
     );
   });
   process.stdout.write(`\nreport: ${jsonPath}\n`);
