@@ -28,3 +28,6 @@ cdk.context.json
 
 # HTTP client
 *.http
+
+# Cold-start probe reports
+reports/

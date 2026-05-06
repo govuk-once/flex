@@ -9,10 +9,15 @@
     "lint": "nx affected --target=lint",
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
-    "jwt": "tsx scripts/generateToken.ts"
+    "jwt": "tsx scripts/generateToken.ts",
+    "cold-starts": "tsx scripts/cold-starts.ts"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "3.1032.0",
+    "@aws-sdk/client-cloudwatch-logs": "3.1032.0",
+    "@aws-sdk/client-lambda": "3.1032.0",
     "@flex/cli": "workspace:*",
+    "@flex/utils": "workspace:*",
     "esbuild": "0.28.0",
     "nx": "22.7.1",
     "tsx": "4.21.0",
