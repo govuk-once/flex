@@ -22,7 +22,7 @@ import {
 
 import { sanitiseStageName } from "@flex/utils";
 
-const PROBE_ENV_KEY = "_COLD_START_PROBE";
+const PROBE_ENV_KEY = "COLD_START_PROBE";
 const LOG_INGEST_WAIT_SECONDS = 15;
 const PROBE_CONCURRENCY = 5;
 const QUERY_CONCURRENCY = 5;
@@ -154,23 +154,64 @@ async function discoverLambdas(stage: string): Promise<DiscoveredLambda[]> {
   return lambdas.sort((a, b) => a.functionName.localeCompare(b.functionName));
 }
 
-async function probeLambda(
+async function fetchMetadata(
   lambda: DiscoveredLambda,
   client: LambdaClient,
-): Promise<ProbedLambda> {
-  const probeStamp = String(Date.now());
-
+): Promise<{
+  probed: ProbedLambda;
+  existingEnv: Readonly<Record<string, string>>;
+}> {
   try {
     const existing = await client.send(
       new GetFunctionCommand({ FunctionName: lambda.functionName }),
     );
-    const existingEnv = existing.Configuration?.Environment?.Variables ?? {};
+    const cfg = existing.Configuration;
+    const vpcAttached = (cfg?.VpcConfig?.SubnetIds ?? []).length > 0;
+    return {
+      existingEnv: cfg?.Environment?.Variables ?? {},
+      probed: {
+        functionName: lambda.functionName,
+        domain: lambda.domain,
+        accessTier: vpcAttached ? "vpc" : "non-vpc",
+        memorySize: cfg?.MemorySize ?? 0,
+        codeSize: cfg?.CodeSize ?? 0,
+        timeoutSeconds: cfg?.Timeout ?? 0,
+        logGroupName:
+          cfg?.LoggingConfig?.LogGroup ?? `/aws/lambda/${lambda.functionName}`,
+      },
+    };
+  } catch (error) {
+    return {
+      existingEnv: {},
+      probed: {
+        functionName: lambda.functionName,
+        domain: lambda.domain,
+        accessTier: "non-vpc",
+        memorySize: 0,
+        codeSize: 0,
+        timeoutSeconds: 0,
+        logGroupName: `/aws/lambda/${lambda.functionName}`,
+        probeError: `GetFunction failed: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
+  }
+}
 
+async function probeLambda(
+  lambda: DiscoveredLambda,
+  client: LambdaClient,
+): Promise<ProbedLambda> {
+  // Always collect metadata first; if any subsequent step fails we
+  // still want memory / code size / VPC info in the report.
+  const metadata = await fetchMetadata(lambda, client);
+  const probeStamp = String(Date.now());
+
+  try {
     await client.send(
       new UpdateFunctionConfigurationCommand({
         FunctionName: lambda.functionName,
         Environment: {
-          Variables: { ...existingEnv, [PROBE_ENV_KEY]: probeStamp },
+          Variables: { ...metadata.existingEnv, [PROBE_ENV_KEY]: probeStamp },
         },
       }),
     );
@@ -178,7 +219,6 @@ async function probeLambda(
       { client, maxWaitTime: 60 },
       { FunctionName: lambda.functionName },
     );
-
     await client.send(
       new InvokeCommand({
         FunctionName: lambda.functionName,
@@ -186,32 +226,10 @@ async function probeLambda(
         InvocationType: "RequestResponse",
       }),
     );
-
-    const cfg = existing.Configuration;
-    const codeSize = existing.Code?.RepositoryType
-      ? (cfg?.CodeSize ?? 0)
-      : (cfg?.CodeSize ?? 0);
-    const vpcAttached = (cfg?.VpcConfig?.SubnetIds ?? []).length > 0;
-
-    return {
-      functionName: lambda.functionName,
-      domain: lambda.domain,
-      accessTier: vpcAttached ? "vpc" : "non-vpc",
-      memorySize: cfg?.MemorySize ?? 0,
-      codeSize,
-      timeoutSeconds: cfg?.Timeout ?? 0,
-      logGroupName:
-        cfg?.LoggingConfig?.LogGroup ?? `/aws/lambda/${lambda.functionName}`,
-    };
+    return metadata.probed;
   } catch (error) {
     return {
-      functionName: lambda.functionName,
-      domain: lambda.domain,
-      accessTier: "non-vpc",
-      memorySize: 0,
-      codeSize: 0,
-      timeoutSeconds: 0,
-      logGroupName: `/aws/lambda/${lambda.functionName}`,
+      ...metadata.probed,
       probeError: error instanceof Error ? error.message : String(error),
     };
   }
