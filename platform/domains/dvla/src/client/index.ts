@@ -148,6 +148,8 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
         ).request;
         return typedFetch(request);
       },
+    },
+    shareCode: {
       post: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
         const request = fetcher(
           `${DVLA_REMOTE_ROUTES.app}/create-driving-licence-share-code`,

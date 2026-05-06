@@ -18,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => { },
+    toRemote: () => {},
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -104,6 +104,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/customer-summary",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
+
       const pathParams = normalizeInboundPath(event.path).split("/");
       const id = pathParams[3];
       if (!id) {
@@ -141,7 +142,12 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/share-codes",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
 
       return { id, jwt };
     },
@@ -154,18 +160,22 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/share-codes",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
 
       const pathParams = normalizeInboundPath(event.path).split("/");
       const shareCodeId = pathParams[3];
       if (!shareCodeId) {
         throw new createHttpError.BadRequest("Missing shareCodeid in path");
       }
-
       return { id, jwt, shareCodeId };
     },
     callRemote: (client, data) =>
-      client.shareCodes.delete(data.id, data.jwt, data.shareCodeId),
+      client.shareCode.delete(data.id, data.jwt, data.shareCodeId),
   },
   "POST:/v1/share-code": {
     operation: "postShareCode",
@@ -174,11 +184,16 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/share-codes",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
 
       return { id, jwt };
     },
-    callRemote: (client, data) => client.shareCodes.post(data.id, data.jwt),
+    callRemote: (client, data) => client.shareCode.post(data.id, data.jwt),
   },
 } as const satisfies Record<string, RouteContract>;
 

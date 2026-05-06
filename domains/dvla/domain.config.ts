@@ -1,6 +1,8 @@
 import {
+  MultiShareCodeResponseSchema,
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
+  SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
@@ -64,6 +66,24 @@ export const { config, route, routeContext } = domain({
       target: "udp",
       route: "GET /v1/identity/*",
       response: GetServiceIdentityLinkResponseSchema,
+    },
+    dvlaPostShareCode: {
+      type: "domain",
+      target: "dvla",
+      route: "POST /v1/share-code",
+      response: SingleShareCodeResponseSchema,
+    },
+    dvlaDeleteShareCode: {
+      type: "domain",
+      target: "dvla",
+      route: "DELETE /v1/share-code/*",
+      response: SingleShareCodeResponseSchema,
+    },
+    dvlaGetShareCodes: {
+      type: "domain",
+      target: "dvla",
+      route: "GET /v1/share-codes",
+      response: MultiShareCodeResponseSchema,
     },
   },
   routes: {
@@ -133,6 +153,48 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/share-codes": {
+        GET: {
+          public: {
+            name: "get-share-codes",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaGetShareCodes",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: MultiShareCodeResponseSchema,
+          },
+        },
+      },
+      "/share-code": {
+        POST: {
+          public: {
+            name: "post-share-code",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaPostShareCode",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: SingleShareCodeResponseSchema,
+          },
+        },
+      },
+      "/share-code/:id": {
+        DELETE: {
+          public: {
+            name: "delete-share-code",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaDeleteShareCode",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: SingleShareCodeResponseSchema,
           },
         },
       },

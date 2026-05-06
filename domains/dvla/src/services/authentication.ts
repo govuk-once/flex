@@ -3,13 +3,17 @@ import { InferRouteContext } from "@flex/sdk";
 import createHttpError from "http-errors";
 import { status } from "http-status";
 
-type CommonDvlaContext = InferRouteContext<
-  typeof config,
-  | "GET /v1/customer-summary"
-  | "GET /v1/driver-summary"
-  | "GET /v1/driving-licence"
-  | "POST /v1/test-notification"
->;
+type CommonDvlaContext =
+  | InferRouteContext<
+      typeof config,
+      | "GET /v1/customer-summary"
+      | "GET /v1/driver-summary"
+      | "GET /v1/driving-licence"
+      | "GET /v1/share-codes"
+      | "POST /v1/share-code"
+      | "POST /v1/test-notification"
+    >
+  | InferRouteContext<typeof config, "DELETE /v1/share-code/:id">;
 
 export async function getUserLinkingId(
   ctx: CommonDvlaContext,
