@@ -15,8 +15,8 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "3.1032.0",
     "@flex/sdk": "workspace:*",
-    "aws-cdk": "2.1119.0",
-    "aws-cdk-lib": "2.251.0",
+    "aws-cdk": "2.1120.0",
+    "aws-cdk-lib": "2.252.0",
     "constructs": "10.6.0",
     "graphology": "0.26.0",
     "graphology-dag": "0.4.1",
@@ -27,7 +27,7 @@
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/node": "25.6.0",
-    "eslint": "10.2.1",
+    "eslint": "10.3.0",
     "tsx": "4.21.0",
     "typescript": "6.0.3"
   }
