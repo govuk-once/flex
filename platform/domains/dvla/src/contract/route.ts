@@ -18,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => {},
+    toRemote: () => { },
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -133,6 +133,52 @@ export const ROUTE_CONTRACTS = {
       return { registrationNumber };
     },
     callRemote: (client, data) => client.vehicle.get(data.registrationNumber),
+  },
+  "GET:/v1/share-codes": {
+    operation: "getShareCodes",
+    method: "GET",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.shareCodes.get(data.id, data.jwt),
+  },
+  "DELETE:/v1/share-code/:id": {
+    operation: "deleteShareCode",
+    method: "DELETE",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const shareCodeId = pathParams[3];
+      if (!shareCodeId) {
+        throw new createHttpError.BadRequest("Missing shareCodeid in path");
+      }
+
+      return { id, jwt, shareCodeId };
+    },
+    callRemote: (client, data) =>
+      client.shareCodes.delete(data.id, data.jwt, data.shareCodeId),
+  },
+  "POST:/v1/share-code": {
+    operation: "postShareCode",
+    method: "POST",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = assertRequiredHeaderAndReturn(event, "linking-id");
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.shareCodes.post(data.id, data.jwt),
   },
 } as const satisfies Record<string, RouteContract>;
 

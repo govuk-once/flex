@@ -130,6 +130,64 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
         return typedFetch(request);
       },
     },
+    shareCodes: {
+      get: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.app}/list-driving-licence-share-codes`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
+            },
+            body: JSON.stringify({
+              linkingId,
+            }),
+          },
+        ).request;
+        return typedFetch(request);
+      },
+      post: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.app}/create-driving-licence-share-code`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
+            },
+            body: JSON.stringify({
+              linkingId,
+            }),
+          },
+        ).request;
+        return typedFetch(request);
+      },
+      delete: (
+        jwt: string,
+        linkingId: string,
+        tokenId: string,
+      ): Promise<ApiResult<void>> => {
+        const request = fetcher(
+          `${DVLA_REMOTE_ROUTES.app}/create-driving-licence-share-code`,
+          {
+            method: "POST",
+            headers: {
+              ...defaultHeaders,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
+            },
+            body: JSON.stringify({
+              linkingId,
+              tokenId,
+            }),
+          },
+        ).request;
+        return typedFetch(request);
+      },
+    },
   };
 }
 
