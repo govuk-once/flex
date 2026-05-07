@@ -79,6 +79,22 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
+      "/profile-bare": {
+        GET: {
+          public: {
+            name: "perf-profile-bare",
+            integrations: [],
+          },
+        },
+      },
+      "/profile-imports": {
+        GET: {
+          public: {
+            name: "perf-profile-imports",
+            integrations: [],
+          },
+        },
+      },
     },
   },
 });

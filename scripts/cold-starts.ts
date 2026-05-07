@@ -29,6 +29,7 @@ const QUERY_RETRY_GAP_SECONDS = 10;
 const PROBE_CONCURRENCY = 5;
 const QUERY_CONCURRENCY = 5;
 const SAMPLES_DEFAULT = 20;
+const WARM_SAMPLES_DEFAULT = 30;
 const REPORTS_DIR = "reports";
 
 const SKIP_STACK_SUFFIXES = [
@@ -41,6 +42,7 @@ const SKIP_STACK_SUFFIXES = [
 interface CliArgs {
   readonly stage: string;
   readonly samples: number;
+  readonly warmSamples: number;
 }
 
 interface DiscoveredLambda {
@@ -57,13 +59,14 @@ interface ProbedLambda {
   readonly codeSize: number;
   readonly timeoutSeconds: number;
   readonly logGroupName: string;
-  readonly invokeRequestIds: readonly string[];
+  readonly coldRequestIds: readonly string[];
+  readonly warmRequestIds: readonly string[];
   readonly probeError?: string;
 }
 
 interface CompletedLambda extends ProbedLambda {
   readonly initDurations: readonly number[];
-  readonly billedDurations: readonly number[];
+  readonly warmDurations: readonly number[];
   readonly queryError?: string;
 }
 
@@ -77,8 +80,10 @@ interface PercentileSummary {
 
 interface GroupSummary {
   readonly lambdaCount: number;
-  readonly sampleCount: number;
+  readonly coldSampleCount: number;
+  readonly warmSampleCount: number;
   readonly initDurationMs: PercentileSummary;
+  readonly warmDurationMs: PercentileSummary;
 }
 
 interface Report {
@@ -109,7 +114,14 @@ function parseArgs(argv: readonly string[]): CliArgs {
       `invalid --samples value "${String(samplesRaw)}"; must be a positive integer`,
     );
   }
-  return { stage, samples };
+  const warmRaw = readFlag(argv, "--warm-samples") ?? process.env.WARM_SAMPLES;
+  const warmSamples = warmRaw ? Number(warmRaw) : WARM_SAMPLES_DEFAULT;
+  if (!Number.isInteger(warmSamples) || warmSamples < 0) {
+    throw new Error(
+      `invalid --warm-samples value "${String(warmRaw)}"; must be a non-negative integer`,
+    );
+  }
+  return { stage, samples, warmSamples };
 }
 
 function readFlag(argv: readonly string[], flag: string): string | undefined {
@@ -193,7 +205,8 @@ async function fetchMetadata(
         timeoutSeconds: cfg?.Timeout ?? 0,
         logGroupName:
           cfg?.LoggingConfig?.LogGroup ?? `/aws/lambda/${lambda.functionName}`,
-        invokeRequestIds: [],
+        coldRequestIds: [],
+        warmRequestIds: [],
       },
     };
   } catch (error) {
@@ -207,7 +220,8 @@ async function fetchMetadata(
         codeSize: 0,
         timeoutSeconds: 0,
         logGroupName: `/aws/lambda/${lambda.functionName}`,
-        invokeRequestIds: [],
+        coldRequestIds: [],
+        warmRequestIds: [],
         probeError: `GetFunction failed: ${error instanceof Error ? error.message : String(error)}`,
       },
     };
@@ -219,12 +233,14 @@ const REQUEST_ID_PATTERN = /START RequestId:\s+([0-9a-f-]+)/i;
 async function probeLambda(
   lambda: DiscoveredLambda,
   samples: number,
+  warmSamples: number,
   client: LambdaClient,
 ): Promise<ProbedLambda> {
   // Always collect metadata first; if any subsequent step fails we
   // still want memory / code size / VPC info in the report.
   const metadata = await fetchMetadata(lambda, client);
-  const invokeRequestIds: string[] = [];
+  const coldRequestIds: string[] = [];
+  const warmRequestIds: string[] = [];
   let probeError: string | undefined;
 
   try {
@@ -257,7 +273,26 @@ async function probeLambda(
         }),
       );
       const id = extractRequestIdFromLogTail(invokeResult.LogResult);
-      if (id) invokeRequestIds.push(id);
+      if (id) coldRequestIds.push(id);
+    }
+
+    // Warm pass: back-to-back sequential invokes against the still-warm
+    // container that just handled the last cold sample. No env mutation
+    // means AWS reuses the existing execution environment, so each
+    // invocation skips init and emits a REPORT line with no
+    // @initDuration field — that's how we'll classify warm vs cold
+    // when querying Logs Insights.
+    for (let i = 0; i < warmSamples; i += 1) {
+      const invokeResult = await client.send(
+        new InvokeCommand({
+          FunctionName: lambda.functionName,
+          Payload: Buffer.from("{}"),
+          InvocationType: "RequestResponse",
+          LogType: "Tail",
+        }),
+      );
+      const id = extractRequestIdFromLogTail(invokeResult.LogResult);
+      if (id) warmRequestIds.push(id);
     }
   } catch (error) {
     probeError = error instanceof Error ? error.message : String(error);
@@ -289,7 +324,8 @@ async function probeLambda(
 
   return {
     ...metadata.probed,
-    invokeRequestIds,
+    coldRequestIds,
+    warmRequestIds,
     probeError,
   };
 }
@@ -305,19 +341,20 @@ function extractRequestIdFromLogTail(
 
 interface QueryResult {
   initDurations: number[];
-  billedDurations: number[];
+  warmDurations: number[];
   queryError?: string;
 }
 
-async function queryInitDurations(
+async function queryDurations(
   probed: ProbedLambda,
   startTimeUnix: number,
   client: CloudWatchLogsClient,
 ): Promise<QueryResult> {
-  if (probed.invokeRequestIds.length === 0) {
+  const totalIds = probed.coldRequestIds.length + probed.warmRequestIds.length;
+  if (totalIds === 0) {
     return {
       initDurations: [],
-      billedDurations: [],
+      warmDurations: [],
       queryError: probed.probeError
         ? `probe failed: ${probed.probeError}`
         : "no request IDs captured",
@@ -325,20 +362,22 @@ async function queryInitDurations(
   }
 
   // Logs Insights ingestion can lag by 30s+ for fresh invocations.
-  // Retry until all sample REPORTs are visible or attempts run out.
-  let lastResult: QueryResult = { initDurations: [], billedDurations: [] };
+  // Retry until every sample REPORT is visible or attempts run out.
+  let lastResult: QueryResult = { initDurations: [], warmDurations: [] };
   for (let attempt = 0; attempt < QUERY_RETRY_ATTEMPTS; attempt += 1) {
     if (attempt > 0) await sleep(QUERY_RETRY_GAP_SECONDS * 1000);
     lastResult = await runOneQuery(probed, startTimeUnix, client);
     if (lastResult.queryError !== undefined) return lastResult;
-    if (lastResult.initDurations.length === probed.invokeRequestIds.length) {
-      return lastResult;
-    }
+    const seen =
+      lastResult.initDurations.length + lastResult.warmDurations.length;
+    if (seen === totalIds) return lastResult;
   }
-  if (lastResult.initDurations.length < probed.invokeRequestIds.length) {
+  const seen =
+    lastResult.initDurations.length + lastResult.warmDurations.length;
+  if (seen < totalIds) {
     return {
       ...lastResult,
-      queryError: `only ${String(lastResult.initDurations.length)}/${String(probed.invokeRequestIds.length)} REPORT lines after ${String(QUERY_RETRY_ATTEMPTS)} retries`,
+      queryError: `only ${String(seen)}/${String(totalIds)} REPORT lines after ${String(QUERY_RETRY_ATTEMPTS)} retries`,
     };
   }
   return lastResult;
@@ -349,11 +388,12 @@ async function runOneQuery(
   startTimeUnix: number,
   client: CloudWatchLogsClient,
 ): Promise<QueryResult> {
-  // We always have at least one captured RequestId here (callers guard
-  // against the empty case). Filter by the full set so we get every
-  // sample REPORT in one query and are immune to races with other traffic.
-  const idList = probed.invokeRequestIds.map((id) => `"${id}"`).join(", ");
-  const queryString = `fields @initDuration, @billedDuration, @requestId | filter @type = "REPORT" and @requestId in [${idList}] | limit ${String(probed.invokeRequestIds.length)}`;
+  // Filter by the union of captured RequestIds in one query. Each row
+  // has @initDuration set on cold invokes and absent on warm ones —
+  // that's how we split the populations.
+  const allIds = [...probed.coldRequestIds, ...probed.warmRequestIds];
+  const idList = allIds.map((id) => `"${id}"`).join(", ");
+  const queryString = `fields @initDuration, @duration, @requestId | filter @type = "REPORT" and @requestId in [${idList}] | limit ${String(allIds.length)}`;
 
   try {
     const start = await client.send(
@@ -368,7 +408,7 @@ async function runOneQuery(
     if (!queryId) {
       return {
         initDurations: [],
-        billedDurations: [],
+        warmDurations: [],
         queryError: "Logs Insights returned no queryId",
       };
     }
@@ -382,14 +422,17 @@ async function runOneQuery(
       );
       if (result.status === "Complete") {
         const initDurations: number[] = [];
-        const billedDurations: number[] = [];
+        const warmDurations: number[] = [];
         result.results?.forEach((row) => {
           const init = readFieldNumber(row, "@initDuration");
-          const billed = readFieldNumber(row, "@billedDuration");
-          if (init !== null) initDurations.push(init);
-          if (billed !== null) billedDurations.push(billed);
+          const duration = readFieldNumber(row, "@duration");
+          if (init !== null) {
+            initDurations.push(init);
+          } else if (duration !== null) {
+            warmDurations.push(duration);
+          }
         });
-        return { initDurations, billedDurations };
+        return { initDurations, warmDurations };
       }
       if (
         result.status &&
@@ -397,7 +440,7 @@ async function runOneQuery(
       ) {
         return {
           initDurations: [],
-          billedDurations: [],
+          warmDurations: [],
           queryError: `query ${result.status}`,
         };
       }
@@ -405,13 +448,13 @@ async function runOneQuery(
 
     return {
       initDurations: [],
-      billedDurations: [],
+      warmDurations: [],
       queryError: "query did not complete within 30s",
     };
   } catch (error) {
     return {
       initDurations: [],
-      billedDurations: [],
+      warmDurations: [],
       queryError: error instanceof Error ? error.message : String(error),
     };
   }
@@ -468,11 +511,14 @@ function pickPercentile(sorted: readonly number[], pct: number): number {
 function groupSummary(group: readonly CompletedLambda[]): GroupSummary {
   // Pool every sample across every Lambda in the group — that's a
   // truer aggregate than per-Lambda summaries-of-summaries.
-  const pooled = group.flatMap((entry) => entry.initDurations);
+  const pooledCold = group.flatMap((entry) => entry.initDurations);
+  const pooledWarm = group.flatMap((entry) => entry.warmDurations);
   return {
     lambdaCount: group.length,
-    sampleCount: pooled.length,
-    initDurationMs: summarise(pooled),
+    coldSampleCount: pooledCold.length,
+    warmSampleCount: pooledWarm.length,
+    initDurationMs: summarise(pooledCold),
+    warmDurationMs: summarise(pooledWarm),
   };
 }
 
@@ -526,43 +572,71 @@ function renderMarkdown(report: Report): string {
   lines.push("");
   lines.push(`Generated: ${report.generatedAt}`);
   lines.push(
-    `Lambdas probed: ${String(report.summary.lambdaCount)} (${String(report.summary.sampleCount)} samples total)`,
+    `Lambdas probed: ${String(report.summary.lambdaCount)} (${String(report.summary.coldSampleCount)} cold + ${String(report.summary.warmSampleCount)} warm samples)`,
   );
   lines.push(
-    `Init duration min/p50/p99/max: ${formatMs(report.summary.initDurationMs.min)} / ${formatMs(report.summary.initDurationMs.p50)} / ${formatMs(report.summary.initDurationMs.p99)} / ${formatMs(report.summary.initDurationMs.max)}`,
+    `Cold init min/p50/p99/max: ${formatMs(report.summary.initDurationMs.min)} / ${formatMs(report.summary.initDurationMs.p50)} / ${formatMs(report.summary.initDurationMs.p99)} / ${formatMs(report.summary.initDurationMs.max)}`,
+  );
+  lines.push(
+    `Warm exec min/p50/p99/max: ${formatMs(report.summary.warmDurationMs.min)} / ${formatMs(report.summary.warmDurationMs.p50)} / ${formatMs(report.summary.warmDurationMs.p99)} / ${formatMs(report.summary.warmDurationMs.max)}`,
   );
   lines.push("");
 
-  lines.push("## All lambdas (slowest first by p50)");
+  lines.push("## All lambdas (slowest first by cold p50)");
   lines.push("");
-  lines.push("| # | Lambda | Domain | Tier | Mem | Code | N | min | p50 | mean | max |");
-  lines.push("|---|--------|--------|------|-----|------|---|-----|-----|------|-----|");
+  lines.push(
+    "| # | Lambda | Domain | Tier | Mem | Code | N | cold p50 | cold max | warm p50 | warm max | Δ p50 |",
+  );
+  lines.push(
+    "|---|--------|--------|------|-----|------|---|----------|----------|----------|----------|-------|",
+  );
   report.lambdas.forEach((entry, i) => {
-    const s = summarise(entry.initDurations);
+    const cold = summarise(entry.initDurations);
+    const warm = summarise(entry.warmDurations);
+    const delta =
+      entry.initDurations.length > 0 && entry.warmDurations.length > 0
+        ? cold.p50 - warm.p50
+        : null;
     lines.push(
-      `| ${String(i + 1)} | \`${shortName(entry.functionName)}\` | ${entry.domain} | ${entry.accessTier} | ${String(entry.memorySize)} MB | ${formatBytes(entry.codeSize)} | ${String(entry.initDurations.length)} | ${formatMs(s.min)} | ${formatMs(s.p50)} | ${formatMs(s.mean)} | ${formatMs(s.max)} |`,
+      `| ${String(i + 1)} | \`${shortName(entry.functionName)}\` | ${entry.domain} | ${entry.accessTier} | ${String(entry.memorySize)} MB | ${formatBytes(entry.codeSize)} | ${String(entry.initDurations.length)}c/${String(entry.warmDurations.length)}w | ${formatMs(cold.p50)} | ${formatMs(cold.max)} | ${formatMs(warm.p50)} | ${formatMs(warm.max)} | ${delta === null ? "—" : formatMs(delta)} |`,
     );
   });
   lines.push("");
 
   lines.push("## By domain");
   lines.push("");
-  lines.push("| Domain | Lambdas | Samples | min | p50 | p99 | max |");
-  lines.push("|--------|---------|---------|-----|-----|-----|-----|");
+  lines.push(
+    "| Domain | Lambdas | cold p50 | cold p99 | warm p50 | warm p99 | Δ p50 |",
+  );
+  lines.push(
+    "|--------|---------|----------|----------|----------|----------|-------|",
+  );
   Object.entries(report.byDomain).forEach(([domain, summary]) => {
+    const delta =
+      summary.coldSampleCount > 0 && summary.warmSampleCount > 0
+        ? summary.initDurationMs.p50 - summary.warmDurationMs.p50
+        : null;
     lines.push(
-      `| ${domain} | ${String(summary.lambdaCount)} | ${String(summary.sampleCount)} | ${formatMs(summary.initDurationMs.min)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
+      `| ${domain} | ${String(summary.lambdaCount)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.warmDurationMs.p50)} | ${formatMs(summary.warmDurationMs.p99)} | ${delta === null ? "—" : formatMs(delta)} |`,
     );
   });
   lines.push("");
 
   lines.push("## By access tier");
   lines.push("");
-  lines.push("| Tier | Lambdas | Samples | min | p50 | p99 | max |");
-  lines.push("|------|---------|---------|-----|-----|-----|-----|");
+  lines.push(
+    "| Tier | Lambdas | cold p50 | cold p99 | warm p50 | warm p99 | Δ p50 |",
+  );
+  lines.push(
+    "|------|---------|----------|----------|----------|----------|-------|",
+  );
   Object.entries(report.byAccessTier).forEach(([tier, summary]) => {
+    const delta =
+      summary.coldSampleCount > 0 && summary.warmSampleCount > 0
+        ? summary.initDurationMs.p50 - summary.warmDurationMs.p50
+        : null;
     lines.push(
-      `| ${tier} | ${String(summary.lambdaCount)} | ${String(summary.sampleCount)} | ${formatMs(summary.initDurationMs.min)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.initDurationMs.max)} |`,
+      `| ${tier} | ${String(summary.lambdaCount)} | ${formatMs(summary.initDurationMs.p50)} | ${formatMs(summary.initDurationMs.p99)} | ${formatMs(summary.warmDurationMs.p50)} | ${formatMs(summary.warmDurationMs.p99)} | ${delta === null ? "—" : formatMs(delta)} |`,
     );
   });
   lines.push("");
@@ -609,9 +683,9 @@ function reportFilename(stage: string, ext: string): string {
 }
 
 async function main(argv: readonly string[]): Promise<number> {
-  const { stage, samples } = parseArgs(argv);
+  const { stage, samples, warmSamples } = parseArgs(argv);
   process.stdout.write(
-    `probing cold starts for stage: ${stage} (samples per lambda: ${String(samples)})\n`,
+    `probing cold starts for stage: ${stage} (cold ${String(samples)} + warm ${String(warmSamples)} per lambda)\n`,
   );
 
   process.stdout.write("→ discovering lambdas…\n");
@@ -628,15 +702,15 @@ async function main(argv: readonly string[]): Promise<number> {
   const probeStartedAt = Math.floor(Date.now() / 1000);
 
   process.stdout.write(
-    `→ probing (concurrency ${String(PROBE_CONCURRENCY)}, ${String(samples)} samples each)…\n`,
+    `→ probing (concurrency ${String(PROBE_CONCURRENCY)})…\n`,
   );
   const probed = await runInBatches(discovered, PROBE_CONCURRENCY, (lambda) =>
-    probeLambda(lambda, samples, lambdaClient),
+    probeLambda(lambda, samples, warmSamples, lambdaClient),
   );
   probed.forEach((entry) => {
     const status = entry.probeError ? "✗" : "✓";
     process.stdout.write(
-      `  ${status} ${shortName(entry.functionName)} (${String(entry.invokeRequestIds.length)}/${String(samples)})\n`,
+      `  ${status} ${shortName(entry.functionName)} (cold ${String(entry.coldRequestIds.length)}/${String(samples)}, warm ${String(entry.warmRequestIds.length)}/${String(warmSamples)})\n`,
     );
   });
 
@@ -647,17 +721,13 @@ async function main(argv: readonly string[]): Promise<number> {
 
   const logsClient = new CloudWatchLogsClient();
   process.stdout.write(
-    `→ querying init durations (concurrency ${String(QUERY_CONCURRENCY)})…\n`,
+    `→ querying durations (concurrency ${String(QUERY_CONCURRENCY)})…\n`,
   );
   const completed = await runInBatches(
     probed,
     QUERY_CONCURRENCY,
     async (entry) => {
-      const result = await queryInitDurations(
-        entry,
-        probeStartedAt,
-        logsClient,
-      );
+      const result = await queryDurations(entry, probeStartedAt, logsClient);
       return { ...entry, ...result } satisfies CompletedLambda;
     },
   );
@@ -669,11 +739,12 @@ async function main(argv: readonly string[]): Promise<number> {
   writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   writeFileSync(markdownPath, renderMarkdown(report), "utf8");
 
-  process.stdout.write("\ntop 10 slowest (by p50):\n");
+  process.stdout.write("\ntop 10 slowest (by cold p50):\n");
   report.lambdas.slice(0, 10).forEach((entry, i) => {
-    const s = summarise(entry.initDurations);
+    const cold = summarise(entry.initDurations);
+    const warm = summarise(entry.warmDurations);
     process.stdout.write(
-      `  ${String(i + 1).padStart(2, " ")}. p50 ${formatMs(s.p50).padStart(7, " ")}  (min ${formatMs(s.min)} max ${formatMs(s.max)} n=${String(entry.initDurations.length)})  ${shortName(entry.functionName)}\n`,
+      `  ${String(i + 1).padStart(2, " ")}. cold ${formatMs(cold.p50).padStart(7, " ")}  warm ${formatMs(warm.p50).padStart(7, " ")}  (n=${String(entry.initDurations.length)}c/${String(entry.warmDurations.length)}w)  ${shortName(entry.functionName)}\n`,
     );
   });
   process.stdout.write(`\nreport: ${jsonPath}\n`);

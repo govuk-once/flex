@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "3.1038.0",
-    "@flex/sdk": "workspace:*"
+    "@flex/dvla-service-gateway": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/udp-domain": "workspace:*"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
