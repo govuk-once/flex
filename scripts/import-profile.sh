@@ -10,18 +10,29 @@
 set -euo pipefail
 
 STAGE=${STAGE:-${USER:?STAGE not set and USER is empty}}
+REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-eu-west-2}}
 
+# Look up by listing all perf log groups for the stage and filtering by
+# substring — robust to whatever CDK suffix gets appended.
 LOG_GROUP=$(aws logs describe-log-groups \
-  --log-group-name-prefix "/aws/lambda/${STAGE}-perf-PerfPublicV1PerfProfileImports" \
-  --query 'logGroups[0].logGroupName' --output text)
+  --region "$REGION" \
+  --log-group-name-prefix "/aws/lambda/${STAGE}-perf-" \
+  --query "logGroups[?contains(logGroupName, 'ProfileImports')].logGroupName | [0]" \
+  --output text)
 
 if [ "$LOG_GROUP" = "None" ] || [ -z "$LOG_GROUP" ]; then
-  echo "no profile-imports log group for stage $STAGE" >&2
+  echo "no profile-imports log group for stage $STAGE in region $REGION" >&2
+  echo "perf log groups found:" >&2
+  aws logs describe-log-groups \
+    --region "$REGION" \
+    --log-group-name-prefix "/aws/lambda/${STAGE}-perf-" \
+    --query 'logGroups[*].logGroupName' --output text >&2 || true
   exit 1
 fi
 echo "log group: $LOG_GROUP"
 
 QUERY_ID=$(aws logs start-query \
+  --region "$REGION" \
   --log-group-name "$LOG_GROUP" \
   --start-time "$(($(date +%s) - 7200))" \
   --end-time "$(date +%s)" \
@@ -29,11 +40,11 @@ QUERY_ID=$(aws logs start-query \
   --query queryId --output text)
 
 echo "query: $QUERY_ID — polling…"
-until [ "$(aws logs get-query-results --query-id "$QUERY_ID" --query status --output text)" = "Complete" ]; do
+until [ "$(aws logs get-query-results --region "$REGION" --query-id "$QUERY_ID" --query status --output text)" = "Complete" ]; do
   sleep 1
 done
 
-aws logs get-query-results --query-id "$QUERY_ID" --output json | python3 -c '
+aws logs get-query-results --region "$REGION" --query-id "$QUERY_ID" --output json | python3 -c '
 import sys, json
 data = json.load(sys.stdin)
 samples = []
