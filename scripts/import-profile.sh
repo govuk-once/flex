@@ -15,18 +15,20 @@ REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-eu-west-2}}
 # Lookup by Lambda function (flex CDK uses an auto-generated log group
 # name that doesn't match /aws/lambda/<func>, so we go via the Lambda
 # API and read LoggingConfig.LogGroup off the function config itself).
-FUNCTION_NAME=$(aws lambda list-functions \
+# Note: AWS CLI auto-paginates list-functions; --query gets applied
+# per page, so we flatten all function names via tr+grep instead of
+# JMESPath filtering to avoid the per-page `[0]` pitfall.
+ALL_PERF_FUNCTIONS=$(aws lambda list-functions \
   --region "$REGION" \
-  --query "Functions[?starts_with(FunctionName, '${STAGE}-perf-') && contains(FunctionName, 'ProfileImports')].FunctionName | [0]" \
-  --output text)
+  --query 'Functions[*].FunctionName' \
+  --output text | tr '\t' '\n' | grep "^${STAGE}-perf-" || true)
 
-if [ "$FUNCTION_NAME" = "None" ] || [ -z "$FUNCTION_NAME" ]; then
+FUNCTION_NAME=$(echo "$ALL_PERF_FUNCTIONS" | grep ProfileImports | head -1)
+
+if [ -z "$FUNCTION_NAME" ]; then
   echo "no profile-imports function for stage $STAGE in region $REGION" >&2
   echo "perf functions found:" >&2
-  aws lambda list-functions \
-    --region "$REGION" \
-    --query "Functions[?starts_with(FunctionName, '${STAGE}-perf-')].FunctionName" \
-    --output text >&2 || true
+  echo "$ALL_PERF_FUNCTIONS" >&2
   exit 1
 fi
 echo "function: $FUNCTION_NAME"
