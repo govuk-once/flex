@@ -95,6 +95,22 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
+      "/cascade-entry": {
+        GET: {
+          public: {
+            name: "perf-cascade-entry",
+            integrations: [],
+          },
+        },
+      },
+      "/cascade-target": {
+        GET: {
+          public: {
+            name: "perf-cascade-target",
+            integrations: [],
+          },
+        },
+      },
     },
   },
 });

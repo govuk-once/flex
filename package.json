@@ -10,7 +10,8 @@
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
     "jwt": "tsx scripts/generateToken.ts",
-    "cold-starts": "tsx scripts/cold-starts.ts"
+    "cold-starts": "tsx scripts/cold-starts.ts",
+    "cold-starts-cascade": "tsx scripts/cold-starts-cascade.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudformation": "3.1032.0",
