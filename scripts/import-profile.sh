@@ -12,22 +12,32 @@ set -euo pipefail
 STAGE=${STAGE:-${USER:?STAGE not set and USER is empty}}
 REGION=${AWS_REGION:-${AWS_DEFAULT_REGION:-eu-west-2}}
 
-# Look up by listing all perf log groups for the stage and filtering by
-# substring — robust to whatever CDK suffix gets appended.
-LOG_GROUP=$(aws logs describe-log-groups \
+# Lookup by Lambda function (flex CDK uses an auto-generated log group
+# name that doesn't match /aws/lambda/<func>, so we go via the Lambda
+# API and read LoggingConfig.LogGroup off the function config itself).
+FUNCTION_NAME=$(aws lambda list-functions \
   --region "$REGION" \
-  --log-group-name-prefix "/aws/lambda/${STAGE}-perf-" \
-  --query "logGroups[?contains(logGroupName, 'ProfileImports')].logGroupName | [0]" \
+  --query "Functions[?starts_with(FunctionName, '${STAGE}-perf-') && contains(FunctionName, 'ProfileImports')].FunctionName | [0]" \
   --output text)
 
-if [ "$LOG_GROUP" = "None" ] || [ -z "$LOG_GROUP" ]; then
-  echo "no profile-imports log group for stage $STAGE in region $REGION" >&2
-  echo "perf log groups found:" >&2
-  aws logs describe-log-groups \
+if [ "$FUNCTION_NAME" = "None" ] || [ -z "$FUNCTION_NAME" ]; then
+  echo "no profile-imports function for stage $STAGE in region $REGION" >&2
+  echo "perf functions found:" >&2
+  aws lambda list-functions \
     --region "$REGION" \
-    --log-group-name-prefix "/aws/lambda/${STAGE}-perf-" \
-    --query 'logGroups[*].logGroupName' --output text >&2 || true
+    --query "Functions[?starts_with(FunctionName, '${STAGE}-perf-')].FunctionName" \
+    --output text >&2 || true
   exit 1
+fi
+echo "function: $FUNCTION_NAME"
+
+LOG_GROUP=$(aws lambda get-function-configuration \
+  --region "$REGION" \
+  --function-name "$FUNCTION_NAME" \
+  --query 'LoggingConfig.LogGroup' --output text)
+
+if [ "$LOG_GROUP" = "None" ] || [ -z "$LOG_GROUP" ]; then
+  LOG_GROUP="/aws/lambda/${FUNCTION_NAME}"
 fi
 echo "log group: $LOG_GROUP"
 
