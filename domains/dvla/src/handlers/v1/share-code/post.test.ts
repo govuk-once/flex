@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -14,13 +15,13 @@ describe("POST /v1/share-code", () => {
   });
 
   const mockUdpSuccess = () =>
-    api.get("/domains/udp/v1/identity/dvla").reply(200, {
+    api.get("/domains/udp/v1/identity/dvla").reply(status.OK, {
       serviceId: testLinkingId,
       serviceName: "dvla",
     });
 
   const mockAuthSuccess = () =>
-    api.get("/gateways/dvla/v1/authenticate").reply(200, {
+    api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
       "id-token": testAuthToken,
       apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
       passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
@@ -53,14 +54,14 @@ describe("POST /v1/share-code", () => {
       .post("/gateways/dvla/v1/share-code", {})
       .query({ linkingId: testLinkingId })
       .matchHeader("auth", testAuthToken)
-      .reply(200, mockSingleShareCodeData);
+      .reply(status.OK, mockSingleShareCodeData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({}),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(status.OK);
     expect(JSON.parse(result.body)).toStrictEqual(mockSingleShareCodeData);
   });
 
@@ -76,14 +77,16 @@ describe("POST /v1/share-code", () => {
         .post("/gateways/dvla/v1/share-code", {})
         .query({ linkingId: testLinkingId })
         .matchHeader("auth", testAuthToken)
-        .reply(500, { message: "Internal Server Error" });
+        .reply(status.INTERNAL_SERVER_ERROR, {
+          message: "Internal Server Error",
+        });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 502 if authentication fails during share code creation", async ({
@@ -91,14 +94,14 @@ describe("POST /v1/share-code", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       mockUdpSuccess();
-      api.get("/gateways/dvla/v1/authenticate").reply(403);
+      api.get("/gateways/dvla/v1/authenticate").reply(status.FORBIDDEN);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
   });
 });

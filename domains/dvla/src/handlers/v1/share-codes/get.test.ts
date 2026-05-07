@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -14,13 +15,13 @@ describe("GET /v1/share-codes", () => {
   });
 
   const mockUdpSuccess = () =>
-    api.get("/domains/udp/v1/identity/dvla").reply(200, {
+    api.get("/domains/udp/v1/identity/dvla").reply(status.OK, {
       serviceId: testLinkingId,
       serviceName: "dvla",
     });
 
   const mockAuthSuccess = () =>
-    api.get("/gateways/dvla/v1/authenticate").reply(200, {
+    api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
       "id-token": testAuthToken,
       apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
       passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
@@ -55,14 +56,14 @@ describe("GET /v1/share-codes", () => {
       .get("/gateways/dvla/v1/share-codes")
       .query({ linkingId: testLinkingId })
       .matchHeader("auth", testAuthToken)
-      .reply(200, mockShareCodeData);
+      .reply(status.OK, mockShareCodeData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({}),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(status.OK);
     expect(JSON.parse(result.body)).toStrictEqual(mockShareCodeData);
   });
 
@@ -71,7 +72,9 @@ describe("GET /v1/share-codes", () => {
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      api.get("/domains/udp/v1/identity/dvla").reply(500);
+      api
+        .get("/domains/udp/v1/identity/dvla")
+        .reply(status.INTERNAL_SERVER_ERROR);
       mockAuthSuccess();
 
       const result = await handler(
@@ -79,7 +82,7 @@ describe("GET /v1/share-codes", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 502 if the DVLA authentication service fails", async ({
@@ -87,14 +90,14 @@ describe("GET /v1/share-codes", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       mockUdpSuccess();
-      api.get("/gateways/dvla/v1/authenticate").reply(401);
+      api.get("/gateways/dvla/v1/authenticate").reply(status.UNAUTHORIZED);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 502 if the final dvlaGetShareCodes integration fails", async ({
@@ -107,21 +110,21 @@ describe("GET /v1/share-codes", () => {
       api
         .get("/gateways/dvla/v1/share-codes")
         .query({ linkingId: testLinkingId })
-        .reply(500, { message: "DVLA Down" });
+        .reply(status.INTERNAL_SERVER_ERROR, { message: "DVLA Down" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 404 if getUserLinkingId returns NOT_FOUND from UDP", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      api.get("/domains/udp/v1/identity/dvla").reply(404);
+      api.get("/domains/udp/v1/identity/dvla").reply(status.NOT_FOUND);
       mockAuthSuccess();
 
       const result = await handler(
@@ -129,7 +132,7 @@ describe("GET /v1/share-codes", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(404);
+      expect(result.statusCode).toBe(status.NOT_FOUND);
     });
   });
 });

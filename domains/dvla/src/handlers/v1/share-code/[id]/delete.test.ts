@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -16,13 +17,13 @@ describe("DELETE /v1/share-code/:id", () => {
   });
 
   const mockUdpSuccess = () =>
-    api.get("/domains/udp/v1/identity/dvla").reply(200, {
+    api.get("/domains/udp/v1/identity/dvla").reply(status.OK, {
       serviceId: testLinkingId,
       serviceName: "dvla",
     });
 
   const mockAuthSuccess = () =>
-    api.get("/gateways/dvla/v1/authenticate").reply(200, {
+    api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
       "id-token": testAuthToken,
       apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
       passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
@@ -55,7 +56,7 @@ describe("DELETE /v1/share-code/:id", () => {
       .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
       .query({ linkingId: testLinkingId })
       .matchHeader("auth", testAuthToken)
-      .reply(200, mockCancelledShareCodeData);
+      .reply(status.OK, mockCancelledShareCodeData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({
@@ -64,7 +65,7 @@ describe("DELETE /v1/share-code/:id", () => {
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(status.OK);
     expect(JSON.parse(result.body)).toStrictEqual(mockCancelledShareCodeData);
   });
 
@@ -79,7 +80,7 @@ describe("DELETE /v1/share-code/:id", () => {
       api
         .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
         .query({ linkingId: testLinkingId })
-        .reply(500, { message: "DVLA Delete Failed" });
+        .reply(status.INTERNAL_SERVER_ERROR, { message: "DVLA Delete Failed" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
@@ -88,7 +89,7 @@ describe("DELETE /v1/share-code/:id", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 404 if the token to delete is not found by DVLA", async ({
@@ -101,7 +102,7 @@ describe("DELETE /v1/share-code/:id", () => {
       api
         .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
         .query({ linkingId: testLinkingId })
-        .reply(404, { message: "Token not found" });
+        .reply(status.NOT_FOUND, { message: "Token not found" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
@@ -110,7 +111,7 @@ describe("DELETE /v1/share-code/:id", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(404);
+      expect(result.statusCode).toBe(status.NOT_FOUND);
     });
   });
 });
