@@ -73,10 +73,10 @@ export const { config, route, routeContext } = domain({
       route: "POST /v1/share-code",
       response: SingleShareCodeResponseSchema,
     },
-    dvlaDeleteShareCode: {
+    dvlaCancelShareCode: {
       type: "gateway",
       target: "dvla",
-      route: "DELETE /v1/share-code/*",
+      route: "POST /v1/share-code/*",
       response: SingleShareCodeResponseSchema,
     },
     dvlaGetShareCodes: {
@@ -184,13 +184,13 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/share-code/:id": {
-        DELETE: {
+      "/share-code/:id/cancel": {
+        POST: {
           public: {
-            name: "delete-share-code",
+            name: "cancel-share-code",
             integrations: [
               "dvlaAuthenticate",
-              "dvlaDeleteShareCode",
+              "dvlaCancelShareCode",
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],

@@ -3,7 +3,7 @@ import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
-import { handler } from "./delete";
+import { handler } from "./post";
 
 describe("DELETE /v1/share-code/:id", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
@@ -53,7 +53,7 @@ describe("DELETE /v1/share-code/:id", () => {
     mockAuthSuccess();
 
     api
-      .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
+      .post(`/gateways/dvla/v1/share-code/${testTokenId}/cancel`)
       .query({ linkingId: testLinkingId })
       .matchHeader("auth", testAuthToken)
       .reply(status.OK, mockCancelledShareCodeData);
@@ -78,7 +78,7 @@ describe("DELETE /v1/share-code/:id", () => {
       mockAuthSuccess();
 
       api
-        .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
+        .post(`/gateways/dvla/v1/share-code/${testTokenId}/cancel`)
         .query({ linkingId: testLinkingId })
         .reply(status.INTERNAL_SERVER_ERROR, { message: "DVLA Delete Failed" });
 
@@ -100,7 +100,7 @@ describe("DELETE /v1/share-code/:id", () => {
       mockAuthSuccess();
 
       api
-        .delete(`/gateways/dvla/v1/share-code/${testTokenId}`)
+        .post(`/gateways/dvla/v1/share-code/${testTokenId}/cancel`)
         .query({ linkingId: testLinkingId })
         .reply(status.NOT_FOUND, { message: "Token not found" });
 

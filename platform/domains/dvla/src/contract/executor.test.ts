@@ -26,10 +26,12 @@ const remoteClient = {
   },
   shareCode: {
     post: vi.fn(),
-    delete: vi.fn(),
   },
   shareCodes: {
     get: vi.fn(),
+  },
+  cancelShareCode: {
+    post: vi.fn(),
   },
 };
 
@@ -218,13 +220,13 @@ describe("DVLA Executor", () => {
       },
     },
     {
-      method: "DELETE",
-      path: "/v1/share-code/test-share-123",
-      operation: "deleteShareCode",
+      method: "POST",
+      path: "/v1/share-code/test-share-123/cancel",
+      operation: "postShareCode",
       headers: { auth: "Bearer jwt-123" },
       queryParams: { linkingId: "test-id-123" },
       configureRemoteClient: () => {
-        remoteClient.shareCode.delete.mockResolvedValue({
+        remoteClient.cancelShareCode.post.mockResolvedValue({
           ok: true,
           status: 200,
           data: {
@@ -244,7 +246,7 @@ describe("DVLA Executor", () => {
         });
       },
       assertRemoteClientCall: () => {
-        expect(remoteClient.shareCode.delete).toHaveBeenCalledWith(
+        expect(remoteClient.cancelShareCode.post).toHaveBeenCalledWith(
           "test-id-123",
           "Bearer jwt-123",
           "test-share-123",

@@ -72,7 +72,7 @@ export const MultiShareCodeResponseSchema = z.object({
     .describe("A list of share driving licence tokens"),
 });
 
-export const deleteShareCodeRequestSchema = commonRequestSchema.extend({
+export const postShareCodeCancelRequestSchema = commonRequestSchema.extend({
   shareCodeId: NonEmptyString.describe(
     "The unique identifier (tokenId) of the share code to be deleted",
   ),

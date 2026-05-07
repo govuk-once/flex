@@ -33,8 +33,8 @@ const DYNAMIC_ROUTE_LIST: { pattern: RegExp; contract: RouteContract }[] = [
     contract: ROUTE_CONTRACTS["GET:/v1/vehicle-enquiry"],
   },
   {
-    pattern: /^DELETE:\/v1\/share-code\/[^/]+$/,
-    contract: ROUTE_CONTRACTS["DELETE:/v1/share-code/:id"],
+    pattern: /^POST:\/v1\/share-code\/[^/]+\/cancel$/,
+    contract: ROUTE_CONTRACTS["POST:/v1/share-code/:id/cancel"],
   },
 ];
 

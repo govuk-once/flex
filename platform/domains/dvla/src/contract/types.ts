@@ -20,8 +20,8 @@ import {
   GetLicenceResponseSchema,
 } from "../schemas/remote/drivingLicences";
 import {
-  DeleteCodeRequestSchema,
   MultiShareCodeResponse,
+  PostShareCodeCancelRequestSchema,
   ShareCodeRequestSchema,
   SingleShareCodeResponse,
 } from "../schemas/remote/shareCode";
@@ -40,12 +40,12 @@ export type RouteOperation =
   | "getCustomerSummary"
   | "getVehicleEnquiryService"
   | "postShareCode"
-  | "deleteShareCode"
+  | "postShareCodeCancel"
   | "getShareCodes";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
-  TMethod extends "GET" | "POST" | "DELETE",
+  TMethod extends "GET" | "POST",
   TRemoteRequest,
   TRemoteResponse,
   TDomainResponse,
@@ -128,10 +128,10 @@ export type PostShareCode = BaseRouteContract<
   SingleShareCodeResponse
 >;
 
-export type DeleteShareCode = BaseRouteContract<
-  "deleteShareCode",
-  "DELETE",
-  DeleteCodeRequestSchema,
+export type PostShareCodeCancel = BaseRouteContract<
+  "postShareCodeCancel",
+  "POST",
+  PostShareCodeCancelRequestSchema,
   unknown,
   SingleShareCodeResponse
 >;
@@ -153,5 +153,5 @@ export type RouteContract =
   | PostDrivingTestNotification
   | GetVehicleEnquiryServiceRouteContract
   | PostShareCode
-  | DeleteShareCode
+  | PostShareCodeCancel
   | GetShareCodes;

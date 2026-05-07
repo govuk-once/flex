@@ -18,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => {},
+    toRemote: () => { },
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/licence/:id": {
@@ -153,9 +153,9 @@ export const ROUTE_CONTRACTS = {
     },
     callRemote: (client, data) => client.shareCodes.get(data.id, data.jwt),
   },
-  "DELETE:/v1/share-code/:id": {
-    operation: "deleteShareCode",
-    method: "DELETE",
+  "POST:/v1/share-code/:id/cancel": {
+    operation: "postShareCodeCancel",
+    method: "POST",
     inboundPath: "/v1/share-codes",
     remotePath: "/v1/share-codes",
     toRemote: (event) => {
@@ -175,7 +175,7 @@ export const ROUTE_CONTRACTS = {
       return { id, jwt, shareCodeId };
     },
     callRemote: (client, data) =>
-      client.shareCode.delete(data.id, data.jwt, data.shareCodeId),
+      client.cancelShareCode.post(data.id, data.jwt, data.shareCodeId),
   },
   "POST:/v1/share-code": {
     operation: "postShareCode",

@@ -151,7 +151,9 @@ const remoteClient = {
       status: 201,
       data: MOCK_SINGLE_SHARE_CODE_RESPONSE,
     }),
-    delete: vi.fn().mockResolvedValue({
+  },
+  cancelShareCode: {
+    post: vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       data: {
@@ -365,7 +367,7 @@ describe("DVLA Service Gateway", () => {
     expect(remoteClient.shareCode.post).toHaveBeenCalledWith(linkingId, jwt);
   });
 
-  it("dispatches DELETE /v1/share-code/:id and returns cancelled share code", async ({
+  it("dispatches POST /v1/share-code/:id/cancel and returns cancelled share code", async ({
     privateGatewayEvent,
   }) => {
     const jwt = "test-token";
@@ -373,11 +375,14 @@ describe("DVLA Service Gateway", () => {
     const tokenId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 
     const response = await handler(
-      privateGatewayEvent.delete(`/gateways/dvla/v1/share-code/${tokenId}`, {
-        headers: { auth: jwt },
-        queryStringParameters: { linkingId },
-        body: {},
-      }),
+      privateGatewayEvent.post(
+        `/gateways/dvla/v1/share-code/${tokenId}/cancel`,
+        {
+          headers: { auth: jwt },
+          queryStringParameters: { linkingId },
+          body: {},
+        },
+      ),
       context,
     );
 
@@ -392,7 +397,7 @@ describe("DVLA Service Gateway", () => {
       body: JSON.stringify(MOCK_DELETED_RESPONSE),
     });
 
-    expect(remoteClient.shareCode.delete).toHaveBeenCalledWith(
+    expect(remoteClient.cancelShareCode.post).toHaveBeenCalledWith(
       linkingId,
       jwt,
       tokenId,

@@ -5,18 +5,19 @@ import { status } from "http-status";
 import {
   getDvlaAuthToken,
   getUserLinkingId,
-} from "../../../../services/authentication";
+} from "../../../../../services/authentication";
 
-export const handler = route("DELETE /v1/share-code/:id", async (ctx) => {
+export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
   ]);
 
-  const response = await ctx.integrations.dvlaDeleteShareCode({
-    path: `/${ctx.pathParams.id}`,
+  const response = await ctx.integrations.dvlaCancelShareCode({
+    path: `/${ctx.pathParams.id}/cancel`,
     headers: { auth: auth },
     query: { linkingId: userLinkingId },
+    body: {},
   });
 
   if (!response.ok) {

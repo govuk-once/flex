@@ -2,8 +2,8 @@ import z from "zod";
 
 import { commonRequestSchema } from "../common";
 import {
-  deleteShareCodeRequestSchema,
   MultiShareCodeResponseSchema,
+  postShareCodeCancelRequestSchema,
   ShareCodeSchema,
   SingleShareCodeResponseSchema,
 } from "../domain/shareCode";
@@ -18,6 +18,6 @@ export type ShareCode = z.infer<typeof ShareCodeSchema>;
 
 export type ShareCodeRequestSchema = z.infer<typeof commonRequestSchema>;
 
-export type DeleteCodeRequestSchema = z.infer<
-  typeof deleteShareCodeRequestSchema
+export type PostShareCodeCancelRequestSchema = z.infer<
+  typeof postShareCodeCancelRequestSchema
 >;

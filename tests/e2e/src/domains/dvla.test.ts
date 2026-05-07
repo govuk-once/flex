@@ -253,7 +253,7 @@ describe.sequential("DVLA domain", () => {
         }
       });
 
-      it("DELETE: returns 200 and cancels the specified share code", async ({
+      it("POST: returns 200 and cancels the specified share code", async ({
         cloudfront,
         withIdentityLink,
       }) => {
@@ -261,10 +261,11 @@ describe.sequential("DVLA domain", () => {
 
         expect(createdTokenId).toBeDefined();
 
-        const result = await cloudfront.client.delete(
-          `${baseEndpoint}/${createdTokenId}`,
+        const result = await cloudfront.client.post(
+          `${baseEndpoint}/${createdTokenId}/cancel`,
           {
             headers: { ...authorization },
+            body: {},
           },
         );
 
