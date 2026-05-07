@@ -40,8 +40,10 @@ export class QueryParametersParseError extends Error {
 export class AuthorizationError extends Error {
   readonly statusCode = 401;
 
-  constructor() {
-    super("Failed to extract the pairwise ID from the request context");
+  constructor(
+    message = "Failed to extract the pairwise ID from the request context",
+  ) {
+    super(message);
 
     this.name = "AuthorizationError";
   }

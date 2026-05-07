@@ -1,14 +1,17 @@
 import type { ApiResult, FlexFetchRequestInit } from "@flex/flex-fetch";
-import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
+import { createSigv4Fetcher, flexFetch, typedFetch } from "@flex/flex-fetch";
 import { type ZodType } from "zod";
 
 import type {
   DomainConfig,
+  DomainIntegration,
   DomainIntegrations,
   HttpMethod,
   IntegrationResult,
 } from "../types";
+import { AuthorizationError } from "../utils/errors";
 import { extractRouteKeySegments } from "./route-key";
+import { routeStorage } from "./store";
 
 interface ParsedIntegrationRoute extends ReturnType<
   typeof extractRouteKeySegments
@@ -112,13 +115,13 @@ function buildFetcherOptions(
   };
 }
 
-type SigV4Fetcher = (
+type IntegrationFetcher = (
   path: string,
   options?: FlexFetchRequestInit,
 ) => { request: Promise<Response>; abort: () => void };
 
 export function createIntegrationInvoker(
-  fetcher: SigV4Fetcher,
+  fetcher: IntegrationFetcher,
   integration: IntegrationInvokerConfig,
 ): (...args: never[]) => Promise<IntegrationResult> {
   return async (options?: InvokerOptions): Promise<IntegrationResult> => {
@@ -135,7 +138,7 @@ export function createIntegrationInvoker(
 
 interface IntegrationBasePathConfig {
   target: string;
-  type: "domain" | "gateway";
+  type: DomainIntegration["type"];
   version: string;
 }
 
@@ -144,7 +147,16 @@ function createIntegrationBasePath({
   type,
   version,
 }: IntegrationBasePathConfig) {
-  return `/${type === "domain" ? "domains" : "gateways"}/${target}/${version}`;
+  switch (type) {
+    case "domain":
+      return `/domains/${target}/${version}`;
+    case "gateway":
+      return `/gateways/${target}/${version}`;
+    case "public":
+      // Mirrors the prefix CDK mounts public domain routes under
+      // (`platform/infra/flex/src/stacks/domain.ts:158`).
+      return `/app/${target}/${version}`;
+  }
 }
 
 function resolveGatewayUrl(
@@ -177,9 +189,45 @@ function resolveGatewayUrl(
   return value;
 }
 
+interface CreateBearerFetcherOptions {
+  baseUrl: string;
+  getToken: () => string | undefined;
+}
+
+// Bearer-token fetcher for `type: "public"` integrations. Reads the
+// caller's inbound JWT lazily (per call) from the route store, so the
+// same cached fetcher can serve every invocation. Reuses `flexFetch`
+// for retry/abort to keep behaviour identical to the SigV4 path.
+export function createBearerFetcher({
+  baseUrl,
+  getToken,
+}: CreateBearerFetcherOptions): IntegrationFetcher {
+  return (path, options) => {
+    const token = getToken();
+    if (!token) {
+      throw new AuthorizationError(
+        "Public integration invoked without an inbound JWT to forward",
+      );
+    }
+    // Normalise to a plain object before spreading: HeadersInit also
+    // permits Headers / string[][] which lint rightly flags as unsafe
+    // to spread. Within @flex/sdk integrations we always pass plain
+    // record-shaped headers, so the runtime cast is safe.
+    const callerHeaders = (options?.headers ?? {}) as Record<string, string>;
+    const headers: Record<string, string> = {
+      ...callerHeaders,
+      Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+    };
+    return flexFetch(`${baseUrl}${path}`, { ...options, headers });
+  };
+}
+
 // ----------------------------------------------------------------------------
 // Integration / Builder
 // ----------------------------------------------------------------------------
+
+const PRIVATE_GATEWAY_URL_PATH = "/flex/apigw/private/gateway-url";
+const PUBLIC_API_URL_PATH = "/flex/apigw/public/url";
 
 export function buildDomainIntegrations(
   config: DomainConfig,
@@ -194,22 +242,51 @@ export function buildDomainIntegrations(
     throw new Error("AWS region is required when an integration is defined");
   }
 
-  const fetcher = createSigv4Fetcher({
-    baseUrl: resolveGatewayUrl(
-      config.resources,
-      "/flex/apigw/private/gateway-url",
-    ),
-    region,
-  });
+  const integrationEntries = Object.entries(config.integrations);
+  const usesPrivate = integrationEntries.some(
+    ([, integration]) =>
+      integration.type === "domain" || integration.type === "gateway",
+  );
+  const usesPublic = integrationEntries.some(
+    ([, integration]) => integration.type === "public",
+  );
+
+  // Build each fetcher only if at least one integration needs it, so a
+  // domain that only uses one path doesn't have to declare both
+  // gateway-URL resources.
+  const sigv4Fetcher = usesPrivate
+    ? createSigv4Fetcher({
+        baseUrl: resolveGatewayUrl(config.resources, PRIVATE_GATEWAY_URL_PATH),
+        region,
+      })
+    : undefined;
+
+  const bearerFetcher = usesPublic
+    ? createBearerFetcher({
+        baseUrl: resolveGatewayUrl(config.resources, PUBLIC_API_URL_PATH),
+        getToken: () => routeStorage.getStore()?.auth?.bearerToken,
+      })
+    : undefined;
 
   return Object.fromEntries(
-    Object.entries(config.integrations).map(([key, integration]) => {
+    integrationEntries.map(([key, integration]) => {
       const route = parseIntegrationRoute(integration.route);
       const basePath = createIntegrationBasePath({
         target: integration.target ?? config.name,
         type: integration.type,
         version: route.version,
       });
+
+      const fetcher =
+        integration.type === "public" ? bearerFetcher : sigv4Fetcher;
+
+      // Both fetcher branches are guaranteed defined by the usesPublic /
+      // usesPrivate construction above, but narrow defensively.
+      if (!fetcher) {
+        throw new Error(
+          `No fetcher available for integration "${key}" of type "${integration.type}"`,
+        );
+      }
 
       return [
         key,

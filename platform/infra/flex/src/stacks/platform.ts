@@ -377,6 +377,7 @@ export class FlexPlatformStack extends BaseStack {
       [STAGE_KEYS.ApigwPublicRestId]: restApi.restApiId,
       [STAGE_KEYS.ApigwPublicAppRoot]: appRoot.resourceId,
       [STAGE_KEYS.ApigwPublicAuthorizerFn]: authorizerFn.function.functionArn,
+      [STAGE_KEYS.ApigwPublicUrl]: `https://${subdomainName ?? domainName}`,
       [STAGE_KEYS.ApigwPrivateGatewayUrl]: privateGatewayUrl,
       [STAGE_KEYS.ApigwPrivateRestId]: privateGateway.restApiId,
       [STAGE_KEYS.ApigwPrivateDomainRoot]: domainsRoot.resourceId,

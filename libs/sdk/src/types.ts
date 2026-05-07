@@ -206,9 +206,19 @@ export interface IntegrationServiceGateway<
   readonly route: Route;
 }
 
+export interface IntegrationPublicApi<
+  Route extends string = string,
+  Body extends ZodType = ZodType,
+  Response extends ZodType = ZodType,
+> extends DomainIntegrationOptions<Body, Response> {
+  readonly type: "public";
+  readonly route: Route;
+}
+
 export type DomainIntegration =
   | IntegrationDomainService
-  | IntegrationServiceGateway;
+  | IntegrationServiceGateway
+  | IntegrationPublicApi;
 
 // ----------------------------------------------------------------------------
 // Utility
@@ -549,6 +559,10 @@ type WithBody<RouteConfig> = RouteConfig extends {
 
 export interface RouteAuth {
   readonly pairwiseId: string;
+  // Raw inbound `Authorization` header value, surfaced for `type: "public"`
+  // integrations to forward the caller's JWT on outbound calls. Only
+  // populated for routes with an inbound JWT (i.e. public-gateway routes).
+  readonly bearerToken?: string;
 }
 
 interface HandlerSuccessResult {

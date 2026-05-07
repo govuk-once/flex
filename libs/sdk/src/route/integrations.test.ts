@@ -3,21 +3,26 @@ import { assert, beforeEach, describe, expect, vi } from "vitest";
 import z from "zod";
 
 import type { DomainConfig, IntegrationResult } from "../types";
+import { AuthorizationError } from "../utils/errors";
 import type { IntegrationInvokerConfig, InvokerOptions } from "./integrations";
 import {
   buildDomainIntegrations,
+  createBearerFetcher,
   createIntegrationInvoker,
   parseIntegrationRoute,
   toIntegrationResult,
 } from "./integrations";
+import { routeStorage } from "./store";
 
 const mockFetcher = vi.hoisted(() => vi.fn());
 const mockTypedFetch = vi.hoisted(() => vi.fn());
 const mockCreateSigv4Fetcher = vi.hoisted(() => vi.fn(() => mockFetcher));
+const mockFlexFetch = vi.hoisted(() => vi.fn());
 
 vi.mock("@flex/flex-fetch", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@flex/flex-fetch")>()),
   createSigv4Fetcher: mockCreateSigv4Fetcher,
+  flexFetch: mockFlexFetch,
   typedFetch: mockTypedFetch,
 }));
 
@@ -126,6 +131,183 @@ describe("buildDomainIntegrations", () => {
 
     expect(result.sameDomain).toBeTypeOf("function");
     expect(result.crossDomain).toBeTypeOf("function");
+  });
+
+  describe("public integrations", () => {
+    const publicGateway = {
+      key: "publicApiUrl",
+      url: "https://api.example.com",
+      path: "/flex/apigw/public/url",
+    };
+
+    const publicOnlyConfig: DomainConfig = {
+      name: "test-domain",
+      resources: {
+        [publicGateway.key]: { type: "ssm", path: publicGateway.path },
+      },
+      integrations: {
+        publicCall: {
+          type: "public",
+          target: "target-domain",
+          route: "GET /v1/public-endpoint",
+        },
+      },
+      routes: {},
+    };
+
+    it("does not create a SigV4 fetcher when only public integrations exist", ({
+      env,
+    }) => {
+      env.set({ AWS_REGION: region, [publicGateway.key]: publicGateway.url });
+
+      buildDomainIntegrations(publicOnlyConfig);
+
+      expect(mockCreateSigv4Fetcher).not.toHaveBeenCalled();
+    });
+
+    it("resolves the public API URL when a public integration exists", ({
+      env,
+    }) => {
+      env.set({ AWS_REGION: region, [publicGateway.key]: publicGateway.url });
+
+      const result = buildDomainIntegrations(publicOnlyConfig);
+
+      assert(result !== undefined, "No integrations built");
+      expect(result.publicCall).toBeTypeOf("function");
+    });
+
+    it("throws when the public API URL is missing from resources", ({
+      env,
+    }) => {
+      env.set({ AWS_REGION: region });
+
+      expect(() =>
+        buildDomainIntegrations({
+          ...publicOnlyConfig,
+          resources: { unrelated: { type: "ssm", path: "/some/other/param" } },
+        }),
+      ).toThrow(`"${publicGateway.path}" resource was not found`);
+    });
+
+    it("builds both fetchers when public and private integrations coexist", ({
+      env,
+    }) => {
+      env.set({
+        AWS_REGION: region,
+        [gateway.key]: gateway.url,
+        [publicGateway.key]: publicGateway.url,
+      });
+
+      const result = buildDomainIntegrations({
+        ...domainConfig,
+        resources: {
+          [gateway.key]: { type: "ssm", path: gateway.path },
+          [publicGateway.key]: { type: "ssm", path: publicGateway.path },
+        },
+        integrations: {
+          ...domainConfig.integrations,
+          publicCall: {
+            type: "public",
+            target: "target-domain",
+            route: "GET /v1/public-endpoint",
+          },
+        },
+      });
+
+      expect(mockCreateSigv4Fetcher).toHaveBeenCalledOnce();
+      assert(result !== undefined, "No integrations built");
+      expect(result.publicCall).toBeTypeOf("function");
+      expect(result.sameDomain).toBeTypeOf("function");
+    });
+  });
+});
+
+describe("createBearerFetcher", () => {
+  type FlexFetchCall = [string, { headers: Record<string, string> }];
+
+  function lastFlexFetchCall(): FlexFetchCall {
+    return mockFlexFetch.mock.lastCall as FlexFetchCall;
+  }
+
+  beforeEach(() => {
+    mockFlexFetch.mockReturnValue({
+      request: Promise.resolve(new Response()),
+      abort: vi.fn(),
+    });
+  });
+
+  it("forwards the inbound bearer token on the outbound request", () => {
+    const fetcher = createBearerFetcher({
+      baseUrl: "https://api.example.com",
+      getToken: () => "Bearer eyJabc",
+    });
+
+    fetcher("/app/dvla/v1/driving-licence", { method: "GET" });
+
+    const [url, options] = lastFlexFetchCall();
+    expect(url).toBe("https://api.example.com/app/dvla/v1/driving-licence");
+    expect(options.headers.Authorization).toBe("Bearer eyJabc");
+  });
+
+  it("prefixes the token with 'Bearer ' when not already present", () => {
+    const fetcher = createBearerFetcher({
+      baseUrl: "https://api.example.com",
+      getToken: () => "rawTokenWithoutPrefix",
+    });
+
+    fetcher("/app/dvla/v1/driving-licence", { method: "GET" });
+
+    const [, options] = lastFlexFetchCall();
+    expect(options.headers.Authorization).toBe("Bearer rawTokenWithoutPrefix");
+  });
+
+  it("throws AuthorizationError when no inbound bearer token is available", () => {
+    const fetcher = createBearerFetcher({
+      baseUrl: "https://api.example.com",
+      getToken: () => undefined,
+    });
+
+    expect(() =>
+      fetcher("/app/dvla/v1/driving-licence", { method: "GET" }),
+    ).toThrow(AuthorizationError);
+  });
+
+  it("reads the token lazily via getToken (per call, not per build)", () => {
+    const tokenRef: { current: string | undefined } = { current: undefined };
+    const fetcher = createBearerFetcher({
+      baseUrl: "https://api.example.com",
+      getToken: () => tokenRef.current,
+    });
+
+    expect(() => fetcher("/foo", { method: "GET" })).toThrow(
+      AuthorizationError,
+    );
+
+    tokenRef.current = "Bearer xyz";
+    fetcher("/foo", { method: "GET" });
+
+    const [url, options] = lastFlexFetchCall();
+    expect(url).toBe("https://api.example.com/foo");
+    expect(options.headers.Authorization).toBe("Bearer xyz");
+  });
+
+  it("integrates with routeStorage so route handlers' auth is forwarded", () => {
+    const fetcher = createBearerFetcher({
+      baseUrl: "https://api.example.com",
+      getToken: () => routeStorage.getStore()?.auth?.bearerToken,
+    });
+
+    routeStorage.run(
+      {
+        // Minimal store satisfying the shape we exercise.
+        logger: { info: vi.fn() } as never,
+        auth: { pairwiseId: "user-1", bearerToken: "Bearer storedToken" },
+      },
+      () => fetcher("/foo", { method: "GET" }),
+    );
+
+    const [, options] = lastFlexFetchCall();
+    expect(options.headers.Authorization).toBe("Bearer storedToken");
   });
 });
 

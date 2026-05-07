@@ -28,6 +28,7 @@ export const STAGE_KEYS = {
   ApigwPublicRestId: `/${stage}/flex/apigw/public/rest-api-id`,
   ApigwPublicAppRoot: `/${stage}/flex/apigw/public/app-root`,
   ApigwPublicAuthorizerFn: `/${stage}/flex/apigw/public/authorizer-fn`,
+  ApigwPublicUrl: `/${stage}/flex/apigw/public/url`,
   //
   ApigwPrivateRestId: `/${stage}/flex/apigw/private/rest-api-id`,
   ApigwPrivateDomainRoot: `/${stage}/flex/apigw/private/domains-root`,

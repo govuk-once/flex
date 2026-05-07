@@ -50,9 +50,14 @@ const IntegrationServiceGatewaySchema = DomainIntegrationBaseSchema.extend({
   type: z.literal("gateway"),
 });
 
+const IntegrationPublicApiSchema = DomainIntegrationBaseSchema.extend({
+  type: z.literal("public"),
+});
+
 const DomainIntegrationSchema = z.discriminatedUnion("type", [
   IntegrationDomainServiceSchema,
   IntegrationServiceGatewaySchema,
+  IntegrationPublicApiSchema,
 ]);
 
 const DomainConfigCommonSchema = z.object({

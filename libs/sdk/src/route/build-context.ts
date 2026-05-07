@@ -54,7 +54,7 @@ export function buildHandlerContext(
     : undefined;
   return {
     logger,
-    ...(gateway === "public" && { auth: extractAuth(event.requestContext) }),
+    ...(gateway === "public" && { auth: extractAuth(event) }),
     ...(body !== undefined && { body }),
     ...(pathParams && { pathParams }),
     ...(queryParams && { queryParams }),
@@ -65,13 +65,18 @@ export function buildHandlerContext(
   };
 }
 
-function extractAuth(requestContext: LambdaEvent["requestContext"]): RouteAuth {
-  const { pairwiseId } = requestContext.authorizer;
+function extractAuth(event: LambdaEvent): RouteAuth {
+  const { pairwiseId } = event.requestContext.authorizer;
 
   if (!pairwiseId) throw new AuthorizationError();
 
+  // APIGW preserves header casing per request; check both common forms.
+  const bearerToken =
+    event.headers.Authorization ?? event.headers.authorization;
+
   return {
     pairwiseId,
+    ...(bearerToken && { bearerToken }),
   };
 }
 

@@ -15,6 +15,9 @@ function toPermissionGrant(
   { route, type, target }: DomainIntegration,
   domain: string,
 ): PermissionGrant {
+  // `public` integrations call the public API URL via plain HTTPS;
+  // they need no `execute-api:Invoke` grant (the public API enforces
+  // auth via the JWT authorizer, not IAM). Filtered out by callers.
   const prefix = type === "domain" ? "domains" : "gateways";
 
   const { method, version, path } = extractRouteKeySegments(route);
@@ -56,17 +59,20 @@ export function grantRoutePermissions(
 ) {
   if (!target.role || keys.length === 0) return;
 
-  const grants = keys.map((key) => {
-    const integration = integrations.get(key);
+  const grants = keys
+    .map((key) => {
+      const integration = integrations.get(key);
 
-    if (!integration) {
-      throw new Error(
-        `"${key}" was referenced in "integrations" but has not been resolved`,
-      );
-    }
+      if (!integration) {
+        throw new Error(
+          `"${key}" was referenced in "integrations" but has not been resolved`,
+        );
+      }
 
-    return toPermissionGrant(integration, domain);
-  });
+      return integration;
+    })
+    .filter((integration) => integration.type !== "public")
+    .map((integration) => toPermissionGrant(integration, domain));
 
   for (const [method, routes] of getMethodPermissionGrants(grants)) {
     const resources = routes.map((prefix) =>
