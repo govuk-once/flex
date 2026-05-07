@@ -75,14 +75,17 @@ if not samples:
     print("no import-profile samples found", file=sys.stderr)
     sys.exit(1)
 
-print(f"\nsamples: {len(samples)}\n")
+print("")
+print("samples:", len(samples))
+print("")
 keys = sorted({k for s in samples for k in s})
-print(f"{\"stage\":<30} {\"min\":>9} {\"p50\":>9} {\"mean\":>9} {\"max\":>9}")
+header = "stage".ljust(30) + "min".rjust(10) + "p50".rjust(10) + "mean".rjust(10) + "max".rjust(10)
+print(header)
 print("-" * 70)
 for k in keys:
     vals = sorted(s[k] for s in samples if k in s)
     n = len(vals)
     p50 = vals[n // 2]
     avg = sum(vals) / n
-    print(f"{k:<30} {vals[0]:>7.1f}ms {p50:>7.1f}ms {avg:>7.1f}ms {vals[-1]:>7.1f}ms")
+    print(k.ljust(30) + f"{vals[0]:>7.1f}ms" + f"{p50:>7.1f}ms" + f"{avg:>7.1f}ms" + f"{vals[-1]:>7.1f}ms")
 '
