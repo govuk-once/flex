@@ -1,18 +1,22 @@
-// Cascade cold-start probe.
+// Natural-chain cold-start probe.
 //
-// Approximates the user-visible cost of an integration chain
-// (e.g. dvla -> udp) by invoking two Lambdas sequentially, with both
-// forced cold for the cold pass and both warm for the warm pass.
-// The aggregate wall-clock time roughly matches a real chain because
-// real chains pay each Lambda's cold start in sequence plus a small
-// HTTP overhead (~10-20ms intra-region) we don't simulate here.
+// Invokes a real flex public endpoint via HTTPS (with a stub JWT) after
+// forcing every Lambda in the downstream chain to be cold. The chain
+// runs naturally through API Gateway and the production integration
+// path, so the wall-clock we measure is what a real user would see if
+// every Lambda involved happened to cold-start at once.
+//
+// Defaults to dvla driving-licence -> udp identity (the canonical
+// production cascade). Override --path / --cold to test other chains.
 //
 // Usage:
 //   STAGE=pr-257 pnpm cold-starts-cascade
-//   STAGE=pr-257 pnpm cold-starts-cascade --samples 20 --warm-samples 30
+//   STAGE=pr-257 pnpm cold-starts-cascade \
+//     --path /v1/driving-licence \
+//     --cold get-users-drivers-licence,get-service-identity \
+//     --samples 10 --warm-samples 20
 //
-// Defaults to perf domain's cascade-entry / cascade-target Lambdas.
-// Override with --entry / --target to test arbitrary chains.
+// Auth: stub JWT generated via the same path as `pnpm jwt`.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -25,31 +29,38 @@ import {
 } from "@aws-sdk/client-cloudformation";
 import {
   GetFunctionCommand,
-  InvokeCommand,
   LambdaClient,
   UpdateFunctionConfigurationCommand,
   waitUntilFunctionUpdated,
 } from "@aws-sdk/client-lambda";
 
-import { sanitiseStageName } from "@flex/utils";
+import { getStackOutputs, sanitiseStageName } from "@flex/utils";
+
+import { getJwtClient } from "../tests/e2e/src/setup.global";
 
 const PROBE_ENV_KEY = "COLD_START_PROBE";
 const SAMPLES_DEFAULT = 10;
 const WARM_SAMPLES_DEFAULT = 20;
 const REPORTS_DIR = "reports";
 
+const DEFAULT_PATH = "/v1/driving-licence";
+const DEFAULT_COLD_HINTS = [
+  "get-users-drivers-licence",
+  "get-service-identity",
+];
+
 interface CliArgs {
   readonly stage: string;
-  readonly entryHint: string;
-  readonly targetHint: string;
+  readonly path: string;
+  readonly coldHints: readonly string[];
   readonly samples: number;
   readonly warmSamples: number;
 }
 
 interface ResolvedLambda {
+  readonly hint: string;
   readonly functionName: string;
   readonly memorySize: number;
-  readonly codeSize: number;
   readonly existingEnv: Readonly<Record<string, string>>;
 }
 
@@ -61,29 +72,18 @@ interface PercentileSummary {
   readonly mean: number;
 }
 
-interface CascadeRun {
-  readonly entryMs: number;
-  readonly targetMs: number;
+interface ChainSample {
   readonly totalMs: number;
+  readonly status: number;
 }
 
 interface Report {
   readonly stage: string;
   readonly generatedAt: string;
-  readonly entry: { name: string; memory: number; codeSize: number };
-  readonly target: { name: string; memory: number; codeSize: number };
-  readonly cold: {
-    samples: number;
-    entry: PercentileSummary;
-    target: PercentileSummary;
-    total: PercentileSummary;
-  };
-  readonly warm: {
-    samples: number;
-    entry: PercentileSummary;
-    target: PercentileSummary;
-    total: PercentileSummary;
-  };
+  readonly path: string;
+  readonly coldChain: readonly { hint: string; functionName: string; memorySize: number }[];
+  readonly cold: { samples: number; total: PercentileSummary };
+  readonly warm: { samples: number; total: PercentileSummary };
   readonly deltaMsP50: number;
 }
 
@@ -103,19 +103,19 @@ function parseArgs(argv: readonly string[]): CliArgs {
   const warmRaw = readFlag(argv, "--warm-samples") ?? process.env.WARM_SAMPLES;
   const warmSamples = warmRaw ? Number(warmRaw) : WARM_SAMPLES_DEFAULT;
   if (!Number.isInteger(samples) || samples < 1) {
-    throw new Error(
-      `invalid --samples value "${String(samplesRaw)}"; must be a positive integer`,
-    );
+    throw new Error(`invalid --samples value "${String(samplesRaw)}"`);
   }
   if (!Number.isInteger(warmSamples) || warmSamples < 0) {
-    throw new Error(
-      `invalid --warm-samples value "${String(warmRaw)}"; must be a non-negative integer`,
-    );
+    throw new Error(`invalid --warm-samples value "${String(warmRaw)}"`);
   }
+  const coldRaw = readFlag(argv, "--cold");
+  const coldHints = coldRaw
+    ? coldRaw.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
+    : DEFAULT_COLD_HINTS;
   return {
     stage,
-    entryHint: readFlag(argv, "--entry") ?? "perf-cascade-entry",
-    targetHint: readFlag(argv, "--target") ?? "perf-cascade-target",
+    path: readFlag(argv, "--path") ?? DEFAULT_PATH,
+    coldHints,
     samples,
     warmSamples,
   };
@@ -131,13 +131,8 @@ function readFlag(argv: readonly string[], flag: string): string | undefined {
 async function findFunctionByHint(
   stage: string,
   hint: string,
+  cfn: CloudFormationClient,
 ): Promise<string> {
-  // Hint matches the route's `name` from domain.config.ts (e.g.
-  // "perf-cascade-entry"); CDK turns it into a logical id like
-  // "PerfPublicV1PerfCascadeEntryFunction". We list resources of all
-  // ${stage}-* stacks and pick the Lambda whose physical id contains
-  // a camelCased version of the hint.
-  const cfn = new CloudFormationClient();
   const stackPrefix = `${stage}-`;
   const stacks: string[] = [];
   let nextToken: string | undefined;
@@ -187,7 +182,8 @@ async function findFunctionByHint(
   throw new Error(`no Lambda found for hint "${hint}" in stage "${stage}"`);
 }
 
-async function fetchLambdaMetadata(
+async function fetchMetadata(
+  hint: string,
   functionName: string,
   client: LambdaClient,
 ): Promise<ResolvedLambda> {
@@ -196,9 +192,9 @@ async function fetchLambdaMetadata(
   );
   const cfg = response.Configuration;
   return {
+    hint,
     functionName,
     memorySize: cfg?.MemorySize ?? 0,
-    codeSize: cfg?.CodeSize ?? 0,
     existingEnv: cfg?.Environment?.Variables ?? {},
   };
 }
@@ -238,47 +234,18 @@ async function restoreEnv(
   );
 }
 
-async function timedInvoke(
-  functionName: string,
-  client: LambdaClient,
-): Promise<number> {
+async function callEndpoint(
+  url: string,
+  jwt: string,
+): Promise<ChainSample> {
   const t0 = Date.now();
-  await client.send(
-    new InvokeCommand({
-      FunctionName: functionName,
-      Payload: Buffer.from("{}"),
-      InvocationType: "RequestResponse",
-    }),
-  );
-  return Date.now() - t0;
-}
-
-async function runColdSample(
-  entry: ResolvedLambda,
-  target: ResolvedLambda,
-  index: number,
-  client: LambdaClient,
-): Promise<CascadeRun> {
-  const stamp = `${String(Date.now())}-${String(index)}`;
-  // Bump both in parallel — independent updates against different
-  // functions, no concurrency contention on AWS side.
-  await Promise.all([
-    bumpEnvAndWait(entry, stamp, client),
-    bumpEnvAndWait(target, stamp, client),
-  ]);
-  const entryMs = await timedInvoke(entry.functionName, client);
-  const targetMs = await timedInvoke(target.functionName, client);
-  return { entryMs, targetMs, totalMs: entryMs + targetMs };
-}
-
-async function runWarmSample(
-  entry: ResolvedLambda,
-  target: ResolvedLambda,
-  client: LambdaClient,
-): Promise<CascadeRun> {
-  const entryMs = await timedInvoke(entry.functionName, client);
-  const targetMs = await timedInvoke(target.functionName, client);
-  return { entryMs, targetMs, totalMs: entryMs + targetMs };
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { authorization: `Bearer ${jwt}` },
+  });
+  // Drain body so timing reflects full response, not just headers.
+  await response.text();
+  return { totalMs: Date.now() - t0, status: response.status };
 }
 
 function summarise(values: readonly number[]): PercentileSummary {
@@ -298,96 +265,57 @@ function summarise(values: readonly number[]): PercentileSummary {
 
 function buildReport(
   stage: string,
-  entry: ResolvedLambda,
-  target: ResolvedLambda,
-  cold: readonly CascadeRun[],
-  warm: readonly CascadeRun[],
+  path: string,
+  chain: readonly ResolvedLambda[],
+  cold: readonly ChainSample[],
+  warm: readonly ChainSample[],
 ): Report {
-  const coldEntry = summarise(cold.map((r) => r.entryMs));
-  const coldTarget = summarise(cold.map((r) => r.targetMs));
   const coldTotal = summarise(cold.map((r) => r.totalMs));
-  const warmEntry = summarise(warm.map((r) => r.entryMs));
-  const warmTarget = summarise(warm.map((r) => r.targetMs));
   const warmTotal = summarise(warm.map((r) => r.totalMs));
-
   return {
     stage,
     generatedAt: new Date().toISOString(),
-    entry: {
-      name: entry.functionName,
-      memory: entry.memorySize,
-      codeSize: entry.codeSize,
-    },
-    target: {
-      name: target.functionName,
-      memory: target.memorySize,
-      codeSize: target.codeSize,
-    },
-    cold: {
-      samples: cold.length,
-      entry: coldEntry,
-      target: coldTarget,
-      total: coldTotal,
-    },
-    warm: {
-      samples: warm.length,
-      entry: warmEntry,
-      target: warmTarget,
-      total: warmTotal,
-    },
+    path,
+    coldChain: chain.map((c) => ({
+      hint: c.hint,
+      functionName: c.functionName,
+      memorySize: c.memorySize,
+    })),
+    cold: { samples: cold.length, total: coldTotal },
+    warm: { samples: warm.length, total: warmTotal },
     deltaMsP50: coldTotal.p50 - warmTotal.p50,
   };
 }
 
 function renderMarkdown(report: Report): string {
   const lines: string[] = [];
-  lines.push(`# Cascade cold-start report — ${report.stage}`);
+  lines.push(`# Natural-chain cold-start report — ${report.stage}`);
   lines.push("");
   lines.push(`Generated: ${report.generatedAt}`);
-  lines.push(`Entry:  \`${report.entry.name}\` (${String(report.entry.memory)} MB, ${formatBytes(report.entry.codeSize)})`);
-  lines.push(`Target: \`${report.target.name}\` (${String(report.target.memory)} MB, ${formatBytes(report.target.codeSize)})`);
+  lines.push(`Path: \`${report.path}\``);
   lines.push("");
-  lines.push(`Cold samples: ${String(report.cold.samples)}, warm samples: ${String(report.warm.samples)}`);
+  lines.push("## Forced-cold chain");
   lines.push("");
-
-  lines.push("## Aggregate chain time (entry + target wall-clock)");
+  lines.push("| Hint | Function | Memory |");
+  lines.push("|------|----------|--------|");
+  report.coldChain.forEach((c) => {
+    lines.push(
+      `| \`${c.hint}\` | \`${c.functionName}\` | ${String(c.memorySize)} MB |`,
+    );
+  });
   lines.push("");
-  lines.push("| Stage | min | p50 | mean | p99 | max |");
-  lines.push("|-------|-----|-----|------|-----|-----|");
+  lines.push("## End-to-end wall-clock");
+  lines.push("");
+  lines.push("| Stage | Samples | min | p50 | mean | p99 | max |");
+  lines.push("|-------|---------|-----|-----|------|-----|-----|");
   lines.push(
-    `| Cold  | ${formatMs(report.cold.total.min)} | ${formatMs(report.cold.total.p50)} | ${formatMs(report.cold.total.mean)} | ${formatMs(report.cold.total.p99)} | ${formatMs(report.cold.total.max)} |`,
+    `| Cold  | ${String(report.cold.samples)} | ${formatMs(report.cold.total.min)} | ${formatMs(report.cold.total.p50)} | ${formatMs(report.cold.total.mean)} | ${formatMs(report.cold.total.p99)} | ${formatMs(report.cold.total.max)} |`,
   );
   lines.push(
-    `| Warm  | ${formatMs(report.warm.total.min)} | ${formatMs(report.warm.total.p50)} | ${formatMs(report.warm.total.mean)} | ${formatMs(report.warm.total.p99)} | ${formatMs(report.warm.total.max)} |`,
+    `| Warm  | ${String(report.warm.samples)} | ${formatMs(report.warm.total.min)} | ${formatMs(report.warm.total.p50)} | ${formatMs(report.warm.total.mean)} | ${formatMs(report.warm.total.p99)} | ${formatMs(report.warm.total.max)} |`,
   );
-  lines.push(`| **Δ p50** | | **${formatMs(report.deltaMsP50)}** | | | |`);
+  lines.push(`| **Δ p50** | | | **${formatMs(report.deltaMsP50)}** | | | |`);
   lines.push("");
-
-  lines.push("## Per-Lambda breakdown");
-  lines.push("");
-  lines.push("| Lambda | Phase | min | p50 | mean | p99 | max |");
-  lines.push("|--------|-------|-----|-----|------|-----|-----|");
-  lines.push(
-    `| entry  | cold | ${formatMs(report.cold.entry.min)} | ${formatMs(report.cold.entry.p50)} | ${formatMs(report.cold.entry.mean)} | ${formatMs(report.cold.entry.p99)} | ${formatMs(report.cold.entry.max)} |`,
-  );
-  lines.push(
-    `| entry  | warm | ${formatMs(report.warm.entry.min)} | ${formatMs(report.warm.entry.p50)} | ${formatMs(report.warm.entry.mean)} | ${formatMs(report.warm.entry.p99)} | ${formatMs(report.warm.entry.max)} |`,
-  );
-  lines.push(
-    `| target | cold | ${formatMs(report.cold.target.min)} | ${formatMs(report.cold.target.p50)} | ${formatMs(report.cold.target.mean)} | ${formatMs(report.cold.target.p99)} | ${formatMs(report.cold.target.max)} |`,
-  );
-  lines.push(
-    `| target | warm | ${formatMs(report.warm.target.min)} | ${formatMs(report.warm.target.p50)} | ${formatMs(report.warm.target.mean)} | ${formatMs(report.warm.target.p99)} | ${formatMs(report.warm.target.max)} |`,
-  );
-  lines.push("");
-
-  lines.push("## Caveat");
-  lines.push("");
-  lines.push("This script orchestrates the chain externally — it invokes entry");
-  lines.push("then target sequentially. A real flex chain (e.g. dvla calling");
-  lines.push("udp via integration) goes through API Gateway, adding ~10–20ms");
-  lines.push("HTTP overhead per hop on top of these numbers. The cold-start");
-  lines.push("penalties (the dominant cost) are captured accurately.");
   return lines.join("\n");
 }
 
@@ -395,85 +323,96 @@ function formatMs(value: number): string {
   return `${value.toFixed(0)}ms`;
 }
 
-function formatBytes(value: number): string {
-  if (value <= 0) return "—";
-  if (value < 1024) return `${String(value)}B`;
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(0)}KB`;
-  return `${(value / 1024 / 1024).toFixed(1)}MB`;
-}
-
 function reportFilename(stage: string, ext: string): string {
   const isoStamp = new Date().toISOString().replace(/[:.]/g, "-");
   return `cold-starts-cascade-${stage}-${isoStamp}.${ext}`;
 }
 
+const FlexApiUrlOutputSchema = "FlexApiUrl";
+
+async function resolveApiUrl(stage: string): Promise<string> {
+  const outputs = await getStackOutputs(`${stage}-FlexPlatform`);
+  const url = outputs[FlexApiUrlOutputSchema];
+  if (!url) {
+    throw new Error(
+      `${stage}-FlexPlatform stack does not export FlexApiUrl`,
+    );
+  }
+  return url;
+}
+
 async function main(argv: readonly string[]): Promise<number> {
-  const { stage, entryHint, targetHint, samples, warmSamples } =
-    parseArgs(argv);
+  const { stage, path, coldHints, samples, warmSamples } = parseArgs(argv);
 
   process.stdout.write(
-    `cascade probe — stage ${stage}, ${String(samples)} cold + ${String(warmSamples)} warm samples\n`,
+    `cascade probe — stage ${stage}, path ${path}, cold ${String(samples)} + warm ${String(warmSamples)}\n`,
   );
-  process.stdout.write(
-    `entry hint: ${entryHint}\ntarget hint: ${targetHint}\n`,
-  );
+  process.stdout.write(`forcing cold: ${coldHints.join(", ")}\n`);
 
-  const entryName = await findFunctionByHint(stage, entryHint);
-  const targetName = await findFunctionByHint(stage, targetHint);
-  process.stdout.write(`resolved entry  → ${entryName}\n`);
-  process.stdout.write(`resolved target → ${targetName}\n`);
+  const apiUrl = await resolveApiUrl(stage);
+  const fullUrl = new URL(path, apiUrl).toString();
+  process.stdout.write(`url: ${fullUrl}\n`);
 
+  process.stdout.write("→ generating stub JWT…\n");
+  const jwt = await (await getJwtClient(stage)).getToken();
+
+  const cfn = new CloudFormationClient();
   const lambdaClient = new LambdaClient();
-  const entry = await fetchLambdaMetadata(entryName, lambdaClient);
-  const target = await fetchLambdaMetadata(targetName, lambdaClient);
 
-  const cold: CascadeRun[] = [];
+  process.stdout.write("→ resolving lambdas…\n");
+  const chain: ResolvedLambda[] = [];
+  for (const hint of coldHints) {
+    const fn = await findFunctionByHint(stage, hint, cfn);
+    const meta = await fetchMetadata(hint, fn, lambdaClient);
+    chain.push(meta);
+    process.stdout.write(`  ${hint} → ${fn} (${String(meta.memorySize)} MB)\n`);
+  }
+
+  const cold: ChainSample[] = [];
   try {
     process.stdout.write(`\n→ cold pass (${String(samples)} samples)…\n`);
     for (let i = 0; i < samples; i += 1) {
-      const run = await runColdSample(entry, target, i, lambdaClient);
-      cold.push(run);
+      const stamp = `${String(Date.now())}-${String(i)}`;
+      // Bump every chain Lambda in parallel — independent updates.
+      await Promise.all(
+        chain.map((lambda) => bumpEnvAndWait(lambda, stamp, lambdaClient)),
+      );
+      const sample = await callEndpoint(fullUrl, jwt);
+      cold.push(sample);
       process.stdout.write(
-        `  ${String(i + 1).padStart(2, " ")}. entry ${formatMs(run.entryMs).padStart(7, " ")}  target ${formatMs(run.targetMs).padStart(7, " ")}  total ${formatMs(run.totalMs).padStart(7, " ")}\n`,
+        `  ${String(i + 1).padStart(2, " ")}. status ${String(sample.status)}  total ${formatMs(sample.totalMs).padStart(7, " ")}\n`,
       );
     }
   } finally {
-    process.stdout.write(`\n→ restoring env on both lambdas…\n`);
-    await Promise.all([
-      restoreEnv(entry, lambdaClient).catch((e: unknown) => {
-        process.stderr.write(
-          `  failed to restore entry env: ${e instanceof Error ? e.message : String(e)}\n`,
-        );
-      }),
-      restoreEnv(target, lambdaClient).catch((e: unknown) => {
-        process.stderr.write(
-          `  failed to restore target env: ${e instanceof Error ? e.message : String(e)}\n`,
-        );
-      }),
-    ]);
-  }
-
-  // Brief pause so warm pass hits the post-restore container, not
-  // whatever ephemeral state was left mid-restore.
-  await sleep(2000);
-
-  process.stdout.write(`\n→ warm pass (${String(warmSamples)} samples)…\n`);
-  // Prime: run one invoke pair so both Lambdas are guaranteed warm
-  // before we start sampling (the env restore creates a new container
-  // for the next invoke).
-  if (warmSamples > 0) {
-    await runWarmSample(entry, target, lambdaClient);
-  }
-  const warm: CascadeRun[] = [];
-  for (let i = 0; i < warmSamples; i += 1) {
-    const run = await runWarmSample(entry, target, lambdaClient);
-    warm.push(run);
-    process.stdout.write(
-      `  ${String(i + 1).padStart(2, " ")}. entry ${formatMs(run.entryMs).padStart(7, " ")}  target ${formatMs(run.targetMs).padStart(7, " ")}  total ${formatMs(run.totalMs).padStart(7, " ")}\n`,
+    process.stdout.write(`\n→ restoring env on chain lambdas…\n`);
+    await Promise.all(
+      chain.map((lambda) =>
+        restoreEnv(lambda, lambdaClient).catch((e: unknown) => {
+          process.stderr.write(
+            `  failed to restore ${lambda.hint}: ${e instanceof Error ? e.message : String(e)}\n`,
+          );
+        }),
+      ),
     );
   }
 
-  const report = buildReport(stage, entry, target, cold, warm);
+  await sleep(2000);
+
+  process.stdout.write(`\n→ warm pass (${String(warmSamples)} samples)…\n`);
+  if (warmSamples > 0) {
+    // Prime so warm samples hit a stable container.
+    await callEndpoint(fullUrl, jwt);
+  }
+  const warm: ChainSample[] = [];
+  for (let i = 0; i < warmSamples; i += 1) {
+    const sample = await callEndpoint(fullUrl, jwt);
+    warm.push(sample);
+    process.stdout.write(
+      `  ${String(i + 1).padStart(2, " ")}. status ${String(sample.status)}  total ${formatMs(sample.totalMs).padStart(7, " ")}\n`,
+    );
+  }
+
+  const report = buildReport(stage, path, chain, cold, warm);
   mkdirSync(REPORTS_DIR, { recursive: true });
   const jsonPath = resolve(REPORTS_DIR, reportFilename(stage, "json"));
   const markdownPath = resolve(REPORTS_DIR, reportFilename(stage, "md"));
@@ -482,12 +421,8 @@ async function main(argv: readonly string[]): Promise<number> {
 
   process.stdout.write(`\nsummary:\n`);
   process.stdout.write(
-    `  cold total p50: ${formatMs(report.cold.total.p50)}  (entry ${formatMs(report.cold.entry.p50)} + target ${formatMs(report.cold.target.p50)})\n`,
+    `  cold p50: ${formatMs(report.cold.total.p50)}  warm p50: ${formatMs(report.warm.total.p50)}  Δ p50: ${formatMs(report.deltaMsP50)}\n`,
   );
-  process.stdout.write(
-    `  warm total p50: ${formatMs(report.warm.total.p50)}  (entry ${formatMs(report.warm.entry.p50)} + target ${formatMs(report.warm.target.p50)})\n`,
-  );
-  process.stdout.write(`  Δ p50: ${formatMs(report.deltaMsP50)}\n`);
   process.stdout.write(`\nreport: ${jsonPath}\n`);
   process.stdout.write(`        ${markdownPath}\n`);
   return 0;
