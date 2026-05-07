@@ -68,19 +68,19 @@ export const { config, route, routeContext } = domain({
       response: GetServiceIdentityLinkResponseSchema,
     },
     dvlaPostShareCode: {
-      type: "domain",
+      type: "gateway",
       target: "dvla",
       route: "POST /v1/share-code",
       response: SingleShareCodeResponseSchema,
     },
     dvlaDeleteShareCode: {
-      type: "domain",
+      type: "gateway",
       target: "dvla",
       route: "DELETE /v1/share-code/*",
       response: SingleShareCodeResponseSchema,
     },
     dvlaGetShareCodes: {
-      type: "domain",
+      type: "gateway",
       target: "dvla",
       route: "GET /v1/share-codes",
       response: MultiShareCodeResponseSchema,

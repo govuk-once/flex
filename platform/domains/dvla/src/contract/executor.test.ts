@@ -24,6 +24,13 @@ const remoteClient = {
   vehicle: {
     get: vi.fn(),
   },
+  shareCode: {
+    post: vi.fn(),
+    delete: vi.fn(),
+  },
+  shareCodes: {
+    get: vi.fn(),
+  },
 };
 
 describe("DVLA Executor", () => {
@@ -141,10 +148,120 @@ describe("DVLA Executor", () => {
         expect(remoteClient.vehicle.get).toHaveBeenCalledWith("AA11ABC");
       },
     },
+    {
+      method: "GET",
+      path: "/v1/share-codes",
+      operation: "getShareCodes",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "test-id-123" },
+      configureRemoteClient: () => {
+        remoteClient.shareCodes.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            linkingId: "550e8400-e29b-41d4-a716-446655440000",
+            shareCodes: [
+              {
+                state: "valid",
+                tokenId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+                token: "B2CDFGHJ",
+                drivingLicenceNumber: "SMITH952052S99ABC",
+                driverId: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+                documentReference: "REF12345",
+                created: "2026-05-01T10:00:00Z",
+                expiry: "2026-05-22T10:00:00Z",
+                status: "active",
+                cancelled: "2026-05-22T10:00:00Z",
+              },
+            ],
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.shareCodes.get).toHaveBeenCalledWith(
+          "test-id-123",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/share-code",
+      operation: "postShareCode",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "test-id-123" },
+      configureRemoteClient: () => {
+        remoteClient.shareCode.post.mockResolvedValue({
+          ok: true,
+          status: 201,
+          data: {
+            linkingId: "550e8400-e29b-41d4-a716-446655440000",
+            shareCode: {
+              state: "valid",
+              tokenId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+              token: "XWRPTSMK",
+              drivingLicenceNumber: "JONES952052J99XYZ",
+              driverId: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+              documentReference: "DOC99999",
+              created: "2026-05-07T09:00:00Z",
+              expiry: "2026-05-28T09:00:00Z",
+              cancelled: "2026-05-28T09:00:00Z",
+            },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.shareCode.post).toHaveBeenCalledWith(
+          "test-id-123",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "DELETE",
+      path: "/v1/share-code/test-share-123",
+      operation: "deleteShareCode",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "test-id-123" },
+      configureRemoteClient: () => {
+        remoteClient.shareCode.delete.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            linkingId: "550e8400-e29b-41d4-a716-446655440000",
+            shareCode: {
+              state: "cancelled",
+              tokenId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+              token: "B2CDFGHJ",
+              drivingLicenceNumber: "SMITH952052S99ABC",
+              driverId: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+              documentReference: "REF12345",
+              created: "2026-05-01T10:00:00Z",
+              expiry: "2026-05-22T10:00:00Z",
+              cancelled: "2026-05-07T11:00:00Z",
+            },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.shareCode.delete).toHaveBeenCalledWith(
+          "test-id-123",
+          "Bearer jwt-123",
+          "test-share-123",
+        );
+      },
+    },
   ])(
     "should resolve request for $method $path to $operation",
     async (
-      { method, path, headers, configureRemoteClient, assertRemoteClientCall },
+      {
+        method,
+        path,
+        headers,
+        queryParams,
+        configureRemoteClient,
+        assertRemoteClientCall,
+      },
       { privateGatewayEvent },
     ) => {
       configureRemoteClient();
@@ -153,6 +270,7 @@ describe("DVLA Executor", () => {
         httpMethod: method,
         path,
         headers,
+        queryStringParameters: queryParams,
       });
 
       const result = await execute(event, remoteClient);

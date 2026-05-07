@@ -14,16 +14,20 @@ export const handler = route("DELETE /v1/share-code/:id", async (ctx) => {
   ]);
 
   const response = await ctx.integrations.dvlaDeleteShareCode({
-    path: ctx.pathParams.id,
+    path: `/${ctx.pathParams.id}`,
     headers: { auth: auth },
     query: { linkingId: userLinkingId },
   });
 
   if (!response.ok) {
-    ctx.logger.error("Failed to create new share codes with DVLA", {
+    ctx.logger.error("Failed to delete share code with DVLA", {
       status: response.error.status,
       errorBody: response.error.body,
     });
+
+    if (response.error.status === status.NOT_FOUND) {
+      throw new createHttpError.NotFound();
+    }
 
     throw new createHttpError.BadGateway();
   }
