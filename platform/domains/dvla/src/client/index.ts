@@ -168,12 +168,12 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
         return typedFetch(request);
       },
       delete: (
-        jwt: string,
         linkingId: string,
+        jwt: string,
         tokenId: string,
       ): Promise<ApiResult<void>> => {
         const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.app}/create-driving-licence-share-code`,
+          `${DVLA_REMOTE_ROUTES.app}/cancel-driving-licence-share-code`,
           {
             method: "POST",
             headers: {

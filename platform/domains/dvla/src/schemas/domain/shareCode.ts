@@ -48,13 +48,15 @@ export const ShareCodeSchema = z.object({
     message: "The date-time the token will expire",
   }),
 
-  status: z.enum(["active", "inactive"]).optional(),
+  status: z.enum(["active", "inactive"]).nullish(),
 
-  redeemed: z.iso.datetime().optional(),
+  redeemed: z.iso.datetime().nullish(),
 
-  cancelled: z.iso.datetime({
-    message: "The date-time the token was cancelled",
-  }),
+  cancelled: z.iso
+    .datetime({
+      message: "The date-time the token was cancelled",
+    })
+    .nullish(),
 });
 
 export const SingleShareCodeResponseSchema = z.object({
