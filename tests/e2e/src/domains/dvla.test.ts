@@ -1,6 +1,10 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { viewDriverResponseSchema } from "@flex/dvla-domain";
-import { vehicleEnquiryResponseSchema } from "@flex/dvla-service-gateway";
+import {
+  MultiShareCodeResponseSchema,
+  SingleShareCodeResponseSchema,
+  vehicleEnquiryResponseSchema,
+} from "@flex/dvla-service-gateway";
 import { beforeAll, describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
@@ -195,6 +199,98 @@ describe.sequential("DVLA domain", () => {
         });
 
         expect(result.status).toBe(502);
+      });
+    });
+  });
+
+  describe("/dvla/v1/share-code(s)", () => {
+    const listEndpoint = "/dvla/v1/share-codes";
+    const baseEndpoint = "/dvla/v1/share-code";
+    let createdTokenId: string;
+
+    describe("Flow: Create, List, and Delete", () => {
+      it("POST: returns 200 and creates a new share code", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
+
+        const result = await cloudfront.client.post(baseEndpoint, {
+          headers: { ...authorization },
+          body: {},
+        });
+
+        expect(result.status).toBe(200);
+
+        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        expect(validation.success).toBe(true);
+
+        if (validation.success) {
+          createdTokenId = validation.data.shareCode.tokenId;
+        }
+      });
+
+      it("GET: returns 200 and lists all share codes", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
+
+        const result = await cloudfront.client.get(listEndpoint, {
+          headers: { ...authorization },
+        });
+
+        expect(result.status).toBe(200);
+
+        const validation = MultiShareCodeResponseSchema.safeParse(result.body);
+        expect(validation.success).toBe(true);
+
+        if (validation.success) {
+          const exists = validation.data.shareCodes.some(
+            (sc) => sc.tokenId === createdTokenId,
+          );
+          expect(exists).toBe(true);
+        }
+      });
+
+      it("DELETE: returns 200 and cancels the specified share code", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
+
+        expect(createdTokenId).toBeDefined();
+
+        const result = await cloudfront.client.delete(
+          `${baseEndpoint}/${createdTokenId}`,
+          {
+            headers: { ...authorization },
+          },
+        );
+
+        expect(result.status).toBe(200);
+
+        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        expect(validation.success).toBe(true);
+
+        if (validation.success) {
+          expect(validation.data.shareCode.state).toBe("cancelled");
+          expect(validation.data.shareCode.tokenId).toBe(createdTokenId);
+        }
+      });
+    });
+
+    describe("Edge Cases", () => {
+      it("GET: returns 404 when user is not linked", async ({
+        cloudfront,
+        withCleanIdentity,
+      }) => {
+        await withCleanIdentity("dvla");
+
+        const result = await cloudfront.client.get(listEndpoint, {
+          headers: { ...authorization },
+        });
+        expect(result.status).toBe(404);
       });
     });
   });
