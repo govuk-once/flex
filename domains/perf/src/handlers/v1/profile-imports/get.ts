@@ -2,27 +2,26 @@ import { performance } from "node:perf_hooks";
 
 import { route } from "@domain";
 
-// Each cold start triggers a fresh module-instantiation pass. Dynamic
-// imports inside the handler force these to run on first invoke,
-// where we can time them individually. The breakdown is logged so
-// it surfaces in CloudWatch alongside the REPORT line we already
-// capture for init duration.
-export const handler = route("GET /v1/profile-imports", async () => {
-  const stages: Record<string, number> = {};
+// Run timed dynamic imports at module top so they execute during
+// cold-start init (and the resulting log line gets emitted regardless
+// of whether the invoke event ever reaches the handler body).
+// Top-level await is supported on Node.js 20+ Lambda runtime.
+const stages: Record<string, number> = {};
 
-  let t = performance.now();
-  await import("@flex/udp-domain");
-  stages.flexUdpDomain = performance.now() - t;
+let t = performance.now();
+await import("@flex/udp-domain");
+stages.flexUdpDomain = performance.now() - t;
 
-  t = performance.now();
-  await import("@flex/dvla-service-gateway");
-  stages.flexDvlaServiceGateway = performance.now() - t;
+t = performance.now();
+await import("@flex/dvla-service-gateway");
+stages.flexDvlaServiceGateway = performance.now() - t;
 
-  t = performance.now();
-  await import("@aws-sdk/client-ssm");
-  stages.awsSdkClientSsm = performance.now() - t;
+t = performance.now();
+await import("@aws-sdk/client-ssm");
+stages.awsSdkClientSsm = performance.now() - t;
 
-  console.log(JSON.stringify({ message: "import-profile", stages }));
+console.log(JSON.stringify({ message: "import-profile", stages }));
 
-  return { status: 200, data: { ok: true, stages } };
-});
+export const handler = route("GET /v1/profile-imports", () =>
+  Promise.resolve({ status: 200, data: { ok: true, stages } }),
+);
