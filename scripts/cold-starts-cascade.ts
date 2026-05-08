@@ -12,9 +12,13 @@
 // Usage:
 //   STAGE=pr-257 pnpm cold-starts-cascade
 //   STAGE=pr-257 pnpm cold-starts-cascade \
-//     --path /v1/driving-licence \
+//     --path /dvla/v1/driving-licence \
 //     --cold get-users-drivers-licence,get-service-identity \
 //     --samples 10 --warm-samples 20
+//
+// Path format: /<domain>/<version>/<route> — the script prepends
+// flex's public `/app` mount-point automatically. Mirrors how e2e
+// tests construct URLs against the cloudfront fixture.
 //
 // Auth: stub JWT generated via the same path as `pnpm jwt`.
 
@@ -43,11 +47,16 @@ const SAMPLES_DEFAULT = 10;
 const WARM_SAMPLES_DEFAULT = 20;
 const REPORTS_DIR = "reports";
 
-const DEFAULT_PATH = "/v1/driving-licence";
+const DEFAULT_PATH = "/dvla/v1/driving-licence";
 const DEFAULT_COLD_HINTS = [
   "get-users-drivers-licence",
   "get-service-identity",
 ];
+
+// flex mounts every public domain route under this prefix on the
+// public APIGW, fronted by CloudFront. The e2e cloudfront fixture
+// uses the same base (`${FLEX_API_URL}/app`).
+const PUBLIC_API_MOUNT_PREFIX = "/app";
 
 interface CliArgs {
   readonly stage: string;
@@ -350,7 +359,9 @@ async function main(argv: readonly string[]): Promise<number> {
   process.stdout.write(`forcing cold: ${coldHints.join(", ")}\n`);
 
   const apiUrl = await resolveApiUrl(stage);
-  const fullUrl = new URL(path, apiUrl).toString();
+  const trimmedBase = apiUrl.replace(/\/$/, "");
+  const normalisedPath = path.startsWith("/") ? path : `/${path}`;
+  const fullUrl = `${trimmedBase}${PUBLIC_API_MOUNT_PREFIX}${normalisedPath}`;
   process.stdout.write(`url: ${fullUrl}\n`);
 
   process.stdout.write("→ generating stub JWT…\n");
