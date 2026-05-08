@@ -6,8 +6,20 @@ export const { config, route, routeContext } = domain({
     access: "public",
     function: { timeoutSeconds: 10, memorySize: 128 },
   },
-  resources: {},
-  integrations: {},
+  resources: {
+    flexPublicApiUrl: {
+      type: "ssm",
+      path: "/flex/apigw/public/url",
+      scope: "stage",
+    },
+  },
+  integrations: {
+    dvlaDrivingLicencePublic: {
+      type: "public",
+      target: "dvla",
+      route: "GET /v1/driving-licence",
+    },
+  },
   routes: {
     v1: {
       "/baseline": {
@@ -92,6 +104,15 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "perf-profile-imports",
             integrations: [],
+          },
+        },
+      },
+      "/cascade-public": {
+        GET: {
+          public: {
+            name: "perf-cascade-public",
+            resources: ["flexPublicApiUrl"],
+            integrations: ["dvlaDrivingLicencePublic"],
           },
         },
       },
