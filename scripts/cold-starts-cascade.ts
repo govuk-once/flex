@@ -47,10 +47,10 @@ const SAMPLES_DEFAULT = 10;
 const WARM_SAMPLES_DEFAULT = 20;
 const REPORTS_DIR = "reports";
 
-const DEFAULT_PATH = "/dvla/v1/driving-licence";
+const DEFAULT_PATH = "/perf/v1/cascade-local-council";
 const DEFAULT_COLD_HINTS = [
-  "get-users-drivers-licence",
-  "get-service-identity",
+  "perf-cascade-local-council",
+  "public-v1-get-local-a",
 ];
 const PUBLIC_API_MOUNT_PREFIX = "/app";
 
