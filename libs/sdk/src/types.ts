@@ -559,9 +559,6 @@ type WithBody<RouteConfig> = RouteConfig extends {
 
 export interface RouteAuth {
   readonly pairwiseId: string;
-  // Raw inbound `Authorization` header value, surfaced for `type: "public"`
-  // integrations to forward the caller's JWT on outbound calls. Only
-  // populated for routes with an inbound JWT (i.e. public-gateway routes).
   readonly bearerToken?: string;
 }
 

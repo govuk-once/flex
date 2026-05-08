@@ -70,7 +70,6 @@ function extractAuth(event: LambdaEvent): RouteAuth {
 
   if (!pairwiseId) throw new AuthorizationError();
 
-  // APIGW preserves header casing per request; check both common forms.
   const bearerToken =
     event.headers.Authorization ?? event.headers.authorization;
 

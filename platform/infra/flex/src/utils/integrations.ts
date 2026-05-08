@@ -15,9 +15,6 @@ function toPermissionGrant(
   { route, type, target }: DomainIntegration,
   domain: string,
 ): PermissionGrant {
-  // `public` integrations call the public API URL via plain HTTPS;
-  // they need no `execute-api:Invoke` grant (the public API enforces
-  // auth via the JWT authorizer, not IAM). Filtered out by callers.
   const prefix = type === "domain" ? "domains" : "gateways";
 
   const { method, version, path } = extractRouteKeySegments(route);

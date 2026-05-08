@@ -153,8 +153,6 @@ function createIntegrationBasePath({
     case "gateway":
       return `/gateways/${target}/${version}`;
     case "public":
-      // Mirrors the prefix CDK mounts public domain routes under
-      // (`platform/infra/flex/src/stacks/domain.ts:158`).
       return `/app/${target}/${version}`;
   }
 }
@@ -194,10 +192,6 @@ interface CreateBearerFetcherOptions {
   getToken: () => string | undefined;
 }
 
-// Bearer-token fetcher for `type: "public"` integrations. Reads the
-// caller's inbound JWT lazily (per call) from the route store, so the
-// same cached fetcher can serve every invocation. Reuses `flexFetch`
-// for retry/abort to keep behaviour identical to the SigV4 path.
 export function createBearerFetcher({
   baseUrl,
   getToken,
@@ -209,10 +203,6 @@ export function createBearerFetcher({
         "Public integration invoked without an inbound JWT to forward",
       );
     }
-    // Normalise to a plain object before spreading: HeadersInit also
-    // permits Headers / string[][] which lint rightly flags as unsafe
-    // to spread. Within @flex/sdk integrations we always pass plain
-    // record-shaped headers, so the runtime cast is safe.
     const callerHeaders = (options?.headers ?? {}) as Record<string, string>;
     const headers: Record<string, string> = {
       ...callerHeaders,
@@ -251,9 +241,6 @@ export function buildDomainIntegrations(
     ([, integration]) => integration.type === "public",
   );
 
-  // Build each fetcher only if at least one integration needs it, so a
-  // domain that only uses one path doesn't have to declare both
-  // gateway-URL resources.
   const sigv4Fetcher = usesPrivate
     ? createSigv4Fetcher({
         baseUrl: resolveGatewayUrl(config.resources, PRIVATE_GATEWAY_URL_PATH),
@@ -280,8 +267,6 @@ export function buildDomainIntegrations(
       const fetcher =
         integration.type === "public" ? bearerFetcher : sigv4Fetcher;
 
-      // Both fetcher branches are guaranteed defined by the usesPublic /
-      // usesPrivate construction above, but narrow defensively.
       if (!fetcher) {
         throw new Error(
           `No fetcher available for integration "${key}" of type "${integration.type}"`,

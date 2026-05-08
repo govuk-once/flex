@@ -52,10 +52,6 @@ const DEFAULT_COLD_HINTS = [
   "get-users-drivers-licence",
   "get-service-identity",
 ];
-
-// flex mounts every public domain route under this prefix on the
-// public APIGW, fronted by CloudFront. The e2e cloudfront fixture
-// uses the same base (`${FLEX_API_URL}/app`).
 const PUBLIC_API_MOUNT_PREFIX = "/app";
 
 interface CliArgs {
