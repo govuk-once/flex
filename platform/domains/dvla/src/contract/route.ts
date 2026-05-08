@@ -104,6 +104,7 @@ export const ROUTE_CONTRACTS = {
     remotePath: "/v1/customer-summary",
     toRemote: (event) => {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
+
       const pathParams = normalizeInboundPath(event.path).split("/");
       const id = pathParams[3];
       if (!id) {
@@ -133,6 +134,66 @@ export const ROUTE_CONTRACTS = {
       return { registrationNumber };
     },
     callRemote: (client, data) => client.vehicle.get(data.registrationNumber),
+  },
+  "GET:/v1/share-codes": {
+    operation: "getShareCodes",
+    method: "GET",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.shareCodes.get(data.id, data.jwt),
+  },
+  "POST:/v1/share-code/:id/cancel": {
+    operation: "postShareCodeCancel",
+    method: "POST",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
+
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const shareCodeId = pathParams[3];
+      if (!shareCodeId) {
+        throw new createHttpError.BadRequest("Missing shareCodeid in path");
+      }
+      return { id, jwt, shareCodeId };
+    },
+    callRemote: (client, data) =>
+      client.cancelShareCode.post(data.id, data.jwt, data.shareCodeId),
+  },
+  "POST:/v1/share-code": {
+    operation: "postShareCode",
+    method: "POST",
+    inboundPath: "/v1/share-codes",
+    remotePath: "/v1/share-codes",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const id = event.queryStringParameters?.linkingId;
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing linking-id query parameter",
+        );
+      }
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.shareCode.post(data.id, data.jwt),
   },
 } as const satisfies Record<string, RouteContract>;
 

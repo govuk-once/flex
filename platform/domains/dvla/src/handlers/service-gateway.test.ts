@@ -72,6 +72,29 @@ const MOCK_VEHICLE_RESPONSE = {
   automatedVehicle: false,
 };
 
+const MOCK_SHARE_CODE = {
+  state: "valid",
+  tokenId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  token: "B2CDFGHJ",
+  drivingLicenceNumber: "SMITH952052S99ABC",
+  driverId: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+  documentReference: "REF12345",
+  created: "2026-05-01T10:00:00Z",
+  expiry: "2026-05-22T10:00:00Z",
+  status: "active",
+  cancelled: "2026-05-22T10:00:00Z",
+};
+
+const MOCK_SINGLE_SHARE_CODE_RESPONSE = {
+  linkingId: "test-linking-id",
+  shareCode: MOCK_SHARE_CODE,
+};
+
+const MOCK_MULTI_SHARE_CODE_RESPONSE = {
+  linkingId: "test-linking-id",
+  shareCodes: [MOCK_SHARE_CODE],
+};
+
 const remoteClient = {
   authentication: {
     get: vi.fn().mockResolvedValue({
@@ -113,6 +136,30 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_VEHICLE_RESPONSE,
+    }),
+  },
+  shareCodes: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_MULTI_SHARE_CODE_RESPONSE,
+    }),
+  },
+  shareCode: {
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      data: MOCK_SINGLE_SHARE_CODE_RESPONSE,
+    }),
+  },
+  cancelShareCode: {
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        ...MOCK_SINGLE_SHARE_CODE_RESPONSE,
+        shareCode: { ...MOCK_SHARE_CODE, state: "cancelled" },
+      },
     }),
   },
 };
@@ -271,6 +318,90 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.vehicle.get).toHaveBeenCalledWith(registrationNumber);
+  });
+
+  it("dispatches GET /v1/share-codes and returns multiple share codes", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "test-linking-id";
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/dvla/v1/share-codes", {
+        headers: { auth: jwt },
+        queryStringParameters: { linkingId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_MULTI_SHARE_CODE_RESPONSE),
+    });
+
+    expect(remoteClient.shareCodes.get).toHaveBeenCalledWith(linkingId, jwt);
+  });
+
+  it("dispatches POST /v1/share-code and returns created share code", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "test-linking-id";
+
+    const response = await handler(
+      privateGatewayEvent.post("/gateways/dvla/v1/share-code", {
+        headers: { auth: jwt },
+        body: {},
+        queryStringParameters: { linkingId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 201,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_SINGLE_SHARE_CODE_RESPONSE),
+    });
+
+    expect(remoteClient.shareCode.post).toHaveBeenCalledWith(linkingId, jwt);
+  });
+
+  it("dispatches POST /v1/share-code/:id/cancel and returns cancelled share code", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "test-linking-id";
+    const tokenId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+
+    const response = await handler(
+      privateGatewayEvent.post(
+        `/gateways/dvla/v1/share-code/${tokenId}/cancel`,
+        {
+          headers: { auth: jwt },
+          queryStringParameters: { linkingId },
+          body: {},
+        },
+      ),
+      context,
+    );
+
+    const MOCK_DELETED_RESPONSE = {
+      ...MOCK_SINGLE_SHARE_CODE_RESPONSE,
+      shareCode: { ...MOCK_SHARE_CODE, state: "cancelled" },
+    };
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_DELETED_RESPONSE),
+    });
+
+    expect(remoteClient.cancelShareCode.post).toHaveBeenCalledWith(
+      linkingId,
+      jwt,
+      tokenId,
+    );
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({
