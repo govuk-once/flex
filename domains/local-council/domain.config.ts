@@ -36,6 +36,12 @@ export const { config, route, routeContext } = domain({
     v1: {
       "/local-council/:id": {
         POST: {
+          public: {
+            name: "upsert-local-authority-public",
+            resources: ["flexPrivateGatewayUrl"],
+            integrations: ["udpSaveLocalAuthority"],
+            body: LocalAuthoritySchema,
+          },
           private: {
             name: "upsert-local-authority",
             resources: ["flexPrivateGatewayUrl"],
@@ -44,6 +50,12 @@ export const { config, route, routeContext } = domain({
           },
         },
         GET: {
+          public: {
+            name: "get-local-authority-public",
+            resources: ["flexPrivateGatewayUrl"],
+            integrations: ["udpGetLocalAuthority"],
+            response: LocalAuthorityResponseSchema,
+          },
           private: {
             name: "get-local-authority",
             resources: ["flexPrivateGatewayUrl"],

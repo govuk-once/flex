@@ -19,6 +19,11 @@ export const { config, route, routeContext } = domain({
       target: "dvla",
       route: "GET /v1/driving-licence",
     },
+    localCouncilGetPublic: {
+      type: "public",
+      target: "local-council",
+      route: "GET /v1/local-council/*",
+    },
   },
   routes: {
     v1: {
@@ -113,6 +118,15 @@ export const { config, route, routeContext } = domain({
             name: "perf-cascade-public",
             resources: ["flexPublicApiUrl"],
             integrations: ["dvlaDrivingLicencePublic"],
+          },
+        },
+      },
+      "/cascade-local-council": {
+        GET: {
+          public: {
+            name: "perf-cascade-local-council",
+            resources: ["flexPublicApiUrl"],
+            integrations: ["localCouncilGetPublic"],
           },
         },
       },
