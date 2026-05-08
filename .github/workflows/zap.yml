@@ -1,0 +1,68 @@
+name: ZAP API scan
+
+on:
+  workflow_run:
+    workflows: [Continuous Deployment]
+    types:
+      - completed
+
+
+jobs:
+  zap_scan:
+      if: ${{ github.event.workflow_run.conclusion == 'success' }}
+      runs-on: ubuntu-latest
+      name: ⚡️ Zap staging
+      timeout-minutes: 30
+      steps:
+        - name: Checkout
+          uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+          with:
+              ref: main
+              fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063 # v5.1.1
+          with:
+            role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+            aws-region: 'eu-west-2'
+            role-session-name: ${{ github.run_id }}
+
+        - name: Setup node
+          uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+          with:
+            node-version-file: ".nvmrc"
+
+        - name: Install dependencies
+          run: |
+            npm install -g pnpm@latest-10
+            pnpm install
+
+        - name: Generate JWT
+          env:
+            STAGE: 'staging'
+          run: pnpm dastSetup
+
+        - name: ZAP Scan
+          uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
+          with:
+              token: ${{ secrets.GITHUB_TOKEN }}
+              docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
+              format: openapi
+              target: ./.zap/merged-openapi.json
+              rules_file_name: './.zap/rules.tsv'
+              # URL can't have trailing slash
+              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+              allow_issue_writing: false # We don't want to create Github issues for now
+
+        - name: Upload to Security Tab
+          if: always() # Upload even if vulnerabilities are found
+          uses: github/codeql-action/upload-sarif@e46ed2cbd01164d986452f91f178727624ae40d7 # v4.35.3
+          with:
+            sarif_file: 'report.sarif'
+            category: 'owasp-zap'
+
+  workflow_fail:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+        - run: echo "❌ Continuous Deployment workflow failed"

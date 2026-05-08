@@ -1,0 +1,890 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "dvla",
+    "version": "1.0.0",
+    "description": "Driving licence, customer summary, and driver summary endpoints",
+    "x-flex-default-errors": [
+      502
+    ]
+  },
+  "tags": [
+    {
+      "name": "dvla_other",
+      "x-displayName": "other"
+    },
+    {
+      "name": "udp_other",
+      "x-displayName": "other"
+    },
+    {
+      "name": "uns_other",
+      "x-displayName": "other"
+    }
+  ],
+  "paths": {
+    "/v1/driving-licence": {
+      "servers": [],
+      "get": {
+        "name": "get-users-drivers-licence",
+        "summary": "Get user's driving licence details",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewDriverResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream service error"
+          }
+        },
+        "tags": [
+          "dvla_other"
+        ]
+      }
+    },
+    "/v1/test-notification": {
+      "servers": [],
+      "post": {
+        "name": "post-test-notification",
+        "summary": "Send a test notification via DVLA",
+        "x-flex-access": "public",
+        "responses": {
+          "502": {
+            "description": "Upstream service error"
+          }
+        },
+        "tags": [
+          "dvla_other"
+        ]
+      }
+    },
+    "/v1/customer-summary": {
+      "servers": [],
+      "get": {
+        "name": "get-customer-summary",
+        "summary": "Get customer summary by linking ID",
+        "x-flex-access": "public",
+        "responses": {
+          "502": {
+            "description": "Upstream service error"
+          }
+        },
+        "tags": [
+          "dvla_other"
+        ]
+      }
+    },
+    "/v1/driver-summary": {
+      "servers": [],
+      "get": {
+        "name": "get-driver-summary",
+        "summary": "Get driver summary by linking ID",
+        "x-flex-access": "public",
+        "responses": {
+          "502": {
+            "description": "Upstream service error"
+          }
+        },
+        "tags": [
+          "dvla_other"
+        ]
+      }
+    },
+    "/v1/identity/:service": {
+      "servers": [],
+      "get": {
+        "name": "get-service-identity",
+        "summary": "Get service identity link",
+        "x-flex-access": "public",
+        "tags": [
+          "udp_other"
+        ]
+      },
+      "delete": {
+        "name": "delete-service-identity",
+        "summary": "Delete service identity link",
+        "x-flex-access": "public",
+        "tags": [
+          "udp_other"
+        ]
+      }
+    },
+    "/v1/identity/:service/:id": {
+      "servers": [],
+      "post": {
+        "name": "create-service-identity-link",
+        "summary": "Create a service identity link",
+        "x-flex-access": "public",
+        "tags": [
+          "udp_other"
+        ]
+      }
+    },
+    "/v1/users": {
+      "servers": [],
+      "get": {
+        "name": "get-user-notification-preferences",
+        "summary": "Get user and notification preferences",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "udp_other"
+        ]
+      },
+      "post": {
+        "name": "create-user",
+        "summary": "Create a new user",
+        "x-flex-access": "private",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        },
+        "tags": [
+          "udp_other"
+        ]
+      }
+    },
+    "/v1/users/push-id": {
+      "servers": [],
+      "get": {
+        "name": "get-user-notification-push-id",
+        "summary": "Get user's push notification ID",
+        "headers": {
+          "userId": {
+            "name": "User-Id",
+            "required": true
+          }
+        },
+        "x-flex-access": "private",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserPushIdResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "udp_other"
+        ]
+      }
+    },
+    "/v1/users/notifications": {
+      "servers": [],
+      "patch": {
+        "name": "update-user-notification-preferences",
+        "summary": "Update notification preferences",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateNotificationPreferencesOutboundResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferencesRequest"
+              }
+            }
+          }
+        },
+        "tags": [
+          "udp_other"
+        ]
+      }
+    },
+    "/v1/notifications": {
+      "servers": [],
+      "get": {
+        "name": "get-notifications",
+        "summary": "List all notifications",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "uns_other"
+        ]
+      }
+    },
+    "/v1/notifications/:notificationId": {
+      "servers": [],
+      "get": {
+        "name": "get-notification-by-id",
+        "summary": "Get a single notification",
+        "x-flex-access": "public",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "uns_other"
+        ]
+      },
+      "delete": {
+        "name": "delete-notification",
+        "summary": "Delete a notification",
+        "x-flex-access": "public",
+        "responses": {
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "uns_other"
+        ]
+      }
+    },
+    "/v1/notifications/:notificationId/status": {
+      "servers": [],
+      "patch": {
+        "name": "patch-notification-status",
+        "summary": "Update notification status",
+        "x-flex-access": "public",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchNotificationBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "uns_other"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Address": {
+        "type": "object",
+        "properties": {
+          "unstructuredAddress": {
+            "type": "object",
+            "properties": {
+              "line1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 45
+              },
+              "line2": {
+                "type": "string",
+                "maxLength": 45
+              },
+              "line3": {
+                "type": "string",
+                "maxLength": 45
+              },
+              "line4": {
+                "type": "string",
+                "maxLength": 45
+              },
+              "line5": {
+                "type": "string",
+                "maxLength": 45
+              },
+              "postcode": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Driver": {
+        "type": "object",
+        "required": [
+          "drivingLicenceNumber"
+        ],
+        "properties": {
+          "drivingLicenceNumber": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 16
+          },
+          "firstNames": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "Male",
+              "Female"
+            ]
+          },
+          "dateOfBirth": {
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "disqualifiedUntil": {
+            "type": "string"
+          },
+          "disqualifiedForLife": {
+            "type": "boolean"
+          },
+          "disqualifiedPendingSentence": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Licence": {
+        "type": "object",
+        "required": [
+          "type",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Provisional",
+              "Full"
+            ],
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Valid",
+              "Disqualified",
+              "Revoked",
+              "Surrendered",
+              "Expired",
+              "Exchanged",
+              "Refused"
+            ],
+            "minLength": 1
+          },
+          "statusQualifier": {
+            "type": "string",
+            "enum": [
+              "For re-assessment only",
+              "Photo licence invitation sent",
+              "Short period disqualification",
+              "Until test passed",
+              "Until extended test passed",
+              "Pending sentence",
+              "For life"
+            ]
+          }
+        }
+      },
+      "EntitlementRecord": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string"
+          },
+          "categoryLegalLiteral": {
+            "type": "string"
+          },
+          "categoryType": {
+            "type": "string",
+            "enum": [
+              "Provisional",
+              "Full"
+            ]
+          },
+          "fromDate": {
+            "type": "string"
+          },
+          "expiryDate": {
+            "type": "string"
+          },
+          "restrictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "restrictionCode"
+              ],
+              "properties": {
+                "restrictionCode": {
+                  "type": "string"
+                },
+                "restrictionLiteral": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Endorsement": {
+        "type": "object",
+        "properties": {
+          "offenceCode": {
+            "type": "string"
+          },
+          "offenceLegalLiteral": {
+            "type": "string"
+          },
+          "offenceDate": {
+            "type": "string"
+          },
+          "convictionDate": {
+            "type": "string"
+          },
+          "penaltyPoints": {
+            "type": "integer"
+          },
+          "penaltyPointsExpiryDate": {
+            "type": "string"
+          },
+          "disqualification": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "forLife": {
+                "type": "boolean"
+              },
+              "years": {
+                "type": "integer"
+              },
+              "months": {
+                "type": "integer"
+              },
+              "days": {
+                "type": "integer"
+              },
+              "startDate": {
+                "type": "string"
+              },
+              "disqualifiedPendingSentence": {
+                "type": "boolean"
+              }
+            }
+          },
+          "disqualificationRemovalDate": {
+            "type": "string"
+          },
+          "disqualificationReimposedDate": {
+            "type": "string"
+          },
+          "disqualificationSuspendedPendingAppealDate": {
+            "type": "string"
+          },
+          "sentenceDate": {
+            "type": "string"
+          }
+        }
+      },
+      "ViewDriverResponse": {
+        "type": "object",
+        "required": [
+          "driver",
+          "licence"
+        ],
+        "properties": {
+          "driver": {
+            "$ref": "#/components/schemas/Driver"
+          },
+          "licence": {
+            "$ref": "#/components/schemas/Licence"
+          },
+          "entitlement": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntitlementRecord"
+            }
+          },
+          "endorsements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Endorsement"
+            }
+          },
+          "testPass": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryCode": {
+                  "type": "string"
+                },
+                "categoryLegalLiteral": {
+                  "type": "string"
+                },
+                "testDate": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "withAutomaticTransmission": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "token": {
+            "type": "object",
+            "properties": {
+              "validFromDate": {
+                "type": "string"
+              },
+              "validToDate": {
+                "type": "string"
+              },
+              "issueNumber": {
+                "type": "string"
+              }
+            }
+          },
+          "cpc": {
+            "type": "object",
+            "properties": {
+              "cpcs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lgvValidTo": {
+                      "type": "string"
+                    },
+                    "pcvValidTo": {
+                      "type": "string"
+                    },
+                    "national": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "holder": {
+            "type": "object",
+            "properties": {
+              "tachoCards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cardNumber": {
+                      "type": "string"
+                    },
+                    "cardStatus": {
+                      "type": "string"
+                    },
+                    "cardExpiryDate": {
+                      "type": "string"
+                    },
+                    "cardStartOfValidityDate": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuthenticateResponse": {
+        "type": "object",
+        "required": [
+          "id-token",
+          "apiKeyExpiry",
+          "passwordExpiry"
+        ],
+        "properties": {
+          "id-token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "apiKeyExpiry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "passwordExpiry": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ConsentStatus": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "accepted",
+          "denied"
+        ]
+      },
+      "PushId": {
+        "type": "string"
+      },
+      "UserId": {
+        "type": "string"
+      },
+      "GetServiceIdentityLinkResponse": {
+        "type": "object",
+        "required": [
+          "serviceId",
+          "serviceName"
+        ],
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "serviceName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "idToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "required": [
+          "userId",
+          "pushId"
+        ],
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      },
+      "GetUserResponse": {
+        "type": "object",
+        "required": [
+          "userId",
+          "notifications"
+        ],
+        "properties": {
+          "userId": {
+            "$ref": "#/components/schemas/UserId"
+          },
+          "notifications": {
+            "type": "object",
+            "required": [
+              "consentStatus",
+              "pushId"
+            ],
+            "properties": {
+              "consentStatus": {
+                "$ref": "#/components/schemas/ConsentStatus"
+              },
+              "pushId": {
+                "$ref": "#/components/schemas/PushId"
+              }
+            }
+          }
+        }
+      },
+      "GetUserPushIdResponse": {
+        "type": "object",
+        "required": [
+          "pushId"
+        ],
+        "properties": {
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      },
+      "UpdateNotificationPreferencesRequest": {
+        "type": "object",
+        "required": [
+          "consentStatus"
+        ],
+        "properties": {
+          "consentStatus": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          }
+        }
+      },
+      "UpdateNotificationPreferencesOutboundResponse": {
+        "type": "object",
+        "required": [
+          "consentStatus",
+          "pushId"
+        ],
+        "properties": {
+          "consentStatus": {
+            "$ref": "#/components/schemas/ConsentStatus"
+          },
+          "pushId": {
+            "$ref": "#/components/schemas/PushId"
+          }
+        }
+      },
+      "NotificationStatus": {
+        "type": "string",
+        "enum": [
+          "RECEIVED",
+          "READ",
+          "MARKED_AS_UNREAD",
+          "HIDDEN"
+        ]
+      },
+      "Notification": {
+        "type": "object",
+        "required": [
+          "NotificationID",
+          "NotificationTitle",
+          "NotificationBody",
+          "MessageTitle",
+          "MessageBody",
+          "DispatchedDateTime"
+        ],
+        "properties": {
+          "NotificationID": {
+            "type": "string",
+            "minLength": 1
+          },
+          "NotificationTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "NotificationBody": {
+            "type": "string",
+            "minLength": 1
+          },
+          "MessageTitle": {
+            "type": "string",
+            "minLength": 1
+          },
+          "MessageBody": {
+            "type": "string",
+            "minLength": 1
+          },
+          "DispatchedDateTime": {
+            "type": "string",
+            "format": "date-time",
+            "minLength": 1
+          },
+          "Status": {
+            "$ref": "#/components/schemas/NotificationStatus"
+          }
+        }
+      },
+      "PatchNotificationBody": {
+        "type": "object",
+        "required": [
+          "Status"
+        ],
+        "properties": {
+          "Status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "READ",
+              "MARKED_AS_UNREAD"
+            ],
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "x-tagGroups": [
+    {
+      "name": "dvla",
+      "tags": [
+        "dvla_other"
+      ]
+    },
+    {
+      "name": "udp",
+      "tags": [
+        "udp_other"
+      ]
+    },
+    {
+      "name": "uns",
+      "tags": [
+        "uns_other"
+      ]
+    }
+  ]
+}
