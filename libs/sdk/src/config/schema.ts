@@ -1,4 +1,4 @@
-import { NonEmptyString } from "@flex/utils";
+import { EnvironmentSchema, NonEmptyString } from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
 
@@ -68,16 +68,10 @@ export const DomainResourceSchema = z.object({
   scope: z.enum(["environment", "stage"]).optional(),
 });
 
-export const FlexEnvironmentSchema = z.enum([
-  "development",
-  "staging",
-  "production",
-]);
-
 export const DomainFeatureFlagSchema = z.object({
   description: NonEmptyString.optional(),
   default: z.boolean().optional(),
-  environments: z.array(FlexEnvironmentSchema).optional(),
+  environments: z.array(EnvironmentSchema).optional(),
 });
 
 const MethodRouteConfigSchema = z.object({
@@ -92,6 +86,7 @@ const MethodRouteConfigSchema = z.object({
   integrations: z.array(NonEmptyString).readonly().optional(),
   featureFlags: z.array(NonEmptyString).readonly().optional(),
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
+  environments: z.array(EnvironmentSchema).readonly().optional(),
 });
 
 const GatewayRouteConfigSchema = z
@@ -104,9 +99,9 @@ const GatewayRouteConfigSchema = z
     'At least one "public" or "private" route must be defined',
   );
 
-const PathRoutesSchema = z.record(
+const PathRoutesSchema = z.partialRecord(
   HttpMethodSchema,
-  GatewayRouteConfigSchema.optional(),
+  GatewayRouteConfigSchema,
 );
 
 const VersionRoutesSchema = z.record(NonEmptyString, PathRoutesSchema);
@@ -119,4 +114,5 @@ export const DomainConfigSchema = z.object({
   integrations: z.record(NonEmptyString, DomainIntegrationSchema).optional(),
   featureFlags: z.record(NonEmptyString, DomainFeatureFlagSchema).optional(),
   owner: NonEmptyString.optional(),
+  environments: z.array(EnvironmentSchema).readonly().optional(),
 });

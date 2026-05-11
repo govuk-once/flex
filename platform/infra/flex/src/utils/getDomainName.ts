@@ -1,6 +1,5 @@
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
-
-import { getEnvConfig } from "../base/env";
+import { getEnvConfig } from "@flex/utils";
 
 const hostedZoneParamName = "/infra/dns/hostedzonename";
 
@@ -15,6 +14,7 @@ export async function getDomainName() {
   }
 
   const { persistent, stage } = getEnvConfig();
+
   const domainName = Parameter.Value;
 
   return {

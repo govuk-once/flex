@@ -1,5 +1,6 @@
 import type { FlexFetchRequestInit } from "@flex/flex-fetch";
 import type { Logger } from "@flex/logging";
+import type { Environment } from "@flex/utils";
 import type {
   APIGatewayProxyEventBase,
   APIGatewayProxyResult,
@@ -11,7 +12,6 @@ import {
   DomainConfigSchema,
   DomainFeatureFlagSchema,
   DomainResourceSchema,
-  FlexEnvironmentSchema,
   FunctionConfigSchema,
   HeaderConfigSchema,
   HttpMethodSchema,
@@ -30,7 +30,6 @@ export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
 export type DomainResource = z.infer<typeof DomainResourceSchema>;
 export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
 export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
-export type FlexEnvironment = z.infer<typeof FlexEnvironmentSchema>;
 export type DomainFeatureFlag = z.infer<typeof DomainFeatureFlagSchema>;
 
 // ----------------------------------------------------------------------------
@@ -238,6 +237,13 @@ export type InferFeatureFlagKeys<Config extends DomainConfig> = Config extends {
   ? FeatureFlagKey
   : never;
 
+export type InferEnvironmentKeys<Config extends DomainConfig> = Config extends {
+  readonly environments: readonly (infer DomainEnvironmentKeys extends
+    Environment)[];
+}
+  ? DomainEnvironmentKeys
+  : Environment;
+
 type ExtractPathParams<Path extends string> =
   Path extends `${string}:${infer PathParam}/${infer RemainingPath}`
     ? PathParam | ExtractPathParams<`/${RemainingPath}`>
@@ -358,19 +364,22 @@ export type GatewayRouteConfig<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
+  EnvironmentKeys extends Environment = Environment,
 > =
   | {
       readonly public: MethodRouteConfig<
         Method,
         ResourceKeys,
         IntegrationKeys,
-        FeatureFlagKeys
+        FeatureFlagKeys,
+        EnvironmentKeys
       >;
       readonly private?: MethodRouteConfig<
         Method,
         ResourceKeys,
         IntegrationKeys,
-        FeatureFlagKeys
+        FeatureFlagKeys,
+        EnvironmentKeys
       >;
     }
   | {
@@ -378,13 +387,15 @@ export type GatewayRouteConfig<
         Method,
         ResourceKeys,
         IntegrationKeys,
-        FeatureFlagKeys
+        FeatureFlagKeys,
+        EnvironmentKeys
       >;
       readonly private: MethodRouteConfig<
         Method,
         ResourceKeys,
         IntegrationKeys,
-        FeatureFlagKeys
+        FeatureFlagKeys,
+        EnvironmentKeys
       >;
     };
 
@@ -406,6 +417,7 @@ type MethodRouteConfig<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
+  EnvironmentKeys extends Environment = Environment,
 > = {
   readonly name: string;
   readonly access?: RouteAccess;
@@ -418,18 +430,21 @@ type MethodRouteConfig<
   readonly integrations?: readonly IntegrationKeys[];
   readonly featureFlags?: readonly FeatureFlagKeys[];
   readonly headers?: Readonly<Record<string, HeaderConfig>>;
+  readonly environments?: readonly EnvironmentKeys[];
 };
 
 type PathRoutes<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
+  EnvironmentKeys extends Environment = Environment,
 > = {
   readonly [Method in HttpMethod]?: GatewayRouteConfig<
     Method,
     ResourceKeys,
     IntegrationKeys,
-    FeatureFlagKeys
+    FeatureFlagKeys,
+    EnvironmentKeys
   >;
 };
 
@@ -437,14 +452,19 @@ type VersionRoutes<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
+  EnvironmentKeys extends Environment = Environment,
 > = Readonly<
-  Record<string, PathRoutes<ResourceKeys, IntegrationKeys, FeatureFlagKeys>>
+  Record<
+    string,
+    PathRoutes<ResourceKeys, IntegrationKeys, FeatureFlagKeys, EnvironmentKeys>
+  >
 >;
 
 export interface DomainConfig<
   ResourceKeys extends string = string,
   IntegrationKeys extends string = string,
   FeatureFlagKeys extends string = string,
+  EnvironmentKeys extends Environment = Environment,
 > {
   readonly name: string;
   readonly routes: Readonly<
@@ -453,7 +473,8 @@ export interface DomainConfig<
       VersionRoutes<
         NoInfer<ResourceKeys>,
         NoInfer<IntegrationKeys>,
-        NoInfer<FeatureFlagKeys>
+        NoInfer<FeatureFlagKeys>,
+        NoInfer<EnvironmentKeys>
       >
     >
   >;
@@ -462,6 +483,7 @@ export interface DomainConfig<
   readonly resources?: Readonly<Record<ResourceKeys, DomainResource>>;
   readonly integrations?: Readonly<Record<IntegrationKeys, DomainIntegration>>;
   readonly featureFlags?: Readonly<Record<FeatureFlagKeys, DomainFeatureFlag>>;
+  readonly environments?: readonly EnvironmentKeys[];
 }
 
 export interface DomainResult<Config extends DomainConfig> {

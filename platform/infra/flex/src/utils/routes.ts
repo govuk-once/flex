@@ -1,53 +1,28 @@
 import type {
   DomainIntegration,
   DomainResource,
-  HttpMethod,
   IacDomainConfig,
   RouteAccess,
 } from "@flex/sdk";
+import type { Stage } from "@flex/utils";
 
-type RouteGateway = NonNullable<
-  IacDomainConfig["routes"][string][string][HttpMethod]
->;
+import type { DomainRouteEntry } from "./deployment";
+import { getDeployableRoutes } from "./deployment";
 
-export interface FlatRoute {
-  readonly version: string;
-  readonly path: string;
-  readonly method: HttpMethod;
-  readonly gateway: "public" | "private";
+export interface FlatRoute extends DomainRouteEntry {
   readonly handlerPath: string;
-  readonly routeConfig: NonNullable<RouteGateway["public" | "private"]>;
 }
 
 export function flattenRoutes(
-  routes: IacDomainConfig["routes"],
+  config: IacDomainConfig,
+  stage: Stage,
 ): readonly FlatRoute[] {
-  const entries: FlatRoute[] = [];
-
-  for (const [version, paths] of Object.entries(routes)) {
-    for (const [path, methods] of Object.entries(paths)) {
-      for (const [method, gateways] of Object.entries(methods)) {
-        if (!gateways) continue;
-
-        for (const gateway of ["public", "private"] as const) {
-          const routeConfig = gateways[gateway];
-
-          if (routeConfig) {
-            entries.push({
-              version,
-              path,
-              method: method as HttpMethod,
-              gateway,
-              handlerPath: toHandlerPath(version, path, method, { gateway }),
-              routeConfig,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return entries;
+  return getDeployableRoutes(config, stage).map((r) => ({
+    ...r,
+    handlerPath: toHandlerPath(r.version, r.path, r.method, {
+      gateway: r.gateway,
+    }),
+  }));
 }
 
 function resolveKeys<Definition>(

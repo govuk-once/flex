@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./config": "./domain.config.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",
@@ -14,6 +15,7 @@
   "dependencies": {
     "@flex/sdk": "workspace:*",
     "@flex/udp-domain": "workspace:*",
+    "@flex/uns-domain": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",

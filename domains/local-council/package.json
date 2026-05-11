@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./domain.config.ts"
+  },
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",

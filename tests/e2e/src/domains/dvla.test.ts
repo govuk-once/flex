@@ -1,26 +1,37 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { viewDriverResponseSchema } from "@flex/dvla-domain";
+import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
   MultiShareCodeResponseSchema,
   SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
 } from "@flex/dvla-service-gateway";
+import { config as udpConfig } from "@flex/udp-domain/config";
 import { beforeAll, describe, expect, inject } from "vitest";
 
 import { it } from "../extend/it";
+import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 
-describe.sequential("DVLA domain", () => {
+const ssmProvider = new SSMProvider();
+
+const udpCreateIdentityDeployed = () =>
+  isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
+const udpDeleteIdentityDeployed = () =>
+  isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
+
+describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
   const { JWT, ENVIRONMENT } = inject("e2eEnv");
   const authorization = { Authorization: `Bearer ${JWT.VALID}` };
-  const ssmProvider = new SSMProvider();
   let linkingId: string;
 
   beforeAll(async () => {
     const rawLinkingId = await ssmProvider.get<string>(
       `/${ENVIRONMENT}/flex-param/dvla/test-user`,
     );
-    if (!rawLinkingId)
+
+    if (!rawLinkingId) {
       throw new Error(`Parameter not found for environment: ${ENVIRONMENT}`);
+    }
 
     linkingId = rawLinkingId;
   });
@@ -28,7 +39,11 @@ describe.sequential("DVLA domain", () => {
   describe("/dvla/v1/driving-licence", () => {
     const endpoint = "/dvla/v1/driving-licence";
 
-    describe("GET", () => {
+    describe.runIf(
+      isRouteDeployed(dvlaConfig, "GET /v1/driving-licence") &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
+    )("GET", () => {
       it("returns 200 and valid data when identity is linked", async ({
         cloudfront,
         withIdentityLink,
@@ -61,7 +76,11 @@ describe.sequential("DVLA domain", () => {
   describe("/dvla/v1/test-notification", () => {
     const endpoint = "/dvla/v1/test-notification";
 
-    describe("POST", () => {
+    describe.runIf(
+      isRouteDeployed(dvlaConfig, "POST /v1/test-notification") &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
+    )("POST", () => {
       it("returns 202 when identity is linked and notification is sent", async ({
         cloudfront,
         withIdentityLink,
@@ -95,7 +114,11 @@ describe.sequential("DVLA domain", () => {
   describe("/dvla/v1/driver-summary", () => {
     const endpoint = "/dvla/v1/driver-summary";
 
-    describe("GET", () => {
+    describe.runIf(
+      isRouteDeployed(dvlaConfig, "GET /v1/driver-summary") &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
+    )("GET", () => {
       it("returns 200 when identity is linked and driver-summary is fetched", async ({
         cloudfront,
         withIdentityLink,
@@ -127,7 +150,11 @@ describe.sequential("DVLA domain", () => {
   describe("/dvla/v1/customer-summary", () => {
     const endpoint = "/dvla/v1/customer-summary";
 
-    describe("GET", () => {
+    describe.runIf(
+      isRouteDeployed(dvlaConfig, "GET /v1/customer-summary") &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
+    )("GET", () => {
       it("returns 200 when identity is linked and customer-summary is fetched", async ({
         cloudfront,
         withIdentityLink,
@@ -157,50 +184,56 @@ describe.sequential("DVLA domain", () => {
   });
 
   describe("/dvla/v1/vehicle-enquiry", () => {
-    const baseEndpoint = "/dvla/v1/vehicle-enquiry";
-    const validReg = "AA19AAA";
-    const notFoundReg = "ER19NFD";
+    const mockRegistration = {
+      valid: "AA19AAA",
+      notFound: "ER19NFD",
+      upstreamError: "ER19ERR",
+    };
+    const endpoint = (registration: string) =>
+      `/dvla/v1/vehicle-enquiry/${registration}`;
 
-    describe("GET", () => {
-      it("returns 200 and valid vehicle data for a known registration", async ({
-        cloudfront,
-      }) => {
-        const result = await cloudfront.client.get(
-          `${baseEndpoint}/${validReg}`,
-          {
-            headers: { ...authorization },
-          },
-        );
+    describe.runIf(isRouteDeployed(dvlaConfig, "GET /v1/vehicle-enquiry/:reg"))(
+      "GET",
+      () => {
+        it("returns 200 and valid vehicle data for a known registration", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(
+            endpoint(mockRegistration.valid),
+            { headers: { ...authorization } },
+          );
 
-        expect(result.status).toBe(200);
+          expect(result.status).toBe(200);
 
-        const validation = vehicleEnquiryResponseSchema.safeParse(result.body);
-        expect(validation.success).toBe(true);
-      });
-
-      it("returns 404 for a non-existent vehicle registration", async ({
-        cloudfront,
-      }) => {
-        const result = await cloudfront.client.get(
-          `${baseEndpoint}/${notFoundReg}`,
-          {
-            headers: { ...authorization },
-          },
-        );
-
-        expect(result.status).toBe(404);
-      });
-
-      it("returns 502 when upstream returns a 500 error", async ({
-        cloudfront,
-      }) => {
-        const result = await cloudfront.client.get(`${baseEndpoint}/ER19ERR`, {
-          headers: { ...authorization },
+          const validation = vehicleEnquiryResponseSchema.safeParse(
+            result.body,
+          );
+          expect(validation.success).toBe(true);
         });
 
-        expect(result.status).toBe(502);
-      });
-    });
+        it("returns 404 for a non-existent vehicle registration", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(
+            endpoint(mockRegistration.notFound),
+            { headers: { ...authorization } },
+          );
+
+          expect(result.status).toBe(404);
+        });
+
+        it("returns 502 when upstream returns a 500 error", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(
+            endpoint(mockRegistration.upstreamError),
+            { headers: { ...authorization } },
+          );
+
+          expect(result.status).toBe(502);
+        });
+      },
+    );
   });
 
   describe("/dvla/v1/share-code(s)", () => {

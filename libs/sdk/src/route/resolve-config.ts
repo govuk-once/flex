@@ -1,3 +1,4 @@
+import { Environment, isPersistentEnvironment } from "@flex/utils";
 import type { ZodType } from "zod";
 
 import type {
@@ -5,7 +6,6 @@ import type {
   DomainFeatureFlag,
   DomainIntegrations,
   DomainResource,
-  FlexEnvironment,
   HeaderConfig,
   HttpMethod,
   LogLevel,
@@ -87,21 +87,11 @@ export function getRouteResources(
   );
 }
 
-const NAMED_ENVIRONMENTS: ReadonlySet<string> = new Set([
-  "development",
-  "staging",
-  "production",
-]);
-
-function isFlexEnvironment(
-  value: string | undefined,
-): value is FlexEnvironment {
-  return !!value && NAMED_ENVIRONMENTS.has(value);
-}
-
-function resolveCurrentEnvironment(): FlexEnvironment {
+function resolveCurrentEnvironment(): Environment {
   const stage = process.env.STAGE;
-  return isFlexEnvironment(stage) ? stage : "development";
+  return stage && isPersistentEnvironment(stage)
+    ? stage
+    : Environment.development;
 }
 
 /**

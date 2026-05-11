@@ -1,4 +1,4 @@
-import { getEnvConfig } from "./base/env";
+import { getEnvConfig } from "@flex/utils";
 
 const { env, stage } = getEnvConfig();
 
