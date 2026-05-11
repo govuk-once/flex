@@ -3,27 +3,33 @@
   "type": "module",
   "scripts": {
     "dev": "flex",
-    "deploy": "pnpm --filter @platform/flex run deploy",
+    "deploy": "pnpm openapi:generate && pnpm --filter @platform/flex run deploy",
     "checkov": "nx affected --target=checkov",
     "tsc": "nx affected --target=tsc",
     "lint": "nx affected --target=lint",
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
     "jwt": "tsx scripts/generateToken.ts",
-    "dastSetup" : "tsx scripts/dastSetup.ts"
+    "dastSetup" : "tsx scripts/dastSetup.ts",
+    "openapi:generate": "tsx scripts/generate-openapi.ts",
+    "docs:serve": "pnpm openapi:generate && serve docs"
   },
   "devDependencies": {
     "@flex/cli": "workspace:*",
     "esbuild": "0.28.0",
     "nx": "22.7.1",
+    "serve": "14.2.5",
     "tsx": "4.21.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "zod": "4.3.6",
+    "zod-openapi": "5.4.6"
   },
   "pnpm": {
     "overrides": {
       "undici": "7.24.0",
       "tar": "7.5.13",
-      "protobufjs": "^8.0.1"
+      "protobufjs": "^8.0.1",
+      "minimatch": "^10.0.1"
     }
   },
   "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"

@@ -66,6 +66,9 @@ jobs:
       - name: Type Check
         run: pnpm run tsc
 
+      - name: Generate OpenAPI docs
+        run: pnpm openapi:generate
+
       - name: Unit Tests
         run: pnpm exec nx run-many --target=test --all --run --coverage
 

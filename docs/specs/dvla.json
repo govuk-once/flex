@@ -1,0 +1,843 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "dvla domain",
+    "version": "1.0.0",
+    "description": "Auto-generated from `domains/dvla/domain.config.ts`. Do not edit by hand. Regenerate with `pnpm openapi:generate`."
+  },
+  "paths": {
+    "/v1/driving-licence": {
+      "get": {
+        "operationId": "get-users-drivers-licence",
+        "summary": "GET /driving-licence",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "driver": {
+                      "type": "object",
+                      "properties": {
+                        "drivingLicenceNumber": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 16
+                        },
+                        "firstNames": {
+                          "type": "string"
+                        },
+                        "lastName": {
+                          "type": "string"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "enum": [
+                            "Male",
+                            "Female"
+                          ]
+                        },
+                        "dateOfBirth": {
+                          "type": "string",
+                          "description": "Date in the format YYYY-MM-DD"
+                        },
+                        "address": {
+                          "type": "object",
+                          "properties": {
+                            "unstructuredAddress": {
+                              "type": "object",
+                              "properties": {
+                                "line1": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 45
+                                },
+                                "line2": {
+                                  "type": "string",
+                                  "minLength": 0,
+                                  "maxLength": 45
+                                },
+                                "line3": {
+                                  "type": "string",
+                                  "minLength": 0,
+                                  "maxLength": 45
+                                },
+                                "line4": {
+                                  "type": "string",
+                                  "minLength": 0,
+                                  "maxLength": 45
+                                },
+                                "line5": {
+                                  "type": "string",
+                                  "minLength": 0,
+                                  "maxLength": 45
+                                },
+                                "postcode": {
+                                  "type": "string"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "disqualifiedUntil": {
+                          "type": "string",
+                          "description": "Date in the format YYYY-MM-DD"
+                        },
+                        "disqualifiedForLife": {
+                          "type": "boolean"
+                        },
+                        "disqualifiedPendingSentence": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "drivingLicenceNumber"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "licence": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "Provisional",
+                            "Full"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "Valid",
+                            "Disqualified",
+                            "Revoked",
+                            "Surrendered",
+                            "Expired",
+                            "Exchanged",
+                            "Refused"
+                          ]
+                        },
+                        "statusQualifier": {
+                          "type": "string",
+                          "enum": [
+                            "For re-assessment only",
+                            "Photo licence invitation sent",
+                            "Short period disqualification",
+                            "Until test passed",
+                            "Until extended test passed",
+                            "Pending sentence",
+                            "For life"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "entitlement": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryCode": {
+                            "type": "string"
+                          },
+                          "categoryLegalLiteral": {
+                            "type": "string"
+                          },
+                          "categoryType": {
+                            "type": "string",
+                            "enum": [
+                              "Provisional",
+                              "Full"
+                            ]
+                          },
+                          "fromDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "expiryDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "restrictions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "restrictionCode": {
+                                  "type": "string"
+                                },
+                                "restrictionLiteral": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "restrictionCode"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "endorsements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "offenceCode": {
+                            "type": "string"
+                          },
+                          "offenceLegalLiteral": {
+                            "type": "string"
+                          },
+                          "offenceDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "convictionDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "penaltyPoints": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "penaltyPointsExpiryDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "disqualification": {
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "type": "string"
+                              },
+                              "forLife": {
+                                "type": "boolean"
+                              },
+                              "years": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "months": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "days": {
+                                "type": "integer",
+                                "minimum": -9007199254740991,
+                                "maximum": 9007199254740991
+                              },
+                              "startDate": {
+                                "type": "string",
+                                "description": "Date in the format YYYY-MM-DD"
+                              },
+                              "disqualifiedPendingSentence": {
+                                "type": "boolean"
+                              }
+                            },
+                            "additionalProperties": false
+                          },
+                          "disqualificationRemovalDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "disqualificationReimposedDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "disqualificationSuspendedPendingAppealDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "sentenceDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "testPass": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "categoryCode": {
+                            "type": "string"
+                          },
+                          "categoryLegalLiteral": {
+                            "type": "string"
+                          },
+                          "testDate": {
+                            "type": "string",
+                            "description": "Date in the format YYYY-MM-DD"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "withAutomaticTransmission": {
+                            "type": "boolean"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "token": {
+                      "type": "object",
+                      "properties": {
+                        "validFromDate": {
+                          "type": "string",
+                          "description": "Date in the format YYYY-MM-DD"
+                        },
+                        "validToDate": {
+                          "type": "string",
+                          "description": "Date in the format YYYY-MM-DD"
+                        },
+                        "issueNumber": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "cpc": {
+                      "type": "object",
+                      "properties": {
+                        "cpcs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "lgvValidTo": {
+                                "type": "string",
+                                "description": "Date in the format YYYY-MM-DD"
+                              },
+                              "pcvValidTo": {
+                                "type": "string",
+                                "description": "Date in the format YYYY-MM-DD"
+                              },
+                              "national": {
+                                "type": "boolean"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "holder": {
+                      "type": "object",
+                      "properties": {
+                        "tachoCards": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "cardNumber": {
+                                "type": "string"
+                              },
+                              "cardStatus": {
+                                "type": "string"
+                              },
+                              "cardExpiryDate": {
+                                "type": "string",
+                                "description": "Date in the format YYYY-MM-DD"
+                              },
+                              "cardStartOfValidityDate": {
+                                "type": "string",
+                                "description": "Date in the format YYYY-MM-DD"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "driver",
+                    "licence"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/test-notification": {
+      "post": {
+        "operationId": "post-test-notification",
+        "summary": "POST /test-notification",
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    },
+    "/v1/customer-summary": {
+      "get": {
+        "operationId": "get-customer-summary",
+        "summary": "GET /customer-summary",
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    },
+    "/v1/driver-summary": {
+      "get": {
+        "operationId": "get-driver-summary",
+        "summary": "GET /driver-summary",
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    },
+    "/v1/vehicle-enquiry/{reg}": {
+      "get": {
+        "operationId": "get-vehicle-enquiry",
+        "summary": "GET /vehicle-enquiry/:reg",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reg",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    },
+    "/v1/share-codes": {
+      "get": {
+        "operationId": "get-share-codes",
+        "summary": "GET /share-codes",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linkingId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                      "description": "Unique identifier linking the share request"
+                    },
+                    "shareCodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "state": {
+                            "type": "string",
+                            "enum": [
+                              "cancelled",
+                              "valid"
+                            ],
+                            "description": "The state of a share driving licence token"
+                          },
+                          "tokenId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "token": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 8,
+                            "pattern": "^[^aeilouAEIOU01]{8}$"
+                          },
+                          "drivingLicenceNumber": {
+                            "type": "string",
+                            "minLength": 16,
+                            "maxLength": 16,
+                            "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}$"
+                          },
+                          "driverId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "documentReference": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 8,
+                            "pattern": "^[a-zA-Z0-9]*$"
+                          },
+                          "created": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                          },
+                          "expiry": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                          },
+                          "status": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "active",
+                                  "inactive"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "redeemed": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "cancelled": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "state",
+                          "tokenId",
+                          "token",
+                          "drivingLicenceNumber",
+                          "driverId",
+                          "documentReference",
+                          "created",
+                          "expiry"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "description": "A list of share driving licence tokens"
+                    }
+                  },
+                  "required": [
+                    "linkingId",
+                    "shareCodes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/share-code": {
+      "post": {
+        "operationId": "post-share-code",
+        "summary": "POST /share-code",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linkingId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "shareCode": {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "cancelled",
+                            "valid"
+                          ],
+                          "description": "The state of a share driving licence token"
+                        },
+                        "tokenId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "token": {
+                          "type": "string",
+                          "minLength": 8,
+                          "maxLength": 8,
+                          "pattern": "^[^aeilouAEIOU01]{8}$"
+                        },
+                        "drivingLicenceNumber": {
+                          "type": "string",
+                          "minLength": 16,
+                          "maxLength": 16,
+                          "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}$"
+                        },
+                        "driverId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "documentReference": {
+                          "type": "string",
+                          "minLength": 8,
+                          "maxLength": 8,
+                          "pattern": "^[a-zA-Z0-9]*$"
+                        },
+                        "created": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "expiry": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "status": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "active",
+                                "inactive"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "redeemed": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "cancelled": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "tokenId",
+                        "token",
+                        "drivingLicenceNumber",
+                        "driverId",
+                        "documentReference",
+                        "created",
+                        "expiry"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "linkingId",
+                    "shareCode"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/share-code/{id}/cancel": {
+      "post": {
+        "operationId": "cancel-share-code",
+        "summary": "POST /share-code/:id/cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linkingId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "shareCode": {
+                      "type": "object",
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "cancelled",
+                            "valid"
+                          ],
+                          "description": "The state of a share driving licence token"
+                        },
+                        "tokenId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "token": {
+                          "type": "string",
+                          "minLength": 8,
+                          "maxLength": 8,
+                          "pattern": "^[^aeilouAEIOU01]{8}$"
+                        },
+                        "drivingLicenceNumber": {
+                          "type": "string",
+                          "minLength": 16,
+                          "maxLength": 16,
+                          "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}$"
+                        },
+                        "driverId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "documentReference": {
+                          "type": "string",
+                          "minLength": 8,
+                          "maxLength": 8,
+                          "pattern": "^[a-zA-Z0-9]*$"
+                        },
+                        "created": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "expiry": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        "status": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "active",
+                                "inactive"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "redeemed": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "cancelled": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "state",
+                        "tokenId",
+                        "token",
+                        "drivingLicenceNumber",
+                        "driverId",
+                        "documentReference",
+                        "created",
+                        "expiry"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "linkingId",
+                    "shareCode"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
