@@ -123,6 +123,37 @@ Handlers can also throw from `http-errors` for standard error responses. See [Ha
 
 When a route defines a `response` schema, the SDK validates the handler's response `data` against it. Validation errors are logged and return a 500 response. Set the log level to `DEBUG` or `TRACE` to include validation errors in the response body.
 
+### Naming Schemas for the OpenAPI Generator
+
+`pnpm openapi:generate` walks every domain's `domain.config.ts` and emits one OpenAPI 3.1 document per domain to `docs/specs/`. By default, every Zod schema is inlined wherever it's used — including duplicated copies of the same schema across multiple operations. To produce a clean spec with reusable components, tag your shared schemas with Zod's native `.meta({ id })`:
+
+```typescript
+export const ShareCodeSchema = z
+  .object({
+    state: z.enum(["cancelled", "valid"]),
+    tokenId: z.uuid(),
+    // ...
+  })
+  .meta({ id: "ShareCode" });
+
+export const SingleShareCodeResponseSchema = z
+  .object({
+    linkingId: z.uuid(),
+    shareCode: ShareCodeSchema,
+  })
+  .meta({ id: "SingleShareCodeResponse" });
+```
+
+The generator promotes every tagged schema to `components.schemas` once and emits `$ref: "#/components/schemas/<id>"` everywhere the schema is used — including nested references. Untagged anonymous shapes are still inlined.
+
+**Convention:** use PascalCase ids that match the consumer-facing type name (drop any `Schema` suffix from the const name). Tag any schema that is either:
+
+- referenced from more than one operation,
+- defined as a named `const` and exported,
+- complex enough that a reader benefits from seeing it once in `components.schemas` rather than inline everywhere.
+
+No registration step or extension import is required — Zod 4's `.meta()` is a first-class metadata method and `zod-openapi` reads `id` automatically.
+
 ### Common Defaults
 
 Common fields apply defaults across all routes. Route-level config takes precedence:
