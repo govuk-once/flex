@@ -17,15 +17,15 @@ export const handler = route(
       throw new createHttpError.NotFound();
     }
 
+    /**
+     * NOTE:
+     * For now ignoring the response from DVLA as they are just returning 404
+     */
     if (pathParams.service === "dvla") {
-      const response = await integrations.dvlaUnlinkUser({
+      await integrations.dvlaUnlinkUser({
         body: {},
-        headers: {
-          serviceId: linked.serviceId,
-        },
+        headers: { serviceId: linked.serviceId },
       });
-
-      console.log(response);
     }
 
     await deleteServiceIdentity(linked.serviceName, linked.serviceId);

@@ -1,5 +1,4 @@
 import { route } from "@domain";
-import createHttpError from "http-errors";
 import { status } from "http-status";
 
 import {

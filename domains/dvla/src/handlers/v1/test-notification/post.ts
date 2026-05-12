@@ -1,6 +1,4 @@
-import { config, route } from "@domain";
-import { InferRouteContext } from "@flex/sdk";
-import createHttpError from "http-errors";
+import { route } from "@domain";
 import { status } from "http-status";
 
 import {

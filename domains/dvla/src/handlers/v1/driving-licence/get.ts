@@ -8,13 +8,13 @@ import {
   getDvlaAuthToken,
   getUserLinkingId,
 } from "../../../services/authentication";
+import { handleStandardErrors } from "../../../services/errors";
 
-type GetDvlaLicenceContext = InferRouteContext<
-  typeof config,
-  "GET /v1/driving-licence"
->;
+const endpoint = "GET /v1/driving-licence";
 
-export const handler = route("GET /v1/driving-licence", async (ctx) => {
+type GetDvlaLicenceContext = InferRouteContext<typeof config, typeof endpoint>;
+
+export const handler = route(endpoint, async (ctx) => {
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
@@ -41,13 +41,7 @@ async function getDvlaLicenceKey(
     headers: { auth: auth },
   });
 
-  if (!response.ok) {
-    logger.error("Failed to get userRef with DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-    throw new createHttpError.BadGateway();
-  }
+  handleStandardErrors(response, endpoint);
 
   const customer = response.data.customerResponse?.customer;
   const products = customer?.products;
@@ -82,21 +76,14 @@ async function getDvlaLicence(
   auth: string,
   productKey: string,
 ): Promise<ViewDriverResponse> {
-  const { integrations, logger } = ctx;
+  const { integrations } = ctx;
 
   const response = await integrations.dvlaRetrieveLicence({
     path: `/${productKey}`,
     headers: { auth: auth },
   });
 
-  if (!response.ok) {
-    logger.error("Failed to get licence with DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-
-    throw new createHttpError.BadGateway();
-  }
+  handleStandardErrors(response, endpoint);
 
   return response.data;
 }
