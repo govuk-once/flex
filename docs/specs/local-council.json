@@ -1,0 +1,208 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "local-council domain",
+    "version": "1.0.0",
+    "description": "Auto-generated from `domains/local-council/domain.config.ts`. Do not edit by hand. Regenerate with `pnpm openapi:generate`."
+  },
+  "paths": {
+    "/v1/local-council/{id}": {
+      "get": {
+        "operationId": "get-local-authority",
+        "summary": "GET /local-council/:id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "local_authority": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "homepage_url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "tier": {
+                          "type": "string",
+                          "enum": [
+                            "county",
+                            "district",
+                            "unitary",
+                            "metropolitan",
+                            "london_borough"
+                          ]
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "parent": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "homepage_url": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "tier": {
+                              "type": "string",
+                              "enum": [
+                                "county",
+                                "district",
+                                "unitary",
+                                "metropolitan",
+                                "london_borough"
+                              ]
+                            },
+                            "slug": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "homepage_url",
+                            "tier",
+                            "slug"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "homepage_url",
+                        "tier",
+                        "slug"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "local_authority"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "upsert-local-authority",
+        "summary": "POST /local-council/:id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "local_authority": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "homepage_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "tier": {
+                        "type": "string",
+                        "enum": [
+                          "county",
+                          "district",
+                          "unitary",
+                          "metropolitan",
+                          "london_borough"
+                        ]
+                      },
+                      "slug": {
+                        "type": "string"
+                      },
+                      "parent": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "homepage_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "county",
+                              "district",
+                              "unitary",
+                              "metropolitan",
+                              "london_borough"
+                            ]
+                          },
+                          "slug": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "homepage_url",
+                          "tier",
+                          "slug"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "homepage_url",
+                      "tier",
+                      "slug"
+                    ]
+                  }
+                },
+                "required": [
+                  "local_authority"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    }
+  }
+}

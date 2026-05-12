@@ -32,10 +32,19 @@ pnpm jwt
 
 # Generate a JWT against staging stack
 STAGE=staging pnpm jwt
+
+# Generate OpenAPI specs for every domain
+# (writes one JSON per domain plus an index manifest to docs/specs/)
+pnpm openapi:generate
+
+# Regenerate specs and open them in a local Swagger UI
+# (browses every domain via a dropdown at http://localhost:3000)
+pnpm docs:serve
 ```
 
 > Note:
 > - You need to ensure you have AWS cli access setup to run the above in the correct environment
+> - `pnpm openapi:generate` runs automatically before deploys (see `package.json`); the committed `docs/specs/*.json` files reflect the schemas at `main`'s tip.
 
 ---
 
@@ -52,7 +61,9 @@ STAGE=staging pnpm jwt
 
 ```text
 flex/
-├── docs/                # Development guides
+├── docs/                # Development guides + Swagger UI viewer
+│   ├── index.html       # Run via `pnpm docs:serve`
+│   └── specs/           # Auto-generated OpenAPI 3.1 docs (per domain)
 ├── domains/             # Domain-specific handlers
 ├── libs/                # Shared packages (@flex/*)
 ├── platform/

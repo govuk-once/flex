@@ -138,4 +138,5 @@ export const RetrieveCustomerSummaryByLinkingIdResponse = z
     vehicleResponse: z.array(vehicle_full_response).nullish(),
     hasErrors: z.boolean().nullish(),
   })
-  .loose();
+  .loose()
+  .meta({ id: "RetrieveCustomerSummaryByLinkingIdResponse" });

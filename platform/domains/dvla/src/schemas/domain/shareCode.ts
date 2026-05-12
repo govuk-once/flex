@@ -3,74 +3,80 @@ import { z } from "zod";
 
 import { commonRequestSchema } from "../common";
 
-export const ShareCodeSchema = z.object({
-  state: z
-    .enum(["cancelled", "valid"])
-    .describe("The state of a share driving licence token"),
+export const ShareCodeSchema = z
+  .object({
+    state: z
+      .enum(["cancelled", "valid"])
+      .describe("The state of a share driving licence token"),
 
-  tokenId: z.uuid({
-    message: "The universally unique id for a token",
-  }),
-
-  token: z
-    .string()
-    .min(8)
-    .max(8)
-    .regex(/^[^aeilouAEIOU01]{8}$/, {
-      message:
-        "A driver licence share token (8 chars, excluding vowels and 0/1)",
+    tokenId: z.uuid({
+      message: "The universally unique id for a token",
     }),
 
-  drivingLicenceNumber: NonEmptyString.length(16).regex(
-    /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}$/,
-    {
-      message: "A valid UK driving licence number",
-    },
-  ),
+    token: z
+      .string()
+      .min(8)
+      .max(8)
+      .regex(/^[^aeilouAEIOU01]{8}$/, {
+        message:
+          "A driver licence share token (8 chars, excluding vowels and 0/1)",
+      }),
 
-  driverId: z.uuid({
-    message: "Unique identifier for a driver in the format of a V4 UUID",
-  }),
+    drivingLicenceNumber: NonEmptyString.length(16).regex(
+      /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}$/,
+      {
+        message: "A valid UK driving licence number",
+      },
+    ),
 
-  documentReference: z
-    .string()
-    .min(8)
-    .max(8)
-    .regex(/^[a-zA-Z0-9]*$/, {
-      message: "A driver licence share document reference",
+    driverId: z.uuid({
+      message: "Unique identifier for a driver in the format of a V4 UUID",
     }),
 
-  created: z.iso.datetime({
-    message: "The date-time the token was created",
-  }),
+    documentReference: z
+      .string()
+      .min(8)
+      .max(8)
+      .regex(/^[a-zA-Z0-9]*$/, {
+        message: "A driver licence share document reference",
+      }),
 
-  expiry: z.iso.datetime({
-    message: "The date-time the token will expire",
-  }),
+    created: z.iso.datetime({
+      message: "The date-time the token was created",
+    }),
 
-  status: z.enum(["active", "inactive"]).nullish(),
+    expiry: z.iso.datetime({
+      message: "The date-time the token will expire",
+    }),
 
-  redeemed: z.iso.datetime().nullish(),
+    status: z.enum(["active", "inactive"]).nullish(),
 
-  cancelled: z.iso
-    .datetime({
-      message: "The date-time the token was cancelled",
-    })
-    .nullish(),
-});
+    redeemed: z.iso.datetime().nullish(),
 
-export const SingleShareCodeResponseSchema = z.object({
-  linkingId: z.uuid(),
-  shareCode: ShareCodeSchema,
-});
+    cancelled: z.iso
+      .datetime({
+        message: "The date-time the token was cancelled",
+      })
+      .nullish(),
+  })
+  .meta({ id: "ShareCode" });
 
-export const MultiShareCodeResponseSchema = z.object({
-  linkingId: z.uuid().describe("Unique identifier linking the share request"),
+export const SingleShareCodeResponseSchema = z
+  .object({
+    linkingId: z.uuid(),
+    shareCode: ShareCodeSchema,
+  })
+  .meta({ id: "SingleShareCodeResponse" });
 
-  shareCodes: z
-    .array(ShareCodeSchema)
-    .describe("A list of share driving licence tokens"),
-});
+export const MultiShareCodeResponseSchema = z
+  .object({
+    linkingId: z.uuid().describe("Unique identifier linking the share request"),
+
+    shareCodes: z
+      .array(ShareCodeSchema)
+      .describe("A list of share driving licence tokens"),
+  })
+  .meta({ id: "MultiShareCodeResponse" });
 
 export const postShareCodeCancelRequestSchema = commonRequestSchema.extend({
   shareCodeId: NonEmptyString.describe(
