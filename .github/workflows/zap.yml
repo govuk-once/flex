@@ -5,11 +5,18 @@ on:
     workflows: [Continuous Deployment]
     types:
       - completed
+  workflow_dispatch:
 
+permissions:
+  id-token: write      # Required for AWS OIDC
+  contents: read
+  security-events: write # Required for SARIF upload
 
 jobs:
   zap_scan:
-      if: ${{ github.event.workflow_run.conclusion == 'success' }}
+      if: |
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success'
       runs-on: ubuntu-latest
       name: ⚡️ Zap staging
       timeout-minutes: 30
@@ -23,7 +30,7 @@ jobs:
         - name: Configure AWS credentials
           uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063 # v5.1.1
           with:
-            role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+            role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE  }}
             aws-region: 'eu-west-2'
             role-session-name: ${{ github.run_id }}
 
@@ -51,7 +58,7 @@ jobs:
               target: ./.zap/merged-openapi.json
               rules_file_name: './.zap/rules.tsv'
               # URL can't have trailing slash
-              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true" -J report.sarif' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
               allow_issue_writing: false # We don't want to create Github issues for now
 
         - name: Upload to Security Tab
