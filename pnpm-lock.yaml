@@ -558,8 +558,8 @@ importers:
         specifier: 1.16.0
         version: 1.16.0
       axios-cookiejar-support:
-        specifier: 6.0.5
-        version: 6.0.5(axios@1.16.0)(tough-cookie@6.0.1)(undici@7.24.0)
+        specifier: 7.0.0
+        version: 7.0.0(axios@1.16.0)(tough-cookie@6.0.1)(undici@7.24.0)
       cheerio:
         specifier: 1.2.0
         version: 1.2.0
@@ -3406,9 +3406,9 @@ packages:
     resolution: {integrity: sha512-iS0pV4xGzhexBCMG9ggXM5CaxTHa3KxOxkw2tphLgA/60vSycSWjJWso0s4xzGRrtABSi0b3LlxG5Jek7NjuqA==}
     engines: {node: '>=18'}
 
-  axios-cookiejar-support@6.0.5:
-    resolution: {integrity: sha512-ldPOQCJWB0ipugkTNVB8QRl/5L2UgfmVNVQtS9en1JQJ1wW588PqAmymnwmmgc12HLDzDtsJ28xE2ppj4rD4ng==}
-    engines: {node: '>=20.0.0'}
+  axios-cookiejar-support@7.0.0:
+    resolution: {integrity: sha512-IpxfiGiEsHp3uj3fjtTiM2LjQGKF5Ig7gZSsVKTJ9RN6KZor17bEwU1ZgYMcrrT3qKP3pz1FdzufgHjtDxKIvg==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       axios: '>=0.20.0'
       tough-cookie: '>=4.0.0'
@@ -4537,9 +4537,9 @@ packages:
   http-cache-semantics@4.2.0:
     resolution: {integrity: sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==}
 
-  http-cookie-agent@7.0.4:
-    resolution: {integrity: sha512-BF9iTnice7+LI4tHB8Bm0nFnp+J+bAY5Cll53uEa9NIFQCM7noUyWbImqJhB+j0drmJHvE/Wr6o+8FXq7IVYeA==}
-    engines: {node: '>=20.0.0'}
+  http-cookie-agent@8.0.0:
+    resolution: {integrity: sha512-c5A2W4NXYRQR+ZOEA+nzLlWj0K7zXAG21UZaDKfZrFSlmmb1MMXBVDhQJNUNYkYJZwFi0ptlNu4r37tEM45tvg==}
+    engines: {node: '>=22.0.0'}
     peerDependencies:
       tough-cookie: ^4.0.0 || ^5.0.0 || ^6.0.0
       undici: 7.24.0
@@ -10219,10 +10219,10 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  axios-cookiejar-support@6.0.5(axios@1.16.0)(tough-cookie@6.0.1)(undici@7.24.0):
+  axios-cookiejar-support@7.0.0(axios@1.16.0)(tough-cookie@6.0.1)(undici@7.24.0):
     dependencies:
       axios: 1.16.0
-      http-cookie-agent: 7.0.4(tough-cookie@6.0.1)(undici@7.24.0)
+      http-cookie-agent: 8.0.0(tough-cookie@6.0.1)(undici@7.24.0)
       tough-cookie: 6.0.1
     transitivePeerDependencies:
       - undici
@@ -11539,7 +11539,7 @@ snapshots:
 
   http-cache-semantics@4.2.0: {}
 
-  http-cookie-agent@7.0.4(tough-cookie@6.0.1)(undici@7.24.0):
+  http-cookie-agent@8.0.0(tough-cookie@6.0.1)(undici@7.24.0):
     dependencies:
       agent-base: 9.0.0
       tough-cookie: 6.0.1
