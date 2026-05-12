@@ -18,10 +18,10 @@
     "@flex/cli": "workspace:*",
     "esbuild": "0.28.0",
     "nx": "22.7.1",
-    "serve": "14.2.5",
+    "serve": "14.2.6",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
-    "zod": "4.3.6",
+    "zod": "4.4.3",
     "zod-openapi": "5.4.6"
   },
   "pnpm": {
