@@ -1,12 +1,14 @@
 import { Environment, getEnvConfig } from "@flex/utils";
 
 import { SsmApp } from "./base";
+import { MONITORED_REGIONS } from "./monitored-regions";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
+import { FlexMonitoringStack } from "./stacks/monitoring";
 import { FlexPlatformStack } from "./stacks/platform";
 import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
@@ -61,6 +63,12 @@ if (persistent) {
 new FlexCertStack(app, `${stage}-FlexCertStack`, {
   domainName,
   subdomainName,
+});
+
+MONITORED_REGIONS.forEach(({ region: monitoringRegion }) => {
+  new FlexMonitoringStack(app, `${stage}-FlexMonitoring-${monitoringRegion}`, {
+    region: monitoringRegion,
+  });
 });
 
 new FlexPlatformStack(app, `${stage}-FlexPlatform`, {

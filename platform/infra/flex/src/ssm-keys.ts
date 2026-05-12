@@ -22,6 +22,7 @@ export const ENV_KEYS = {
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
   UdpConfigRoleArn: `/${env}/flex-param/udp/consumer-role-arn`,
   UdpCmkArn: `/${env}/flex-param/udp/cmk-arn`,
+  MonitoringConfig: `/${env}/flex-param/flex/monitoring`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
@@ -38,7 +39,7 @@ export const STAGE_KEYS = {
   //
   CertArn: `/${stage}/cert/cert-arn`,
   //
-  CloudfrontId: `/${stage}/flex/cloudfront/distribution-id`,
-  CloudfrontFunctionName: `/${stage}/flex/cloudfront/function-name`,
-  CloudfrontFunctionArn: `/${stage}/flex/cloudfront/function-arn`,
+  AlertTopicArn: `/${stage}/flex/alerts/topic-arn`,
+  AlertTopicCriticalArn: `/${stage}/flex/alerts/critical-topic-arn`,
+  AlertTopicWarningArn: `/${stage}/flex/alerts/warning-topic-arn`,
 };
