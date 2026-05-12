@@ -997,6 +997,9 @@ importers:
 
   tests/performance:
     dependencies:
+      '@aws-sdk/client-cloudwatch':
+        specifier: 3.1037.0
+        version: 3.1037.0
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing

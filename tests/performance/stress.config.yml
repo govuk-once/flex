@@ -1,0 +1,44 @@
+config:
+  target: "{{ $env.BASE_URL }}"
+  http:
+    timeout: 30
+  # No ensure thresholds — stress is observation only, not pass/fail
+  ensure: {}
+  phases:
+    - name: confirm-baseline
+      duration: 60
+      arrivalRate: 15
+      maxVusers: 100
+    - name: ramp-to-growth
+      duration: 120
+      arrivalRate: 15
+      rampTo: 100
+      maxVusers: 300
+    - name: ramp-to-capacity
+      duration: 180
+      arrivalRate: 100
+      rampTo: 500
+      maxVusers: 1000
+    - name: find-ceiling
+      duration: 120
+      arrivalRate: 500
+      rampTo: 1000
+      maxVusers: 2000
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "{{ $env.AWS_REGION }}"
+        namespace: flex/performance-tests
+        dimensions:
+          - name: Stage
+            value: "{{ $env.STAGE }}"
+          - name: TestType
+            value: stress
+        traces:
+          serviceName: flex-api
+          sampleRate: 0.1
+          useRequestNames: true
+          annotations:
+            tool: Artillery
+            stage: "{{ $env.STAGE }}"
+            testType: stress
