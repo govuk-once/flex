@@ -7,6 +7,10 @@ on:
       - completed
   workflow_dispatch:
 
+permissions:
+  id-token: write      # Required for AWS OIDC
+  contents: read
+  security-events: write # Required for SARIF upload
 
 jobs:
   zap_scan:
