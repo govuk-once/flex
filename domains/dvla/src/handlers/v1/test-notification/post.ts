@@ -7,44 +7,25 @@ import {
   getDvlaAuthToken,
   getUserLinkingId,
 } from "../../../services/authentication";
+import { handleStandardErrors } from "../../../services/errors";
 
-type PostDvlaNotificationContext = InferRouteContext<
-  typeof config,
-  "POST /v1/test-notification"
->;
+const endpoint = "POST /v1/test-notification";
 
-export const handler = route("POST /v1/test-notification", async (ctx) => {
+export const handler = route(endpoint, async (ctx) => {
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
   ]);
 
-  await postDvlaTestNotification(ctx, auth, userLinkingId);
+  const response = await ctx.integrations.dvlaTestNotification({
+    body: {},
+    headers: { auth: auth },
+    path: `/${userLinkingId}`,
+  });
+
+  handleStandardErrors(response, endpoint);
 
   return {
     status: status.ACCEPTED,
   };
 });
-
-async function postDvlaTestNotification(
-  ctx: PostDvlaNotificationContext,
-  auth: string,
-  linkingId: string,
-): Promise<void> {
-  const { integrations, logger } = ctx;
-
-  const response = await integrations.dvlaTestNotification({
-    body: {},
-    headers: { auth: auth },
-    path: `/${linkingId}`,
-  });
-
-  if (!response.ok) {
-    logger.error("Failed to get send test notification to DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-
-    throw new createHttpError.BadGateway();
-  }
-}

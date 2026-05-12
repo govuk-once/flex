@@ -90,7 +90,7 @@ describe("GET /v1/customer-summary", () => {
 
       api
         .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
-        .reply(404, { message: "Not Found" });
+        .reply(500, { message: "Not Found" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),

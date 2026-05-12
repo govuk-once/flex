@@ -10,11 +10,22 @@ import {
 
 export const handler = route(
   "DELETE /v1/identity/:service",
-  async ({ auth }) => {
+  async ({ auth, pathParams, integrations }) => {
     const linked = await getServiceIdentityLink(auth.pairwiseId as UserId);
 
     if (!linked) {
       throw new createHttpError.NotFound();
+    }
+
+    if (pathParams.service === "dvla") {
+      const response = await integrations.dvlaUnlinkUser({
+        body: {},
+        headers: {
+          serviceId: linked.serviceId,
+        },
+      });
+
+      console.log(response);
     }
 
     await deleteServiceIdentity(linked.serviceName, linked.serviceId);

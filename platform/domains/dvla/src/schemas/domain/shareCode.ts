@@ -6,7 +6,7 @@ import { commonRequestSchema } from "../common";
 export const ShareCodeSchema = z
   .object({
     state: z
-      .enum(["cancelled", "valid"])
+      .enum(["cancelled", "expired", "valid", "redeemed", "invalid"])
       .describe("The state of a share driving licence token"),
 
     tokenId: z.uuid({

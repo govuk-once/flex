@@ -26,6 +26,7 @@ import {
   SingleShareCodeResponse,
 } from "../schemas/remote/shareCode";
 import { PostTestNotificationRequestSchema } from "../schemas/remote/testNotification";
+import { UnlinkUserRequestSchema } from "../schemas/remote/unlinkUser";
 import {
   VehicleEnquiryRequestBodySchema,
   VehicleEnquiryResponseSchema,
@@ -41,7 +42,8 @@ export type RouteOperation =
   | "getVehicleEnquiryService"
   | "postShareCode"
   | "postShareCodeCancel"
-  | "getShareCodes";
+  | "getShareCodes"
+  | "postUnlinkUser";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -144,6 +146,14 @@ export type GetShareCodes = BaseRouteContract<
   MultiShareCodeResponse
 >;
 
+export type PostUnlinkUser = BaseRouteContract<
+  "postUnlinkUser",
+  "POST",
+  UnlinkUserRequestSchema,
+  unknown,
+  unknown
+>;
+
 export type RouteContract =
   | GetAuthenticateRouteContract
   | GetCustomerRetrieveRouteContract
@@ -154,4 +164,5 @@ export type RouteContract =
   | GetVehicleEnquiryServiceRouteContract
   | PostShareCode
   | PostShareCodeCancel
-  | GetShareCodes;
+  | GetShareCodes
+  | PostUnlinkUser;

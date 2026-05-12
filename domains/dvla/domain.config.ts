@@ -27,6 +27,11 @@ export const { config, route, routeContext } = domain({
     encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
   },
   integrations: {
+    dvlaUnlinkUser: {
+      type: "gateway",
+      target: "dvla",
+      route: "POST /v1/unlink-user",
+    },
     dvlaTestNotification: {
       type: "gateway",
       target: "dvla",
@@ -198,6 +203,25 @@ export const { config, route, routeContext } = domain({
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
             response: SingleShareCodeResponseSchema,
+          },
+        },
+      },
+      "/unlink": {
+        POST: {
+          private: {
+            name: "unlink-user",
+            headers: {
+              serviceId: {
+                name: "serviceId",
+                required: true,
+              },
+            },
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaUnlinkUser",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
       },
