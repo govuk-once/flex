@@ -47,9 +47,6 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
-      - name: Generate OpenAPI docs
-        run: pnpm openapi:generate
-
       - name: Deploy FLEX AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
 

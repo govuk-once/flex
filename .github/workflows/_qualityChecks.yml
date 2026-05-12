@@ -69,6 +69,13 @@ jobs:
       - name: Generate OpenAPI docs
         run: pnpm openapi:generate
 
+      - name: Verify OpenAPI specs are up to date
+        run: |
+          git diff --exit-code docs/specs/ || {
+            echo "::error::docs/specs/ is out of date — run 'pnpm openapi:generate' and commit"
+            exit 1
+          }
+
       - name: Unit Tests
         run: pnpm exec nx run-many --target=test --all --run --coverage
 
