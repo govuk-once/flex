@@ -50,7 +50,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@bc9489585819302995bb108bbd899b7975f40303 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@ef734cca817839d2dcb4b1e3a7118492ebb4df39 # v5.1.1
         with:
           role-to-assume: ${{ inputs.STAGE == 'staging' && secrets.STAGING_DEPLOYMENT_ROLE || secrets.DEV_DEPLOYMENT_ROLE }}
           aws-region: ${{ inputs.AWS_REGION }}
