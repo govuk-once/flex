@@ -19,7 +19,7 @@
     "@flex/udp-domain": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
