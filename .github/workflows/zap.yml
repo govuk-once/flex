@@ -68,14 +68,14 @@ jobs:
               target: ./.zap/merged-openapi.json
               rules_file_name: './.zap/rules.tsv'
               # URL can't have trailing slash
-              cmd_options: '-a -O ${{ secrets.DEVELOPMENT_API_URL }} -z "-config format.sarif=true -config report.sarif=/zap/wrk/report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+              cmd_options: "-a -O ${{ secrets.DEVELOPMENT_API_URL }} -z '-config format.sarif=true -config report.sarif=/zap/wrk/report.sarif'" # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
               allow_issue_writing: false # We don't want to create Github issues for now
 
         #DEBUG ONLY - REMOVE
         - name: List Files for Debugging
           run: |
-            echo "Current Directory: $(pwd)"
-            ls -l *.sarif || echo "No SARIF file found!"
+            echo "Searching for any sarif files in the entire workspace..."
+            find . -name "*.sarif"
 
         - name: Upload to Security Tab
           if: always() # Upload even if vulnerabilities are found
