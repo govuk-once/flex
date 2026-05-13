@@ -168,7 +168,7 @@
         "name": "create-user",
         "summary": "Create a new user",
         "x-flex-access": "private",
-        "requestBody": {
+        "requestBody":  {
           "required": true,
           "content": {
             "application/json": {
@@ -176,12 +176,12 @@
                 "$ref": "#/components/schemas/CreateUserRequest"
               }
             }
-          },
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
           }
-        }
         },
         "tags": [
           "udp_other"
