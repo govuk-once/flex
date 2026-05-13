@@ -258,10 +258,9 @@ describe("DVLA Executor", () => {
     },
     {
       method: "POST",
-      path: "/v1/unlink-user",
+      path: "/v1/unlink-user/service-123-abc",
       operation: "postUnlinkUser",
       headers: { auth: "Bearer jwt-123" },
-      queryParams: { serviceId: "service-123-abc" },
       configureRemoteClient: () => {
         remoteClient.unlink.post.mockResolvedValue({
           ok: true,

@@ -420,9 +420,8 @@ describe("DVLA Service Gateway", () => {
     const serviceId = "service-123-abc";
 
     const response = await handler(
-      privateGatewayEvent.post("/gateways/dvla/v1/unlink-user", {
+      privateGatewayEvent.post(`/gateways/dvla/v1/unlink-user/${serviceId}`, {
         headers: { auth: jwt },
-        queryStringParameters: { serviceId },
         body: {},
       }),
       context,

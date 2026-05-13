@@ -5,7 +5,7 @@ import status from "http-status";
 import { routeContext } from "../../domain.config";
 
 type Endpoints =
-  | "POST /v1/unlink [private]"
+  | "POST /v1/unlink/:id [private]"
   | "POST /v1/share-code"
   | "GET /v1/share-codes"
   | "GET /v1/driving-licence"

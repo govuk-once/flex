@@ -59,7 +59,7 @@ export const { config, route, routeContext } = domain({
     dvlaUnlinkUser: {
       type: "domain",
       target: "dvla",
-      route: "POST /v1/unlink",
+      route: "POST /v1/unlink/*",
     },
   },
   routes: {

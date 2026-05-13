@@ -29,7 +29,7 @@ export const { config, route, routeContext } = domain({
     dvlaUnlinkUser: {
       type: "gateway",
       target: "dvla",
-      route: "POST /v1/unlink-user",
+      route: "POST /v1/unlink-user/*",
     },
     dvlaTestNotification: {
       type: "gateway",
@@ -205,16 +205,10 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/unlink": {
+      "/unlink/:id": {
         POST: {
           private: {
             name: "unlink-user",
-            headers: {
-              serviceId: {
-                name: "serviceId",
-                required: true,
-              },
-            },
             integrations: [
               "dvlaAuthenticate",
               "dvlaUnlinkUser",

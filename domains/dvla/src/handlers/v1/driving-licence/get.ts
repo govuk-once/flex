@@ -1,9 +1,9 @@
 import { config, route } from "@domain";
+import { GetLicenceResponseSchema } from "@flex/dvla-service-gateway";
 import { InferRouteContext } from "@flex/sdk";
 import createHttpError from "http-errors";
 import { status } from "http-status";
 
-import { ViewDriverResponse } from "../../../schemas/driversLicence";
 import {
   getDvlaAuthToken,
   getUserLinkingId,
@@ -75,7 +75,7 @@ async function getDvlaLicence(
   ctx: GetDvlaLicenceContext,
   auth: string,
   productKey: string,
-): Promise<ViewDriverResponse> {
+): Promise<GetLicenceResponseSchema> {
   const { integrations } = ctx;
 
   const response = await integrations.dvlaRetrieveLicence({

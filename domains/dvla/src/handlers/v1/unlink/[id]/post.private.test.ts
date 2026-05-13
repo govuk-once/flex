@@ -8,7 +8,7 @@ import { handler } from "./post.private";
 describe("POST /v1/unlink [private]", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const testAuthToken = "test-id-token";
-  const testServiceId = "service-123-abc";
+  const testId = "service-123-abc";
 
   const mockAuthSuccess = () =>
     api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
@@ -26,14 +26,13 @@ describe("POST /v1/unlink [private]", () => {
     const mockUnlinkResponse = { success: true };
 
     api
-      .post("/gateways/dvla/v1/unlink-user")
-      .query({ serviceId: testServiceId })
+      .post(`/gateways/dvla/v1/unlink-user/${testId}`)
       .matchHeader("auth", testAuthToken)
       .reply(status.OK, mockUnlinkResponse);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({
-        headers: { serviceId: testServiceId },
+        pathParameters: { id: testId },
       }),
       context.create(),
     );
@@ -51,7 +50,7 @@ describe("POST /v1/unlink [private]", () => {
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          headers: { serviceId: testServiceId },
+          pathParameters: { id: testId },
         }),
         context.create(),
       );
@@ -66,13 +65,12 @@ describe("POST /v1/unlink [private]", () => {
       mockAuthSuccess();
 
       api
-        .post("/gateways/dvla/v1/unlink-user")
-        .query({ serviceId: testServiceId })
+        .post(`/gateways/dvla/v1/unlink-user/${testId}`)
         .reply(status.INTERNAL_SERVER_ERROR, { message: "Internal Error" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          headers: { serviceId: testServiceId },
+          pathParameters: { id: testId },
         }),
         context.create(),
       );
@@ -87,13 +85,12 @@ describe("POST /v1/unlink [private]", () => {
       mockAuthSuccess();
 
       api
-        .post("/gateways/dvla/v1/unlink-user")
-        .query({ serviceId: testServiceId })
-        .reply(status.BAD_REQUEST, { message: "Missing serviceId" });
+        .post(`/gateways/dvla/v1/unlink-user/${testId}`)
+        .reply(status.BAD_REQUEST, { message: "Bad Request" });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({
-          headers: { serviceId: testServiceId },
+          pathParameters: { id: testId },
         }),
         context.create(),
       );

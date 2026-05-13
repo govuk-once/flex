@@ -24,7 +24,7 @@ export const handler = route(
     if (pathParams.service === "dvla") {
       await integrations.dvlaUnlinkUser({
         body: {},
-        headers: { serviceId: linked.serviceId },
+        path: `/${linked.serviceId}`,
       });
     }
 
