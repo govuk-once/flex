@@ -6,9 +6,10 @@ import { Construct } from "constructs";
 
 import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
 import { getPlatformEntry } from "../../utils/getEntry";
+import { AlarmActionProps } from "../alarms/types";
 import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
-interface ServiceGatewayProps {
+interface ServiceGatewayProps extends AlarmActionProps {
   consumerConfigArn: string;
   gatewaysResource: IResource;
   privateEgressSg: ISecurityGroup;
@@ -26,6 +27,8 @@ export function createServiceGateway(
     secretArnEnvVarName,
     service,
     vpc,
+    criticalAction,
+    warningAction,
   }: ServiceGatewayProps,
 ) {
   const serviceGateway = new FlexPrivateEgressFunction(
@@ -40,6 +43,8 @@ export function createServiceGateway(
       timeout: Duration.seconds(30),
       privateEgressSg,
       vpc,
+      criticalAction,
+      warningAction,
     },
   );
 

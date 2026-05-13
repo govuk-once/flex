@@ -7,9 +7,10 @@ import { Construct } from "constructs";
 
 import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
 import { getPlatformEntry } from "../../utils/getEntry";
+import { AlarmActionProps } from "../alarms/types";
 import { FlexPrivateIsolatedFunction } from "../lambda/flex-private-isolated-function";
 
-interface UdpServiceGatewayProps {
+interface UdpServiceGatewayProps extends AlarmActionProps {
   gatewaysResource: IResource;
   consumerConfigArn: string;
   cmkArn: string;
@@ -27,6 +28,8 @@ export function createUdpServiceGateway(
     gatewaysResource,
     privateIsolatedSg,
     vpc,
+    criticalAction,
+    warningAction,
   }: UdpServiceGatewayProps,
 ) {
   const udpCmk = Key.fromKeyArn(scope, "UdpCmk", cmkArn);
@@ -42,6 +45,8 @@ export function createUdpServiceGateway(
       timeout: Duration.seconds(30),
       privateIsolatedSg,
       vpc,
+      criticalAction,
+      warningAction,
     },
   );
 
