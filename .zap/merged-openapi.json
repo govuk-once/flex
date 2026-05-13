@@ -105,7 +105,12 @@
         "x-flex-access": "public",
         "tags": [
           "udp_other"
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       },
       "delete": {
         "name": "delete-service-identity",
@@ -113,7 +118,12 @@
         "x-flex-access": "public",
         "tags": [
           "udp_other"
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/v1/identity/:service/:id": {
@@ -124,7 +134,12 @@
         "x-flex-access": "public",
         "tags": [
           "udp_other"
-        ]
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/v1/users": {
@@ -161,7 +176,12 @@
                 "$ref": "#/components/schemas/CreateUserRequest"
               }
             }
+          },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
+        }
         },
         "tags": [
           "udp_other"
