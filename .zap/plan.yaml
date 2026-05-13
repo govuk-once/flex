@@ -1,0 +1,18 @@
+env:
+  contexts:
+    - name: "Development"
+      urls: ["${TARGET_URL}"]
+jobs:
+  - type: openapi
+    parameters:
+      apiFile: "/zap/wrk/.zap/merged-openapi.json"
+      targetUrl: "${TARGET_URL}"
+  - type: activeScan
+    parameters:
+      context: "Development"
+      policy: "Default Policy"
+  - type: report
+    parameters:
+      template: sarif
+      reportDir: "/zap/wrk/"
+      reportFile: "report"
