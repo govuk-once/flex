@@ -26,7 +26,7 @@
     "@types/ramda": "0.31.1",
     "aws-sdk-client-mock": "4.1.0",
     "axios": "1.16.0",
-    "axios-cookiejar-support": "6.0.5",
+    "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
     "eslint": "10.3.0",
     "jose": "6.2.3",

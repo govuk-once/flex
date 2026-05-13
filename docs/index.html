@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FLEX API Docs</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swagger-ui-dist@5.32.5/swagger-ui.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      header {
+        padding: 12px 24px;
+        background: #1b1b1b;
+        color: #fff;
+        font-size: 14px;
+      }
+      header strong {
+        margin-right: 12px;
+      }
+      #swagger-ui {
+        max-width: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>FLEX API Docs</strong>
+      <span id="status">loading domain list…</span>
+    </header>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.32.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.32.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+      (async () => {
+        const status = document.getElementById("status");
+        try {
+          const res = await fetch("specs/index.json", { cache: "no-cache" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const { domains } = await res.json();
+          if (!Array.isArray(domains) || domains.length === 0) {
+            status.textContent =
+              "no specs found — run `pnpm openapi:generate` first";
+            return;
+          }
+          status.textContent = `${domains.length} domain(s)`;
+          window.ui = SwaggerUIBundle({
+            urls: domains.map((d) => ({ url: d.spec, name: d.name })),
+            dom_id: "#swagger-ui",
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.apis,
+              SwaggerUIStandalonePreset,
+            ],
+            layout: "StandaloneLayout",
+          });
+        } catch (err) {
+          status.textContent = `failed to load specs index: ${err.message}`;
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -15,6 +15,8 @@ export const ENV_KEYS = {
   CacheEndpoint: `/${env}/flex/cache/endpoint`,
   SgPrivateEgress: `/${env}/flex/sg/private-egress`,
   SgPrivateIsolated: `/${env}/flex/sg/private-isolated`,
+  TopicCriticalAlarms: `/${env}/flex/topic/critical-alarms`,
+  TopicWarningAlarms: `/${env}/flex/topic/warning-alarms`,
   DvlaConfigSecretArn: `/${env}/flex-param/dvla/consumer-config-secret-arn`,
   UnsConfigSecretArn: `/${env}/flex-param/uns/consumer-config-secret-arn`,
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
@@ -35,4 +37,8 @@ export const STAGE_KEYS = {
   ApigwPrivateGatewayUrl: `/${stage}/flex/apigw/private/gateway-url`,
   //
   CertArn: `/${stage}/cert/cert-arn`,
+  //
+  CloudfrontId: `/${stage}/flex/cloudfront/distribution-id`,
+  CloudfrontFunctionName: `/${stage}/flex/cloudfront/function-name`,
+  CloudfrontFunctionArn: `/${stage}/flex/cloudfront/function-arn`,
 };

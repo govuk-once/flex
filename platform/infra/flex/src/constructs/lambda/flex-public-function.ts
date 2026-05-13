@@ -5,6 +5,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
+import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
 
 const { stage } = getEnvConfig();
@@ -12,7 +13,11 @@ const { stage } = getEnvConfig();
 export class FlexPublicFunction extends Construct {
   public readonly function: NodejsFunction;
 
-  constructor(scope: Construct, id: string, functionProps: FlexFunctionProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    { criticalAction, warningAction, ...functionProps }: FlexFunctionProps,
+  ) {
     super(scope, id);
 
     const logGroup = new LogGroup(this, "LogGroup", {
@@ -28,6 +33,13 @@ export class FlexPublicFunction extends Construct {
         FLEX_ENVIRONMENT: stage,
       },
       logGroup,
+    });
+
+    new LambdaAlarms(this, `${id}Alarm`, {
+      fn: this.function,
+      alarmNamePrefix: `${id.toLowerCase()}-alarm`,
+      criticalAction,
+      warningAction,
     });
 
     if (functionProps.domain) {
