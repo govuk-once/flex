@@ -93,10 +93,13 @@ jobs:
               -J report.json \
               || [ $? -eq 2 ] # Allow exit code 2 (warnings) but fail on others
 
-            # Use ZAP's built-in standalone reporting tool to convert the JSON to Sarif
-            docker run --rm -v $(pwd):/zap/wrk/:rw \
-            ghcr.io/zaproxy/zaproxy:stable zap-cli report \
-            -o /zap/wrk/report.sarif -f sarif
+            # Debug report.sarif with zap.sh exportreport
+            docker run --rm -v $(pwd):/zap/wrk/:rw --user $(id -u):$(id -g) \
+            ghcr.io/zaproxy/zaproxy:stable zap.sh -cmd \
+            -addoninstall exportreport \
+            -config "exportreport.export.format=SARIF" \
+            -config "exportreport.export.path=/zap/wrk/report.sarif" \
+            -config "exportreport.export.source=/zap/wrk/report.json"
 
         - name: Find sarif file
           run: |
