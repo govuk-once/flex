@@ -78,9 +78,9 @@ jobs:
           run: |
             # Pre-create the sarif and json file to avoid any permission issues
             touch report.sarif
-            chmod 664 report.sarif
+            chmod 666 report.sarif
             touch report.json
-            chmod 664 report.json
+            chmod 666 report.json
 
             docker run --rm -v $(pwd):/zap/wrk/:rw \
               --network=host \
