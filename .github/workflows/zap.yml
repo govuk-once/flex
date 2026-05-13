@@ -74,7 +74,7 @@ jobs:
               #  -z "-config format.sarif=true -config report.sarif=/zap/wrk/report.sarif"
               #allow_issue_writing: false # We don't want to create Github issues for now
 
-        - name: ZAP Scan (Manual Docker)
+        - name: ZAP Scan
           run: |
             # Pre-create the sarif file to avoid any permission issues
             touch report.sarif
@@ -87,13 +87,16 @@ jobs:
               -t ./.zap/merged-openapi.json \
               -f openapi \
               -a -O ${{ secrets.DEVELOPMENT_API_URL }} \
-              -z "-config format.sarif=true -config report.sarif=/zap/wrk/report.sarif -config rules.file=/zap/wrk/.zap/rules.tsv" \
+              -z "-config rules.file=/zap/wrk/.zap/rules.tsv" \
+              -J report.json \
               || [ $? -eq 2 ] # Allow exit code 2 (warnings) but fail on others
 
-            sleep 5
+            # Use ZAP's built-in standalone reporting tool to convert the JSON to Sarif
+            docker run --rm -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-cli report \
+            -o /zap/wrk/report.sarif -f sarif
 
-        #DEBUG ONLY - REMOVE
-        - name: List Files for Debugging
+        - name: Find sarif file
           run: |
             echo "Searching for any sarif files in the entire workspace..."
             find . -name "*.sarif"
