@@ -13,6 +13,6 @@ jobs:
       policy: "Default Policy"
   - type: report
     parameters:
-      template: sarif
+      template: sarif-json
       reportDir: "/zap/wrk/"
       reportFile: "report"
