@@ -46,7 +46,7 @@ jobs:
 
         - name: Generate JWT
           env:
-            STAGE: 'staging'
+            STAGE: 'development'
           run: pnpm dastSetup
 
         - name: Verify auth header
