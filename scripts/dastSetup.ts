@@ -1,5 +1,5 @@
 import { getJwtClient } from "../tests/e2e/src/setup.global";
-import * as fs from 'fs';
+import fs from "node:fs";
 
 async function main() {
   const stage = process.env.STAGE || "development";
