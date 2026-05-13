@@ -81,7 +81,6 @@ jobs:
             chmod 666 report.sarif
 
             docker run --rm -v $(pwd):/zap/wrk/:rw \
-              --user $(id -u):$(id -g) \
               --network=host \
               -e HOME=/zap/wrk/ \
               -e TARGET_URL="${{ secrets.DEVELOPMENT_API_URL }}" \
