@@ -16,6 +16,8 @@ async function main() {
     console.log("::add-mask::token");
 
     const envFile = process.env.GITHUB_ENV;
+    console.log(`\nwritting in: ${envFile}\n`);
+
     if (envFile) {
       // Append env var in github env file to share with the next step
       fs.appendFileSync(envFile, `ZAP_AUTH_HEADER_VALUE=Bearer ${token}\n`);
