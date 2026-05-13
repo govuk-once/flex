@@ -67,6 +67,23 @@ describe("GET /v1/customer-summary", () => {
   });
 
   describe("Error scenarios", () => {
+    it("returns 502 if DVLA authentication fails", async ({
+      context,
+      privateGatewayEventWithAuthorizer,
+    }) => {
+      mockUdpSuccess();
+      api
+        .get("/gateways/dvla/v1/authenticate")
+        .reply(status.INTERNAL_SERVER_ERROR);
+
+      const result = await handler(
+        privateGatewayEventWithAuthorizer.create({}),
+        context.create(),
+      );
+
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
+    });
+
     it("returns 502 if customer-summary integration returns an error", async ({
       context,
       privateGatewayEventWithAuthorizer,
