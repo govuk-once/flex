@@ -94,7 +94,7 @@ jobs:
               || [ $? -eq 2 ] # Allow exit code 2 (warnings) but fail on others
 
             # Debug report.sarif with zap.sh exportreport
-            docker run --rm -v $(pwd):/zap/wrk/:rw --user $(id -u):$(id -g) \
+            docker run --rm -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap.sh -cmd \
             -addoninstall exportreport \
             -config "exportreport.export.format=SARIF" \
