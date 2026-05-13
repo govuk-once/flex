@@ -58,7 +58,7 @@ jobs:
               target: ./.zap/merged-openapi.json
               rules_file_name: './.zap/rules.tsv'
               # URL can't have trailing slash
-              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true" -J report.sarif' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true -config report.sarif=report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
               allow_issue_writing: false # We don't want to create Github issues for now
 
         - name: Upload to Security Tab
