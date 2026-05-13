@@ -33,6 +33,9 @@ const remoteClient = {
   cancelShareCode: {
     post: vi.fn(),
   },
+  unlink: {
+    post: vi.fn(),
+  },
 };
 
 describe("DVLA Executor", () => {
@@ -250,6 +253,26 @@ describe("DVLA Executor", () => {
           "test-id-123",
           "Bearer jwt-123",
           "test-share-123",
+        );
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/unlink-user",
+      operation: "postUnlinkUser",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { serviceId: "service-123-abc" },
+      configureRemoteClient: () => {
+        remoteClient.unlink.post.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { success: true },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.unlink.post).toHaveBeenCalledWith(
+          "service-123-abc",
+          "Bearer jwt-123",
         );
       },
     },

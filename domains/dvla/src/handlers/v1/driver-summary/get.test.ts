@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -52,14 +53,14 @@ describe("GET /v1/driver-summary", () => {
     api
       .get(`/gateways/dvla/v1/driver-summary/${testLinkingId}`)
       .matchHeader("auth", testAuthToken)
-      .reply(200, mockDriverSummaryData);
+      .reply(status.OK, mockDriverSummaryData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({}),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(status.OK);
     expect(JSON.parse(result.body)).toStrictEqual(mockDriverSummaryData);
   });
 
@@ -69,14 +70,16 @@ describe("GET /v1/driver-summary", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       mockUdpSuccess();
-      api.get("/gateways/dvla/v1/authenticate").reply(500);
+      api
+        .get("/gateways/dvla/v1/authenticate")
+        .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 502 if driver-summary integration call fails", async ({
@@ -88,28 +91,30 @@ describe("GET /v1/driver-summary", () => {
 
       api
         .get(`/gateways/dvla/v1/driver-summary/${testLinkingId}`)
-        .reply(500, { message: "Internal Server Error" });
+        .reply(status.INTERNAL_SERVER_ERROR, {
+          message: "Internal Server Error",
+        });
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 404 if the user linking ID is missing from UDP", async ({
       context,
       privateGatewayEventWithAuthorizer,
     }) => {
-      api.get("/domains/udp/v1/identity/dvla").reply(404);
+      api.get("/domains/udp/v1/identity/dvla").reply(status.NOT_FOUND);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(404);
+      expect(result.statusCode).toBe(status.NOT_FOUND);
     });
   });
 });

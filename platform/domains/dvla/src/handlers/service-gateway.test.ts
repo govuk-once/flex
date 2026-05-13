@@ -95,6 +95,8 @@ const MOCK_MULTI_SHARE_CODE_RESPONSE = {
   shareCodes: [MOCK_SHARE_CODE],
 };
 
+const MOCK_UNLINK_RESPONSE = { success: true };
+
 const remoteClient = {
   authentication: {
     get: vi.fn().mockResolvedValue({
@@ -160,6 +162,13 @@ const remoteClient = {
         ...MOCK_SINGLE_SHARE_CODE_RESPONSE,
         shareCode: { ...MOCK_SHARE_CODE, state: "cancelled" },
       },
+    }),
+  },
+  unlink: {
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_UNLINK_RESPONSE,
     }),
   },
 };
@@ -402,6 +411,30 @@ describe("DVLA Service Gateway", () => {
       jwt,
       tokenId,
     );
+  });
+
+  it("dispatches POST /v1/unlink-user and returns success", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const serviceId = "service-123-abc";
+
+    const response = await handler(
+      privateGatewayEvent.post("/gateways/dvla/v1/unlink-user", {
+        headers: { auth: jwt },
+        queryStringParameters: { serviceId },
+        body: {},
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_UNLINK_RESPONSE),
+    });
+
+    expect(remoteClient.unlink.post).toHaveBeenCalledWith(serviceId, jwt);
   });
 
   it("maps remote 5xx errors to 502 with sanitized message", async ({
