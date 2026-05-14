@@ -436,4 +436,5 @@ export const RetrieveDriverSummaryByLinkingIdResponse = z
       .nullish(),
     hasErrors: z.boolean(),
   })
-  .loose();
+  .loose()
+  .meta({ id: "RetrieveDriverSummaryByLinkingIdResponse" });

@@ -1,15 +1,14 @@
 import {
+  authenticateResponseSchema,
   MultiShareCodeResponseSchema,
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
   SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
+  viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
-
-import { authenticateResponseSchema } from "./src/schemas/authenticate";
-import { viewDriverResponseSchema } from "./src/schemas/driversLicence";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",
@@ -27,6 +26,11 @@ export const { config, route, routeContext } = domain({
     encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
   },
   integrations: {
+    dvlaUnlinkUser: {
+      type: "gateway",
+      target: "dvla",
+      route: "POST /v1/unlink-user/*",
+    },
     dvlaTestNotification: {
       type: "gateway",
       target: "dvla",
@@ -127,6 +131,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: RetrieveCustomerSummaryByLinkingIdResponse,
           },
         },
       },
@@ -140,6 +145,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: RetrieveDriverSummaryByLinkingIdResponse,
           },
         },
       },
@@ -196,6 +202,19 @@ export const { config, route, routeContext } = domain({
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
             response: SingleShareCodeResponseSchema,
+          },
+        },
+      },
+      "/unlink/:id": {
+        POST: {
+          private: {
+            name: "unlink-user",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaUnlinkUser",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
       },

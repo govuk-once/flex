@@ -1,0 +1,24 @@
+{
+  "domains": [
+    {
+      "name": "dvla",
+      "spec": "specs/dvla.json"
+    },
+    {
+      "name": "example",
+      "spec": "specs/example.json"
+    },
+    {
+      "name": "local-council",
+      "spec": "specs/local-council.json"
+    },
+    {
+      "name": "udp",
+      "spec": "specs/udp.json"
+    },
+    {
+      "name": "uns",
+      "spec": "specs/uns.json"
+    }
+  ]
+}

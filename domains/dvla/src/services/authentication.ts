@@ -13,7 +13,10 @@ type CommonDvlaContext =
       | "POST /v1/share-code"
       | "POST /v1/test-notification"
     >
-  | InferRouteContext<typeof config, "POST /v1/share-code/:id/cancel">;
+  | InferRouteContext<
+      typeof config,
+      "POST /v1/share-code/:id/cancel" | "POST /v1/unlink/:id [private]"
+    >;
 
 export async function getUserLinkingId(
   ctx: CommonDvlaContext,

@@ -9,6 +9,7 @@ import {
   CachePolicy,
   Distribution,
   FunctionEventType,
+  IFunction,
   OriginRequestPolicy,
   PriceClass,
   SecurityPolicyProtocol,
@@ -36,11 +37,13 @@ import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../../utils/getEntry";
+import { AlarmActionProps } from "../alarms/types";
+import { WafAlarms } from "../alarms/waf";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 
 const envConfig = getEnvConfig();
 
-interface FlexCloudfrontProps {
+interface FlexCloudfrontProps extends AlarmActionProps {
   restApi: RestApi;
   certArn: string;
   domainName: string;
@@ -49,6 +52,7 @@ interface FlexCloudfrontProps {
 
 export class FlexCloudfront extends Construct {
   public readonly distribution: Distribution;
+  public readonly viewerRequestFunction: IFunction;
 
   /**
    * To prevent any down time we return the previous secret and a new one that will be stored.
@@ -155,14 +159,21 @@ export class FlexCloudfront extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { restApi, certArn, domainName, subdomainName }: FlexCloudfrontProps,
+    {
+      restApi,
+      certArn,
+      domainName,
+      subdomainName,
+      criticalAction,
+      warningAction,
+    }: FlexCloudfrontProps,
   ) {
     super(scope, id);
 
     const { setCurrentSecret, currentSecret, previousSecret } =
       this.#createRotatingSecret();
 
-    const viwerRequestFunction = new FlexCloudfrontFunction(
+    const flexCloudfrontFunction = new FlexCloudfrontFunction(
       this,
       "ViewerRequestFunction",
       {
@@ -172,6 +183,8 @@ export class FlexCloudfront extends Construct {
         ),
       },
     );
+
+    this.viewerRequestFunction = flexCloudfrontFunction.function;
 
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
 
@@ -218,12 +231,13 @@ export class FlexCloudfront extends Construct {
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         functionAssociations: [
           {
-            function: viwerRequestFunction.function,
+            function: this.viewerRequestFunction,
             eventType: FunctionEventType.VIEWER_REQUEST,
           },
         ],
       },
       logBucket: accessLogBucket,
+      publishAdditionalMetrics: true,
       domainNames: [subdomainName ?? domainName],
       certificate: cert,
     });
@@ -239,6 +253,7 @@ export class FlexCloudfront extends Construct {
     }
 
     const webAcl = new CfnWebACL(this, "ApiWaf", {
+      name: `${envConfig.stage}-apiwaf`,
       scope: "REGIONAL",
       defaultAction: {
         block: {},
@@ -293,6 +308,14 @@ export class FlexCloudfront extends Construct {
     new CfnWebACLAssociation(this, "WebAclAssociation", {
       webAclArn: webAcl.attrArn,
       resourceArn: restApi.deploymentStage.stageArn,
+    });
+
+    new WafAlarms(this, "ApiWafAlarms", {
+      alarmNamePrefix: `${envConfig.stage}-waf`,
+      criticalAction,
+      warningAction,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      webAclName: webAcl.name!,
     });
 
     const zone = HostedZone.fromLookup(this, "HostedZone", { domainName });

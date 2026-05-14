@@ -126,7 +126,6 @@ export const { config, route, routeContext } = domain({
         DELETE: {
           public: {
             name: "delete-todo",
-            environments: [],
           },
         },
       },
@@ -167,7 +166,6 @@ export const { config, route, routeContext } = domain({
         GET: {
           public: {
             name: "get-runtime-resource",
-            environments: [],
             resources: ["privateGatewaysRoot"],
           },
         },

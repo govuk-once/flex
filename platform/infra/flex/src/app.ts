@@ -3,6 +3,7 @@ import { Environment, getEnvConfig } from "@flex/utils";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
+import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
@@ -41,6 +42,8 @@ if (persistent) {
     ENV_KEYS.CacheEndpoint,
     ENV_KEYS.SgPrivateEgress,
     ENV_KEYS.SgPrivateIsolated,
+    ENV_KEYS.TopicCriticalAlarms,
+    ENV_KEYS.TopicWarningAlarms,
     ENV_KEYS.VpcEApiGateway,
     // Vpc exports are extensive
     `${ENV_KEYS.Vpc}/vpc-id`,
@@ -64,6 +67,8 @@ new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   domainName,
   subdomainName,
 });
+
+new FlexCloudfrontAlarmsStack(app, `${stage}-FlexCloudfrontAlarms`);
 
 const allDomainConfigs = await getDomainConfigs();
 const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);

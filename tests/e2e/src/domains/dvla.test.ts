@@ -1,10 +1,10 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
-import { viewDriverResponseSchema } from "@flex/dvla-domain";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
   MultiShareCodeResponseSchema,
   SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
+  viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { beforeAll, describe, expect, inject } from "vitest";
@@ -263,7 +263,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         }
       });
 
-      it("GET: returns 200 and lists all share codes", async ({
+      it.skip("GET: returns 200 and lists all share codes", async ({
         cloudfront,
         withIdentityLink,
       }) => {

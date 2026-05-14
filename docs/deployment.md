@@ -99,7 +99,7 @@ Persistent environments have dedicated infrastructure deployed via CI/CD on merg
 ### Deployment Flow
 
 ```text
-merge to main → Quality Checks → Deploy to "development" → Deploy to "staging"
+merge to main → Quality Checks → Deploy to "development" → Deploy to "staging" → Deploy to "production"
 ```
 
 Each deployment includes E2E tests that must pass before proceeding to the next step.
@@ -178,6 +178,7 @@ Both jobs run in parallel. The ephemeral environment deployment uses the PR numb
 | Quality Checks        | `development` | —                     |
 | Deploy to Development | `development` | Quality Checks        |
 | Deploy to Staging     | `staging`     | Deploy to Development |
+| Deploy to Production  | `production`  | Deploy to Staging     |
 
 Each stage must complete before the next step begins. E2E tests run as part of each deployment.
 

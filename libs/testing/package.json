@@ -18,15 +18,15 @@
     "@aws-sdk/client-secrets-manager": "3.1032.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/core": "7.4.0",
-    "@middy/secrets-manager": "7.4.0",
-    "@middy/ssm": "7.4.0",
+    "@middy/core": "7.5.0",
+    "@middy/secrets-manager": "7.5.0",
+    "@middy/ssm": "7.5.0",
     "@types/aws-lambda": "8.10.161",
     "@types/node": "25.6.0",
     "@types/ramda": "0.31.1",
     "aws-sdk-client-mock": "4.1.0",
     "axios": "1.16.0",
-    "axios-cookiejar-support": "6.0.5",
+    "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
     "eslint": "10.3.0",
     "jose": "6.2.3",
@@ -37,6 +37,6 @@
     "tough-cookie": "6.0.1",
     "typescript": "6.0.3",
     "vitest": "4.1.5",
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   }
 }

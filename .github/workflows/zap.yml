@@ -5,11 +5,18 @@ on:
     workflows: [Continuous Deployment]
     types:
       - completed
+  workflow_dispatch:
 
+permissions:
+  id-token: write      # Required for AWS OIDC
+  contents: read
+  security-events: write # Required for SARIF upload
 
 jobs:
   zap_scan:
-      if: ${{ github.event.workflow_run.conclusion == 'success' }}
+      if: |
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success'
       runs-on: ubuntu-latest
       name: ⚡️ Zap staging
       timeout-minutes: 30
@@ -21,14 +28,14 @@ jobs:
               fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
         - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@51635dbf418c2cdd8b3e1497529334d8db7e4063 # v5.1.1
+          uses: aws-actions/configure-aws-credentials@ef734cca817839d2dcb4b1e3a7118492ebb4df39 # v5.1.1
           with:
-            role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+            role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE  }}
             aws-region: 'eu-west-2'
             role-session-name: ${{ github.run_id }}
 
         - name: Setup node
-          uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+          uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
           with:
             node-version-file: ".nvmrc"
 
@@ -51,12 +58,12 @@ jobs:
               target: ./.zap/merged-openapi.json
               rules_file_name: './.zap/rules.tsv'
               # URL can't have trailing slash
-              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true -config report.sarif=report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
               allow_issue_writing: false # We don't want to create Github issues for now
 
         - name: Upload to Security Tab
           if: always() # Upload even if vulnerabilities are found
-          uses: github/codeql-action/upload-sarif@e46ed2cbd01164d986452f91f178727624ae40d7 # v4.35.3
+          uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
           with:
             sarif_file: 'report.sarif'
             category: 'owasp-zap'
