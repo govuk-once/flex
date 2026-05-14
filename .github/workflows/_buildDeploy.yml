@@ -51,6 +51,7 @@ jobs:
         run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
 
       - name: E2E tests
+        if: inputs.STAGE != 'production'
         env:
           STAGE: ${{ env.STAGE }}
         run: pnpm --filter @flex/e2e test:e2e
