@@ -16,363 +16,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "driver": {
-                      "type": "object",
-                      "properties": {
-                        "drivingLicenceNumber": {
-                          "type": "string",
-                          "minLength": 5,
-                          "maxLength": 16
-                        },
-                        "firstNames": {
-                          "type": "string"
-                        },
-                        "lastName": {
-                          "type": "string"
-                        },
-                        "gender": {
-                          "type": "string",
-                          "enum": [
-                            "Male",
-                            "Female"
-                          ]
-                        },
-                        "dateOfBirth": {
-                          "type": "string",
-                          "description": "Date in the format YYYY-MM-DD"
-                        },
-                        "address": {
-                          "type": "object",
-                          "properties": {
-                            "unstructuredAddress": {
-                              "type": "object",
-                              "properties": {
-                                "line1": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 45
-                                },
-                                "line2": {
-                                  "type": "string",
-                                  "minLength": 0,
-                                  "maxLength": 45
-                                },
-                                "line3": {
-                                  "type": "string",
-                                  "minLength": 0,
-                                  "maxLength": 45
-                                },
-                                "line4": {
-                                  "type": "string",
-                                  "minLength": 0,
-                                  "maxLength": 45
-                                },
-                                "line5": {
-                                  "type": "string",
-                                  "minLength": 0,
-                                  "maxLength": 45
-                                },
-                                "postcode": {
-                                  "type": "string"
-                                }
-                              },
-                              "additionalProperties": false
-                            }
-                          },
-                          "additionalProperties": false
-                        },
-                        "disqualifiedUntil": {
-                          "type": "string",
-                          "description": "Date in the format YYYY-MM-DD"
-                        },
-                        "disqualifiedForLife": {
-                          "type": "boolean"
-                        },
-                        "disqualifiedPendingSentence": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "drivingLicenceNumber"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "licence": {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "Provisional",
-                            "Full"
-                          ]
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "Valid",
-                            "Disqualified",
-                            "Revoked",
-                            "Surrendered",
-                            "Expired",
-                            "Exchanged",
-                            "Refused"
-                          ]
-                        },
-                        "statusQualifier": {
-                          "type": "string",
-                          "enum": [
-                            "For re-assessment only",
-                            "Photo licence invitation sent",
-                            "Short period disqualification",
-                            "Until test passed",
-                            "Until extended test passed",
-                            "Pending sentence",
-                            "For life"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "status"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "entitlement": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "categoryCode": {
-                            "type": "string"
-                          },
-                          "categoryLegalLiteral": {
-                            "type": "string"
-                          },
-                          "categoryType": {
-                            "type": "string",
-                            "enum": [
-                              "Provisional",
-                              "Full"
-                            ]
-                          },
-                          "fromDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "expiryDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "restrictions": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "restrictionCode": {
-                                  "type": "string"
-                                },
-                                "restrictionLiteral": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "restrictionCode"
-                              ],
-                              "additionalProperties": false
-                            }
-                          }
-                        },
-                        "additionalProperties": false
-                      }
-                    },
-                    "endorsements": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "offenceCode": {
-                            "type": "string"
-                          },
-                          "offenceLegalLiteral": {
-                            "type": "string"
-                          },
-                          "offenceDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "convictionDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "penaltyPoints": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "penaltyPointsExpiryDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "disqualification": {
-                            "type": "object",
-                            "properties": {
-                              "type": {
-                                "type": "string"
-                              },
-                              "forLife": {
-                                "type": "boolean"
-                              },
-                              "years": {
-                                "type": "integer",
-                                "minimum": -9007199254740991,
-                                "maximum": 9007199254740991
-                              },
-                              "months": {
-                                "type": "integer",
-                                "minimum": -9007199254740991,
-                                "maximum": 9007199254740991
-                              },
-                              "days": {
-                                "type": "integer",
-                                "minimum": -9007199254740991,
-                                "maximum": 9007199254740991
-                              },
-                              "startDate": {
-                                "type": "string",
-                                "description": "Date in the format YYYY-MM-DD"
-                              },
-                              "disqualifiedPendingSentence": {
-                                "type": "boolean"
-                              }
-                            },
-                            "additionalProperties": false
-                          },
-                          "disqualificationRemovalDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "disqualificationReimposedDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "disqualificationSuspendedPendingAppealDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "sentenceDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          }
-                        },
-                        "additionalProperties": false
-                      }
-                    },
-                    "testPass": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "categoryCode": {
-                            "type": "string"
-                          },
-                          "categoryLegalLiteral": {
-                            "type": "string"
-                          },
-                          "testDate": {
-                            "type": "string",
-                            "description": "Date in the format YYYY-MM-DD"
-                          },
-                          "status": {
-                            "type": "string"
-                          },
-                          "withAutomaticTransmission": {
-                            "type": "boolean"
-                          }
-                        },
-                        "additionalProperties": false
-                      }
-                    },
-                    "token": {
-                      "type": "object",
-                      "properties": {
-                        "validFromDate": {
-                          "type": "string",
-                          "description": "Date in the format YYYY-MM-DD"
-                        },
-                        "validToDate": {
-                          "type": "string",
-                          "description": "Date in the format YYYY-MM-DD"
-                        },
-                        "issueNumber": {
-                          "type": "string"
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "cpc": {
-                      "type": "object",
-                      "properties": {
-                        "cpcs": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "lgvValidTo": {
-                                "type": "string",
-                                "description": "Date in the format YYYY-MM-DD"
-                              },
-                              "pcvValidTo": {
-                                "type": "string",
-                                "description": "Date in the format YYYY-MM-DD"
-                              },
-                              "national": {
-                                "type": "boolean"
-                              }
-                            },
-                            "additionalProperties": false
-                          }
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "holder": {
-                      "type": "object",
-                      "properties": {
-                        "tachoCards": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "cardNumber": {
-                                "type": "string"
-                              },
-                              "cardStatus": {
-                                "type": "string"
-                              },
-                              "cardExpiryDate": {
-                                "type": "string",
-                                "description": "Date in the format YYYY-MM-DD"
-                              },
-                              "cardStartOfValidityDate": {
-                                "type": "string",
-                                "description": "Date in the format YYYY-MM-DD"
-                              }
-                            },
-                            "additionalProperties": false
-                          }
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "driver",
-                    "licence"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/ViewDriverResponse"
                 }
               }
             }
@@ -536,6 +180,380 @@
   },
   "components": {
     "schemas": {
+      "ViewDriverResponse": {
+        "type": "object",
+        "properties": {
+          "driver": {
+            "$ref": "#/components/schemas/Driver"
+          },
+          "licence": {
+            "$ref": "#/components/schemas/Licence"
+          },
+          "entitlement": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntitlementRecord"
+            }
+          },
+          "endorsements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Endorsement"
+            }
+          },
+          "testPass": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryCode": {
+                  "type": "string"
+                },
+                "categoryLegalLiteral": {
+                  "type": "string"
+                },
+                "testDate": {
+                  "type": "string",
+                  "description": "Date in the format YYYY-MM-DD"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "withAutomaticTransmission": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "token": {
+            "type": "object",
+            "properties": {
+              "validFromDate": {
+                "type": "string",
+                "description": "Date in the format YYYY-MM-DD"
+              },
+              "validToDate": {
+                "type": "string",
+                "description": "Date in the format YYYY-MM-DD"
+              },
+              "issueNumber": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "cpc": {
+            "type": "object",
+            "properties": {
+              "cpcs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lgvValidTo": {
+                      "type": "string",
+                      "description": "Date in the format YYYY-MM-DD"
+                    },
+                    "pcvValidTo": {
+                      "type": "string",
+                      "description": "Date in the format YYYY-MM-DD"
+                    },
+                    "national": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "holder": {
+            "type": "object",
+            "properties": {
+              "tachoCards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cardNumber": {
+                      "type": "string"
+                    },
+                    "cardStatus": {
+                      "type": "string"
+                    },
+                    "cardExpiryDate": {
+                      "type": "string",
+                      "description": "Date in the format YYYY-MM-DD"
+                    },
+                    "cardStartOfValidityDate": {
+                      "type": "string",
+                      "description": "Date in the format YYYY-MM-DD"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "driver",
+          "licence"
+        ],
+        "additionalProperties": false
+      },
+      "Driver": {
+        "type": "object",
+        "properties": {
+          "drivingLicenceNumber": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 16
+          },
+          "firstNames": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "Male",
+              "Female"
+            ]
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "disqualifiedUntil": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "disqualifiedForLife": {
+            "type": "boolean"
+          },
+          "disqualifiedPendingSentence": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "drivingLicenceNumber"
+        ],
+        "additionalProperties": false
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "unstructuredAddress": {
+            "type": "object",
+            "properties": {
+              "line1": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 45
+              },
+              "line2": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 45
+              },
+              "line3": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 45
+              },
+              "line4": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 45
+              },
+              "line5": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 45
+              },
+              "postcode": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "Licence": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Provisional",
+              "Full"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Valid",
+              "Disqualified",
+              "Revoked",
+              "Surrendered",
+              "Expired",
+              "Exchanged",
+              "Refused"
+            ]
+          },
+          "statusQualifier": {
+            "type": "string",
+            "enum": [
+              "For re-assessment only",
+              "Photo licence invitation sent",
+              "Short period disqualification",
+              "Until test passed",
+              "Until extended test passed",
+              "Pending sentence",
+              "For life"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "EntitlementRecord": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string"
+          },
+          "categoryLegalLiteral": {
+            "type": "string"
+          },
+          "categoryType": {
+            "type": "string",
+            "enum": [
+              "Provisional",
+              "Full"
+            ]
+          },
+          "fromDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "expiryDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "restrictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "restrictionCode": {
+                  "type": "string"
+                },
+                "restrictionLiteral": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "restrictionCode"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Endorsement": {
+        "type": "object",
+        "properties": {
+          "offenceCode": {
+            "type": "string"
+          },
+          "offenceLegalLiteral": {
+            "type": "string"
+          },
+          "offenceDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "convictionDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "penaltyPoints": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "penaltyPointsExpiryDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "disqualification": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "forLife": {
+                "type": "boolean"
+              },
+              "years": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "months": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "days": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "startDate": {
+                "type": "string",
+                "description": "Date in the format YYYY-MM-DD"
+              },
+              "disqualifiedPendingSentence": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "disqualificationRemovalDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "disqualificationReimposedDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "disqualificationSuspendedPendingAppealDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          },
+          "sentenceDate": {
+            "type": "string",
+            "description": "Date in the format YYYY-MM-DD"
+          }
+        },
+        "additionalProperties": false
+      },
       "RetrieveCustomerSummaryByLinkingIdResponse": {
         "type": "object",
         "properties": {

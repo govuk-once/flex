@@ -1,11 +1,11 @@
 import {
   authenticateResponseSchema,
-  getLicenceResponseSchema,
   MultiShareCodeResponseSchema,
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
   SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
+  viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
@@ -40,7 +40,7 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "dvla",
       route: "GET /v1/licence/*",
-      response: getLicenceResponseSchema,
+      response: viewDriverResponseSchema,
     },
     dvlaAuthenticate: {
       type: "gateway",
@@ -103,7 +103,7 @@ export const { config, route, routeContext } = domain({
               "dvlaCustomerSummary",
               "udpGetLinkingId",
             ],
-            response: getLicenceResponseSchema,
+            response: viewDriverResponseSchema,
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },

@@ -1,7 +1,7 @@
 export { authenticateResponseSchema } from "./schemas/domain/authenticate";
 export { RetrieveCustomerSummaryByLinkingIdResponse } from "./schemas/domain/customerSummary";
 export { RetrieveDriverSummaryByLinkingIdResponse } from "./schemas/domain/driverSummary";
-export { getLicenceResponseSchema } from "./schemas/domain/drivingLicences";
+export { viewDriverResponseSchema } from "./schemas/domain/drivingLicences";
 export {
   MultiShareCodeResponseSchema,
   SingleShareCodeResponseSchema,
