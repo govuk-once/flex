@@ -10,7 +10,7 @@
     "test": "nx affected --target=test --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
     "jwt": "tsx scripts/generateToken.ts",
-    "dastSetup" : "tsx scripts/dastSetup.ts",
+    "dastSetup": "tsx scripts/dastSetup.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "docs:serve": "pnpm openapi:generate && serve docs"
   },
@@ -21,7 +21,7 @@
     "serve": "14.2.5",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
-    "zod": "4.3.6",
+    "zod": "4.4.3",
     "zod-openapi": "5.4.6"
   },
   "pnpm": {
