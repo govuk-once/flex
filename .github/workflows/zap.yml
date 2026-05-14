@@ -49,6 +49,15 @@ jobs:
             STAGE: 'staging'
           run: pnpm dastSetup
 
+        - name: Verify auth header
+          run: |
+            if [ -n "$ZAP_AUTH_HEADER_VALUE" ]; then
+              echo "Success: Auth header is available."
+            else
+              echo "Failure: Auth header is missing!"
+              exit 1
+            fi
+
         - name: ZAP Scan
           uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
           with:
