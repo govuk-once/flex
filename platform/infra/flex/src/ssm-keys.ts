@@ -39,6 +39,9 @@ export const STAGE_KEYS = {
   //
   CertArn: `/${stage}/cert/cert-arn`,
   //
+  CloudfrontId: `/${stage}/flex/cloudfront/distribution-id`,
+  CloudfrontFunctionName: `/${stage}/flex/cloudfront/function-name`,
+  CloudfrontFunctionArn: `/${stage}/flex/cloudfront/function-arn`,
   AlertTopicArn: `/${stage}/flex/alerts/topic-arn`,
   AlertTopicCriticalArn: `/${stage}/flex/alerts/critical-topic-arn`,
   AlertTopicWarningArn: `/${stage}/flex/alerts/warning-topic-arn`,
