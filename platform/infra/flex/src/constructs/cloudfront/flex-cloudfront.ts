@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import { getEnvConfig } from "@flex/utils";
+import { Environment, getEnvConfig } from "@flex/utils";
 import { Duration, Stack } from "aws-cdk-lib";
 import { RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
@@ -26,6 +26,7 @@ import {
   ObjectLockMode,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
+import { CfnProtection } from "aws-cdk-lib/aws-shield";
 import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import {
   AwsCustomResource,
@@ -242,6 +243,14 @@ export class FlexCloudfront extends Construct {
     });
 
     setCurrentSecret.node.addDependency(this.distribution);
+
+    if (envConfig.env === Environment.production) {
+      const { account } = Stack.of(this);
+      new CfnProtection(this, "ShieldProtection", {
+        name: `${envConfig.stage}-flex-cloudfront`,
+        resourceArn: `arn:aws:cloudfront::${account}:distribution/${this.distribution.distributionId}`,
+      });
+    }
 
     const webAcl = new CfnWebACL(this, "ApiWaf", {
       name: `${envConfig.stage}-apiwaf`,

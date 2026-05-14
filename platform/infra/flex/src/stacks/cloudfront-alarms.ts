@@ -1,4 +1,4 @@
-import { getEnvConfig } from "@flex/utils";
+import { Environment, getEnvConfig } from "@flex/utils";
 import { Duration } from "aws-cdk-lib";
 import {
   Distribution,
@@ -18,9 +18,10 @@ import { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
+import { ShieldAlarms } from "../constructs/alarms/shield";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 
-const { stage } = getEnvConfig();
+const { env, stage } = getEnvConfig();
 
 export class FlexCloudfrontAlarmsStack extends BaseStack {
   private buildRelay(
@@ -79,11 +80,13 @@ export class FlexCloudfrontAlarmsStack extends BaseStack {
       },
     });
 
+    const distributionId = this.import(STAGE_KEYS.CloudfrontId, "eu-west-2");
+
     const distribution = Distribution.fromDistributionAttributes(
       this,
       "Distribution",
       {
-        distributionId: this.import(STAGE_KEYS.CloudfrontId, "eu-west-2"),
+        distributionId,
         domainName: "placeholder", // not used by alarm metrics
       },
     );
@@ -141,5 +144,14 @@ export class FlexCloudfrontAlarmsStack extends BaseStack {
       criticalAction,
       warningAction,
     });
+
+    if (env === Environment.production) {
+      new ShieldAlarms(this, "ShieldAlarms", {
+        alarmNamePrefix: `${stage}-shield`,
+        resourceArn: `arn:aws:cloudfront::${this.account}:distribution/${distributionId}`,
+        criticalAction,
+        warningAction,
+      });
+    }
   }
 }
