@@ -1,10 +1,10 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
-  getLicenceResponseSchema,
   MultiShareCodeResponseSchema,
   SingleShareCodeResponseSchema,
   vehicleEnquiryResponseSchema,
+  viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { beforeAll, describe, expect, inject } from "vitest";
@@ -55,7 +55,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         });
         expect(result.status).toBe(200);
 
-        const validation = getLicenceResponseSchema.safeParse(result.body);
+        const validation = viewDriverResponseSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
       });
 
