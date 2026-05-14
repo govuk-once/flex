@@ -56,6 +56,11 @@ export const { config, route, routeContext } = domain({
       route: "POST /v1/users",
       body: CreateUserRequestSchema,
     },
+    dvlaUnlinkUser: {
+      type: "domain",
+      target: "dvla",
+      route: "POST /v1/unlink/*",
+    },
   },
   routes: {
     v1: {
@@ -83,7 +88,11 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "delete-service-identity",
             resources: ["privateGatewayUrl"],
-            integrations: ["udpDeleteIdentity", "udpGetIdentity"],
+            integrations: [
+              "udpDeleteIdentity",
+              "udpGetIdentity",
+              "dvlaUnlinkUser",
+            ],
           },
         },
       },

@@ -1,13 +1,15 @@
 import { route } from "@domain";
-import createHttpError from "http-errors";
 import { status } from "http-status";
 
 import {
   getDvlaAuthToken,
   getUserLinkingId,
 } from "../../../services/authentication";
+import { handleStandardErrors } from "../../../services/errors";
 
-export const handler = route("GET /v1/share-codes", async (ctx) => {
+const endpoint = "GET /v1/share-codes";
+
+export const handler = route(endpoint, async (ctx) => {
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
@@ -18,14 +20,7 @@ export const handler = route("GET /v1/share-codes", async (ctx) => {
     query: { linkingId: userLinkingId },
   });
 
-  if (!response.ok) {
-    ctx.logger.error("Failed to get share codes from DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-
-    throw new createHttpError.BadGateway();
-  }
+  handleStandardErrors(response, endpoint);
 
   return {
     status: status.OK,

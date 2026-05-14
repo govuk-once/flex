@@ -1,11 +1,13 @@
 import { route } from "@domain";
-import createHttpError from "http-errors";
 import { status } from "http-status";
 
 import {
   getDvlaAuthToken,
   getUserLinkingId,
 } from "../../../../../services/authentication";
+import { handleStandardErrors } from "../../../../../services/errors";
+
+const endpoint = "POST /v1/share-code/:id/cancel";
 
 export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
   const [userLinkingId, auth] = await Promise.all([
@@ -20,18 +22,7 @@ export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
     body: {},
   });
 
-  if (!response.ok) {
-    ctx.logger.error("Failed to delete share code with DVLA", {
-      status: response.error.status,
-      errorBody: response.error.body,
-    });
-
-    if (response.error.status === status.NOT_FOUND) {
-      throw new createHttpError.NotFound();
-    }
-
-    throw new createHttpError.BadGateway();
-  }
+  handleStandardErrors(response, endpoint);
 
   return {
     status: status.OK,

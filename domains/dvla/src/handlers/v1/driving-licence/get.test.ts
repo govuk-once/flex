@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import status from "http-status";
 import nock from "nock";
 import { beforeEach, describe, expect, vi } from "vitest";
 
@@ -16,7 +17,7 @@ describe("GET /v1/driving-licence", () => {
   });
 
   const mockUdpSuccess = () =>
-    api.get("/domains/udp/v1/identity/dvla").reply(200, {
+    api.get("/domains/udp/v1/identity/dvla").reply(status.OK, {
       serviceId: testLinkingId,
       serviceName: "dvla",
     });
@@ -70,14 +71,14 @@ describe("GET /v1/driving-licence", () => {
     api
       .get(`/gateways/dvla/v1/licence/${testProductKey}`)
       .matchHeader("auth", testAuthToken)
-      .reply(200, mockLicenceData);
+      .reply(status.OK, mockLicenceData);
 
     const result = await handler(
       privateGatewayEventWithAuthorizer.create({}),
       context.create(),
     );
 
-    expect(result.statusCode).toBe(200);
+    expect(result.statusCode).toBe(status.OK);
     expect(JSON.parse(result.body)).toStrictEqual(mockLicenceData);
   });
 
@@ -91,7 +92,7 @@ describe("GET /v1/driving-licence", () => {
 
       api
         .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
-        .reply(200, {
+        .reply(status.OK, {
           linkingId: testLinkingId,
           hasErrors: false,
           customerResponse: {
@@ -104,7 +105,7 @@ describe("GET /v1/driving-licence", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(422);
+      expect(result.statusCode).toBe(status.UNPROCESSABLE_ENTITY);
     });
 
     it("returns 422 if the products array is missing or empty", async ({
@@ -116,7 +117,7 @@ describe("GET /v1/driving-licence", () => {
 
       api
         .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
-        .reply(200, {
+        .reply(status.OK, {
           customerResponse: {
             customer: {
               customerId: testCustomerId,
@@ -130,7 +131,7 @@ describe("GET /v1/driving-licence", () => {
         context.create(),
       );
 
-      expect(result.statusCode).toBe(422);
+      expect(result.statusCode).toBe(status.UNPROCESSABLE_ENTITY);
     });
 
     it("returns 502 if DVLA authentication fails", async ({
@@ -138,14 +139,16 @@ describe("GET /v1/driving-licence", () => {
       privateGatewayEventWithAuthorizer,
     }) => {
       mockUdpSuccess();
-      api.get("/gateways/dvla/v1/authenticate").reply(500);
+      api
+        .get("/gateways/dvla/v1/authenticate")
+        .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
 
     it("returns 502 if customer-summary call fails", async ({
@@ -154,14 +157,16 @@ describe("GET /v1/driving-licence", () => {
     }) => {
       mockUdpSuccess();
       mockAuthSuccess();
-      api.get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`).reply(500);
+      api
+        .get(`/gateways/dvla/v1/customer-summary/${testLinkingId}`)
+        .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.create({}),
         context.create(),
       );
 
-      expect(result.statusCode).toBe(502);
+      expect(result.statusCode).toBe(status.BAD_GATEWAY);
     });
   });
 });

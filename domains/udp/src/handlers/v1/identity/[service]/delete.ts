@@ -10,11 +10,22 @@ import {
 
 export const handler = route(
   "DELETE /v1/identity/:service",
-  async ({ auth }) => {
+  async ({ auth, pathParams, integrations }) => {
     const linked = await getServiceIdentityLink(auth.pairwiseId as UserId);
 
     if (!linked) {
       throw new createHttpError.NotFound();
+    }
+
+    /**
+     * NOTE:
+     * For now ignoring the response from DVLA as they are just returning 404
+     */
+    if (pathParams.service === "dvla") {
+      await integrations.dvlaUnlinkUser({
+        body: {},
+        path: `/${linked.serviceId}`,
+      });
     }
 
     await deleteServiceIdentity(linked.serviceName, linked.serviceId);

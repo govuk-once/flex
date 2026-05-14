@@ -155,6 +155,27 @@
           }
         }
       }
+    },
+    "/v1/unlink/{id}": {
+      "post": {
+        "operationId": "unlink-user",
+        "summary": "POST /unlink/:id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3994,7 +4015,10 @@
             "type": "string",
             "enum": [
               "cancelled",
-              "valid"
+              "expired",
+              "valid",
+              "redeemed",
+              "invalid"
             ],
             "description": "The state of a share driving licence token"
           },

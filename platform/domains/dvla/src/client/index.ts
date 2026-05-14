@@ -192,6 +192,22 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
         return typedFetch(request);
       },
     },
+    unlink: {
+      post: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
+        const request = fetcher(`${DVLA_REMOTE_ROUTES.app}/unlink-customer`, {
+          method: "POST",
+          headers: {
+            ...defaultHeaders,
+            "X-API-KEY": config.apiKey,
+            Authorization: jwt.trim(),
+          },
+          body: JSON.stringify({
+            linkingId,
+          }),
+        }).request;
+        return typedFetch(request);
+      },
+    },
   };
 }
 

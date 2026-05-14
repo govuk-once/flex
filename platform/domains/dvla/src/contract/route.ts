@@ -195,6 +195,25 @@ export const ROUTE_CONTRACTS = {
     },
     callRemote: (client, data) => client.shareCode.post(data.id, data.jwt),
   },
+  "POST:/v1/unlink-user/:id": {
+    operation: "postUnlinkUser",
+    method: "POST",
+    inboundPath: "/v1/unlink-user",
+    remotePath: "/v1/unlink-user",
+    toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const id = pathParams[3];
+      if (!id) {
+        throw new createHttpError.BadRequest(
+          "Missing customer linking id in path",
+        );
+      }
+
+      return { id, jwt };
+    },
+    callRemote: (client, data) => client.unlink.post(data.id, data.jwt),
+  },
 } as const satisfies Record<string, RouteContract>;
 
 function assertRequiredHeaderAndReturn(
