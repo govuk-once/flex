@@ -14,6 +14,8 @@ import { Function } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { importAlarmActions } from "../constructs/alarms/actions";
+import { AlarmActionProps } from "../constructs/alarms/types";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
@@ -128,6 +130,11 @@ export class FlexDomainStack extends BaseStack {
         })
       : undefined;
 
+    const { criticalAction, warningAction } = importAlarmActions(this, {
+      criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
+      warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
+    });
+
     routes.forEach(
       ({ gateway, handlerPath, method, path, routeConfig, version }) => {
         const functionId = toPascalCase(
@@ -142,6 +149,8 @@ export class FlexDomainStack extends BaseStack {
           domain: config.name,
           entry: getDomainEntry(config.name, handlerPath),
           ...toFunctionConfig(routeConfig.function, config.common?.function),
+          criticalAction,
+          warningAction,
         });
 
         if (routeConfig.resources?.length) {
@@ -215,7 +224,7 @@ export class FlexDomainStack extends BaseStack {
     props: ReturnType<typeof toFunctionConfig> & {
       domain: string;
       entry: string;
-    },
+    } & AlarmActionProps,
   ) {
     const vpc = this.importVpc(ENV_KEYS.Vpc);
     const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);

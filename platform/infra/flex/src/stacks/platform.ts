@@ -25,6 +25,9 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { importAlarmActions } from "../constructs/alarms/actions";
+import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
+import { AlarmActionProps } from "../constructs/alarms/types";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
@@ -34,7 +37,7 @@ import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
-const { env } = getEnvConfig();
+const { env, stage } = getEnvConfig();
 
 interface FlexPlatformStackProps {
   domainName: string;
@@ -89,11 +92,13 @@ export class FlexPlatformStack extends BaseStack {
     userPoolId,
     clientId,
     jwksUri,
+    criticalAction,
+    warningAction,
   }: {
     userPoolId: string;
     clientId: string;
     jwksUri: string;
-  }) {
+  } & AlarmActionProps) {
     const vpc = this.importVpc(ENV_KEYS.Vpc);
     const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
 
@@ -107,10 +112,12 @@ export class FlexPlatformStack extends BaseStack {
       },
       privateEgressSg,
       vpc,
+      criticalAction,
+      warningAction,
     });
   }
 
-  #getAuthorizerFunction() {
+  #getAuthorizerFunction({ criticalAction, warningAction }: AlarmActionProps) {
     // Only in the development env we stub the JWKS service
     if (env === Environment.development) {
       const stubUserPoolId = this.import(ENV_KEYS.AuthUserPoolIdStub);
@@ -122,6 +129,8 @@ export class FlexPlatformStack extends BaseStack {
         clientId: stubClientId,
         userPoolId: stubUserPoolId,
         jwksUri,
+        criticalAction,
+        warningAction,
       });
     }
 
@@ -132,10 +141,12 @@ export class FlexPlatformStack extends BaseStack {
       clientId,
       userPoolId,
       jwksUri: `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId}/.well-known/jwks.json`,
+      criticalAction,
+      warningAction,
     });
   }
 
-  #createRestApi() {
+  #createRestApi({ criticalAction, warningAction }: AlarmActionProps) {
     const restApi = new RestApi(this, "Api", {
       description: "Central API Gateway for the Flex Platform",
       deployOptions: {
@@ -203,13 +214,20 @@ export class FlexPlatformStack extends BaseStack {
       },
     });
 
+    new ApiGatewayAlarms(this, "GatewayAlarms", {
+      alarmNamePrefix: `${stage}-apigw`,
+      criticalAction,
+      warningAction,
+      api: restApi,
+    });
+
     return {
       restApi,
       appRoot,
     };
   }
 
-  #createPrivateRestApi() {
+  #createPrivateRestApi({ criticalAction, warningAction }: AlarmActionProps) {
     const apiGatewayEndpoint = this.importInterfaceVpcEndpoint(
       ENV_KEYS.VpcEApiGateway,
     );
@@ -301,6 +319,8 @@ export class FlexPlatformStack extends BaseStack {
       consumerRoleArn: udpConsumerRoleArn,
       privateIsolatedSg,
       vpc,
+      criticalAction,
+      warningAction,
     });
 
     createServiceGateway(this, {
@@ -310,6 +330,8 @@ export class FlexPlatformStack extends BaseStack {
       privateEgressSg,
       secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
       service: "dvla",
+      criticalAction,
+      warningAction,
     });
 
     createServiceGateway(this, {
@@ -319,9 +341,18 @@ export class FlexPlatformStack extends BaseStack {
       privateEgressSg,
       secretArnEnvVarName: "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
       service: "uns",
+      criticalAction,
+      warningAction,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
+
+    new ApiGatewayAlarms(this, "PrivateGatewayAlarms", {
+      alarmNamePrefix: `${stage}-apigw-private`,
+      criticalAction,
+      warningAction,
+      api: privateGateway,
+    });
 
     return {
       privateGateway,
@@ -349,22 +380,39 @@ export class FlexPlatformStack extends BaseStack {
       },
     });
 
-    const { restApi, appRoot } = this.#createRestApi();
+    const { criticalAction, warningAction } = importAlarmActions(this, {
+      criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
+      warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
+    });
 
-    const authorizerFn = this.#getAuthorizerFunction();
+    const { restApi, appRoot } = this.#createRestApi({
+      criticalAction,
+      warningAction,
+    });
+
+    const authorizerFn = this.#getAuthorizerFunction({
+      criticalAction,
+      warningAction,
+    });
 
     const certArn = this.import(STAGE_KEYS.CertArn, "us-east-1");
     const cert = Certificate.fromCertificateArn(this, "Cert", certArn);
 
-    new FlexCloudfront(this, "Cloudfront", {
-      certArn: cert.certificateArn,
-      domainName,
-      subdomainName,
-      restApi,
-    });
+    const { distribution, viewerRequestFunction } = new FlexCloudfront(
+      this,
+      "Cloudfront",
+      {
+        certArn: cert.certificateArn,
+        domainName,
+        subdomainName,
+        restApi,
+        criticalAction,
+        warningAction,
+      },
+    );
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
-      this.#createPrivateRestApi();
+      this.#createPrivateRestApi({ criticalAction, warningAction });
 
     const permissionsBoundary = createPermissionsBoundary(
       this,
@@ -381,6 +429,9 @@ export class FlexPlatformStack extends BaseStack {
       [STAGE_KEYS.ApigwPrivateRestId]: privateGateway.restApiId,
       [STAGE_KEYS.ApigwPrivateDomainRoot]: domainsRoot.resourceId,
       [STAGE_KEYS.ApigwPrivateGatewaysRoot]: gatewaysRoot.resourceId,
+      [STAGE_KEYS.CloudfrontId]: distribution.distributionId,
+      [STAGE_KEYS.CloudfrontFunctionName]: viewerRequestFunction.functionName,
+      [STAGE_KEYS.CloudfrontFunctionArn]: viewerRequestFunction.functionArn,
     });
 
     new CfnOutput(this, "FlexApiUrl", {

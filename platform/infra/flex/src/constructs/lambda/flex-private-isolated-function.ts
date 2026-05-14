@@ -6,6 +6,7 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
+import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
 
 const { stage } = getEnvConfig();
@@ -24,6 +25,8 @@ export class FlexPrivateIsolatedFunction extends Construct {
     {
       vpc,
       privateIsolatedSg,
+      criticalAction,
+      warningAction,
       ...functionProps
     }: FlexPrivateIsolatedFunctionProps,
   ) {
@@ -47,6 +50,13 @@ export class FlexPrivateIsolatedFunction extends Construct {
       vpcSubnets: {
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
+    });
+
+    new LambdaAlarms(this, `${id}Alarm`, {
+      fn: this.function,
+      alarmNamePrefix: `${id.toLowerCase()}-alarm`,
+      criticalAction,
+      warningAction,
     });
 
     if (functionProps.domain) {

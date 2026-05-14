@@ -5,6 +5,7 @@ import { ENV_KEYS } from "../../ssm-keys";
 import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createElastiCacheCluster } from "./cache";
 import { addVpcEndpoints } from "./endpoints";
+import { createAlarmTopics } from "./topics";
 import { createVpc } from "./vpc";
 
 export class FlexCoreStack extends BaseStack {
@@ -40,11 +41,15 @@ export class FlexCoreStack extends BaseStack {
       securityGroups: [privateEgress, privateIsolated],
     });
 
+    const { criticalTopic, warningTopic } = createAlarmTopics(this);
+
     this.exportVpc(ENV_KEYS.Vpc, vpc);
     this.exports({
       [ENV_KEYS.CacheEndpoint]: cacheCluster.attrPrimaryEndPointAddress,
       [ENV_KEYS.SgPrivateEgress]: privateEgress.securityGroupId,
       [ENV_KEYS.SgPrivateIsolated]: privateIsolated.securityGroupId,
+      [ENV_KEYS.TopicCriticalAlarms]: criticalTopic.topicArn,
+      [ENV_KEYS.TopicWarningAlarms]: warningTopic.topicArn,
       [ENV_KEYS.VpcEApiGateway]: apiGatewayEndpoint.vpcEndpointId,
     });
   }

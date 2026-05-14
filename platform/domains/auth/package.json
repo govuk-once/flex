@@ -12,10 +12,10 @@
     "@aws-lambda-powertools/parameters": "2.33.0",
     "@aws-sdk/client-ssm": "3.1032.0",
     "@flex/logging": "workspace:*",
-    "@middy/core": "7.4.0",
+    "@middy/core": "7.5.0",
     "aws-jwt-verify": "5.1.1",
     "http-errors": "2.0.1",
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
