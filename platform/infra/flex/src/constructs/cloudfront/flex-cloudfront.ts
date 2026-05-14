@@ -51,7 +51,7 @@ interface FlexCloudfrontProps extends AlarmActionProps {
 
 export class FlexCloudfront extends Construct {
   public readonly distribution: Distribution;
-  public readonly viwerRequestFunction: IFunction;
+  public readonly viewerRequestFunction: IFunction;
 
   /**
    * To prevent any down time we return the previous secret and a new one that will be stored.
@@ -183,7 +183,7 @@ export class FlexCloudfront extends Construct {
       },
     );
 
-    this.viwerRequestFunction = flexCloudfrontFunction.function;
+    this.viewerRequestFunction = flexCloudfrontFunction.function;
 
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
 
@@ -230,7 +230,7 @@ export class FlexCloudfront extends Construct {
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         functionAssociations: [
           {
-            function: this.viwerRequestFunction,
+            function: this.viewerRequestFunction,
             eventType: FunctionEventType.VIEWER_REQUEST,
           },
         ],

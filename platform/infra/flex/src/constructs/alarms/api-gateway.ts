@@ -35,16 +35,17 @@ export class ApiGatewayAlarms extends Construct {
     // 1% threshold = 0.01.
     this.fiveXxAlarm = new Alarm(this, "5xxErrorRate", {
       alarmName: `${alarmNamePrefix}-5xx-error-rate`,
-      alarmDescription: "Critical: 5XX error rate above 1% over 5 minutes",
+      alarmDescription:
+        "Critical: 5XX error rate above 1% over 5 consecutive 1 minute periods",
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "5XXError",
         dimensionsMap: dimensions,
         statistic: Stats.AVERAGE,
-        period: Duration.minutes(5),
+        period: Duration.minutes(1),
       }),
       threshold: 0.01,
-      evaluationPeriods: 1,
+      evaluationPeriods: 5,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
@@ -53,16 +54,17 @@ export class ApiGatewayAlarms extends Construct {
     // 4XXError as a ratio. 5% threshold = 0.05.
     this.fourXxAlarm = new Alarm(this, "4xxErrorRate", {
       alarmName: `${alarmNamePrefix}-4xx-error-rate`,
-      alarmDescription: "Warning: 4XX error rate above 5% over 5 minutes",
+      alarmDescription:
+        "Warning: 4XX error rate above 5% over 5 consecutive 1 minute periods",
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "4XXError",
         dimensionsMap: dimensions,
         statistic: Stats.AVERAGE,
-        period: Duration.minutes(5),
+        period: Duration.minutes(1),
       }),
       threshold: 0.05,
-      evaluationPeriods: 1,
+      evaluationPeriods: 5,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });

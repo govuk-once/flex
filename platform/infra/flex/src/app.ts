@@ -42,6 +42,8 @@ if (persistent) {
     ENV_KEYS.CacheEndpoint,
     ENV_KEYS.SgPrivateEgress,
     ENV_KEYS.SgPrivateIsolated,
+    ENV_KEYS.TopicCriticalAlarms,
+    ENV_KEYS.TopicWarningAlarms,
     ENV_KEYS.VpcEApiGateway,
     // Vpc exports are extensive
     `${ENV_KEYS.Vpc}/vpc-id`,

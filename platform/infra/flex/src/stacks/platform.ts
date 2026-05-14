@@ -398,7 +398,7 @@ export class FlexPlatformStack extends BaseStack {
     const certArn = this.import(STAGE_KEYS.CertArn, "us-east-1");
     const cert = Certificate.fromCertificateArn(this, "Cert", certArn);
 
-    const { distribution, viwerRequestFunction } = new FlexCloudfront(
+    const { distribution, viewerRequestFunction } = new FlexCloudfront(
       this,
       "Cloudfront",
       {
@@ -430,8 +430,8 @@ export class FlexPlatformStack extends BaseStack {
       [STAGE_KEYS.ApigwPrivateDomainRoot]: domainsRoot.resourceId,
       [STAGE_KEYS.ApigwPrivateGatewaysRoot]: gatewaysRoot.resourceId,
       [STAGE_KEYS.CloudfrontId]: distribution.distributionId,
-      [STAGE_KEYS.CloudfrontFunctionName]: viwerRequestFunction.functionName,
-      [STAGE_KEYS.CloudfrontFunctionArn]: viwerRequestFunction.functionArn,
+      [STAGE_KEYS.CloudfrontFunctionName]: viewerRequestFunction.functionName,
+      [STAGE_KEYS.CloudfrontFunctionArn]: viewerRequestFunction.functionArn,
     });
 
     new CfnOutput(this, "FlexApiUrl", {

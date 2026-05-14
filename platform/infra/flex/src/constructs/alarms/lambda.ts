@@ -53,14 +53,13 @@ export class LambdaAlarms extends Construct {
       }),
       threshold: 0,
       evaluationPeriods: 5,
-      datapointsToAlarm: 5,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
     this.throttlesAlarm.addAlarmAction(warningAction);
 
     const timeoutMs = fn.timeout?.toMilliseconds();
-    const durationThreshold = timeoutMs ? Math.floor(timeoutMs * 0.8) : 24000;
+    const durationThreshold = timeoutMs ? Math.floor(timeoutMs * 0.8) : 24000; // Default to 80% of 30s
     this.durationAlarm = new Alarm(this, "Duration", {
       alarmName: `${alarmNamePrefix}-duration`,
       alarmDescription: `Warning: p99 duration above ${String(durationThreshold)}ms over 5 minutes`,

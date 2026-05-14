@@ -1,5 +1,18 @@
 import { getEnvConfig } from "@flex/utils";
-import { Distribution, Function } from "aws-cdk-lib/aws-cloudfront";
+import { Duration } from "aws-cdk-lib";
+import {
+  Distribution,
+  Function as CloudfrontFunction,
+} from "aws-cdk-lib/aws-cloudfront";
+import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Key } from "aws-cdk-lib/aws-kms";
+import {
+  Code,
+  Function as LambdaFunction,
+  Runtime,
+} from "aws-cdk-lib/aws-lambda";
+import { Topic } from "aws-cdk-lib/aws-sns";
+import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
@@ -10,6 +23,48 @@ import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 const { stage } = getEnvConfig();
 
 export class FlexCloudfrontAlarmsStack extends BaseStack {
+  private buildRelay(
+    severity: "Critical" | "Warning",
+    targetTopicArn: string,
+    alarmTopicKey: Key,
+  ) {
+    const relayTopic = new Topic(this, `${severity}RelayTopic`, {
+      topicName: `${stage}-cf-${severity.toLowerCase()}-relay`,
+      masterKey: alarmTopicKey,
+    });
+
+    const relayFn = new LambdaFunction(this, `${severity}RelayFn`, {
+      runtime: Runtime.NODEJS_24_X,
+      handler: "index.handler",
+      timeout: Duration.seconds(10),
+      code: Code.fromInline(`
+        const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
+        const client = new SNSClient({ region: "eu-west-2" });
+        exports.handler = async (event) => {
+          for (const record of event.Records ?? []) {
+            await client.send(new PublishCommand({
+              TopicArn: ${targetTopicArn},
+              Subject: record.Sns.Subject?.slice(0, 100),
+              Message: record.Sns.Message,
+              MessageAttributes: record.Sns.MessageAttributes,
+            }));
+          }
+        };
+      `),
+    });
+
+    relayFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["sns:Publish"],
+        resources: [targetTopicArn],
+      }),
+    );
+
+    relayTopic.addSubscription(new LambdaSubscription(relayFn));
+
+    return relayTopic;
+  }
+
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
@@ -33,7 +88,7 @@ export class FlexCloudfrontAlarmsStack extends BaseStack {
       },
     );
 
-    const viewerRequestFunction = Function.fromFunctionAttributes(
+    const viewerRequestFunction = CloudfrontFunction.fromFunctionAttributes(
       this,
       "ViewerRequestFunction",
       {
@@ -45,9 +100,38 @@ export class FlexCloudfrontAlarmsStack extends BaseStack {
       },
     );
 
+    const criticalTargetArn = this.import(
+      ENV_KEYS.TopicCriticalAlarms,
+      "eu-west-2",
+    );
+    const warningTargetArn = this.import(
+      ENV_KEYS.TopicWarningAlarms,
+      "eu-west-2",
+    );
+
+    const alarmTopicKey = new Key(this, "AlarmTopicRelayKey", {
+      alias: "alias/flex-alerts-relay-key",
+      description: "KMS key for alarm SNS topics",
+      enableKeyRotation: true,
+    });
+    alarmTopicKey.grantEncryptDecrypt(
+      new ServicePrincipal("cloudwatch.amazonaws.com"),
+    );
+
+    const criticalRelay = this.buildRelay(
+      "Critical",
+      criticalTargetArn,
+      alarmTopicKey,
+    );
+    const warningRelay = this.buildRelay(
+      "Warning",
+      warningTargetArn,
+      alarmTopicKey,
+    );
+
     const { criticalAction, warningAction } = importAlarmActions(this, {
-      criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms, "eu-west-2"),
-      warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms, "eu-west-2"),
+      criticalTopicArn: criticalRelay.topicArn,
+      warningTopicArn: warningRelay.topicArn,
     });
 
     new CloudFrontAlarms(this, "Alarms", {
