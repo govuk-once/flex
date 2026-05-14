@@ -66,8 +66,8 @@ This triggers a new run on GitHub using the branch's logic against the developme
 
 ---
 
-## How to test the openapi
+## How to test the OpenAPI document
 
-To test the openapi you will need to install the [owasp zap tool](https://www.zaproxy.org/download/).
-Open the tool, in the toolbar go to import -> Import OpenAPI Definition. Choose File -> the openapi to verify, change the target to localhost and press import.
+To test the OpenAPI you will need to install the [owasp zap tool](https://www.zaproxy.org/download/).
+Open the tool, in the toolbar go to `import` -> `Import OpenAPI Definition`. `Choose File` -> the OpenAPI to verify, change the target to `localhost` and press `import`.
 The results will appear as soon as it tried to import the file.
