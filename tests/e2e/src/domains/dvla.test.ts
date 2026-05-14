@@ -41,8 +41,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/driving-licence") &&
-      udpCreateIdentityDeployed() &&
-      udpDeleteIdentityDeployed(),
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 and valid data when identity is linked", async ({
         cloudfront,
@@ -78,8 +78,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "POST /v1/test-notification") &&
-      udpCreateIdentityDeployed() &&
-      udpDeleteIdentityDeployed(),
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
     )("POST", () => {
       it("returns 202 when identity is linked and notification is sent", async ({
         cloudfront,
@@ -116,8 +116,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/driver-summary") &&
-      udpCreateIdentityDeployed() &&
-      udpDeleteIdentityDeployed(),
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 when identity is linked and driver-summary is fetched", async ({
         cloudfront,
@@ -152,8 +152,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/customer-summary") &&
-      udpCreateIdentityDeployed() &&
-      udpDeleteIdentityDeployed(),
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 when identity is linked and customer-summary is fetched", async ({
         cloudfront,
