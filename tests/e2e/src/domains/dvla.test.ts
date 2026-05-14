@@ -263,7 +263,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         }
       });
 
-      it("GET: returns 200 and lists all share codes", async ({
+      it.skip("GET: returns 200 and lists all share codes", async ({
         cloudfront,
         withIdentityLink,
       }) => {

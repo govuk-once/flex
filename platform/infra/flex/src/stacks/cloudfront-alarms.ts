@@ -110,7 +110,7 @@ export class FlexCloudfrontAlarmsStack extends BaseStack {
     );
 
     const alarmTopicKey = new Key(this, "AlarmTopicRelayKey", {
-      alias: "alias/flex-alerts-relay-key",
+      alias: `alias/${stage}-flex-alerts-relay-key`,
       description: "KMS key for alarm SNS topics",
       enableKeyRotation: true,
     });
