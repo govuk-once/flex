@@ -1,5 +1,4 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
-import { viewDriverResponseSchema } from "@flex/dvla-domain";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
   getLicenceResponseSchema,
