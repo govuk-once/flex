@@ -20,8 +20,8 @@ async function main() {
     if (envFile) {
       // Append env var in github env file to share with the next step
       fs.appendFileSync(envFile, `ZAP_AUTH_HEADER_VALUE=Bearer ${token}\n`);
+      console.log(`\nSaved in: ${envFile}\n`);
     }
-    console.log(`\nSaved in: ${envFile}\n`);
 
     console.log("\n--------------------------------------------------");
 
