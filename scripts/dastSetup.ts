@@ -13,10 +13,9 @@ async function main() {
     console.log("\n--------------------------------------------------");
 
     console.log("\nToken Generated Successfully:\n");
-    console.log("::add-mask::token");
+    console.log("::add-mask::${token}");
 
     const envFile = process.env.GITHUB_ENV;
-    console.log(`\nwritting in: ${envFile}\n`);
 
     if (envFile) {
       // Append env var in github env file to share with the next step
