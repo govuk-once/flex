@@ -4,7 +4,10 @@ export { extendIt } from "./extend/it.e2e";
 export type { ApiResponse } from "./fixtures/api";
 export { createApi } from "./fixtures/api";
 export { invalidJwt } from "./fixtures/auth";
-export { getStubTokenGenerator } from "./fixtures/StubTokenGenerator";
+export {
+  getStubTokenGenerator,
+  getStubTokenGeneratorFromJWK,
+} from "./fixtures/StubTokenGenerator";
 export {
   type BaseTokenGenerator,
   getTokenGenerator,

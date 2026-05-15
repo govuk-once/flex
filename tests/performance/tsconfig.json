@@ -1,4 +1,4 @@
 {
   "extends": "@flex/config/tsconfig.json",
-  "include": ["processor.ts"]
+  "include": ["user-api-processor.ts", "test-data/**/*.ts", "report.ts"]
 }

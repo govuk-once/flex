@@ -1,0 +1,38 @@
+config:
+  target: "{{ $env.BASE_URL }}"
+  http:
+    timeout: 30
+  processor: "./user-api-processor.ts"
+  phases:
+    - name: warm-up
+      duration: 30
+      arrivalRate: 1
+      maxVusers: 5
+    - name: ramp
+      duration: 60
+      arrivalRate: 1
+      rampTo: 10
+      maxVusers: 25
+    - name: sustained
+      duration: 120
+      arrivalRate: 10
+      maxVusers: 25
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1500
+      - http.error_rate: 1
+
+before:
+  flow:
+    - function: "before"
+
+scenarios:
+  - name: user-get
+    beforeScenario: pickUserJwt
+    flow:
+      - get:
+          url: "/app/udp/v1/users"
+          headers:
+            Authorization: "Bearer {{ jwt }}"
+          expect:
+            - statusCode: 200

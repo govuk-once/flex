@@ -3,9 +3,10 @@ config:
   http:
     timeout: 30
   phases:
-    - duration: 15
-      arrivalRate: 1
-      maxVusers: 1
+    - name: soak
+      duration: 1800
+      arrivalRate: 15
+      maxVusers: 50
   plugins:
     publish-metrics:
       - type: cloudwatch
@@ -14,6 +15,8 @@ config:
         dimensions:
           - name: Stage
             value: "{{ $env.STAGE }}"
+          - name: TestType
+            value: soak
         traces:
           serviceName: flex-api
           sampleRate: 1
@@ -21,3 +24,4 @@ config:
           annotations:
             tool: Artillery
             stage: "{{ $env.STAGE }}"
+            testType: soak

@@ -3,9 +3,14 @@ config:
   http:
     timeout: 30
   phases:
-    - duration: 15
-      arrivalRate: 1
-      maxVusers: 1
+    - name: warm-up
+      duration: 60
+      arrivalRate: 3
+      maxVusers: 20
+    - name: sustained
+      duration: 300
+      arrivalRate: 15
+      maxVusers: 50
   plugins:
     publish-metrics:
       - type: cloudwatch
@@ -14,6 +19,8 @@ config:
         dimensions:
           - name: Stage
             value: "{{ $env.STAGE }}"
+          - name: TestType
+            value: load-baseline
         traces:
           serviceName: flex-api
           sampleRate: 1
@@ -21,3 +28,4 @@ config:
           annotations:
             tool: Artillery
             stage: "{{ $env.STAGE }}"
+            testType: load-baseline

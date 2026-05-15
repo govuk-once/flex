@@ -1,0 +1,45 @@
+config:
+  target: "{{ $env.BASE_URL }}"
+  http:
+    timeout: 30
+  phases:
+    - name: idle
+      duration: 60
+      arrivalRate: 5
+      maxVusers: 20
+    - name: spike
+      duration: 15
+      arrivalRate: 5
+      rampTo: 200
+      maxVusers: 300
+    - name: hold
+      duration: 120
+      arrivalRate: 200
+      maxVusers: 500
+    - name: drop
+      duration: 15
+      arrivalRate: 200
+      rampTo: 5
+      maxVusers: 500
+    - name: recovery
+      duration: 120
+      arrivalRate: 5
+      maxVusers: 20
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        region: "{{ $env.AWS_REGION }}"
+        namespace: flex/performance-tests
+        dimensions:
+          - name: Stage
+            value: "{{ $env.STAGE }}"
+          - name: TestType
+            value: spike
+        traces:
+          serviceName: flex-api
+          sampleRate: 1
+          useRequestNames: true
+          annotations:
+            tool: Artillery
+            stage: "{{ $env.STAGE }}"
+            testType: spike

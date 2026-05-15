@@ -15,18 +15,18 @@ class StubTokenGenerator implements BaseTokenGenerator {
     this.kid = kid;
   }
 
-  async getToken(): Promise<string> {
-    const sub = "d6a2b234-e011-7084-f347-912225bd2861";
+  async getToken(sub?: string): Promise<string> {
+    const subject = sub ?? "d6a2b234-e011-7084-f347-912225bd2861";
 
     const builder = new SignJWT({
-      sub,
+      sub: subject,
       "cognito:groups": ["eu-west-2_testUserPoolId_onelogin"],
       iss: "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId",
       version: 2,
       client_id: "testClientId",
       token_use: "access",
       scope: "openid email",
-      username: `onelogin_${sub}`,
+      username: `onelogin_${subject}`,
     })
       .setProtectedHeader({ alg: "RS256", kid: this.kid, typ: "JWT" })
       .setIssuedAt()
@@ -37,29 +37,27 @@ class StubTokenGenerator implements BaseTokenGenerator {
   }
 }
 
-export async function getStubTokenGenerator(): Promise<StubTokenGenerator> {
-  const rawSecret = await getSecret(
-    "/development/flex-secret/auth/e2e/private_jwk",
-    { transform: "json" },
-  );
+const PrivateKeySchema = z.object({
+  alg: z.string(),
+  d: z.string(),
+  dp: z.string(),
+  dq: z.string(),
+  e: z.string(),
+  kty: z.string(),
+  n: z.string(),
+  p: z.string(),
+  q: z.string(),
+  qi: z.string(),
+  use: z.string(),
+  kid: z.string(),
+});
 
-  const PrivateKeySchema = z.object({
-    alg: z.string(),
-    d: z.string(),
-    dp: z.string(),
-    dq: z.string(),
-    e: z.string(),
-    kty: z.string(),
-    n: z.string(),
-    p: z.string(),
-    q: z.string(),
-    qi: z.string(),
-    use: z.string(),
-    kid: z.string(),
-  });
+export type PrivateKeyData = z.infer<typeof PrivateKeySchema>;
 
-  const privateKeyData = PrivateKeySchema.parse(rawSecret);
-
+export async function getStubTokenGeneratorFromJWK(
+  jwk: unknown,
+): Promise<StubTokenGenerator> {
+  const privateKeyData = PrivateKeySchema.parse(jwk);
   const privateKey = (await importJWK(privateKeyData, "RS256")) as CryptoKey;
   const publicJWKS = {
     keys: [
@@ -73,6 +71,13 @@ export async function getStubTokenGenerator(): Promise<StubTokenGenerator> {
       },
     ],
   };
-
   return new StubTokenGenerator(privateKey, publicJWKS, privateKeyData.kid);
+}
+
+export async function getStubTokenGenerator(): Promise<StubTokenGenerator> {
+  const rawSecret = await getSecret(
+    "/development/flex-secret/auth/e2e/private_jwk",
+    { transform: "json" },
+  );
+  return getStubTokenGeneratorFromJWK(rawSecret);
 }
