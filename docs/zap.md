@@ -16,7 +16,7 @@ The scan runs every time a deployment to staging is successful. The results are 
 | Zap workflow                                 | `.github/workflows/zap.yml`                                  |
 | Interim OpenAPI docs                         | `.zap/merged-openapi.json`                                   |
 | Zap rules                                    | `.zap/rules.tsv`                                             |
-| Zap auth header setup                        | `scripts/dastSetups.ts`                                      |
+| Zap auth header setup                        | `scripts/dastSetup.ts`                                       |
 
 ## Directory
 
@@ -71,3 +71,9 @@ This triggers a new run on GitHub using the branch's logic against the developme
 To test the OpenAPI you will need to install the [owasp zap tool](https://www.zaproxy.org/download/).
 Open the tool, in the toolbar go to `import` -> `Import OpenAPI Definition`. `Choose File` -> the OpenAPI to verify, change the target to `localhost` and press `import`.
 The results will appear as soon as it tried to import the file.
+
+---
+
+## How to deal with vulnerabilities
+
+Vulnerability remediation must follow the [GDS Once process](https://gdsgovukagents.atlassian.net/wiki/spaces/GOS/pages/51806439/Vulnerability+Management+Process). If this process is unavailable or can't be followed, raise a ticket to initiate triage and remediation in the project JIRA space.
