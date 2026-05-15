@@ -16,7 +16,7 @@ The scan runs every time a deployment to staging is successful. The results are 
 | Zap workflow                                 | `.github/workflows/zap.yml`                                  |
 | Interim OpenAPI docs                         | `.zap/merged-openapi.json`                                   |
 | Zap rules                                    | `.zap/rules.tsv`                                             |
-| Zap auth header setup                        | `scripts/dastSetups.ts`                                      |
+| Zap auth header setup                        | `scripts/dastSetup.ts`                                      |
 
 ## Directory
 
