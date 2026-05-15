@@ -1,7 +1,6 @@
 import { Environment, getEnvConfig } from "@flex/utils";
 
 import { SsmApp } from "./base";
-import { MONITORED_REGIONS } from "./monitored-regions";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
 import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
@@ -34,6 +33,7 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpConfigSecretArn,
   ENV_KEYS.DvlaConfigSecretArn,
   ENV_KEYS.UnsConfigSecretArn,
+  ENV_KEYS.MonitoringSlackChannelId,
 ]);
 
 if (persistent) {
@@ -65,11 +65,7 @@ new FlexCertStack(app, `${stage}-FlexCertStack`, {
   subdomainName,
 });
 
-MONITORED_REGIONS.forEach(({ region: monitoringRegion }) => {
-  new FlexMonitoringStack(app, `${stage}-FlexMonitoring-${monitoringRegion}`, {
-    region: monitoringRegion,
-  });
-});
+new FlexMonitoringStack(app, `${stage}-FlexMonitoring`);
 
 new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   domainName,

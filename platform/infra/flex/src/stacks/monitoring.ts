@@ -1,97 +1,22 @@
-import { Environment, getEnvConfig } from "@flex/utils";
-import { Duration } from "aws-cdk-lib";
+import { getEnvConfig } from "@flex/utils";
 import { SlackChannelConfiguration } from "aws-cdk-lib/aws-chatbot";
-import {
-  Alarm,
-  ComparisonOperator,
-  Metric,
-  TreatMissingData,
-} from "aws-cdk-lib/aws-cloudwatch";
-import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
-import {
-  ManagedPolicy,
-  PolicyStatement,
-  ServicePrincipal,
-} from "aws-cdk-lib/aws-iam";
+import { ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
-import { StringParameter } from "aws-cdk-lib/aws-ssm";
+import {
+  AwsCustomResource,
+  AwsCustomResourcePolicy,
+  PhysicalResourceId,
+} from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
-import { BaseStackProps } from "../base/types";
-import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
+import { ENV_KEYS } from "../ssm-keys";
 
-type SupportedRegion = BaseStackProps["env"]["region"];
-
-interface FlexMonitoringStackProps {
-  region: SupportedRegion;
-}
-
-interface MonitoringConfig {
-  workspaceId?: string;
-  channelId?: string;
-  channelIdCritical?: string;
-  channelIdWarning?: string;
-}
-
-type ChannelField = "channelId" | "channelIdCritical" | "channelIdWarning";
-
-interface TopicSpec {
-  suffix: "default" | "critical" | "warning";
-  topicName: string;
-  ssmKey: string;
-  channelField: ChannelField;
-}
-
-const { env, stage, persistent } = getEnvConfig();
-
-function buildTopicSpecs(region: string): TopicSpec[] {
-  const defaultSpec: TopicSpec = {
-    suffix: "default",
-    topicName: `flex-alerts-${stage}-${region}`,
-    ssmKey: STAGE_KEYS.AlertTopicArn,
-    channelField: "channelId",
-  };
-
-  if (env !== Environment.production) return [defaultSpec];
-
-  return [
-    defaultSpec,
-    {
-      suffix: "critical",
-      topicName: `flex-alerts-prod-critical-${region}`,
-      ssmKey: STAGE_KEYS.AlertTopicCriticalArn,
-      channelField: "channelIdCritical",
-    },
-    {
-      suffix: "warning",
-      topicName: `flex-alerts-prod-warning-${region}`,
-      ssmKey: STAGE_KEYS.AlertTopicWarningArn,
-      channelField: "channelIdWarning",
-    },
-  ];
-}
-
-function readMonitoringConfig(scope: Construct): MonitoringConfig {
-  const raw = StringParameter.valueFromLookup(
-    scope,
-    ENV_KEYS.MonitoringConfig,
-    "{}",
-  );
-  try {
-    return JSON.parse(raw) as MonitoringConfig;
-  } catch {
-    return {};
-  }
-}
+const { persistent, stage } = getEnvConfig();
 
 export class FlexMonitoringStack extends BaseStack {
-  constructor(
-    scope: Construct,
-    id: string,
-    { region }: FlexMonitoringStackProps,
-  ) {
+  constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -100,149 +25,74 @@ export class FlexMonitoringStack extends BaseStack {
         ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
-      env: { region },
+      env: { region: "eu-west-2" },
     });
 
-    const alertsKey = new Key(this, "AlertsKey", {
-      alias: `alias/flex-alerts-${stage}-${region}`,
-      description: `Encryption key for FLEX alert SNS topics (${stage}, ${region})`,
-      enableKeyRotation: true,
-    });
-    alertsKey.grantEncryptDecrypt(new ServicePrincipal("sns.amazonaws.com"));
-    alertsKey.grantEncryptDecrypt(
-      new ServicePrincipal("cloudwatch.amazonaws.com"),
+    if (!persistent) return;
+
+    const workspaceLookup = new AwsCustomResource(
+      this,
+      "SlackWorkspaceLookup",
+      {
+        onUpdate: {
+          service: "chatbot",
+          action: "DescribeSlackWorkspaces",
+          region: "us-east-2",
+          physicalResourceId: PhysicalResourceId.of(
+            "flex-slack-workspace-lookup",
+          ),
+        },
+        policy: AwsCustomResourcePolicy.fromSdkCalls({
+          resources: AwsCustomResourcePolicy.ANY_RESOURCE,
+        }),
+      },
     );
 
-    const config = readMonitoringConfig(this);
+    const slackWorkspaceId = workspaceLookup.getResponseField(
+      "SlackWorkspaces.0.SlackTeamId",
+    );
+    const slackChannelId = this.import(
+      ENV_KEYS.MonitoringSlackChannelId,
+      "eu-west-2",
+    );
 
-    const topicBundles = buildTopicSpecs(region).map((spec) => ({
-      spec,
-      topic: new Topic(this, `Topic-${spec.suffix}`, {
-        topicName: spec.topicName,
-        displayName: `FLEX alerts ${stage} ${region} (${spec.suffix})`,
-        masterKey: alertsKey,
-      }),
-    }));
-
-    topicBundles.forEach(({ spec, topic }) => {
-      const alarm = new Alarm(this, `TestAlarm-${spec.suffix}`, {
-        alarmName: `flex-alerts-test-${stage}-${region}-${spec.suffix}`,
-        alarmDescription:
-          `Synthetic test alarm for ${spec.topicName}. ` +
-          "Never fires naturally, trigger via " +
-          `\`aws cloudwatch set-alarm-state --region ${region} ` +
-          `--alarm-name <this-alarm> --state-value ALARM --state-reason test\` ` +
-          "to verify Slack delivery.",
-        metric: new Metric({
-          namespace: "Flex/AlertingTest",
-          metricName: "NeverPublished",
-          period: Duration.minutes(1),
-          statistic: "Sum",
-        }),
-        threshold: 1,
-        evaluationPeriods: 1,
-        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-        treatMissingData: TreatMissingData.NOT_BREACHING,
-      });
-      alarm.addAlarmAction(new SnsAction(topic));
+    const coreKey = Key.fromLookup(this, "CoreAlarmKey", {
+      aliasName: "alias/flex-alerts-key",
     });
 
-    topicBundles.forEach(({ spec, topic }) => {
-      this.export(spec.ssmKey, topic.topicArn);
-    });
+    const severities = [
+      { name: "critical", ssmKey: ENV_KEYS.TopicCriticalAlarms },
+      { name: "warning", ssmKey: ENV_KEYS.TopicWarningAlarms },
+    ] as const;
 
-    const slackReady = persistent && Boolean(config.workspaceId);
-    const slackBundles = slackReady
-      ? topicBundles.filter(({ spec }) => Boolean(config[spec.channelField]))
-      : [];
-
-    slackBundles.forEach(({ spec, topic }) => {
-      const slack = new SlackChannelConfiguration(
+    severities.forEach(({ name, ssmKey }) => {
+      const topic = Topic.fromTopicArn(
         this,
-        `Slack-${spec.suffix}`,
-        {
-          slackChannelConfigurationName: `flex-alerts-${stage}-${region}-${spec.suffix}`,
-          slackWorkspaceId: config.workspaceId as string,
-          slackChannelId: config[spec.channelField] as string,
-          notificationTopics: [topic],
-          guardrailPolicies: [
-            ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess"),
-          ],
-        },
+        `Topic-${name}`,
+        this.import(ssmKey, "eu-west-2"),
       );
 
-      slack.role?.addToPrincipalPolicy(
+      const slack = new SlackChannelConfiguration(this, `Slack-${name}`, {
+        slackChannelConfigurationName: `flex-alerts-${stage}-${name}`,
+        slackWorkspaceId,
+        slackChannelId,
+        notificationTopics: [topic],
+        guardrailPolicies: [
+          ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess"),
+        ],
+      });
+
+      if (!slack.role) {
+        throw new Error(
+          `SlackChannelConfiguration Slack-${name} has no role; cannot grant KMS decrypt`,
+        );
+      }
+      slack.role.addToPrincipalPolicy(
         new PolicyStatement({
           actions: ["kms:Decrypt", "kms:GenerateDataKey"],
-          resources: [alertsKey.keyArn],
+          resources: [coreKey.keyArn],
         }),
       );
     });
-
-    // Wire the env-scoped FlexCoreStack alarm topics to Slack.
-    // Real platform alarms publish to those topics via importAlarmActions;
-    // this stack is where their Slack delivery lives so we don't touch
-    // FlexCoreStack itself. eu-west-2 only: FlexCoreStack is eu-west-2,
-    // and CloudFront alarms in us-east-1 already relay to it.
-    const coreReady = slackReady && region === "eu-west-2";
-
-    if (coreReady) {
-      const coreKey = Key.fromLookup(this, "CoreAlarmKey", {
-        aliasName: "alias/flex-alerts-key",
-      });
-
-      const pickCoreChannelId = (
-        severity: "critical" | "warning",
-      ): string | undefined => {
-        if (env !== Environment.production) return config.channelId;
-        const severityChannel =
-          severity === "critical"
-            ? config.channelIdCritical
-            : config.channelIdWarning;
-        return severityChannel ?? config.channelId;
-      };
-
-      const coreSeverities = (["critical", "warning"] as const)
-        .map((severity) => ({
-          severity,
-          slackChannelId: pickCoreChannelId(severity),
-          ssmKey:
-            severity === "critical"
-              ? ENV_KEYS.TopicCriticalAlarms
-              : ENV_KEYS.TopicWarningAlarms,
-        }))
-        .filter((entry): entry is typeof entry & { slackChannelId: string } =>
-          Boolean(entry.slackChannelId),
-        );
-
-      coreSeverities.forEach(({ severity, slackChannelId, ssmKey }) => {
-        const coreTopic = Topic.fromTopicArn(
-          this,
-          `CoreTopic-${severity}`,
-          this.import(ssmKey, "eu-west-2"),
-        );
-
-        const slack = new SlackChannelConfiguration(
-          this,
-          `SlackCore-${severity}`,
-          {
-            slackChannelConfigurationName: `flex-alerts-${stage}-core-${severity}`,
-            slackWorkspaceId: config.workspaceId as string,
-            slackChannelId,
-            notificationTopics: [coreTopic],
-            guardrailPolicies: [
-              ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess"),
-            ],
-          },
-        );
-
-        slack.role?.addToPrincipalPolicy(
-          new PolicyStatement({
-            actions: ["kms:Decrypt", "kms:GenerateDataKey"],
-            resources: [coreKey.keyArn],
-          }),
-        );
-      });
-    }
   }
 }
