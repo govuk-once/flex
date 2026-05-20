@@ -25,6 +25,16 @@ export const { config, route } = domain({
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
     },
+    unsCustomerRole: {
+      type: "ssm",
+      path: "/uns/customer-role",
+      scope: "stage",
+    },
+    unsFlexPrivateGatewayUrl: {
+      type: "ssm",
+      path: "/uns/flex/privateGatewayUrl",
+      scope: "stage",
+    },
   },
   integrations: {
     unsGetNotifications: {
@@ -65,8 +75,9 @@ export const { config, route } = domain({
             response: NotificationsResponseSchema,
             resources: [
               "encryptionKey",
-              "privateGatewayUrl",
               "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
             ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
@@ -79,8 +90,9 @@ export const { config, route } = domain({
             response: NotificationSchema,
             resources: [
               "encryptionKey",
-              "privateGatewayUrl",
               "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
             ],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
@@ -90,8 +102,9 @@ export const { config, route } = domain({
             name: "delete-notification",
             resources: [
               "encryptionKey",
-              "privateGatewayUrl",
               "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
             ],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
@@ -104,8 +117,9 @@ export const { config, route } = domain({
             body: PatchNotificationBodySchema,
             resources: [
               "encryptionKey",
-              "privateGatewayUrl",
               "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
             ],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },

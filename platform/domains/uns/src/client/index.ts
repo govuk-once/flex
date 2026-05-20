@@ -2,7 +2,7 @@ import { ApiResult, typedFetch } from "@flex/flex-fetch";
 
 import { UNS_REMOTE_ROUTES } from "../contract/route";
 import { NotificationPatchBody } from "../schemas/remote/notification";
-import { createPublicFetch } from "../utils/createPublicFetch";
+import { createPrivateFetch } from "../utils/createPrivateFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 /**
@@ -12,7 +12,10 @@ import { ConsumerConfig } from "../utils/getConsumerConfig";
  * Private to the gateway package — domain services NEVER import from here.
  */
 export function createUnsRemoteClient(config: ConsumerConfig) {
-  const fetcher = createPublicFetch({ baseUrl: config.apiUrl });
+  const fetcher = createPrivateFetch({
+    baseUrl: config.apiUrl,
+    roleArn: config.roleArn,
+  });
 
   const defaultHeaders = {
     Accept: "application/json",
@@ -31,7 +34,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "GET",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
+              "X-API-KEY": config.roleArn,
             },
           },
         ).request;
@@ -48,7 +51,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "DELETE",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
+              "X-API-KEY": config.roleArn,
             },
           },
         ).request;
@@ -66,7 +69,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "PATCH",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
+              "X-API-KEY": config.roleArn,
             },
             body: JSON.stringify(body),
           },
@@ -81,7 +84,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           method: "GET",
           headers: {
             ...defaultHeaders,
-            "X-API-KEY": config.apiKey,
+            "X-API-KEY": config.roleArn,
           },
         }).request;
         return typedFetch(request);
