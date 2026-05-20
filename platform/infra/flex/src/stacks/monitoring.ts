@@ -3,11 +3,6 @@ import { SlackChannelConfiguration } from "aws-cdk-lib/aws-chatbot";
 import { ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
@@ -30,26 +25,9 @@ export class FlexMonitoringStack extends BaseStack {
 
     if (!persistent) return;
 
-    const workspaceLookup = new AwsCustomResource(
-      this,
-      "SlackWorkspaceLookup",
-      {
-        onUpdate: {
-          service: "chatbot",
-          action: "DescribeSlackWorkspaces",
-          region: "us-east-2",
-          physicalResourceId: PhysicalResourceId.of(
-            "flex-slack-workspace-lookup",
-          ),
-        },
-        policy: AwsCustomResourcePolicy.fromSdkCalls({
-          resources: AwsCustomResourcePolicy.ANY_RESOURCE,
-        }),
-      },
-    );
-
-    const slackWorkspaceId = workspaceLookup.getResponseField(
-      "SlackWorkspaces.0.SlackTeamId",
+    const slackWorkspaceId = this.import(
+      ENV_KEYS.MonitoringSlackWorkspaceId,
+      "eu-west-2",
     );
     const slackChannelId = this.import(
       ENV_KEYS.MonitoringSlackChannelId,

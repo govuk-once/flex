@@ -33,6 +33,7 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpConfigSecretArn,
   ENV_KEYS.DvlaConfigSecretArn,
   ENV_KEYS.UnsConfigSecretArn,
+  ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
 ]);
 
