@@ -35,6 +35,7 @@ app.addExternalExports(region, [
   ENV_KEYS.UnsConfigSecretArn,
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
+  ENV_KEYS.FlexEncryptionKey,
 ]);
 
 if (persistent) {
