@@ -7,6 +7,7 @@ import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
+import { FlexMonitoringStack } from "./stacks/monitoring";
 import { FlexPlatformStack } from "./stacks/platform";
 import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
@@ -32,6 +33,8 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpConfigSecretArn,
   ENV_KEYS.DvlaConfigSecretArn,
   ENV_KEYS.UnsConfigSecretArn,
+  ENV_KEYS.MonitoringSlackWorkspaceId,
+  ENV_KEYS.MonitoringSlackChannelId,
 ]);
 
 if (persistent) {
@@ -62,6 +65,8 @@ new FlexCertStack(app, `${stage}-FlexCertStack`, {
   domainName,
   subdomainName,
 });
+
+new FlexMonitoringStack(app, `${stage}-FlexMonitoring`);
 
 new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   domainName,

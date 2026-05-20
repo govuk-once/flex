@@ -22,6 +22,8 @@ export const ENV_KEYS = {
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
   UdpConfigRoleArn: `/${env}/flex-param/udp/consumer-role-arn`,
   UdpCmkArn: `/${env}/flex-param/udp/cmk-arn`,
+  MonitoringSlackWorkspaceId: `/${env}/flex-param/monitoring/slackWorkspaceId`,
+  MonitoringSlackChannelId: `/${env}/flex-param/monitoring/slackChannelId`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
