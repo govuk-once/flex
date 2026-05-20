@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createNormalizeInboundPath } from "../createNormalizeInboundPath";
+import { createNormalizeInboundPath } from "./createNormalizeInboundPath";
 
 describe("createNormalizeInboundPath", () => {
   const normalize = createNormalizeInboundPath("/gateways/dvla");

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { createConsumerConfigLoader } from "../createConsumerConfigLoader";
+import { createConsumerConfigLoader } from "./createConsumerConfigLoader";
 
 vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: vi.fn(),

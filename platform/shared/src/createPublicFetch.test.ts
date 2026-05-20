@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createPublicFetch } from "../createPublicFetch";
+import { createPublicFetch } from "./createPublicFetch";
 
 vi.mock("@flex/flex-fetch", () => ({
   flexFetch: vi
