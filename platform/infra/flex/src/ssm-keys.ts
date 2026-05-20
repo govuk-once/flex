@@ -24,6 +24,7 @@ export const ENV_KEYS = {
   UdpCmkArn: `/${env}/flex-param/udp/cmk-arn`,
   MonitoringSlackWorkspaceId: `/${env}/flex-param/monitoring/slackWorkspaceId`,
   MonitoringSlackChannelId: `/${env}/flex-param/monitoring/slackChannelId`,
+  FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };

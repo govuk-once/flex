@@ -306,6 +306,8 @@ export class FlexPlatformStack extends BaseStack {
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
     const udpConsumerRoleArn = this.import(ENV_KEYS.UdpConfigRoleArn);
 
+    const flexEncryptionKeyArn = this.import(ENV_KEYS.FlexEncryptionKey);
+
     const vpc = this.importVpc(ENV_KEYS.Vpc);
     const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
     const privateIsolatedSg = this.importSecurityGroup(
@@ -332,6 +334,7 @@ export class FlexPlatformStack extends BaseStack {
       service: "dvla",
       criticalAction,
       warningAction,
+      encryptionKeyArn: flexEncryptionKeyArn,
     });
 
     createServiceGateway(this, {
@@ -343,6 +346,7 @@ export class FlexPlatformStack extends BaseStack {
       service: "uns",
       criticalAction,
       warningAction,
+      encryptionKeyArn: flexEncryptionKeyArn,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
