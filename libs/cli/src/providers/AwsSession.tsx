@@ -1,12 +1,14 @@
-import { exec } from "child_process";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
 import {
   createContext,
   PropsWithChildren,
   use,
   useEffect,
+  useMemo,
   useState,
 } from "react";
-import { promisify } from "util";
 import z from "zod";
 
 interface AwsSessionContextProps {
@@ -26,14 +28,14 @@ const callerIdentitySchema = z.object({
 async function getAwsIdentity() {
   try {
     const { stdout } = await execAsync("aws sts get-caller-identity");
-    const { Account } = callerIdentitySchema.parse(JSON.parse(stdout));
-    return Account;
-  } catch (_e: unknown) {
+    return callerIdentitySchema.parse(JSON.parse(stdout)).Account;
+  } catch (error) {
+    console.error("Failed to resolve AWS identity:", error);
     return null;
   }
 }
 
-export function AwsSessionProvider({ children }: PropsWithChildren) {
+export function AwsSessionProvider({ children }: Readonly<PropsWithChildren>) {
   const [identity, setIdentity] = useState<string | null>();
 
   useEffect(() => {
@@ -47,7 +49,11 @@ export function AwsSessionProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  return <AwsSessionContext value={{ identity }}>{children}</AwsSessionContext>;
+  return (
+    <AwsSessionContext value={useMemo(() => ({ identity }), [identity])}>
+      {children}
+    </AwsSessionContext>
+  );
 }
 
 export const useAwsSession = () => use(AwsSessionContext);

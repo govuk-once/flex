@@ -1,20 +1,19 @@
 import { Box, Text } from "ink";
+import type { IndicatorProps } from "ink-select-input";
 import InkSelectInput from "ink-select-input";
 
 import { useSpinner } from "./Spinner";
 
+interface SelectInputIndicatorProps {
+  isSelected?: boolean;
+  paused?: boolean;
+}
+
 function SelectInputIndicator({
   isSelected,
   paused = false,
-}: {
-  isSelected?: boolean;
-  paused?: boolean;
-}) {
-  const frame = useSpinner({
-    frames: [">", "›"],
-    interval: 250,
-    paused,
-  });
+}: Readonly<SelectInputIndicatorProps>) {
+  const frame = useSpinner({ frames: [">", "›"], interval: 250, paused });
 
   if (isSelected) {
     return (
@@ -32,7 +31,7 @@ interface SelectInputItemProps {
   spacer?: boolean;
 }
 
-function SelectInputItem({ label, spacer }: SelectInputItemProps) {
+function SelectInputItem({ label, spacer }: Readonly<SelectInputItemProps>) {
   return (
     <Box paddingBottom={spacer ? 1 : 0}>
       {label.split("").map((item, index) => (
@@ -43,6 +42,14 @@ function SelectInputItem({ label, spacer }: SelectInputItemProps) {
       ))}
     </Box>
   );
+}
+
+function ActiveIndicator({ isSelected }: Readonly<IndicatorProps>) {
+  return <SelectInputIndicator isSelected={isSelected} />;
+}
+
+function PausedIndicator({ isSelected }: Readonly<IndicatorProps>) {
+  return <SelectInputIndicator paused isSelected={isSelected} />;
 }
 
 export interface SelectInputItem {
@@ -58,17 +65,12 @@ interface SelectInputProps {
   onSelect?: (input: { value: string }) => void;
 }
 
-export function SelectInput(props: SelectInputProps) {
+export function SelectInput(props: Readonly<SelectInputProps>) {
   return (
     <InkSelectInput<string>
       {...props}
       itemComponent={SelectInputItem}
-      indicatorComponent={({ isSelected }) => (
-        <SelectInputIndicator
-          isSelected={isSelected}
-          paused={!props.isFocused}
-        />
-      )}
+      indicatorComponent={props.isFocused ? ActiveIndicator : PausedIndicator}
     />
   );
 }

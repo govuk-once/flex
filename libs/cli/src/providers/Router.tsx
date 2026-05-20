@@ -1,4 +1,10 @@
-import { createContext, PropsWithChildren, use, useState } from "react";
+import {
+  createContext,
+  PropsWithChildren,
+  use,
+  useMemo,
+  useState,
+} from "react";
 
 export const Routes = {
   HOME: "/home",
@@ -16,10 +22,14 @@ const RouterContext = createContext<RouterContextProps>({
   setRoute: () => {},
 });
 
-export function RouterProvider({ children }: PropsWithChildren) {
+export function RouterProvider({ children }: Readonly<PropsWithChildren>) {
   const [route, setRoute] = useState<string>(Routes.HOME);
 
-  return <RouterContext value={{ route, setRoute }}>{children}</RouterContext>;
+  return (
+    <RouterContext value={useMemo(() => ({ route, setRoute }), [route])}>
+      {children}
+    </RouterContext>
+  );
 }
 
 export const useRouter = () => use(RouterContext);

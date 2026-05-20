@@ -14,7 +14,7 @@ import { createSanitizer } from "./sanitizer";
  * - Provides consistent log structure across all domains
  */
 export class FlexLogFormatter extends LogFormatter {
-  #sanitize = createSanitizer();
+  readonly #sanitize = createSanitizer();
   #serviceName?: string;
 
   setServiceName(name: string): void {
@@ -27,7 +27,7 @@ export class FlexLogFormatter extends LogFormatter {
   ): LogItem {
     const baseAttributes: LogAttributes = {
       level: attributes.logLevel,
-      message: this.#sanitize("message", attributes.message) as string,
+      message: this.#sanitize("message", attributes.message),
       timestamp: this.formatTimestamp(attributes.timestamp),
       service: this.#serviceName ?? attributes.serviceName,
     };

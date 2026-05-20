@@ -1,3 +1,7 @@
+function serialiseBody(body: unknown) {
+  return typeof body === "string" ? body : JSON.stringify(body);
+}
+
 export interface StructuredResponse {
   statusCode: number;
   headers?: Record<string, boolean | number | string>;
@@ -23,12 +27,7 @@ function buildResponse<T>(
 ): StructuredResponse {
   return {
     statusCode,
-    body:
-      body != null
-        ? typeof body === "string"
-          ? body
-          : JSON.stringify(body)
-        : undefined,
+    body: body == null ? undefined : serialiseBody(body),
     ...options,
   };
 }

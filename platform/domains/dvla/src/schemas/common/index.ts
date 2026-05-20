@@ -1,6 +1,24 @@
 import { NonEmptyString } from "@flex/utils";
 import z from "zod";
 
+export const DrivingLicenceNumber = z
+  .string()
+  .length(16)
+  .regex(
+    /^[A-Z]{1,5}9{0,4}\d(?:[05][1-9]|[16][0-2])(?:0[1-9]|[12]\d|3[01])\d(?:99|[A-Z][A-Z9])[A-HJ-NPR-X2-9][A-Z]{2}$/i,
+    "Must be a valid UK driving licence number",
+  );
+export type DrivingLicenceNumber = z.output<typeof DrivingLicenceNumber>;
+
+export const ShareCodeToken = z
+  .string()
+  .length(8)
+  .regex(/^[^aeilouAEIOU01]{8}$/, "Must not contain vowels or the digits 0/1");
+export type ShareCodeToken = z.output<typeof ShareCodeToken>;
+
+export const CourtCode = z.string().regex(/\d{4}/, "Must contain 4 digits");
+export type CourtCode = z.output<typeof CourtCode>;
+
 export const commonRequestSchema = z.object({
   id: NonEmptyString,
   jwt: NonEmptyString,

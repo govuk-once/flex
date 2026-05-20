@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, use } from "react";
+import { createContext, PropsWithChildren, use, useMemo } from "react";
 
 import { useStdoutDimensions } from "../hooks/use-stdout-dimensions";
 
@@ -20,7 +20,7 @@ const LayoutContext = createContext<LayoutContextProps>({
   smallPadding: false,
 });
 
-export function LayoutProvider({ children }: PropsWithChildren) {
+export function LayoutProvider({ children }: Readonly<PropsWithChildren>) {
   const [columns, rows] = useStdoutDimensions();
   const isSingleColumn = columns < 150;
   const isSmall = columns < 60;
@@ -31,14 +31,17 @@ export function LayoutProvider({ children }: PropsWithChildren) {
 
   return (
     <LayoutContext
-      value={{
-        isSmall,
-        isSingleColumn,
-        bodyHeight,
-        navWidth: 45,
-        mainWidth: columns - 45,
-        smallPadding,
-      }}
+      value={useMemo(
+        () => ({
+          isSmall,
+          isSingleColumn,
+          bodyHeight,
+          navWidth: 45,
+          mainWidth: columns - 45,
+          smallPadding,
+        }),
+        [bodyHeight, columns, isSingleColumn, isSmall, smallPadding],
+      )}
     >
       {children}
     </LayoutContext>

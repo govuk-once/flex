@@ -2601,7 +2601,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -2642,7 +2642,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -2997,7 +2997,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -3688,7 +3688,7 @@
                           "type": "string",
                           "minLength": 16,
                           "maxLength": 16,
-                          "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}"
+                          "pattern": "^[A-Z]{1,5}9{0,4}\\d(?:[05][1-9]|[16][0-2])(?:0[1-9]|[12]\\d|3[01])\\d(?:99|[A-Z][A-Z9])[A-HJ-NPR-X2-9][A-Z]{2}$"
                         },
                         "driverId": {
                           "type": "string",
@@ -4025,40 +4025,47 @@
           "tokenId": {
             "type": "string",
             "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "The universally unique id for a token"
           },
           "token": {
             "type": "string",
             "minLength": 8,
             "maxLength": 8,
-            "pattern": "^[^aeilouAEIOU01]{8}$"
+            "pattern": "^[^aeilouAEIOU01]{8}$",
+            "description": "A driver licence share token (8 chars, excluding vowels and 0/1)"
           },
           "drivingLicenceNumber": {
             "type": "string",
             "minLength": 16,
             "maxLength": 16,
-            "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}$"
+            "pattern": "^[A-Z]{1,5}9{0,4}\\d(?:[05][1-9]|[16][0-2])(?:0[1-9]|[12]\\d|3[01])\\d(?:99|[A-Z][A-Z9])[A-HJ-NPR-X2-9][A-Z]{2}$",
+            "description": "A valid UK driving licence number"
           },
           "driverId": {
             "type": "string",
             "format": "uuid",
-            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Unique identifier for a driver in the format of a V4 UUID"
           },
           "documentReference": {
             "type": "string",
             "minLength": 8,
             "maxLength": 8,
-            "pattern": "^[a-zA-Z0-9]*$"
+            "pattern": "^[a-zA-Z0-9]*$",
+            "description": "A driver licence share document reference"
           },
           "created": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "The date-time the token was created"
           },
           "expiry": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "description": "The date-time the token will expire"
           },
           "status": {
             "anyOf": [
@@ -4091,7 +4098,8 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "description": "The date-time the token was cancelled"
               },
               {
                 "type": "null"

@@ -50,7 +50,8 @@
                           ]
                         },
                         "slug": {
-                          "type": "string"
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                         },
                         "parent": {
                           "type": "object",
@@ -74,7 +75,8 @@
                               ]
                             },
                             "slug": {
-                              "type": "string"
+                              "type": "string",
+                              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                             }
                           },
                           "required": [
@@ -147,7 +149,8 @@
                         ]
                       },
                       "slug": {
-                        "type": "string"
+                        "type": "string",
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                       },
                       "parent": {
                         "type": "object",
@@ -171,7 +174,8 @@
                             ]
                           },
                           "slug": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                           }
                         },
                         "required": [

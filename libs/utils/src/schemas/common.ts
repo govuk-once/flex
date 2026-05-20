@@ -1,6 +1,30 @@
 import { z } from "zod";
 
 // ============================================================================
+// STRINGS
+// ============================================================================
+
+export const AlphanumericString = z
+  .string()
+  .regex(/^[a-zA-Z0-9]*$/, "Must contain only letters and digits");
+export type AlphanumericString = z.output<typeof AlphanumericString>;
+
+export const NonEmptyString = z.string().min(1);
+export type NonEmptyString = z.output<typeof NonEmptyString>;
+
+export const NumericString = z
+  .string()
+  .regex(/^\d+$/, "Must contain only digits");
+export type NumericString = z.output<typeof NumericString>;
+
+// ============================================================================
+// NUMBERS
+// ============================================================================
+
+export const WholeNumber = z.number().int();
+export type WholeNumber = z.output<typeof WholeNumber>;
+
+// ============================================================================
 // PRIMITIVES
 // ============================================================================
 
@@ -16,15 +40,9 @@ export type IsoDateTime = z.output<typeof IsoDateTime>;
 export const Jwt = z.jwt();
 export type Jwt = z.output<typeof Jwt>;
 
-export const NonEmptyString = z.string().min(1);
-export type NonEmptyString = z.output<typeof NonEmptyString>;
-
-export const WholeNumber = z.number().int();
-export type WholeNumber = z.output<typeof WholeNumber>;
-
-export const Slug = z.string().refine((v) => /^[a-z]+(-[a-z]+)*$/.test(v), {
-  error: "Must be a lowercase slug",
-});
+export const Slug = z
+  .string()
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be a lowercase slug");
 export type Slug = z.output<typeof Slug>;
 
 // ============================================================================

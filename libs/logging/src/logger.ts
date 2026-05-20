@@ -4,7 +4,7 @@ import { LogLevel } from "@aws-lambda-powertools/logger/types";
 import { FlexLogFormatter } from "./formatter";
 
 class FlexLogger extends PowerToolsLogger {
-  #formatter: FlexLogFormatter;
+  readonly #formatter: FlexLogFormatter;
 
   constructor() {
     const formatter = new FlexLogFormatter();

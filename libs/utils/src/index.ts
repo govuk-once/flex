@@ -7,6 +7,7 @@ export {
   isStageAllowed,
 } from "./environments";
 export { getHeader } from "./http/getHeader";
+export { normaliseHeaders } from "./http/normalise-headers";
 export type { QueryParams } from "./http/query-params";
 export { extractQueryParams } from "./http/query-params";
 export type { BuildRequestOptions, HttpRequestOptions } from "./http/request";

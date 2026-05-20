@@ -1,15 +1,17 @@
+import { AlphanumericString, Uuid } from "@flex/utils";
 import z from "zod";
 
-import { applications_response } from "../common";
+import {
+  applications_response,
+  CourtCode,
+  DrivingLicenceNumber,
+  ShareCodeToken,
+} from "../common";
 
 const holder_by_driving_licence_number = z.object({
   driver: z
     .object({
-      drivingLicenceNumber: z
-        .string()
-        .min(5)
-        .max(16)
-        .regex(/^[a-zA-Z0-9]*$/),
+      drivingLicenceNumber: AlphanumericString.min(5).max(16),
       firstNames: z.string().nullish(),
       lastName: z.string().nullish(),
       title: z.string().nullish(),
@@ -190,17 +192,11 @@ const holder_by_driving_licence_number = z.object({
     .array(
       z
         .object({
-          appealCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          appealCourtCode: CourtCode.nullish(),
           appealCourtName: z.string().nullish(),
           appealDate: z.string().nullish(),
           convictionDate: z.string().nullish(),
-          convictionCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          convictionCourtCode: CourtCode.nullish(),
           convictionCourtName: z.string().nullish(),
           disqualification: z
             .object({
@@ -262,10 +258,7 @@ const holder_by_driving_licence_number = z.object({
             .nullish(),
           rehabilitationCourseCompleted: z.boolean().nullish(),
           sentenceDate: z.string().nullish(),
-          sentencingCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          sentencingCourtCode: CourtCode.nullish(),
           sentencingCourtName: z.string().nullish(),
         })
         .optional(),
@@ -394,25 +387,11 @@ const find_tokens = z
     tokens: z.array(
       z.object({
         state: z.enum(["cancelled", "expired", "redeemed", "valid", "invalid"]),
-        tokenId: z.uuid(),
-        token: z
-          .string()
-          .min(8)
-          .max(8)
-          .regex(/^[^aeilouAEIOU01]{8}$/),
-        drivingLicenceNumber: z
-          .string()
-          .min(16)
-          .max(16)
-          .regex(
-            /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}/,
-          ),
-        driverId: z.uuid(),
-        documentReference: z
-          .string()
-          .min(8)
-          .max(8)
-          .regex(/^[a-zA-Z0-9]*$/),
+        tokenId: Uuid,
+        token: ShareCodeToken,
+        drivingLicenceNumber: DrivingLicenceNumber,
+        driverId: Uuid,
+        documentReference: AlphanumericString.length(8),
         created: z.iso.datetime({ offset: true }),
         expiry: z.iso.datetime({ offset: true }),
         status: z.enum(["active", "inactive"]).nullish(),
@@ -425,7 +404,7 @@ const find_tokens = z
 
 export const RetrieveDriverSummaryByLinkingIdResponse = z
   .object({
-    linkingId: z.uuid(),
+    linkingId: Uuid,
     driverViewResponse: holder_by_driving_licence_number,
     sdlResponse: find_tokens.nullish(),
     driversEligibilityResponse: applications_response.nullish(),

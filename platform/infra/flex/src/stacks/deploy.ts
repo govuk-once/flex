@@ -29,7 +29,7 @@ function buildRoutesHash(bindings: RouteBinding[]) {
     .update(
       bindings
         .map((b) => `${b.method}:${b.path}`)
-        .sort()
+        .sort((a, b) => a.localeCompare(b))
         .join("|"),
     )
     .digest("hex");

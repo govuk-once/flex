@@ -28,17 +28,17 @@ export const TODOS: Todo[] = [
 const todos = new Map<string, Todo>(TODOS.map((t) => [t.id, t]));
 
 export const store = {
-  create: async (data: Todo): Promise<Todo> => {
+  create: (data: Todo): Promise<Todo> => {
     todos.set(data.id, data);
     return Promise.resolve(data);
   },
-  list: async (): Promise<Todo[]> => Promise.resolve([...todos.values()]),
-  getById: async (id: TodoId): Promise<Todo | null> =>
+  list: (): Promise<Todo[]> => Promise.resolve([...todos.values()]),
+  getById: (id: TodoId): Promise<Todo | null> =>
     Promise.resolve(todos.get(id) ?? null),
-  update: async (data: Todo): Promise<Todo | null> => {
+  update: (data: Todo): Promise<Todo | null> => {
     if (!todos.has(data.id)) return Promise.resolve(null);
     todos.set(data.id, data);
     return Promise.resolve(data);
   },
-  delete: async (id: TodoId) => Promise.resolve(todos.delete(id)),
+  delete: (id: TodoId) => Promise.resolve(todos.delete(id)),
 };

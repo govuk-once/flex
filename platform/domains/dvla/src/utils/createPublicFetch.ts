@@ -1,23 +1,19 @@
 import { flexFetch, FlexFetchRequestInit } from "@flex/flex-fetch";
+import { normaliseHeaders } from "@flex/utils";
 
 export function createPublicFetch(config: { baseUrl: string }) {
-  return (url: string, options?: FlexFetchRequestInit) => {
-    const fullUrl = url.startsWith("http") ? url : `${config.baseUrl}${url}`;
+  return (url: string, options: FlexFetchRequestInit = {}) => {
+    const { headers, retryAttempts = 3 } = options;
 
-    const headers =
-      options?.headers instanceof Headers
-        ? Object.fromEntries(options.headers.entries())
-        : Array.isArray(options?.headers)
-          ? Object.fromEntries(options.headers)
-          : (options?.headers ?? {});
+    const fullUrl = url.startsWith("http") ? url : `${config.baseUrl}${url}`;
 
     return flexFetch(fullUrl, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...headers,
+        ...normaliseHeaders(headers),
       },
-      retryAttempts: options?.retryAttempts ?? 3,
+      retryAttempts,
     });
   };
 }

@@ -6,42 +6,52 @@ type RouteGateway = NonNullable<
   IacDomainConfig["routes"][string][string][HttpMethod]
 >;
 
+type Gateway = "public" | "private";
+
+const GATEWAYS: Gateway[] = ["public", "private"];
+
 export interface DomainRouteEntry {
   readonly version: string;
   readonly path: string;
   readonly routeKey: string;
   readonly method: HttpMethod;
-  readonly gateway: "public" | "private";
-  readonly routeConfig: NonNullable<RouteGateway["public" | "private"]>;
+  readonly gateway: Gateway;
+  readonly routeConfig: NonNullable<RouteGateway[Gateway]>;
+}
+
+function getGatewayEntries(
+  version: string,
+  path: string,
+  method: HttpMethod,
+  gateways: RouteGateway,
+): readonly DomainRouteEntry[] {
+  return GATEWAYS.flatMap((gateway) => {
+    const routeConfig = gateways[gateway];
+    const routeKey = `${method} /${version}${path}${gateway === "private" ? " [private]" : ""}`;
+    return routeConfig
+      ? [{ version, path, method, gateway, routeKey, routeConfig }]
+      : [];
+  });
+}
+
+function getMethodEntries(
+  version: string,
+  path: string,
+  methods: IacDomainConfig["routes"][string][string],
+): readonly DomainRouteEntry[] {
+  return Object.entries(methods).flatMap(([method, gateways]) =>
+    getGatewayEntries(version, path, method as HttpMethod, gateways),
+  );
 }
 
 function getDomainRouteEntries(
   routes: IacDomainConfig["routes"],
 ): readonly DomainRouteEntry[] {
-  const entries: DomainRouteEntry[] = [];
-
-  for (const [version, paths] of Object.entries(routes)) {
-    for (const [path, methods] of Object.entries(paths)) {
-      for (const [method, gateways] of Object.entries(methods)) {
-        for (const gateway of ["public", "private"] as const) {
-          const routeConfig = gateways[gateway];
-
-          if (!routeConfig) continue;
-
-          entries.push({
-            version,
-            path,
-            routeKey: `${method} /${version}${path}${gateway === "private" ? " [private]" : ""}`,
-            method: method as HttpMethod,
-            gateway,
-            routeConfig,
-          });
-        }
-      }
-    }
-  }
-
-  return entries;
+  return Object.entries(routes).flatMap(([version, paths]) =>
+    Object.entries(paths).flatMap(([path, methods]) =>
+      getMethodEntries(version, path, methods),
+    ),
+  );
 }
 
 export function getDeployableRoutes(

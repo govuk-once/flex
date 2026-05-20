@@ -10,7 +10,7 @@ export function toApiGatewayResponse(result: HandlerResult): LambdaResult {
 
     return {
       statusCode: status,
-      body: data != null ? JSON.stringify(data) : "",
+      body: data == null ? "" : JSON.stringify(data),
       headers: { "Content-Type": "application/json" },
     };
   }
@@ -20,7 +20,7 @@ export function toApiGatewayResponse(result: HandlerResult): LambdaResult {
 
     return {
       statusCode: status,
-      body: error != null ? JSON.stringify({ error }) : "",
+      body: error == null ? "" : JSON.stringify({ error }),
       headers: { "Content-Type": "application/json" },
     };
   }
