@@ -719,6 +719,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
+      '@flex/platform-shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
@@ -771,6 +774,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
+      '@flex/platform-shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
@@ -823,6 +829,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
+      '@flex/platform-shared':
+        specifier: workspace:*
+        version: link:../../shared
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
@@ -936,6 +945,34 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+
+  platform/shared:
+    dependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.33.0
+        version: 2.33.0(@aws-sdk/client-secrets-manager@3.1032.0)(@aws-sdk/client-ssm@3.1038.0)(@middy/core@7.5.0)
+      '@flex/flex-fetch':
+        specifier: workspace:*
+        version: link:../../libs/flex-fetch
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@vitest/coverage-v8':
+        specifier: 4.1.5
+        version: 4.1.5(vitest@4.1.5)
+      eslint:
+        specifier: 10.3.0
+        version: 10.3.0(jiti@2.6.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.11(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.0))
 
   tests/e2e:
     dependencies:
