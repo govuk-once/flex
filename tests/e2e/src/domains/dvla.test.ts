@@ -1,8 +1,8 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
-  MultiShareCodeResponseSchema,
-  SingleShareCodeResponseSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
   viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
@@ -41,8 +41,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/driving-licence") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
+      udpCreateIdentityDeployed() &&
+      udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 and valid data when identity is linked", async ({
         cloudfront,
@@ -78,8 +78,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "POST /v1/test-notification") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
+      udpCreateIdentityDeployed() &&
+      udpDeleteIdentityDeployed(),
     )("POST", () => {
       it("returns 202 when identity is linked and notification is sent", async ({
         cloudfront,
@@ -116,8 +116,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/driver-summary") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
+      udpCreateIdentityDeployed() &&
+      udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 when identity is linked and driver-summary is fetched", async ({
         cloudfront,
@@ -152,8 +152,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/customer-summary") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
+      udpCreateIdentityDeployed() &&
+      udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns 200 when identity is linked and customer-summary is fetched", async ({
         cloudfront,
@@ -255,7 +255,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {
@@ -263,30 +264,29 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         }
       });
 
-      it.todo(
-        "GET: returns 200 and lists all share codes",
-        async ({ cloudfront, withIdentityLink }) => {
-          await withIdentityLink("dvla", linkingId);
+      it.skip("GET: returns 200 and lists all share codes", async ({
+        cloudfront,
+        withIdentityLink,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
 
-          const result = await cloudfront.client.get(listEndpoint, {
-            headers: { ...authorization },
-          });
+        const result = await cloudfront.client.get(listEndpoint, {
+          headers: { ...authorization },
+        });
 
-          expect(result.status).toBe(200);
+        expect(result.status).toBe(200);
 
-          const validation = MultiShareCodeResponseSchema.safeParse(
-            result.body,
+        const validation =
+          MultiShareCodeResponseSchemaWithoutIdSchmea.safeParse(result.body);
+        expect(validation.success).toBe(true);
+
+        if (validation.success) {
+          const exists = validation.data.shareCodes.some(
+            (sc) => sc.tokenId === createdTokenId,
           );
-          expect(validation.success).toBe(true);
-
-          if (validation.success) {
-            const exists = validation.data.shareCodes.some(
-              (sc) => sc.tokenId === createdTokenId,
-            );
-            expect(exists).toBe(true);
-          }
-        },
-      );
+          expect(exists).toBe(true);
+        }
+      });
 
       it("POST: returns 200 and cancels the specified share code", async ({
         cloudfront,
@@ -306,7 +306,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {

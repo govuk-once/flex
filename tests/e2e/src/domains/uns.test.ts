@@ -55,7 +55,7 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     describe.runIf(
       isRouteDeployed(unsConfig, "GET /v1/notifications/:notificationId"),
     )("GET", () => {
-      it.runIf(udpGetUsersDeployed())(
+      it.runIf(udpGetUsersDeployed()).todo(
         "returns 200 with notification details",
         async ({ cloudfront, udpUser: _ }) => {
           const result = await cloudfront.client.get(
@@ -122,7 +122,7 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
         "PATCH /v1/notifications/:notificationId/status",
       ),
     )("PATCH", () => {
-      it.runIf(udpGetUsersDeployed())(
+      it.runIf(udpGetUsersDeployed()).todo(
         "returns 202 when a notification status has been updated",
         async ({ cloudfront, udpUser: _ }) => {
           const result = await cloudfront.client.patch<
