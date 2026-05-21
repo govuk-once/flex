@@ -6,7 +6,6 @@ import {
   getUserLinkingId,
 } from "../../../services/authentication";
 import { handleStandardErrors } from "../../../services/errors";
-import { removeLinkingId } from "../../../services/removeLinkingId";
 
 const endpoint = "GET /v1/share-codes";
 
@@ -22,9 +21,10 @@ export const handler = route(endpoint, async (ctx) => {
   });
 
   handleStandardErrors(response, endpoint);
+  const { linkingId: _, ...body } = response.data;
 
   return {
     status: status.OK,
-    data: removeLinkingId(response.data),
+    data: body,
   };
 });
