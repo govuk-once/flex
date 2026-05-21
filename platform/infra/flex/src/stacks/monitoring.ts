@@ -43,34 +43,34 @@ export class FlexMonitoringStack extends BaseStack {
       { name: "warning", ssmKey: ENV_KEYS.TopicWarningAlarms },
     ] as const;
 
-    severities.forEach(({ name, ssmKey }) => {
-      const topic = Topic.fromTopicArn(
+    const notificationTopics = severities.map(({ name, ssmKey }) =>
+      Topic.fromTopicArn(
         this,
         `Topic-${name}`,
         this.import(ssmKey, "eu-west-2"),
-      );
+      ),
+    );
 
-      const slack = new SlackChannelConfiguration(this, `Slack-${name}`, {
-        slackChannelConfigurationName: `flex-alerts-${stage}-${name}`,
-        slackWorkspaceId,
-        slackChannelId,
-        notificationTopics: [topic],
-        guardrailPolicies: [
-          ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess"),
-        ],
-      });
-
-      if (!slack.role) {
-        throw new Error(
-          `SlackChannelConfiguration Slack-${name} has no role; cannot grant KMS decrypt`,
-        );
-      }
-      slack.role.addToPrincipalPolicy(
-        new PolicyStatement({
-          actions: ["kms:Decrypt", "kms:GenerateDataKey"],
-          resources: [coreKey.keyArn],
-        }),
-      );
+    const slack = new SlackChannelConfiguration(this, "Slack", {
+      slackChannelConfigurationName: `flex-alerts-${stage}`,
+      slackWorkspaceId,
+      slackChannelId,
+      notificationTopics,
+      guardrailPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName("ReadOnlyAccess"),
+      ],
     });
+
+    if (!slack.role) {
+      throw new Error(
+        "SlackChannelConfiguration has no role; cannot grant KMS decrypt",
+      );
+    }
+    slack.role.addToPrincipalPolicy(
+      new PolicyStatement({
+        actions: ["kms:Decrypt", "kms:GenerateDataKey"],
+        resources: [coreKey.keyArn],
+      }),
+    );
   }
 }
