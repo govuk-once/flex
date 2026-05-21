@@ -62,7 +62,9 @@ describe("POST /v1/share-code", () => {
     );
 
     expect(result.statusCode).toBe(status.OK);
-    expect(JSON.parse(result.body)).toStrictEqual(mockSingleShareCodeData);
+
+    const { linkingId: _, ...expectedBody } = mockSingleShareCodeData;
+    expect(JSON.parse(result.body)).toStrictEqual(expectedBody);
   });
 
   describe("Error scenarios", () => {

@@ -61,7 +61,9 @@ describe("GET /v1/driver-summary", () => {
     );
 
     expect(result.statusCode).toBe(status.OK);
-    expect(JSON.parse(result.body)).toStrictEqual(mockDriverSummaryData);
+
+    const { linkingId: _, ...expectedBody } = mockDriverSummaryData;
+    expect(JSON.parse(result.body)).toStrictEqual(expectedBody);
   });
 
   describe("Error scenarios", () => {

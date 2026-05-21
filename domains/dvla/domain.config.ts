@@ -10,6 +10,13 @@ import {
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 
+import {
+  CustomerSummaryWithoutIdSchema,
+  DriverSummaryWithoutIdSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
+} from "./src/schemas";
+
 export const { config, route, routeContext } = domain({
   name: "dvla",
   environments: ["development", "staging"],
@@ -103,7 +110,7 @@ export const { config, route, routeContext } = domain({
               "dvlaCustomerSummary",
               "udpGetLinkingId",
             ],
-            // response: viewDriverResponseSchema,
+            response: viewDriverResponseSchema,
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
@@ -131,7 +138,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            // response: RetrieveCustomerSummaryByLinkingIdResponse,
+            response: CustomerSummaryWithoutIdSchema,
           },
         },
       },
@@ -145,7 +152,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            // response: RetrieveDriverSummaryByLinkingIdResponse,
+            response: DriverSummaryWithoutIdSchema,
           },
         },
       },
@@ -173,7 +180,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            // response: MultiShareCodeResponseSchema,
+            response: MultiShareCodeResponseSchemaWithoutIdSchmea,
           },
         },
       },
@@ -187,7 +194,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            // response: SingleShareCodeResponseSchema,
+            response: SingleShareCodeResponseSchemaWithoutIdSchema,
           },
         },
       },
@@ -201,7 +208,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            // response: SingleShareCodeResponseSchema,
+            response: SingleShareCodeResponseSchemaWithoutIdSchema,
           },
         },
       },

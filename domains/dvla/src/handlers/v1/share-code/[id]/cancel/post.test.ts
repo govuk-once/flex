@@ -66,7 +66,8 @@ describe("DELETE /v1/share-code/:id", () => {
     );
 
     expect(result.statusCode).toBe(status.OK);
-    expect(JSON.parse(result.body)).toStrictEqual(mockCancelledShareCodeData);
+    const { linkingId: _, ...expectedBody } = mockCancelledShareCodeData;
+    expect(JSON.parse(result.body)).toStrictEqual(expectedBody);
   });
 
   describe("Error scenarios", () => {
