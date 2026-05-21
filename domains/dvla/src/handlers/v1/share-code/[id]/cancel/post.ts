@@ -23,8 +23,6 @@ export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
     body: {},
   });
 
-  console.log(response);
-
   handleStandardErrors(response, endpoint);
 
   return {
