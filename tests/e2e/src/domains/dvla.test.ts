@@ -19,9 +19,8 @@ const udpCreateIdentityDeployed = () =>
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 
-describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
-  const { JWT, ENVIRONMENT } = inject("e2eEnv");
-  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
+describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
+  const { ENVIRONMENT } = inject("e2eEnv");
   let linkingId: string;
 
   beforeAll(async () => {
@@ -47,11 +46,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 200 and valid data when identity is linked", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
         expect(result.status).toBe(200);
 
@@ -62,11 +62,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 404 when user is not linked", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
         expect(result.status).toBe(404);
       });
@@ -84,11 +85,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 202 when identity is linked and notification is sent", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.post(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: {},
         });
 
@@ -98,11 +100,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 404 when user has no identity link", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.post(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: {},
         });
 
@@ -122,11 +125,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 200 when identity is linked and driver-summary is fetched", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(200);
@@ -135,11 +139,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 404 when user has no identity link", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(404);
@@ -158,11 +163,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 200 when identity is linked and customer-summary is fetched", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(200);
@@ -171,11 +177,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("returns 404 when user has no identity link", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(404);
@@ -197,10 +204,11 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       () => {
         it("returns 200 and valid vehicle data for a known registration", async ({
           cloudfront,
+          authHeader,
         }) => {
           const result = await cloudfront.client.get(
             endpoint(mockRegistration.valid),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(200);
@@ -213,10 +221,11 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         it("returns 404 for a non-existent vehicle registration", async ({
           cloudfront,
+          authHeader,
         }) => {
           const result = await cloudfront.client.get(
             endpoint(mockRegistration.notFound),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(404);
@@ -224,10 +233,11 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         it("returns 502 when upstream returns a 500 error", async ({
           cloudfront,
+          authHeader,
         }) => {
           const result = await cloudfront.client.get(
             endpoint(mockRegistration.upstreamError),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(502);
@@ -245,11 +255,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("POST: returns 200 and creates a new share code", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.post(baseEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: {},
         });
 
@@ -266,11 +277,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it.skip("GET: returns 200 and lists all share codes", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
         const result = await cloudfront.client.get(listEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(200);
@@ -289,6 +301,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("POST: returns 200 and cancels the specified share code", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink("dvla", linkingId);
 
@@ -297,7 +310,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         const result = await cloudfront.client.post(
           `${baseEndpoint}/${createdTokenId}/cancel`,
           {
-            headers: { ...authorization },
+            headers: authHeader,
             body: {},
           },
         );
@@ -318,11 +331,12 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
       it("GET: returns 404 when user is not linked", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity("dvla");
 
         const result = await cloudfront.client.get(listEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
         expect(result.status).toBe(404);
       });

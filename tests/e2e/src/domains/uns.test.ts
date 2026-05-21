@@ -5,7 +5,7 @@ import {
   PatchNotificationBody,
 } from "@flex/uns-domain";
 import { config as unsConfig } from "@flex/uns-domain/config";
-import { describe, expect, inject } from "vitest";
+import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
@@ -13,9 +13,6 @@ import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users");
 
 describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
-  const { JWT } = inject("e2eEnv");
-  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
-
   const mockNotificationId = {
     valid: "d4e04ac4-5696-45b7-8e8c-0060883a84f5",
     notFound: "unknown-notification-id",
@@ -29,9 +26,9 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
       () => {
         it.runIf(udpGetUsersDeployed())(
           "returns 200 with users notifications",
-          async ({ cloudfront, udpUser: _ }) => {
+          async ({ cloudfront, udpUser: _, authHeader }) => {
             const result = await cloudfront.client.get(endpoint, {
-              headers: { ...authorization },
+              headers: authHeader,
             });
 
             expect(result.status).toBe(200);
@@ -57,10 +54,10 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     )("GET", () => {
       it.runIf(udpGetUsersDeployed())(
         "returns 200 with notification details",
-        async ({ cloudfront, udpUser: _ }) => {
+        async ({ cloudfront, udpUser: _, authHeader }) => {
           const result = await cloudfront.client.get(
             endpoint(mockNotificationId.valid),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(200);
@@ -78,10 +75,11 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
 
       it("returns 404 when a notification does not exist", async ({
         cloudfront,
+        authHeader,
       }) => {
         const result = await cloudfront.client.get(
           endpoint(mockNotificationId.notFound),
-          { headers: { ...authorization } },
+          { headers: authHeader },
         );
 
         expect(result.status).toBe(404);
@@ -102,10 +100,13 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
           expect(result.status).toBe(401);
         });
 
-        it("returns 404 when no not found", async ({ cloudfront }) => {
+        it("returns 404 when no not found", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.delete(
             endpoint(mockNotificationId.notFound),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(404);
@@ -124,12 +125,12 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     )("PATCH", () => {
       it.runIf(udpGetUsersDeployed())(
         "returns 202 when a notification status has been updated",
-        async ({ cloudfront, udpUser: _ }) => {
+        async ({ cloudfront, udpUser: _, authHeader }) => {
           const result = await cloudfront.client.patch<
             PatchNotificationBody,
             unknown
           >(endpoint(mockNotificationId.valid), {
-            headers: { ...authorization },
+            headers: authHeader,
             body: { Status: "READ" },
           });
 
@@ -148,12 +149,13 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
 
       it("returns 404 when a notification does not exist", async ({
         cloudfront,
+        authHeader,
       }) => {
         const result = await cloudfront.client.patch<
           PatchNotificationBody,
           unknown
         >(endpoint(mockNotificationId.notFound), {
-          headers: { ...authorization },
+          headers: authHeader,
           body: { Status: "READ" },
         });
 

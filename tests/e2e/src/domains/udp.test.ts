@@ -4,7 +4,7 @@ import type {
   UpdateNotificationPreferencesRequest,
 } from "@flex/udp-domain";
 import { config as udpConfig } from "@flex/udp-domain/config";
-import { describe, expect, inject } from "vitest";
+import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
@@ -15,10 +15,7 @@ const udpCreateIdentityDeployed = () =>
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 
-describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
-  const { JWT } = inject("e2eEnv");
-
-  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
+describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
   const serviceId = "test-service-id";
   const service = "test-service";
 
@@ -33,11 +30,12 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
       it("returns 200 with service identity true when linked", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink(service, serviceId);
 
         const linkedResult = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(linkedResult.status).toBe(200);
@@ -47,11 +45,12 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
       it("returns 200 with service identity false when unlinked", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity(service);
 
         const unlinkedResult = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(unlinkedResult.status).toBe(200);
@@ -66,17 +65,18 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
       it("returns 204 when identity is unlinked successfully and 404 when trying to unlink the same service", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         await withIdentityLink(service, serviceId);
 
         const resultUnlinked = await cloudfront.client.delete(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(resultUnlinked.status).toBe(204);
 
         const resultNotFound = await cloudfront.client.delete(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(resultNotFound.status).toBe(404);
@@ -94,26 +94,27 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
       it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity(service);
 
         const createResult = await cloudfront.client.post(
           `${endpoint}/${serviceId}`,
-          { headers: { ...authorization } },
+          { headers: authHeader },
         );
 
         expect(createResult.status).toBe(201);
 
         const idempotentResult = await cloudfront.client.post(
           `${endpoint}/${serviceId}`,
-          { headers: { ...authorization } },
+          { headers: authHeader },
         );
 
         expect(idempotentResult.status).toBe(204);
 
         const swapResult = await cloudfront.client.post(
           `${endpoint}/new-test-id-999`,
-          { headers: { ...authorization } },
+          { headers: authHeader },
         );
 
         expect(swapResult.status).toBe(201);
@@ -125,9 +126,12 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
     const endpoint = "/udp/v1/users";
 
     describe.runIf(isRouteDeployed(udpConfig, "GET /v1/users"))("GET", () => {
-      it("returns 200 with user profile", async ({ cloudfront }) => {
+      it("returns 200 with user profile", async ({
+        cloudfront,
+        authHeader,
+      }) => {
         const result = await cloudfront.client.get<GetUserResponse>(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(200);
@@ -152,12 +156,13 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
       it("returns 200 with updated user notification preferences", async ({
         cloudfront,
         udpUser: _,
+        authHeader,
       }) => {
         const result = await cloudfront.client.patch<
           UpdateNotificationPreferencesRequest,
           UpdateNotificationPreferencesOutboundResponse
         >(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: { consentStatus: "accepted" },
         });
 
@@ -176,9 +181,9 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
         { body: {}, reason: "is empty" },
       ])(
         "rejects request when body $reason",
-        async ({ body }, { cloudfront }) => {
+        async ({ body }, { cloudfront, authHeader }) => {
           const result = await cloudfront.client.patch(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
             body,
           });
 

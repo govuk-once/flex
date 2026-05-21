@@ -63,9 +63,12 @@ describe("authentication", () => {
       });
     });
 
-    it("allows request with a valid token", async ({ cloudfront }) => {
+    it("allows request with a valid token", async ({
+      cloudfront,
+      authHeader,
+    }) => {
       const result = await cloudfront.client.get(endpoint, {
-        headers: { Authorization: `Bearer ${JWT.VALID}` },
+        headers: authHeader,
       });
 
       expect(result.headers.get("x-rejected-by")).toBeNull();
