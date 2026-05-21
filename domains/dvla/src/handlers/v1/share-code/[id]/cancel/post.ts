@@ -6,6 +6,7 @@ import {
   getUserLinkingId,
 } from "../../../../../services/authentication";
 import { handleStandardErrors } from "../../../../../services/errors";
+import { removeLinkingId } from "../../../../../services/removeLinkingId";
 
 const endpoint = "POST /v1/share-code/:id/cancel";
 
@@ -22,10 +23,12 @@ export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
     body: {},
   });
 
+  console.log(response);
+
   handleStandardErrors(response, endpoint);
 
   return {
     status: status.OK,
-    data: response.data,
+    data: removeLinkingId(response.data),
   };
 });

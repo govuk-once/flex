@@ -6,6 +6,7 @@ import {
   getUserLinkingId,
 } from "../../../services/authentication";
 import { handleStandardErrors } from "../../../services/errors";
+import { removeLinkingId } from "../../../services/removeLinkingId";
 
 const endpoint = "GET /v1/driver-summary";
 
@@ -24,6 +25,6 @@ export const handler = route(endpoint, async (ctx) => {
 
   return {
     status: status.OK,
-    data: response.data,
+    data: removeLinkingId(response.data),
   };
 });
