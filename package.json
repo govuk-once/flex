@@ -18,8 +18,8 @@
   "devDependencies": {
     "@flex/cli": "workspace:*",
     "esbuild": "0.28.0",
-    "nx": "22.7.1",
-    "serve": "14.2.5",
+    "nx": "22.7.2",
+    "serve": "14.2.6",
     "tsx": "4.21.0",
     "typescript": "6.0.3",
     "zod": "4.4.3",

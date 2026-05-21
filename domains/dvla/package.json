@@ -26,7 +26,7 @@
     "@flex/udp-domain": "workspace:*",
     "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.3.0",
+    "eslint": "10.4.0",
     "nock": "14.0.12",
     "typescript": "6.0.3",
     "vitest": "4.1.5"
