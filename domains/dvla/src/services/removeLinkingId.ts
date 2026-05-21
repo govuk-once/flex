@@ -6,6 +6,6 @@ export const removeLinkingId = <T extends Record<string, unknown>>(
 ): Omit<T, "linkingId"> | null | undefined => {
   if (!data) return data;
 
-  const { linkingId: _linkingId, ...rest } = data;
-  return rest;
+  const { linkingId: _linkingId, ...body } = data;
+  return body;
 };
