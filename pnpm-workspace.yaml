@@ -3,6 +3,7 @@ packages:
   - libs/*
   - platform/domains/*
   - platform/infra/*
+  - platform/shared
   - tests/*
   - tests/performance/*
 

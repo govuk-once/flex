@@ -8,6 +8,7 @@
     "tsc": "nx affected --target=tsc",
     "lint": "nx affected --target=lint",
     "test": "nx affected --target=test --run",
+    "test:coverage": "nx run-many --target=test:coverage --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
     "jwt": "tsx scripts/generateToken.ts",
     "dastSetup": "tsx scripts/dastSetup.ts",
