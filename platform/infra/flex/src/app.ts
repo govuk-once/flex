@@ -7,7 +7,6 @@ import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
-import { FlexMonitoringStack } from "./stacks/monitoring";
 import { FlexPlatformStack } from "./stacks/platform";
 import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
@@ -66,8 +65,6 @@ new FlexCertStack(app, `${stage}-FlexCertStack`, {
   domainName,
   subdomainName,
 });
-
-new FlexMonitoringStack(app, `${stage}-FlexMonitoring`);
 
 new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
   domainName,
