@@ -1,4 +1,6 @@
-import { exec } from "child_process";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
+
 import {
   createContext,
   PropsWithChildren,
@@ -6,7 +8,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import { promisify } from "util";
 import z from "zod";
 
 interface AwsSessionContextProps {

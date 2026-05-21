@@ -1,11 +1,12 @@
+import { createServer } from "node:http";
+import querystring from "node:querystring";
+
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import axios, { AxiosInstance } from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { load } from "cheerio";
-import { createServer } from "http";
 import pkceChallenge from "pkce-challenge";
-import querystring from "querystring";
 import { TOTP } from "totp-generator";
 import { CookieJar } from "tough-cookie";
 import { z } from "zod";
@@ -34,9 +35,9 @@ interface TokenResponse {
 }
 
 class TokenGenerator implements BaseTokenGenerator {
-  private client: AxiosInstance;
+  private readonly client: AxiosInstance;
 
-  constructor(private config: JwtAuthConfig) {
+  constructor(private readonly config: JwtAuthConfig) {
     const jar = new CookieJar();
     this.client = wrapper(
       axios.create({

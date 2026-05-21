@@ -14,7 +14,7 @@ import { createSanitizer } from "./sanitizer";
  * - Provides consistent log structure across all domains
  */
 export class FlexLogFormatter extends LogFormatter {
-  #sanitize = createSanitizer();
+  readonly #sanitize = createSanitizer();
   #serviceName?: string;
 
   setServiceName(name: string): void {

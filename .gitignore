@@ -28,3 +28,5 @@ cdk.context.json
 
 # HTTP client
 *.http
+
+eslint-report.json

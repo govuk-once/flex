@@ -3,7 +3,6 @@ import type { ZodType } from "zod";
 
 import type {
   DomainConfig,
-  DomainFeatureFlag,
   DomainIntegrations,
   DomainResource,
   HeaderConfig,
@@ -117,7 +116,7 @@ export function getRouteFeatureFlags(
 
   return Object.fromEntries(
     flagKeys.map((key) => {
-      const flag = featureFlags[key] as DomainFeatureFlag | undefined;
+      const flag = featureFlags[key];
 
       if (!flag) {
         throw new Error(
@@ -126,12 +125,13 @@ export function getRouteFeatureFlags(
       }
 
       const envOverride = process.env[key];
+
+      const envFallback =
+        flag.environments?.includes(currentEnvironment) ||
+        (flag.default ?? false);
+
       const value =
-        envOverride !== undefined
-          ? envOverride === "true"
-          : flag.environments?.includes(currentEnvironment)
-            ? true
-            : (flag.default ?? false);
+        envOverride === undefined ? envFallback : envOverride === "true";
 
       return [key, value] as const;
     }),
