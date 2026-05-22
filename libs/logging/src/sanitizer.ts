@@ -56,9 +56,9 @@ function rebuildSecretRegex(): void {
     return;
   }
 
-  const pattern = secretValues
+  const pattern = [...secretValues]
     .sort((a, b) => b.length - a.length) // Longest first to avoid partial matches
-    .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) // Escape regex chars
+    .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)) // Escape regex chars
     .join("|");
 
   secretValuesRegex = new RegExp(pattern, "gi");

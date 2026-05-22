@@ -1,6 +1,7 @@
+import { readdirSync, rmSync } from "node:fs";
+import path from "node:path";
+
 import { createChildLogger } from "@flex/logging";
-import { readdirSync, rmSync } from "fs";
-import path from "path";
 
 export function clearTmp() {
   const tmpDir = "/tmp";
