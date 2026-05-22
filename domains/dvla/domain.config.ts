@@ -1,21 +1,18 @@
 import {
   authenticateResponseSchema,
+  CustomerSummaryWithoutIdSchema,
+  DriverSummaryWithoutIdSchema,
   MultiShareCodeResponseSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
   RetrieveCustomerSummaryByLinkingIdResponse,
   RetrieveDriverSummaryByLinkingIdResponse,
   SingleShareCodeResponseSchema,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
   viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
-
-import {
-  CustomerSummaryWithoutIdSchema,
-  DriverSummaryWithoutIdSchema,
-  MultiShareCodeResponseSchemaWithoutIdSchmea,
-  SingleShareCodeResponseSchemaWithoutIdSchema,
-} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",
