@@ -32,11 +32,6 @@ export const { config, route, routeContext } = domain({
     },
   },
   integrations: {
-    createUser: {
-      type: "domain",
-      route: "POST /v1/users",
-      body: CreateUserRequestSchema,
-    },
     udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
     udpCreateIdentity: { type: "gateway", route: "POST /v1/identity/*" },
     udpDeleteIdentity: { type: "gateway", route: "DELETE /v1/identity/*" },
@@ -112,27 +107,19 @@ export const { config, route, routeContext } = domain({
       "/users": {
         GET: {
           public: {
-            name: "get-user-notification-preferences",
+            name: "upsert-user",
             resources: [
               "privateGatewayUrl",
               "encryptionKey",
               "udpNotificationSecret",
             ],
             integrations: [
-              "createUser",
+              "udpCreateUser",
               "udpCreateNotificationPreferences",
               "udpGetNotificationPreferences",
             ],
             function: { timeoutSeconds: 25 },
             response: GetUserResponseSchema,
-          },
-        },
-        POST: {
-          private: {
-            name: "create-user",
-            resources: ["privateGatewayUrl"],
-            integrations: ["udpCreateUser"],
-            body: CreateUserRequestSchema,
           },
         },
       },

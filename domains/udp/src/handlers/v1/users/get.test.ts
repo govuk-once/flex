@@ -77,7 +77,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(204);
+      api.post("/gateways/udp/v1/users", user).reply(204);
 
       api
         .post("/gateways/udp/v1/notifications")
@@ -127,7 +127,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(500);
+      api.post("/gateways/udp/v1/users", user).reply(500);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.get(endpoint),
@@ -146,7 +146,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(204);
+      api.post("/gateways/udp/v1/users", user).reply(204);
 
       api
         .post("/gateways/udp/v1/notifications")

@@ -119,7 +119,7 @@
     },
     "/v1/users": {
       "get": {
-        "operationId": "get-user-notification-preferences",
+        "operationId": "upsert-user",
         "summary": "GET /users",
         "responses": {
           "200": {
@@ -164,39 +164,6 @@
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "operationId": "create-user",
-        "summary": "POST /users",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "pushId": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "userId",
-                  "pushId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response."
           }
         }
       }

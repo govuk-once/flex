@@ -1,4 +1,4 @@
-import { NonEmptyString, UserId } from "@flex/utils";
+import { UserId } from "@flex/utils";
 import { z } from "zod";
 
 import {
@@ -12,12 +12,6 @@ export const CreateUserRequestSchema = z.object({
 });
 
 export type CreateUserRequest = z.output<typeof CreateUserRequestSchema>;
-
-export const CreateUserResponseSchema = z.object({
-  message: NonEmptyString,
-});
-
-export type CreateUserResponse = z.output<typeof CreateUserResponseSchema>;
 
 export const GetUserResponseSchema = z.object({
   userId: UserId,
