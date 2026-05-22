@@ -276,11 +276,11 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
       it.todo(
         "GET: returns 200 and lists all share codes",
-        async ({ cloudfront, withIdentityLink }) => {
+        async ({ cloudfront, withIdentityLink, authHeader }) => {
           await withIdentityLink("dvla", linkingId);
 
           const result = await cloudfront.client.get(listEndpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
