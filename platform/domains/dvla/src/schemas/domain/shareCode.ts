@@ -1,7 +1,7 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { commonRequestSchema } from "../common";
+import { commonRequestSchema, DrivingLicenceNumber } from "../common";
 
 export const ShareCodeSchema = z
   .object({
@@ -22,11 +22,8 @@ export const ShareCodeSchema = z
           "A driver licence share token (8 chars, excluding vowels and 0/1)",
       }),
 
-    drivingLicenceNumber: NonEmptyString.length(16).regex(
-      /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}$/,
-      {
-        message: "A valid UK driving licence number",
-      },
+    drivingLicenceNumber: DrivingLicenceNumber.describe(
+      "A valid UK driving licence number",
     ),
 
     driverId: z.uuid({

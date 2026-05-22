@@ -8,6 +8,8 @@ import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
+import sonarjs from "eslint-plugin-sonarjs";
+import unicorn from "eslint-plugin-unicorn";
 import { findUpSync } from "find-up";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -64,6 +66,8 @@ export const config = [
     plugins: {
       "@typescript-eslint": tseslint.plugin,
       "simple-import-sort": simpleImportSort,
+      sonarjs,
+      unicorn,
     },
     // @ts-expect-error return type for flattenedTsConfigRules is valid can ignore
     rules: {
@@ -78,8 +82,20 @@ export const config = [
         },
       ],
       "@typescript-eslint/no-floating-promises": ["error"],
+      "@typescript-eslint/prefer-readonly": "warn",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
+      "sonarjs/no-nested-conditional": "warn",
+      "sonarjs/redundant-type-aliases": "warn",
+      "sonarjs/regex-complexity": "warn",
+      "sonarjs/single-char-in-character-classes": "warn",
+      "sonarjs/no-misleading-array-reverse": "warn",
+      "sonarjs/no-nested-template-literals": "warn",
+      "sonarjs/no-skipped-tests": "warn",
+      "unicorn/no-useless-promise-resolve-reject": "warn",
+      "unicorn/prefer-default-parameters": "warn",
+      "unicorn/prefer-node-protocol": "warn",
+      "unicorn/prefer-string-raw": "warn",
     },
   },
   {
@@ -104,7 +120,6 @@ export const config = [
     files: ["**/*.json"],
     language: "json/json",
     plugins: {
-      // @ts-expect-error issue within "@eslint/json" not our own
       json,
     },
     rules: {

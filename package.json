@@ -7,6 +7,7 @@
     "checkov": "nx affected --target=checkov",
     "tsc": "nx affected --target=tsc",
     "lint": "nx affected --target=lint",
+    "lint:report": "eslint domains libs platform tests/e2e --format json --output-file eslint-report.json",
     "test": "nx affected --target=test --run",
     "test:coverage": "nx run-many --target=test:coverage --run",
     "test:e2e": "nx run-many --target=test:e2e --run",
@@ -17,7 +18,9 @@
   },
   "devDependencies": {
     "@flex/cli": "workspace:*",
+    "@flex/config": "workspace:*",
     "esbuild": "0.28.0",
+    "eslint": "10.3.0",
     "nx": "22.7.1",
     "serve": "14.2.5",
     "tsx": "4.21.0",

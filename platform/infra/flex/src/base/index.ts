@@ -27,10 +27,10 @@ const createKey = ({ region, key }: { region: string; key: string }) =>
 const EXTERNAL = "@@EXTERNAL@@";
 
 export class SsmApp extends cdk.App {
-  #stacks = new Map<string, BaseStack>();
-  #stackDeps = new Map<string, string[] | undefined>();
-  #stackGraph = new DirectedGraph();
-  #exports = new Map<string, string>(); // region + key = stackId
+  readonly #stacks = new Map<string, BaseStack>();
+  readonly #stackDeps = new Map<string, string[] | undefined>();
+  readonly #stackGraph = new DirectedGraph();
+  readonly #exports = new Map<string, string>(); // region + key = stackId
 
   addExternalExports(region: string, keys: string[]) {
     keys.forEach((key) => {
@@ -91,7 +91,8 @@ export class SsmApp extends cdk.App {
       const { label, version } = graph.getNodeAttributes(node);
       const connector = isLast ? "└── " : "├── ";
       const childPrefix = isLast ? "    " : "│   ";
-      const name = `${label ?? node}${version ? ` v${version}` : ""}`;
+      const versionSuffix = version ? ` v${version}` : "";
+      const name = `${label ?? node}${versionSuffix}`;
 
       if (visited.has(node)) {
         console.log(`${prefix}${connector}${name} (↑ see above)`);
@@ -142,9 +143,9 @@ export class SsmApp extends cdk.App {
 }
 
 export abstract class BaseStack extends cdk.Stack {
-  #app: SsmApp;
-  #importCache = new Map<string, string>();
-  #constructCache = new Map<string, unknown>();
+  readonly #app: SsmApp;
+  readonly #importCache = new Map<string, string>();
+  readonly #constructCache = new Map<string, unknown>();
 
   #crossRegionRead(key: string, region: string): string {
     const ssmRead: cdk.custom_resources.AwsSdkCall = {
@@ -177,7 +178,7 @@ export abstract class BaseStack extends cdk.Stack {
     return cr.getResponseField("Parameter.Value");
   }
 
-  #addStackTags = (tags: TagOptions) => {
+  readonly #addStackTags = (tags: TagOptions) => {
     cdk.Tags.of(this).add("Environment", env, { priority: 100 });
     cdk.Tags.of(this).add("Stage", stage, { priority: 100 });
 

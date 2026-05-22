@@ -12,11 +12,10 @@ type DeleteRoute = "DELETE /v1/identity/:service";
 type GetRoute = "GET /v1/identity/:service";
 type GetRoutePrivate = "GET /v1/identity/:service [private]";
 
-type PostIdentityRoutes = PostRoute;
 type DeleteIdentityRoutes = PostRoute | DeleteRoute;
 type GetIdentityRoutes = GetRoute | GetRoutePrivate | DeleteIdentityRoutes;
 
-const postCtx = routeContext<PostIdentityRoutes>;
+const postCtx = routeContext<PostRoute>;
 const deleteCtx = routeContext<DeleteIdentityRoutes>;
 const getCtx = routeContext<GetIdentityRoutes>;
 
