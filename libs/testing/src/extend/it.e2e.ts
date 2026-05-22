@@ -29,7 +29,7 @@ async function mintToken(): Promise<string> {
 
   stubGeneratorPromise ??= getStubTokenGenerator();
   const generator = await stubGeneratorPromise;
-  return generator.getToken(crypto.randomUUID());
+  return generator.getToken(/*crypto.randomUUID()*/);
 }
 
 function tokenForFile(fileId: string): Promise<string> {
