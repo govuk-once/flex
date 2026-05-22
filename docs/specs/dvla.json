@@ -2584,7 +2584,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -2625,7 +2625,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -2980,7 +2980,7 @@
                           "anyOf": [
                             {
                               "type": "string",
-                              "pattern": "[0-9]{4}"
+                              "pattern": "\\d{4}"
                             },
                             {
                               "type": "null"
@@ -3671,7 +3671,7 @@
                           "type": "string",
                           "minLength": 16,
                           "maxLength": 16,
-                          "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}"
+                          "pattern": "^[A-Z]{1,5}9{0,4}\\d(?:[05][1-9]|[16][0-2])(?:0[1-9]|[12]\\d|3[01])\\d(?:99|[A-Z][A-Z9])[A-HJ-NPR-X2-9][A-Z]{2}$"
                         },
                         "driverId": {
                           "type": "string",
@@ -4012,7 +4012,8 @@
             "type": "string",
             "minLength": 16,
             "maxLength": 16,
-            "pattern": "^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\\w[A-Za-z]{2}$"
+            "pattern": "^[A-Z]{1,5}9{0,4}\\d(?:[05][1-9]|[16][0-2])(?:0[1-9]|[12]\\d|3[01])\\d(?:99|[A-Z][A-Z9])[A-HJ-NPR-X2-9][A-Z]{2}$",
+            "description": "A valid UK driving licence number"
           },
           "driverId": {
             "type": "string",
