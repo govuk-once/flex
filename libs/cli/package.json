@@ -19,18 +19,18 @@
     "ink-select-input": "6.2.0",
     "ink-text-input": "6.0.0",
     "mustache": "4.2.0",
-    "react": "19.2.5",
-    "tsx": "4.21.0",
+    "react": "19.2.6",
+    "tsx": "4.22.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/mustache": "4.2.6",
-    "@types/node": "25.6.0",
-    "@types/react": "19.2.14",
-    "eslint": "10.3.0",
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "eslint": "10.4.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.5"
+    "vitest": "4.1.7"
   }
 }
