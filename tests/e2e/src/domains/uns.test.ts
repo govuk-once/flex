@@ -1,3 +1,4 @@
+import { STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import {
   NotificationSchema,
@@ -13,6 +14,10 @@ import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users");
 
 describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
+  // These tests assert against a given user based on the contents of the dev database, so
+  // we need to ensure the stub token generator always returns the same subject for consistency.
+  it.override({ authSub: STUB_DEFAULT_SUBJECT });
+
   const mockNotificationId = {
     valid: "d4e04ac4-5696-45b7-8e8c-0060883a84f5",
     notFound: "unknown-notification-id",

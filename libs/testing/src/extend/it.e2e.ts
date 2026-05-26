@@ -13,6 +13,7 @@ import { getStubTokenGenerator } from "../fixtures/StubTokenGenerator";
 interface Fixtures {
   cloudfront: ReturnType<typeof createApi>;
   privateGateway: ReturnType<typeof createApi>;
+  authSub: string | undefined;
   authHeader: { Authorization: string };
 }
 
@@ -20,7 +21,7 @@ let stubGeneratorPromise: ReturnType<typeof getStubTokenGenerator> | undefined;
 
 const tokenByFile = new Map<string, Promise<string>>();
 
-async function mintToken(): Promise<string> {
+async function mintToken(authSub: string | undefined): Promise<string> {
   const { ENVIRONMENT, JWT } = inject("e2eEnv");
 
   if (ENVIRONMENT === "staging" || ENVIRONMENT === "production") {
@@ -29,14 +30,18 @@ async function mintToken(): Promise<string> {
 
   stubGeneratorPromise ??= getStubTokenGenerator();
   const generator = await stubGeneratorPromise;
-  return generator.getToken(/*crypto.randomUUID()*/);
+  return generator.getToken(authSub ?? crypto.randomUUID());
 }
 
-function tokenForFile(fileId: string): Promise<string> {
-  let token = tokenByFile.get(fileId);
+function tokenForFile(
+  fileId: string,
+  authSub: string | undefined,
+): Promise<string> {
+  const key = `${fileId}::${authSub ?? ""}`;
+  let token = tokenByFile.get(key);
   if (!token) {
-    token = mintToken();
-    tokenByFile.set(fileId, token);
+    token = mintToken(authSub);
+    tokenByFile.set(key, token);
   }
   return token;
 }
@@ -51,8 +56,9 @@ export const extendIt = () =>
       const { FLEX_PRIVATE_GATEWAY_URL } = inject("e2eEnv");
       await use(createApi(FLEX_PRIVATE_GATEWAY_URL, { signal }));
     },
-    authHeader: async ({ task }, use) => {
-      const token = await tokenForFile(task.file.filepath);
+    authSub: undefined,
+    authHeader: async ({ task, authSub }, use) => {
+      const token = await tokenForFile(task.file.filepath, authSub);
       await use({ Authorization: `Bearer ${token}` });
     },
   });
