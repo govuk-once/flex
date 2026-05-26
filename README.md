@@ -43,6 +43,7 @@ pnpm docs:serve
 ```
 
 > Note:
+>
 > - You need to ensure you have AWS cli access setup to run the above in the correct environment
 > - `pnpm openapi:generate` runs automatically before deploys (see `package.json`); the committed `docs/specs/*.json` files reflect the schemas at `main`'s tip.
 
@@ -77,13 +78,13 @@ flex/
 
 ## Packages
 
-| Package                                            | Description                                                  |
-| -------------------------------------------------- | ------------------------------------------------------------ |
-| [`@flex/config`](/libs/config/README.md)           | Shared ESLint, TypeScript and Vitest configuration           |
-| [`@flex/logging`](/libs/logging/README.md)         | Structured logging via AWS Lambda Powertools                 |
-| [`@flex/sdk`](/libs/sdk/README.md)                 | Declarative domain configuration and route handler factory   |
-| [`@flex/testing`](/libs/testing/README.md)         | Test fixtures, helpers and extended test functions           |
-| [`@flex/utils`](/libs/utils/README.md)             | Shared schemas, types and HTTP utilities                     |
+| Package                                    | Description                                                |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| [`@flex/config`](/libs/config/README.md)   | Shared ESLint, TypeScript and Vitest configuration         |
+| [`@flex/logging`](/libs/logging/README.md) | Structured logging via AWS Lambda Powertools               |
+| [`@flex/sdk`](/libs/sdk/README.md)         | Declarative domain configuration and route handler factory |
+| [`@flex/testing`](/libs/testing/README.md) | Test fixtures, helpers and extended test functions         |
+| [`@flex/utils`](/libs/utils/README.md)     | Shared schemas, types and HTTP utilities                   |
 
 ---
 
@@ -107,9 +108,9 @@ flex/
 
 ### Infrastructure
 
-| Stack                                                | Description                                                    |
-| ---------------------------------------------------- | -------------------------------------------------------------- |
-| [`@platform/flex`](/platform/infra/flex/README.md)   | VPC, API Gateway, CloudFront, Lambda constructs and routes     |
+| Stack                                              | Description                                                |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| [`@platform/flex`](/platform/infra/flex/README.md) | VPC, API Gateway, CloudFront, Lambda constructs and routes |
 
 ---
 
