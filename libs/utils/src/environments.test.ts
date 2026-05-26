@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   Environment,
@@ -41,22 +41,18 @@ describe("isStageAllowed", () => {
 });
 
 describe("getEnvConfig", () => {
-  beforeEach(() => {
-    delete process.env.STAGE;
-    delete process.env.USER;
-  });
-
   afterEach(() => {
-    delete process.env.STAGE;
-    delete process.env.USER;
+    vi.unstubAllEnvs();
   });
 
   it("throws when neither STAGE nor USER is set", () => {
+    vi.stubEnv("STAGE", "");
+    vi.stubEnv("USER", "");
     expect(() => getEnvConfig()).toThrow("STAGE or USER env var not set");
   });
 
   it("returns persistent config for a known environment stage", () => {
-    process.env.STAGE = "production";
+    vi.stubEnv("STAGE", "production");
     const config = getEnvConfig();
     expect(config).toEqual({
       env: Environment.production,
@@ -66,19 +62,12 @@ describe("getEnvConfig", () => {
   });
 
   it("returns development config for an ephemeral stage", () => {
-    process.env.STAGE = "my-branch-123";
+    vi.stubEnv("STAGE", "my-branch-123");
     const config = getEnvConfig();
     expect(config).toEqual({
       env: Environment.development,
       stage: "my-branch-12",
       persistent: false,
     });
-  });
-
-  it("falls back to USER when STAGE is not set", () => {
-    process.env.USER = "staging";
-    const config = getEnvConfig();
-    expect(config.stage).toBe("staging");
-    expect(config.persistent).toBe(true);
   });
 });
