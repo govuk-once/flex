@@ -11,7 +11,6 @@ import {
   ResponseType,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import {
   AnyPrincipal,
   Effect,
@@ -22,13 +21,15 @@ import {
 import { FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
+import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
 import { AlarmActionProps } from "../constructs/alarms/types";
-import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { WafAlarms } from "../constructs/alarms/waf";
 import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { createUnsServiceGateway } from "../constructs/gateways/uns";
@@ -39,11 +40,6 @@ import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
 const { env, stage } = getEnvConfig();
-
-interface FlexPlatformStackProps {
-  domainName: string;
-  subdomainName?: string;
-}
 
 export class FlexPlatformStack extends BaseStack {
   #createStubJwksService() {
@@ -373,11 +369,110 @@ export class FlexPlatformStack extends BaseStack {
     };
   }
 
-  constructor(
-    scope: Construct,
-    id: string,
-    { domainName, subdomainName }: FlexPlatformStackProps,
-  ) {
+  #createWebAcl({
+    restApiStageArn,
+    criticalAction,
+    warningAction,
+  }: { restApiStageArn: string } & AlarmActionProps) {
+    const originVerifySecret = new Secret(this, "OriginVerifySecret", {
+      secretName: `/${stage}/flex-secret/origin-verify-secret`,
+      generateSecretString: {
+        excludePunctuation: true,
+        passwordLength: 32,
+      },
+      replicaRegions: [{ region: "us-east-1" }],
+    });
+    applyCheckovSkip(
+      originVerifySecret,
+      "CKV_AWS_149",
+      "Using AWS managed keys is fine in this case and lets us replicate cross region without issues",
+    );
+
+    const webAcl = new CfnWebACL(this, "ApiWaf", {
+      name: `${stage}-apiwaf`,
+      scope: "REGIONAL",
+      defaultAction: {
+        block: {},
+      },
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: "OriginVerifyWebAcl",
+      },
+      dataProtectionConfig: {
+        dataProtections: [
+          {
+            action: "SUBSTITUTION",
+            field: {
+              fieldType: "SINGLE_HEADER",
+              fieldKeys: ["authorization"],
+            },
+            excludeRuleMatchDetails: false,
+            excludeRateBasedDetails: false,
+          },
+        ],
+      },
+      rules: [
+        {
+          name: "RequireOriginSecret",
+          priority: 0,
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: false,
+            sampledRequestsEnabled: false,
+            metricName: "RequireOriginSecret",
+          },
+          action: {
+            allow: {},
+          },
+          statement: {
+            byteMatchStatement: {
+              fieldToMatch: {
+                singleHeader: { Name: "x-origin-verify" },
+              },
+              positionalConstraint: "EXACTLY",
+              searchString: originVerifySecret.secretValue.unsafeUnwrap(),
+              textTransformations: [{ priority: 0, type: "NONE" }],
+            },
+          },
+        },
+        {
+          name: "AWSManagedRulesKnownBadInputsRuleSet",
+          priority: 1,
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: false,
+            sampledRequestsEnabled: false,
+            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
+          },
+          overrideAction: {
+            none: {},
+          },
+          statement: {
+            managedRuleGroupStatement: {
+              name: "AWSManagedRulesKnownBadInputsRuleSet",
+              vendorName: "AWS",
+            },
+          },
+        },
+      ],
+    });
+
+    new CfnWebACLAssociation(this, "WebAclAssociation", {
+      webAclArn: webAcl.attrArn,
+      resourceArn: restApiStageArn,
+    });
+
+    new WafAlarms(this, "ApiWafAlarms", {
+      alarmNamePrefix: `${stage}-waf`,
+      criticalAction,
+      warningAction,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      webAclName: webAcl.name!,
+    });
+
+    return { originVerifySecret };
+  }
+
+  constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -401,26 +496,16 @@ export class FlexPlatformStack extends BaseStack {
       warningAction,
     });
 
-    const authorizerFn = this.#getAuthorizerFunction({
+    const { originVerifySecret } = this.#createWebAcl({
+      restApiStageArn: restApi.deploymentStage.stageArn,
       criticalAction,
       warningAction,
     });
 
-    const certArn = this.import(STAGE_KEYS.CertArn, "us-east-1");
-    const cert = Certificate.fromCertificateArn(this, "Cert", certArn);
-
-    const { distribution, viewerRequestFunction } = new FlexCloudfront(
-      this,
-      "Cloudfront",
-      {
-        certArn: cert.certificateArn,
-        domainName,
-        subdomainName,
-        restApi,
-        criticalAction,
-        warningAction,
-      },
-    );
+    const authorizerFn = this.#getAuthorizerFunction({
+      criticalAction,
+      warningAction,
+    });
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });
@@ -436,18 +521,13 @@ export class FlexPlatformStack extends BaseStack {
       [STAGE_KEYS.ApigwPublicRestId]: restApi.restApiId,
       [STAGE_KEYS.ApigwPublicAppRoot]: appRoot.resourceId,
       [STAGE_KEYS.ApigwPublicAuthorizerFn]: authorizerFn.function.functionArn,
+      [STAGE_KEYS.ApigwPrivateGatewaysRoot]: gatewaysRoot.resourceId,
       [STAGE_KEYS.ApigwPrivateGatewayUrl]: privateGatewayUrl,
       [STAGE_KEYS.ApigwPrivateRestId]: privateGateway.restApiId,
       [STAGE_KEYS.ApigwPrivateDomainRoot]: domainsRoot.resourceId,
-      [STAGE_KEYS.ApigwPrivateGatewaysRoot]: gatewaysRoot.resourceId,
-      [STAGE_KEYS.CloudfrontId]: distribution.distributionId,
-      [STAGE_KEYS.CloudfrontFunctionName]: viewerRequestFunction.functionName,
-      [STAGE_KEYS.CloudfrontFunctionArn]: viewerRequestFunction.functionArn,
+      [STAGE_KEYS.WafCfSecretHeaderArn]: originVerifySecret.secretArn,
     });
 
-    new CfnOutput(this, "FlexApiUrl", {
-      value: `https://${subdomainName ?? domainName}`,
-    });
     new CfnOutput(this, "PrivateGatewayUrl", { value: privateGatewayUrl });
   }
 }

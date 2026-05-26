@@ -4,18 +4,15 @@ import { Aspects } from "aws-cdk-lib";
 import { EnforceS3Https } from "./aspects/enforce-s3-https";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
-import { FlexCertStack } from "./stacks/cert";
-import { FlexCloudfrontAlarmsStack } from "./stacks/cloudfront-alarms";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
+import { FlexGlobalStack } from "./stacks/global";
 import { FlexPlatformStack } from "./stacks/platform";
 import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
-import { getDomainName } from "./utils/getDomainName";
 
 const { env, persistent, stage } = getEnvConfig();
-const { domainName, subdomainName } = await getDomainName();
 
 const app = new SsmApp();
 Aspects.of(app).add(new EnforceS3Https());
@@ -71,17 +68,9 @@ if (persistent) {
   ]);
 }
 
-new FlexCertStack(app, `${stage}-FlexCertStack`, {
-  domainName,
-  subdomainName,
-});
+new FlexPlatformStack(app, `${stage}-FlexPlatform`);
 
-new FlexPlatformStack(app, `${stage}-FlexPlatform`, {
-  domainName,
-  subdomainName,
-});
-
-new FlexCloudfrontAlarmsStack(app, `${stage}-FlexCloudfrontAlarms`);
+new FlexGlobalStack(app, `${stage}-FlexGlobal`);
 
 const allDomainConfigs = await getDomainConfigs();
 const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);

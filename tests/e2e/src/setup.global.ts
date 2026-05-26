@@ -1,7 +1,6 @@
 import {
   BaseTokenGenerator,
   e2eEnvSchema,
-  flexStackOutputsSchema,
   getStubTokenGenerator,
   getTokenGenerator,
   invalidJwt,
@@ -38,12 +37,24 @@ export default async function setup({
   } else {
     stage = envStage ?? sanitiseStageName(process.env.USER) ?? "development";
 
-    const platformOutputs = await getStackOutputs(`${stage}-FlexPlatform`);
+    const [{ PrivateGatewayUrl }, { FlexApiUrl }] = await Promise.all([
+      getStackOutputs(`${stage}-FlexPlatform`),
+      getStackOutputs(`${stage}-FlexGlobal`, "us-east-1"),
+    ]);
 
-    const platform = flexStackOutputsSchema.parse(platformOutputs);
+    if (!PrivateGatewayUrl) {
+      throw new Error(
+        "PrivateGatewayUrl missing from FlexPlatform stack CloudFormation outputs",
+      );
+    }
+    if (!FlexApiUrl) {
+      throw new Error(
+        "FlexApiUrl missing from FlexGlobal stack CloudFormation outputs",
+      );
+    }
 
-    apiUrl = platform.FlexApiUrl;
-    privateGatewayUrl = platform.PrivateGatewayUrl;
+    apiUrl = FlexApiUrl;
+    privateGatewayUrl = PrivateGatewayUrl;
   }
 
   const jwtClient = await getJwtClient(stage);

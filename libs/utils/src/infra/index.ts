@@ -43,8 +43,11 @@ function toSafeMessage(err: unknown) {
   return `${name}: ${message}${requestId}`;
 }
 
-export async function getStackOutputs(stackName: string) {
-  const client = new CloudFormationClient();
+export async function getStackOutputs(
+  stackName: string,
+  region: "eu-west-2" | "us-east-1" = "eu-west-2",
+) {
+  const client = new CloudFormationClient({ region });
   const command = new DescribeStacksCommand({
     StackName: stackName,
   });
