@@ -40,7 +40,7 @@ const secretValuePatterns: Array<RegExp> = [
 ];
 
 const piiValuePatterns: Array<RegExp> = [
-  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email addresses
+  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}/, // Email addresses
   /(?:\+44|0)\d{9,10}/, // UK phone numbers
   /\b[A-Z]{2}\d{6}[A-D]\b/, // National Insurance numbers
   /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i, // UK postcodes
