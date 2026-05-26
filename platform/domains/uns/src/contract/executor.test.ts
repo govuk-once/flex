@@ -138,5 +138,61 @@ describe("UNS Executor", () => {
         message: "Missing or invalid externalUserID query parameter",
       });
     });
+
+    it("throws 404 when route is not registered", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.get("/v1/unknown-route");
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 404,
+        message: "Route not found",
+      });
+    });
+
+    it("throws 400 when PATCH body is missing", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "PATCH",
+        path: "/v1/notifications/notif-123/status",
+        queryStringParameters: { externalUserID: "user-123" },
+        body: null,
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+    });
+
+    it("throws 400 when PATCH body is invalid JSON", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "PATCH",
+        path: "/v1/notifications/notif-123/status",
+        queryStringParameters: { externalUserID: "user-123" },
+        body: "not-valid-json{",
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+    });
+
+    it("throws 400 when PATCH body fails schema validation", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "PATCH",
+        path: "/v1/notifications/notif-123/status",
+        queryStringParameters: { externalUserID: "user-123" },
+        body: JSON.stringify({ Status: "INVALID_STATUS" }),
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+    });
   });
 });
