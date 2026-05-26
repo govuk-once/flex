@@ -13,7 +13,10 @@ describe("JWKS Endpoint", () => {
   });
 
   it("returns 200 with JWKS when secret is valid", async () => {
-    vi.mocked(getSecret).mockResolvedValue({ n: "test-n-value", kid: "test-kid" } as never);
+    vi.mocked(getSecret).mockResolvedValue({
+      n: "test-n-value",
+      kid: "test-kid",
+    } as never);
 
     const result = await handler();
 

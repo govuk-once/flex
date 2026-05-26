@@ -227,7 +227,9 @@ describe("UNS Service Gateway", () => {
   it("returns 500 for unexpected non-HTTP errors", async ({
     privateGatewayEvent,
   }) => {
-    remoteClient.notifications.get.mockRejectedValue(new Error("Unexpected error"));
+    remoteClient.notifications.get.mockRejectedValue(
+      new Error("Unexpected error"),
+    );
 
     const response = await handler(
       privateGatewayEvent.get("/gateways/uns/v1/notifications", {
