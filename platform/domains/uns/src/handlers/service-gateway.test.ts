@@ -20,6 +20,8 @@ const TEST_SECRET_ARN =
 const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   apiUrl: "https://uns-remote.example.test",
   roleArn: "arn:aws:iam:123456789012:role/uns-consumer-role", // pragma: allowlist secret
+  apiKey: `api123`, // pragma: allowlist secret
+  privateApiUrl: "https://uns-remote-private.example.test",
 };
 
 const MOCK_NOTIFICATION_RESPONSE = {
