@@ -9,7 +9,7 @@ import { describe, expect, inject } from "vitest";
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 
-const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users");
+const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users/me");
 const udpCreateIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
 const udpDeleteIdentityDeployed = () =>
@@ -121,10 +121,10 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
     });
   });
 
-  describe("/udp/v1/users", () => {
-    const endpoint = "/udp/v1/users";
+  describe("/udp/v1/users/me", () => {
+    const endpoint = "/udp/v1/users/me";
 
-    describe.runIf(isRouteDeployed(udpConfig, "GET /v1/users"))("GET", () => {
+    describe.runIf(isRouteDeployed(udpConfig, "GET /v1/users/me"))("GET", () => {
       it("returns 200 with user profile", async ({ cloudfront }) => {
         const result = await cloudfront.client.get<GetUserResponse>(endpoint, {
           headers: { ...authorization },
@@ -142,11 +142,11 @@ describe.runIf(isDomainDeployed(udpConfig)).sequential("UDP domain", () => {
     });
   });
 
-  describe("/udp/v1/users/notifications", () => {
-    const endpoint = "/udp/v1/users/notifications";
+  describe("/udp/v1/users/me/notifications", () => {
+    const endpoint = "/udp/v1/users/me/notifications";
 
     describe.runIf(
-      isRouteDeployed(udpConfig, "PATCH /v1/users/notifications") &&
+      isRouteDeployed(udpConfig, "PATCH /v1/users/me/notifications") &&
         udpGetUsersDeployed(),
     )("PATCH", () => {
       it("returns 200 with updated user notification preferences", async ({

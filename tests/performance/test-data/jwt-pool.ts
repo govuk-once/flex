@@ -33,7 +33,7 @@ async function warmUpUsers(): Promise<void> {
     const batch = jwtPool.slice(i, i + CONCURRENCY);
     await Promise.all(
       batch.map((jwt) =>
-        fetch(`${baseUrl}/app/udp/v1/users`, {
+        fetch(`${baseUrl}/app/udp/v1/users/me`, {
           headers: { Authorization: `Bearer ${jwt}` },
           signal: AbortSignal.timeout(15_000),
         }).catch((err: Error) =>
