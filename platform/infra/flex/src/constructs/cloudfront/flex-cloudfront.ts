@@ -189,6 +189,7 @@ export class FlexCloudfront extends Construct {
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
 
     const accessLogBucket = new Bucket(this, "AccessLogBucket", {
+      // NOSONAR enforceSSL is applied via the EnforceS3Https aspect
       publicReadAccess: false,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
