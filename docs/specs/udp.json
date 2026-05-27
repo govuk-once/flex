@@ -117,10 +117,10 @@
         }
       }
     },
-    "/v1/users": {
+    "/v1/users/me": {
       "get": {
         "operationId": "upsert-user",
-        "summary": "GET /users",
+        "summary": "GET /users/me",
         "responses": {
           "200": {
             "description": "Successful response.",
@@ -206,10 +206,10 @@
         }
       }
     },
-    "/v1/users/notifications": {
+    "/v1/users/me/notifications": {
       "patch": {
         "operationId": "update-user-notification-preferences",
-        "summary": "PATCH /users/notifications",
+        "summary": "PATCH /users/me/notifications",
         "requestBody": {
           "required": true,
           "content": {
