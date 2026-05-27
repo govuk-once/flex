@@ -4,7 +4,9 @@ import { z } from "zod";
 
 const consumerConfigSchema = z.object({
   apiUrl: NonEmptyString,
+  apiKey: NonEmptyString,
   roleArn: NonEmptyString,
+  privateApiUrl: NonEmptyString,
 });
 
 export type ConsumerConfig = z.output<typeof consumerConfigSchema>;

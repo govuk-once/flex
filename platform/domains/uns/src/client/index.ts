@@ -13,7 +13,7 @@ import { ConsumerConfig } from "../utils/getConsumerConfig";
  */
 export function createUnsRemoteClient(config: ConsumerConfig) {
   const fetcher = createPrivateFetch({
-    baseUrl: config.apiUrl,
+    baseUrl: config.privateApiUrl,
     roleArn: config.roleArn,
   });
 
@@ -34,7 +34,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "GET",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.roleArn,
+              "X-API-KEY": config.apiKey,
             },
           },
         ).request;
@@ -51,7 +51,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "DELETE",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.roleArn,
+              "X-API-KEY": config.apiKey,
             },
           },
         ).request;
@@ -69,7 +69,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
             method: "PATCH",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.roleArn,
+              "X-API-KEY": config.apiKey,
             },
             body: JSON.stringify(body),
           },
@@ -84,7 +84,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           method: "GET",
           headers: {
             ...defaultHeaders,
-            "X-API-KEY": config.roleArn,
+            "X-API-KEY": config.apiKey,
           },
         }).request;
         return typedFetch(request);

@@ -25,16 +25,6 @@ export const { config, route } = domain({
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
     },
-    unsCustomerRole: {
-      type: "ssm",
-      path: "/uns/customer-role",
-      scope: "stage",
-    },
-    unsFlexPrivateGatewayUrl: {
-      type: "ssm",
-      path: "/uns/flex/privateGatewayUrl",
-      scope: "stage",
-    },
   },
   integrations: {
     unsGetNotifications: {
@@ -73,12 +63,7 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: [
-              "encryptionKey",
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["encryptionKey", "udpNotificationSecret"],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
@@ -88,24 +73,14 @@ export const { config, route } = domain({
           public: {
             name: "get-notification-by-id",
             response: NotificationSchema,
-            resources: [
-              "encryptionKey",
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["encryptionKey", "udpNotificationSecret"],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
         },
         DELETE: {
           public: {
             name: "delete-notification",
-            resources: [
-              "encryptionKey",
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["encryptionKey", "udpNotificationSecret"],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
         },
@@ -115,12 +90,7 @@ export const { config, route } = domain({
           public: {
             name: "patch-notification-status",
             body: PatchNotificationBodySchema,
-            resources: [
-              "encryptionKey",
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["encryptionKey", "udpNotificationSecret"],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },
         },
