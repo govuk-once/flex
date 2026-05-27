@@ -10,7 +10,8 @@ import { describe, expect, inject } from "vitest";
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 
-const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users/me");
+const udpGetUsersDeployed = () =>
+  isRouteDeployed(udpConfig, "GET /v1/users/me");
 
 describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
   const { JWT } = inject("e2eEnv");

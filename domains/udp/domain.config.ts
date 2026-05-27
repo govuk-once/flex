@@ -104,7 +104,7 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/users": {
+      "/users/me": {
         GET: {
           public: {
             name: "upsert-user",
@@ -142,7 +142,7 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/users/notifications": {
+      "/users/me/notifications": {
         PATCH: {
           public: {
             name: "update-user-notification-preferences",
