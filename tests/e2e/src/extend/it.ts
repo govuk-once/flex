@@ -14,7 +14,7 @@ interface UdpFixtures {
 export const it = extendIt().extend<UdpFixtures>({
   udpUser: async ({ cloudfront, authHeader }, use) => {
     const result = await cloudfront.client.get<GetUserResponse>(
-      "/udp/v1/users",
+      "/udp/v1/users/me",
       {
         headers: authHeader,
       },

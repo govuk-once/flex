@@ -408,9 +408,8 @@ const find_tokens = z
   })
   .loose();
 
-export const RetrieveDriverSummaryByLinkingIdResponse = z
+export const DriverSummaryWithoutIdSchema = z
   .object({
-    linkingId: z.uuid(),
     driverViewResponse: holder_by_driving_licence_number,
     sdlResponse: find_tokens.nullish(),
     driversEligibilityResponse: applications_response.nullish(),
@@ -422,4 +421,9 @@ export const RetrieveDriverSummaryByLinkingIdResponse = z
     hasErrors: z.boolean(),
   })
   .loose()
-  .meta({ id: "RetrieveDriverSummaryByLinkingIdResponse" });
+  .meta({ id: "DriverSummaryWithoutId" });
+
+export const RetrieveDriverSummaryByLinkingIdResponse =
+  DriverSummaryWithoutIdSchema.extend({
+    linkingId: z.uuid(),
+  }).meta({ id: "RetrieveDriverSummaryByLinkingIdResponse" });

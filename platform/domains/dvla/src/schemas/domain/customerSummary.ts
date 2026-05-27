@@ -128,9 +128,8 @@ const vehicle_full_response = z
   .partial()
   .loose();
 
-export const RetrieveCustomerSummaryByLinkingIdResponse = z
+export const CustomerSummaryWithoutIdSchema = z
   .object({
-    linkingId: z.uuid().nullish(),
     customerResponse: retrieve_customer_response.nullish(),
     driversEligibilityResponse: applications_response.nullish(),
     driversSuppressionResponse: z.any().nullish(),
@@ -139,4 +138,9 @@ export const RetrieveCustomerSummaryByLinkingIdResponse = z
     hasErrors: z.boolean().nullish(),
   })
   .loose()
-  .meta({ id: "RetrieveCustomerSummaryByLinkingIdResponse" });
+  .meta({ id: "CustomerSummaryWithoutIdSchema" });
+
+export const RetrieveCustomerSummaryByLinkingIdResponse =
+  CustomerSummaryWithoutIdSchema.extend({
+    linkingId: z.uuid().nullish(),
+  }).meta({ id: "RetrieveCustomerSummaryByLinkingIdResponse" });

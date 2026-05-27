@@ -1,8 +1,8 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
-  MultiShareCodeResponseSchema,
-  SingleShareCodeResponseSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
   viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
@@ -266,7 +266,8 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {
@@ -274,30 +275,30 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
         }
       });
 
-      it.todo(
-        "GET: returns 200 and lists all share codes",
-        async ({ cloudfront, withIdentityLink, authHeader }) => {
-          await withIdentityLink("dvla", linkingId);
+      it("GET: returns 200 and lists all share codes", async ({
+        cloudfront,
+        withIdentityLink,
+        authHeader,
+      }) => {
+        await withIdentityLink("dvla", linkingId);
 
-          const result = await cloudfront.client.get(listEndpoint, {
-            headers: authHeader,
-          });
+        const result = await cloudfront.client.get(listEndpoint, {
+          headers: authHeader,
+        });
 
-          expect(result.status).toBe(200);
+        expect(result.status).toBe(200);
 
-          const validation = MultiShareCodeResponseSchema.safeParse(
-            result.body,
+        const validation =
+          MultiShareCodeResponseSchemaWithoutIdSchmea.safeParse(result.body);
+        expect(validation.success).toBe(true);
+
+        if (validation.success) {
+          const exists = validation.data.shareCodes.some(
+            (sc) => sc.tokenId === createdTokenId,
           );
-          expect(validation.success).toBe(true);
-
-          if (validation.success) {
-            const exists = validation.data.shareCodes.some(
-              (sc) => sc.tokenId === createdTokenId,
-            );
-            expect(exists).toBe(true);
-          }
-        },
-      );
+          expect(exists).toBe(true);
+        }
+      });
 
       it("POST: returns 200 and cancels the specified share code", async ({
         cloudfront,
@@ -318,7 +319,8 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {

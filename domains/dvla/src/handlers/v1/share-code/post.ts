@@ -22,9 +22,10 @@ export const handler = route(endpoint, async (ctx) => {
   });
 
   handleStandardErrors(response, endpoint);
+  const { linkingId: _, ...body } = response.data;
 
   return {
     status: status.OK,
-    data: response.data,
+    data: body,
   };
 });
