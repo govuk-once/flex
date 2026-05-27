@@ -8,10 +8,10 @@ import type {
 import { getPushId } from "@utils/get-push-id";
 import createHttpError from "http-errors";
 
-const context = routeContext<"GET /v1/users">;
+const context = routeContext<"GET /v1/users/me">;
 
 export const handler = route(
-  "GET /v1/users",
+  "GET /v1/users/me",
   async ({ auth, logger, resources }) => {
     // TODO: Add to SDK auth or keep alias for this domain only?
     const userId = auth.pairwiseId as UserId;

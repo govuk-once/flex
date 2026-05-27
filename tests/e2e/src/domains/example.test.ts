@@ -11,7 +11,8 @@ import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 
 // TODO: Fine for now, but need a better solution for tests with cross-domain dependencies
-const udpGetUsersDeployed = () => isRouteDeployed(udpConfig, "GET /v1/users");
+const udpGetUsersDeployed = () =>
+  isRouteDeployed(udpConfig, "GET /v1/users/me");
 const udpCreateIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
 const udpDeleteIdentityDeployed = () =>

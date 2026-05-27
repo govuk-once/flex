@@ -13,9 +13,9 @@ import { handler } from "./get";
 
 vi.mock("@utils/get-push-id");
 
-describe("GET /v1/users", () => {
+describe("GET /v1/users/me", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const endpoint = "/users";
+  const endpoint = "/users/me";
 
   const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 

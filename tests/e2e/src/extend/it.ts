@@ -16,7 +16,7 @@ export const it = extendIt().extend<UdpFixtures>({
   udpUser: async ({ cloudfront }, use) => {
     const { JWT } = inject("e2eEnv");
     const result = await cloudfront.client.get<GetUserResponse>(
-      "/udp/v1/users",
+      "/udp/v1/users/me",
       {
         headers: { Authorization: `Bearer ${JWT.VALID}` },
       },
