@@ -1,5 +1,6 @@
-import nock from "nock";
-import { afterAll, afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
+import "./http";
+
+import { beforeEach, vi } from "vitest";
 
 vi.mock("@flex/flex-fetch", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -20,20 +21,6 @@ vi.mock("@middy/ssm", () => ({
   default: () => ({ before: vi.fn() }),
 }));
 
-beforeAll(() => {
-  nock.disableNetConnect();
-});
-
-afterAll(() => {
-  nock.enableNetConnect();
-});
-
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-afterEach(() => {
-  // Useful to see which request(s) failed/were not intercepted
-  expect(nock.pendingMocks()).toStrictEqual([]);
-  nock.cleanAll();
 });

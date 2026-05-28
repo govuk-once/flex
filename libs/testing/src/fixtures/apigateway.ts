@@ -12,6 +12,7 @@ import type {
 import { mergeDeepLeft } from "ramda";
 
 import { validJwt, validJwtUsername } from "./auth";
+import { baseSdkEvent } from "./sdk";
 
 // ----------------------------------------------------------------------------
 // Event (HTTP API V2)
@@ -362,55 +363,10 @@ export type RestApiEventRequestOptions<TBody = never> = {
   queryStringParameters?: QueryParams;
 } & ([TBody] extends [never] ? { body?: never } : { body: TBody });
 
-const baseRestApiEvent: APIGatewayProxyEvent = {
-  body: null,
-  multiValueQueryStringParameters: {},
-  pathParameters: {},
-  queryStringParameters: {},
-  stageVariables: {},
-  resource: "/",
-  path: "/",
-  httpMethod: "GET",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  multiValueHeaders: {},
-  requestContext: {
-    authorizer: undefined,
-    protocol: "HTTP/1.1",
-    httpMethod: "GET",
-    path: "/",
-    accountId: "123456789012",
-    apiId: "api-id",
-    domainName: "api-id.execute-api.eu-west-2.amazonaws.com",
-    domainPrefix: "api-id",
-    requestId: "test-request-id",
-    routeKey: "$default",
-    stage: "$default",
-    identity: {
-      accountId: "123456789012",
-      apiKey: null,
-      apiKeyId: null,
-      accessKey: null,
-      caller: "test-caller",
-      clientCert: null,
-      cognitoAuthenticationProvider: null,
-      cognitoAuthenticationType: null,
-      cognitoIdentityId: null,
-      cognitoIdentityPoolId: null,
-      principalOrgId: null,
-      sourceIp: "127.0.0.1",
-      user: null,
-      userAgent: "test-agent",
-      userArn: null,
-    },
-    requestTimeEpoch: 1735689600000,
-    resourceId: "test-resource-id",
-    resourcePath: "/",
-    requestTime: "01/Jan/2026:00:00:00 +0000",
-  },
-  isBase64Encoded: false,
-};
+// TODO: Temporary fix, can delete once sdk fixtures are used in tests
+const baseRestApiEvent: APIGatewayProxyEvent = mergeDeepLeft(baseSdkEvent, {
+  requestContext: { authorizer: undefined },
+});
 
 function buildRestApiEvent(overrides: RestApiEventOverrides = {}) {
   return mergeDeepLeft(overrides, baseRestApiEvent) as APIGatewayProxyEvent;
