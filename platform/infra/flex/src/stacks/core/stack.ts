@@ -5,6 +5,7 @@ import { ENV_KEYS } from "../../ssm-keys";
 import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createElastiCacheCluster } from "./cache";
 import { addVpcEndpoints } from "./endpoints";
+import { createSlackNotifications } from "./notifications";
 import { createAlarmTopics } from "./topics";
 import { createVpc } from "./vpc";
 
@@ -41,7 +42,15 @@ export class FlexCoreStack extends BaseStack {
       securityGroups: [privateEgress, privateIsolated],
     });
 
-    const { criticalTopic, warningTopic } = createAlarmTopics(this);
+    const { criticalTopic, warningTopic, alarmTopicKey } =
+      createAlarmTopics(this);
+
+    createSlackNotifications(this, {
+      alarmTopicKey,
+      topics: [warningTopic, criticalTopic],
+      slackWorkspaceId: this.import(ENV_KEYS.MonitoringSlackWorkspaceId),
+      slackChannelId: this.import(ENV_KEYS.MonitoringSlackChannelId),
+    });
 
     this.exportVpc(ENV_KEYS.Vpc, vpc);
     this.exports({

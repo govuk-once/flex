@@ -12,9 +12,9 @@ import { handler } from "./patch";
 
 vi.mock("@utils/get-push-id");
 
-describe("PATCH /v1/users/notifications", () => {
+describe("PATCH /v1/users/me/notifications", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const endpoint = "/users/notifications";
+  const endpoint = "/users/me/notifications";
 
   const userId = createUserId("test-pairwise-id");
   const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret

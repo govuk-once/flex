@@ -1,5 +1,6 @@
+import fs, { readdirSync, rmSync } from "node:fs";
+
 import { it } from "@flex/testing";
-import fs, { readdirSync, rmSync } from "fs";
 import { vol } from "memfs";
 import { beforeEach, describe, expect, vi, vitest } from "vitest";
 

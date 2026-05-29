@@ -1,5 +1,7 @@
 import { Environment, getEnvConfig } from "@flex/utils";
+import { Aspects } from "aws-cdk-lib";
 
+import { EnforceS3Https } from "./aspects/enforce-s3-https";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCertStack } from "./stacks/cert";
@@ -16,6 +18,8 @@ const { env, persistent, stage } = getEnvConfig();
 const { domainName, subdomainName } = await getDomainName();
 
 const app = new SsmApp();
+Aspects.of(app).add(new EnforceS3Https());
+
 const region = "eu-west-2";
 
 app.addExternalExports(region, [
@@ -32,6 +36,9 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpConfigSecretArn,
   ENV_KEYS.DvlaConfigSecretArn,
   ENV_KEYS.UnsConfigSecretArn,
+  ENV_KEYS.MonitoringSlackWorkspaceId,
+  ENV_KEYS.MonitoringSlackChannelId,
+  ENV_KEYS.FlexEncryptionKey,
 ]);
 
 if (persistent) {

@@ -117,10 +117,10 @@
         }
       }
     },
-    "/v1/users": {
+    "/v1/users/me": {
       "get": {
-        "operationId": "get-user-notification-preferences",
-        "summary": "GET /users",
+        "operationId": "upsert-user",
+        "summary": "GET /users/me",
         "responses": {
           "200": {
             "description": "Successful response.",
@@ -166,39 +166,6 @@
             }
           }
         }
-      },
-      "post": {
-        "operationId": "create-user",
-        "summary": "POST /users",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "pushId": {
-                    "type": "string",
-                    "minLength": 1
-                  }
-                },
-                "required": [
-                  "userId",
-                  "pushId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful response."
-          }
-        }
       }
     },
     "/v1/users/push-id": {
@@ -239,10 +206,10 @@
         }
       }
     },
-    "/v1/users/notifications": {
+    "/v1/users/me/notifications": {
       "patch": {
         "operationId": "update-user-notification-preferences",
-        "summary": "PATCH /users/notifications",
+        "summary": "PATCH /users/me/notifications",
         "requestBody": {
           "required": true,
           "content": {

@@ -25,15 +25,8 @@ export function createAlarmTopics(scope: Construct) {
     masterKey: alarmTopicKey,
   });
 
-  // Allow CloudWatch from any region (including us-east-1 for CloudFront)
-  // to publish to these topics.
   criticalTopic.grantPublish(cloudwatchPrincipal);
   warningTopic.grantPublish(cloudwatchPrincipal);
 
-  /////////////////////////////////////////////////////
-  // Alarm subscriptions here                        //
-  // Subscribers need key access to decrypt messages //
-  /////////////////////////////////////////////////////
-
-  return { criticalTopic, warningTopic };
+  return { criticalTopic, warningTopic, alarmTopicKey };
 }

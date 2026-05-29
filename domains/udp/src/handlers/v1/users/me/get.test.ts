@@ -13,9 +13,9 @@ import { handler } from "./get";
 
 vi.mock("@utils/get-push-id");
 
-describe("GET /v1/users", () => {
+describe("GET /v1/users/me", () => {
   const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const endpoint = "/users";
+  const endpoint = "/users/me";
 
   const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
@@ -77,7 +77,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(204);
+      api.post("/gateways/udp/v1/users", user).reply(204);
 
       api
         .post("/gateways/udp/v1/notifications")
@@ -127,7 +127,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(500);
+      api.post("/gateways/udp/v1/users", user).reply(500);
 
       const result = await handler(
         privateGatewayEventWithAuthorizer.get(endpoint),
@@ -146,7 +146,7 @@ describe("GET /v1/users", () => {
         .matchHeader("requesting-service-user-id", userId)
         .reply(404);
 
-      api.post("/domains/udp/v1/users", user).reply(204);
+      api.post("/gateways/udp/v1/users", user).reply(204);
 
       api
         .post("/gateways/udp/v1/notifications")

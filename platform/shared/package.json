@@ -1,0 +1,27 @@
+{
+  "name": "@flex/platform-shared",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/parameters": "2.33.0",
+    "@flex/flex-fetch": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@vitest/coverage-v8": "4.1.5",
+    "eslint": "10.3.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5"
+  }
+}

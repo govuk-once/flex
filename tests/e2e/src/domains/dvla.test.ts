@@ -1,8 +1,8 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
 import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
-  MultiShareCodeResponseSchema,
-  SingleShareCodeResponseSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
   viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
@@ -255,7 +255,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {
@@ -263,7 +264,7 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
         }
       });
 
-      it.skip("GET: returns 200 and lists all share codes", async ({
+      it("GET: returns 200 and lists all share codes", async ({
         cloudfront,
         withIdentityLink,
       }) => {
@@ -275,7 +276,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = MultiShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          MultiShareCodeResponseSchemaWithoutIdSchmea.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {
@@ -304,7 +306,8 @@ describe.runIf(isDomainDeployed(dvlaConfig)).sequential("DVLA domain", () => {
 
         expect(result.status).toBe(200);
 
-        const validation = SingleShareCodeResponseSchema.safeParse(result.body);
+        const validation =
+          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
         expect(validation.success).toBe(true);
 
         if (validation.success) {

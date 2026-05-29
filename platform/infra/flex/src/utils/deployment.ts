@@ -6,6 +6,8 @@ type RouteGateway = NonNullable<
   IacDomainConfig["routes"][string][string][HttpMethod]
 >;
 
+const GATEWAY_SUFFIX = { public: "", private: " [private]" } as const;
+
 export interface DomainRouteEntry {
   readonly version: string;
   readonly path: string;
@@ -31,7 +33,7 @@ function getDomainRouteEntries(
           entries.push({
             version,
             path,
-            routeKey: `${method} /${version}${path}${gateway === "private" ? " [private]" : ""}`,
+            routeKey: `${method} /${version}${path}${GATEWAY_SUFFIX[gateway]}`,
             method: method as HttpMethod,
             gateway,
             routeConfig,

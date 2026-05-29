@@ -1,7 +1,7 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { commonRequestSchema } from "../common";
+import { commonRequestSchema, DrivingLicenceNumber } from "../common";
 
 export const ShareCodeSchema = z
   .object({
@@ -22,11 +22,8 @@ export const ShareCodeSchema = z
           "A driver licence share token (8 chars, excluding vowels and 0/1)",
       }),
 
-    drivingLicenceNumber: NonEmptyString.length(16).regex(
-      /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}$/,
-      {
-        message: "A valid UK driving licence number",
-      },
+    drivingLicenceNumber: DrivingLicenceNumber.describe(
+      "A valid UK driving licence number",
     ),
 
     driverId: z.uuid({
@@ -61,22 +58,29 @@ export const ShareCodeSchema = z
   })
   .meta({ id: "ShareCode" });
 
-export const SingleShareCodeResponseSchema = z
+export const SingleShareCodeResponseSchemaWithoutIdSchema = z
   .object({
-    linkingId: z.uuid(),
     shareCode: ShareCodeSchema,
   })
-  .meta({ id: "SingleShareCodeResponse" });
+  .meta({ id: "SingleShareCodeResponseWithoutId" });
 
-export const MultiShareCodeResponseSchema = z
+export const SingleShareCodeResponseSchema =
+  SingleShareCodeResponseSchemaWithoutIdSchema.extend({
+    linkingId: z.uuid(),
+  }).meta({ id: "SingleShareCodeResponse" });
+
+export const MultiShareCodeResponseSchemaWithoutIdSchmea = z
   .object({
-    linkingId: z.uuid().describe("Unique identifier linking the share request"),
-
     shareCodes: z
       .array(ShareCodeSchema)
       .describe("A list of share driving licence tokens"),
   })
-  .meta({ id: "MultiShareCodeResponse" });
+  .meta({ id: "MultiShareCodeResponseWithoutId" });
+
+export const MultiShareCodeResponseSchema =
+  MultiShareCodeResponseSchemaWithoutIdSchmea.extend({
+    linkingId: z.uuid().describe("Unique identifier linking the share request"),
+  }).meta({ id: "MultiShareCodeResponse" });
 
 export const postShareCodeCancelRequestSchema = commonRequestSchema.extend({
   shareCodeId: NonEmptyString.describe(

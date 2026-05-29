@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { applications_response } from "../common";
+import { applications_response, DrivingLicenceNumber } from "../common";
 
 const holder_by_driving_licence_number = z.object({
   driver: z
@@ -190,17 +190,11 @@ const holder_by_driving_licence_number = z.object({
     .array(
       z
         .object({
-          appealCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          appealCourtCode: z.string().regex(/\d{4}/).nullish(),
           appealCourtName: z.string().nullish(),
           appealDate: z.string().nullish(),
           convictionDate: z.string().nullish(),
-          convictionCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          convictionCourtCode: z.string().regex(/\d{4}/).nullish(),
           convictionCourtName: z.string().nullish(),
           disqualification: z
             .object({
@@ -262,10 +256,7 @@ const holder_by_driving_licence_number = z.object({
             .nullish(),
           rehabilitationCourseCompleted: z.boolean().nullish(),
           sentenceDate: z.string().nullish(),
-          sentencingCourtCode: z
-            .string()
-            .regex(/[0-9]{4}/)
-            .nullish(),
+          sentencingCourtCode: z.string().regex(/\d{4}/).nullish(),
           sentencingCourtName: z.string().nullish(),
         })
         .optional(),
@@ -400,13 +391,7 @@ const find_tokens = z
           .min(8)
           .max(8)
           .regex(/^[^aeilouAEIOU01]{8}$/),
-        drivingLicenceNumber: z
-          .string()
-          .min(16)
-          .max(16)
-          .regex(
-            /^(?=.{16}$)[A-Za-z]{1,5}9{0,4}[0-9](?:[05][1-9]|[16][0-2])(?:[0][1-9]|[12][0-9]|3[01])[0-9](?:99|[A-Za-z][A-Za-z9])(?![IOQYZioqyz01_])\w[A-Za-z]{2}/,
-          ),
+        drivingLicenceNumber: DrivingLicenceNumber,
         driverId: z.uuid(),
         documentReference: z
           .string()
@@ -423,9 +408,8 @@ const find_tokens = z
   })
   .loose();
 
-export const RetrieveDriverSummaryByLinkingIdResponse = z
+export const DriverSummaryWithoutIdSchema = z
   .object({
-    linkingId: z.uuid(),
     driverViewResponse: holder_by_driving_licence_number,
     sdlResponse: find_tokens.nullish(),
     driversEligibilityResponse: applications_response.nullish(),
@@ -437,4 +421,9 @@ export const RetrieveDriverSummaryByLinkingIdResponse = z
     hasErrors: z.boolean(),
   })
   .loose()
-  .meta({ id: "RetrieveDriverSummaryByLinkingIdResponse" });
+  .meta({ id: "DriverSummaryWithoutId" });
+
+export const RetrieveDriverSummaryByLinkingIdResponse =
+  DriverSummaryWithoutIdSchema.extend({
+    linkingId: z.uuid(),
+  }).meta({ id: "RetrieveDriverSummaryByLinkingIdResponse" });

@@ -21,14 +21,9 @@ export {
   UpdateNotificationPreferencesRequestSchema,
   UpdateNotificationPreferencesResponseSchema,
 } from "./schemas/notifications";
-export type {
-  CreateUserRequest,
-  CreateUserResponse,
-  GetUserResponse,
-} from "./schemas/user";
+export type { CreateUserRequest, GetUserResponse } from "./schemas/user";
 export {
   CreateUserRequestSchema,
-  CreateUserResponseSchema,
   GetUserPushIdResponseSchema,
   GetUserResponseSchema,
 } from "./schemas/user";

@@ -63,6 +63,9 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Generate report for SonarQube
+        run: pnpm run lint:report || true
+
       - name: Type Check
         run: pnpm run tsc
 

@@ -8,35 +8,37 @@ import type {
 import { getPushId } from "@utils/get-push-id";
 import createHttpError from "http-errors";
 
-const context = routeContext<"GET /v1/users">;
+const context = routeContext<"GET /v1/users/me">;
 
-export const handler = route("GET /v1/users", async ({ auth, resources }) => {
-  const { logger } = context();
-  // TODO: Add to SDK auth or keep alias for this domain only?
-  const userId = auth.pairwiseId as UserId;
+export const handler = route(
+  "GET /v1/users/me",
+  async ({ auth, logger, resources }) => {
+    // TODO: Add to SDK auth or keep alias for this domain only?
+    const userId = auth.pairwiseId as UserId;
 
-  const pushId = getPushId(userId, resources.udpNotificationSecret);
+    const pushId = getPushId(userId, resources.udpNotificationSecret);
 
-  const notifications = await getNotifications(userId);
+    const notifications = await getNotifications(userId);
 
-  if (notifications) {
+    if (notifications) {
+      return {
+        status: 200,
+        data: { notifications, userId },
+      };
+    }
+
+    logger.info("No user found creating user");
+
+    await createUser(userId, pushId);
+
+    const created = await createNotifications(userId, pushId);
+
     return {
       status: 200,
-      data: { notifications, userId },
+      data: { userId, notifications: created },
     };
-  }
-
-  logger.info("No user found creating user");
-
-  await createUser(userId, pushId);
-
-  const created = await createNotifications(userId, pushId);
-
-  return {
-    status: 200,
-    data: { userId, notifications: created },
-  };
-});
+  },
+);
 
 async function getNotifications(
   userId: UserId,
@@ -67,7 +69,7 @@ async function getNotifications(
 async function createUser(userId: UserId, pushId: PushId) {
   const { integrations, logger } = context();
 
-  const result = await integrations.createUser({
+  const result = await integrations.udpCreateUser({
     body: { userId, pushId },
   });
 

@@ -173,7 +173,7 @@ describe("sanitizer", () => {
 
   describe("addSensitivePattern", () => {
     it("redacts values matching a custom string pattern", () => {
-      addSensitivePattern("\\b[A-Z]{2}\\d{7}\\b");
+      addSensitivePattern(String.raw`\b[A-Z]{2}\d{7}\b`);
 
       expect(sanitize("data", "Passport: AB1234567")).toBe(REDACTED);
     });

@@ -5,7 +5,7 @@ import z from "zod";
 import { BaseTokenGenerator } from "./TokenGenerator";
 
 class StubTokenGenerator implements BaseTokenGenerator {
-  private privateKey: CryptoKey;
+  private readonly privateKey: CryptoKey;
   public publicJWKS: { keys: JWK[] };
   public kid: string;
 
@@ -15,18 +15,18 @@ class StubTokenGenerator implements BaseTokenGenerator {
     this.kid = kid;
   }
 
-  async getToken(sub?: string): Promise<string> {
-    const subject = sub ?? "d6a2b234-e011-7084-f347-912225bd2861";
-
+  async getToken(
+    sub = "d6a2b234-e011-7084-f347-912225bd2861",
+  ): Promise<string> {
     const builder = new SignJWT({
-      sub: subject,
+      sub,
       "cognito:groups": ["eu-west-2_testUserPoolId_onelogin"],
       iss: "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_testUserPoolId",
       version: 2,
       client_id: "testClientId",
       token_use: "access",
       scope: "openid email",
-      username: `onelogin_${subject}`,
+      username: `onelogin_${sub}`,
     })
       .setProtectedHeader({ alg: "RS256", kid: this.kid, typ: "JWT" })
       .setIssuedAt()

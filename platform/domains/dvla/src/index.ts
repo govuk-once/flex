@@ -1,10 +1,18 @@
 export { authenticateResponseSchema } from "./schemas/domain/authenticate";
-export { RetrieveCustomerSummaryByLinkingIdResponse } from "./schemas/domain/customerSummary";
-export { RetrieveDriverSummaryByLinkingIdResponse } from "./schemas/domain/driverSummary";
+export {
+  CustomerSummaryWithoutIdSchema,
+  RetrieveCustomerSummaryByLinkingIdResponse,
+} from "./schemas/domain/customerSummary";
+export {
+  DriverSummaryWithoutIdSchema,
+  RetrieveDriverSummaryByLinkingIdResponse,
+} from "./schemas/domain/driverSummary";
 export { viewDriverResponseSchema } from "./schemas/domain/drivingLicences";
 export {
   MultiShareCodeResponseSchema,
+  MultiShareCodeResponseSchemaWithoutIdSchmea,
   SingleShareCodeResponseSchema,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
 } from "./schemas/domain/shareCode";
 export {
   vehicleEnquiryRequestBodySchema,

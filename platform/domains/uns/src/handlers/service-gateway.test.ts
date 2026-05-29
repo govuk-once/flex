@@ -225,4 +225,79 @@ describe("UNS Service Gateway", () => {
       }),
     });
   });
+
+  it("returns 500 for unexpected non-HTTP errors", async ({
+    privateGatewayEvent,
+  }) => {
+    remoteClient.notifications.get.mockRejectedValue(
+      new Error("Unexpected error"),
+    );
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/notifications", {
+        queryStringParameters: { externalUserID: "user-123" },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Internal server error" }),
+    });
+  });
+
+  it("passes through 4xx error with body from remote", async ({
+    privateGatewayEvent,
+  }) => {
+    remoteClient.notifications.get.mockResolvedValue({
+      ok: false,
+      error: {
+        status: 400,
+        message: "Bad Request",
+        body: { detail: "invalid externalUserID" },
+      },
+    });
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/notifications", {
+        queryStringParameters: { externalUserID: "user-123" },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Bad Request",
+        error: { detail: "invalid externalUserID" },
+      }),
+    });
+  });
+
+  it("passes through 4xx error without body from remote", async ({
+    privateGatewayEvent,
+  }) => {
+    remoteClient.notifications.get.mockResolvedValue({
+      ok: false,
+      error: {
+        status: 404,
+        message: "Not Found",
+      },
+    });
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/notifications", {
+        queryStringParameters: { externalUserID: "user-123" },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 404,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Not Found" }),
+    });
+  });
 });
