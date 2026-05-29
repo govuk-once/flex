@@ -26,7 +26,9 @@ export const ENV_KEYS = {
   MonitoringSlackChannelId: `/${env}/flex-param/monitoring/slackChannelId`,
   FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
   Vpc: `/${env}/flex/vpc`,
-  VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
+  VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,  
+  UnsPrivateGatewayUrl: `/${env}/flex-param/uns/flex/privateGatewayUrl`,
+  UnsCustomerRole: `/${env}/flex-param/uns/customer-role`,
 };
 
 export const STAGE_KEYS = {

@@ -15,7 +15,6 @@ export const { config, route } = domain({
     function: { timeoutSeconds: 30 },
   },
   resources: {
-    encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
     privateGatewayUrl: {
       type: "ssm",
       path: "/flex/apigw/private/gateway-url",
@@ -24,6 +23,16 @@ export const { config, route } = domain({
     udpNotificationSecret: {
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
+    },
+    unsCustomerRole: {
+      type: "ssm",
+      path: "/uns/customer-role",
+      scope: "stage",
+    },
+    unsFlexPrivateGatewayUrl: {
+      type: "ssm",
+      path: "/uns/flex/privateGatewayUrl",
+      scope: "stage",
     },
   },
   integrations: {
@@ -63,7 +72,11 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: ["encryptionKey", "udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
+            ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
@@ -73,14 +86,22 @@ export const { config, route } = domain({
           public: {
             name: "get-notification-by-id",
             response: NotificationSchema,
-            resources: ["encryptionKey", "udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
+            ],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
         },
         DELETE: {
           public: {
             name: "delete-notification",
-            resources: ["encryptionKey", "udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
+            ],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
         },
@@ -90,7 +111,11 @@ export const { config, route } = domain({
           public: {
             name: "patch-notification-status",
             body: PatchNotificationBodySchema,
-            resources: ["encryptionKey", "udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "unsCustomerRole",
+              "unsFlexPrivateGatewayUrl",
+            ],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },
         },
