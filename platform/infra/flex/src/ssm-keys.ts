@@ -19,6 +19,7 @@ export const ENV_KEYS = {
   TopicWarningAlarms: `/${env}/flex/topic/warning-alarms`,
   DvlaConfigSecretArn: `/${env}/flex-param/dvla/consumer-config-secret-arn`,
   UnsConfigSecretArn: `/${env}/flex-param/uns/consumer-config-secret-arn`,
+  UnsConfigRoleArn: `/${env}/flex-param/uns/consumer-role-arn`,
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
   UdpConfigRoleArn: `/${env}/flex-param/udp/consumer-role-arn`,
   UdpCmkArn: `/${env}/flex-param/udp/cmk-arn`,

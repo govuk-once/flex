@@ -12,6 +12,7 @@ import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-functio
 
 interface ServiceGatewayProps extends AlarmActionProps {
   consumerConfigArn: string;
+  consumerRoleArn?: string;
   gatewaysResource: IResource;
   privateEgressSg: ISecurityGroup;
   secretArnEnvVarName: string;
@@ -24,6 +25,7 @@ export function createServiceGateway(
   scope: Construct,
   {
     consumerConfigArn,
+    consumerRoleArn,
     gatewaysResource,
     privateEgressSg,
     secretArnEnvVarName,
@@ -65,6 +67,16 @@ export function createServiceGateway(
       resources: [consumerConfigArn],
     }),
   );
+
+  if (consumerRoleArn) {
+    serviceGateway.function.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["sts:AssumeRole"],
+        resources: [consumerRoleArn],
+      }),
+    );
+  }
 
   createPrivateGatewayRoute(
     `${service}/{proxy+}`,

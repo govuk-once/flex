@@ -301,6 +301,7 @@ export class FlexPlatformStack extends BaseStack {
 
     const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
     const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecretArn);
+    const unsConsumerRoleArn = this.import(ENV_KEYS.UnsConfigRoleArn);
 
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
@@ -340,6 +341,7 @@ export class FlexPlatformStack extends BaseStack {
     createServiceGateway(this, {
       vpc,
       consumerConfigArn: unsConsumerConfigArn,
+      consumerRoleArn: unsConsumerRoleArn,
       gatewaysResource: gatewaysRoot,
       privateEgressSg,
       secretArnEnvVarName: "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
