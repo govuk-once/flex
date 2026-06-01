@@ -23,6 +23,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
   });
 
   const defaultHeaders = {
+    "Content-Type": "application/json",
     Accept: "application/json",
     "X-API-KEY": config.apiKey,
   };
