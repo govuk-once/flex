@@ -35,20 +35,13 @@ export const handler: MiddyfiedHandler<
     logger.setServiceName("uns-service-gateway");
     logger.setLogLevel("INFO");
 
-    logger.info(`Gateway initialized`);
-
     try {
-      logger.info(`Parsing config`);
       const config = configSchema.parse(process.env);
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
-
       const remoteClient = createUnsRemoteClient(consumerConfig);
-
       const result = await execute(event, remoteClient);
-      logger.info(`API Call exected`, { result });
-
       if (!result.ok) {
         return mapRemoteErrorToGatewayResponse(result.error);
       }
@@ -77,9 +70,9 @@ function mapRemoteErrorToGatewayResponse(error: {
   message: string;
   body?: unknown;
 }): APIGatewayProxyResultV2 {
-  logger.info("Mapping remote error to gateway response", { error });
+  logger.debug("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
-    logger.info("UNS upstream service unavailable", { error });
+    logger.debug("UNS upstream service unavailable", { error });
     return jsonResponse(502, {
       message: "UNS upstream service unavailable",
     });

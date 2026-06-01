@@ -184,34 +184,32 @@ describe("UNS Service Gateway", () => {
   });
 
   // Causing trouble while debugging
-  // // it("maps remote 5xx errors to 502 with sanitized message", async ({
-  // //   privateGatewayEvent,
-  // // }) => {
-  // //   remoteClient.notifications.get.mockResolvedValue(
-  // //     expect.objectContaining({
-  // //       ok: false,
-  // //       error: {
-  // //         status: 503,
-  // //         message: "Service Unavailable",
-  // //       },
-  // //     }),
-  // //   );
+  it("maps remote 5xx errors to 502 with sanitized message", async ({
+    privateGatewayEvent,
+  }) => {
+    remoteClient.notifications.get.mockResolvedValue({
+      ok: false,
+      error: {
+        status: 503,
+        message: "Service Unavailable",
+      },
+    });
 
-  // //   const response = await handler(
-  // //     privateGatewayEvent.get("/gateways/uns/v1/notifications", {
-  // //       queryStringParameters: { externalUserID: "123" },
-  // //     }),
-  // //     context,
-  // //   );
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/notifications", {
+        queryStringParameters: { externalUserID: "123" },
+      }),
+      context,
+    );
 
-  // //   expect(response).toEqual({
-  // //     statusCode: 502,
-  // //     headers: { "Content-Type": "application/json" },
-  // //     body: JSON.stringify({
-  // //       message: "UNS upstream service unavailable",
-  // //     }),
-  // //   });
-  // // });
+    expect(response).toEqual({
+      statusCode: 502,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "UNS upstream service unavailable",
+      }),
+    });
+  });
 
   it("returns 400 for missing query parameters", async ({
     privateGatewayEvent,
