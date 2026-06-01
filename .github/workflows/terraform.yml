@@ -1,0 +1,92 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths: ["platform/infra/terraform/**"]
+  pull_request:
+    paths: ["platform/infra/terraform/**"]
+  workflow_dispatch:
+
+jobs:
+  # PR: plan all environments in parallel — no approval gate, no plan artefact uploaded
+  planDevelopment:
+    if: github.event_name == 'pull_request'
+    name: Plan Development
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: development
+      APPLY: false
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.DEV_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.DEV_GCP_SERVICE_ACCOUNT }}
+
+  planStaging:
+    if: github.event_name == 'pull_request'
+    name: Plan Staging
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: staging
+      APPLY: false
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.DEV_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.DEV_GCP_SERVICE_ACCOUNT }}
+
+  planProduction:
+    if: github.event_name == 'pull_request'
+    name: Plan Production
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: production
+      APPLY: false
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.PROD_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.PROD_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.PROD_GCP_SERVICE_ACCOUNT }}
+
+  # Push to main / manual dispatch: apply sequentially dev → staging → prod
+  # Production requires manual approval via the GitHub 'production' environment protection rule
+  applyDevelopment:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Apply Development
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: development
+      APPLY: true
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.DEV_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.DEV_GCP_SERVICE_ACCOUNT }}
+
+  applyStaging:
+    needs: applyDevelopment
+    name: Apply Staging
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: staging
+      APPLY: true
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.DEV_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.DEV_GCP_SERVICE_ACCOUNT }}
+
+  applyProduction:
+    needs: applyStaging
+    environment: production
+    name: Apply Production
+    uses: ./.github/workflows/_terraformPlanApply.yml
+    with:
+      STAGE: production
+      APPLY: true
+      AWS_REGION: eu-west-2
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.PROD_DEPLOYMENT_ROLE }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.PROD_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.PROD_GCP_SERVICE_ACCOUNT }}

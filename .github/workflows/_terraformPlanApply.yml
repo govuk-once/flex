@@ -1,0 +1,95 @@
+name: Terraform Plan / Apply
+
+on:
+  workflow_call:
+    inputs:
+      STAGE:
+        description: "Deployment stage (development, staging, production)"
+        type: string
+        required: true
+      APPLY:
+        description: "Apply changes (true) or plan only (false)"
+        type: boolean
+        required: true
+      AWS_REGION:
+        description: "AWS region"
+        type: string
+        default: "eu-west-2"
+    secrets:
+      ROLE_TO_ASSUME:
+        description: "AWS deployment role to assume"
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        description: "GCP Workload Identity Federation provider resource name"
+        required: true
+      GCP_SERVICE_ACCOUNT:
+        description: "GCP service account email to impersonate"
+        required: true
+
+jobs:
+  terraform:
+    name: Terraform ${{ inputs.APPLY && 'Apply' || 'Plan' }} — ${{ inputs.STAGE }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: platform/infra/terraform/environments/${{ inputs.STAGE }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Read Terraform version
+        id: tf-version
+        run: echo "version=$(cat .terraform-version)" >> $GITHUB_OUTPUT
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: ${{ steps.tf-version.outputs.version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@ef734cca817839d2dcb4b1e3a7118492ebb4df39 # v5.1.1
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: ${{ github.run_id }}
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Terraform Init
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "::add-mask::$ACCOUNT_ID"
+          terraform init \
+            -backend-config=backend.tfvars \
+            -backend-config="bucket=flex-${{ inputs.STAGE }}-${ACCOUNT_ID}-tfstate"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Checkov scan
+        run: |
+          pip install checkov --quiet
+          terraform show -json tfplan > /tmp/tfplan.json
+          checkov -f /tmp/tfplan.json \
+            --config-file ../../checkov.yaml \
+            --framework terraform_plan
+          rm /tmp/tfplan.json
+
+      - name: Terraform Apply
+        if: inputs.APPLY
+        run: terraform apply -auto-approve tfplan
+
+      - name: Cleanup plan artefact
+        if: always()
+        run: rm -f tfplan
