@@ -7,6 +7,7 @@ const consumerConfigSchema = z.object({
   apiKey: NonEmptyString,
   roleArn: NonEmptyString,
   privateApiUrl: NonEmptyString,
+  region: NonEmptyString,
 });
 
 export type ConsumerConfig = z.output<typeof consumerConfigSchema>;

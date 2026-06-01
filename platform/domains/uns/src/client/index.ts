@@ -16,10 +16,10 @@ import { ConsumerConfig } from "../utils/getConsumerConfig";
  */
 export function createUnsRemoteClient(config: ConsumerConfig) {
   const fetcher = createSigv4FetchWithCredentials({
+    region: config.region,
     baseUrl: config.privateApiUrl,
-    region: "eu-west-2",
     roleArn: config.roleArn,
-    roleName: "consumer-session",
+    roleName: "uns-consumer-session",
   });
 
   const defaultHeaders = {
