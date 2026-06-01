@@ -65,8 +65,7 @@ cd environments/development
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 terraform init \
   -backend-config=backend.tfvars \
-  -backend-config="bucket=flex-development-${ACCOUNT_ID}-tfstate" \
-  -backend-config="dynamodb_table=flex-development-${ACCOUNT_ID}-tfstate"
+  -backend-config="bucket=flex-development-${ACCOUNT_ID}-tfstate"
 
 terraform plan
 ```

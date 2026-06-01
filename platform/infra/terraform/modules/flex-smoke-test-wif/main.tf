@@ -35,24 +35,6 @@ resource "google_service_account" "smoke_test" {
   description  = "Used by the flex smoke test Lambda to mint Firebase App Check tokens. Scoped to App Check only."
 }
 
-resource "google_project_iam_custom_role" "smoke_test_appcheck" {
-  project     = var.gcp_project_id
-  role_id     = "smoke_test_appcheck"
-  title       = "Smoke Test App Check Role"
-  description = "Custom role for the flex smoke test Lambda, with permissions scoped to Firebase App Check only."
-
-  permissions = [
-    "firebaseappcheck.services.get",
-    "firebaseappcheck.services.list",
-  ]
-}
-
-resource "google_project_iam_member" "smoke_test_appcheck" {
-  project = var.gcp_project_id
-  role    = google_project_iam_custom_role.smoke_test_appcheck.name
-  member  = "serviceAccount:${google_service_account.smoke_test.email}"
-}
-
 resource "google_service_account_iam_member" "smoke_test_sign_blobs" {
   service_account_id = google_service_account.smoke_test.id
   role               = "roles/iam.serviceAccountTokenCreator"
