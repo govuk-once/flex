@@ -17,9 +17,15 @@ import {
   createRestApiEvent,
   createRestApiEventWithAuthorizer,
 } from "../fixtures/apigateway";
+import type { HttpFixture } from "../fixtures/http";
+import { createHttp } from "../fixtures/http";
+import type { SdkFixture } from "../fixtures/sdk";
+import { createSdkContext, createSdkEvent } from "../fixtures/sdk";
 import { createUserId } from "../fixtures/user";
 
 interface Fixtures {
+  http: HttpFixture;
+  sdk: SdkFixture;
   authorizerEvent: ReturnType<typeof createAuthorizerEvent>;
   authorizerResult: ReturnType<typeof createAuthorizerResult>;
   context: ReturnType<typeof createContext>;
@@ -59,6 +65,18 @@ interface Fixtures {
 }
 
 export const it = vitestIt.extend<Fixtures>({
+  http: [
+    async ({}, use) => {
+      using http = createHttp();
+      await use(http);
+    },
+    { auto: true },
+  ],
+  sdk: async ({}, use) =>
+    use({
+      event: createSdkEvent(),
+      context: createSdkContext(),
+    }),
   authorizerEvent: async ({}, use) => use(createAuthorizerEvent()),
   authorizerResult: async ({}, use) => use(createAuthorizerResult()),
   context: async ({}, use) => use(createContext()),
