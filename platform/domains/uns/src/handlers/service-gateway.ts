@@ -44,10 +44,7 @@ export const handler: MiddyfiedHandler<
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
 
-      logger.info(`Config received`, { consumerConfig });
-
       const remoteClient = createUnsRemoteClient(consumerConfig);
-      logger.info(`Remote client created`);
 
       const result = await execute(event, remoteClient);
       logger.info(`API Call exected`, { result });
@@ -80,9 +77,9 @@ function mapRemoteErrorToGatewayResponse(error: {
   message: string;
   body?: unknown;
 }): APIGatewayProxyResultV2 {
-  logger.debug("Mapping remote error to gateway response", { error });
+  logger.info("Mapping remote error to gateway response", { error });
   if (error.status >= 500) {
-    logger.debug("UNS upstream service unavailable", { error });
+    logger.info("UNS upstream service unavailable", { error });
     return jsonResponse(502, {
       message: "UNS upstream service unavailable",
     });
