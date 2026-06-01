@@ -35,14 +35,22 @@ export const handler: MiddyfiedHandler<
     logger.setServiceName("uns-service-gateway");
     logger.setLogLevel("INFO");
 
+    logger.info(`Gateway initialized`);
+
     try {
+      logger.info(`Parsing config`);
       const config = configSchema.parse(process.env);
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
 
+      logger.info(`Config received`, { consumerConfig });
+
       const remoteClient = createUnsRemoteClient(consumerConfig);
+      logger.info(`Remote client created`, { remoteClient });
+
       const result = await execute(event, remoteClient);
+      logger.info(`API Call exected`, { result });
 
       if (!result.ok) {
         return mapRemoteErrorToGatewayResponse(result.error);
@@ -50,7 +58,9 @@ export const handler: MiddyfiedHandler<
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
-      logger.error("Internal server error", { error });
+      logger.error("Internal server error", {
+        error,
+      });
       if (createHttpError.isHttpError(error)) {
         return jsonResponse(error.statusCode, {
           message: error.message,

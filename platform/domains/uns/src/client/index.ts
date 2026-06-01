@@ -24,6 +24,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
 
   const defaultHeaders = {
     Accept: "application/json",
+    "X-API-KEY": config.apiKey,
   };
 
   return {
@@ -37,10 +38,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}?${params}`,
           {
             method: "GET",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
           },
         ).request;
         return typedFetch(request);
@@ -54,10 +52,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}?${params}`,
           {
             method: "DELETE",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
           },
         ).request;
         return typedFetch(request);
@@ -72,10 +67,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}/status?${params}`,
           {
             method: "PATCH",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
             body: JSON.stringify(body),
           },
         ).request;
@@ -87,10 +79,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
         const params = new URLSearchParams({ externalUserID: pushId });
         const request = fetcher(`${UNS_REMOTE_ROUTES.notification}?${params}`, {
           method: "GET",
-          headers: {
-            ...defaultHeaders,
-            "X-API-KEY": config.apiKey,
-          },
+          headers: defaultHeaders,
         }).request;
         return typedFetch(request);
       },

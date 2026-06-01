@@ -15,6 +15,7 @@ export const { config, route } = domain({
     function: { timeoutSeconds: 30 },
   },
   resources: {
+    encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
     privateGatewayUrl: {
       type: "ssm",
       path: "/flex/apigw/private/gateway-url",
@@ -62,7 +63,11 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: ["udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
@@ -72,14 +77,22 @@ export const { config, route } = domain({
           public: {
             name: "get-notification-by-id",
             response: NotificationSchema,
-            resources: ["udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
         },
         DELETE: {
           public: {
             name: "delete-notification",
-            resources: ["udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
         },
@@ -89,7 +102,11 @@ export const { config, route } = domain({
           public: {
             name: "patch-notification-status",
             body: PatchNotificationBodySchema,
-            resources: ["udpNotificationSecret"],
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl",
+            ],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },
         },
