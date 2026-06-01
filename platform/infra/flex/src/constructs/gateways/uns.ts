@@ -31,7 +31,7 @@ export function createUnsServiceGateway(
 ) {
   const unsServiceGateway = new FlexPrivateIsolatedFunction(
     scope,
-    "unsServiceGateway",
+    "unsPrivateServiceGateway",
     {
       entry: getPlatformEntry("uns", "handlers/service-gateway.ts"),
       domain: "udp",
