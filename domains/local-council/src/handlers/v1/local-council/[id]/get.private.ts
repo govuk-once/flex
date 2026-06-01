@@ -1,6 +1,5 @@
+import { route } from "@domain";
 import createHttpError from "http-errors";
-
-import { route } from "../../../../../domain.config";
 
 export const handler = route(
   "GET /v1/local-council/:id [private]",

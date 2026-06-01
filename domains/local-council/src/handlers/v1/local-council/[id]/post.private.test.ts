@@ -1,78 +1,59 @@
 import { it } from "@flex/testing";
-import nock from "nock";
+import { localAuthority, localCouncilId, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import type { LocalAuthority } from "../../../../schemas/local-authority";
 import { handler } from "./post.private";
 
-const validBody: LocalAuthority = {
-  local_authority: {
-    name: "Derbyshire Dales District Council",
-    homepage_url: "https://www.derbyshiredales.gov.uk/",
-    tier: "district",
-    slug: "derbyshire-dales",
-    parent: {
-      name: "Derbyshire County Council",
-      homepage_url: "https://www.derbyshire.gov.uk/",
-      tier: "county",
-      slug: "derbyshire",
-    },
-  },
-};
-
 describe("POST /v1/local-council/:id [private]", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const id = "test-uuid-123";
+  const endpoint = `/local-council/${localCouncilId}`;
 
-  it("returns 200 when local authority is saved", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
+  it("returns 200 when the local authority is created", async ({
+    http,
+    sdk,
   }) => {
-    api.post(`/gateways/udp/v1/local-council/${id}`, validBody).reply(200);
+    http.gateway("udp").post(endpoint, { body: localAuthority }).reply(200);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "POST",
-        pathParameters: { id },
-        body: JSON.stringify(validBody),
+      sdk.event.post(endpoint, {
+        userId,
+        params: { id: localCouncilId },
+        body: localAuthority,
       }),
-      context.create(),
+      sdk.context(),
     );
 
     expect(result.statusCode).toBe(200);
+    expect(result.body).toBe("");
   });
 
-  it("returns 502 when saving fails", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    api.post(`/gateways/udp/v1/local-council/${id}`, validBody).reply(500);
-
+  it("returns 400 when the request body is invalid", async ({ sdk }) => {
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "POST",
-        pathParameters: { id },
-        body: JSON.stringify(validBody),
-      }),
-      context.create(),
-    );
-
-    expect(result.statusCode).toBe(502);
-  });
-
-  it("returns 400 when body is invalid", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "POST",
-        pathParameters: { id },
-        body: JSON.stringify({ invalid: true }),
-      }),
-      context.create(),
+      sdk.event.post(endpoint, { userId, params: { id: localCouncilId } }),
+      sdk.context(),
     );
 
     expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      message: "Invalid request body",
+    });
+  });
+
+  it("returns 502 when the UDP create local authority integration fails", async ({
+    http,
+    sdk,
+  }) => {
+    http.gateway("udp").post(endpoint, { body: localAuthority }).reply(500);
+
+    const result = await handler(
+      sdk.event.post(endpoint, {
+        userId,
+        params: { id: localCouncilId },
+        body: localAuthority,
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(502);
+    expect(result.body).toBe("");
   });
 });

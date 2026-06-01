@@ -1,78 +1,45 @@
 import { it } from "@flex/testing";
-import nock from "nock";
+import { localAuthority, localCouncilId, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import type { LocalAuthority } from "../../../../schemas/local-authority";
 import { handler } from "./get.private";
 
-const storedData: LocalAuthority = {
-  local_authority: {
-    name: "Derbyshire Dales District Council",
-    homepage_url: "https://www.derbyshiredales.gov.uk/",
-    tier: "district",
-    slug: "derbyshire-dales",
-    parent: {
-      name: "Derbyshire County Council",
-      homepage_url: "https://www.derbyshire.gov.uk/",
-      tier: "county",
-      slug: "derbyshire",
-    },
-  },
-};
-
 describe("GET /v1/local-council/:id [private]", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const id = "test-uuid-123";
+  const endpoint = `/local-council/${localCouncilId}`;
 
-  it("returns 200 with local authority data", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    api.get(`/gateways/udp/v1/local-council/${id}`).reply(200, storedData);
+  it("returns 200 with the local authority data", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/local-council/${localCouncilId}`)
+      .reply(200, localAuthority);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "GET",
-        pathParameters: { id },
-      }),
-      context.create(),
+      sdk.event.get(endpoint, { userId, params: { id: localCouncilId } }),
+      sdk.context(),
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(storedData);
+    expect(JSON.parse(result.body)).toStrictEqual(localAuthority);
   });
 
-  it("returns 404 when local authority does not exist", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    api.get(`/gateways/udp/v1/local-council/${id}`).reply(404);
+  it.for([
+    { reason: "cannot find the local authority", upstream: 404, expected: 404 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP get local authority integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .get(`/local-council/${localCouncilId}`)
+        .reply(upstream);
 
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "GET",
-        pathParameters: { id },
-      }),
-      context.create(),
-    );
+      const result = await handler(
+        sdk.event.get(endpoint, { userId, params: { id: localCouncilId } }),
+        sdk.context(),
+      );
 
-    expect(result.statusCode).toBe(404);
-  });
-
-  it("returns 502 when UDP gateway fails", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    api.get(`/gateways/udp/v1/local-council/${id}`).reply(500);
-
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        httpMethod: "GET",
-        pathParameters: { id },
-      }),
-      context.create(),
-    );
-
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });
