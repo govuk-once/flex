@@ -9,7 +9,3 @@ export function getPlatformEntry(domain: string, path: string) {
   // /platform/domains/auth/src/handler.ts
   return `${findProjectRoot()}/platform/domains/${domain}/src/${path}`;
 }
-
-export function getPlatformSmokeTestEntry(path: string) {
-  return `${findProjectRoot()}/platform/smoke-test/src/${path}`;
-}

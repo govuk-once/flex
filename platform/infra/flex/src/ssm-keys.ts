@@ -29,19 +29,6 @@ export const ENV_KEYS = {
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
 
-export const SMOKE_TEST_KEYS = {
-  GcpCredentialConfig: `/${env}/flex/smoke-test/gcp-credential-config`,
-  GcpServiceAccountEmail: `/${env}/flex/smoke-test/gcp-service-account-email`,
-  GcpProjectNumber: `/${env}/flex/smoke-test/gcp-project-number`,
-  FirebaseAppId: `/${env}/flex/smoke-test/firebase-app-id`,
-  AuthUrl: `/${env}/flex/smoke-test/auth-url`,
-  ClientId: `/${env}/flex/smoke-test/client-id`,
-  RedirectUri: `/${env}/flex/smoke-test/redirect-uri`,
-  OneLoginEnvironment: `/${env}/flex/smoke-test/onelogin-environment`,
-  ApiUrl: `/${env}/flex/smoke-test/api-url`,
-  UserSecret: `/${env}/flex/smoke-test/user`,
-} as const;
-
 export const STAGE_KEYS = {
   ApigwPublicRestId: `/${stage}/flex/apigw/public/rest-api-id`,
   ApigwPublicAppRoot: `/${stage}/flex/apigw/public/app-root`,
