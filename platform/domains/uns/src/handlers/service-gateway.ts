@@ -47,7 +47,7 @@ export const handler: MiddyfiedHandler<
       logger.info(`Config received`, { consumerConfig });
 
       const remoteClient = createUnsRemoteClient(consumerConfig);
-      logger.info(`Remote client created`, { remoteClient });
+      logger.info(`Remote client created`);
 
       const result = await execute(event, remoteClient);
       logger.info(`API Call exected`, { result });

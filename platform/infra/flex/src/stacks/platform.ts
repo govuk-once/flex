@@ -348,6 +348,7 @@ export class FlexPlatformStack extends BaseStack {
       privateIsolatedSg,
       criticalAction,
       warningAction,
+      encryptionKeyArn: flexEncryptionKeyArn,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash

@@ -2,6 +2,7 @@ import { Duration } from "aws-cdk-lib";
 import { IResource } from "aws-cdk-lib/aws-apigateway";
 import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { Key } from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
 
 import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
@@ -15,6 +16,7 @@ interface UnsServiceGatewayProps extends AlarmActionProps {
   consumerRoleArn: string;
   vpc: IVpc;
   privateIsolatedSg: ISecurityGroup;
+  encryptionKeyArn: string;
 }
 
 export function createUnsServiceGateway(
@@ -27,6 +29,7 @@ export function createUnsServiceGateway(
     vpc,
     criticalAction,
     warningAction,
+    encryptionKeyArn,
   }: UnsServiceGatewayProps,
 ) {
   const unsServiceGateway = new FlexPrivateIsolatedFunction(
@@ -45,6 +48,9 @@ export function createUnsServiceGateway(
       warningAction,
     },
   );
+
+  const kmsKey = Key.fromKeyArn(scope, `encryptionKeyArnUns`, encryptionKeyArn);
+  kmsKey.grantDecrypt(unsServiceGateway.function);
 
   unsServiceGateway.function.addToRolePolicy(
     new PolicyStatement({
