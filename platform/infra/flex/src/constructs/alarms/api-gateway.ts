@@ -90,10 +90,14 @@ export class ApiGatewayAlarms extends Construct {
 
     // p99 integration latency - backend-only latency, helps distinguish
     // API Gateway overhead from backend slowness when p99 latency fires.
+
+    // Disabled action currently (FLEX-333) until we decide how to proceed
+    // with excessive alerting.
     this.integrationP99LatencyAlarm = new Alarm(this, "IntegrationP99Latency", {
       alarmName: `${alarmNamePrefix}-integration-p99-latency`,
       alarmDescription:
         "Warning: integration p99 latency above 2900ms over 5 minutes",
+      actionsEnabled: false,
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "IntegrationLatency",
