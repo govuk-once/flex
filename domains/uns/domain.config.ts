@@ -24,16 +24,6 @@ export const { config, route } = domain({
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
     },
-    unsCustomerRole: {
-      type: "ssm",
-      path: "/uns/customer-role",
-      scope: "stage",
-    },
-    unsFlexPrivateGatewayUrl: {
-      type: "ssm",
-      path: "/uns/flex/privateGatewayUrl",
-      scope: "stage",
-    },
   },
   integrations: {
     unsGetNotifications: {
@@ -72,11 +62,7 @@ export const { config, route } = domain({
           public: {
             name: "get-notifications",
             response: NotificationsResponseSchema,
-            resources: [
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["udpNotificationSecret"],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
         },
@@ -86,22 +72,14 @@ export const { config, route } = domain({
           public: {
             name: "get-notification-by-id",
             response: NotificationSchema,
-            resources: [
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["udpNotificationSecret"],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
         },
         DELETE: {
           public: {
             name: "delete-notification",
-            resources: [
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["udpNotificationSecret"],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
         },
@@ -111,11 +89,7 @@ export const { config, route } = domain({
           public: {
             name: "patch-notification-status",
             body: PatchNotificationBodySchema,
-            resources: [
-              "udpNotificationSecret",
-              "unsCustomerRole",
-              "unsFlexPrivateGatewayUrl",
-            ],
+            resources: ["udpNotificationSecret"],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },
         },

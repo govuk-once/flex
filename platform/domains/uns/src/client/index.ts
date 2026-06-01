@@ -1,8 +1,11 @@
-import { ApiResult, typedFetch } from "@flex/flex-fetch";
+import {
+  ApiResult,
+  createSigv4FetchWithCredentials,
+  typedFetch,
+} from "@flex/flex-fetch";
 
 import { UNS_REMOTE_ROUTES } from "../contract/route";
 import { NotificationPatchBody } from "../schemas/remote/notification";
-import { createPrivateFetch } from "../utils/createPrivateFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 /**
@@ -12,9 +15,11 @@ import { ConsumerConfig } from "../utils/getConsumerConfig";
  * Private to the gateway package — domain services NEVER import from here.
  */
 export function createUnsRemoteClient(config: ConsumerConfig) {
-  const fetcher = createPrivateFetch({
+  const fetcher = createSigv4FetchWithCredentials({
     baseUrl: config.privateApiUrl,
+    region: "eu-west-2",
     roleArn: config.roleArn,
+    roleName: "consumer-session",
   });
 
   const defaultHeaders = {
