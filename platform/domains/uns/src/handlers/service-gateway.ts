@@ -40,17 +40,17 @@ export const handler: MiddyfiedHandler<
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
+
       const remoteClient = createUnsRemoteClient(consumerConfig);
       const result = await execute(event, remoteClient);
+
       if (!result.ok) {
         return mapRemoteErrorToGatewayResponse(result.error);
       }
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
-      logger.error("Internal server error", {
-        error,
-      });
+      logger.error("Internal server error", { error });
       if (createHttpError.isHttpError(error)) {
         return jsonResponse(error.statusCode, {
           message: error.message,

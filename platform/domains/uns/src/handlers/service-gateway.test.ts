@@ -183,7 +183,6 @@ describe("UNS Service Gateway", () => {
     expect(remoteClient.notifications.get).toHaveBeenCalledWith(pushId);
   });
 
-  // Causing trouble while debugging
   it("maps remote 5xx errors to 502 with sanitized message", async ({
     privateGatewayEvent,
   }) => {
