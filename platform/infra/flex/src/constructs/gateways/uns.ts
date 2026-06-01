@@ -1,0 +1,71 @@
+import { Duration } from "aws-cdk-lib";
+import { IResource } from "aws-cdk-lib/aws-apigateway";
+import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
+import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { Construct } from "constructs";
+
+import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
+import { getPlatformEntry } from "../../utils/getEntry";
+import { AlarmActionProps } from "../alarms/types";
+import { FlexPrivateIsolatedFunction } from "../lambda/flex-private-isolated-function";
+
+interface UnsServiceGatewayProps extends AlarmActionProps {
+  gatewaysResource: IResource;
+  consumerConfigArn: string;
+  consumerRoleArn: string;
+  vpc: IVpc;
+  privateIsolatedSg: ISecurityGroup;
+}
+
+export function createUnsServiceGateway(
+  scope: Construct,
+  {
+    consumerConfigArn,
+    consumerRoleArn,
+    gatewaysResource,
+    privateIsolatedSg,
+    vpc,
+    criticalAction,
+    warningAction,
+  }: UnsServiceGatewayProps,
+) {
+  const unsServiceGateway = new FlexPrivateIsolatedFunction(
+    scope,
+    "unsServiceGateway",
+    {
+      entry: getPlatformEntry("uns", "handlers/service-gateway.ts"),
+      domain: "udp",
+      environment: {
+        FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN: consumerConfigArn,
+      },
+      timeout: Duration.seconds(30),
+      privateIsolatedSg,
+      vpc,
+      criticalAction,
+      warningAction,
+    },
+  );
+
+  unsServiceGateway.function.addToRolePolicy(
+    new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ["secretsmanager:GetSecretValue"],
+      resources: [consumerConfigArn],
+    }),
+  );
+
+  unsServiceGateway.function.addToRolePolicy(
+    new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ["sts:AssumeRole"],
+      resources: [consumerRoleArn],
+    }),
+  );
+
+  createPrivateGatewayRoute(
+    "uns/{proxy+}",
+    "ANY",
+    unsServiceGateway.function,
+    gatewaysResource,
+  );
+}

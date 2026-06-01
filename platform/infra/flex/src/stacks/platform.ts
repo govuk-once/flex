@@ -31,6 +31,7 @@ import { AlarmActionProps } from "../constructs/alarms/types";
 import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
 import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
+import { createUnsServiceGateway } from "../constructs/gateways/uns";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -339,17 +340,14 @@ export class FlexPlatformStack extends BaseStack {
       encryptionKeyArn: flexEncryptionKeyArn,
     });
 
-    createServiceGateway(this, {
+    createUnsServiceGateway(this, {
       vpc,
       consumerConfigArn: unsConsumerConfigArn,
       consumerRoleArn: unsConsumerRoleArn,
       gatewaysResource: gatewaysRoot,
-      privateEgressSg,
-      secretArnEnvVarName: "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
-      service: "uns",
+      privateIsolatedSg,
       criticalAction,
       warningAction,
-      encryptionKeyArn: flexEncryptionKeyArn,
     });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
