@@ -1,20 +1,13 @@
 import querystring from "node:querystring";
 
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { load } from "cheerio";
 import pkceChallenge from "pkce-challenge";
 import { TOTP } from "totp-generator";
 import { CookieJar } from "tough-cookie";
-import { z } from "zod";
 
-export interface BaseTokenGenerator {
-  getToken(): Promise<string>;
-}
-
-export interface OneLoginAuthConfig {
+export interface AuthConfig {
   email: string;
   password: string;
   totp: string;
@@ -26,9 +19,7 @@ export interface OneLoginAuthConfig {
   attestationToken?: string;
 }
 
-export async function getAccessToken(
-  config: OneLoginAuthConfig,
-): Promise<string> {
+export async function getAccessToken(config: AuthConfig): Promise<string> {
   const jar = new CookieJar();
   const client = wrapper(
     axios.create({
@@ -64,7 +55,18 @@ export async function getAccessToken(
   const csrfToken = $('input[name="_csrf"]').val() as string;
   if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
 
+  const code = await captureAuthCode(client, config, csrfToken);
+
+  return exchangeCodeForAccessToken(code, code_verifier, config);
+}
+
+async function captureAuthCode(
+  client: ReturnType<typeof wrapper>,
+  config: AuthConfig,
+  csrfToken: string,
+): Promise<string> {
   const oneLoginDomain = `signin.${config.oneLoginEnvironment}.account.gov.uk`;
+
   const post = (path: string, data: object) =>
     client.post(
       `https://${oneLoginDomain}${path}`,
@@ -77,6 +79,9 @@ export async function getAccessToken(
 
   const { otp } = await TOTP.generate(config.totp);
 
+  // ONE Login redirects to the custom scheme (govuk://...) after TOTP.
+  // axios can't follow a custom-scheme URL so it throws — we capture the
+  // location header via beforeRedirect before that happens.
   let codeRedirectUrl: string | undefined;
 
   try {
@@ -96,11 +101,20 @@ export async function getAccessToken(
     if (!codeRedirectUrl) throw error;
   }
 
-  if (!codeRedirectUrl) throw new Error("TOTP step did not produce a redirect");
+  if (!codeRedirectUrl) {
+    throw new Error("TOTP step did not produce a redirect");
+  }
 
   const code = new URL(codeRedirectUrl).searchParams.get("code");
   if (!code) throw new Error("No code found in redirect URL");
+  return code;
+}
 
+async function exchangeCodeForAccessToken(
+  code: string,
+  codeVerifier: string,
+  config: AuthConfig,
+): Promise<string> {
   const response = await fetch(`https://${config.authUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -110,71 +124,13 @@ export async function getAccessToken(
       client_secret: config.clientSecret,
       code,
       redirect_uri: config.redirectUri,
-      code_verifier,
+      code_verifier: codeVerifier,
       scope: "email openid",
     }),
   });
 
-  if (!response.ok)
-    throw new Error(`Token exchange failed: ${await response.text()}`);
+  if (!response.ok) throw new Error(`Token exchange failed: ${await response.text()}`);
 
   const { access_token } = (await response.json()) as { access_token: string };
   return access_token;
-}
-
-class TokenGenerator implements BaseTokenGenerator {
-  constructor(private readonly config: OneLoginAuthConfig) {}
-
-  async getToken(): Promise<string> {
-    try {
-      return await getAccessToken(this.config);
-    } catch (error) {
-      console.error("Failed to execute E2E login flow:", error);
-      throw error;
-    }
-  }
-}
-
-const UserSecretSchema = z.object({
-  email: z.email(),
-  password: z.string(),
-  totp: z.string(),
-});
-
-const ClientSecretSchema = z.object({
-  clientSecret: z.string(),
-});
-
-export async function getTokenGenerator(
-  stage: "staging" | "production",
-): Promise<TokenGenerator> {
-  const [
-    userSecretRaw,
-    clientSecretRaw,
-    clientId,
-    oneLoginEnvironment,
-    authUrl,
-  ] = await Promise.all([
-    getSecret(`/${stage}/flex-secret/e2e/test_user`, { transform: "json" }),
-    getSecret(`/${stage}/flex-secret/auth/client_secret`, {
-      transform: "json",
-    }),
-    getParameter(`/${stage}/flex-param/auth/client-id`),
-    getParameter(`/${stage}/flex-param/auth/one-login-environment`),
-    getParameter(`/${stage}/flex-param/auth/auth-url`),
-  ]);
-
-  const userSecret = UserSecretSchema.parse(userSecretRaw);
-  const clientSecret = ClientSecretSchema.parse(clientSecretRaw);
-
-  return new TokenGenerator({
-    email: userSecret.email,
-    password: userSecret.password,
-    totp: userSecret.totp,
-    clientId: clientId as string,
-    clientSecret: clientSecret.clientSecret,
-    oneLoginEnvironment: oneLoginEnvironment as string,
-    authUrl: authUrl as string,
-    redirectUri: "govuk://govuk/login-auth-callback",
-  });
 }
