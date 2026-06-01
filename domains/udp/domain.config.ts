@@ -4,6 +4,8 @@ import {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
+  GetIdentitiesGWResponseSchema,
+  GetIdentitiesResponseSchema,
   GetNotificationPreferencesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
@@ -51,6 +53,15 @@ export const { config, route, routeContext } = domain({
       route: "POST /v1/users",
       body: CreateUserRequestSchema,
     },
+    udpGetIdentities: {
+      type: "gateway",
+      route: "GET /v1/identities/*",
+      response: GetIdentitiesGWResponseSchema,
+    },
+    udpPostIdentities: {
+      type: "gateway",
+      route: "POST /v1/identities/*",
+    },
     dvlaUnlinkUser: {
       type: "domain",
       target: "dvla",
@@ -59,6 +70,16 @@ export const { config, route, routeContext } = domain({
   },
   routes: {
     v1: {
+      "/identity": {
+        GET: {
+          public: {
+            name: "get-users-service-identities",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetIdentities"],
+            response: GetIdentitiesResponseSchema,
+          },
+        },
+      },
       "/identity/:service": {
         GET: {
           public: {
@@ -87,6 +108,8 @@ export const { config, route, routeContext } = domain({
               "udpDeleteIdentity",
               "udpGetIdentity",
               "dvlaUnlinkUser",
+              "udpGetIdentities",
+              "udpPostIdentities",
             ],
           },
         },
@@ -100,6 +123,8 @@ export const { config, route, routeContext } = domain({
               "udpCreateIdentity",
               "udpDeleteIdentity",
               "udpGetIdentity",
+              "udpGetIdentities",
+              "udpPostIdentities",
             ],
           },
         },

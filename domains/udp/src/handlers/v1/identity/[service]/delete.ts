@@ -1,5 +1,6 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
+import { updateIdentityList } from "@services/identities";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
@@ -9,7 +10,9 @@ import status from "http-status";
 
 export const handler = route(
   "DELETE /v1/identity/:service",
-  async ({ auth, pathParams, integrations }) => {
+  async (ctx) => {
+    const { auth, pathParams, integrations } = ctx;
+
     // TODO: SDK auth alias
     const userId = auth.pairwiseId as UserId;
 
@@ -28,7 +31,10 @@ export const handler = route(
       });
     }
 
-    await deleteServiceIdentity(identity.serviceName, identity.serviceId);
+    await Promise.all([
+      deleteServiceIdentity(identity.serviceName, identity.serviceId),
+      updateIdentityList(ctx, pathParams.service, "remove"),
+    ]);
 
     return { status: status.NO_CONTENT };
   },

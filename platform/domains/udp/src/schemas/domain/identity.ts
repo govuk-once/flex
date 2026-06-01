@@ -14,8 +14,23 @@ export const createIdentityRequestSchema = z.object({
   body: createIdentityRequestBodySchema,
 });
 
+export const identitiesRequestSchema = z.object({
+  identifier: NonEmptyString,
+});
+
 export const identityResponseSchema = z.object({
   message: NonEmptyString,
+});
+
+export const identitiesResponseSchema = z.object({
+  data: z.object({
+    services: z.array(NonEmptyString),
+  }),
+});
+
+export const identitiesPostRequestSchema = z.object({
+  body: identitiesResponseSchema,
+  identifier: NonEmptyString,
 });
 
 export const deleteIdentityRequestSchema = z.object({

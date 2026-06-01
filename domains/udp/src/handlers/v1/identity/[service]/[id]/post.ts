@@ -1,5 +1,6 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
+import { updateIdentityList } from "@services/identities";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
@@ -9,7 +10,8 @@ import status from "http-status";
 
 export const handler = route(
   "POST /v1/identity/:service/:id",
-  async ({ pathParams, auth }) => {
+  async (ctx) => {
+    const { pathParams, auth } = ctx;
     const { id: serviceId } = pathParams;
 
     // TODO: SDK auth alias
@@ -26,7 +28,10 @@ export const handler = route(
       await deleteServiceIdentity(identity.serviceName, identity.serviceId);
     }
 
-    await postServiceIdentity();
+    await Promise.all([
+      postServiceIdentity(),
+      updateIdentityList(ctx, pathParams.service, "append"),
+    ]);
 
     return { status: status.CREATED };
   },

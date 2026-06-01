@@ -6,6 +6,8 @@ export type {
 export {
   CreateServiceIdentityLinkRequestSchema,
   DeleteServiceIdentityLinkResponseSchema,
+  GetIdentitiesGWResponseSchema,
+  GetIdentitiesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
 } from "./identity";
 export type {

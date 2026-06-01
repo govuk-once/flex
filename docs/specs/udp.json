@@ -6,6 +6,37 @@
     "description": "Auto-generated from `domains/udp/domain.config.ts`. Do not edit by hand. Regenerate with `pnpm openapi:generate`."
   },
   "paths": {
+    "/v1/identity": {
+      "get": {
+        "operationId": "get-users-service-identities",
+        "summary": "GET /identity",
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "services": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": [
+                    "services"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/identity/{service}": {
       "get": {
         "operationId": "get-service-identity",
