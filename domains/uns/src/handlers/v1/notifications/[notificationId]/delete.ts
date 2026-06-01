@@ -37,7 +37,7 @@ export const handler = route(
 
     if (!response.ok) {
       const { status: errorStatus, body: errorBody } = response.error;
-      ctx.logger.error("Call to patch notification failed", {
+      ctx.logger.error("Call to delete notification failed", {
         status: errorStatus,
         errorBody,
       });
