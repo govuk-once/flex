@@ -1,15 +1,17 @@
 import { createUserId, it } from "@flex/testing";
-import nock from "nock";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v0/users/notifications", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const userId = createUserId("test-pairwise-id");
-  const testPushId = "push-12345";
+  const endpoint = "/users/notifications";
 
-  const mockNotificationsData = [
+  const userId = createUserId("test-pairwise-id");
+  // TODO: Create a branded cast for push IDs?
+  const pushId = "test-push-id";
+  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
+
+  const notifications = [
     {
       NotificationID: "123456",
       Status: "READ",
@@ -21,66 +23,55 @@ describe("GET /v0/users/notifications", () => {
     },
   ];
 
-  const mockUdpPushIdSuccess = () =>
-    api
-      .get("/domains/udp/v1/users/push-id")
-      .matchHeader("User-Id", userId)
-      .reply(200, { pushId: testPushId });
-
-  const mockUnsNotificationsSuccess = () =>
-    api
-      .get("/gateways/uns/v1/notifications")
-      .query({ externalUserID: testPushId })
-      .reply(200, mockNotificationsData);
-
-  it("returns 200 and notifications data on success", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    mockUdpPushIdSuccess();
-    mockUnsNotificationsSuccess();
+  it("returns 200 with notifications", async ({ http, sdk }) => {
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId });
+    http
+      .gateway("uns")
+      .get("/notifications", { query: { externalUserID: pushId } })
+      .reply(200, notifications);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.authenticated({}, userId),
-      context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
+      sdk.event.get(endpoint, { userId }),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(mockNotificationsData);
+    expect(JSON.parse(result.body)).toStrictEqual(notifications);
   });
 
-  describe("Error scenarios", () => {
-    it("returns 502 if UDP push ID lookup fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api.get("/domains/udp/v1/users/push-id").reply(500);
+  it("returns 502 when the push ID lookup fails", async ({ http, sdk }) => {
+    http.domain("udp").get("/users/push-id").reply(500);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.authenticated({}, userId),
-        context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { userId }),
+      sdk.context({ secrets }),
+    );
 
-      expect(result.statusCode).toBe(502);
-    });
+    expect(result.statusCode).toBe(502);
+  });
 
-    it("returns 502 if UNS notifications lookup fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      mockUdpPushIdSuccess();
+  it("returns 502 when the notifications lookup fails", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId });
 
-      api
-        .get("/gateways/uns/v1/notifications")
-        .query({ externalUserID: testPushId })
-        .reply(404);
+    http
+      .gateway("uns")
+      .get("/notifications", { query: { externalUserID: pushId } })
+      .reply(404);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.authenticated({}, userId),
-        context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { userId }),
+      sdk.context({ secrets }),
+    );
 
-      expect(result.statusCode).toBe(502);
-    });
+    expect(result.statusCode).toBe(502);
   });
 });

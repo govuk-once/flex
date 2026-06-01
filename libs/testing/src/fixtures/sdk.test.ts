@@ -10,6 +10,7 @@ import { createUserId } from "./user";
 
 describe("createSdkEvent", () => {
   const sdkEvent = createSdkEvent();
+  const userId = createUserId("custom-user");
 
   it("returns the base event when called with no arguments", () => {
     expect(sdkEvent()).toStrictEqual(baseSdkEvent);
@@ -17,12 +18,12 @@ describe("createSdkEvent", () => {
 
   it("merges base event with overrides when provided", () => {
     const event = sdkEvent({
-      path: "/new",
+      path: "/test",
       headers: { "x-custom": "value" },
       requestContext: { authorizer: { pairwiseId: "custom-user" } },
     });
 
-    expect(event.path).toBe("/new");
+    expect(event.path).toBe("/test");
     expect(event.headers).toStrictEqual({
       "Content-Type": "application/json",
       "x-custom": "value",
@@ -37,28 +38,50 @@ describe("createSdkEvent", () => {
   it.each(["get", "delete"] as const)(
     'variant "%s" sets httpMethod and path',
     (method) => {
-      const event = sdkEvent[method]("/method");
+      const event = sdkEvent[method]("/test");
 
       expect(event.httpMethod).toBe(method.toUpperCase());
-      expect(event.path).toBe("/method");
+      expect(event.path).toBe("/test");
     },
   );
 
   it.each(["post", "put", "patch"] as const)(
     'variant "%s" sets httpMethod, path and body',
     (method) => {
-      const event = sdkEvent[method]("/method", { body: { key: "value" } });
+      const event = sdkEvent[method]("/test", { body: { key: "value" } });
 
       expect(event.httpMethod).toBe(method.toUpperCase());
-      expect(event.path).toBe("/method");
+      expect(event.path).toBe("/test");
       expect(event.body).toBe(JSON.stringify({ key: "value" }));
     },
   );
 
-  it("serialises query parameters", () => {
+  it("serialises query parameters when query is provided", () => {
     expect(
-      sdkEvent.get("/", { query: { page: 1 } }).queryStringParameters,
+      sdkEvent.get("/test", { query: { page: 1 } }).queryStringParameters,
     ).toEqual({ page: "1" });
+  });
+
+  it("sets event path parameters when params are provided", () => {
+    expect(
+      sdkEvent.get("/test", { params: { id: "test-id" } }).pathParameters,
+    ).toStrictEqual({ id: "test-id" });
+  });
+
+  it("creates authenticated event when user ID is provided", () => {
+    const event = sdkEvent.get("/test", { userId });
+
+    expect(event.requestContext.authorizer).toStrictEqual({
+      principalId: userId,
+      integrationLatency: 0,
+      pairwiseId: userId,
+    });
+  });
+
+  it("keeps the default authorizer when user ID is not provided", () => {
+    expect(sdkEvent.get("/test").requestContext.authorizer).toStrictEqual(
+      baseSdkEvent.requestContext.authorizer,
+    );
   });
 });
 

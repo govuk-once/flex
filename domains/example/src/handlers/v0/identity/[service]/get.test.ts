@@ -1,82 +1,67 @@
 import { it } from "@flex/testing";
 import { createUserId } from "@utils/parser";
-import nock from "nock";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v0/identity/:service", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-
   const service = "test-service";
-  const userId = createUserId("test-pairwise-id");
-
   const endpoint = `/identity/${service}`;
-  const event = {
-    httpMethod: "GET",
-    path: endpoint,
-    pathParameters: { service },
-  };
 
-  const existingIdentity = {
+  const userId = createUserId("test-user-id");
+
+  const identity = {
     serviceId: "existing-id",
     serviceName: "test-service",
   };
 
-  describe("response", () => {
-    it("returns 200 with linked set to true when identity exists", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(200, existingIdentity);
+  it("returns 200 with linked true when the identity exists", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(200, identity);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { userId, params: { service } }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ linked: true });
-    });
-
-    it("returns 200 with linked set to false when identity does not exist", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(404);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ linked: false });
-    });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({ linked: true });
   });
 
-  describe("errors", () => {
-    it("returns 502 when upstream fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(500);
+  it("returns 200 with linked false when the identity does not exist", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(404);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { userId, params: { service } }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(502);
-    });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({ linked: false });
+  });
+
+  it("returns 502 when upstream fails", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(500);
+
+    const result = await handler(
+      sdk.event.get(endpoint, { userId, params: { service } }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(502);
   });
 });

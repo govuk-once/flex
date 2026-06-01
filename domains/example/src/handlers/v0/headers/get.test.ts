@@ -6,70 +6,59 @@ import { handler } from "./get";
 describe("GET /v0/headers", () => {
   const endpoint = "/headers";
 
-  describe("request validation", () => {
-    it("returns 400 when required header is missing", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.get(endpoint, {
-          headers: {
-            "x-correlation-id": "correlation-value",
-            "x-example-id": "example-value",
-          },
-        }),
-        context.create(),
-      );
+  it("returns 400 when a required header is missing", async ({ sdk }) => {
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: {
+          "x-correlation-id": "correlation-value",
+          "x-example-id": "example-value",
+        },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(400);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        message: "Missing headers: x-request-id",
-        headers: ["x-request-id"],
-      });
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      message: "Missing headers: x-request-id",
+      headers: ["x-request-id"],
     });
   });
 
-  describe("response", () => {
-    it("returns 200 with all headers resolved", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.get(endpoint, {
-          headers: {
-            "x-request-id": "request-value",
-            "x-correlation-id": "correlation-value",
-            "x-example-id": "example-value",
-          },
-        }),
-        context.create(),
-      );
+  it("returns 200 with all headers resolved", async ({ sdk }) => {
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: {
+          "x-request-id": "request-value",
+          "x-correlation-id": "correlation-value",
+          "x-example-id": "example-value",
+        },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        correlationId: "correlation-value",
-        exampleId: "example-value",
-        requestId: "request-value",
-      });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      correlationId: "correlation-value",
+      exampleId: "example-value",
+      requestId: "request-value",
     });
+  });
 
-    it("returns 200 with optional headers set to null when omitted", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.get(endpoint, {
-          headers: { "x-request-id": "request-value" },
-        }),
-        context.create(),
-      );
+  it("returns 200 with optional headers set to null when omitted", async ({
+    sdk,
+  }) => {
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: { "x-request-id": "request-value" },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        correlationId: null,
-        exampleId: null,
-        requestId: "request-value",
-      });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      correlationId: null,
+      exampleId: null,
+      requestId: "request-value",
     });
   });
 });

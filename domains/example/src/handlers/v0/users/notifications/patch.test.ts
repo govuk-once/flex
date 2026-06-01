@@ -1,91 +1,77 @@
 import { createUserId, it } from "@flex/testing";
-import nock from "nock";
 import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /v0/users/notifications", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
   const endpoint = "/users/notifications";
 
   const userId = createUserId("test-pairwise-id");
+  // TODO: Create a branded cast for push IDs?
+  const pushId = "test-push-id";
+  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
-  const mockUdpGetPushIdSuccess = () =>
-    api
-      .get("/domains/udp/v1/users/push-id")
-      .matchHeader("User-Id", userId)
-      .reply(200, {
-        pushId: "derived-notification-id",
-      });
+  const notifications = { consentStatus: "accepted", pushId };
 
-  it("updates user notifications successfully and returns 204 with updated notifications", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
+  it("returns 200 with updated notifications and feature flags", async ({
+    http,
+    sdk,
   }) => {
-    mockUdpGetPushIdSuccess();
-    api
-      .post("/gateways/udp/v1/notifications")
-      .matchHeader("requesting-service-user-id", userId)
-      .reply(200, {
-        consentStatus: "accepted",
-        pushId: "derived-notification-id",
-      });
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId });
+    http
+      .gateway("udp")
+      .post("/notifications", {
+        headers: { "requesting-service-user-id": userId },
+        body: { consentStatus: "accepted", pushId },
+      })
+      .reply(200, notifications);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.patch(endpoint, {
+      sdk.event.patch(endpoint, {
+        userId,
         body: { consentStatus: "accepted" },
       }),
-      context
-        .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
-        .create(),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(200);
-    expect(result.body).toBe(
-      JSON.stringify({
-        consentStatus: "accepted",
-        pushId: "derived-notification-id",
-        featureFlags: {
-          newUserProfileEnabled: true,
-        },
-      }),
-    );
+    expect(JSON.parse(result.body)).toStrictEqual({
+      ...notifications,
+      featureFlags: { newUserProfileEnabled: true },
+    });
   });
 
   it.for([
-    {
-      body: { consentStatus: "invalid" },
-      reason: "passes an invalid consent status",
-    },
-    { body: {}, reason: "is empty" },
-  ])(
-    "returns 400 when body $reason",
-    async ({ body }, { context, privateGatewayEventWithAuthorizer }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.patch(endpoint, { body }),
-        context
-          .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
-          .create(),
-      );
+    { body: { consentStatus: "invalid" }, reason: "an invalid consent status" },
+    { body: {}, reason: "empty" },
+  ])("returns 400 when body is $reason", async ({ body }, { sdk }) => {
+    const result = await handler(
+      sdk.event.patch(endpoint, { userId, body }),
+      sdk.context({ secrets }),
+    );
 
-      expect(result.statusCode).toBe(400);
-    },
-  );
+    expect(result.statusCode).toBe(400);
+  });
 
-  it("returns 502 when updating user notifications fails", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
+  it("returns 502 when the notifications update fails", async ({
+    http,
+    sdk,
   }) => {
-    mockUdpGetPushIdSuccess();
-    api.post("/gateways/udp/v1/notifications").reply(500);
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId });
+    http.gateway("udp").post("/notifications").reply(500);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.patch(endpoint, {
+      sdk.event.patch(endpoint, {
+        userId,
         body: { consentStatus: "accepted" },
       }),
-      context
-        .withSecret({ udpNotificationSecret: "test-notification-value" }) // pragma: allowlist secret
-        .create(),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(502);
