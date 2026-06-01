@@ -9,46 +9,30 @@ vi.mock("@data/store");
 
 describe("DELETE /v0/todos/:id", () => {
   const endpoint = "/todos";
+
   const todoId = createTodoId("todo-uuid");
-  const event = {
-    httpMethod: "DELETE",
-    path: endpoint,
-    pathParameters: { id: todoId },
-  };
 
-  describe("response", () => {
-    it("returns 204 when todo is deleted", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.delete).mockResolvedValue(true);
+  it("returns 204 when the todo is deleted", async ({ sdk }) => {
+    vi.mocked(store.delete).mockResolvedValue(true);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.delete(endpoint, { params: { id: todoId } }),
+      sdk.context(),
+    );
 
-      expect(vi.mocked(store.delete)).toHaveBeenCalledExactlyOnceWith(todoId);
-
-      expect(result.statusCode).toBe(204);
-    });
+    expect(vi.mocked(store.delete)).toHaveBeenCalledExactlyOnceWith(todoId);
+    expect(result.statusCode).toBe(204);
   });
 
-  describe("errors", () => {
-    it("returns 404 when todo deletion fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.delete).mockResolvedValue(false);
+  it("returns 404 when the todo deletion fails", async ({ sdk }) => {
+    vi.mocked(store.delete).mockResolvedValue(false);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.delete(endpoint, { params: { id: todoId } }),
+      sdk.context(),
+    );
 
-      expect(vi.mocked(store.delete)).toHaveBeenCalledExactlyOnceWith(todoId);
-
-      expect(result.statusCode).toBe(404);
-    });
+    expect(vi.mocked(store.delete)).toHaveBeenCalledExactlyOnceWith(todoId);
+    expect(result.statusCode).toBe(404);
   });
 });

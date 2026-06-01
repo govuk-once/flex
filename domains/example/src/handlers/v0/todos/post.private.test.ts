@@ -1,28 +1,22 @@
 import { store } from "@data/store";
 import { it } from "@flex/testing";
-import { Todo } from "@schemas/todos";
+import type { Todo } from "@schemas/todos";
 import { createTodoId } from "@utils/parser";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, describe, expect, vi } from "vitest";
 
 import { handler } from "./post.private";
 
 vi.mock("node:crypto", () => ({
-  default: { randomUUID: vi.fn().mockReturnValue("test-uuid") },
+  default: { randomUUID: vi.fn().mockReturnValue("test-todo-id") },
 }));
 vi.mock("@data/store");
 
 describe("POST /v0/todos [private]", () => {
   const endpoint = "/todos";
-  const todoId = createTodoId("test-uuid");
-  const createdTodo: Todo = {
+
+  const todoId = createTodoId("test-todo-id");
+
+  const todo: Todo = {
     id: todoId,
     title: "My todo",
     completed: false,
@@ -39,85 +33,58 @@ describe("POST /v0/todos [private]", () => {
     vi.useRealTimers();
   });
 
-  beforeEach(() => {
-    vi.stubEnv("enableTodoMetadata", "false");
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  describe("request validation", () => {
-    it.for([
-      { body: {}, reason: "is empty" },
-      { body: { title: "" }, reason: "contains empty title" },
-      {
-        body: { title: "Title", priority: "unknown" },
-        reason: "contains invalid priority",
-      },
-    ])(
-      "returns 400 when payload $reason",
-      async ({ body }, { context, privateGatewayEventWithAuthorizer }) => {
-        const result = await handler(
-          privateGatewayEventWithAuthorizer.post(endpoint, { body }),
-          context.create(),
-        );
-
-        expect(result.statusCode).toBe(400);
-        expect(JSON.parse(result.body)).toStrictEqual({
-          message: "Invalid request body",
-        });
-      },
+  it.for([
+    { body: {}, reason: "is empty" },
+    { body: { title: "" }, reason: "contains empty title" },
+    {
+      body: { title: "Title", priority: "unknown" },
+      reason: "contains invalid priority",
+    },
+  ])("returns 400 when payload $reason", async ({ body }, { sdk }) => {
+    const result = await handler(
+      sdk.event.post(endpoint, { body }),
+      sdk.context(),
     );
+
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      message: "Invalid request body",
+    });
   });
 
-  describe("response", () => {
-    it("returns 200 with created todo", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.post(endpoint, {
-          body: { title: "My todo" },
-        }),
-        context.create(),
-      );
+  it("returns 200 with created todo", async ({ sdk }) => {
+    const result = await handler(
+      sdk.event.post(endpoint, { body: { title: "My todo" } }),
+      sdk.context(),
+    );
 
-      expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(
-        createdTodo,
-      );
+    expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(todo);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(todo);
+  });
 
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual(createdTodo);
-    });
+  it("returns 200 with created todo when full payload is provided", async ({
+    sdk,
+  }) => {
+    const payload: Pick<Todo, "title" | "completed" | "priority"> = {
+      title: "My todo",
+      completed: true,
+      priority: "high",
+    };
 
-    it("returns 200 with created todo when full payload is provided", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const payload: Pick<Todo, "title" | "completed" | "priority"> = {
-        title: "My todo",
-        completed: true,
-        priority: "high",
-      };
+    const expected: Todo = {
+      ...payload,
+      id: todoId,
+      createdAt: "2026-04-01T12:00:00.000Z",
+    };
 
-      const expectedTodo: Todo = {
-        ...payload,
-        id: createTodoId("test-uuid"),
-        createdAt: "2026-04-01T12:00:00.000Z",
-      };
+    const result = await handler(
+      sdk.event.post(endpoint, { body: payload }),
+      sdk.context(),
+    );
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.post(endpoint, { body: payload }),
-        context.create(),
-      );
-
-      expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(
-        expectedTodo,
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual(expectedTodo);
-    });
+    expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(expected);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(expected);
   });
 });

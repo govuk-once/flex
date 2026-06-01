@@ -1,103 +1,82 @@
 import { it } from "@flex/testing";
 import { createUserId } from "@utils/parser";
-import nock from "nock";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get.private";
 
 describe("GET /v0/identity/:service [private]", () => {
-  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
-
   const service = "test-service";
+  const endpoint = `/identity/${service}`;
+
   const userId = createUserId("test-user-id");
 
-  const endpoint = `/identity/${service}`;
-  const event = {
-    httpMethod: "GET",
-    path: endpoint,
-    headers: { "User-Id": userId },
-    pathParameters: { service },
-  };
-
-  const existingIdentity = {
+  const identity = {
     serviceId: "existing-id",
     serviceName: "test-service",
   };
 
-  describe("request validation", () => {
-    it("returns 400 when user ID header is missing", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          headers: undefined,
-        }),
-        context.create(),
-      );
+  it("returns 400 when the User-Id header is missing", async ({ sdk }) => {
+    const result = await handler(
+      sdk.event.get(endpoint, { params: { service } }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(400);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        headers: ["User-Id"],
-        message: "Missing headers: User-Id",
-      });
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      headers: ["User-Id"],
+      message: "Missing headers: User-Id",
     });
   });
 
-  describe("response", () => {
-    it("returns 200 with identity link details", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      gateway
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(200, existingIdentity);
+  it("returns 200 with the identity link details", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(200, identity);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: { "User-Id": userId },
+        params: { service },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual(existingIdentity);
-    });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(identity);
   });
 
-  describe("errors", () => {
-    it("returns 404 when identity does not exist", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      gateway
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(404);
+  it("returns 404 when the identity does not exist", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(404);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: { "User-Id": userId },
+        params: { service },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(404);
-    });
+    expect(result.statusCode).toBe(404);
+  });
 
-    it("returns 502 when upstream fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      gateway
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(500);
+  it("returns 502 when the upstream fails", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .reply(500);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        headers: { "User-Id": userId },
+        params: { service },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(502);
-    });
+    expect(result.statusCode).toBe(502);
   });
 });

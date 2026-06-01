@@ -18,7 +18,9 @@ export type SdkEvent = APIGatewayProxyWithLambdaAuthorizerEvent<{
 
 interface SdkEventRequestOptions {
   headers?: Record<string, string>;
+  params?: Record<string, string>;
   query?: QueryParams;
+  userId?: UserId;
 }
 
 export const baseSdkEvent: SdkEvent = {
@@ -87,13 +89,19 @@ type SdkEventOverrides = SdkEventRequestOptions & { body?: unknown };
 function toRequest(
   httpMethod: string,
   path: string,
-  { body, headers, query }: SdkEventOverrides = {},
+  { body, headers, params, query, userId }: SdkEventOverrides = {},
 ): DeepPartial<SdkEvent> {
   return {
     httpMethod,
     path,
     headers: { "Content-Type": "application/json", ...headers },
     queryStringParameters: extractQueryParams(query)[1],
+    ...(params && { pathParameters: params }),
+    ...(userId && {
+      requestContext: {
+        authorizer: { principalId: userId, pairwiseId: userId },
+      },
+    }),
     ...(body !== undefined && { body: JSON.stringify(body) }),
   };
 }
@@ -105,11 +113,11 @@ export function createSdkEvent() {
   return createFixtureFactory(baseSdkEvent, (build) => ({
     get: (path: string, options?: SdkEventOptions) =>
       build(toRequest("GET", path, options)),
-    post: <Body>(path: string, options: SdkEventOptions<Body>) =>
+    post: <Body = never>(path: string, options?: SdkEventOptions<Body>) =>
       build(toRequest("POST", path, options)),
-    put: <Body>(path: string, options: SdkEventOptions<Body>) =>
+    put: <Body = never>(path: string, options?: SdkEventOptions<Body>) =>
       build(toRequest("PUT", path, options)),
-    patch: <Body>(path: string, options: SdkEventOptions<Body>) =>
+    patch: <Body = never>(path: string, options?: SdkEventOptions<Body>) =>
       build(toRequest("PATCH", path, options)),
     delete: (path: string, options?: SdkEventOptions) =>
       build(toRequest("DELETE", path, options)),
