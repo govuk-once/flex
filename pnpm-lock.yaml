@@ -986,6 +986,58 @@ importers:
         specifier: 4.1.5
         version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.11(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.0))
 
+  platform/smoke-test:
+    dependencies:
+      '@aws-lambda-powertools/parameters':
+        specifier: 2.33.0
+        version: 2.33.0(@aws-sdk/client-secrets-manager@3.1032.0)(@aws-sdk/client-ssm@3.1038.0)(@middy/core@7.5.0)
+      '@aws-sdk/client-cloudwatch':
+        specifier: 3.1032.0
+        version: 3.1032.0
+      axios:
+        specifier: 1.16.0
+        version: 1.16.0
+      axios-cookiejar-support:
+        specifier: 7.0.0
+        version: 7.0.0(axios@1.16.0)(tough-cookie@6.0.1)(undici@7.24.0)
+      cheerio:
+        specifier: 1.2.0
+        version: 1.2.0
+      google-auth-library:
+        specifier: 9.15.1
+        version: 9.15.1
+      pkce-challenge:
+        specifier: 6.0.0
+        version: 6.0.0
+      totp-generator:
+        specifier: 2.0.1
+        version: 2.0.1
+      tough-cookie:
+        specifier: 6.0.1
+        version: 6.0.1
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      '@types/node':
+        specifier: 25.6.0
+        version: 25.6.0
+      eslint:
+        specifier: 10.3.0
+        version: 10.3.0(jiti@2.6.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.11(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.0))
+
   tests/e2e:
     dependencies:
       '@flex/utils':
@@ -1163,6 +1215,10 @@ packages:
 
   '@aws-sdk/client-cloudwatch-logs@3.1045.0':
     resolution: {integrity: sha512-8p8jQuiIteWVYF7NhNHTXv4I7w6ZsDUWa4S6F+j8XIu8x5t+f38RKusQCHN4z8YEAzHSmg/8eIXkagP6N4UNMw==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-cloudwatch@3.1032.0':
+    resolution: {integrity: sha512-SfgfDRzT2hM7PWXzNNf5uN276xu0UIeAY89p5lfCELechkuP5YRFQUP6RH1uortUpot6PsMKZv8tEaqXvEV7eQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-cloudwatch@3.1037.0':
@@ -4491,6 +4547,14 @@ packages:
   functions-have-names@1.2.3:
     resolution: {integrity: sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==}
 
+  gaxios@6.7.1:
+    resolution: {integrity: sha512-LDODD4TMYx7XXdpwxAVRAIAuB0bzv0s+ywFonY46k126qzQHT9ygyoa9tncmOiQmmDrik65UYsEkv3lbfqQ3yQ==}
+    engines: {node: '>=14'}
+
+  gcp-metadata@6.1.1:
+    resolution: {integrity: sha512-a4tiq7E0/5fTjxPAaH4jpjkSv/uCaU2p5KC6HVGrvl0cDjA8iBZv4vv1gyzlmK0ZUKqwpOyQMKzZQe3lTit77A==}
+    engines: {node: '>=14'}
+
   generator-function@2.0.1:
     resolution: {integrity: sha512-SFdFmIJi+ybC0vjlHN0ZGVGHc3lgE0DxPAT0djjVg+kjOnSqclqmj0KQ7ykTOLP6YxoqOvuAODGdcHJn+43q3g==}
     engines: {node: '>= 0.4'}
@@ -4571,6 +4635,14 @@ packages:
     engines: {node: '>=0.6.0'}
     hasBin: true
 
+  google-auth-library@9.15.1:
+    resolution: {integrity: sha512-Jb6Z0+nvECVz+2lzSMt9u98UsoakXxA2HGHMCxh+so3n90XgYWkq5dur19JAJV7ONiJY22yBTyJB1TSkvPq9Ng==}
+    engines: {node: '>=14'}
+
+  google-logging-utils@0.0.2:
+    resolution: {integrity: sha512-NEgUnEcBiP5HrPzufUkBzJOD/Sxsco3rLNo1F1TNf7ieU8ryUzBhqba8r756CjLX7rn3fHl6iLEwPYuqpoKgQQ==}
+    engines: {node: '>=14'}
+
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -4599,6 +4671,10 @@ packages:
     resolution: {integrity: sha512-8SSImzgUUYC89Z042s+0r/vMibY7GX/Emz4LDO5e7jYXhuoWfHISPFJYjpRLUSJGq6UQ6xlenvX1p/hJdfXuXg==}
     peerDependencies:
       graphology-types: '>=0.24.0'
+
+  gtoken@7.1.0:
+    resolution: {integrity: sha512-pCcEwRi+TKpMlxAQObHDQ56KawURgyAf6jtIY046fJ5tIv3zDe/LEIubckAO8fj6JnAxLdmWkUfNyulQ2iKdEw==}
+    engines: {node: '>=14.0.0'}
 
   has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
@@ -6455,6 +6531,11 @@ packages:
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
+  uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    hasBin: true
+
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
@@ -6976,6 +7057,52 @@ snapshots:
       '@smithy/util-middleware': 4.3.0
       '@smithy/util-retry': 4.4.0
       '@smithy/util-utf8': 4.3.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
+
+  '@aws-sdk/client-cloudwatch@3.1032.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/core': 3.974.8
+      '@aws-sdk/credential-provider-node': 3.972.39
+      '@aws-sdk/middleware-host-header': 3.972.10
+      '@aws-sdk/middleware-logger': 3.972.10
+      '@aws-sdk/middleware-recursion-detection': 3.972.11
+      '@aws-sdk/middleware-user-agent': 3.972.38
+      '@aws-sdk/region-config-resolver': 3.972.13
+      '@aws-sdk/types': 3.973.8
+      '@aws-sdk/util-endpoints': 3.996.8
+      '@aws-sdk/util-user-agent-browser': 3.972.10
+      '@aws-sdk/util-user-agent-node': 3.973.24
+      '@smithy/config-resolver': 4.5.0
+      '@smithy/core': 3.24.0
+      '@smithy/fetch-http-handler': 5.4.0
+      '@smithy/hash-node': 4.3.0
+      '@smithy/invalid-dependency': 4.3.0
+      '@smithy/middleware-compression': 4.4.0
+      '@smithy/middleware-content-length': 4.3.0
+      '@smithy/middleware-endpoint': 4.5.0
+      '@smithy/middleware-retry': 4.6.0
+      '@smithy/middleware-serde': 4.3.0
+      '@smithy/middleware-stack': 4.3.0
+      '@smithy/node-config-provider': 4.4.0
+      '@smithy/node-http-handler': 4.7.0
+      '@smithy/protocol-http': 5.4.0
+      '@smithy/smithy-client': 4.13.0
+      '@smithy/types': 4.14.1
+      '@smithy/url-parser': 4.3.0
+      '@smithy/util-base64': 4.4.0
+      '@smithy/util-body-length-browser': 4.3.0
+      '@smithy/util-body-length-node': 4.3.0
+      '@smithy/util-defaults-mode-browser': 4.4.0
+      '@smithy/util-defaults-mode-node': 4.3.0
+      '@smithy/util-endpoints': 3.5.0
+      '@smithy/util-middleware': 4.3.0
+      '@smithy/util-retry': 4.4.0
+      '@smithy/util-utf8': 4.3.0
+      '@smithy/util-waiter': 4.4.0
       tslib: 2.8.1
     transitivePeerDependencies:
       - aws-crt
@@ -11634,6 +11761,26 @@ snapshots:
 
   functions-have-names@1.2.3: {}
 
+  gaxios@6.7.1:
+    dependencies:
+      extend: 3.0.2
+      https-proxy-agent: 7.0.6
+      is-stream: 2.0.1
+      node-fetch: 2.7.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  gcp-metadata@6.1.1:
+    dependencies:
+      gaxios: 6.7.1
+      google-logging-utils: 0.0.2
+      json-bigint: 1.0.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   generator-function@2.0.1: {}
 
   gensync@1.0.0-beta.2: {}
@@ -11711,6 +11858,20 @@ snapshots:
     dependencies:
       minimist: 1.2.8
 
+  google-auth-library@9.15.1:
+    dependencies:
+      base64-js: 1.5.1
+      ecdsa-sig-formatter: 1.0.11
+      gaxios: 6.7.1
+      gcp-metadata: 6.1.1
+      gtoken: 7.1.0
+      jws: 4.0.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  google-logging-utils@0.0.2: {}
+
   gopd@1.2.0: {}
 
   got@14.6.6:
@@ -11746,6 +11907,14 @@ snapshots:
     dependencies:
       events: 3.3.0
       graphology-types: 0.24.8
+
+  gtoken@7.1.0:
+    dependencies:
+      gaxios: 6.7.1
+      jws: 4.0.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   has-bigints@1.1.0: {}
 
@@ -13917,6 +14086,8 @@ snapshots:
   uuid@11.1.1: {}
 
   uuid@8.3.2: {}
+
+  uuid@9.0.1: {}
 
   vary@1.1.2: {}
 

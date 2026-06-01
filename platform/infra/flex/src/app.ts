@@ -10,6 +10,7 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexPlatformStack } from "./stacks/platform";
+import { FlexSmokeTestStack } from "./stacks/smoke-test";
 import { getDeployableDomains } from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
 import { getDomainName } from "./utils/getDomainName";
@@ -43,6 +44,7 @@ app.addExternalExports(region, [
 
 if (persistent) {
   new FlexCoreStack(app, `${env}-FlexCore`);
+  new FlexSmokeTestStack(app, `${env}-FlexSmokeTest`);
 } else if (env === Environment.development) {
   // Add these as external deps as we reuse the development env vpc
   app.addExternalExports(region, [

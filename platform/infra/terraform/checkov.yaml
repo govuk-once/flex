@@ -1,0 +1,3 @@
+compact: true
+skip-check:
+  - CKV_GCP_110 # Workload Identity Pool — disabled state not required for smoke test pool
