@@ -18,8 +18,8 @@ export interface ApiGatewayAlarmsProps extends BaseAlarmsProps {
 export class ApiGatewayAlarms extends Construct {
   public readonly fiveXxAlarm: Alarm;
   public readonly fourXxAlarm: Alarm;
-  public readonly p99LatencyAlarm: Alarm;
-  public readonly integrationP99LatencyAlarm: Alarm;
+  public readonly p95LatencyAlarm: Alarm;
+  public readonly integrationP95LatencyAlarm: Alarm;
 
   constructor(scope: Construct, id: string, props: ApiGatewayAlarmsProps) {
     super(scope, id);
@@ -70,46 +70,49 @@ export class ApiGatewayAlarms extends Construct {
     });
     this.fourXxAlarm.addAlarmAction(warningAction);
 
-    // p99 end-to-end latency
-    this.p99LatencyAlarm = new Alarm(this, "P99Latency", {
-      alarmName: `${alarmNamePrefix}-p99-latency`,
-      alarmDescription: "Warning: p99 latency above 3000ms over 5 minutes",
+    // p95 end-to-end latency. p95 (not p99) and an M-of-N evaluation window
+    // keep transient cold-start spikes from paging while still catching a
+    // sustained regression.
+    this.p95LatencyAlarm = new Alarm(this, "P95Latency", {
+      alarmName: `${alarmNamePrefix}-p95-latency`,
+      alarmDescription:
+        "Warning: p95 latency above 3000ms for 2 of 3 consecutive 5 minute periods",
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "Latency",
         dimensionsMap: dimensions,
-        statistic: Stats.p(99),
+        statistic: Stats.p(95),
         period: Duration.minutes(5),
       }),
       threshold: 3000,
-      evaluationPeriods: 1,
+      evaluationPeriods: 3,
+      datapointsToAlarm: 2,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.p99LatencyAlarm.addAlarmAction(warningAction);
+    this.p95LatencyAlarm.addAlarmAction(warningAction);
 
-    // p99 integration latency - backend-only latency, helps distinguish
-    // API Gateway overhead from backend slowness when p99 latency fires.
-
-    // Disabled action currently (FLEX-333) until we decide how to proceed
-    // with excessive alerting.
-    this.integrationP99LatencyAlarm = new Alarm(this, "IntegrationP99Latency", {
-      alarmName: `${alarmNamePrefix}-integration-p99-latency`,
+    // p95 integration latency - backend-only latency, helps distinguish
+    // API Gateway overhead from backend slowness when p95 latency fires.
+    // Same p95 + M-of-N tuning as the end-to-end alarm to ride out cold-start
+    // spikes.
+    this.integrationP95LatencyAlarm = new Alarm(this, "IntegrationP95Latency", {
+      alarmName: `${alarmNamePrefix}-integration-p95-latency`,
       alarmDescription:
-        "Warning: integration p99 latency above 2900ms over 5 minutes",
-      actionsEnabled: false,
+        "Warning: integration p95 latency above 2900ms for 2 of 3 consecutive 5 minute periods",
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "IntegrationLatency",
         dimensionsMap: dimensions,
-        statistic: Stats.p(99),
+        statistic: Stats.p(95),
         period: Duration.minutes(5),
       }),
       threshold: 2900,
-      evaluationPeriods: 1,
+      evaluationPeriods: 3,
+      datapointsToAlarm: 2,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.integrationP99LatencyAlarm.addAlarmAction(warningAction);
+    this.integrationP95LatencyAlarm.addAlarmAction(warningAction);
   }
 }
