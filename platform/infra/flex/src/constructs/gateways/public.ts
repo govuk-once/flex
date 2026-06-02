@@ -12,7 +12,6 @@ import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-functio
 
 interface ServiceGatewayProps extends AlarmActionProps {
   consumerConfigArn: string;
-  consumerRoleArn?: string;
   gatewaysResource: IResource;
   privateEgressSg: ISecurityGroup;
   secretArnEnvVarName: string;
