@@ -4,6 +4,12 @@ import z from "zod";
 
 import { BaseTokenGenerator } from "./TokenGenerator";
 
+/**
+ * Default stub subject. Tests that depend on data seeded for this specific
+ * user can pin it explicitly instead of receiving a random per-file subject.
+ */
+export const STUB_DEFAULT_SUBJECT = "d6a2b234-e011-7084-f347-912225bd2861";
+
 class StubTokenGenerator implements BaseTokenGenerator {
   private readonly privateKey: CryptoKey;
   public publicJWKS: { keys: JWK[] };
@@ -15,9 +21,7 @@ class StubTokenGenerator implements BaseTokenGenerator {
     this.kid = kid;
   }
 
-  async getToken(
-    sub = "d6a2b234-e011-7084-f347-912225bd2861",
-  ): Promise<string> {
+  async getToken(sub = STUB_DEFAULT_SUBJECT): Promise<string> {
     const builder = new SignJWT({
       sub,
       "cognito:groups": ["eu-west-2_testUserPoolId_onelogin"],

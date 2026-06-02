@@ -5,7 +5,7 @@ import type {
 } from "@flex/udp-domain";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { NotificationsResponseSchema } from "@flex/uns-domain";
-import { describe, expect, inject } from "vitest";
+import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
@@ -19,19 +19,18 @@ const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 
 describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
-  const { JWT } = inject("e2eEnv");
-
-  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
-
   describe("/example/v0/todos", () => {
     const endpoint = "/example/v0/todos";
 
     describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/todos"))(
       "GET",
       () => {
-        it("returns 200 with list of todos", async ({ cloudfront }) => {
+        it("returns 200 with list of todos", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -41,10 +40,13 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
           });
         });
 
-        it("returns 200 with filtered results", async ({ cloudfront }) => {
+        it("returns 200 with filtered results", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.get(
             `${endpoint}?priority=low&limit=1`,
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(200);
@@ -63,9 +65,12 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/todos/:id"))(
       "GET",
       () => {
-        it("returns 200 with existing todo", async ({ cloudfront }) => {
+        it("returns 200 with existing todo", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.get(endpoint(), {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -87,9 +92,12 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     describe.runIf(
       isRouteDeployed(exampleConfig, "POST /v0/todos/:id/duplicate"),
     )("POST", () => {
-      it("returns 201 with duplicated todo", async ({ cloudfront }) => {
+      it("returns 201 with duplicated todo", async ({
+        cloudfront,
+        authHeader,
+      }) => {
         const result = await cloudfront.client.post(endpoint(), {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(201);
@@ -110,10 +118,13 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/headers"))(
       "GET",
       () => {
-        it("returns 200 with resolved headers", async ({ cloudfront }) => {
+        it("returns 200 with resolved headers", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.get(endpoint, {
             headers: {
-              ...authorization,
+              ...authHeader,
               "x-example-id": "example-123",
               "x-request-id": "request-123",
               "x-correlation-id": "correlation-123",
@@ -137,9 +148,12 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/resources"))(
       "GET",
       () => {
-        it("returns 200 with resolved resources", async ({ cloudfront }) => {
+        it("returns 200 with resolved resources", async ({
+          cloudfront,
+          authHeader,
+        }) => {
           const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -161,9 +175,10 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
       () => {
         it("returns 200 with resolved runtime resources", async ({
           cloudfront,
+          authHeader,
         }) => {
           const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -187,11 +202,11 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     )("GET", () => {
       it.todo(
         "returns 200 with linked set to true when identity exists",
-        async ({ cloudfront, withIdentityLink }) => {
+        async ({ cloudfront, withIdentityLink, authHeader }) => {
           await withIdentityLink(service, serviceId);
 
           const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -201,11 +216,11 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
       it.todo(
         "returns 200 with linked set to false when identity does not exist",
-        async ({ cloudfront, withCleanIdentity }) => {
+        async ({ cloudfront, withCleanIdentity, authHeader }) => {
           await withCleanIdentity(service);
 
           const result = await cloudfront.client.get(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
           });
 
           expect(result.status).toBe(200);
@@ -225,9 +240,10 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
       it("returns 200 with updated notifications", async ({
         cloudfront,
         udpUser: _,
+        authHeader,
       }) => {
         const result = await cloudfront.client.patch(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: { consentStatus: "accepted" },
         });
 
@@ -250,9 +266,10 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
         udpUser: _,
+        authHeader,
       }) => {
         const result = await cloudfront.client.get(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(result.status).toBe(200);
@@ -269,12 +286,13 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
       it("returns 200 with updated notification preferences", async ({
         cloudfront,
         udpUser: _,
+        authHeader,
       }) => {
         const result = await cloudfront.client.patch<
           UpdateNotificationPreferencesRequest,
           UpdateNotificationPreferencesOutboundResponse
         >(endpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
           body: { consentStatus: "accepted" },
         });
 
@@ -296,9 +314,9 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
         { body: {}, reason: "is empty" },
       ])(
         "rejects request when body $reason",
-        async ({ body }, { cloudfront }) => {
+        async ({ body }, { cloudfront, authHeader }) => {
           const result = await cloudfront.client.patch(endpoint, {
-            headers: { ...authorization },
+            headers: authHeader,
             body,
           });
 
