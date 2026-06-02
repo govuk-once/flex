@@ -1,31 +1,27 @@
 import { route } from "@domain";
+import { getDvlaAuthToken, getUserLinkingId } from "@services/authentication";
+import { handleStandardErrors } from "@services/errors";
 import { status } from "http-status";
-
-import {
-  getDvlaAuthToken,
-  getUserLinkingId,
-} from "../../../services/authentication";
-import { handleStandardErrors } from "../../../services/errors";
 
 const endpoint = "POST /v1/share-code";
 
 export const handler = route(endpoint, async (ctx) => {
+  const { integrations } = ctx;
+
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
   ]);
 
-  const response = await ctx.integrations.dvlaPostShareCode({
+  const response = await integrations.dvlaPostShareCode({
     body: {},
-    headers: { auth: auth },
+    headers: { auth },
     query: { linkingId: userLinkingId },
   });
 
   handleStandardErrors(response, endpoint);
-  const { linkingId: _, ...body } = response.data;
 
-  return {
-    status: status.OK,
-    data: body,
-  };
+  const { linkingId: _, ...shareCode } = response.data;
+
+  return { status: status.OK, data: shareCode };
 });

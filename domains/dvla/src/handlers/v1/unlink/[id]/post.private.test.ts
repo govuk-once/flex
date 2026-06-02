@@ -1,101 +1,68 @@
-import { it } from "@flex/testing";
-import status from "http-status";
-import nock from "nock";
+import { it, token } from "@flex/testing";
+import { session, unlinkResult, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./post.private";
 
 describe("POST /v1/unlink [private]", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const testAuthToken = "test-id-token";
-  const testId = "service-123-abc";
+  const endpoint = "/unlink";
 
-  const mockAuthSuccess = () =>
-    api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
-      "id-token": testAuthToken,
-      apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
-      passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
-    });
-
-  it("returns 200 and success data when unlinking is successful", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
+  it("returns 200 with success when DVLA unlinking succeeds", async ({
+    http,
+    sdk,
   }) => {
-    mockAuthSuccess();
-
-    const mockUnlinkResponse = { success: true };
-
-    api
-      .post(`/gateways/dvla/v1/unlink-user/${testId}`)
-      .matchHeader("auth", testAuthToken)
-      .reply(status.OK, mockUnlinkResponse);
+    http.gateway("dvla").get("/authenticate").reply(200, session);
+    http
+      .gateway("dvla")
+      .post(`/unlink-user/${userId}`, { headers: { auth: token } })
+      .reply(200, unlinkResult);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        pathParameters: { id: testId },
-      }),
-      context.create(),
+      sdk.event.post(endpoint, { params: { id: userId } }),
+      sdk.context(),
     );
 
-    expect(result.statusCode).toBe(status.OK);
-    expect(JSON.parse(result.body)).toStrictEqual(mockUnlinkResponse);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(unlinkResult);
   });
 
-  describe("Error scenarios", () => {
-    it("returns 502 if the DVLA authentication service fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api.get("/gateways/dvla/v1/authenticate").reply(status.UNAUTHORIZED);
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the DVLA authenticate integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { id: testId },
-        }),
-        context.create(),
+        sdk.event.post(endpoint, { params: { id: userId } }),
+        sdk.context(),
       );
 
-      expect(result.statusCode).toBe(status.BAD_GATEWAY);
-    });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 
-    it("returns 502 if the dvlaUnlinkUser integration fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      mockAuthSuccess();
+  it.for([
+    { reason: "returns a bad request", upstream: 400, expected: 400 },
+    { reason: "cannot find the link", upstream: 404, expected: 404 },
+    { reason: "is rate limited", upstream: 429, expected: 429 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the DVLA post share code integration integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("dvla").get("/authenticate").reply(200, session);
 
-      api
-        .post(`/gateways/dvla/v1/unlink-user/${testId}`)
-        .reply(status.INTERNAL_SERVER_ERROR, { message: "Internal Error" });
+      http
+        .gateway("dvla")
+        .post(`/unlink-user/${userId}`, { headers: { auth: token } })
+        .reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { id: testId },
-        }),
-        context.create(),
+        sdk.event.post(endpoint, { params: { id: userId } }),
+        sdk.context(),
       );
 
-      expect(result.statusCode).toBe(status.BAD_GATEWAY);
-    });
-
-    it("returns 400 if integration returns 400", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      mockAuthSuccess();
-
-      api
-        .post(`/gateways/dvla/v1/unlink-user/${testId}`)
-        .reply(status.BAD_REQUEST, { message: "Bad Request" });
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { id: testId },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(status.BAD_REQUEST);
-    });
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

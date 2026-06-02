@@ -7,7 +7,7 @@ import type {
 } from "@schemas/local-authority";
 
 export { createUserId };
-export const userId = createUserId();
+export const userId = createUserId("test-localcouncil-user");
 
 export const createLocalCouncilId = (value = "test-localcouncil-id") => value;
 export const localCouncilId = createLocalCouncilId();

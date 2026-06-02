@@ -1,13 +1,13 @@
 import { store } from "@data/store";
-import { it } from "@flex/testing";
+import { it, timestamp } from "@flex/testing";
 import type { Todo } from "@schemas/todos";
-import { createTodo, timestamp } from "@tests/fixtures";
+import { createTodo, todoId } from "@tests/fixtures";
 import { afterAll, beforeAll, describe, expect, vi } from "vitest";
 
 import { handler } from "./post.private";
 
 vi.mock("node:crypto", () => ({
-  default: { randomUUID: vi.fn().mockReturnValue("test-todo-id") },
+  default: { randomUUID: vi.fn().mockReturnValue(todoId) },
 }));
 vi.mock("@data/store");
 

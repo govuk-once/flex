@@ -1,112 +1,50 @@
 import { it } from "@flex/testing";
-import status from "http-status";
-import nock from "nock";
+import { registrationNumber, userId, vehicle } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v1/vehicle-enquiry/:reg", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const testRegistration = "AA11ABC";
+  const endpoint = `/vehicle-enquiry/${registrationNumber}`;
 
-  it("returns 200 and vehicle data on success", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
-  }) => {
-    const mockVehicleData = {
-      registrationNumber: testRegistration,
-      make: "TOYOTA",
-      colour: "BLUE",
-      fuelType: "PETROL",
-      taxStatus: "Taxed",
-    };
-
-    api
-      .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
-      .reply(status.OK, mockVehicleData);
+  it("returns 200 with the vehicle details", async ({ http, sdk }) => {
+    http
+      .gateway("dvla")
+      .get(`/vehicle-enquiry/${registrationNumber}`)
+      .reply(200, vehicle);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({
-        pathParameters: { reg: testRegistration },
-      }),
-      context.create(),
+      sdk.event.get(endpoint, { userId, params: { reg: registrationNumber } }),
+      sdk.context(),
     );
 
-    expect(result.statusCode).toBe(status.OK);
-    expect(JSON.parse(result.body)).toStrictEqual(mockVehicleData);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(vehicle);
   });
 
-  describe("Error scenarios", () => {
-    it("returns 400 when DVLA returns a Bad Request", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
-        .reply(status.BAD_REQUEST, { message: "Invalid VRM" });
+  it.for([
+    { reason: "returns a bad request", upstream: 400, expected: 400 },
+    { reason: "cannot find the link", upstream: 404, expected: 404 },
+    { reason: "is rate limited", upstream: 429, expected: 429 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the DVLA post share code integration integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("dvla")
+        .get(`/vehicle-enquiry/${registrationNumber}`)
+        .reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { reg: testRegistration },
+        sdk.event.get(endpoint, {
+          userId,
+          params: { reg: registrationNumber },
         }),
-        context.create(),
+        sdk.context(),
       );
 
-      expect(result.statusCode).toBe(status.BAD_REQUEST);
-    });
-
-    it("returns 404 when vehicle is not found in DVLA records", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
-        .reply(status.NOT_FOUND, { message: "Vehicle not found" });
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { reg: testRegistration },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(status.NOT_FOUND);
-    });
-
-    it("returns 429 when DVLA rate limit is exceeded", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
-        .reply(status.TOO_MANY_REQUESTS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { reg: testRegistration },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(status.TOO_MANY_REQUESTS);
-    });
-
-    it("returns 502 as default for other upstream errors (e.g. 500)", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/dvla/v1/vehicle-enquiry/${testRegistration}`)
-        .reply(status.INTERNAL_SERVER_ERROR);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { reg: testRegistration },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(status.BAD_GATEWAY);
-    });
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

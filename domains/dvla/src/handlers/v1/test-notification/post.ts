@@ -1,29 +1,25 @@
 import { route } from "@domain";
+import { getDvlaAuthToken, getUserLinkingId } from "@services/authentication";
+import { handleStandardErrors } from "@services/errors";
 import { status } from "http-status";
-
-import {
-  getDvlaAuthToken,
-  getUserLinkingId,
-} from "../../../services/authentication";
-import { handleStandardErrors } from "../../../services/errors";
 
 const endpoint = "POST /v1/test-notification";
 
 export const handler = route(endpoint, async (ctx) => {
+  const { integrations } = ctx;
+
   const [userLinkingId, auth] = await Promise.all([
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
   ]);
 
-  const response = await ctx.integrations.dvlaTestNotification({
+  const response = await integrations.dvlaTestNotification({
     body: {},
-    headers: { auth: auth },
+    headers: { auth },
     path: `/${userLinkingId}`,
   });
 
   handleStandardErrors(response, endpoint);
 
-  return {
-    status: status.ACCEPTED,
-  };
+  return { status: status.ACCEPTED };
 });
