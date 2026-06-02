@@ -25,7 +25,6 @@ export function createServiceGateway(
   scope: Construct,
   {
     consumerConfigArn,
-    consumerRoleArn,
     gatewaysResource,
     privateEgressSg,
     secretArnEnvVarName,
@@ -67,16 +66,6 @@ export function createServiceGateway(
       resources: [consumerConfigArn],
     }),
   );
-
-  if (consumerRoleArn) {
-    serviceGateway.function.addToRolePolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ["sts:AssumeRole"],
-        resources: [consumerRoleArn],
-      }),
-    );
-  }
 
   createPrivateGatewayRoute(
     `${service}/{proxy+}`,
