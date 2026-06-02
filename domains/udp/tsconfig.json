@@ -4,11 +4,10 @@
   "compilerOptions": {
     "paths": {
       "@domain": ["./domain.config.ts"],
-      "@schemas": ["./src/schemas/index.ts"],
       "@schemas/*": ["./src/schemas/*"],
-      "@utils": ["./src/utils/index.ts"],
-      "@utils/*": ["./src/utils/*"],
-      "@tests/fixtures": ["./src/tests/fixtures.ts"]
+      "@services/*": ["./src/services/*"],
+      "@tests/fixtures": ["./src/tests/fixtures.ts"],
+      "@utils/*": ["./src/utils/*"]
     }
   }
 }

@@ -1,21 +1,21 @@
 import { route } from "@domain";
-import { UserId } from "@flex/utils";
-import createHttpError from "http-errors";
-import status from "http-status";
-
+import type { UserId } from "@flex/utils";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
-} from "../../../../services/identity";
+} from "@services/identity";
+import createHttpError from "http-errors";
+import status from "http-status";
 
 export const handler = route(
   "DELETE /v1/identity/:service",
   async ({ auth, pathParams, integrations }) => {
-    const linked = await getServiceIdentityLink(auth.pairwiseId as UserId);
+    // TODO: SDK auth alias
+    const userId = auth.pairwiseId as UserId;
 
-    if (!linked) {
-      throw new createHttpError.NotFound();
-    }
+    const identity = await getServiceIdentityLink(userId);
+
+    if (!identity) throw new createHttpError.NotFound();
 
     /**
      * NOTE:
@@ -24,11 +24,11 @@ export const handler = route(
     if (pathParams.service === "dvla") {
       await integrations.dvlaUnlinkUser({
         body: {},
-        path: `/${linked.serviceId}`,
+        path: `/${identity.serviceId}`,
       });
     }
 
-    await deleteServiceIdentity(linked.serviceName, linked.serviceId);
+    await deleteServiceIdentity(identity.serviceName, identity.serviceId);
 
     return { status: status.NO_CONTENT };
   },

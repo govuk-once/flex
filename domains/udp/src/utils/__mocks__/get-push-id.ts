@@ -1,4 +1,4 @@
-import type { PushId } from "@schemas/notifications";
+import { pushId } from "@tests/fixtures";
 import { vi } from "vitest";
 
-export const getPushId = vi.fn(() => "test-notification-id" as PushId);
+export const getPushId = vi.fn(() => pushId);

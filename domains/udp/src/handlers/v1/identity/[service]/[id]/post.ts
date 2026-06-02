@@ -1,29 +1,29 @@
 import { route } from "@domain";
-import { UserId } from "@flex/utils";
-import status from "http-status";
-
+import type { UserId } from "@flex/utils";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
   postServiceIdentity,
-} from "../../../../../services/identity";
+} from "@services/identity";
+import status from "http-status";
 
 export const handler = route(
   "POST /v1/identity/:service/:id",
   async ({ pathParams, auth }) => {
-    const { id: requestedId } = pathParams;
-    const existing = await getServiceIdentityLink(auth.pairwiseId as UserId);
+    const { id: serviceId } = pathParams;
 
-    if (existing) {
-      const isDifferentId = existing.serviceId !== requestedId;
+    // TODO: SDK auth alias
+    const userId = auth.pairwiseId as UserId;
 
-      /** If user is already linked return 204 */
-      if (!isDifferentId) {
+    const identity = await getServiceIdentityLink(userId);
+
+    if (identity) {
+      if (identity.serviceId === serviceId) {
         return { status: status.NO_CONTENT };
       }
 
       /** Remove old link if user is already linked and has a new linking ID */
-      await deleteServiceIdentity(existing.serviceName, existing.serviceId);
+      await deleteServiceIdentity(identity.serviceName, identity.serviceId);
     }
 
     await postServiceIdentity();

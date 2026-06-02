@@ -1,5 +1,5 @@
 import { route, routeContext } from "@domain";
-import { UserId } from "@flex/utils";
+import type { UserId } from "@flex/utils";
 import type {
   GetNotificationPreferencesResponse,
   PushId,
@@ -13,7 +13,7 @@ const context = routeContext<"GET /v1/users/me">;
 export const handler = route(
   "GET /v1/users/me",
   async ({ auth, logger, resources }) => {
-    // TODO: Add to SDK auth or keep alias for this domain only?
+    // TODO: SDK auth alias
     const userId = auth.pairwiseId as UserId;
 
     const pushId = getPushId(userId, resources.udpNotificationSecret);

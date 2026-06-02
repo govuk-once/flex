@@ -1,21 +1,16 @@
 import { route } from "@domain";
-import { UserId } from "@flex/utils";
+import type { UserId } from "@flex/utils";
+import { getServiceIdentityLink } from "@services/identity";
 import status from "http-status";
 
-import { getServiceIdentityLink } from "../../../../services/identity";
-
 export const handler = route("GET /v1/identity/:service", async ({ auth }) => {
-  const data = await getServiceIdentityLink(auth.pairwiseId as UserId);
+  // TODO: SDK auth alias
+  const userId = auth.pairwiseId as UserId;
 
-  if (!data) {
-    return {
-      status: status.OK,
-      data: { linked: false },
-    };
-  }
+  const identity = await getServiceIdentityLink(userId);
 
   return {
     status: status.OK,
-    data: { linked: true },
+    data: { linked: Boolean(identity) },
   };
 });

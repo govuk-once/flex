@@ -1,23 +1,21 @@
 import { route } from "@domain";
-import { UserId } from "@flex/utils";
+import type { UserId } from "@flex/utils";
+import { getServiceIdentityLink } from "@services/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
-
-import { getServiceIdentityLink } from "../../../../services/identity";
 
 export const handler = route(
   "GET /v1/identity/:service [private]",
   async ({ headers }) => {
+    // TODO: SDK auth alias
     const userId = headers.userId as UserId;
-    const linked = await getServiceIdentityLink(userId);
 
-    if (!linked) {
+    const identity = await getServiceIdentityLink(userId);
+
+    if (!identity) {
       throw new createHttpError.NotFound();
     }
 
-    return {
-      status: status.OK,
-      data: linked,
-    };
+    return { status: status.OK, data: identity };
   },
 );
