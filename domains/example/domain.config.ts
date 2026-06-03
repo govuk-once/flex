@@ -230,7 +230,6 @@ export const { config, route, routeContext } = domain({
               "udpNotificationSecret",
             ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
-            featureFlags: ["newUserProfileEnabled"],
             function: { timeoutSeconds: 20 },
             response: NotificationsResponseSchema,
           },
