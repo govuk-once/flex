@@ -1,8 +1,11 @@
-import { ApiResult, typedFetch } from "@flex/flex-fetch";
+import {
+  ApiResult,
+  createSigv4FetchWithCredentials,
+  typedFetch,
+} from "@flex/flex-fetch";
 
 import { UNS_REMOTE_ROUTES } from "../contract/route";
 import { NotificationPatchBody } from "../schemas/remote/notification";
-import { createPublicFetch } from "../utils/createPublicFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 /**
@@ -12,7 +15,13 @@ import { ConsumerConfig } from "../utils/getConsumerConfig";
  * Private to the gateway package — domain services NEVER import from here.
  */
 export function createUnsRemoteClient(config: ConsumerConfig) {
-  const fetcher = createPublicFetch({ baseUrl: config.apiUrl });
+  const fetcher = createSigv4FetchWithCredentials({
+    baseUrl: config.apiUrl,
+    region: config.region,
+    roleArn: config.consumerRoleArn,
+    roleName: "consumer-session",
+    externalId: config.externalId,
+  });
 
   const defaultHeaders = {
     Accept: "application/json",
@@ -29,10 +38,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}?${params}`,
           {
             method: "GET",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
           },
         ).request;
         return typedFetch(request);
@@ -46,10 +52,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}?${params}`,
           {
             method: "DELETE",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
           },
         ).request;
         return typedFetch(request);
@@ -64,10 +67,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
           `${UNS_REMOTE_ROUTES.notification}/${notificationId}/status?${params}`,
           {
             method: "PATCH",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-            },
+            headers: defaultHeaders,
             body: JSON.stringify(body),
           },
         ).request;
@@ -79,10 +79,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
         const params = new URLSearchParams({ externalUserID: pushId });
         const request = fetcher(`${UNS_REMOTE_ROUTES.notification}?${params}`, {
           method: "GET",
-          headers: {
-            ...defaultHeaders,
-            "X-API-KEY": config.apiKey,
-          },
+          headers: defaultHeaders,
         }).request;
         return typedFetch(request);
       },
