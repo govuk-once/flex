@@ -35,11 +35,12 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
       it("returns a success status code (200 or 204) when checking initial tracking profile", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity(service);
 
         const listResult = await cloudfront.client.get(listEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect([200, 204]).toContain(listResult.status);
@@ -48,19 +49,20 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
       it("returns 200 and confirms the newly appended service exists inside the collection", async ({
         cloudfront,
         withCleanIdentity,
+        authHeader,
       }) => {
         await withCleanIdentity(service);
 
         const createResult = await cloudfront.client.post(
           `/udp/v1/identity/${service}/${serviceId}`,
           {
-            headers: { ...authorization },
+            headers: authHeader,
           },
         );
         expect(createResult.status).toBe(201);
 
         const listResult = await cloudfront.client.get(listEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         expect(listResult.status).toBe(200);
@@ -76,6 +78,7 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
       it("returns a success status code and confirms the service has been removed from the array list after unlinking", async ({
         cloudfront,
         withIdentityLink,
+        authHeader,
       }) => {
         // 1. Start with a guaranteed linked state
         await withIdentityLink(service, serviceId);
@@ -84,14 +87,14 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
         const deleteResult = await cloudfront.client.delete(
           `/udp/v1/identity/${service}`,
           {
-            headers: { ...authorization },
+            headers: authHeader,
           },
         );
         expect(deleteResult.status).toBe(204);
 
         // 3. Fetch tracking list to verify the element was filtered out cleanly
         const listResult = await cloudfront.client.get(listEndpoint, {
-          headers: { ...authorization },
+          headers: authHeader,
         });
 
         // If it was the only service, it might return 204. If other services still exist, it returns 200.

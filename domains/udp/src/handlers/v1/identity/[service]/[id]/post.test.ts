@@ -25,10 +25,7 @@ describe("POST /v1/identity/:service/:id", () => {
         .get(`/identity/${service}`, { headers: { "User-Id": userId } })
         .reply(status.NOT_FOUND);
 
-      http
-        .gateway("udp")
-        .get(`/identities/${userId}`)
-        .reply(status.NOT_FOUND);
+      http.gateway("udp").get(`/identities/${userId}`).reply(status.NOT_FOUND);
 
       http
         .gateway("udp")
@@ -204,10 +201,7 @@ describe("POST /v1/identity/:service/:id", () => {
         .get(`/identity/${service}`, { headers: { "User-Id": userId } })
         .reply(status.NOT_FOUND);
 
-      http
-        .gateway("udp")
-        .get(`/identities/${userId}`)
-        .reply(status.NOT_FOUND);
+      http.gateway("udp").get(`/identities/${userId}`).reply(status.NOT_FOUND);
 
       http
         .gateway("udp")

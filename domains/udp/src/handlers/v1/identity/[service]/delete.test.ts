@@ -35,7 +35,9 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .delete(`/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`)
+        .delete(
+          `/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
+        )
         .reply(status.NO_CONTENT);
 
       http
@@ -46,7 +48,10 @@ describe("DELETE /v1/identity/:service", () => {
         .reply(status.OK);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
@@ -71,7 +76,9 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .delete(`/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`)
+        .delete(
+          `/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
+        )
         .reply(status.NO_CONTENT);
 
       http
@@ -82,7 +89,10 @@ describe("DELETE /v1/identity/:service", () => {
         .reply(status.OK);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
@@ -98,18 +108,20 @@ describe("DELETE /v1/identity/:service", () => {
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(status.OK, foundServiceIdentityLink);
 
-      http
-        .gateway("udp")
-        .get(`/identities/${userId}`)
-        .reply(status.NOT_FOUND);
+      http.gateway("udp").get(`/identities/${userId}`).reply(status.NOT_FOUND);
 
       http
         .gateway("udp")
-        .delete(`/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`)
+        .delete(
+          `/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
+        )
         .reply(status.NO_CONTENT);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
@@ -128,7 +140,10 @@ describe("DELETE /v1/identity/:service", () => {
         .reply(status.NOT_FOUND);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
@@ -145,11 +160,17 @@ describe("DELETE /v1/identity/:service", () => {
         .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
-      expect(result).toStrictEqual({ statusCode: status.BAD_GATEWAY, body: "" });
+      expect(result).toStrictEqual({
+        statusCode: status.BAD_GATEWAY,
+        body: "",
+      });
     });
 
     it("returns 502 when the UDP identity unlink integration fails", async ({
@@ -168,15 +189,23 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .delete(`/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`)
+        .delete(
+          `/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
+        )
         .reply(status.INTERNAL_SERVER_ERROR);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.delete(endpoint, {
+          userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 
-      expect(result).toStrictEqual({ statusCode: status.BAD_GATEWAY, body: "" });
+      expect(result).toStrictEqual({
+        statusCode: status.BAD_GATEWAY,
+        body: "",
+      });
     });
   });
 });
