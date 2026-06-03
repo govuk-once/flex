@@ -1,7 +1,6 @@
 import { store } from "@data/store";
 import { it } from "@flex/testing";
-import type { Todo } from "@schemas/todos";
-import { createTodoId } from "@utils/parser";
+import { todo, todoId, withMetadata } from "@tests/fixtures";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
@@ -10,16 +9,6 @@ vi.mock("@data/store");
 
 describe("GET /v0/todos/:id", () => {
   const endpoint = "/todos";
-
-  const todoId = createTodoId("test-todo-id");
-
-  const todo: Todo = {
-    id: todoId,
-    title: "Todo #1",
-    completed: true,
-    priority: "low",
-    createdAt: "2026-03-29T11:00:00.000Z",
-  };
 
   it.beforeEach(({ env }) => {
     env.set({ enableTodoMetadata: "false" });
@@ -56,11 +45,7 @@ describe("GET /v0/todos/:id", () => {
   }) => {
     env.set({ enableTodoMetadata: "true" });
 
-    const todoWithMetadata = {
-      ...todo,
-      meta: { label: todo.priority.toUpperCase() },
-    };
-    vi.mocked(store.getById).mockResolvedValue(todoWithMetadata);
+    vi.mocked(store.getById).mockResolvedValue(todo);
 
     const result = await handler(
       sdk.event.get(endpoint, { params: { id: todoId } }),
@@ -69,6 +54,6 @@ describe("GET /v0/todos/:id", () => {
 
     expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(todoId);
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(todoWithMetadata);
+    expect(JSON.parse(result.body)).toStrictEqual(withMetadata(todo));
   });
 });

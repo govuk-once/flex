@@ -1,6 +1,6 @@
 import { store } from "@data/store";
 import { it } from "@flex/testing";
-import { createTodoId } from "@utils/parser";
+import { todoId } from "@tests/fixtures";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./delete";
@@ -9,8 +9,6 @@ vi.mock("@data/store");
 
 describe("DELETE /v0/todos/:id", () => {
   const endpoint = "/todos";
-
-  const todoId = createTodoId("todo-uuid");
 
   it("returns 204 when the todo is deleted", async ({ sdk }) => {
     vi.mocked(store.delete).mockResolvedValue(true);

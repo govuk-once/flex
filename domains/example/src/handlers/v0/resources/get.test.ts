@@ -1,12 +1,11 @@
 import { it } from "@flex/testing";
+import { secrets } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v0/resources", () => {
   const endpoint = "/resources";
-
-  const secrets = { udpNotificationSecret: "secret-value" }; // pragma: allowlist secret
 
   it("returns 200 with resolved resources", async ({ sdk }) => {
     const result = await handler(

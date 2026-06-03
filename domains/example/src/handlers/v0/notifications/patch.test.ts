@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import { createUserId } from "@utils/parser";
+import { pushId, secrets, userId } from "@tests/fixtures";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
@@ -16,15 +16,7 @@ vi.mock("node:crypto", () => ({
 describe("PATCH /v0/notifications", () => {
   const endpoint = "/notifications";
 
-  const userId = createUserId("test-user-id");
-  // TODO: Create a branded cast for push IDs?
-  const pushId = "test-push-id";
-  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
-
-  const notifications = {
-    consentStatus: "accepted",
-    pushId,
-  };
+  const notifications = { consentStatus: "accepted", pushId };
 
   it.for([
     {

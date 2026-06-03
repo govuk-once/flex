@@ -1,4 +1,5 @@
-import { createUserId, it } from "@flex/testing";
+import { it } from "@flex/testing";
+import { pushId, secrets, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
@@ -6,17 +7,19 @@ import { handler } from "./patch";
 describe("PATCH /v0/users/notifications", () => {
   const endpoint = "/users/notifications";
 
-  const userId = createUserId("test-pairwise-id");
-  // TODO: Create a branded cast for push IDs?
-  const pushId = "test-push-id";
-  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
-
   const notifications = { consentStatus: "accepted", pushId };
 
+  it.beforeEach(({ env }) => {
+    env.set({ newUserProfileEnabled: "false" });
+  });
+
   it("returns 200 with updated notifications and feature flags", async ({
+    env,
     http,
     sdk,
   }) => {
+    env.set({ newUserProfileEnabled: "true" });
+
     http
       .domain("udp")
       .get("/users/push-id", { headers: { "User-Id": userId } })

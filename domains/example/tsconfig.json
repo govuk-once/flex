@@ -6,6 +6,7 @@
       "@data/*": ["./src/data/*"],
       "@services/*": ["./src/services/*"],
       "@schemas/*": ["./src/schemas/*"],
+      "@tests/fixtures": ["./src/tests/fixtures.ts"],
       "@utils/*": ["./src/utils/*"]
     }
   },

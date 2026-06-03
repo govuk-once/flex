@@ -1,12 +1,13 @@
 import type { DeepPartial } from "@flex/utils";
-import { mergeDeepLeft } from "ramda";
+
+import { mergeFixture } from "./merge-fixture";
 
 type FixtureBuilder<T> = (overrides?: DeepPartial<T>) => T;
 
 export function createFixtureBuilder<Base extends object>(
   base: Base,
 ): FixtureBuilder<Base> {
-  return (overrides): Base => mergeDeepLeft(overrides ?? {}, base) as Base;
+  return (overrides) => mergeFixture(base, overrides);
 }
 
 export function createFixtureFactory<

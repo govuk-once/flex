@@ -1,15 +1,11 @@
-import { createUserId, it } from "@flex/testing";
+import { it } from "@flex/testing";
+import { pushId, secrets, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v0/users/notifications", () => {
   const endpoint = "/users/notifications";
-
-  const userId = createUserId("test-pairwise-id");
-  // TODO: Create a branded cast for push IDs?
-  const pushId = "test-push-id";
-  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
   const notifications = [
     {

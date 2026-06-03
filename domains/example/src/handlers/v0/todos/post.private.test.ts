@@ -1,7 +1,7 @@
 import { store } from "@data/store";
 import { it } from "@flex/testing";
 import type { Todo } from "@schemas/todos";
-import { createTodoId } from "@utils/parser";
+import { createTodo, timestamp } from "@tests/fixtures";
 import { afterAll, beforeAll, describe, expect, vi } from "vitest";
 
 import { handler } from "./post.private";
@@ -14,19 +14,9 @@ vi.mock("@data/store");
 describe("POST /v0/todos [private]", () => {
   const endpoint = "/todos";
 
-  const todoId = createTodoId("test-todo-id");
-
-  const todo: Todo = {
-    id: todoId,
-    title: "My todo",
-    completed: false,
-    priority: "medium",
-    createdAt: "2026-04-01T12:00:00.000Z",
-  };
-
   beforeAll(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-01T12:00:00.000Z"));
+    vi.setSystemTime(new Date(timestamp));
   });
 
   afterAll(() => {
@@ -53,30 +43,34 @@ describe("POST /v0/todos [private]", () => {
   });
 
   it("returns 200 with created todo", async ({ sdk }) => {
+    const payload = { title: "My todo" };
+
+    const newTodo = createTodo({
+      ...payload,
+      completed: false,
+      priority: "medium",
+    });
+
     const result = await handler(
-      sdk.event.post(endpoint, { body: { title: "My todo" } }),
+      sdk.event.post(endpoint, { body: payload }),
       sdk.context(),
     );
 
-    expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(todo);
+    expect(vi.mocked(store.create)).toHaveBeenCalledExactlyOnceWith(newTodo);
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(todo);
+    expect(JSON.parse(result.body)).toStrictEqual(newTodo);
   });
 
   it("returns 200 with created todo when full payload is provided", async ({
     sdk,
   }) => {
-    const payload: Pick<Todo, "title" | "completed" | "priority"> = {
+    const payload = {
       title: "My todo",
       completed: true,
       priority: "high",
-    };
+    } satisfies Partial<Todo>;
 
-    const expected: Todo = {
-      ...payload,
-      id: todoId,
-      createdAt: "2026-04-01T12:00:00.000Z",
-    };
+    const expected = createTodo(payload);
 
     const result = await handler(
       sdk.event.post(endpoint, { body: payload }),
