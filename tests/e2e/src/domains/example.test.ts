@@ -1,10 +1,12 @@
 import { config as exampleConfig } from "@flex/example-domain/config";
+import { STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
 } from "@flex/udp-domain";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { NotificationsResponseSchema } from "@flex/uns-domain";
+import { config as unsConfig } from "@flex/uns-domain/config";
 import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
@@ -13,12 +15,21 @@ import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 // TODO: Fine for now, but need a better solution for tests with cross-domain dependencies
 const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");
+const udpGetPushIdDeployed = () =>
+  isRouteDeployed(udpConfig, "GET /v1/users/push-id [private]");
 const udpCreateIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 
+const unsGetNotificationsDeployed = () =>
+  isRouteDeployed(unsConfig, "GET /v1/notifications");
+
 describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
+  // These tests assert against a given user based on the contents of the dev database, so
+  // we need to ensure the stub token generator always returns the same subject for consistency.
+  it.override({ authSub: STUB_DEFAULT_SUBJECT });
+
   describe("/example/v0/todos", () => {
     const endpoint = "/example/v0/todos";
 
@@ -87,7 +98,7 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
   });
 
   describe("/example/v0/todos/:id/duplicate", () => {
-    const endpoint = (id = "todo-1") => `example/v0/todos/${id}/duplicate`;
+    const endpoint = (id = "todo-1") => `/example/v0/todos/${id}/duplicate`;
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "POST /v0/todos/:id/duplicate"),
@@ -261,7 +272,9 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "GET /v0/users/notifications") &&
-        udpGetUsersDeployed(),
+        udpGetUsersDeployed() &&
+        udpGetPushIdDeployed() &&
+        unsGetNotificationsDeployed(),
     )("GET", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
@@ -281,7 +294,8 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "PATCH /v0/users/notifications") &&
-        udpGetUsersDeployed(),
+        udpGetUsersDeployed() &&
+        udpGetPushIdDeployed(),
     )("PATCH", () => {
       it("returns 200 with updated notification preferences", async ({
         cloudfront,
