@@ -7,6 +7,7 @@ export { invalidJwt } from "./fixtures/auth";
 export {
   getStubTokenGenerator,
   getStubTokenGeneratorFromJWK,
+  STUB_DEFAULT_SUBJECT,
 } from "./fixtures/StubTokenGenerator";
 export {
   type BaseTokenGenerator,

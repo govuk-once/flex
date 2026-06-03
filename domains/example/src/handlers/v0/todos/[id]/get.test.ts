@@ -2,7 +2,7 @@ import { store } from "@data/store";
 import { it } from "@flex/testing";
 import type { Todo } from "@schemas/todos";
 import { createTodoId } from "@utils/parser";
-import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
 
@@ -10,13 +10,10 @@ vi.mock("@data/store");
 
 describe("GET /v0/todos/:id", () => {
   const endpoint = "/todos";
-  const todoId = createTodoId("todo-uuid");
-  const event = {
-    httpMethod: "GET",
-    path: endpoint,
-    pathParameters: { id: todoId },
-  };
-  const existingTodo: Todo = {
+
+  const todoId = createTodoId("test-todo-id");
+
+  const todo: Todo = {
     id: todoId,
     title: "Todo #1",
     completed: true,
@@ -24,85 +21,54 @@ describe("GET /v0/todos/:id", () => {
     createdAt: "2026-03-29T11:00:00.000Z",
   };
 
-  beforeEach(() => {
-    vi.stubEnv("enableTodoMetadata", "false");
+  it.beforeEach(({ env }) => {
+    env.set({ enableTodoMetadata: "false" });
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
+  it("returns 200 with the existing todo", async ({ sdk }) => {
+    vi.mocked(store.getById).mockResolvedValue(todo);
+
+    const result = await handler(
+      sdk.event.get(endpoint, { params: { id: todoId } }),
+      sdk.context(),
+    );
+
+    expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(todoId);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(todo);
   });
 
-  describe("response", () => {
-    it("returns 200 with existing todo", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.getById).mockResolvedValue(existingTodo);
+  it("returns 404 when the todo does not exist", async ({ sdk }) => {
+    vi.mocked(store.getById).mockResolvedValue(null);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { params: { id: "unknown" } }),
+      sdk.context(),
+    );
 
-      expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(todoId);
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual(existingTodo);
-    });
+    expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith("unknown");
+    expect(result.statusCode).toBe(404);
   });
 
-  describe("errors", () => {
-    it("returns 404 when todo does not exist", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.getById).mockResolvedValue(null);
+  it("includes todo metadata when enableTodoMetadata is enabled", async ({
+    env,
+    sdk,
+  }) => {
+    env.set({ enableTodoMetadata: "true" });
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          pathParameters: { id: "unknown" },
-        }),
-        context.create(),
-      );
+    const todoWithMetadata = {
+      ...todo,
+      meta: { label: todo.priority.toUpperCase() },
+    };
+    vi.mocked(store.getById).mockResolvedValue(todoWithMetadata);
 
-      expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(
-        "unknown",
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, { params: { id: todoId } }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(404);
-    });
-  });
-
-  describe("feature flags", () => {
-    describe("enableTodoMetadata", () => {
-      const todoWithMetadata = {
-        ...existingTodo,
-        meta: { label: existingTodo.priority.toUpperCase() },
-      };
-
-      beforeEach(() => {
-        vi.stubEnv("enableTodoMetadata", "true");
-      });
-
-      it("includes todo metadata when enabled", async ({
-        context,
-        privateGatewayEventWithAuthorizer,
-      }) => {
-        vi.mocked(store.getById).mockResolvedValue(todoWithMetadata);
-
-        const result = await handler(
-          privateGatewayEventWithAuthorizer.create(event),
-          context.create(),
-        );
-
-        expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(
-          todoId,
-        );
-
-        expect(result.statusCode).toBe(200);
-        expect(JSON.parse(result.body)).toStrictEqual(todoWithMetadata);
-      });
-    });
+    expect(vi.mocked(store.getById)).toHaveBeenCalledExactlyOnceWith(todoId);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(todoWithMetadata);
   });
 });

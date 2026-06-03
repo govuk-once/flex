@@ -1,7 +1,6 @@
 import { store, TODOS } from "@data/store";
 import { it } from "@flex/testing";
-import type { APIGatewayProxyEventQueryStringParameters } from "aws-lambda";
-import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
 
@@ -9,188 +8,131 @@ vi.mock("@data/store");
 
 describe("GET /v0/todos", () => {
   const endpoint = "/todos";
-  const event = { httpMethod: "GET", path: endpoint };
 
-  beforeEach(() => {
-    vi.stubEnv("enableTodoMetadata", "false");
+  it.beforeEach(({ env }) => {
+    env.set({ enableTodoMetadata: "false" });
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  describe("request validation", () => {
-    it.for<{
-      queryStringParameters: APIGatewayProxyEventQueryStringParameters;
-      reason: string;
-      expected: { field: string };
-    }>([
-      {
-        queryStringParameters: { priority: "unknown" },
-        reason: "contains invalid priority",
-        expected: { field: "priority" },
-      },
-      {
-        queryStringParameters: { limit: "0" },
-        reason: "contains limit below minimum",
-        expected: { field: "limit" },
-      },
-      {
-        queryStringParameters: { limit: "101" },
-        reason: "contains limit above maximum",
-        expected: { field: "limit" },
-      },
-    ])(
-      "returns 400 when query $reason",
-      async (
-        { queryStringParameters, expected },
-        { context, privateGatewayEventWithAuthorizer },
-      ) => {
-        const result = await handler(
-          privateGatewayEventWithAuthorizer.create({
-            ...event,
-            queryStringParameters,
-          }),
-          context.create(),
-        );
-
-        expect(result.statusCode).toBe(400);
-        expect(JSON.parse(result.body)).toStrictEqual({
-          message: "Invalid query parameters",
-          errors: [
-            { field: expected.field, message: expect.any(String) as string },
-          ],
-        });
-      },
+  it.for<{
+    query: Record<string, string>;
+    reason: string;
+    field: string;
+  }>([
+    {
+      query: { priority: "unknown" },
+      reason: "contains invalid priority",
+      field: "priority",
+    },
+    {
+      query: { limit: "0" },
+      reason: "contains limit below minimum",
+      field: "limit",
+    },
+    {
+      query: { limit: "101" },
+      reason: "contains limit above maximum",
+      field: "limit",
+    },
+  ])("returns 400 when query $reason", async ({ query, field }, { sdk }) => {
+    const result = await handler(
+      sdk.event.get(endpoint, { query }),
+      sdk.context(),
     );
-  });
 
-  describe("response", () => {
-    it("returns 200 with all todos", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.list).mockResolvedValue(TODOS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ todos: TODOS, total: 3 });
-    });
-
-    it("returns 200 with todos filtered by completed status", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.list).mockResolvedValue(TODOS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          queryStringParameters: { completed: "true" },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        todos: [TODOS[0]],
-        total: 1,
-      });
-    });
-
-    it("returns 200 with todos filtered by priority", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.list).mockResolvedValue(TODOS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          queryStringParameters: { priority: "low" },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        todos: [TODOS[0]],
-        total: 1,
-      });
-    });
-
-    it("returns 200 with paginated results", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.list).mockResolvedValue(TODOS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          queryStringParameters: { limit: "1", page: "2" },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({
-        todos: [TODOS[1]],
-        total: 3,
-      });
-    });
-
-    it("returns 200 with no results", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      vi.mocked(store.list).mockResolvedValue(TODOS);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create({
-          ...event,
-          queryStringParameters: { completed: "true", priority: "high" },
-        }),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ todos: [], total: 0 });
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      message: "Invalid query parameters",
+      errors: [{ field, message: expect.any(String) as string }],
     });
   });
 
-  describe("feature flags", () => {
-    describe("enableTodoMetadata", () => {
-      const todosWithMetadata = TODOS.map((t) => ({
-        ...t,
-        meta: { label: t.priority.toUpperCase() },
-      }));
+  it("returns 200 with all todos", async ({ sdk }) => {
+    vi.mocked(store.list).mockResolvedValue(TODOS);
 
-      beforeEach(() => {
-        vi.stubEnv("enableTodoMetadata", "true");
-      });
+    const result = await handler(sdk.event.get(endpoint), sdk.context());
 
-      it("includes todo metadata when enabled", async ({
-        context,
-        privateGatewayEventWithAuthorizer,
-      }) => {
-        vi.mocked(store.list).mockResolvedValue(TODOS);
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({ todos: TODOS, total: 3 });
+  });
 
-        const result = await handler(
-          privateGatewayEventWithAuthorizer.create(event),
-          context.create(),
-        );
+  it("returns 200 with todos filtered by completed status", async ({ sdk }) => {
+    vi.mocked(store.list).mockResolvedValue(TODOS);
 
-        expect(result.statusCode).toBe(200);
-        expect(JSON.parse(result.body)).toStrictEqual({
-          todos: todosWithMetadata,
-          total: 3,
-        });
-      });
+    const result = await handler(
+      sdk.event.get(endpoint, { query: { completed: "true" } }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      todos: [TODOS[0]],
+      total: 1,
+    });
+  });
+
+  it("returns 200 with todos filtered by priority", async ({ sdk }) => {
+    vi.mocked(store.list).mockResolvedValue(TODOS);
+
+    const result = await handler(
+      sdk.event.get(endpoint, { query: { priority: "low" } }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      todos: [TODOS[0]],
+      total: 1,
+    });
+  });
+
+  it("returns 200 with paginated results", async ({ sdk }) => {
+    vi.mocked(store.list).mockResolvedValue(TODOS);
+
+    const result = await handler(
+      sdk.event.get(endpoint, { query: { limit: "1", page: "2" } }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      todos: [TODOS[1]],
+      total: 3,
+    });
+  });
+
+  it("returns 200 with no results", async ({ sdk }) => {
+    vi.mocked(store.list).mockResolvedValue(TODOS);
+
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        query: { completed: "true", priority: "high" },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({ todos: [], total: 0 });
+  });
+
+  it("includes todo metadata when enableTodoMetadata is enabled", async ({
+    env,
+    sdk,
+  }) => {
+    env.set({ enableTodoMetadata: "true" });
+
+    const todosWithMetadata = TODOS.map((t) => ({
+      ...t,
+      meta: { label: t.priority.toUpperCase() },
+    }));
+
+    vi.mocked(store.list).mockResolvedValue(TODOS);
+
+    const result = await handler(sdk.event.get(endpoint), sdk.context());
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({
+      todos: todosWithMetadata,
+      total: 3,
     });
   });
 });

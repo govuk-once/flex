@@ -1,3 +1,4 @@
+import { STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import {
   NotificationSchema,
@@ -5,7 +6,7 @@ import {
   PatchNotificationBody,
 } from "@flex/uns-domain";
 import { config as unsConfig } from "@flex/uns-domain/config";
-import { describe, expect, inject } from "vitest";
+import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
 import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
@@ -14,8 +15,9 @@ const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");
 
 describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
-  const { JWT } = inject("e2eEnv");
-  const authorization = { Authorization: `Bearer ${JWT.VALID}` };
+  // These tests assert against a given user based on the contents of the dev database, so
+  // we need to ensure the stub token generator always returns the same subject for consistency.
+  it.override({ authSub: STUB_DEFAULT_SUBJECT });
 
   const mockNotificationId = {
     valid: "d4e04ac4-5696-45b7-8e8c-0060883a84f5",
@@ -30,9 +32,9 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
       () => {
         it.runIf(udpGetUsersDeployed())(
           "returns 200 with users notifications",
-          async ({ cloudfront, udpUser: _ }) => {
+          async ({ cloudfront, udpUser: _, authHeader }) => {
             const result = await cloudfront.client.get(endpoint, {
-              headers: { ...authorization },
+              headers: authHeader,
             });
 
             expect(result.status).toBe(200);
@@ -58,10 +60,10 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     )("GET", () => {
       it.runIf(udpGetUsersDeployed())(
         "returns 200 with notification details",
-        async ({ cloudfront, udpUser: _ }) => {
+        async ({ cloudfront, udpUser: _, authHeader }) => {
           const result = await cloudfront.client.get(
             endpoint(mockNotificationId.valid),
-            { headers: { ...authorization } },
+            { headers: authHeader },
           );
 
           expect(result.status).toBe(200);
@@ -79,10 +81,11 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
 
       it("returns 404 when a notification does not exist", async ({
         cloudfront,
+        authHeader,
       }) => {
         const result = await cloudfront.client.get(
           endpoint(mockNotificationId.notFound),
-          { headers: { ...authorization } },
+          { headers: authHeader },
         );
 
         expect(result.status).toBe(404);
@@ -100,11 +103,14 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
         expect(result.status).toBe(401);
       });
 
-      it("returns 404 when no not found", async ({ cloudfront }) => {
-        const result = await cloudfront.client.delete(
-          endpoint(mockNotificationId.notFound),
-          { headers: { ...authorization } },
-        );
+        it("returns 404 when no not found", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.delete(
+            endpoint(mockNotificationId.notFound),
+            { headers: authHeader },
+          );
 
         expect(result.status).toBe(404);
       });
@@ -122,12 +128,12 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     )("PATCH", () => {
       it.runIf(udpGetUsersDeployed()).todo(
         "returns 202 when a notification status has been updated",
-        async ({ cloudfront, udpUser: _ }) => {
+        async ({ cloudfront, udpUser: _, authHeader }) => {
           const result = await cloudfront.client.patch<
             PatchNotificationBody,
             unknown
           >(endpoint(mockNotificationId.valid), {
-            headers: { ...authorization },
+            headers: authHeader,
             body: { Status: "READ" },
           });
 
@@ -146,12 +152,13 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
 
       it("returns 404 when a notification does not exist", async ({
         cloudfront,
+        authHeader,
       }) => {
         const result = await cloudfront.client.patch<
           PatchNotificationBody,
           unknown
         >(endpoint(mockNotificationId.notFound), {
-          headers: { ...authorization },
+          headers: authHeader,
           body: { Status: "READ" },
         });
 
