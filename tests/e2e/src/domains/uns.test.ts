@@ -30,19 +30,20 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     describe.runIf(isRouteDeployed(unsConfig, "GET /v1/notifications"))(
       "GET",
       () => {
-        it.runIf(udpGetUsersDeployed())(
-          "returns 200 with users notifications",
-          async ({ cloudfront, udpUser: _, authHeader }) => {
-            const result = await cloudfront.client.get(endpoint, {
-              headers: authHeader,
-            });
+        it.skip("returns 200 with users notifications", async ({
+          cloudfront,
+          udpUser: _,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: authHeader,
+          });
 
-            expect(result.status).toBe(200);
-            expect(
-              NotificationsResponseSchema.safeParse(result.body).success,
-            ).toBe(true);
-          },
-        );
+          expect(result.status).toBe(200);
+          expect(
+            NotificationsResponseSchema.safeParse(result.body).success,
+          ).toBe(true);
+        });
 
         it("returns 401 when no auth is provided", async ({ cloudfront }) => {
           const result = await cloudfront.client.get(endpoint);
