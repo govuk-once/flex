@@ -20,7 +20,7 @@ pre-commit install
 pnpm test
 ```
 
-See the [Environment Setup](/docs/environment-setup.md) for prerequisites and detailed configuration.
+See the [Environment Setup](/docs/environment-setup.md) for prerequisites and detailed configuration
 
 ---
 
