@@ -64,9 +64,9 @@ export const { config, route } = domain({
             name: "get-notifications",
             response: NotificationsResponseSchema,
             resources: [
+              "udpNotificationSecret",
               "encryptionKey",
               "privateGatewayUrl",
-              "udpNotificationSecret",
             ],
             integrations: ["unsGetNotifications", "udpGetPushId"],
           },
@@ -78,9 +78,9 @@ export const { config, route } = domain({
             name: "get-notification-by-id",
             response: NotificationSchema,
             resources: [
+              "udpNotificationSecret",
               "encryptionKey",
               "privateGatewayUrl",
-              "udpNotificationSecret",
             ],
             integrations: ["unsGetNotificationById", "udpGetPushId"],
           },
@@ -89,9 +89,9 @@ export const { config, route } = domain({
           public: {
             name: "delete-notification",
             resources: [
+              "udpNotificationSecret",
               "encryptionKey",
               "privateGatewayUrl",
-              "udpNotificationSecret",
             ],
             integrations: ["unsDeleteNotification", "udpGetPushId"],
           },
@@ -103,9 +103,9 @@ export const { config, route } = domain({
             name: "patch-notification-status",
             body: PatchNotificationBodySchema,
             resources: [
+              "udpNotificationSecret",
               "encryptionKey",
               "privateGatewayUrl",
-              "udpNotificationSecret",
             ],
             integrations: ["unsPatchNotification", "udpGetPushId"],
           },

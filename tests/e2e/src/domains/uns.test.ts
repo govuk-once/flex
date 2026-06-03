@@ -58,7 +58,7 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
     describe.runIf(
       isRouteDeployed(unsConfig, "GET /v1/notifications/:notificationId"),
     )("GET", () => {
-      it.runIf(udpGetUsersDeployed()).todo(
+      it.runIf(udpGetUsersDeployed())(
         "returns 200 with notification details",
         async ({ cloudfront, udpUser: _, authHeader }) => {
           const result = await cloudfront.client.get(
@@ -92,32 +92,29 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
       });
     });
 
-    // TODO: Existing tests were calling GET endpoints for DELETE scenarios
-    describe
-      .runIf(
-        isRouteDeployed(unsConfig, "DELETE /v1/notifications/:notificationId"),
-      )
-      .todo("DELETE", () => {
-        it("returns 401 when no auth is provided", async ({ cloudfront }) => {
-          const result = await cloudfront.client.delete(
-            endpoint(mockNotificationId.valid),
-          );
+    describe.runIf(
+      isRouteDeployed(unsConfig, "DELETE /v1/notifications/:notificationId"),
+    )("DELETE", () => {
+      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+        const result = await cloudfront.client.delete(
+          endpoint(mockNotificationId.valid),
+        );
 
-          expect(result.status).toBe(401);
-        });
-
-        it("returns 404 when no not found", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.delete(
-            endpoint(mockNotificationId.notFound),
-            { headers: authHeader },
-          );
-
-          expect(result.status).toBe(404);
-        });
+        expect(result.status).toBe(401);
       });
+
+      it("returns 404 when no not found", async ({
+        cloudfront,
+        authHeader,
+      }) => {
+        const result = await cloudfront.client.delete(
+          endpoint(mockNotificationId.notFound),
+          { headers: authHeader },
+        );
+
+        expect(result.status).toBe(404);
+      });
+    });
   });
 
   describe("/uns/v1/notifications/:notificationId/status", () => {
