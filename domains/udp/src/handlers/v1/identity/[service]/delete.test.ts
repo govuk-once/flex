@@ -43,7 +43,9 @@ describe("DELETE /v1/identity/:service", () => {
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: ["another-active-service"] },
+          body: {
+            data: { services: ["another-active-service"] },
+          },
         })
         .reply(status.OK);
 
@@ -84,7 +86,9 @@ describe("DELETE /v1/identity/:service", () => {
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: [] },
+          body: {
+            data: { services: [] },
+          },
         })
         .reply(status.OK);
 

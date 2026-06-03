@@ -29,13 +29,15 @@ describe("POST /v1/identity/:service/:id", () => {
 
       http
         .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, body)
+        .post(`/identity/${service}/${serviceId}`, { body })
         .reply(status.CREATED);
 
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: [service] },
+          body: {
+            data: { services: [service] },
+          },
         })
         .reply(status.OK);
 
@@ -69,14 +71,15 @@ describe("POST /v1/identity/:service/:id", () => {
 
       http
         .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, body)
+        .post(`/identity/${service}/${serviceId}`, { body })
         .reply(status.CREATED);
 
-      // Fixed string bug to use dynamic template string variable matching main pattern
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: [service, "some-other-service"] },
+          body: {
+            data: { services: [service, "some-other-service"] },
+          },
         })
         .reply(status.OK);
 
@@ -147,13 +150,15 @@ describe("POST /v1/identity/:service/:id", () => {
 
       http
         .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, body)
+        .post(`/identity/${service}/${serviceId}`, { body })
         .reply(status.CREATED);
 
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: ["existing-other-service", service] },
+          body: {
+            data: { services: ["existing-other-service", service] },
+          },
         })
         .reply(status.OK);
 
@@ -205,13 +210,15 @@ describe("POST /v1/identity/:service/:id", () => {
 
       http
         .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, body)
+        .post(`/identity/${service}/${serviceId}`, { body })
         .reply(status.CREATED);
 
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          data: { services: [service] },
+          body: {
+            data: { services: [service] },
+          },
         })
         .reply(status.INTERNAL_SERVER_ERROR);
 
