@@ -232,7 +232,6 @@ export const { config, route, routeContext } = domain({
             integrations: ["unsGetNotifications", "udpGetPushId"],
             function: { timeoutSeconds: 20 },
             response: NotificationsResponseSchema,
-            logLevel: "DEBUG",
           },
         },
       },

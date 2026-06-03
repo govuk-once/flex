@@ -6,7 +6,6 @@ import type {
 } from "@flex/udp-domain";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { NotificationsResponseSchema } from "@flex/uns-domain";
-import { config as unsConfig } from "@flex/uns-domain/config";
 import { describe, expect } from "vitest";
 
 import { it } from "../extend/it";
@@ -272,8 +271,7 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "GET /v0/users/notifications") &&
-        udpGetUsersDeployed() &&
-        isRouteDeployed(unsConfig, "GET /v1/notifications"),
+        udpGetUsersDeployed(),
     )("GET", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
