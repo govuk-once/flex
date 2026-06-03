@@ -103,14 +103,14 @@ describe.runIf(isDomainDeployed(unsConfig))("UNS domain", () => {
         expect(result.status).toBe(401);
       });
 
-        it("returns 404 when no not found", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.delete(
-            endpoint(mockNotificationId.notFound),
-            { headers: authHeader },
-          );
+      it("returns 404 when no not found", async ({
+        cloudfront,
+        authHeader,
+      }) => {
+        const result = await cloudfront.client.delete(
+          endpoint(mockNotificationId.notFound),
+          { headers: authHeader },
+        );
 
         expect(result.status).toBe(404);
       });
