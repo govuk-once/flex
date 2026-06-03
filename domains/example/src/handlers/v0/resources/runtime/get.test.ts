@@ -1,12 +1,11 @@
 import { it } from "@flex/testing";
+import { params } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v0/resources/runtime", () => {
   const endpoint = "/resources/runtime";
-
-  const params = { privateGatewaysRoot: "test-param-value" };
 
   it("returns 200 with resolved resources", async ({ sdk }) => {
     const result = await handler(

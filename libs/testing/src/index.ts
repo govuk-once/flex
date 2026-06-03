@@ -43,3 +43,4 @@ export {
   validJwtUsername,
 } from "./fixtures";
 export { createUserId } from "./fixtures/user";
+export { mergeFixture } from "./utils/merge-fixture";

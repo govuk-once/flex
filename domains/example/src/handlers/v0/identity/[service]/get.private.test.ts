@@ -1,23 +1,15 @@
 import { it } from "@flex/testing";
-import { createUserId } from "@utils/parser";
+import { serviceIdentityLink, serviceName, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get.private";
 
 describe("GET /v0/identity/:service [private]", () => {
-  const service = "test-service";
-  const endpoint = `/identity/${service}`;
-
-  const userId = createUserId("test-user-id");
-
-  const identity = {
-    serviceId: "existing-id",
-    serviceName: "test-service",
-  };
+  const endpoint = `/identity/${serviceName}`;
 
   it("returns 400 when the User-Id header is missing", async ({ sdk }) => {
     const result = await handler(
-      sdk.event.get(endpoint, { params: { service } }),
+      sdk.event.get(endpoint, { params: { service: serviceName } }),
       sdk.context(),
     );
 
@@ -31,31 +23,31 @@ describe("GET /v0/identity/:service [private]", () => {
   it("returns 200 with the identity link details", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-      .reply(200, identity);
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, serviceIdentityLink);
 
     const result = await handler(
       sdk.event.get(endpoint, {
         headers: { "User-Id": userId },
-        params: { service },
+        params: { service: serviceName },
       }),
       sdk.context(),
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(identity);
+    expect(JSON.parse(result.body)).toStrictEqual(serviceIdentityLink);
   });
 
   it("returns 404 when the identity does not exist", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
       .reply(404);
 
     const result = await handler(
       sdk.event.get(endpoint, {
         headers: { "User-Id": userId },
-        params: { service },
+        params: { service: serviceName },
       }),
       sdk.context(),
     );
@@ -66,13 +58,13 @@ describe("GET /v0/identity/:service [private]", () => {
   it("returns 502 when the upstream fails", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get(`/identity/${service}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
       .reply(500);
 
     const result = await handler(
       sdk.event.get(endpoint, {
         headers: { "User-Id": userId },
-        params: { service },
+        params: { service: serviceName },
       }),
       sdk.context(),
     );

@@ -1,7 +1,6 @@
 import { store } from "@data/store";
 import { it } from "@flex/testing";
-import type { Todo } from "@schemas/todos";
-import { createTodoId } from "@utils/parser";
+import { createTodo, todo, todoId } from "@tests/fixtures";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
@@ -11,24 +10,12 @@ vi.mock("@data/store");
 describe("POST /v0/todos/:id/duplicate", () => {
   const endpoint = "/todos";
 
-  const todoId = createTodoId("todo-uuid");
-
-  const todo: Todo = {
-    id: todoId,
-    title: "Todo #1",
-    completed: true,
-    priority: "low",
-    createdAt: "2026-03-29T11:00:00.000Z",
-  };
-  const duplicatedTodo: Todo = {
-    id: todoId,
-    title: "Todo #1 (copy)",
-    completed: false,
-    priority: "low",
-    createdAt: "2026-04-01T12:00:00.000Z",
-  };
-
   it("returns 201 with the duplicated todo", async ({ http, sdk }) => {
+    const duplicatedTodo = createTodo({
+      title: "Todo #1 (copy)",
+      completed: false,
+    });
+
     vi.mocked(store.getById).mockResolvedValue(todo);
 
     http

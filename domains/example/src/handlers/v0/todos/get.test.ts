@@ -1,5 +1,6 @@
 import { store, TODOS } from "@data/store";
 import { it } from "@flex/testing";
+import { withMetadata } from "@tests/fixtures";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./get";
@@ -120,18 +121,13 @@ describe("GET /v0/todos", () => {
   }) => {
     env.set({ enableTodoMetadata: "true" });
 
-    const todosWithMetadata = TODOS.map((t) => ({
-      ...t,
-      meta: { label: t.priority.toUpperCase() },
-    }));
-
     vi.mocked(store.list).mockResolvedValue(TODOS);
 
     const result = await handler(sdk.event.get(endpoint), sdk.context());
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toStrictEqual({
-      todos: todosWithMetadata,
+      todos: TODOS.map(withMetadata),
       total: 3,
     });
   });
