@@ -1,60 +1,43 @@
-import createHttpError from "http-errors";
-import { status } from "http-status";
-
-import { route } from "../../../../../domain.config";
+import { route } from "@domain";
+import type { UserId } from "@flex/utils";
+import { throwIntegrationError } from "@services/errors";
 
 export const handler = route(
   "DELETE /v1/notifications/:notificationId",
-  async (ctx) => {
-    const pushIdResponse = await ctx.integrations.udpGetPushId({
-      headers: { "User-Id": ctx.auth.pairwiseId },
+  async ({ auth, integrations, logger, pathParams }) => {
+    const { notificationId } = pathParams;
+
+    // TODO: Add SDK alias
+    const userId = auth.pairwiseId as UserId;
+
+    const pushIdResponse = await integrations.udpGetPushId({
+      headers: { "User-Id": userId },
     });
 
     if (!pushIdResponse.ok) {
-      const { status: errorStatus, body: errorBody } = pushIdResponse.error;
-      ctx.logger.error("Call to get push id failed", {
-        status: errorStatus,
-        errorBody,
-      });
-      switch (errorStatus) {
-        case status.BAD_REQUEST:
-          throw new createHttpError.BadRequest();
-        case status.NOT_FOUND:
-          throw new createHttpError.NotFound();
-        case status.TOO_MANY_REQUESTS:
-          throw new createHttpError.TooManyRequests();
-        default:
-          throw new createHttpError.BadGateway();
-      }
+      const { status, body } = pushIdResponse.error;
+
+      logger.error("Call to get push id failed", { status, errorBody: body });
+      throwIntegrationError(status);
     }
 
-    const { notificationId } = ctx.pathParams;
+    const { pushId } = pushIdResponse.data;
 
-    const response = await ctx.integrations.unsDeleteNotification({
-      query: { externalUserID: pushIdResponse.data.pushId },
+    const response = await integrations.unsDeleteNotification({
+      query: { externalUserID: pushId },
       path: `/${notificationId}`,
     });
 
     if (!response.ok) {
-      const { status: errorStatus, body: errorBody } = response.error;
-      ctx.logger.error("Call to delete notification failed", {
-        status: errorStatus,
-        errorBody,
+      const { status, body } = response.error;
+
+      logger.error("Call to delete notification failed", {
+        status,
+        errorBody: body,
       });
-      switch (errorStatus) {
-        case status.BAD_REQUEST:
-          throw new createHttpError.BadRequest();
-        case status.NOT_FOUND:
-          throw new createHttpError.NotFound();
-        case status.TOO_MANY_REQUESTS:
-          throw new createHttpError.TooManyRequests();
-        default:
-          throw new createHttpError.BadGateway();
-      }
+      throwIntegrationError(status);
     }
 
-    return {
-      status: 204,
-    };
+    return { status: 204 };
   },
 );

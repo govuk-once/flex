@@ -11,14 +11,14 @@ export const timestamp = createTimestamp();
 export const createPushId = (value = "test-push-id") => value as PushId;
 export const pushId = createPushId();
 
-export const createSecrets = (overrides?: Record<string, unknown>) =>
+export const createSecrets = (overrides?: Record<string, string>) =>
   mergeFixture(
     { udpNotificationSecret: "test-notification-secret" }, // pragma: allowlist secret
     overrides,
   );
 export const secrets = createSecrets();
 
-export const createParams = (overrides?: Record<string, unknown>) =>
+export const createParams = (overrides?: Record<string, string>) =>
   mergeFixture({ privateGatewaysRoot: "test-param-value" }, overrides);
 export const params = createParams();
 

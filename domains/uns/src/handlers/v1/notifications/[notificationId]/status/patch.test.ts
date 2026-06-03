@@ -1,77 +1,105 @@
-import { createUserId, it } from "@flex/testing";
-import nock from "nock";
-import { describe, expect, vi } from "vitest";
+import { it } from "@flex/testing";
+import {
+  notificationId,
+  notificationStatus,
+  pushId,
+  secrets,
+  userId,
+} from "@tests/fixtures";
+import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
 
-vi.mock("@utils/get-push-id");
+describe("PATCH /v1/notifications/:notificationId/status", () => {
+  const endpoint = `/notifications/${notificationId}/status`;
 
-describe("PATCH /v1/notifications/{notificationId}/status", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const userId = createUserId("test-pairwise-id");
-  const testPushId = "push-12345";
-
-  const mockNotificationId = "not-1";
-  const mockUnknownNotificationid = "NotAnId";
-
-  const mockUdpPushIdSuccess = () =>
-    api
-      .get("/domains/udp/v1/users/push-id")
-      .matchHeader("User-Id", userId)
-      .reply(200, { pushId: testPushId });
-
-  const mockUnsPatchSuccess = () =>
-    api
-      .patch(`/gateways/uns/v1/notifications/${mockNotificationId}/status`)
-      .query({ externalUserID: testPushId })
+  it("returns 202 when the notification status has been updated", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId });
+    http
+      .gateway("uns")
+      .patch(`/notifications/${notificationId}/status`, {
+        query: { externalUserID: pushId },
+        body: { Status: notificationStatus },
+      })
       .reply(202);
 
-  const mockUnsPatchNotFound = () =>
-    api
-      .patch(
-        `/gateways/uns/v1/notifications/${mockUnknownNotificationid}/status`,
-      )
-      .query({ externalUserID: testPushId })
-      .reply(404);
-
-  it("returns 202 when status has been updated successfully", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    mockUdpPushIdSuccess();
-    mockUnsPatchSuccess();
-
     const result = await handler(
-      privateGatewayEventWithAuthorizer.authenticated(
-        {
-          body: JSON.stringify({ Status: "READ" }),
-          pathParameters: { notificationId: mockNotificationId },
-        },
+      sdk.event.patch(endpoint, {
         userId,
-      ),
-      context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
+        body: { Status: notificationStatus },
+        params: { notificationId },
+      }),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(202);
+    expect(result.body).toBe("");
   });
 
-  it("returns 404 when the notification ID does not exist", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    mockUdpPushIdSuccess();
-    mockUnsPatchNotFound();
+  it.for([
+    { reason: "returns a bad request", upstream: 400, expected: 400 },
+    { reason: "cannot find the user's push ID", upstream: 404, expected: 404 },
+    { reason: "is rate limited", upstream: 429, expected: 429 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP get push ID integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", { headers: { "User-Id": userId } })
+        .reply(upstream);
 
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.authenticated(
-        {
-          body: JSON.stringify({ Status: "READ" }),
-          pathParameters: { notificationId: mockUnknownNotificationid },
-        },
-        userId,
-      ),
-      context.withSecret({ udpNotificationSecret: "test-value" }).create(), // pragma: allowlist secret
-    );
-    expect(result.statusCode).toBe(404);
-  });
+      const result = await handler(
+        sdk.event.patch(endpoint, {
+          userId,
+          body: { Status: notificationStatus },
+          params: { notificationId },
+        }),
+        sdk.context({ secrets }),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  it.for([
+    { reason: "returns a bad request", upstream: 400, expected: 400 },
+    { reason: "cannot find the notification", upstream: 404, expected: 404 },
+    { reason: "is rate limited", upstream: 429, expected: 429 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UNS patch notification integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", { headers: { "User-Id": userId } })
+        .reply(200, { pushId });
+      http
+        .gateway("uns")
+        .patch(`/notifications/${notificationId}/status`, {
+          query: { externalUserID: pushId },
+          body: { Status: notificationStatus },
+        })
+        .reply(upstream);
+
+      const result = await handler(
+        sdk.event.patch(endpoint, {
+          userId,
+          body: { Status: notificationStatus },
+          params: { notificationId },
+        }),
+        sdk.context({ secrets }),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });
