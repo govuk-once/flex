@@ -1,111 +1,90 @@
-import { createUserId, it } from "@flex/testing";
-import type { GetServiceIdentityLinkResponse } from "@schemas/identity";
-import nock from "nock";
+import { it } from "@flex/testing";
+import { userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./delete";
 
 describe("DELETE /v1/identity/:service", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-
-  const service = "test-service";
+  const serviceName = "test-service";
   const serviceId = "test-service-id";
-  const endpoint = `/identity/${service}/${serviceId}`;
+  const endpoint = `/identity/${serviceName}`;
 
-  const userId = createUserId("test-pairwise-id");
+  const identity = { serviceId, serviceName };
 
-  const foundServiceIdentityLink: GetServiceIdentityLinkResponse = {
-    serviceId: "existing-service-id",
-    serviceName: "existing-service-name",
-  };
+  it("returns 204 when an identity unlink succeeds", async ({ http, sdk }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, identity);
+    http
+      .gateway("udp")
+      .delete(`/identity/${identity.serviceName}/${identity.serviceId}`)
+      .reply(204);
 
-  const event = {
-    httpMethod: "DELETE",
-    path: endpoint,
-    pathParameters: { service, id: serviceId },
-  };
+    const result = await handler(
+      sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+      sdk.context(),
+    );
 
-  describe("response", () => {
-    it("returns 204 when an existing service identity is unlinked", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(200, foundServiceIdentityLink);
-
-      api
-        .delete(
-          `/gateways/udp/v1/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
-        )
-        .reply(204);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: 204, body: "" });
-    });
+    expect(result.statusCode).toBe(204);
+    expect(result.body).toBe("");
   });
 
-  describe("errors", () => {
-    it("returns 404 when service identity link does not exist", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(404);
+  it("returns 404 when an identity link does not exist", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(404);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+      sdk.context(),
+    );
 
-      expect(result).toStrictEqual({ statusCode: 404, body: "" });
-    });
+    expect(result.statusCode).toBe(404);
+    expect(result.body).toBe("");
+  });
 
-    it("returns 502 when retrieving existing service identity link fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(500);
+  it("returns 502 when the UDP identity link integration fails", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(500);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+      sdk.context(),
+    );
 
-      expect(result).toStrictEqual({ statusCode: 502, body: "" });
-    });
+    expect(result.statusCode).toBe(502);
+    expect(result.body).toBe("");
+  });
 
-    it("returns 502 when unlinking service identity fails", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(200, foundServiceIdentityLink);
+  it("returns 502 when the UDP identity unlink integration fails", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, identity);
+    http
+      .gateway("udp")
+      .delete(`/identity/${identity.serviceName}/${identity.serviceId}`)
+      .reply(500);
 
-      api
-        .delete(
-          `/gateways/udp/v1/identity/${foundServiceIdentityLink.serviceName}/${foundServiceIdentityLink.serviceId}`,
-        )
-        .reply(500);
+    const result = await handler(
+      sdk.event.delete(endpoint, { userId, params: { service: serviceName } }),
+      sdk.context(),
+    );
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: 502, body: "" });
-    });
+    expect(result.statusCode).toBe(502);
+    expect(result.body).toBe("");
   });
 });

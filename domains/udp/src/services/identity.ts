@@ -4,7 +4,7 @@ import {
   CreateServiceIdentityLinkRequest,
   DeleteServiceIdentityLinkResponse,
   GetServiceIdentityLinkResponse,
-} from "@schemas";
+} from "@schemas/identity";
 import createHttpError from "http-errors";
 
 type PostRoute = "POST /v1/identity/:service/:id";

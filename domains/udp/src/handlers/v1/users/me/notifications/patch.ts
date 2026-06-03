@@ -4,7 +4,7 @@ import type {
   PushId,
   UpdateNotificationPreferencesOutboundResponse,
 } from "@schemas/notifications";
-import { getPushId } from "@utils";
+import { getPushId } from "@utils/get-push-id";
 import createHttpError from "http-errors";
 
 const context = routeContext<"PATCH /v1/users/me/notifications">;
@@ -12,7 +12,7 @@ const context = routeContext<"PATCH /v1/users/me/notifications">;
 export const handler = route(
   "PATCH /v1/users/me/notifications",
   async ({ auth, resources }) => {
-    // TODO: Add to SDK auth or keep alias for this domain only?
+    // TODO: SDK auth alias
     const userId = auth.pairwiseId as UserId;
 
     const notifications = await updateNotifications(

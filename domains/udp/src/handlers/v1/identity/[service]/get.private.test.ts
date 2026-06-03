@@ -1,78 +1,77 @@
-import { createUserId, it } from "@flex/testing";
-import nock from "nock";
+import { it } from "@flex/testing";
+import { userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import { handler } from "./get";
+import { handler } from "./get.private";
 
-describe("GET /v1/identity/:service", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
+describe("GET /v1/identity/:service [private]", () => {
+  const serviceName = "test-service";
+  const serviceId = "test-service-id";
+  const endpoint = `/identity/${serviceName}`;
 
-  const service = "test-service";
-  const userId = createUserId("test-pairwise-id");
+  const identity = { serviceId, serviceName };
 
-  const event = {
-    pathParameters: { service },
-  };
+  it("returns 200 with identity when an identity link exists", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, identity);
 
-  const foundServiceIdentity = {
-    serviceId: "existing-id",
-    serviceName: "test-service",
-  };
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        userId,
+        headers: { "User-Id": userId },
+        params: { service: serviceName },
+      }),
+      sdk.context(),
+    );
 
-  describe("response", () => {
-    it("returns 200 when a service identity exists", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(200, foundServiceIdentity);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ linked: true });
-    });
-
-    it("returns 200 with linked false when identity does not exist (404)", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(404);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result.statusCode).toBe(200);
-      expect(JSON.parse(result.body)).toStrictEqual({ linked: false });
-    });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual(identity);
   });
 
-  describe("errors", () => {
-    it("returns 502 when the upstream service returns a 500", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get(`/gateways/udp/v1/identity/${service}`)
-        .matchHeader("User-Id", userId)
-        .reply(500);
+  it("returns 404 when an identity link does not exist", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(404);
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        userId,
+        headers: { "User-Id": userId },
+        params: { service: serviceName },
+      }),
+      sdk.context(),
+    );
 
-      expect(result.statusCode).toBe(502);
-    });
+    expect(result.statusCode).toBe(404);
+  });
+
+  it("returns 502 when the UDP identity link integration fails", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(500);
+
+    const result = await handler(
+      sdk.event.get(endpoint, {
+        userId,
+        headers: { "User-Id": userId },
+        params: { service: serviceName },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(502);
   });
 });

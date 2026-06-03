@@ -1,5 +1,4 @@
-import { it } from "@flex/testing";
-import { createUserId } from "@flex/testing";
+import { createUserId, it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { getPushId } from "./get-push-id";
