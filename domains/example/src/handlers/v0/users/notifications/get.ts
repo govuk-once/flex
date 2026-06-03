@@ -22,6 +22,8 @@ export const handler = route("GET /v0/users/notifications", async (ctx) => {
     query: { externalUserID: pushIdResponse.data.pushId },
   });
 
+  ctx.logger.error("unsGetNotifications response", { data: response });
+
   if (!response.ok) {
     ctx.logger.debug(
       "Call to get notifications failed",
