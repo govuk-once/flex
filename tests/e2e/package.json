@@ -7,7 +7,8 @@
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "lint:fix": "npx eslint --fix .",
-    "test:e2e": "vitest --passWithNoTests"
+    "test:e2e": "vitest --passWithNoTests src/domains/udp.test.ts",
+    "test:e2e:all": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@flex/utils": "workspace:*"
