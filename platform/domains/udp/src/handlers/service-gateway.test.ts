@@ -45,6 +45,18 @@ const MOCK_REMOTE_NOTIFICATIONS: NotificationsResponse = {
   },
 };
 
+const MOCK_REMOTE_IDENTITIES = {
+  data: {
+    services: ["dvla"],
+  },
+};
+
+const MOCK_EXPECTED_DOMAIN_IDENTITIES = {
+  data: {
+    services: ["dvla"],
+  },
+};
+
 const remoteClient = {
   user: {
     create: vi.fn().mockResolvedValue({
@@ -67,6 +79,18 @@ const remoteClient = {
     delete: vi.fn().mockResolvedValue({
       ok: true,
       status: 204,
+      data: undefined,
+    }),
+  },
+  services: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_REMOTE_IDENTITIES,
+    }),
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
       data: undefined,
     }),
   },
@@ -113,6 +137,19 @@ describe("UDP Service Gateway", () => {
       operation: "createUser",
       body: { pushId: "123", userId: "456" },
       expected: MOCK_EXPECTED_DOMAIN_USER,
+    },
+    {
+      method: "GET",
+      path: "/gateways/udp/v1/identities/onelogin_user123",
+      operation: "getIdentities",
+      expected: MOCK_EXPECTED_DOMAIN_IDENTITIES,
+    },
+    {
+      method: "POST",
+      path: "/gateways/udp/v1/identities/onelogin_user123",
+      operation: "postIdentities",
+      body: { data: { services: ["dvla", "hmrc"] } },
+      expected: undefined,
     },
   ])(
     "routes $method $path to $operation operation and maps remote response to $expected",

@@ -3,7 +3,10 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import { createIdentityRequestBodySchema } from "../schemas/domain/identity";
+import {
+  createIdentityRequestBodySchema,
+  identitiesResponseSchema,
+} from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
@@ -23,6 +26,7 @@ export const UDP_REMOTE_ROUTES = {
   notifications: `${UDP_REMOTE_BASE}/notifications`,
   user: `${UDP_REMOTE_BASE}/user`,
   identity: `${UDP_REMOTE_BASE}/identity`,
+  identities: `${UDP_REMOTE_BASE}/identities`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -136,6 +140,43 @@ export const ROUTE_CONTRACTS = {
     },
     callRemote: (client, data) =>
       client.serviceLink.delete(data.serviceName, data.identifier),
+  },
+  "GET:/v1/identities/:id": {
+    operation: "getIdentities",
+    method: "GET",
+    inboundPath: "/v1/identities",
+    remotePath: "/v1/identities",
+    toRemote: (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const identifier = pathParams[3];
+
+      if (!identifier) {
+        throw new createHttpError.BadRequest("Missing identifier in path");
+      }
+
+      return { identifier };
+    },
+    callRemote: (client, data) => client.services.get(data.identifier),
+  },
+  "POST:/v1/identities/:id": {
+    operation: "postIdentities",
+    method: "POST",
+    inboundPath: "/v1/identities",
+    remotePath: "/v1/identities",
+    toRemote: async (event) => {
+      const pathParams = normalizeInboundPath(event.path).split("/");
+      const identifier = pathParams[3];
+
+      if (!identifier) {
+        throw new createHttpError.BadRequest("Missing identifier in path");
+      }
+
+      const body = await parseAndMapBody(identitiesResponseSchema, event);
+
+      return { identifier, body };
+    },
+    callRemote: (client, data) =>
+      client.services.post(data.body, data.identifier),
   },
   "GET:/v1/identity/:serviceName": {
     operation: "getIdentityLink",

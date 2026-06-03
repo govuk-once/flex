@@ -14,6 +14,10 @@ const remoteClient = {
     update: vi.fn(),
     delete: vi.fn(),
   },
+  services: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
   serviceLink: {
     create: vi.fn(),
     delete: vi.fn(),
@@ -166,6 +170,49 @@ describe("Executor", () => {
         expect(remoteClient.serviceLink.get).toHaveBeenCalledWith(
           "my-awesome-service",
           "user-12345",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/identities/onelogin_user123",
+      operation: "getIdentities",
+      body: undefined,
+      configureRemoteClient: () => {
+        remoteClient.services.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            data: { services: ["dvla"] },
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.services.get).toHaveBeenCalledWith(
+          "onelogin_user123",
+        );
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/identities/onelogin_user123",
+      operation: "postIdentities",
+      body: {
+        data: { services: ["dvla", "hmrc"] },
+      },
+      configureRemoteClient: () => {
+        remoteClient.services.post.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: undefined,
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.services.post).toHaveBeenCalledWith(
+          {
+            data: { services: ["dvla", "hmrc"] },
+          },
+          "onelogin_user123",
         );
       },
     },

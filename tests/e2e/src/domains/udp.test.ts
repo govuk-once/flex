@@ -15,19 +15,99 @@ const udpCreateIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
+const udpGetIdentityDeployed = () =>
+  isRouteDeployed(udpConfig, "GET /v1/identity/:service");
 
 describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
   const serviceId = "test-service-id";
   const service = "test-service";
 
-  describe("/udp/v1/identity/:service", () => {
-    const endpoint = `/udp/v1/identity/${service}`;
+  describe("/udp/v1/identity", () => {
+    const listEndpoint = "/udp/v1/identity";
+    const endpoint = `${listEndpoint}/${service}`;
 
     describe.runIf(
-      isRouteDeployed(udpConfig, "GET /v1/identity/:service") &&
+      isRouteDeployed(udpConfig, "GET /v1/identity") &&
+        udpGetIdentityDeployed() &&
         udpCreateIdentityDeployed() &&
         udpDeleteIdentityDeployed(),
     )("GET", () => {
+      it("returns a success status code (200 or 204) when checking initial tracking profile", async ({
+        cloudfront,
+        withCleanIdentity,
+        authHeader,
+      }) => {
+        await withCleanIdentity(service);
+
+        const listResult = await cloudfront.client.get(listEndpoint, {
+          headers: authHeader,
+        });
+
+        expect([200, 204]).toContain(listResult.status);
+      });
+
+      it("returns 200 and confirms the newly appended service exists inside the collection", async ({
+        cloudfront,
+        withCleanIdentity,
+        authHeader,
+      }) => {
+        await withCleanIdentity(service);
+
+        const createResult = await cloudfront.client.post(
+          `/udp/v1/identity/${service}/${serviceId}`,
+          {
+            headers: authHeader,
+          },
+        );
+        expect(createResult.status).toBe(201);
+
+        const listResult = await cloudfront.client.get(listEndpoint, {
+          headers: authHeader,
+        });
+
+        expect(listResult.status).toBe(200);
+
+        const body = listResult.body as { services: string[] };
+
+        expect(body).toHaveProperty("services");
+        expect(body.services).toBeInstanceOf(Array);
+
+        expect(body.services).toContain(service);
+      });
+
+      it("returns a success status code and confirms the service has been removed from the array list after unlinking", async ({
+        cloudfront,
+        withIdentityLink,
+        authHeader,
+      }) => {
+        // 1. Start with a guaranteed linked state
+        await withIdentityLink(service, serviceId);
+
+        // 2. Unlink the targeted service identity
+        const deleteResult = await cloudfront.client.delete(
+          `/udp/v1/identity/${service}`,
+          {
+            headers: authHeader,
+          },
+        );
+        expect(deleteResult.status).toBe(204);
+
+        // 3. Fetch tracking list to verify the element was filtered out cleanly
+        const listResult = await cloudfront.client.get(listEndpoint, {
+          headers: authHeader,
+        });
+
+        // If it was the only service, it might return 204. If other services still exist, it returns 200.
+        expect([200, 204]).toContain(listResult.status);
+
+        if (listResult.status === 200) {
+          const body = listResult.body as { services: string[] };
+          expect(body.services).toBeInstanceOf(Array);
+
+          expect(body.services).not.toContain(service);
+        }
+      });
+
       it("returns 200 with service identity true when linked", async ({
         cloudfront,
         withIdentityLink,
