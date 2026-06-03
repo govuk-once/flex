@@ -1,5 +1,7 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
+import { logger } from "@flex/logging";
 import { memoize } from "@smithy/property-provider";
+import type { AwsCredentialIdentity } from "@smithy/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { flexFetch } from "../fetch";
@@ -235,5 +237,104 @@ describe("createSigv4FetchWithCredentials", () => {
 
     expect(fromTemporaryCredentials).toHaveBeenCalledTimes(2);
     expect(memoize).toHaveBeenCalledTimes(2);
+  });
+
+  describe("isExpired predicate", () => {
+    function getIsExpired(roleArn: string) {
+      createSigv4FetchWithCredentials({ ...baseOptions, roleArn });
+      const call = vi.mocked(memoize).mock.calls[0];
+      if (!call) throw new Error("memoize was not called");
+      return call[1] as (creds: AwsCredentialIdentity) => boolean;
+    }
+
+    it("returns true when expiration is in the past", () => {
+      const isExpired = getIsExpired("arn:aws:iam::601000000000:role/expired");
+      expect(
+        isExpired({
+          accessKeyId: "k",
+          secretAccessKey: "s",
+          expiration: new Date(Date.now() - 1000),
+        }),
+      ).toBe(true);
+    });
+
+    it("returns false when expiration is in the future", () => {
+      const isExpired = getIsExpired("arn:aws:iam::602000000000:role/valid");
+      expect(
+        isExpired({
+          accessKeyId: "k",
+          secretAccessKey: "s",
+          expiration: new Date(Date.now() + 10_000),
+        }),
+      ).toBe(false);
+    });
+
+    it("returns false when expiration is undefined", () => {
+      const isExpired = getIsExpired(
+        "arn:aws:iam::603000000000:role/no-expiry",
+      );
+      expect(isExpired({ accessKeyId: "k", secretAccessKey: "s" })).toBe(false);
+    });
+  });
+
+  describe("requiresRefresh predicate", () => {
+    function getRequiresRefresh(roleArn: string) {
+      createSigv4FetchWithCredentials({ ...baseOptions, roleArn });
+      const call = vi.mocked(memoize).mock.calls[0];
+      if (!call) throw new Error("memoize was not called");
+      return call[2] as (creds: AwsCredentialIdentity) => boolean;
+    }
+
+    it("returns true when credentials expire within the 5-minute buffer", () => {
+      const requiresRefresh = getRequiresRefresh(
+        "arn:aws:iam::701000000000:role/needs-refresh",
+      );
+      expect(
+        requiresRefresh({
+          accessKeyId: "k",
+          secretAccessKey: "s",
+          expiration: new Date(Date.now() + 299_000),
+        }),
+      ).toBe(true);
+    });
+
+    it("returns false when credentials expire beyond the 5-minute buffer", () => {
+      const requiresRefresh = getRequiresRefresh(
+        "arn:aws:iam::702000000000:role/fresh",
+      );
+      expect(
+        requiresRefresh({
+          accessKeyId: "k",
+          secretAccessKey: "s",
+          expiration: new Date(Date.now() + 600_000),
+        }),
+      ).toBe(false);
+    });
+
+    it("returns false when expiration is undefined", () => {
+      const requiresRefresh = getRequiresRefresh(
+        "arn:aws:iam::703000000000:role/no-expiry",
+      );
+      expect(requiresRefresh({ accessKeyId: "k", secretAccessKey: "s" })).toBe(
+        false,
+      );
+    });
+  });
+
+  it("logs an info message when STS credentials are refreshed", async () => {
+    createSigv4FetchWithCredentials({
+      ...baseOptions,
+      roleArn: "arn:aws:iam::800000000000:role/logging-test",
+    });
+
+    const call = vi.mocked(memoize).mock.calls[0];
+    if (!call) throw new Error("memoize was not called");
+    const loggingProvider = call[0] as () => Promise<AwsCredentialIdentity>;
+    await loggingProvider();
+
+    expect(logger.info).toHaveBeenCalledWith(
+      "STS credentials refreshed",
+      expect.any(Object),
+    );
   });
 });

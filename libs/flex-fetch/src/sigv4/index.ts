@@ -1,4 +1,5 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
+import { logger } from "@flex/logging";
 import { memoize } from "@smithy/property-provider";
 import type {
   AwsCredentialIdentity,
@@ -60,17 +61,33 @@ export function createSigv4FetchWithCredentials(
 
   let credentials = cachedCredentialProviders.get(cacheKey);
   if (!credentials) {
+    const provider = fromTemporaryCredentials({
+      clientConfig: {
+        region: options.region,
+      },
+      params: {
+        RoleArn: options.roleArn,
+        RoleSessionName: options.roleName,
+        ...(options.externalId && { ExternalId: options.externalId }),
+      },
+    });
+
+    const loggingProvider = async () => {
+      const creds = await provider();
+      logger.info("STS credentials refreshed", {
+        expiration: creds.expiration,
+      });
+      return creds;
+    };
+
     credentials = memoize(
-      fromTemporaryCredentials({
-        clientConfig: {
-          region: options.region,
-        },
-        params: {
-          RoleArn: options.roleArn,
-          RoleSessionName: options.roleName,
-          ...(options.externalId && { ExternalId: options.externalId }),
-        },
-      }),
+      loggingProvider,
+      (creds) =>
+        creds.expiration !== undefined &&
+        creds.expiration.getTime() < Date.now(),
+      (creds) =>
+        creds.expiration !== undefined &&
+        creds.expiration.getTime() - Date.now() < 300_000,
     );
 
     cachedCredentialProviders.set(cacheKey, credentials);
