@@ -273,8 +273,7 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     describe.runIf(
       isRouteDeployed(exampleConfig, "GET /v0/users/notifications") &&
         udpGetUsersDeployed() &&
-        udpGetPushIdDeployed() &&
-        unsGetNotificationsDeployed(),
+        isRouteDeployed(unsConfig, "GET /v1/notifications"),
     )("GET", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
