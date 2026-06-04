@@ -31,7 +31,7 @@ scenarios:
     beforeScenario: pickUserJwt
     flow:
       - get:
-          url: "/app/udp/v1/users"
+          url: "/app/udp/v1/users/me"
           headers:
             Authorization: "Bearer {{ jwt }}"
           expect:
