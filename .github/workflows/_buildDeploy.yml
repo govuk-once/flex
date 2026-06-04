@@ -55,3 +55,10 @@ jobs:
         env:
           STAGE: ${{ env.STAGE }}
         run: pnpm --filter @flex/e2e test:e2e
+
+      - name: E2E tests (domain)
+        if: inputs.STAGE != 'production'
+        continue-on-error: true
+        env:
+          STAGE: ${{ env.STAGE }}
+        run: pnpm --filter @flex/e2e test:e2e:all
