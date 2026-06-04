@@ -1,61 +1,41 @@
-import createHttpError from "http-errors";
-import { status } from "http-status";
-
-import { route } from "../../../../../../domain.config";
+import { route } from "@domain";
+import type { UserId } from "@flex/utils";
+import { throwIntegrationError } from "@services/errors";
 
 export const handler = route(
   "PATCH /v1/notifications/:notificationId/status",
-  async (ctx) => {
-    const pushIdResponse = await ctx.integrations.udpGetPushId({
-      headers: { "User-Id": ctx.auth.pairwiseId },
+  async ({ auth, body, integrations, logger, pathParams }) => {
+    const { notificationId } = pathParams;
+
+    // TODO: Add SDK alias
+    const userId = auth.pairwiseId as UserId;
+
+    const pushIdResponse = await integrations.udpGetPushId({
+      headers: { "User-Id": userId },
     });
 
     if (!pushIdResponse.ok) {
-      const { status: errorStatus, body: errorBody } = pushIdResponse.error;
-      ctx.logger.error("Call to get push id failed", {
-        status: errorStatus,
-        errorBody,
-      });
-      switch (errorStatus) {
-        case status.BAD_REQUEST:
-          throw new createHttpError.BadRequest();
-        case status.NOT_FOUND:
-          throw new createHttpError.NotFound();
-        case status.TOO_MANY_REQUESTS:
-          throw new createHttpError.TooManyRequests();
-        default:
-          throw new createHttpError.BadGateway();
-      }
+      const { status, body: errorBody } = pushIdResponse.error;
+
+      logger.error("Call to get push id failed", { status, errorBody });
+      throwIntegrationError(status);
     }
 
-    const { notificationId } = ctx.pathParams;
+    const { pushId } = pushIdResponse.data;
 
-    const response = await ctx.integrations.unsPatchNotification({
-      query: { externalUserID: pushIdResponse.data.pushId },
+    const response = await integrations.unsPatchNotification({
+      query: { externalUserID: pushId },
       path: `/${notificationId}/status`,
-      body: ctx.body,
+      body,
     });
 
     if (!response.ok) {
-      const { status: errorStatus, body: errorBody } = response.error;
-      ctx.logger.error("Call to patch notification failed", {
-        status: errorStatus,
-        errorBody,
-      });
-      switch (errorStatus) {
-        case status.BAD_REQUEST:
-          throw new createHttpError.BadRequest();
-        case status.NOT_FOUND:
-          throw new createHttpError.NotFound();
-        case status.TOO_MANY_REQUESTS:
-          throw new createHttpError.TooManyRequests();
-        default:
-          throw new createHttpError.BadGateway();
-      }
+      const { status, body: errorBody } = response.error;
+
+      logger.error("Call to patch notification failed", { status, errorBody });
+      throwIntegrationError(status);
     }
 
-    return {
-      status: 202,
-    };
+    return { status: 202 };
   },
 );
