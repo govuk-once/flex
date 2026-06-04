@@ -1,87 +1,59 @@
 import { it } from "@flex/testing";
-import status from "http-status";
-import nock from "nock";
+import { createServiceName, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v1/identity", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-
   const endpoint = "/identity";
 
-  const event = {
-    httpMethod: "GET",
-    path: endpoint,
-  };
+  it("returns 200 with all tracking services when the user identity exists", async ({
+    http,
+    sdk,
+  }) => {
+    const services = [createServiceName("dvla"), createServiceName("hmrc")];
 
-  describe("response", () => {
-    it("returns 200 and the list of tracking services when user identity records exist", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      const mockUdpResponse = {
-        data: {
-          services: ["dvla", "hmrc"],
-        },
-      };
+    http
+      .gateway("udp")
+      .get(`/identities/${userId}`)
+      .reply(200, { data: { services } });
 
-      api
-        .get("/gateways/udp/v1/identities/test-pairwise-id")
-        .reply(status.OK, mockUdpResponse);
+    const result = await handler(
+      sdk.event.get(endpoint, { userId }),
+      sdk.context(),
+    );
 
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result).toStrictEqual({
-        statusCode: status.OK,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(mockUdpResponse.data),
-      });
-    });
-
-    it("returns 204 when no identity profile is found for the user (NOT_FOUND state)", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get("/gateways/udp/v1/identities/test-pairwise-id")
-        .reply(status.NOT_FOUND);
-
-      const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
-      );
-
-      expect(result).toStrictEqual({
-        statusCode: status.NO_CONTENT,
-        body: "",
-      });
-    });
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toStrictEqual({ services });
   });
 
-  describe("errors", () => {
-    it("returns 502 when the downstream platform returns an unexpected internal error", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api
-        .get("/gateways/udp/v1/identities/test-pairwise-id")
-        .reply(status.INTERNAL_SERVER_ERROR);
+  it("returns 204 when the user identity does not exist", async ({
+    http,
+    sdk,
+  }) => {
+    http.gateway("udp").get(`/identities/${userId}`).reply(404);
+
+    const result = await handler(
+      sdk.event.get(endpoint, { userId }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(204);
+    expect(result.body).toBe("");
+  });
+
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP get service identities integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create(event),
-        context.create(),
+        sdk.event.get(endpoint, { userId }),
+        sdk.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: status.BAD_GATEWAY,
-        body: "",
-      });
-    });
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

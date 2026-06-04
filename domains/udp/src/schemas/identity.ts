@@ -1,26 +1,34 @@
-import { NonEmptyString } from "@flex/utils";
-import { UserId } from "@flex/utils";
+import { NonEmptyString, UserId } from "@flex/utils";
 import { z } from "zod";
 
-export const GetServiceIdentityLinkResponseSchema = z.object({
+export const ServiceIdentityLinkSchema = z.object({
   serviceId: NonEmptyString,
   serviceName: NonEmptyString,
   accessToken: NonEmptyString.optional(),
   idToken: NonEmptyString.optional(),
   refreshToken: NonEmptyString.optional(),
 });
+export type ServiceIdentityLink = z.output<typeof ServiceIdentityLinkSchema>;
 
-export type GetServiceIdentityLinkResponse = z.output<
-  typeof GetServiceIdentityLinkResponseSchema
->;
-
-export const CreateServiceIdentityLinkRequestSchema = z.object({
+export const ServiceIdentityLinkRequestSchema = z.object({
   appId: UserId,
   accessToken: NonEmptyString.optional(),
   refreshToken: NonEmptyString.optional(),
   idToken: NonEmptyString.optional(),
 });
+export type ServiceIdentityLinkRequest = z.output<
+  typeof ServiceIdentityLinkRequestSchema
+>;
 
+// TODO: Improve types
+
+export const GetServiceIdentityLinkResponseSchema = ServiceIdentityLinkSchema;
+export type GetServiceIdentityLinkResponse = z.output<
+  typeof GetServiceIdentityLinkResponseSchema
+>;
+
+export const CreateServiceIdentityLinkRequestSchema =
+  ServiceIdentityLinkRequestSchema;
 export type CreateServiceIdentityLinkRequest = z.output<
   typeof CreateServiceIdentityLinkRequestSchema
 >;

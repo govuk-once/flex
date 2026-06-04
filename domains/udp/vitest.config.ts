@@ -10,7 +10,7 @@ export default mergeConfig(
         AWS_REGION: "eu-west-2",
         encryptionKey: "arn:aws:kms:eu-west-2:123456789012:key/test-key",
         privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
-        udpNotificationSecret: "test-notification-name", // pragma: allowlist secret
+        udpNotificationSecret: "test-notification-secret", // pragma: allowlist secret
       },
     },
   }),
