@@ -35,14 +35,10 @@ export const STAGE_KEYS = {
   ApigwPublicAppRoot: `/${stage}/flex/apigw/public/app-root`,
   ApigwPublicAuthorizerFn: `/${stage}/flex/apigw/public/authorizer-fn`,
   //
-  ApigwPrivateRestId: `/${stage}/flex/apigw/private/rest-api-id`,
-  ApigwPrivateDomainRoot: `/${stage}/flex/apigw/private/domains-root`,
   ApigwPrivateGatewaysRoot: `/${stage}/flex/apigw/private/gateways-root`,
   ApigwPrivateGatewayUrl: `/${stage}/flex/apigw/private/gateway-url`,
+  ApigwPrivateRestId: `/${stage}/flex/apigw/private/rest-api-id`,
+  ApigwPrivateDomainRoot: `/${stage}/flex/apigw/private/domains-root`,
   //
-  CertArn: `/${stage}/cert/cert-arn`,
-  //
-  CloudfrontId: `/${stage}/flex/cloudfront/distribution-id`,
-  CloudfrontFunctionName: `/${stage}/flex/cloudfront/function-name`,
-  CloudfrontFunctionArn: `/${stage}/flex/cloudfront/function-arn`,
+  WafCfSecretHeaderArn: `/${stage}/flex-secret/origin-verify-secret`,
 };

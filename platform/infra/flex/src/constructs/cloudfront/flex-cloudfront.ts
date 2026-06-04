@@ -1,23 +1,19 @@
-import { randomBytes } from "node:crypto";
-
 import { Environment, getEnvConfig } from "@flex/utils";
 import { Duration, Stack } from "aws-cdk-lib";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import {
   AllowedMethods,
   CachePolicy,
   Distribution,
   FunctionEventType,
-  IFunction,
   OriginRequestPolicy,
   PriceClass,
   SecurityPolicyProtocol,
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
-import { RestApiOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
+import { HttpOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { ARecord, IHostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
   BlockPublicAccess,
@@ -26,17 +22,15 @@ import {
   ObjectLockMode,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { CfnProtection } from "aws-cdk-lib/aws-shield";
-import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from "aws-cdk-lib/custom-resources";
+import { CfnWebACL } from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../../utils/getEntry";
+import { CloudFrontAlarms } from "../alarms/cloudfront";
+import { ShieldAlarms } from "../alarms/shield";
 import { AlarmActionProps } from "../alarms/types";
 import { WafAlarms } from "../alarms/waf";
 import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
@@ -44,117 +38,16 @@ import { FlexCloudfrontFunction } from "./flex-cloudfront-function";
 const envConfig = getEnvConfig();
 
 interface FlexCloudfrontProps extends AlarmActionProps {
-  restApi: RestApi;
+  restApi: IRestApi;
   certArn: string;
+  hostedZone: IHostedZone;
   domainName: string;
   subdomainName?: string;
+  secretHeaderArn: string;
 }
 
 export class FlexCloudfront extends Construct {
   public readonly distribution: Distribution;
-  public readonly viewerRequestFunction: IFunction;
-
-  /**
-   * To prevent any down time we return the previous secret and a new one that will be stored.
-   * This means cloudfront can send the old secret and still be accepted. This will mitigate
-   * any propogation issues when updating the header in cloudfront
-   *
-   * @returns {{ currentSecret: String, previousSecret: String }} A pair of secrets to accept in the WAF
-   */
-  #createRotatingSecret(): {
-    setCurrentSecret: AwsCustomResource;
-    currentSecret: string;
-    previousSecret: string;
-  } {
-    const stack = Stack.of(this);
-
-    const paramName = `/${envConfig.stage}/flex/secure-api/origin-secret`;
-    const paramArn = `arn:aws:ssm:${stack.region}:${stack.account}:parameter${paramName}`;
-    const newSecret = randomBytes(64).toString("hex");
-
-    // Use fromStatements with explicit actions rather than fromSdkCalls to ensure the correct
-    // IAM permissions are always granted. fromSdkCalls auto-generates actions, which can be
-    // unreliable when a permissions boundary is applied to the stack.
-    const ssmPolicy = (actions: string[]) =>
-      AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({ actions, resources: [paramArn] }),
-      ]);
-
-    // Ensure the parameter exists with a default value. This is important on the first
-    // deployment for ephemeral envs. Likely will only run once on the main envs.
-    const seedSecretResource = new AwsCustomResource(this, "SeedSecret", {
-      onCreate: {
-        service: "SSM",
-        action: "putParameter",
-        parameters: { Name: paramName, Value: newSecret, Type: "String" },
-        physicalResourceId: PhysicalResourceId.of("seed-secret"),
-        ignoreErrorCodesMatching: "ParameterAlreadyExists",
-      },
-      policy: ssmPolicy(["ssm:PutParameter"]),
-    });
-
-    const previousSsmGet = {
-      service: "SSM",
-      action: "getParameter",
-      parameters: { Name: paramName },
-      physicalResourceId: PhysicalResourceId.of("get-previous-secret"),
-    };
-    // Safe to read as it will have been created above if it did not exist
-    const previousSecret = new AwsCustomResource(this, "GetPreviousSecret", {
-      onCreate: previousSsmGet,
-      onUpdate: previousSsmGet,
-      // We share the parameter across these 3 calls so we only delete in one place
-      onDelete: {
-        service: "SSM",
-        action: "deleteParameter",
-        parameters: { Name: paramName },
-      },
-      policy: ssmPolicy(["ssm:GetParameter", "ssm:DeleteParameter"]),
-    });
-
-    previousSecret.node.addDependency(seedSecretResource);
-
-    const currentSsmPut = {
-      service: "SSM",
-      action: "putParameter",
-      parameters: {
-        Name: paramName,
-        Value: newSecret,
-        Type: "String",
-        Overwrite: true,
-      },
-      physicalResourceId: PhysicalResourceId.of("store-new-secret"),
-    };
-    // Store the new secret for the next deployment
-    const setCurrentSecret = new AwsCustomResource(this, "StoreNewSecret", {
-      onCreate: currentSsmPut,
-      onUpdate: currentSsmPut,
-      policy: ssmPolicy(["ssm:PutParameter"]),
-    });
-
-    setCurrentSecret.node.addDependency(previousSecret);
-
-    return {
-      setCurrentSecret,
-      currentSecret: newSecret,
-      // The previous secret, falling back to newSecret on first deploy
-      previousSecret:
-        previousSecret.getResponseField("Parameter.Value") || newSecret,
-    };
-  }
-
-  #headerMatchStatement(secret: string) {
-    return {
-      byteMatchStatement: {
-        fieldToMatch: {
-          singleHeader: { Name: "x-origin-verify" },
-        },
-        positionalConstraint: "EXACTLY",
-        searchString: secret,
-        textTransformations: [{ priority: 0, type: "NONE" }],
-      },
-    };
-  }
 
   constructor(
     scope: Construct,
@@ -164,14 +57,13 @@ export class FlexCloudfront extends Construct {
       certArn,
       domainName,
       subdomainName,
+      hostedZone,
       criticalAction,
       warningAction,
+      secretHeaderArn,
     }: FlexCloudfrontProps,
   ) {
     super(scope, id);
-
-    const { setCurrentSecret, currentSecret, previousSecret } =
-      this.#createRotatingSecret();
 
     const flexCloudfrontFunction = new FlexCloudfrontFunction(
       this,
@@ -184,9 +76,107 @@ export class FlexCloudfront extends Construct {
       },
     );
 
-    this.viewerRequestFunction = flexCloudfrontFunction.function;
+    const viewerRequestFunction = flexCloudfrontFunction.function;
 
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
+
+    const webAcl = new CfnWebACL(this, "WebAcl", {
+      name: `${envConfig.stage}-cf-waf`,
+      scope: "CLOUDFRONT",
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: "WebAcl",
+        sampledRequestsEnabled: true,
+      },
+      dataProtectionConfig: {
+        dataProtections: [
+          {
+            action: "SUBSTITUTION",
+            field: {
+              fieldType: "SINGLE_HEADER",
+              fieldKeys: ["authorization"],
+            },
+            excludeRuleMatchDetails: false,
+            excludeRateBasedDetails: false,
+          },
+        ],
+      },
+      rules: [
+        {
+          name: "AWSManagedRulesCommonRuleSet",
+          priority: 0,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesCommonRuleSet",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesCommonRuleSet",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "AWSManagedRulesKnownBadInputsRuleSet",
+          priority: 1,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesKnownBadInputsRuleSet",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "AWSManagedRulesAmazonIpReputationList",
+          priority: 2,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesAmazonIpReputationList",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesAmazonIpReputationList",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "RateLimit",
+          priority: 3,
+          action: { block: {} },
+          statement: {
+            rateBasedStatement: {
+              limit: 2000,
+              aggregateKeyType: "IP",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "RateLimit",
+            sampledRequestsEnabled: true,
+          },
+        },
+      ],
+    });
+
+    new WafAlarms(this, "CloudFrontWafAlarms", {
+      alarmNamePrefix: `${envConfig.stage}-cf-waf`,
+      criticalAction,
+      warningAction,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      webAclName: webAcl.name!,
+    });
 
     const accessLogBucket = new Bucket(this, "AccessLogBucket", {
       // NOSONAR enforceSSL is applied via the EnforceS3Https aspect
@@ -214,24 +204,34 @@ export class FlexCloudfront extends Construct {
       "Log bucket intentionally does not log",
     );
 
+    const originVerifySecret = Secret.fromSecretCompleteArn(
+      this,
+      "OriginVerifySecret",
+      secretHeaderArn,
+    );
+
     this.distribution = new Distribution(this, "Distribution", {
       comment: "Flex Platform CloudFront Distribution for Structural Checks",
       priceClass: PriceClass.PRICE_CLASS_100,
       minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
+      webAclId: webAcl.attrArn,
       defaultBehavior: {
-        origin: new RestApiOrigin(restApi, {
-          originPath: "/prod",
-          customHeaders: {
-            "x-origin-verify": currentSecret,
+        origin: new HttpOrigin(
+          `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
+          {
+            originPath: "/prod",
+            customHeaders: {
+              "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
+            },
           },
-        }),
+        ),
         viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
         allowedMethods: AllowedMethods.ALLOW_ALL,
         cachePolicy: CachePolicy.CACHING_DISABLED,
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         functionAssociations: [
           {
-            function: this.viewerRequestFunction,
+            function: viewerRequestFunction,
             eventType: FunctionEventType.VIEWER_REQUEST,
           },
         ],
@@ -242,86 +242,33 @@ export class FlexCloudfront extends Construct {
       certificate: cert,
     });
 
-    setCurrentSecret.node.addDependency(this.distribution);
+    new CloudFrontAlarms(this, "Alarms", {
+      alarmNamePrefix: `${envConfig.stage}-cf`,
+      distribution: this.distribution,
+      viewerRequestFunction,
+      criticalAction,
+      warningAction,
+    });
 
+    // Shield Advanced is only enable in the production account currently so this
+    // is required else deployments will fail in accounts that don't have it enabled
     if (envConfig.env === Environment.production) {
       const { account } = Stack.of(this);
       new CfnProtection(this, "ShieldProtection", {
         name: `${envConfig.stage}-flex-cloudfront`,
         resourceArn: `arn:aws:cloudfront::${account}:distribution/${this.distribution.distributionId}`,
       });
+
+      new ShieldAlarms(this, "ShieldAlarms", {
+        alarmNamePrefix: `${envConfig.stage}-shield`,
+        resourceArn: this.distribution.distributionArn,
+        criticalAction,
+        warningAction,
+      });
     }
 
-    const webAcl = new CfnWebACL(this, "ApiWaf", {
-      name: `${envConfig.stage}-apiwaf`,
-      scope: "REGIONAL",
-      defaultAction: {
-        block: {},
-      },
-      visibilityConfig: {
-        sampledRequestsEnabled: true,
-        cloudWatchMetricsEnabled: true,
-        metricName: "OriginVerifyWebAcl",
-      },
-      rules: [
-        {
-          name: "RequireOriginSecret",
-          priority: 0,
-          visibilityConfig: {
-            cloudWatchMetricsEnabled: false,
-            sampledRequestsEnabled: false,
-            metricName: "RequireOriginSecret",
-          },
-          action: {
-            allow: {},
-          },
-          statement: {
-            orStatement: {
-              statements: [
-                this.#headerMatchStatement(currentSecret),
-                this.#headerMatchStatement(previousSecret),
-              ],
-            },
-          },
-        },
-        {
-          name: "AWSManagedRulesKnownBadInputsRuleSet",
-          priority: 1,
-          visibilityConfig: {
-            cloudWatchMetricsEnabled: false,
-            sampledRequestsEnabled: false,
-            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
-          },
-          overrideAction: {
-            none: {},
-          },
-          statement: {
-            managedRuleGroupStatement: {
-              name: "AWSManagedRulesKnownBadInputsRuleSet",
-              vendorName: "AWS",
-            },
-          },
-        },
-      ],
-    });
-
-    new CfnWebACLAssociation(this, "WebAclAssociation", {
-      webAclArn: webAcl.attrArn,
-      resourceArn: restApi.deploymentStage.stageArn,
-    });
-
-    new WafAlarms(this, "ApiWafAlarms", {
-      alarmNamePrefix: `${envConfig.stage}-waf`,
-      criticalAction,
-      warningAction,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      webAclName: webAcl.name!,
-    });
-
-    const zone = HostedZone.fromLookup(this, "HostedZone", { domainName });
-
     new ARecord(this, "DomainAliasRecord", {
-      zone,
+      zone: hostedZone,
       recordName: subdomainName ? `${subdomainName}.` : undefined,
       target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
     });

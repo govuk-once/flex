@@ -38,10 +38,3 @@ export const e2eEnvSchema = z.object({
 });
 
 export type E2EEnv = z.output<typeof e2eEnvSchema>;
-
-export const flexStackOutputsSchema = z.object({
-  FlexApiUrl: z.url().describe("Flex Platform API URL"),
-  PrivateGatewayUrl: z.url().describe("Private API Gateway URL"),
-});
-
-export type FlexStackOutputs = z.output<typeof flexStackOutputsSchema>;

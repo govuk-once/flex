@@ -1,6 +1,7 @@
 import { Duration, Stack } from "aws-cdk-lib";
 import {
   Alarm,
+  CfnAlarm,
   ComparisonOperator,
   MathExpression,
   Metric,
@@ -17,7 +18,7 @@ export interface WafAlarmsProps extends BaseAlarmsProps {
 
 export class WafAlarms extends Construct {
   public readonly blockingAllRequestsAlarm: Alarm;
-  public readonly blockedRequestsSpikeAlarm: Alarm;
+  public readonly blockedRequestsSpikeAlarm: CfnAlarm;
 
   constructor(scope: Construct, id: string, props: WafAlarmsProps) {
     super(scope, id);
@@ -66,30 +67,51 @@ export class WafAlarms extends Construct {
     });
     this.blockingAllRequestsAlarm.addAlarmAction(criticalAction);
 
-    this.blockedRequestsSpikeAlarm = new Alarm(this, "BlockedRequestsSpike", {
-      alarmName: `${alarmNamePrefix}-blocked-requests-spike`,
+    const spikeAlarmCfn = new CfnAlarm(this, "BlockedRequestsSpike", {
+      alarmName: `${alarmNamePrefix}-blocked-requests-spike-anomaly`,
       alarmDescription:
-        "Warning: blocked requests over 5 minutes exceeded 3x the trailing 1-hour average",
-      metric: new MathExpression({
-        expression: "IF(baseline > 0, recent / baseline, 0)",
-        usingMetrics: {
-          recent: blocked5m,
-          baseline: new Metric({
-            namespace: "AWS/WAFV2",
-            metricName: "BlockedRequests",
-            dimensionsMap: dimensions,
-            statistic: Stats.AVERAGE,
-            period: Duration.hours(1),
-          }),
-        },
-        period: Duration.minutes(5),
-        label: "Spike ratio",
-      }),
-      threshold: 3,
+        "Warning: blocked requests deviate from expected baseline (anomaly detection)",
+      comparisonOperator: ComparisonOperator.GREATER_THAN_UPPER_THRESHOLD,
       evaluationPeriods: 1,
-      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
+      thresholdMetricId: "expected_band",
+      treatMissingData: "notBreaching",
+      metrics: [
+        {
+          id: "blocked_requests",
+          metricStat: {
+            metric: {
+              namespace: "AWS/WAFV2",
+              metricName: "BlockedRequests",
+              dimensions: Object.entries(dimensions).map(([name, value]) => ({
+                name,
+                value,
+              })),
+            },
+            period: 300,
+            stat: Stats.SUM,
+          },
+          returnData: true,
+        },
+        {
+          id: "expected_band",
+          // 2 = bandwidth in standard deviations
+          expression: "ANOMALY_DETECTION_BAND(blocked_requests, 2)",
+          label: "BlockedRequests (expected)",
+          returnData: true,
+        },
+      ],
     });
-    this.blockedRequestsSpikeAlarm.addAlarmAction(warningAction);
+
+    const spikeAlarmRef = Alarm.fromAlarmArn(
+      this,
+      "BlockedRequestsSpikeRef",
+      spikeAlarmCfn.attrArn,
+    );
+
+    spikeAlarmCfn.alarmActions = [
+      warningAction.bind(this, spikeAlarmRef).alarmActionArn,
+    ];
+
+    this.blockedRequestsSpikeAlarm = spikeAlarmCfn;
   }
 }
