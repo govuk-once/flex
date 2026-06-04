@@ -80,8 +80,7 @@ export class FlexCloudfront extends Construct {
 
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
 
-    const webAcl = new CfnWebACL(this, "WebAcl", {
-      name: `${envConfig.stage}-cf-waf`,
+    const webAcl = new CfnWebACL(this, "CfWebAcl", {
       scope: "CLOUDFRONT",
       defaultAction: { allow: {} },
       visibilityConfig: {
@@ -174,8 +173,7 @@ export class FlexCloudfront extends Construct {
       alarmNamePrefix: `${envConfig.stage}-cf-waf`,
       criticalAction,
       warningAction,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      webAclName: webAcl.name!,
+      webAcl,
     });
 
     const accessLogBucket = new Bucket(this, "AccessLogBucket", {

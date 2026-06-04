@@ -1,4 +1,4 @@
-import { Duration, Stack } from "aws-cdk-lib";
+import { Duration, Fn, Stack } from "aws-cdk-lib";
 import {
   Alarm,
   CfnAlarm,
@@ -8,12 +8,13 @@ import {
   Stats,
   TreatMissingData,
 } from "aws-cdk-lib/aws-cloudwatch";
+import { CfnWebACL } from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
 import { BaseAlarmsProps } from "./types";
 
 export interface WafAlarmsProps extends BaseAlarmsProps {
-  readonly webAclName: string;
+  readonly webAcl: CfnWebACL;
 }
 
 export class WafAlarms extends Construct {
@@ -23,11 +24,10 @@ export class WafAlarms extends Construct {
   constructor(scope: Construct, id: string, props: WafAlarmsProps) {
     super(scope, id);
 
-    const { webAclName, criticalAction, warningAction, alarmNamePrefix } =
-      props;
+    const { webAcl, criticalAction, warningAction, alarmNamePrefix } = props;
 
     const dimensions = {
-      WebACL: webAclName,
+      WebACL: Fn.select(2, Fn.split("/", webAcl.attrArn)),
       Rule: "ALL",
       Region: Stack.of(this).region,
     };

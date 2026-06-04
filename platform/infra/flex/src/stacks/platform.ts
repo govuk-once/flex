@@ -388,8 +388,7 @@ export class FlexPlatformStack extends BaseStack {
       "Using AWS managed keys is fine in this case and lets us replicate cross region without issues",
     );
 
-    const webAcl = new CfnWebACL(this, "ApiWaf", {
-      name: `${stage}-apiwaf`,
+    const webAcl = new CfnWebACL(this, "ApiWebAcl", {
       scope: "REGIONAL",
       defaultAction: {
         block: {},
@@ -465,8 +464,7 @@ export class FlexPlatformStack extends BaseStack {
       alarmNamePrefix: `${stage}-waf`,
       criticalAction,
       warningAction,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      webAclName: webAcl.name!,
+      webAcl,
     });
 
     return { originVerifySecret };
