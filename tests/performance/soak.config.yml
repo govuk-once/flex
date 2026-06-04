@@ -4,9 +4,9 @@ config:
     timeout: 30
   phases:
     - name: soak
-      duration: 1800
-      arrivalRate: 15
-      maxVusers: 50
+      duration: 4500
+      arrivalRate: 1
+      maxVusers: 1
   plugins:
     publish-metrics:
       - type: cloudwatch

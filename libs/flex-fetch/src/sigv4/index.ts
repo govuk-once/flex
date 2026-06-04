@@ -75,19 +75,20 @@ export function createSigv4FetchWithCredentials(
     const loggingProvider = async () => {
       const creds = await provider();
       logger.info("STS credentials refreshed", {
-        expiration: creds.expiration,
+        expiration: creds.expiration?.toISOString(),
       });
       return creds;
     };
 
+    // isExpired: refresh when less than 5 minutes remain, giving a buffer before the 1h STS TTL.
+    // requiresRefresh: return true whenever the credential has an expiry — prevents memoize from
+    // marking it as a permanent constant and skipping the isExpired check on subsequent calls.
     credentials = memoize(
       loggingProvider,
       (creds) =>
         creds.expiration !== undefined &&
-        creds.expiration.getTime() < Date.now(),
-      (creds) =>
-        creds.expiration !== undefined &&
         creds.expiration.getTime() - Date.now() < 300_000,
+      (creds) => creds.expiration !== undefined,
     );
 
     cachedCredentialProviders.set(cacheKey, credentials);

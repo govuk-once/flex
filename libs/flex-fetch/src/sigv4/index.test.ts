@@ -258,13 +258,26 @@ describe("createSigv4FetchWithCredentials", () => {
       ).toBe(true);
     });
 
-    it("returns false when expiration is in the future", () => {
+    it("returns true when expiration is within the 5-minute buffer", () => {
+      const isExpired = getIsExpired(
+        "arn:aws:iam::601500000000:role/near-expiry",
+      );
+      expect(
+        isExpired({
+          accessKeyId: "k",
+          secretAccessKey: "s",
+          expiration: new Date(Date.now() + 299_000),
+        }),
+      ).toBe(true);
+    });
+
+    it("returns false when expiration is more than 5 minutes away", () => {
       const isExpired = getIsExpired("arn:aws:iam::602000000000:role/valid");
       expect(
         isExpired({
           accessKeyId: "k",
           secretAccessKey: "s",
-          expiration: new Date(Date.now() + 10_000),
+          expiration: new Date(Date.now() + 600_000),
         }),
       ).toBe(false);
     });
@@ -285,30 +298,17 @@ describe("createSigv4FetchWithCredentials", () => {
       return call[2] as (creds: AwsCredentialIdentity) => boolean;
     }
 
-    it("returns true when credentials expire within the 5-minute buffer", () => {
+    it("returns true when credentials have an expiry", () => {
       const requiresRefresh = getRequiresRefresh(
-        "arn:aws:iam::701000000000:role/needs-refresh",
+        "arn:aws:iam::701000000000:role/has-expiry",
       );
       expect(
         requiresRefresh({
           accessKeyId: "k",
           secretAccessKey: "s",
-          expiration: new Date(Date.now() + 299_000),
+          expiration: new Date(Date.now() + 3_600_000),
         }),
       ).toBe(true);
-    });
-
-    it("returns false when credentials expire beyond the 5-minute buffer", () => {
-      const requiresRefresh = getRequiresRefresh(
-        "arn:aws:iam::702000000000:role/fresh",
-      );
-      expect(
-        requiresRefresh({
-          accessKeyId: "k",
-          secretAccessKey: "s",
-          expiration: new Date(Date.now() + 600_000),
-        }),
-      ).toBe(false);
     });
 
     it("returns false when expiration is undefined", () => {
