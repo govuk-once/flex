@@ -34,9 +34,14 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpCmkArn,
   ENV_KEYS.UdpConfigRoleArn,
   ENV_KEYS.UdpConfigSecretArn,
-  ENV_KEYS.DvlaConfigSecretArn,
-  ENV_KEYS.UnsConfigSecretArn,
-  ENV_KEYS.UnsCustomerRole,
+  // TODO: remove guard when DVLA and UNS are ready for production
+  ...(env !== Environment.production
+    ? [
+        ENV_KEYS.DvlaConfigSecretArn,
+        ENV_KEYS.UnsConfigSecretArn,
+        ENV_KEYS.UnsCustomerRole,
+      ]
+    : []),
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
   ENV_KEYS.FlexEncryptionKey,
