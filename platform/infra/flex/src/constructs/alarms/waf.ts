@@ -40,31 +40,35 @@ export class WafAlarms extends Construct {
       period: Duration.minutes(5),
     });
 
-    this.blockingAllRequestsAlarm = new Alarm(this, "BlockingAllRequests", {
-      alarmName: `${alarmNamePrefix}-blocking-all-requests`,
-      alarmDescription:
-        "Critical: WAF blocking >90% of total requests over 5 minutes",
-      metric: new MathExpression({
-        expression:
-          "IF((blocked + allowed) > 0, 100 * (blocked / (blocked + allowed)), 0)",
-        usingMetrics: {
-          blocked: blocked5m,
-          allowed: new Metric({
-            namespace: "AWS/WAFV2",
-            metricName: "AllowedRequests",
-            dimensionsMap: dimensions,
-            statistic: Stats.SUM,
-            period: Duration.minutes(5),
-          }),
-        },
-        period: Duration.minutes(5),
-        label: "Block rate (%)",
-      }),
-      threshold: 90,
-      evaluationPeriods: 1,
-      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
-    });
+    this.blockingAllRequestsAlarm = new Alarm(
+      this,
+      "Blocking90PercentRequests",
+      {
+        alarmName: `${alarmNamePrefix}-blocking-90-percent-requests`,
+        alarmDescription:
+          "Critical: WAF blocking >90% of total requests over 5 minutes",
+        metric: new MathExpression({
+          expression:
+            "IF((blocked + allowed) > 0, 100 * (blocked / (blocked + allowed)), 0)",
+          usingMetrics: {
+            blocked: blocked5m,
+            allowed: new Metric({
+              namespace: "AWS/WAFV2",
+              metricName: "AllowedRequests",
+              dimensionsMap: dimensions,
+              statistic: Stats.SUM,
+              period: Duration.minutes(5),
+            }),
+          },
+          period: Duration.minutes(5),
+          label: "Block rate (%)",
+        }),
+        threshold: 90,
+        evaluationPeriods: 1,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+      },
+    );
     this.blockingAllRequestsAlarm.addAlarmAction(criticalAction);
 
     const spikeAlarmCfn = new CfnAlarm(this, "BlockedRequestsSpike", {
