@@ -1,4 +1,3 @@
-import { route } from "@domain";
 import { logger } from "@flex/logging";
 import status from "http-status";
 
@@ -10,8 +9,21 @@ let warmInvocations = 0;
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-export const handler = route("GET /v1/cascade", async (ctx) => {
-  const { delays, hop } = ctx.queryParams;
+interface IntegrationResultLike {
+  readonly ok: boolean;
+  readonly data?: unknown;
+  readonly error?: unknown;
+}
+
+interface RunCascadeInput {
+  readonly delays: readonly number[];
+  readonly hop: number;
+  readonly callNext: (
+    query: Record<string, string>,
+  ) => Promise<IntegrationResultLike>;
+}
+
+export async function runCascade({ delays, hop, callNext }: RunCascadeInput) {
   const [waitMs = 0, ...rest] = delays;
 
   const cold = warmInvocations === 0;
@@ -43,8 +55,9 @@ export const handler = route("GET /v1/cascade", async (ctx) => {
       remaining: rest.length,
     });
 
-    const result = await ctx.integrations.cascadeNext({
-      query: { delays: rest.join(","), hop: String(hop + 1) },
+    const result = await callNext({
+      delays: rest.join(","),
+      hop: String(hop + 1),
     });
 
     next = result.ok ? result.data : { error: result.error };
@@ -62,4 +75,4 @@ export const handler = route("GET /v1/cascade", async (ctx) => {
     status: status.OK,
     data: { hop, cold, waitedMs: waitMs, initAgeMs, next },
   };
-});
+}
