@@ -1,0 +1,29 @@
+{
+  "name": "@flex/cold-start-domain",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./domain.config.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "http-status": "2.1.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@types/aws-lambda": "8.10.161",
+    "eslint": "10.3.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5"
+  }
+}

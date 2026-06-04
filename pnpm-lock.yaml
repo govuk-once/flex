@@ -45,6 +45,40 @@ importers:
         specifier: 5.4.6
         version: 5.4.6(zod@4.4.3)
 
+  domains/cold-start:
+    dependencies:
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../../libs/logging
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-status:
+        specifier: 2.1.0
+        version: 2.1.0
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
+      eslint:
+        specifier: 10.3.0
+        version: 10.3.0(jiti@2.6.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.11(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.0))
+
   domains/dvla:
     dependencies:
       '@flex/sdk':
