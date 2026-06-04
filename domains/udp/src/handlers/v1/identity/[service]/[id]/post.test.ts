@@ -1,240 +1,316 @@
 import { it } from "@flex/testing";
-import type {
-  CreateServiceIdentityLinkRequest,
-  GetServiceIdentityLinkResponse,
-} from "@schemas/identity";
-import { userId } from "@tests/fixtures";
-import status from "http-status";
+import {
+  createServiceId,
+  createServiceIdentityLink,
+  createServiceName,
+  serviceId,
+  serviceIdentityLink,
+  serviceIdentityLinkRequest,
+  serviceName,
+  userId,
+} from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./post";
 
 describe("POST /v1/identity/:service/:id", () => {
-  const service = "test-service";
-  const serviceId = "test-service-id";
-  const endpoint = `/identity/${service}/${serviceId}`;
-  const body: CreateServiceIdentityLinkRequest = { appId: userId };
+  const endpoint = `/identity/${serviceName}/${serviceId}`;
 
-  describe("response", () => {
-    it("returns 201 when a new service identity is linked and appended to the tracking list", async ({
-      http,
-      sdk,
-    }) => {
-      http
-        .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.NOT_FOUND);
+  const existingService = createServiceName("test-existing-service");
 
-      http.gateway("udp").get(`/identities/${userId}`).reply(status.NOT_FOUND);
+  it("returns 201 when the service identity is linked and appended to the tracking list", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(404);
+    http.gateway("udp").get(`/identities/${userId}`).reply(404);
+    http
+      .gateway("udp")
+      .post(`/identity/${serviceName}/${serviceId}`, {
+        body: serviceIdentityLinkRequest,
+      })
+      .reply(201);
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [serviceName] } },
+      })
+      .reply(200);
 
-      http
-        .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, { body })
-        .reply(status.CREATED);
+    const result = await handler(
+      sdk.event.post(endpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: serviceName, id: serviceId },
+      }),
+      sdk.context(),
+    );
 
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: {
-            data: { services: [service] },
-          },
-        })
-        .reply(status.OK);
-
-      const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body,
-          params: { service, id: serviceId },
-        }),
-        sdk.context(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: status.CREATED, body: "" });
-    });
-
-    it("returns 201 and skips appending the list when the service is already present in the tracking list collection", async ({
-      http,
-      sdk,
-    }) => {
-      http
-        .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.NOT_FOUND);
-
-      http
-        .gateway("udp")
-        .get(`/identities/${userId}`)
-        .reply(status.OK, {
-          data: { services: [service, "some-other-service"] },
-        });
-
-      http
-        .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, { body })
-        .reply(status.CREATED);
-
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: {
-            data: { services: [service, "some-other-service"] },
-          },
-        })
-        .reply(status.OK);
-
-      const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body,
-          params: { service, id: serviceId },
-        }),
-        sdk.context(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: status.CREATED, body: "" });
-    });
-
-    it("returns 204 when the identity is already linked with the same ID (skips appending list)", async ({
-      http,
-      sdk,
-    }) => {
-      const existingLink: GetServiceIdentityLinkResponse = {
-        serviceId: serviceId,
-        serviceName: service,
-      };
-
-      http
-        .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.OK, existingLink);
-
-      const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body,
-          params: { service, id: serviceId },
-        }),
-        sdk.context(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: status.NO_CONTENT, body: "" });
-    });
-
-    it("returns 201 after unlinking an old ID and appending the new identity profile if absent", async ({
-      http,
-      sdk,
-    }) => {
-      const oldId = "old-id";
-      const existingLink: GetServiceIdentityLinkResponse = {
-        serviceId: oldId,
-        serviceName: service,
-      };
-
-      http
-        .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.OK, existingLink);
-
-      http
-        .gateway("udp")
-        .delete(`/identity/${service}/${oldId}`)
-        .reply(status.NO_CONTENT);
-
-      http
-        .gateway("udp")
-        .get(`/identities/${userId}`)
-        .reply(status.OK, {
-          data: { services: ["existing-other-service"] },
-        });
-
-      http
-        .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, { body })
-        .reply(status.CREATED);
-
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: {
-            data: { services: ["existing-other-service", service] },
-          },
-        })
-        .reply(status.OK);
-
-      const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body,
-          params: { service, id: serviceId },
-        }),
-        sdk.context(),
-      );
-
-      expect(result).toStrictEqual({ statusCode: status.CREATED, body: "" });
-    });
+    expect(result.statusCode).toBe(201);
+    expect(result.body).toBe("");
   });
 
-  describe("errors", () => {
-    it("returns 502 when the initial check fails", async ({ http, sdk }) => {
+  it("returns 201 when the service identity link is already tracked", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(404);
+    http
+      .gateway("udp")
+      .get(`/identities/${userId}`)
+      .reply(200, { data: { services: [serviceName, existingService] } });
+    http
+      .gateway("udp")
+      .post(`/identity/${serviceName}/${serviceId}`, {
+        body: serviceIdentityLinkRequest,
+      })
+      .reply(201);
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [serviceName, existingService] } },
+      })
+      .reply(200);
+
+    const result = await handler(
+      sdk.event.post(endpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: serviceName, id: serviceId },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(201);
+    expect(result.body).toBe("");
+  });
+
+  it("returns 204 when the service identity is already linked with the same ID", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, serviceIdentityLink);
+
+    const result = await handler(
+      sdk.event.post(endpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: serviceName, id: serviceId },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(204);
+    expect(result.body).toBe("");
+  });
+
+  it("returns 201 and appends to the tracking list if absent when the service identity is unlinked with an old ID", async ({
+    http,
+    sdk,
+  }) => {
+    const oldServiceId = createServiceId("test-old-service-id");
+    const existingServiceIdentity = createServiceIdentityLink({
+      serviceId: oldServiceId,
+    });
+
+    http
+      .gateway("udp")
+      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .reply(200, existingServiceIdentity);
+    http
+      .gateway("udp")
+      .delete(
+        `/identity/${existingServiceIdentity.serviceName}/${oldServiceId}`,
+      )
+      .reply(204);
+    http
+      .gateway("udp")
+      .get(`/identities/${userId}`)
+      .reply(200, { data: { services: [existingService] } });
+    http
+      .gateway("udp")
+      .post(`/identity/${serviceName}/${serviceId}`, {
+        body: serviceIdentityLinkRequest,
+      })
+      .reply(201);
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [existingService, serviceName] } },
+      })
+      .reply(200);
+
+    const result = await handler(
+      sdk.event.post(endpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: serviceName, id: serviceId },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(201);
+    expect(result.body).toBe("");
+  });
+
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP get service identity link integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.INTERNAL_SERVER_ERROR);
+        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .reply(upstream);
 
       const result = await handler(
         sdk.event.post(endpoint, {
           userId,
-          body,
-          params: { service, id: serviceId },
+          body: serviceIdentityLinkRequest,
+          params: { service: serviceName, id: serviceId },
         }),
         sdk.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: status.BAD_GATEWAY,
-        body: "",
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  it.for([
+    { reason: "cannot find the old link", upstream: 404, expected: 502 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP delete service identity link integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      const oldServiceId = createServiceId("test-old-service-id");
+      const existingServiceIdentity = createServiceIdentityLink({
+        serviceId: oldServiceId,
       });
-    });
-
-    it("returns 502 when the identity list post configuration fails", async ({
-      http,
-      sdk,
-    }) => {
-      http
-        .gateway("udp")
-        .get(`/identity/${service}`, { headers: { "User-Id": userId } })
-        .reply(status.NOT_FOUND);
-
-      http.gateway("udp").get(`/identities/${userId}`).reply(status.NOT_FOUND);
 
       http
         .gateway("udp")
-        .post(`/identity/${service}/${serviceId}`, { body })
-        .reply(status.CREATED);
+        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .reply(200, existingServiceIdentity);
+      http
+        .gateway("udp")
+        .delete(
+          `/identity/${existingServiceIdentity.serviceName}/${oldServiceId}`,
+        )
+        .reply(upstream);
 
+      const result = await handler(
+        sdk.event.post(endpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: serviceName, id: serviceId },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  // TODO: Refactor handler logic so that the create/update list calls run sequentially so it can return the expected error
+  it.todo.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP create service identity integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .reply(404);
+      http.gateway("udp").get(`/identities/${userId}`).reply(404);
+      http
+        .gateway("udp")
+        .post(`/identity/${serviceName}/${serviceId}`, {
+          body: serviceIdentityLinkRequest,
+        })
+        .reply(upstream);
+
+      const result = await handler(
+        sdk.event.post(endpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: serviceName, id: serviceId },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP get service identities integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .reply(404);
+      http
+        .gateway("udp")
+        .post(`/identity/${serviceName}/${serviceId}`, {
+          body: serviceIdentityLinkRequest,
+        })
+        .reply(201);
+      http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
+
+      const result = await handler(
+        sdk.event.post(endpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: serviceName, id: serviceId },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP post service identities integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .reply(404);
+      http.gateway("udp").get(`/identities/${userId}`).reply(404);
+      http
+        .gateway("udp")
+        .post(`/identity/${serviceName}/${serviceId}`, {
+          body: serviceIdentityLinkRequest,
+        })
+        .reply(201);
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
-          body: {
-            data: { services: [service] },
-          },
+          body: { data: { services: [serviceName] } },
         })
-        .reply(status.INTERNAL_SERVER_ERROR);
+        .reply(upstream);
 
       const result = await handler(
         sdk.event.post(endpoint, {
           userId,
-          body,
-          params: { service, id: serviceId },
+          body: serviceIdentityLinkRequest,
+          params: { service: serviceName, id: serviceId },
         }),
         sdk.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: status.BAD_GATEWAY,
-        body: "",
-      });
-    });
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

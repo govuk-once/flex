@@ -6,11 +6,15 @@ import {
   PushIdBranded,
 } from "./notifications";
 
-export const CreateUserRequestSchema = z.object({
+export const UserProfileSchema = z.object({
   userId: UserId,
   pushId: PushIdBranded,
 });
+export type UserProfile = z.output<typeof UserProfileSchema>;
 
+// TODO: Improve types
+
+export const CreateUserRequestSchema = UserProfileSchema;
 export type CreateUserRequest = z.output<typeof CreateUserRequestSchema>;
 
 export const GetUserResponseSchema = z.object({

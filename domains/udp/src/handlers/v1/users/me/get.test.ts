@@ -1,5 +1,11 @@
 import { it } from "@flex/testing";
-import { pushId, userId } from "@tests/fixtures";
+import {
+  createNotification,
+  notification,
+  secrets,
+  userId,
+  userProfile,
+} from "@tests/fixtures";
 import { getPushId } from "@utils/get-push-id";
 import { describe, expect, vi } from "vitest";
 
@@ -10,12 +16,8 @@ vi.mock("@utils/get-push-id");
 describe("GET /v1/users/me", () => {
   const endpoint = "/users/me";
 
-  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
-
-  const user = { userId, pushId };
-
   it("returns 200 with user profile", async ({ http, sdk }) => {
-    const notifications = { consentStatus: "accepted", pushId };
+    const notification = createNotification({ consentStatus: "accepted" });
 
     http
       .gateway("udp")
@@ -25,7 +27,7 @@ describe("GET /v1/users/me", () => {
           "requesting-service-user-id": userId,
         },
       })
-      .reply(200, notifications);
+      .reply(200, notification);
 
     const result = await handler(
       sdk.event.get(endpoint, { userId }),
@@ -37,15 +39,16 @@ describe("GET /v1/users/me", () => {
       secrets.udpNotificationSecret,
     );
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual({ userId, notifications });
+    expect(JSON.parse(result.body)).toStrictEqual({
+      userId,
+      notifications: notification,
+    });
   });
 
   it("returns 200 and creates a user when the user profile does not exist", async ({
     http,
     sdk,
   }) => {
-    const notifications = { consentStatus: "unknown", pushId };
-
     http
       .gateway("udp")
       .get("/notifications", {
@@ -55,7 +58,7 @@ describe("GET /v1/users/me", () => {
         },
       })
       .reply(404);
-    http.gateway("udp").post("/users", { body: user }).reply(204);
+    http.gateway("udp").post("/users", { body: userProfile }).reply(204);
     http
       .gateway("udp")
       .post("/notifications", {
@@ -64,7 +67,7 @@ describe("GET /v1/users/me", () => {
           "requesting-service-user-id": userId,
         },
       })
-      .reply(200, notifications);
+      .reply(200, notification);
 
     const result = await handler(
       sdk.event.get(endpoint, { userId }),
@@ -72,7 +75,10 @@ describe("GET /v1/users/me", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual({ userId, notifications });
+    expect(JSON.parse(result.body)).toStrictEqual({
+      userId,
+      notifications: notification,
+    });
   });
 
   it("returns 502 when the UDP get notifications integration fails", async ({
@@ -111,7 +117,7 @@ describe("GET /v1/users/me", () => {
         },
       })
       .reply(404);
-    http.gateway("udp").post("/users", { body: user }).reply(500);
+    http.gateway("udp").post("/users", { body: userProfile }).reply(500);
 
     const result = await handler(
       sdk.event.get(endpoint, { userId }),
@@ -135,7 +141,7 @@ describe("GET /v1/users/me", () => {
         },
       })
       .reply(404);
-    http.gateway("udp").post("/users", { body: user }).reply(204);
+    http.gateway("udp").post("/users", { body: userProfile }).reply(204);
     http
       .gateway("udp")
       .post("/notifications", {

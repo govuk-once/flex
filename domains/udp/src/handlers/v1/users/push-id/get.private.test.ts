@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import { pushId, userId } from "@tests/fixtures";
+import { pushId, secrets, userId } from "@tests/fixtures";
 import { getPushId } from "@utils/get-push-id";
 import { describe, expect, vi } from "vitest";
 
@@ -9,8 +9,6 @@ vi.mock("@utils/get-push-id");
 
 describe("GET /v1/users/push-id [private]", () => {
   const endpoint = "/users/push-id";
-
-  const secrets = { udpNotificationSecret: "test-notification-secret" }; // pragma: allowlist secret
 
   it("returns 200 with UNS push ID", async ({ sdk }) => {
     vi.mocked(getPushId).mockReturnValue(pushId);
