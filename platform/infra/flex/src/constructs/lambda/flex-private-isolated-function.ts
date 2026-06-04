@@ -54,7 +54,7 @@ export class FlexPrivateIsolatedFunction extends Construct {
 
     new LambdaAlarms(this, `${id}Alarm`, {
       fn: this.function,
-      alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
+      alarmNamePrefix: `${stage}-todo-${id.toLowerCase()}-alarm`,
       criticalAction,
       warningAction,
     });

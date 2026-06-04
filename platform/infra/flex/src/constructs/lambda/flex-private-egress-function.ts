@@ -54,7 +54,7 @@ export class FlexPrivateEgressFunction extends Construct {
 
     new LambdaAlarms(this, "Alarm", {
       fn: this.function,
-      alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
+      alarmNamePrefix: `${stage}-todo-${id.toLowerCase()}-alarm`,
       criticalAction,
       warningAction,
     });
