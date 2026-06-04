@@ -15,12 +15,12 @@
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/core": "7.5.0",
-    "@middy/http-error-handler": "7.5.0",
-    "@middy/http-header-normalizer": "7.5.0",
-    "@middy/http-json-body-parser": "7.5.0",
-    "@middy/secrets-manager": "7.5.0",
-    "@middy/ssm": "7.5.0",
+    "@middy/core": "7.6.5",
+    "@middy/http-error-handler": "7.6.5",
+    "@middy/http-header-normalizer": "7.6.5",
+    "@middy/http-json-body-parser": "7.6.5",
+    "@middy/secrets-manager": "7.6.5",
+    "@middy/ssm": "7.6.5",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -29,10 +29,10 @@
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.161",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.3.0",
+    "eslint": "10.4.1",
     "http-errors": "2.0.1",
     "memfs": "4.57.2",
     "typescript": "6.0.3",
-    "vitest": "4.1.5"
+    "vitest": "4.1.8"
   }
 }

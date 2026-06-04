@@ -12,12 +12,12 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "2.33.0"
+    "@aws-lambda-powertools/logger": "2.33.1"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "eslint": "10.3.0",
+    "eslint": "10.4.1",
     "typescript": "6.0.3",
-    "vitest": "4.1.5"
+    "vitest": "4.1.8"
   }
 }
