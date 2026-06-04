@@ -21,7 +21,9 @@ let stubGeneratorPromise: ReturnType<typeof getStubTokenGenerator> | undefined;
 
 const tokenByFile = new Map<string, Promise<string>>();
 
-async function mintToken(authSub: string): Promise<string> {
+async function mintToken(
+  authSub: string = crypto.randomUUID(),
+): Promise<string> {
   const { ENVIRONMENT, JWT } = inject("e2eEnv");
 
   if (ENVIRONMENT === "staging" || ENVIRONMENT === "production") {
@@ -33,17 +35,14 @@ async function mintToken(authSub: string): Promise<string> {
   return generator.getToken(authSub);
 }
 
-function tokenForFile(fileId: string, authSub?: string): Promise<string> {
-  if (!authSub) {
-    // No pinned subject — generate a unique UUID per test for true isolation
-    return mintToken(crypto.randomUUID());
-  }
-  // Pinned subject (e.g. STUB_DEFAULT_SUBJECT) — cache so the same token is
-  // reused across all tests in the file that share this subject
+function tokenForFile(fileId: string, authSub = ""): Promise<string> {
   const key = `${fileId}::${authSub}`;
-  const cached = tokenByFile.get(key) ?? mintToken(authSub);
-  tokenByFile.set(key, cached);
-  return cached;
+  let token = tokenByFile.get(key);
+  if (!token) {
+    token = mintToken(authSub);
+    tokenByFile.set(key, token);
+  }
+  return token;
 }
 
 export const extendIt = () =>
