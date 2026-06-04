@@ -212,7 +212,7 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     new ApiGatewayAlarms(this, "GatewayAlarms", {
-      alarmNamePrefix: `${stage}-apigw`,
+      alarmNamePrefix: `${stage}-todo-apigw`,
       criticalAction,
       warningAction,
       api: restApi,
@@ -355,7 +355,7 @@ export class FlexPlatformStack extends BaseStack {
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
     new ApiGatewayAlarms(this, "PrivateGatewayAlarms", {
-      alarmNamePrefix: `${stage}-apigw-private`,
+      alarmNamePrefix: `${stage}-todo-apigw-private`,
       criticalAction,
       warningAction,
       api: privateGateway,
@@ -461,7 +461,7 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     new WafAlarms(this, "ApiWafAlarms", {
-      alarmNamePrefix: `${stage}-waf`,
+      alarmNamePrefix: `${stage}-todo-waf`,
       criticalAction,
       warningAction,
       webAcl,
