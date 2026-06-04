@@ -300,10 +300,7 @@ export class FlexPlatformStack extends BaseStack {
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
-    const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
-
-    const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecretArn);
-    const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
+    const isProduction = env === Environment.production;
 
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
@@ -328,28 +325,36 @@ export class FlexPlatformStack extends BaseStack {
       warningAction,
     });
 
-    createServiceGateway(this, {
-      vpc,
-      consumerConfigArn: dvlaConsumerConfigArn,
-      gatewaysResource: gatewaysRoot,
-      privateEgressSg,
-      secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
-      service: "dvla",
-      criticalAction,
-      warningAction,
-      encryptionKeyArn: flexEncryptionKeyArn,
-    });
+    // TODO: remove guard when DVLA and UNS are ready for production
+    if (!isProduction) {
+      const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
-    createUnsServiceGateway(this, {
-      vpc,
-      consumerConfigArn: unsConsumerConfigArn,
-      consumerRoleArn: unsConsumerRoleArn,
-      gatewaysResource: gatewaysRoot,
-      privateIsolatedSg,
-      criticalAction,
-      warningAction,
-      encryptionKeyArn: flexEncryptionKeyArn,
-    });
+      createServiceGateway(this, {
+        vpc,
+        consumerConfigArn: dvlaConsumerConfigArn,
+        gatewaysResource: gatewaysRoot,
+        privateEgressSg,
+        secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
+        service: "dvla",
+        criticalAction,
+        warningAction,
+        encryptionKeyArn: flexEncryptionKeyArn,
+      });
+
+      const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecretArn);
+      const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
+
+      createUnsServiceGateway(this, {
+        vpc,
+        consumerConfigArn: unsConsumerConfigArn,
+        consumerRoleArn: unsConsumerRoleArn,
+        gatewaysResource: gatewaysRoot,
+        privateIsolatedSg,
+        criticalAction,
+        warningAction,
+        encryptionKeyArn: flexEncryptionKeyArn,
+      });
+    }
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
