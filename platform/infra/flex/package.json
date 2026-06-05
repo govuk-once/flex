@@ -5,7 +5,7 @@
     "dev": "cdk watch",
     "hotswap": "cdk deploy --hotswap",
     "diff": "cdk diff",
-    "deploy": "cdk deploy --all",
+    "deploy": "cdk deploy --all --concurrency 4 --require-approval never",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
     "tsc": "tsc --noEmit",

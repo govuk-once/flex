@@ -48,7 +48,7 @@ jobs:
           role-session-name: ${{ github.run_id }}
 
       - name: Deploy FLEX AWS infra
-        run: cd ./platform/infra/flex && pnpm run deploy --require-approval never
+        run: cd ./platform/infra/flex && pnpm run deploy
 
       - name: E2E tests
         if: inputs.STAGE != 'production'
