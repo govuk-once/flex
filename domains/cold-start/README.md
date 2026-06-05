@@ -92,6 +92,7 @@ log groups for the last 60 minutes. Set `MINUTES` to change the window.
 | ------------------------- | --------------------------------------------------------------------- |
 | `pnpm cold-start:reset`   | Recycle the lab functions so the next call cold-starts.               |
 | `pnpm cold-start:run`     | Resolve the URL, get a token, call the cascade, print the response.   |
+| `pnpm cold-start:sweep`   | Reset + cold + warm for each depth 1..N, print a markdown table.      |
 | `pnpm cold-start:metrics` | Print per-function `@initDuration` percentiles and cold-start counts. |
 
 The cold-start scripts take `STAGE` (default `development`) and `AWS_REGION`
@@ -104,6 +105,11 @@ can read init durations from any FLEX stack, not just the lab. For example,
 `STACK=pr-334-FlexPlatform pnpm cold-start:metrics` reports the real authoriser
 and platform functions, and `STACK=pr-334-dvla pnpm cold-start:metrics` the DVLA
 handlers.
+
+`cold-start:sweep` takes `MAX_DEPTH` (default 5, capped at 10). It prints the
+markdown table on stdout and per-depth progress on stderr, so
+`STAGE=pr-334 MAX_DEPTH=10 pnpm cold-start:sweep > sweep.md` captures just the
+table.
 
 ## Constraints
 

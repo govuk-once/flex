@@ -16,6 +16,7 @@
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "cold-start:reset": "tsx scripts/coldStartReset.ts",
     "cold-start:run": "tsx scripts/coldStartRun.ts",
+    "cold-start:sweep": "tsx scripts/coldStartSweep.ts",
     "cold-start:metrics": "tsx scripts/coldStartMetrics.ts",
     "docs:serve": "pnpm openapi:generate && serve docs"
   },

@@ -1,33 +1,23 @@
-import { getStackOutputs } from "@flex/utils";
-
-import { getJwtClient } from "../tests/e2e/src/setup.global";
+import {
+  callCascade,
+  getCascadeToken,
+  resolveCascadeUrl,
+} from "./lib/coldStart";
 
 const DEFAULT_DELAYS = "200,200,200,200,200";
-const CASCADE_PATH = "/app/cold-start/v1/cascade";
 
 async function main(): Promise<void> {
   const stage = process.env.STAGE ?? "development";
   const delays = process.env.DELAYS ?? process.argv[2] ?? DEFAULT_DELAYS;
 
-  const { FlexApiUrl } = await getStackOutputs(`${stage}-FlexGlobal`, "us-east-1");
+  const cascadeUrl = await resolveCascadeUrl(stage);
+  const token = await getCascadeToken(stage);
 
-  if (!FlexApiUrl) {
-    throw new Error(`FlexApiUrl not found in "${stage}-FlexGlobal" outputs`);
-  }
+  console.log(`GET ${cascadeUrl}?delays=${delays}\n`);
 
-  const token = await (await getJwtClient(stage)).getToken();
+  const { status, timeMs, body } = await callCascade(cascadeUrl, token, delays);
 
-  const url = `${FlexApiUrl}${CASCADE_PATH}?delays=${encodeURIComponent(delays)}`;
-  console.log(`GET ${url}\n`);
-
-  const startedAt = performance.now();
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const body = await response.text();
-  const elapsedMs = Math.round(performance.now() - startedAt);
-
-  console.log(`status: ${response.status}  time: ${elapsedMs}ms`);
+  console.log(`status: ${status}  time: ${timeMs}ms`);
 
   try {
     console.log(JSON.stringify(JSON.parse(body), null, 2));
