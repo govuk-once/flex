@@ -382,7 +382,7 @@ export function createRestApiEvent() {
         ...options,
         httpMethod: "GET",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
       });
     },
 
@@ -392,7 +392,7 @@ export function createRestApiEvent() {
         ...options,
         httpMethod: "POST",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
     },
@@ -403,7 +403,7 @@ export function createRestApiEvent() {
         ...options,
         httpMethod: "PATCH",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
     },
@@ -414,7 +414,7 @@ export function createRestApiEvent() {
         ...options,
         httpMethod: "DELETE",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
     },
@@ -443,7 +443,7 @@ const baseRestApiEventWithAuthorizer = buildRestApiEvent({
       pairwiseId: "test-pairwise-id",
     },
   },
-} as RestApiEventOverrides) as RestApiEventWithAuthorizer;
+}) as RestApiEventWithAuthorizer;
 
 function buildRestApiEventWithAuthorizer<
   T extends AuthorizerContext = AuthorizerContext,
@@ -466,7 +466,7 @@ export function createRestApiEventWithAuthorizer<
         ...options,
         httpMethod: "GET",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
       });
     },
     delete: (path: string, options: RestApiEventRequestOptions = {}) => {
@@ -475,7 +475,7 @@ export function createRestApiEventWithAuthorizer<
         ...options,
         httpMethod: "DELETE",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
       });
     },
     post: <TReqBody>(
@@ -488,7 +488,7 @@ export function createRestApiEventWithAuthorizer<
         headers: { "Content-Type": "application/json", ...options.headers },
         httpMethod: "POST",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
     },
@@ -502,7 +502,7 @@ export function createRestApiEventWithAuthorizer<
         headers: { "Content-Type": "application/json", ...options.headers },
         httpMethod: "PATCH",
         path,
-        queryStringParameters: params as Record<string, string>,
+        queryStringParameters: params,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
     },
