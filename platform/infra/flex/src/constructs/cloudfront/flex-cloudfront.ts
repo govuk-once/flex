@@ -170,7 +170,7 @@ export class FlexCloudfront extends Construct {
     });
 
     new WafAlarms(this, "CloudFrontWafAlarms", {
-      alarmNamePrefix: `${envConfig.stage}-todo-cf-waf`,
+      alarmNamePrefix: `${envConfig.stage}-cf-waf`,
       criticalAction,
       warningAction,
       webAcl,
@@ -241,7 +241,7 @@ export class FlexCloudfront extends Construct {
     });
 
     new CloudFrontAlarms(this, "Alarms", {
-      alarmNamePrefix: `${envConfig.stage}-todo-cf`,
+      alarmNamePrefix: `${envConfig.stage}-cf`,
       distribution: this.distribution,
       viewerRequestFunction,
       criticalAction,
@@ -258,7 +258,7 @@ export class FlexCloudfront extends Construct {
       });
 
       new ShieldAlarms(this, "ShieldAlarms", {
-        alarmNamePrefix: `${envConfig.stage}-todo-shield`,
+        alarmNamePrefix: `${envConfig.stage}-shield`,
         resourceArn: this.distribution.distributionArn,
         criticalAction,
         warningAction,
