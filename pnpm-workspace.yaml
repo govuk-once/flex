@@ -7,14 +7,19 @@ packages:
   - tests/*
   - tests/performance/*
 
-ignoredBuiltDependencies:
-  - msw
-
 minimumReleaseAge: 2880
 
-onlyBuiltDependencies:
-  - "@swc/core"
-  - esbuild
-  - nx
-
 savePrefix: ""
+
+overrides:
+  "undici": "7.24.0"
+  "tar": "7.5.13"
+  "protobufjs": "^8.0.1"
+  "minimatch": "^10.0.1"
+
+allowBuilds:
+  "@playwright/browser-chromium": true
+  esbuild: true
+  nx: false
+  protobufjs: false
+  unix-dgram: false
