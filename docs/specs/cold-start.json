@@ -1,0 +1,38 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "cold-start domain",
+    "version": "1.0.0",
+    "description": "Auto-generated from `domains/cold-start/domain.config.ts`. Do not edit by hand. Regenerate with `pnpm openapi:generate`."
+  },
+  "paths": {
+    "/v1/cascade": {
+      "get": {
+        "operationId": "cascade",
+        "summary": "GET /cascade",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "delays",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "hop",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response."
+          }
+        }
+      }
+    }
+  }
+}
