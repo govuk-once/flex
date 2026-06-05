@@ -36,7 +36,6 @@ export class FlexGlobalStack extends BaseStack {
     alarmTopicKey: Key,
   ) {
     const relayTopic = new Topic(this, `${severity}RelayTopic`, {
-      topicName: `${stage}-cf-${severity.toLowerCase()}-relay`,
       masterKey: alarmTopicKey,
     });
 
