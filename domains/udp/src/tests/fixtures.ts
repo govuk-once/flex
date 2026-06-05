@@ -12,7 +12,7 @@ import type {
 import type { UserProfile } from "@schemas/user";
 
 export { createUserId };
-export const userId = createUserId();
+export const userId = createUserId("test-udp-user");
 
 export const createSecrets = (overrides?: Record<string, string>) =>
   mergeFixture(

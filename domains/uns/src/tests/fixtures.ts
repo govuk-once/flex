@@ -1,13 +1,10 @@
-import { createUserId, mergeFixture } from "@flex/testing";
+import { createUserId, mergeFixture, timestamp } from "@flex/testing";
 import type { PushId } from "@flex/udp-domain";
-import { DeepPartial } from "@flex/utils";
+import type { DeepPartial } from "@flex/utils";
 import type { Notification, NotificationStatus } from "@schemas/notification";
 
 export { createUserId };
-export const userId = createUserId();
-
-export const createTimestamp = (value = "2026-01-01T00:00:00Z") => value;
-export const timestamp = createTimestamp();
+export const userId = createUserId("test-uns-user");
 
 export const createPushId = (value = "test-push-id") => value as PushId;
 export const pushId = createPushId();

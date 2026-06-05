@@ -1,90 +1,108 @@
-import { it } from "@flex/testing";
-import status from "http-status";
-import nock from "nock";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { it, token } from "@flex/testing";
+import {
+  linkingId,
+  serviceIdentityLink,
+  session,
+  userId,
+} from "@tests/fixtures";
+import { describe, expect } from "vitest";
 
 import { handler } from "./post";
 
 describe("POST /v1/test-notification", () => {
-  const api = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const testLinkingId = "test-user-linking-id";
-  const testAuthToken = "test-id-token";
-  const testPairwiseId = "test-pairwise-id";
+  const endpoint = "/test-notification";
 
-  beforeEach(() => {
-    vi.stubEnv("flexDvlaTestUser", testLinkingId);
-  });
-
-  const mockUdpSuccess = () =>
-    api
-      .get("/domains/udp/v1/identity/dvla")
-      .matchHeader("User-Id", testPairwiseId)
-      .reply(status.OK, {
-        serviceId: testLinkingId,
-        serviceName: "dvla",
-      });
-
-  const mockAuthSuccess = () =>
-    api.get("/gateways/dvla/v1/authenticate").reply(status.OK, {
-      "id-token": testAuthToken,
-      apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
-      passwordExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
-    });
-
-  it("returns 202 when notification is successfully sent", async ({
-    context,
-    privateGatewayEventWithAuthorizer,
+  it("returns 202 when the sent notification succeeds", async ({
+    http,
+    sdk,
   }) => {
-    mockUdpSuccess();
-    mockAuthSuccess();
-
-    api
-      .post(`/gateways/dvla/v1/test-notification/${testLinkingId}`)
-      .reply(status.ACCEPTED);
+    http
+      .domain("udp")
+      .get("/identity/dvla", { headers: { "User-Id": userId } })
+      .reply(200, serviceIdentityLink);
+    http.gateway("dvla").get("/authenticate").reply(200, session);
+    http
+      .gateway("dvla")
+      .post(`/test-notification/${linkingId}`, { headers: { auth: token } })
+      .reply(202);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.create({}),
-      context.create(),
+      sdk.event.post(endpoint, { userId }),
+      sdk.context(),
     );
 
-    expect(result.statusCode).toBe(status.ACCEPTED);
+    expect(result.statusCode).toBe(202);
   });
 
-  describe("Error scenarios", () => {
-    it("returns 502 if the notification gateway returns an error", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      mockUdpSuccess();
-      mockAuthSuccess();
+  it.for([
+    { reason: "cannot find the link", upstream: 404, expected: 404 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP get identity link integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("dvla").get("/authenticate").reply(200, session);
 
-      api
-        .post(`/gateways/dvla/v1/test-notification/${testLinkingId}`)
-        .matchHeader("auth", testAuthToken)
-        .reply(status.INTERNAL_SERVER_ERROR, {
-          message: "Internal Server Error",
-        });
+      http
+        .domain("udp")
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
+        .reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create({}),
-        context.create(),
+        sdk.event.post(endpoint, { userId }),
+        sdk.context(),
       );
 
-      expect(result.statusCode).toBe(status.BAD_GATEWAY);
-    });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 
-    it("returns 404 if the user linking ID cannot be found", async ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
-      api.get("/domains/udp/v1/identity/dvla").reply(status.NOT_FOUND);
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the DVLA authenticate integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
+        .reply(200, serviceIdentityLink);
+
+      http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        privateGatewayEventWithAuthorizer.create({}),
-        context.create(),
+        sdk.event.post(endpoint, { userId }),
+        sdk.context(),
       );
 
-      expect(result.statusCode).toBe(status.NOT_FOUND);
-    });
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
+
+  it.for([
+    { reason: "returns a bad request", upstream: 400, expected: 400 },
+    { reason: "cannot find the link", upstream: 404, expected: 404 },
+    { reason: "is rate limited", upstream: 429, expected: 429 },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the DVLA test notification integration integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
+        .reply(200, serviceIdentityLink);
+      http.gateway("dvla").get("/authenticate").reply(200, session);
+
+      http
+        .gateway("dvla")
+        .post(`/test-notification/${linkingId}`, { headers: { auth: token } })
+        .reply(upstream);
+
+      const result = await handler(
+        sdk.event.post(endpoint, { userId }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

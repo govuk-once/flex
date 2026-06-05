@@ -199,6 +199,7 @@ describe("POST /v1/identity/:service/:id", () => {
         .gateway("udp")
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(200, existingServiceIdentity);
+
       http
         .gateway("udp")
         .delete(
@@ -220,8 +221,7 @@ describe("POST /v1/identity/:service/:id", () => {
     },
   );
 
-  // TODO: Refactor handler logic so that the create/update list calls run sequentially so it can return the expected error
-  it.todo.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
     "returns $expected when the UDP create service identity integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
@@ -229,6 +229,13 @@ describe("POST /v1/identity/:service/:id", () => {
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(404);
       http.gateway("udp").get(`/identities/${userId}`).reply(404);
+      http
+        .gateway("udp")
+        .post(`/identities/${userId}`, {
+          body: { data: { services: [serviceName] } },
+        })
+        .reply(200);
+
       http
         .gateway("udp")
         .post(`/identity/${serviceName}/${serviceId}`, {
@@ -263,6 +270,7 @@ describe("POST /v1/identity/:service/:id", () => {
           body: serviceIdentityLinkRequest,
         })
         .reply(201);
+
       http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
       const result = await handler(
@@ -293,6 +301,7 @@ describe("POST /v1/identity/:service/:id", () => {
           body: serviceIdentityLinkRequest,
         })
         .reply(201);
+
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {

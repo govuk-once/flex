@@ -1,12 +1,9 @@
-import { createUserId, mergeFixture } from "@flex/testing";
+import { createUserId, mergeFixture, timestamp } from "@flex/testing";
 import type { PushId } from "@flex/udp-domain";
 import type { Todo, TodoId, TodoWithMetadata } from "@schemas/todos";
 
 export { createUserId };
-export const userId = createUserId();
-
-export const createTimestamp = (value = "2026-04-01T12:00:00.000Z") => value;
-export const timestamp = createTimestamp();
+export const userId = createUserId("test-example-user");
 
 export const createPushId = (value = "test-push-id") => value as PushId;
 export const pushId = createPushId();

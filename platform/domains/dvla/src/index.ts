@@ -11,6 +11,7 @@ export { viewDriverResponseSchema } from "./schemas/domain/drivingLicences";
 export {
   MultiShareCodeResponseSchema,
   MultiShareCodeResponseSchemaWithoutIdSchmea,
+  ShareCodeSchema,
   SingleShareCodeResponseSchema,
   SingleShareCodeResponseSchemaWithoutIdSchema,
 } from "./schemas/domain/shareCode";
@@ -24,6 +25,7 @@ export type { GetDriverSummaryResponseSchema } from "./schemas/remote/driverSumm
 export type { GetLicenceResponseSchema } from "./schemas/remote/drivingLicences";
 export type {
   MultiShareCodeResponse,
+  ShareCode,
   SingleShareCodeResponse,
 } from "./schemas/remote/shareCode";
 export type {

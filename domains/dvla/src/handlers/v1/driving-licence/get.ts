@@ -1,14 +1,10 @@
 import { config, route } from "@domain";
-import { GetLicenceResponseSchema } from "@flex/dvla-service-gateway";
-import { InferRouteContext } from "@flex/sdk";
+import type { GetLicenceResponseSchema } from "@flex/dvla-service-gateway";
+import type { InferRouteContext } from "@flex/sdk";
+import { getDvlaAuthToken, getUserLinkingId } from "@services/authentication";
+import { handleStandardErrors } from "@services/errors";
 import createHttpError from "http-errors";
 import { status } from "http-status";
-
-import {
-  getDvlaAuthToken,
-  getUserLinkingId,
-} from "../../../services/authentication";
-import { handleStandardErrors } from "../../../services/errors";
 
 const endpoint = "GET /v1/driving-licence";
 
@@ -21,12 +17,9 @@ export const handler = route(endpoint, async (ctx) => {
   ]);
 
   const licenceKey = await getDvlaLicenceKey(ctx, auth, userLinkingId);
-  const data = await getDvlaLicence(ctx, auth, licenceKey);
+  const drivingLicence = await getDvlaLicence(ctx, auth, licenceKey);
 
-  return {
-    status: status.OK,
-    data,
-  };
+  return { status: status.OK, data: drivingLicence };
 });
 
 async function getDvlaLicenceKey(
@@ -38,7 +31,7 @@ async function getDvlaLicenceKey(
 
   const response = await integrations.dvlaCustomerSummary({
     path: `/${linkingId}`,
-    headers: { auth: auth },
+    headers: { auth },
   });
 
   handleStandardErrors(response, endpoint);
@@ -80,7 +73,7 @@ async function getDvlaLicence(
 
   const response = await integrations.dvlaRetrieveLicence({
     path: `/${productKey}`,
-    headers: { auth: auth },
+    headers: { auth },
   });
 
   handleStandardErrors(response, endpoint);
