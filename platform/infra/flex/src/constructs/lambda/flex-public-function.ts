@@ -37,7 +37,7 @@ export class FlexPublicFunction extends Construct {
 
     new LambdaAlarms(this, `${id}Alarm`, {
       fn: this.function,
-      alarmNamePrefix: `${stage}-todo-${id.toLowerCase()}-alarm`,
+      alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
       criticalAction,
       warningAction,
     });
