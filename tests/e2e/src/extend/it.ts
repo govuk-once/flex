@@ -58,8 +58,11 @@ export const it = extendIt().extend<UdpFixtures>({
         headers: authHeader,
       });
       trackedServices.add(service);
-      return cloudfront.client.post(`/udp/v1/identity/${service}/${id}`, {
-        headers: authHeader,
+      return cloudfront.client.post(`/udp/v1/identity/${service}`, {
+        headers: {
+          ...authHeader,
+          "x-linking-token": id,
+        },
       });
     };
 

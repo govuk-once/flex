@@ -3,7 +3,7 @@ import { GetIdentitiesGWResponse } from "@schemas/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
 
-type PostRoute = "POST /v1/identity/:service/:id";
+type PostRoute = "POST /v1/identity/:service";
 type DeleteRoute = "DELETE /v1/identity/:service";
 type GetAllRoute = "GET /v1/identity";
 

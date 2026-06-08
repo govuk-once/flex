@@ -12,7 +12,7 @@ import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
 const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");
 const udpCreateIdentityDeployed = () =>
-  isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
+  isRouteDeployed(udpConfig, "POST /v1/identity/:service");
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 const udpGetIdentityDeployed = () =>
@@ -54,9 +54,12 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
         await withCleanIdentity(service);
 
         const createResult = await cloudfront.client.post(
-          `/udp/v1/identity/${service}/${serviceId}`,
+          `/udp/v1/identity/${service}`,
           {
-            headers: authHeader,
+            headers: {
+              ...authHeader,
+              "x-linking-token": serviceId,
+            },
           },
         );
         expect(createResult.status).toBe(201);
@@ -165,42 +168,48 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
     });
   });
 
-  describe("/udp/v1/identity/:service/:id", () => {
+  describe("/udp/v1/identity/:service", () => {
     const endpoint = `/udp/v1/identity/${service}`;
 
-    describe.runIf(
-      isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id") &&
-        udpDeleteIdentityDeployed(),
-    )("POST", () => {
-      it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
-        cloudfront,
-        withCleanIdentity,
-        authHeader,
-      }) => {
-        await withCleanIdentity(service);
+    describe.runIf(udpCreateIdentityDeployed() && udpDeleteIdentityDeployed())(
+      "POST",
+      () => {
+        it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
+          cloudfront,
+          withCleanIdentity,
+          authHeader,
+        }) => {
+          await withCleanIdentity(service);
 
-        const createResult = await cloudfront.client.post(
-          `${endpoint}/${serviceId}`,
-          { headers: authHeader },
-        );
+          const createResult = await cloudfront.client.post(endpoint, {
+            headers: {
+              ...authHeader,
+              "x-linking-token": serviceId,
+            },
+          });
 
-        expect(createResult.status).toBe(201);
+          expect(createResult.status).toBe(201);
 
-        const idempotentResult = await cloudfront.client.post(
-          `${endpoint}/${serviceId}`,
-          { headers: authHeader },
-        );
+          const idempotentResult = await cloudfront.client.post(endpoint, {
+            headers: {
+              ...authHeader,
+              "x-linking-token": serviceId,
+            },
+          });
 
-        expect(idempotentResult.status).toBe(204);
+          expect(idempotentResult.status).toBe(204);
 
-        const swapResult = await cloudfront.client.post(
-          `${endpoint}/new-test-id-999`,
-          { headers: authHeader },
-        );
+          const swapResult = await cloudfront.client.post(endpoint, {
+            headers: {
+              ...authHeader,
+              "x-linking-token": "new-test-id-999",
+            },
+          });
 
-        expect(swapResult.status).toBe(201);
-      });
-    });
+          expect(swapResult.status).toBe(201);
+        });
+      },
+    );
   });
 
   describe("/udp/v1/users/me", () => {

@@ -7,7 +7,7 @@ import {
 } from "@schemas/identity";
 import createHttpError from "http-errors";
 
-type PostRoute = "POST /v1/identity/:service/:id";
+type PostRoute = "POST /v1/identity/:service";
 type DeleteRoute = "DELETE /v1/identity/:service";
 type GetRoute = "GET /v1/identity/:service";
 type GetRoutePrivate = "GET /v1/identity/:service [private]";
@@ -19,9 +19,9 @@ const postCtx = routeContext<PostRoute>;
 const deleteCtx = routeContext<DeleteIdentityRoutes>;
 const getCtx = routeContext<GetIdentityRoutes>;
 
-export async function postServiceIdentity() {
+export async function postServiceIdentity(serviceId: string) {
   const { auth, integrations, logger, pathParams } = postCtx();
-  const { service, id: serviceId } = pathParams;
+  const { service } = pathParams;
   const userId = auth.pairwiseId as UserId;
 
   const result =

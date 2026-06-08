@@ -18,7 +18,7 @@ const udpGetUsersDeployed = () =>
 const udpGetPushIdDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/push-id [private]");
 const udpCreateIdentityDeployed = () =>
-  isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
+  isRouteDeployed(udpConfig, "POST /v1/identity/:service");
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 

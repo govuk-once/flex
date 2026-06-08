@@ -99,13 +99,21 @@
           }
         }
       },
-      "delete": {
-        "operationId": "delete-service-identity",
-        "summary": "DELETE /identity/:service",
+      "post": {
+        "operationId": "create-service-identity-link",
+        "summary": "POST /identity/:service",
         "parameters": [
           {
             "in": "path",
             "name": "service",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-linking-token",
             "required": true,
             "schema": {
               "type": "string"
@@ -117,24 +125,14 @@
             "description": "Successful response."
           }
         }
-      }
-    },
-    "/v1/identity/{service}/{id}": {
-      "post": {
-        "operationId": "create-service-identity-link",
-        "summary": "POST /identity/:service/:id",
+      },
+      "delete": {
+        "operationId": "delete-service-identity",
+        "summary": "DELETE /identity/:service",
         "parameters": [
           {
             "in": "path",
             "name": "service",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "id",
             "required": true,
             "schema": {
               "type": "string"
