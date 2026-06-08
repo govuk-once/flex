@@ -13,8 +13,15 @@ import { describe, expect } from "vitest";
 
 import { handler } from "./post";
 
-describe("POST /v1/identity/:service/:id", () => {
-  const endpoint = `/identity/${serviceName}/${serviceId}`;
+const createMockDvlaJwt = (linkingId: string) => {
+  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64");
+  const payload = Buffer.from(JSON.stringify({ linking_id: linkingId })).toString("base64");
+  return `${header}.${payload}.signaturehere`;
+};
+
+describe("POST /v1/identity/:service", () => {
+  const endpoint = `/identity/${serviceName}`;
+  const standardHeaders = { "x-linking-token": serviceId };
 
   const existingService = createServiceName("test-existing-service");
 
@@ -44,13 +51,54 @@ describe("POST /v1/identity/:service/:id", () => {
       sdk.event.post(endpoint, {
         userId,
         body: serviceIdentityLinkRequest,
-        params: { service: serviceName, id: serviceId },
+        params: { service: serviceName },
+        headers: standardHeaders,
       }),
       sdk.context(),
     );
 
     expect(result.statusCode).toBe(201);
     expect(result.body).toBe("");
+  });
+
+  it("extracts serviceId securely from JWT payload when the service is DVLA", async ({
+    http,
+    sdk,
+  }) => {
+    const dvlaService = "dvla";
+    const targetDvlaEndpoint = `/identity/${dvlaService}`;
+    const dvlaToken = createMockDvlaJwt(serviceId);
+
+    http
+      .gateway("udp")
+      .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
+      .reply(404);
+    http.gateway("udp").get(`/identities/${userId}`).reply(404);
+    http
+      .gateway("udp")
+      .post(`/identity/${dvlaService}/${serviceId}`, {
+        body: serviceIdentityLinkRequest,
+      })
+      .reply(201);
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [dvlaService] } },
+      })
+      .reply(200);
+
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        // FIX: Change 'linkingToken' to 'x-linking-token' so your handler validation recognizes it
+        headers: { "x-linking-token": dvlaToken },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(201);
   });
 
   it("returns 201 when the service identity link is already tracked", async ({
@@ -82,7 +130,8 @@ describe("POST /v1/identity/:service/:id", () => {
       sdk.event.post(endpoint, {
         userId,
         body: serviceIdentityLinkRequest,
-        params: { service: serviceName, id: serviceId },
+        params: { service: serviceName },
+        headers: standardHeaders,
       }),
       sdk.context(),
     );
@@ -104,7 +153,8 @@ describe("POST /v1/identity/:service/:id", () => {
       sdk.event.post(endpoint, {
         userId,
         body: serviceIdentityLinkRequest,
-        params: { service: serviceName, id: serviceId },
+        params: { service: serviceName },
+        headers: standardHeaders,
       }),
       sdk.context(),
     );
@@ -153,7 +203,8 @@ describe("POST /v1/identity/:service/:id", () => {
       sdk.event.post(endpoint, {
         userId,
         body: serviceIdentityLinkRequest,
-        params: { service: serviceName, id: serviceId },
+        params: { service: serviceName },
+        headers: standardHeaders,
       }),
       sdk.context(),
     );
@@ -174,7 +225,8 @@ describe("POST /v1/identity/:service/:id", () => {
         sdk.event.post(endpoint, {
           userId,
           body: serviceIdentityLinkRequest,
-          params: { service: serviceName, id: serviceId },
+          params: { service: serviceName },
+          headers: standardHeaders,
         }),
         sdk.context(),
       );
@@ -211,7 +263,8 @@ describe("POST /v1/identity/:service/:id", () => {
         sdk.event.post(endpoint, {
           userId,
           body: serviceIdentityLinkRequest,
-          params: { service: serviceName, id: serviceId },
+          params: { service: serviceName },
+          headers: standardHeaders,
         }),
         sdk.context(),
       );
@@ -247,7 +300,8 @@ describe("POST /v1/identity/:service/:id", () => {
         sdk.event.post(endpoint, {
           userId,
           body: serviceIdentityLinkRequest,
-          params: { service: serviceName, id: serviceId },
+          params: { service: serviceName },
+          headers: standardHeaders,
         }),
         sdk.context(),
       );
@@ -277,7 +331,8 @@ describe("POST /v1/identity/:service/:id", () => {
         sdk.event.post(endpoint, {
           userId,
           body: serviceIdentityLinkRequest,
-          params: { service: serviceName, id: serviceId },
+          params: { service: serviceName },
+          headers: standardHeaders,
         }),
         sdk.context(),
       );
@@ -313,7 +368,8 @@ describe("POST /v1/identity/:service/:id", () => {
         sdk.event.post(endpoint, {
           userId,
           body: serviceIdentityLinkRequest,
-          params: { service: serviceName, id: serviceId },
+          params: { service: serviceName },
+          headers: standardHeaders,
         }),
         sdk.context(),
       );
