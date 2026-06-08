@@ -33,6 +33,7 @@ import { WafAlarms } from "../constructs/alarms/waf";
 import { createServiceGateway } from "../constructs/gateways/public";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { createUnsServiceGateway } from "../constructs/gateways/uns";
+import { PartnerEncryption } from "../constructs/kms/PartnerEncryption";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -324,6 +325,8 @@ export class FlexPlatformStack extends BaseStack {
     // TODO: remove guard when DVLA and UNS are ready for production
     if (!isProduction) {
       const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+
+      new PartnerEncryption(this, "PartnerCrypto");
 
       createServiceGateway(this, {
         vpc,
