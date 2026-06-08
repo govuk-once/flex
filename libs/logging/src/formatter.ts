@@ -27,7 +27,7 @@ export class FlexLogFormatter extends LogFormatter {
   ): LogItem {
     const baseAttributes: LogAttributes = {
       level: attributes.logLevel,
-      message: this.#sanitize("message", attributes.message) as string,
+      message: this.#sanitize("message", attributes.message),
       timestamp: this.formatTimestamp(attributes.timestamp),
       service: this.#serviceName ?? attributes.serviceName,
     };

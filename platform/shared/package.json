@@ -13,15 +13,15 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.33.0",
+    "@aws-lambda-powertools/parameters": "2.33.1",
     "@flex/flex-fetch": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@vitest/coverage-v8": "4.1.5",
-    "eslint": "10.3.0",
+    "@vitest/coverage-v8": "4.1.8",
+    "eslint": "10.4.1",
     "typescript": "6.0.3",
-    "vitest": "4.1.5"
+    "vitest": "4.1.8"
   }
 }

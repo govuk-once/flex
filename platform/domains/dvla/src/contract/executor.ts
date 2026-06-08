@@ -73,9 +73,7 @@ async function run(
   return {
     ok: result.ok,
     status: result.status,
-    data: contract.toDomain
-      ? contract.toDomain(result.data as never)
-      : result.data,
+    data: contract.toDomain ? contract.toDomain(result.data) : result.data,
   };
 }
 

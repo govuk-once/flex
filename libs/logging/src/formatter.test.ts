@@ -11,17 +11,16 @@ import { FlexLogFormatter } from "./formatter";
 describe("FlexLogFormatter", () => {
   const createBaseAttributes = (
     overrides: Partial<UnformattedAttributes> = {},
-  ): UnformattedAttributes =>
-    ({
-      logLevel: "INFO",
-      message: "Test message",
-      timestamp: new Date("2024-01-15T10:30:00.000Z"),
-      serviceName: "test-service",
-      sampleRateValue: 0,
-      awsRegion: "",
-      environment: "",
-      ...overrides,
-    }) as UnformattedAttributes;
+  ): UnformattedAttributes => ({
+    logLevel: "INFO",
+    message: "Test message",
+    timestamp: new Date("2024-01-15T10:30:00.000Z"),
+    serviceName: "test-service",
+    sampleRateValue: 0,
+    awsRegion: "",
+    environment: "",
+    ...overrides,
+  });
 
   beforeEach(() => {
     vi.unstubAllEnvs();
@@ -112,7 +111,7 @@ describe("FlexLogFormatter", () => {
         .formatAttributes(
           createBaseAttributes({
             serviceName: "original",
-          } as Partial<UnformattedAttributes>),
+          }),
           {},
         )
         .getAttributes();
