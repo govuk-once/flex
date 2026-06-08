@@ -9,10 +9,10 @@ import {
 import createHttpError from "http-errors";
 import status from "http-status";
 
-export const handler = route("POST /v1/identity/:service", async (ctx) => {
-  const { pathParams, headers, auth, logger } = ctx;
-  const { service } = pathParams;
-  const { linkingToken } = headers;
+export const handler = route("POST /v1/identity/:service/:id", async (ctx) => {
+  const { pathParams, auth, logger } = ctx;
+  // TODO pass linkingToken through via headers
+  const { service, id: linkingToken } = pathParams;
 
   const serviceId = extractServiceId(service, linkingToken);
   if (serviceId === null) {
@@ -44,6 +44,7 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
   return { status: status.CREATED };
 });
 
+// TODO needs to verify JWT signature and decrypt
 function extractServiceId(service: string, token: string): string | null {
   if (service.toLowerCase() === "dvla") {
     try {
@@ -51,7 +52,9 @@ function extractServiceId(service: string, token: string): string | null {
       if (parts.length !== 3) return null;
 
       const [, payloadB64 = ""] = parts;
-      const payload = JSON.parse(Buffer.from(payloadB64, "base64").toString("utf-8"));
+      const payload = JSON.parse(
+        Buffer.from(payloadB64, "base64").toString("utf-8"),
+      );
 
       return payload.linking_id || null;
     } catch {
