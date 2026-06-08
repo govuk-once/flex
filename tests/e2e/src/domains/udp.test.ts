@@ -28,9 +28,9 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
     describe.runIf(
       isRouteDeployed(udpConfig, "GET /v1/identity") &&
-      udpGetIdentityDeployed() &&
-      udpCreateIdentityDeployed() &&
-      udpDeleteIdentityDeployed(),
+        udpGetIdentityDeployed() &&
+        udpCreateIdentityDeployed() &&
+        udpDeleteIdentityDeployed(),
     )("GET", () => {
       it("returns a success status code (200 or 204) when checking initial tracking profile", async ({
         cloudfront,
@@ -141,7 +141,7 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
     describe.runIf(
       isRouteDeployed(udpConfig, "DELETE /v1/identity/:service") &&
-      udpCreateIdentityDeployed(),
+        udpCreateIdentityDeployed(),
     )("DELETE", () => {
       it("returns 204 when identity is unlinked successfully and 404 when trying to unlink the same service", async ({
         cloudfront,
@@ -170,7 +170,7 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
     describe.runIf(
       isRouteDeployed(udpConfig, "POST /v1/identity/:service") &&
-      udpDeleteIdentityDeployed(),
+        udpDeleteIdentityDeployed(),
     )("POST", () => {
       it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
         cloudfront,
@@ -238,7 +238,7 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
     describe.runIf(
       isRouteDeployed(udpConfig, "PATCH /v1/users/me/notifications") &&
-      udpGetUsersDeployed(),
+        udpGetUsersDeployed(),
     )("PATCH", () => {
       it("returns 200 with updated user notification preferences", async ({
         cloudfront,
