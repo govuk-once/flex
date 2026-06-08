@@ -38,6 +38,7 @@ import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
+import { PartnerEncryption } from "../constructs/kms/PartnerEncryption";
 
 const { env, stage } = getEnvConfig();
 
@@ -324,6 +325,8 @@ export class FlexPlatformStack extends BaseStack {
     // TODO: remove guard when DVLA and UNS are ready for production
     if (!isProduction) {
       const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+
+      new PartnerEncryption(this, "PartnerCrypto");
 
       createServiceGateway(this, {
         vpc,
