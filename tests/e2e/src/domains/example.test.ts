@@ -18,7 +18,7 @@ const udpGetUsersDeployed = () =>
 const udpGetPushIdDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/push-id [private]");
 const udpCreateIdentityDeployed = () =>
-  isRouteDeployed(udpConfig, "POST /v1/identity/:service/:id");
+  isRouteDeployed(udpConfig, "POST /v1/identity/:service");
 const udpDeleteIdentityDeployed = () =>
   isRouteDeployed(udpConfig, "DELETE /v1/identity/:service");
 
@@ -208,8 +208,8 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "GET /v0/identity/:service") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
+      udpCreateIdentityDeployed() &&
+      udpDeleteIdentityDeployed(),
     )("GET", () => {
       it.todo(
         "returns 200 with linked set to true when identity exists",
@@ -246,7 +246,7 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "PATCH /v0/notifications") &&
-        udpGetUsersDeployed(),
+      udpGetUsersDeployed(),
     )("PATCH", () => {
       it("returns 200 with updated notifications", async ({
         cloudfront,
@@ -272,9 +272,9 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "GET /v0/users/notifications") &&
-        udpGetUsersDeployed() &&
-        udpGetPushIdDeployed() &&
-        unsGetNotificationsDeployed(),
+      udpGetUsersDeployed() &&
+      udpGetPushIdDeployed() &&
+      unsGetNotificationsDeployed(),
     )("GET", () => {
       it("returns 200 with user notifications", async ({
         cloudfront,
@@ -294,8 +294,8 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
 
     describe.runIf(
       isRouteDeployed(exampleConfig, "PATCH /v0/users/notifications") &&
-        udpGetUsersDeployed() &&
-        udpGetPushIdDeployed(),
+      udpGetUsersDeployed() &&
+      udpGetPushIdDeployed(),
     )("PATCH", () => {
       it("returns 200 with updated notification preferences", async ({
         cloudfront,
