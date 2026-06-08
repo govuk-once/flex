@@ -113,8 +113,6 @@ export const { config, route, routeContext } = domain({
             ],
           },
         },
-      },
-      "/identity/:service/:id": {
         POST: {
           public: {
             name: "create-service-identity-link",
@@ -125,7 +123,13 @@ export const { config, route, routeContext } = domain({
               "udpGetIdentity",
               "udpGetIdentities",
               "udpPostIdentities",
-            ]
+            ],
+            headers: {
+              linkingToken: {
+                name: "x-linking-token",
+                required: true,
+              },
+            },
           },
         },
       },

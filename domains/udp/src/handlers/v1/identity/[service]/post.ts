@@ -9,10 +9,10 @@ import {
 import createHttpError from "http-errors";
 import status from "http-status";
 
-export const handler = route("POST /v1/identity/:service/:id", async (ctx) => {
-  const { pathParams, auth, logger } = ctx;
-  // TODO pass linkingToken through via headers
-  const { service, id: linkingToken } = pathParams;
+export const handler = route("POST /v1/identity/:service", async (ctx) => {
+  const { pathParams, auth, logger, headers } = ctx;
+  const { service } = pathParams;
+  const { linkingToken } = headers;
 
   const serviceId = extractServiceId(service, linkingToken);
   if (serviceId === null) {
@@ -44,7 +44,16 @@ export const handler = route("POST /v1/identity/:service/:id", async (ctx) => {
   return { status: status.CREATED };
 });
 
-// TODO needs to verify JWT signature and decrypt
+/**
+ * Extracts the identity linking ID. For the DVLA service, this requires
+ * parsing the identifier directly out of the provided JWT payload.
+ * - TODO: Verify the JWT signature and handle token decryption.
+ */
+interface DvlaJwtPayload {
+  linking_id?: string;
+  [key: string]: unknown;
+}
+
 function extractServiceId(service: string, token: string): string | null {
   if (service.toLowerCase() === "dvla") {
     try {
@@ -52,11 +61,12 @@ function extractServiceId(service: string, token: string): string | null {
       if (parts.length !== 3) return null;
 
       const [, payloadB64 = ""] = parts;
+
       const payload = JSON.parse(
         Buffer.from(payloadB64, "base64").toString("utf-8"),
-      );
+      ) as DvlaJwtPayload;
 
-      return payload.linking_id || null;
+      return payload.linking_id ?? null;
     } catch {
       return null;
     }
