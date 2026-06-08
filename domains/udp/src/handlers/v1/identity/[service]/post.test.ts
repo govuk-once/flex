@@ -96,7 +96,6 @@ describe("POST /v1/identity/:service", () => {
         userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
-        // FIX: Change 'linkingToken' to 'x-linking-token' so your handler validation recognizes it
         headers: { "x-linking-token": dvlaToken },
       }),
       sdk.context(),
