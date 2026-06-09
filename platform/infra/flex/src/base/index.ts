@@ -154,7 +154,7 @@ export abstract class BaseStack extends cdk.Stack {
       parameters: { Name: key },
       region,
       physicalResourceId: cdk.custom_resources.PhysicalResourceId.of(
-        `${region}:${key}`,
+        `${region}:${key}:${String(Date.now())}`,
       ),
     };
 
