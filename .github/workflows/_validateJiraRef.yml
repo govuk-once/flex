@@ -1,0 +1,24 @@
+name: Validate PR Title
+
+on:
+  workflow_call:
+
+jobs:
+  validate-pr-title:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Skip Dependabot PRs
+        if: github.actor == 'dependabot[bot]'
+        run: echo "Skipping Jira title check for Dependabot"
+
+      - name: Validate PR title contains Jira ticket
+        if: github.actor != 'dependabot[bot]'
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "Checking PR title: $TITLE"
+
+          if ! echo "$TITLE" | grep -Eq '^[A-Z]+-[0-9]+'; then
+            echo "::error ::PR title must start with a Jira ticket key, e.g. FLEX-123 Add user preferences endpoint"
+            exit 1
+          fi

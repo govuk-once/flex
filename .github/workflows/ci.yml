@@ -9,6 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-pr-title:
+    uses: ./.github/workflows/_validateJiraRef.yml
   ci:
     name: Quality Checks
     uses: ./.github/workflows/_qualityChecks.yml
