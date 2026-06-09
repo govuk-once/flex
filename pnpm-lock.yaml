@@ -14,12 +14,24 @@ importers:
 
   .:
     devDependencies:
+      '@aws-sdk/client-cloudformation':
+        specifier: 3.1032.0
+        version: 3.1032.0
+      '@aws-sdk/client-cloudwatch-logs':
+        specifier: 3.1045.0
+        version: 3.1045.0
+      '@aws-sdk/client-lambda':
+        specifier: 3.1045.0
+        version: 3.1045.0
       '@flex/cli':
         specifier: workspace:*
         version: link:libs/cli
       '@flex/config':
         specifier: workspace:*
         version: link:libs/config
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:libs/utils
       esbuild:
         specifier: 0.28.0
         version: 0.28.0
@@ -44,6 +56,40 @@ importers:
       zod-openapi:
         specifier: 5.4.6
         version: 5.4.6(zod@4.4.3)
+
+  domains/cold-start:
+    dependencies:
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../../libs/logging
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-status:
+        specifier: 2.1.0
+        version: 2.1.0
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
+      eslint:
+        specifier: 10.3.0
+        version: 10.3.0(jiti@2.6.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@8.0.11(@types/node@25.6.0)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.0))
 
   domains/dvla:
     dependencies:
@@ -2540,6 +2586,7 @@ packages:
   '@smithy/credential-provider-imds@4.3.7':
     resolution: {integrity: sha512-xj8gq/bjFABAh6qWPSDCYcY3kzQIm4b561C+YnHH4zGq8rOgzQ3Shk+JGlpUxSd41UGiO6FkLdUCtNX1FAeHgg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to incompatibility with Node.js 18 in some environments https://github.com/smithy-lang/smithy-typescript/issues/2022
 
   '@smithy/fetch-http-handler@5.4.6':
     resolution: {integrity: sha512-FEwEYJ1jlBKdhe9TPzfghEi1bP55ZeEImlDkEa62bBBYzUcnB6RUCyuiS2mqKt6ZVjUbBgcNhzfIctH+Hevx9g==}

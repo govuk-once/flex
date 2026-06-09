@@ -1,6 +1,10 @@
 {
   "domains": [
     {
+      "name": "cold-start",
+      "spec": "specs/cold-start.json"
+    },
+    {
       "name": "dvla",
       "spec": "specs/dvla.json"
     },
