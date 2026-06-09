@@ -28,3 +28,15 @@ jobs:
       STAGE: pr-${{ github.event.pull_request.number }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  moduleE2E:
+    name: Module E2E
+    # Runs after the ephemeral deploy, but nothing depends on this job, so a
+    # module failure shows red without blocking the merge.
+    needs: ephemeralEnv
+    uses: ./.github/workflows/_moduleE2E.yml
+    with:
+      AWS_REGION: 'eu-west-2'
+      STAGE: pr-${{ github.event.pull_request.number }}
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

@@ -7,29 +7,14 @@
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "lint:fix": "npx eslint --fix .",
-    "test:e2e": "vitest --passWithNoTests src/domains/udp.test.ts",
-    "test:e2e:all": "vitest --passWithNoTests"
-  },
-  "dependencies": {
-    "@flex/utils": "workspace:*"
+    "test:e2e:platform": "vitest --passWithNoTests"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/parameters": "2.33.1",
     "@flex/config": "workspace:*",
-    "@flex/dvla-domain": "workspace:*",
-    "@flex/dvla-service-gateway": "workspace:*",
-    "@flex/example-domain": "workspace:*",
-    "@flex/local-council-domain": "workspace:*",
-    "@flex/sdk": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@flex/udp-domain": "workspace:*",
-    "@flex/uns-domain": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
     "@types/node": "25.9.2",
-    "dotenv": "17.4.2",
     "eslint": "10.4.1",
     "typescript": "6.0.3",
-    "vitest": "4.1.8",
-    "zod": "4.4.3"
+    "vitest": "4.1.8"
   }
 }

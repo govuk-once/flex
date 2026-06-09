@@ -1,16 +1,16 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
-import { config as dvlaConfig } from "@flex/dvla-domain/config";
 import {
   MultiShareCodeResponseSchemaWithoutIdSchmea,
   SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
   viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
+import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
+import { it } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { beforeAll, describe, expect, inject } from "vitest";
 
-import { it } from "../extend/it";
-import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
+import { config as dvlaConfig } from "../domain.config";
 
 const ssmProvider = new SSMProvider();
 

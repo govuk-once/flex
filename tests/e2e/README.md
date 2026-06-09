@@ -1,17 +1,25 @@
 # @flex/e2e
 
-End-to-end tests for the FLEX platform running against deployed infrastructure.
+Platform end-to-end tests for the FLEX platform running against deployed
+infrastructure.
+
+> Domain (module) E2E tests are co-located with their domains under
+> `domains/<name>/e2e/` and run via `pnpm --filter @flex/<name>-domain test:e2e`.
+> This package holds only the platform-level suites (auth, private gateway).
+> The shared E2E harness (global setup and the extended `it` fixture) lives in
+> [@flex/testing/e2e](/libs/testing/README.md), and the route/domain deployment
+> guards (`isDomainDeployed`, `isRouteDeployed`) live in `@flex/sdk`.
 
 ## Commands
 
 Run these from the repository root:
 
-| Command                                              | Description                                                      |
-| ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `pnpm --filter @flex/e2e lint`                       | Lint files                                                       |
-| `pnpm --filter @flex/e2e test:e2e`                   | Run tests (assumes you have set environment variables in `.env`) |
-| `STAGE=development pnpm --filter @flex/e2e test:e2e` | Run tests with manual environment variables                      |
-| `pnpm --filter @flex/e2e tsc`                        | Run type check                                                   |
+| Command                                                       | Description                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm --filter @flex/e2e lint`                                | Lint files                                                       |
+| `pnpm --filter @flex/e2e test:e2e:platform`                   | Run platform tests (assumes environment variables set in `.env`) |
+| `STAGE=development pnpm --filter @flex/e2e test:e2e:platform` | Run platform tests with manual environment variables             |
+| `pnpm --filter @flex/e2e tsc`                                 | Run type check                                                   |
 
 Alternatively, run `pnpm <command>` from within `tests/e2e/`.
 
@@ -53,7 +61,7 @@ For personal development, you must deploy your own stack before running E2E test
 Environment variables are resolved from CloudFormation stack outputs based on `STAGE`. Defaults to `$USER` if no stage is set:
 
 ```bash
-pnpm --filter @flex/e2e test:e2e
+pnpm --filter @flex/e2e test:e2e:platform
 ```
 
 #### Option B: Manual Override
@@ -61,7 +69,7 @@ pnpm --filter @flex/e2e test:e2e
 Set environment variables directly to skip CloudFormation lookup:
 
 ```bash
-FLEX_API_URL=https://xxx.cloudfront.net pnpm --filter @flex/e2e test:e2e
+FLEX_API_URL=https://xxx.cloudfront.net pnpm --filter @flex/e2e test:e2e:platform
 ```
 
 > When manually overriding, all required variables must be provided together.
@@ -84,12 +92,21 @@ FLEX_API_URL=https://xxx.cloudfront.net
 ```text
 tests/e2e/
   src/
-    domains/          # Domain-specific E2E tests
-      <domain>.test.ts
-    platform/         # Platform E2E tests
+    platform/         # Platform E2E tests (auth, private gateway)
       <name>.test.ts
-    setup.global.ts   # Global test setup
 ```
+
+Domain E2E tests live with their domain:
+
+```text
+domains/<name>/
+  e2e/
+    <name>.test.ts    # Domain E2E tests, run via `test:e2e`
+  vitest.e2e.config.ts
+```
+
+The shared global setup is provided by `@flex/testing/e2e/setup` and consumed by
+each suite's vitest config.
 
 ---
 

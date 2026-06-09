@@ -1,12 +1,13 @@
-import {
-  BaseTokenGenerator,
-  e2eEnvSchema,
-  getStubTokenGenerator,
-  getTokenGenerator,
-  invalidJwt,
-} from "@flex/testing/e2e";
 import { getStackOutputs, sanitiseStageName } from "@flex/utils";
 import { config } from "dotenv";
+
+import { e2eEnvSchema } from "../config/env";
+import { invalidJwt } from "../fixtures/auth";
+import { getStubTokenGenerator } from "../fixtures/StubTokenGenerator";
+import {
+  type BaseTokenGenerator,
+  getTokenGenerator,
+} from "../fixtures/TokenGenerator";
 
 config({ quiet: true });
 

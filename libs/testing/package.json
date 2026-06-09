@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./e2e": "./src/index.e2e.ts",
+    "./e2e/setup": "./src/e2e/setup.global.ts",
     "./setup/sdk": "./src/setup/sdk.ts"
   },
   "scripts": {
@@ -28,6 +29,7 @@
     "axios": "1.17.0",
     "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
+    "dotenv": "17.4.2",
     "eslint": "10.4.1",
     "jose": "6.2.3",
     "nock": "14.0.15",
