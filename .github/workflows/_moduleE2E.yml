@@ -27,7 +27,7 @@ jobs:
 
       - name: List domains with a test:e2e script
         id: list
-        # Emit a JSON array of { name, package } for every domain that declares a test:e2e script.
+        # Emits a JSON array of { name, package } for every domain that declares a test:e2e script.
         run: |
           modules=$(node -e '
             const fs = require("fs"), path = require("path");

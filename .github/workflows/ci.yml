@@ -31,8 +31,6 @@ jobs:
 
   moduleE2E:
     name: Module E2E
-    # Runs after the ephemeral deploy, but nothing depends on this job, so a
-    # module failure shows red without blocking the merge.
     needs: ephemeralEnv
     uses: ./.github/workflows/_moduleE2E.yml
     with:
