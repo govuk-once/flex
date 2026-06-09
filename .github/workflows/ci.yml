@@ -9,22 +9,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-pr-title:
-    uses: ./.github/workflows/_validateJiraRef.yml
+  validate-pr:
+    name: Validate PR
+    uses: ./.github/workflows/_validatePR.yml
   ci:
+    needs: validate-pr
     name: Quality Checks
     uses: ./.github/workflows/_qualityChecks.yml
     with:
-      AWS_REGION: 'eu-west-2'
-      STAGE: 'development'
+      AWS_REGION: "eu-west-2"
+      STAGE: "development"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
   ephemeralEnv:
+    needs: validate-pr
     name: Ephemeral Environment branch tests
     uses: ./.github/workflows/_buildDeploy.yml
     with:
-      AWS_REGION: 'eu-west-2'
+      AWS_REGION: "eu-west-2"
       STAGE: pr-${{ github.event.pull_request.number }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
