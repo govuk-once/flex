@@ -27,7 +27,7 @@
     "@aws-sdk/client-ssm": "3.1060.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.161",
+    "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
     "eslint": "10.4.1",
     "http-errors": "2.0.1",
