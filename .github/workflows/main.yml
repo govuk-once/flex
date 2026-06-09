@@ -29,8 +29,6 @@ jobs:
 
   moduleE2EDev:
     name: Module E2E (Development)
-    # Leaf job: runs after the development deploy but nothing depends on it, so a
-    # module failure leaves the run red while the deploy chain proceeds.
     needs: deployDev
     uses: ./.github/workflows/_moduleE2E.yml
     with:
@@ -51,7 +49,6 @@ jobs:
 
   moduleE2EStaging:
     name: Module E2E (Staging)
-    # Leaf job: runs after the staging deploy but nothing depends on it.
     needs: deployStaging
     uses: ./.github/workflows/_moduleE2E.yml
     with:

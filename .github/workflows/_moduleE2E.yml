@@ -27,9 +27,7 @@ jobs:
 
       - name: List domains with a test:e2e script
         id: list
-        # Emit a JSON array of { name, package } for every domain that declares
-        # a test:e2e script. This is the discovery contract: adding a domain with
-        # a test:e2e script produces its own check with no edit to this workflow.
+        # Emit a JSON array of { name, package } for every domain that declares a test:e2e script.
         run: |
           modules=$(node -e '
             const fs = require("fs"), path = require("path");
@@ -50,9 +48,9 @@ jobs:
     if: needs.discover.outputs.modules != '[]'
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # Required for OIDC authentication with AWS
+      id-token: write
     strategy:
-      fail-fast: false # one domain failing must not cancel the others
+      fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.discover.outputs.modules) }}
     env:
