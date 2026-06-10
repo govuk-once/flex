@@ -10,11 +10,13 @@ import { E2EEnv } from "../config/env";
 import { createApi } from "../fixtures";
 import { getStubTokenGenerator } from "../fixtures/StubTokenGenerator";
 
+const E2E_BYPASS_HEADER = "x-flex-e2e-bypass";
+
 interface Fixtures {
   cloudfront: ReturnType<typeof createApi>;
   privateGateway: ReturnType<typeof createApi>;
   authSub: string | undefined;
-  authHeader: { Authorization: string };
+  authHeader: { Authorization: string; [E2E_BYPASS_HEADER]: string };
 }
 
 let stubGeneratorPromise: ReturnType<typeof getStubTokenGenerator> | undefined;
@@ -58,6 +60,10 @@ export const extendIt = () =>
     authSub: undefined,
     authHeader: async ({ task, authSub }, use) => {
       const token = await tokenForFile(task.file.filepath, authSub);
-      await use({ Authorization: `Bearer ${token}` });
+      const { E2E_BYPASS_TOKEN } = inject("e2eEnv");
+      await use({
+        Authorization: `Bearer ${token}`,
+        [E2E_BYPASS_HEADER]: E2E_BYPASS_TOKEN,
+      });
     },
   });

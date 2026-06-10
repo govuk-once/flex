@@ -48,6 +48,7 @@ interface FlexCloudfrontProps extends AlarmActionProps {
 
 export class FlexCloudfront extends Construct {
   public readonly distribution: Distribution;
+  public readonly e2eBypassSecret: Secret;
 
   constructor(
     scope: Construct,
@@ -79,6 +80,20 @@ export class FlexCloudfront extends Construct {
     const viewerRequestFunction = flexCloudfrontFunction.function;
 
     const cert = Certificate.fromCertificateArn(this, "flexDnsCert", certArn);
+
+    this.e2eBypassSecret = new Secret(this, "E2EBypassSecret", {
+      secretName: `/${envConfig.stage}/flex-secret/e2e-bypass`,
+      generateSecretString: {
+        excludePunctuation: true,
+        passwordLength: 32,
+      },
+      replicaRegions: [{ region: "eu-west-2" }],
+    });
+    applyCheckovSkip(
+      this.e2eBypassSecret,
+      "CKV_AWS_149",
+      "Using AWS managed keys is fine in this case and lets us keep the pattern consistent with origin-verify-secret",
+    );
 
     const webAcl = new CfnWebACL(this, "CfWebAcl", {
       scope: "CLOUDFRONT",
@@ -135,8 +150,28 @@ export class FlexCloudfront extends Construct {
           },
         },
         {
-          name: "AWSManagedRulesAmazonIpReputationList",
+          name: "BypassForE2ETests",
           priority: 2,
+          action: { allow: {} },
+          statement: {
+            byteMatchStatement: {
+              fieldToMatch: {
+                singleHeader: { Name: "x-flex-e2e-bypass" },
+              },
+              positionalConstraint: "EXACTLY",
+              searchString: this.e2eBypassSecret.secretValue.unsafeUnwrap(),
+              textTransformations: [{ priority: 0, type: "NONE" }],
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "BypassForE2ETests",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "AWSManagedRulesAmazonIpReputationList",
+          priority: 3,
           overrideAction: { none: {} },
           statement: {
             managedRuleGroupStatement: {
@@ -152,7 +187,7 @@ export class FlexCloudfront extends Construct {
         },
         {
           name: "RateLimit",
-          priority: 3,
+          priority: 4,
           action: { block: {} },
           statement: {
             rateBasedStatement: {
