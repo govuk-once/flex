@@ -8,70 +8,72 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write      # Required for AWS OIDC
+  id-token: write # Required for AWS OIDC
   contents: read
   security-events: write # Required for SARIF upload
 
 jobs:
   zap_scan:
-      if: |
-        github.event_name == 'workflow_dispatch' ||
-        github.event.workflow_run.conclusion == 'success'
-      runs-on: ubuntu-latest
-      name: ⚡️ Zap staging
-      timeout-minutes: 15
-      steps:
-        - name: Checkout
-          uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-          with:
-              ref: main
-              fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    name: ⚡️ Zap staging
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          ref: main
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
-          with:
-            role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE  }}
-            aws-region: 'eu-west-2'
-            role-session-name: ${{ github.run_id }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE  }}
+          aws-region: "eu-west-2"
+          role-session-name: ${{ github.run_id }}
 
-        - name: Setup node
-          uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-          with:
-            node-version-file: ".nvmrc"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
-        - name: Install dependencies
-          run: |
-            npm install -g pnpm@latest-10
-            pnpm install
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
 
-        - name: Generate JWT
-          env:
-            STAGE: 'staging'
-          run: pnpm dastSetup
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-        - name: Verify auth header
-          run: |
-            if [ -n "$ZAP_AUTH_HEADER_VALUE" ]; then
-              echo "Success: Auth header is available."
-            else
-              echo "Failure: Auth header is missing!"
-              exit 1
-            fi
+      - name: Generate JWT
+        env:
+          STAGE: "staging"
+        run: pnpm dastSetup
 
-        - name: ZAP Scan
-          uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
-          with:
-              token: ${{ secrets.GITHUB_TOKEN }}
-              docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
-              format: openapi
-              target: ./.zap/merged-openapi.json
-              rules_file_name: './.zap/rules.tsv'
-              # URL can't have trailing slash
-              cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true -config report.sarif=report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
-              allow_issue_writing: false # We don't want to create Github issues for now
+      - name: Verify auth header
+        run: |
+          if [ -n "$ZAP_AUTH_HEADER_VALUE" ]; then
+            echo "Success: Auth header is available."
+          else
+            echo "Failure: Auth header is missing!"
+            exit 1
+          fi
+
+      - name: ZAP Scan
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          docker_name: "ghcr.io/zaproxy/zaproxy:stable"
+          format: openapi
+          target: ./.zap/merged-openapi.json
+          rules_file_name: "./.zap/rules.tsv"
+          # URL can't have trailing slash
+          cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true -config report.sarif=report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
+          allow_issue_writing: false # We don't want to create Github issues for now
 
   workflow_fail:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-        - run: echo "❌ Continuous Deployment workflow failed"
+      - run: echo "❌ Continuous Deployment workflow failed"

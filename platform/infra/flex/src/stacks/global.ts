@@ -1,10 +1,24 @@
-import { getEnvConfig } from "@flex/utils";
-import { CfnOutput, Duration } from "aws-cdk-lib";
-import { RestApi } from "aws-cdk-lib/aws-apigateway";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+
+import { Environment, findProjectRoot, getEnvConfig } from "@flex/utils";
+import { CfnOutput, Duration, RemovalPolicy } from "aws-cdk-lib";
+import { IRestApi, RestApi } from "aws-cdk-lib/aws-apigateway";
 import {
   Certificate,
   CertificateValidation,
 } from "aws-cdk-lib/aws-certificatemanager";
+import {
+  AllowedMethods,
+  CachePolicy,
+  Distribution,
+  FunctionEventType,
+  OriginRequestPolicy,
+  PriceClass,
+  SecurityPolicyProtocol,
+  ViewerProtocolPolicy,
+} from "aws-cdk-lib/aws-cloudfront";
+import { HttpOrigin, S3BucketOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import {
@@ -12,22 +26,45 @@ import {
   Function as LambdaFunction,
   Runtime,
 } from "aws-cdk-lib/aws-lambda";
-import { HostedZone } from "aws-cdk-lib/aws-route53";
+import {
+  ARecord,
+  HostedZone,
+  IHostedZone,
+  RecordTarget,
+} from "aws-cdk-lib/aws-route53";
+import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
+import {
+  BlockPublicAccess,
+  Bucket,
+  BucketEncryption,
+} from "aws-cdk-lib/aws-s3";
+import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import { Secret } from "aws-cdk-lib/aws-secretsmanager";
+import { CfnProtection } from "aws-cdk-lib/aws-shield";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
+import { CfnWebACL } from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
-import { FlexCloudfront } from "../constructs/cloudfront/flex-cloudfront";
+import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
+import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
+import { ShieldAlarms } from "../constructs/alarms/shield";
+import { AlarmActionProps } from "../constructs/alarms/types";
+import { WafAlarms } from "../constructs/alarms/waf";
+import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront-function";
+import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
+import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { getPlatformEntry } from "../utils/getEntry";
 
 interface DomainNames {
   domainName: string;
   subdomainName?: string;
 }
 
-const { persistent, stage } = getEnvConfig();
+const { env, persistent, stage } = getEnvConfig();
 
 export class FlexGlobalStack extends BaseStack {
   #buildRelay(
@@ -143,6 +180,351 @@ export class FlexGlobalStack extends BaseStack {
     return { restApi };
   }
 
+  #createCloudfrontWebAcl({ criticalAction, warningAction }: AlarmActionProps) {
+    const e2eBypassSecret = new Secret(this, "E2EBypassSecret", {
+      secretName: `/${stage}/flex-secret/e2e-bypass`,
+      generateSecretString: {
+        excludePunctuation: true,
+        passwordLength: 32,
+      },
+      replicaRegions: [{ region: "eu-west-2" }],
+    });
+    applyCheckovSkip(
+      e2eBypassSecret,
+      "CKV_AWS_149",
+      "Using AWS managed keys is fine in this case and lets us keep the pattern consistent with origin-verify-secret",
+    );
+
+    const webAcl = new CfnWebACL(this, "CfWebAcl", {
+      scope: "CLOUDFRONT",
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: "WebAcl",
+        sampledRequestsEnabled: true,
+      },
+      dataProtectionConfig: {
+        dataProtections: [
+          {
+            action: "SUBSTITUTION",
+            field: {
+              fieldType: "SINGLE_HEADER",
+              fieldKeys: ["authorization"],
+            },
+            excludeRuleMatchDetails: false,
+            excludeRateBasedDetails: false,
+          },
+        ],
+      },
+      rules: [
+        {
+          name: "AWSManagedRulesCommonRuleSet",
+          priority: 0,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesCommonRuleSet",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesCommonRuleSet",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "AWSManagedRulesKnownBadInputsRuleSet",
+          priority: 1,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesKnownBadInputsRuleSet",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "BypassForE2ETests",
+          priority: 2,
+          action: { allow: {} },
+          statement: {
+            byteMatchStatement: {
+              fieldToMatch: {
+                singleHeader: { Name: "x-flex-e2e-bypass" },
+              },
+              positionalConstraint: "EXACTLY",
+              searchString: e2eBypassSecret.secretValue.unsafeUnwrap(),
+              textTransformations: [{ priority: 0, type: "NONE" }],
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "BypassForE2ETests",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "AWSManagedRulesAmazonIpReputationList",
+          priority: 3,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesAmazonIpReputationList",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesAmazonIpReputationList",
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "RateLimit",
+          priority: 4,
+          action: { block: {} },
+          statement: {
+            rateBasedStatement: {
+              limit: 2000,
+              aggregateKeyType: "IP",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "RateLimit",
+            sampledRequestsEnabled: true,
+          },
+        },
+      ],
+    });
+
+    new WafAlarms(this, "CloudFrontWafAlarms", {
+      alarmNamePrefix: `${stage}-cf-waf`,
+      criticalAction,
+      warningAction,
+      webAcl,
+    });
+
+    return { e2eBypassSecret, webAcl };
+  }
+
+  #createCloudfrontDistribution({
+    cert,
+    criticalAction,
+    domainName,
+    openApiSpecBucket,
+    restApi,
+    secretHeaderArn,
+    subdomainName,
+    warningAction,
+    webAcl,
+  }: {
+    cert: Certificate;
+    domainName: string;
+    openApiSpecBucket: Bucket;
+    restApi: IRestApi;
+    secretHeaderArn: string;
+    subdomainName?: string;
+    webAcl: CfnWebACL;
+  } & AlarmActionProps) {
+    const { function: viewerRequestPlatformFunction } =
+      new FlexCloudfrontFunction(this, "ViewerRequestPlatformFunction", {
+        functionSourcePath: getPlatformEntry(
+          "viewer-request-cff-platform",
+          "handler.ts",
+        ),
+      });
+
+    const { function: viewerRequestDocsFunction } = new FlexCloudfrontFunction(
+      this,
+      "ViewerRequestDocsFunction",
+      {
+        functionSourcePath: getPlatformEntry(
+          "viewer-request-cff-docs",
+          "handler.ts",
+        ),
+      },
+    );
+
+    const accessLogBucket = new AccessLogBucket(
+      this,
+      "CloudfrontAccessLogBucket",
+    );
+
+    const originVerifySecret = Secret.fromSecretCompleteArn(
+      this,
+      "OriginVerifySecret",
+      secretHeaderArn,
+    );
+
+    const distribution = new Distribution(this, "Distribution", {
+      comment: "Flex Platform CloudFront Distribution for Structural Checks",
+      priceClass: PriceClass.PRICE_CLASS_100,
+      minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
+      webAclId: webAcl.attrArn,
+      defaultBehavior: {
+        origin: new HttpOrigin(
+          `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
+          {
+            originPath: "/prod",
+            customHeaders: {
+              "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
+            },
+          },
+        ),
+        viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        cachePolicy: CachePolicy.CACHING_DISABLED,
+        originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        functionAssociations: [
+          {
+            function: viewerRequestPlatformFunction,
+            eventType: FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
+      },
+      additionalBehaviors: {
+        "/docs*": {
+          origin: S3BucketOrigin.withOriginAccessControl(openApiSpecBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          functionAssociations: [
+            {
+              function: viewerRequestDocsFunction,
+              eventType: FunctionEventType.VIEWER_REQUEST,
+            },
+          ],
+        },
+      },
+      logBucket: accessLogBucket.bucket,
+      publishAdditionalMetrics: true,
+      domainNames: [subdomainName ?? domainName],
+      certificate: cert,
+    });
+
+    new CloudFrontAlarms(this, "Alarms", {
+      alarmNamePrefix: `${stage}-cf`,
+      distribution,
+      criticalAction,
+      warningAction,
+    });
+
+    new CloudFrontFunctionAlarms(this, "CffAlarmsPlatform", {
+      alarmNamePrefix: `${stage}-cff-platform`,
+      distribution,
+      cloudfrontFunction: viewerRequestPlatformFunction,
+      criticalAction,
+      warningAction,
+    });
+
+    new CloudFrontFunctionAlarms(this, "CffAlarmsDocs", {
+      alarmNamePrefix: `${stage}-cff-docs`,
+      distribution,
+      cloudfrontFunction: viewerRequestDocsFunction,
+      criticalAction,
+      warningAction,
+    });
+
+    return distribution;
+  }
+
+  #createCloudfrontShield({
+    distribution,
+    criticalAction,
+    warningAction,
+  }: {
+    distribution: Distribution;
+  } & AlarmActionProps) {
+    // Shield Advanced is only enable in the production account currently so this
+    // is required else deployments will fail in accounts that don't have it enabled
+    if (env === Environment.production) {
+      new CfnProtection(this, "ShieldProtection", {
+        name: `${stage}-flex-cloudfront`,
+        resourceArn: `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
+      });
+
+      new ShieldAlarms(this, "ShieldAlarms", {
+        alarmNamePrefix: `${stage}-shield`,
+        resourceArn: distribution.distributionArn,
+        criticalAction,
+        warningAction,
+      });
+    }
+  }
+
+  #createARecord({
+    distribution,
+    hostedZone,
+    subdomainName,
+  }: {
+    distribution: Distribution;
+    hostedZone: IHostedZone;
+    subdomainName?: string;
+  }) {
+    new ARecord(this, "DomainAliasRecord", {
+      zone: hostedZone,
+      recordName: subdomainName ? `${subdomainName}.` : undefined,
+      target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
+    });
+  }
+
+  #createOpenApiSpecBucket() {
+    const accessLogBucket = new AccessLogBucket(
+      this,
+      "OpenApiSpecAccessLogBucket",
+    );
+
+    return new Bucket(this, "OpenApiSpecsBucket", {
+      // NOSONAR S6249 enforceSSL applied globally via EnforceS3Https
+      bucketName: `flex-${stage}-openapi-specs`,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      versioned: true,
+      lifecycleRules: [
+        {
+          prefix: "docs/specs/",
+          noncurrentVersionExpiration: Duration.days(30),
+        },
+      ],
+      serverAccessLogsBucket: accessLogBucket.bucket,
+    });
+  }
+
+  #deploySwaggerUi({
+    bucket,
+    distribution,
+  }: {
+    bucket: Bucket;
+    distribution: Distribution;
+  }) {
+    const specsFolder = `${findProjectRoot()}/dist/openapi/current`;
+    mkdirSync(specsFolder, { recursive: true });
+    const docsDeployment = new BucketDeployment(this, "DocsUi", {
+      sources: [
+        Source.asset(path.join(import.meta.dirname, "../docs")),
+        Source.asset(specsFolder),
+      ],
+      destinationBucket: bucket,
+      destinationKeyPrefix: "docs/",
+      distribution,
+      distributionPaths: ["/docs/*"],
+      prune: false,
+    });
+    applyCheckovSkip(
+      docsDeployment.handlerRole.node.findChild("DefaultPolicy"),
+      "CKV_AWS_111",
+      "CDK BucketDeployment grants cloudfront:CreateInvalidation on * by design; the construct does not support scoping.",
+    );
+  }
+
   constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
@@ -168,18 +550,36 @@ export class FlexGlobalStack extends BaseStack {
 
     const { restApi } = this.#getPublicRestApi();
 
+    const { e2eBypassSecret, webAcl } = this.#createCloudfrontWebAcl({
+      criticalAction,
+      warningAction,
+    });
+
     const secretHeaderArn = this.import(
       STAGE_KEYS.WafCfSecretHeaderArn,
       "eu-west-2",
     );
 
-    const cloudfront = new FlexCloudfront(this, "Cloudfront", {
-      certArn: cert.certificateArn,
-      secretHeaderArn,
+    const openApiSpecBucket = this.#createOpenApiSpecBucket();
+
+    const distribution = this.#createCloudfrontDistribution({
+      cert,
+      criticalAction,
       domainName,
-      subdomainName,
+      openApiSpecBucket,
       restApi,
-      hostedZone,
+      secretHeaderArn,
+      subdomainName,
+      warningAction,
+      webAcl,
+    });
+
+    this.#deploySwaggerUi({ bucket: openApiSpecBucket, distribution });
+
+    this.#createARecord({ distribution, hostedZone, subdomainName });
+
+    this.#createCloudfrontShield({
+      distribution,
       criticalAction,
       warningAction,
     });
@@ -189,7 +589,7 @@ export class FlexGlobalStack extends BaseStack {
     });
 
     new CfnOutput(this, "E2EBypassSecretArn", {
-      value: cloudfront.e2eBypassSecret.secretArn,
+      value: e2eBypassSecret.secretArn,
     });
   }
 }

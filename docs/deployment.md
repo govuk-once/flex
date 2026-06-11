@@ -121,7 +121,7 @@ Core infrastructure includes:
 
 ### Quality Checks
 
-**Workflow:** [`_qualityChecks.yml`](/.github/workflows/_qualityChecks.yml)
+**Workflow:** [`_quality-checks.yml`](/.github/workflows/_quality-checks.yml)
 
 **Triggers:** Called by PR and main workflows
 
@@ -138,7 +138,7 @@ Core infrastructure includes:
 
 ### Build and Deploy
 
-**Workflow:** [`_buildDeploy.yml`](/.github/workflows/_buildDeploy.yml)
+**Workflow:** [`_build-deploy.yml`](/.github/workflows/_build-deploy.yml)
 
 **Triggers:** Called by PR and main workflows
 

@@ -1,5 +1,5 @@
 import { Duration } from "aws-cdk-lib";
-import { IDistribution, IFunction } from "aws-cdk-lib/aws-cloudfront";
+import { IDistribution } from "aws-cdk-lib/aws-cloudfront";
 import {
   Alarm,
   ComparisonOperator,
@@ -21,33 +21,20 @@ import { BaseAlarmsProps } from "./types";
  */
 export interface CloudFrontAlarmsProps extends BaseAlarmsProps {
   readonly distribution: IDistribution;
-  readonly viewerRequestFunction: IFunction;
 }
 
 export class CloudFrontAlarms extends Construct {
   public readonly fiveXxErrorRateAlarm: Alarm;
   public readonly fourXxErrorRateAlarm: Alarm;
   public readonly totalErrorRateAlarm: Alarm;
-  public readonly functionExecutionErrorsAlarm: Alarm;
-  public readonly functionThrottlesAlarm: Alarm;
-  public readonly functionValidationErrorsAlarm: Alarm;
 
   constructor(scope: Construct, id: string, props: CloudFrontAlarmsProps) {
     super(scope, id);
 
-    const {
-      distribution,
-      viewerRequestFunction,
-      criticalAction,
-      warningAction,
-      alarmNamePrefix,
-    } = props;
+    const { distribution, criticalAction, warningAction, alarmNamePrefix } =
+      props;
 
     const distDimensions = { DistributionId: distribution.distributionId };
-    const fnDimensions = {
-      DistributionId: distribution.distributionId,
-      FunctionName: viewerRequestFunction.functionName,
-    };
 
     // 5xxErrorRate is already a percentage (0-100), so threshold is 1, not 0.01.
     this.fiveXxErrorRateAlarm = new Alarm(this, "5xxErrorRate", {
@@ -105,72 +92,5 @@ export class CloudFrontAlarms extends Construct {
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
     this.totalErrorRateAlarm.addAlarmAction(warningAction);
-
-    // CloudFront Function execution errors - runs on every viewer request,
-    // any error means requests couldn't be processed.
-    this.functionExecutionErrorsAlarm = new Alarm(
-      this,
-      "FunctionExecutionErrors",
-      {
-        alarmName: `${alarmNamePrefix}-function-execution-errors`,
-        alarmDescription:
-          "Critical: viewer request function execution errors over 5 consecutive 1 minute periods",
-        metric: new Metric({
-          namespace: "AWS/CloudFront",
-          metricName: "FunctionExecutionErrors",
-          dimensionsMap: fnDimensions,
-          statistic: Stats.SUM,
-          period: Duration.minutes(1),
-        }),
-        threshold: 0,
-        evaluationPeriods: 5,
-        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-        treatMissingData: TreatMissingData.NOT_BREACHING,
-      },
-    );
-    this.functionExecutionErrorsAlarm.addAlarmAction(criticalAction);
-
-    // Function throttles - function exceeded compute time limit.
-    this.functionThrottlesAlarm = new Alarm(this, "FunctionThrottles", {
-      alarmName: `${alarmNamePrefix}-function-throttles`,
-      alarmDescription:
-        "Warning: viewer request function throttled over 5 consecutive 1 minute periods",
-      metric: new Metric({
-        namespace: "AWS/CloudFront",
-        metricName: "FunctionThrottles",
-        dimensionsMap: fnDimensions,
-        statistic: Stats.SUM,
-        period: Duration.minutes(1),
-      }),
-      threshold: 0,
-      evaluationPeriods: 5,
-      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
-    });
-    this.functionThrottlesAlarm.addAlarmAction(criticalAction);
-
-    // Function validation errors - function returned malformed event back
-    // to CloudFront (bad headers, response shape, etc).
-    this.functionValidationErrorsAlarm = new Alarm(
-      this,
-      "FunctionValidationErrors",
-      {
-        alarmName: `${alarmNamePrefix}-function-validation-errors`,
-        alarmDescription:
-          "Warning: viewer request function validation errors over 2 consecutive 1 minute periods",
-        metric: new Metric({
-          namespace: "AWS/CloudFront",
-          metricName: "FunctionValidationErrors",
-          dimensionsMap: fnDimensions,
-          statistic: Stats.SUM,
-          period: Duration.minutes(1),
-        }),
-        threshold: 0,
-        evaluationPeriods: 2,
-        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-        treatMissingData: TreatMissingData.NOT_BREACHING,
-      },
-    );
-    this.functionValidationErrorsAlarm.addAlarmAction(warningAction);
   }
 }
