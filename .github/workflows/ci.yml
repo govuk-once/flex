@@ -2,6 +2,7 @@ name: Release Candidate
 
 on:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
     branches: [main]
 
 concurrency:
