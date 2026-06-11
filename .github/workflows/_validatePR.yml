@@ -18,6 +18,6 @@ jobs:
           echo "Checking PR title: $TITLE"
 
           if ! echo "$TITLE" | grep -Eq '^[A-Z]+-[0-9]+'; then
-            echo "::error ::PR title must start with a Jira ticket key, e.g. FLEX-123 Add user preferences endpoint"
+            echo "::error ::PR title must start with a Jira ticket key, e.g FLEX-123 Add user preferences endpoint"
             exit 1
           fi
