@@ -10,9 +10,9 @@ import {
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
   GetUserResponseSchema,
+  JwkSetSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
-  JwkSetSchema,
 } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({

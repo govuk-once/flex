@@ -1,5 +1,3 @@
-export type { Jwk, JwkSet } from "./wellKnownJwks";
-export { JwkSchema, JwkSetSchema } from "./wellKnownJwks";
 export type {
   CreateServiceIdentityLinkRequest,
   DeleteServiceIdentityLinkResponse,
@@ -39,3 +37,5 @@ export {
   GetUserPushIdResponseSchema,
   GetUserResponseSchema,
 } from "./user";
+export type { Jwk, JwkSet } from "./wellKnownJwks";
+export { JwkSchema, JwkSetSchema } from "./wellKnownJwks";

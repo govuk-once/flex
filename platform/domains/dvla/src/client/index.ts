@@ -38,9 +38,11 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
     },
     wellKnownJwk: {
       get: (): Promise<ApiResult<void>> => {
-        const requestBase = createPublicFetch({ baseUrl: config.wellKnownJwkUrl });
-        const request = requestBase('/.well-known/jwks.json', {
-          method: "GET"
+        const requestBase = createPublicFetch({
+          baseUrl: config.wellKnownJwkUrl,
+        });
+        const request = requestBase("/.well-known/jwks.json", {
+          method: "GET",
         }).request;
 
         return typedFetch(request);
