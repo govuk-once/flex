@@ -12,6 +12,15 @@ repos:
       - id: check-case-conflict
       - id: detect-private-key
 
+  - repo: local
+    hooks:
+      - id: check-action-shas
+        name: Check GitHub Actions SHA pinning
+        entry: bash scripts/check-action-shas.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
