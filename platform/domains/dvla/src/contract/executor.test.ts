@@ -9,6 +9,9 @@ const remoteClient = {
   authentication: {
     get: vi.fn(),
   },
+  wellKnownJwk: {
+    get: vi.fn(),
+  },
   licence: {
     get: vi.fn(),
   },
@@ -57,6 +60,32 @@ describe("DVLA Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.authentication.get).toHaveBeenCalled();
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/well-known-jwks",
+      operation: "getWellKnownJwk",
+      configureRemoteClient: () => {
+        remoteClient.wellKnownJwk.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: {
+            keys: [
+              {
+                kty: "RSA",
+                use: "sig",
+                alg: "PS256",
+                kid: "alias/nonprod-govuk-app-jwt-signing-key",
+                n: "mock-n",
+                e: "AQAB",
+              },
+            ],
+          },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.wellKnownJwk.get).toHaveBeenCalled();
       },
     },
     {
