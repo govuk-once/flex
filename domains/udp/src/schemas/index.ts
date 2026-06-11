@@ -1,3 +1,5 @@
+export type { Jwk, JwkSet } from "./wellKnownJwks";
+export { JwkSchema, JwkSetSchema } from "./wellKnownJwks";
 export type {
   CreateServiceIdentityLinkRequest,
   DeleteServiceIdentityLinkResponse,
