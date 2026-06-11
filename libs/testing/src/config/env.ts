@@ -10,6 +10,11 @@ export const e2eEnvSchema = z.object({
     VALID: z.string(),
     INVALID: z.string(),
   }),
+  E2E_BYPASS_TOKEN: z
+    .string()
+    .describe(
+      "Secret token for the x-flex-e2e-bypass WAF header to skip IP reputation blocking",
+    ),
   STAGE: z
     .string()
     .optional()
