@@ -2,6 +2,7 @@ name: Release Candidate
 
 on:
   pull_request:
+    types: [opened, edited, synchronize, reopened]
     branches: [main]
 
 concurrency:
@@ -9,7 +10,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-pr:
+    name: Validate PR
+    uses: ./.github/workflows/_validatePR.yml
   ci:
+    needs: validate-pr
     name: Quality Checks
     uses: ./.github/workflows/_qualityChecks.yml
     with:
@@ -21,6 +26,7 @@ jobs:
       SONAR_URL: ${{ secrets.SONAR_URL }}
 
   ephemeralEnv:
+    needs: validate-pr
     name: Ephemeral Environment branch tests
     uses: ./.github/workflows/_buildDeploy.yml
     with:
