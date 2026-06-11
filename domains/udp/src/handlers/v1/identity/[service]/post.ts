@@ -21,7 +21,7 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
       service,
       serviceId,
     });
-    throw new createHttpError.BadRequest();
+    throw new createHttpError.Unauthorized();
   }
 
   // TODO: SDK auth alias

@@ -30,15 +30,28 @@ export async function extractServiceId(
     const jwkSet: JwkSet = result.data;
 
     try {
-      const JWKS = jose.createLocalJWKSet(jwkSet);
-      console.log(`JWKs ${JWKS}`)
-      console.log(`JWT ${token}`)
 
-      const { payload } = await jose.jwtVerify<DvlaJwtPayload>(token, JWKS);
+      // --- TEMPORARY WORKAROUND ---
+      // Force any key with the specific kid (or all keys) to use PS256
+      const patchedKeys = jwkSet.keys.map(key => {
+        if (key.kid === "alias/nonprod-govuk-app-jwt-signing-key") {
+          return { ...key, alg: "PS256" };
+        }
+        return key;
+      });
+
+      const patchedJwkSet = { ...jwkSet, keys: patchedKeys };
+      // ----------------------------
+
+      const JWKS = jose.createLocalJWKSet(patchedJwkSet);
+
+      const { payload } = await jose.jwtVerify<DvlaJwtPayload>(token, JWKS, {
+        currentDate: new Date(),
+        clockTolerance: 0
+      });
 
       return payload.linking_id ?? null;
     } catch (error) {
-      console.log(error);
       ctx.logger.error("Failed to get extract linking id", {
         error: error
       });
