@@ -18,9 +18,6 @@ export {
 } from "./resolve-config";
 export { toApiGatewayResponse, validateHandlerResponse } from "./response";
 export type { RouteKeySegments } from "./route-key";
-export {
-  extractRouteKeySegments,
-  stripRouteKeyGatewayIdentifier,
-} from "./route-key";
+export { extractRouteKeySegments } from "./route-key";
 export type { RouteStore } from "./store";
 export { getRouteStore, routeStorage } from "./store";

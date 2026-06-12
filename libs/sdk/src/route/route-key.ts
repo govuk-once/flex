@@ -7,6 +7,7 @@ export interface RouteKeySegments {
   gateway: "public" | "private";
 }
 
+// TODO: Reuse splitRouteKey/splitVersionedPath from gateway config
 export function extractRouteKeySegments(routeKey: string): RouteKeySegments {
   const [method, versionedPath] = routeKey.split(" ");
 

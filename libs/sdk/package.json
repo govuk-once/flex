@@ -12,8 +12,10 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
+    "@aws-lambda-powertools/parameters": "2.33.1",
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
+    "@flex/platform-shared": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.6.7",
     "@middy/http-error-handler": "7.6.7",

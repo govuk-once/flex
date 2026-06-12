@@ -14,6 +14,7 @@
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/platform-shared": "workspace:*",
+    "@flex/service-gateway": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.6.7",

@@ -64,3 +64,18 @@ export type NumberBetween<From extends number, To extends number> = Exclude<
 
 type Brand<B> = { __brand: B };
 export type Branded<T, B> = T & Brand<B>;
+
+export type ExtractPathParams<Path extends string> =
+  Path extends `${string}:${infer PathParam}/${infer RemainingPath}`
+    ? PathParam | ExtractPathParams<`/${RemainingPath}`>
+    : Path extends `${string}:${infer PathParam}`
+      ? PathParam
+      : never;
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | Json[]
+  | { [key: string]: Json };

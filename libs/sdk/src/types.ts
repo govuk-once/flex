@@ -244,7 +244,7 @@ export type InferEnvironmentKeys<Config extends DomainConfig> = Config extends {
   ? DomainEnvironmentKeys
   : Environment;
 
-type ExtractPathParams<Path extends string> =
+export type ExtractPathParams<Path extends string> =
   Path extends `${string}:${infer PathParam}/${infer RemainingPath}`
     ? PathParam | ExtractPathParams<`/${RemainingPath}`>
     : Path extends `${string}:${infer PathParam}`

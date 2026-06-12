@@ -1,5 +1,5 @@
 {
-  "name": "@flex/dvla-service-gateway",
+  "name": "@flex/service-gateway",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -9,18 +9,14 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest --passWithNoTests",
-    "test:coverage": "vitest --coverage"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.33.1",
     "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
-    "@flex/platform-shared": "workspace:*",
-    "@flex/service-gateway": "workspace:*",
-    "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@middy/core": "7.6.7",
+    "@middy/core": "7.6.5",
     "http-errors": "2.0.1",
     "zod": "4.4.3"
   },
@@ -29,9 +25,9 @@
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
-    "@vitest/coverage-v8": "4.1.9",
-    "eslint": "10.5.0",
+    "eslint": "10.4.1",
+    "tsx": "4.22.4",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.8"
   }
 }

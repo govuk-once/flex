@@ -7,6 +7,7 @@ export {
   isStageAllowed,
 } from "./environments";
 export { getHeader } from "./http/getHeader";
+export { matchPath, toPathSegments } from "./http/path-params";
 export type { QueryParams } from "./http/query-params";
 export { extractQueryParams } from "./http/query-params";
 export type { BuildRequestOptions, HttpRequestOptions } from "./http/request";
@@ -17,7 +18,9 @@ export { findProjectRoot, getStackOutputs, sanitiseStageName } from "./infra";
 export * from "./openapi/domain/hello-world";
 export * from "./openapi/domain/topics";
 export { jsonResponse } from "./response/json";
+export type * from "./schemas/common";
 export * from "./schemas/common";
 export * from "./schemas/domain/hello-world";
 export * from "./schemas/domain/topics";
-export * from "./types";
+export { splitRouteKey, splitVersionedPath } from "./sdk/routes";
+export type * from "./types";
