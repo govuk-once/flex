@@ -31,9 +31,11 @@ import {
   VehicleEnquiryRequestBodySchema,
   VehicleEnquiryResponseSchema,
 } from "../schemas/remote/vehicleEnquiry";
+import { JwkSet } from "../schemas/remote/wellKnownJwk";
 
 export type RouteOperation =
   | "getAuthenticate"
+  | "getWellKnownJwk"
   | "getRetrieveCustomer"
   | "getRetrieveDrivingLicences"
   | "postTestNotification"
@@ -72,6 +74,14 @@ export type GetAuthenticateRouteContract = BaseRouteContract<
   unknown,
   unknown,
   AuthenticateResponseSchema
+>;
+
+export type GetWellKnownJwkRouteContract = BaseRouteContract<
+  "getWellKnownJwk",
+  "GET",
+  unknown,
+  unknown,
+  JwkSet
 >;
 
 export type GetCustomerRetrieveRouteContract = BaseRouteContract<
@@ -156,6 +166,7 @@ export type PostUnlinkUser = BaseRouteContract<
 
 export type RouteContract =
   | GetAuthenticateRouteContract
+  | GetWellKnownJwkRouteContract
   | GetCustomerRetrieveRouteContract
   | GetCustomerSummaryRouteContract
   | GetDriverSummaryRouteContract

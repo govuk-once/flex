@@ -1,8 +1,11 @@
 import { ApiResult, typedFetch } from "@flex/flex-fetch";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";
+import { JwkSet } from "../schemas/remote/wellKnownJwk";
 import { createPublicFetch } from "../utils/createPublicFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
+
+let jwksCache: ApiResult<JwkSet> | null = null;
 
 /**
  * Remote client for the DVLA API.
@@ -34,6 +37,24 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
           },
         ).request;
         return typedFetch(request);
+      },
+    },
+    wellKnownJwk: {
+      get: async (): Promise<ApiResult<JwkSet>> => {
+        if (jwksCache && jwksCache.ok) return jwksCache;
+
+        const requestBase = createPublicFetch({
+          baseUrl: config.wellKnownJwkUrl,
+        });
+        const request = requestBase("/.well-known/jwks.json", {
+          method: "GET",
+        }).request;
+
+        const result = await typedFetch<JwkSet>(request);
+
+        if (result.ok) jwksCache = result;
+
+        return result;
       },
     },
     licence: {

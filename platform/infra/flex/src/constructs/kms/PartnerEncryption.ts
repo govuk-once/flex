@@ -11,7 +11,7 @@ export class PartnerEncryption extends Construct {
     this.kmsKey = new kms.Key(this, "ThirdPartyEncryptionKey", {
       keySpec: kms.KeySpec.RSA_4096,
       keyUsage: kms.KeyUsage.ENCRYPT_DECRYPT,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
   }
 }

@@ -10,6 +10,7 @@ import {
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
   GetUserResponseSchema,
+  JwkSetSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
 } from "./src/schemas";
@@ -61,6 +62,12 @@ export const { config, route, routeContext } = domain({
     udpPostIdentities: {
       type: "gateway",
       route: "POST /v1/identities/*",
+    },
+    dvlaGetWellKnownJwk: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/well-known-jwks",
+      response: JwkSetSchema,
     },
     dvlaUnlinkUser: {
       type: "domain",
@@ -123,6 +130,7 @@ export const { config, route, routeContext } = domain({
               "udpGetIdentity",
               "udpGetIdentities",
               "udpPostIdentities",
+              "dvlaGetWellKnownJwk",
             ],
             headers: {
               linkingToken: {

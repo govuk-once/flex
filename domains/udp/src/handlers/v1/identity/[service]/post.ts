@@ -6,6 +6,7 @@ import {
   getServiceIdentityLink,
   postServiceIdentity,
 } from "@services/identity";
+import { extractServiceId } from "@services/linkingId";
 import createHttpError from "http-errors";
 import status from "http-status";
 
@@ -14,13 +15,13 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
   const { service } = pathParams;
   const { linkingToken } = headers;
 
-  const serviceId = extractServiceId(service, linkingToken);
+  const serviceId = await extractServiceId(service, linkingToken, ctx);
   if (serviceId === null) {
     logger.error(`Failed to get linking id`, {
       service,
       serviceId,
     });
-    throw new createHttpError.BadRequest();
+    throw new createHttpError.Unauthorized();
   }
 
   // TODO: SDK auth alias
@@ -43,34 +44,3 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
 
   return { status: status.CREATED };
 });
-
-/**
- * Extracts the identity linking ID. For the DVLA service, this requires
- * parsing the identifier directly out of the provided JWT payload.
- * - TODO: Verify the JWT signature and handle token decryption.
- */
-interface DvlaJwtPayload {
-  linking_id?: string;
-  [key: string]: unknown;
-}
-
-function extractServiceId(service: string, token: string): string | null {
-  if (service.toLowerCase() === "dvla") {
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-
-      const [, payloadB64 = ""] = parts;
-
-      const payload = JSON.parse(
-        Buffer.from(payloadB64, "base64").toString("utf-8"),
-      ) as DvlaJwtPayload;
-
-      return payload.linking_id ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  return token;
-}
