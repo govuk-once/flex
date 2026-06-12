@@ -2,15 +2,7 @@ import "./http";
 
 import { beforeEach, vi } from "vitest";
 
-vi.mock("@flex/flex-fetch", async (importOriginal) => ({
-  ...(await importOriginal()),
-  createSigv4Fetcher:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
+vi.mock("@flex/flex-fetch");
 
 vi.mock("@middy/secrets-manager", () => ({
   default: () => ({ before: vi.fn() }),

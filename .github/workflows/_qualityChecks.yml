@@ -22,49 +22,61 @@ on:
         required: true
 
 jobs:
-  qualityChecks:
+  hygiene:
+    name: Hygiene
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    permissions:
-      id-token: write # Required for OIDC authentication with AWS
-    env:
-      STAGE: ${{ inputs.STAGE }}
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
       - name: Setup node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: ".nvmrc"
+          cache: 'pnpm'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Install dependencies
         run: |
-          python3 -m pip install semgrep pre-commit checkov
-          npm install -g pnpm@latest-10
+          python3 -m pip install pre-commit
           pnpm install
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
-        with:
-          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
-          aws-region: ${{ inputs.AWS_REGION }}
-          role-session-name: ${{ github.run_id }}
-
       - name: Run Hygiene & Security Checks
-        run: SKIP=semgrep pre-commit run --all-files --show-diff-on-failure
+        run: pre-commit run --all-files --show-diff-on-failure
 
       - name: NX - set SHAs
         uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
 
+      - name: Cache NX
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-hygiene-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-hygiene-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nx-hygiene-
+
       - name: Lint
         run: pnpm run lint
-
-      - name: Generate report for SonarQube
-        run: pnpm run lint:report || true
 
       - name: Type Check
         run: pnpm run tsc
@@ -79,11 +91,58 @@ jobs:
             exit 1
           }
 
-      - name: Unit Tests
-        run: pnpm exec nx run-many --target=test --all --run --coverage
+  sonarScan:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
-      - name: Infrastructure as Code (IaC) Linting with checkov
-        run: pnpm run checkov
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: NX - set SHAs
+        uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+
+      - name: Cache NX
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-sonar-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-sonar-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nx-sonar-
+
+      - name: Unit Tests
+        env:
+          AWS_REGION: eu-west-2
+          AWS_DEFAULT_REGION: eu-west-2
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test # pragma: allowlist secret
+        run: pnpm exec nx affected --target=test --run --coverage --skip-nx-cache
+
+      - name: Generate report for SonarQube
+        run: pnpm run lint:report || true
+
+      - name: Cache SonarQube scanner
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
 
       - name: Run SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8.2.0
@@ -91,10 +150,60 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      STAGE: ${{ inputs.STAGE }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: 'pnpm'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-checkov-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install checkov
+          pnpm install
+
+      - name: NX - set SHAs
+        uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@ef734cca817839d2dcb4b1e3a7118492ebb4df39 # v5.1.1
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: ${{ github.run_id }}
+
+      - name: Infrastructure as Code (IaC) Linting with checkov
+        run: pnpm run checkov
+
       - name: Run Dependency Review
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
-          fail-on-severity: high # Will fail on newly introduced vulnerabilities
+          fail-on-severity: high
           license-check: false
           base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
           head-ref: ${{ github.event.pull_request.head.sha || github.ref }}

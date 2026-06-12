@@ -173,7 +173,7 @@ export class FlexGlobalStack extends BaseStack {
       "eu-west-2",
     );
 
-    new FlexCloudfront(this, "Cloudfront", {
+    const cloudfront = new FlexCloudfront(this, "Cloudfront", {
       certArn: cert.certificateArn,
       secretHeaderArn,
       domainName,
@@ -186,6 +186,10 @@ export class FlexGlobalStack extends BaseStack {
 
     new CfnOutput(this, "FlexApiUrl", {
       value: `https://${subdomainName ?? domainName}`,
+    });
+
+    new CfnOutput(this, "E2EBypassSecretArn", {
+      value: cloudfront.e2eBypassSecret.secretArn,
     });
   }
 }

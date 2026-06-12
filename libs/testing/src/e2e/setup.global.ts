@@ -1,3 +1,4 @@
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getStackOutputs, sanitiseStageName } from "@flex/utils";
 import { config } from "dotenv";
 
@@ -10,6 +11,16 @@ import {
 } from "../fixtures/TokenGenerator";
 
 config({ quiet: true });
+
+async function getE2eBypassToken(stage: string): Promise<string> {
+  const token = await getSecret(`/${stage}/flex-secret/e2e-bypass`);
+
+  if (!token) {
+    throw new Error(`E2E bypass secret not found for stage "${stage}"`);
+  }
+
+  return token as string;
+}
 
 export default async function setup({
   provide,
@@ -58,8 +69,10 @@ export default async function setup({
     privateGatewayUrl = PrivateGatewayUrl;
   }
 
-  const jwtClient = await getJwtClient(stage);
-  const validJwtToken = await jwtClient.getToken();
+  const [validJwtToken, e2eBypassToken] = await Promise.all([
+    getJwtClient(stage).then((c) => c.getToken()),
+    getE2eBypassToken(stage),
+  ]);
 
   provide(
     "e2eEnv",
@@ -71,6 +84,7 @@ export default async function setup({
         VALID: validJwtToken,
         INVALID: invalidJwt,
       },
+      E2E_BYPASS_TOKEN: e2eBypassToken,
     }),
   );
 }
