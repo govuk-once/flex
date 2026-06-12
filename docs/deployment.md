@@ -60,7 +60,7 @@ After deployment:
 pnpm --filter @platform/flex diff
 
 # Run E2E tests against deployed infrastructure
-pnpm --filter @flex/e2e test:e2e
+pnpm --filter @flex/e2e test:e2e:platform
 ```
 
 ### Destroy

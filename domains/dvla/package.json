@@ -10,7 +10,8 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest --passWithNoTests"
+    "test": "vitest --passWithNoTests",
+    "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "@flex/sdk": "workspace:*",
@@ -20,6 +21,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@aws-lambda-powertools/parameters": "2.33.1",
     "@flex/config": "workspace:*",
     "@flex/dvla-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",

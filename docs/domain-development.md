@@ -743,12 +743,16 @@ pnpm --filter @flex/<domain>-domain test --coverage
 # Run tests in watch mode
 pnpm --filter @flex/<domain>-domain test --watch
 
-# Run E2E tests against your personal environment
-pnpm --filter @flex/e2e test:e2e
+# Run this domain's E2E tests against your personal environment
+pnpm --filter @flex/<domain>-domain test:e2e
 
-# Run E2E tests against a specific environment
-STAGE=development pnpm --filter @flex/e2e test:e2e
+# Run this domain's E2E tests against a specific environment
+STAGE=development pnpm --filter @flex/<domain>-domain test:e2e
 ```
+
+> Domain E2E tests live in `domains/<domain>/e2e/` and run via the domain's
+> `test:e2e` script. CI discovers every domain that declares a `test:e2e`
+> script and runs it as its own non-blocking `Module E2E (<domain>)` check.
 
 ---
 
@@ -762,9 +766,11 @@ STAGE=development pnpm --filter @flex/e2e test:e2e
    1. Add SDK setup file
    2. (Optional) Add domain setup file (`src/tests/setup.ts`) if you need to define your own setup/teardown steps
    3. Add environment variables
+   4. Exclude E2E tests from the unit run (`exclude: [...configDefaults.exclude, "e2e/**"]`)
+4. (Optional) Add E2E tests in `e2e/`, a `vitest.e2e.config.ts`, and a `test:e2e` script so the domain is picked up by the CI module E2E matrix
 5. Define route handler(s)
 6. Create `README.md`
-7. Deploy (`pnpm run deploy`) and verify (`pnpm --filter @flex/e2e test:e2e`)
+7. Deploy (`pnpm run deploy`) and verify (`pnpm --filter @flex/<domain>-domain test:e2e`)
 
 > The platform will [automatically include the new domain](platform/infra/flex/src/utils/getDomainConfigs.ts) for deployment, no manual wiring is necessary.
 

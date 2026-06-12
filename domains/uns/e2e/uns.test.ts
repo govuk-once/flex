@@ -1,15 +1,14 @@
-import { STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
+import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
+import { it, STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
+import { describe, expect } from "vitest";
+
+import { config as unsConfig } from "../domain.config";
 import {
   NotificationSchema,
   NotificationsResponseSchema,
   PatchNotificationBody,
-} from "@flex/uns-domain";
-import { config as unsConfig } from "@flex/uns-domain/config";
-import { describe, expect } from "vitest";
-
-import { it } from "../extend/it";
-import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
+} from "../src";
 
 const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");

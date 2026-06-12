@@ -34,3 +34,13 @@ jobs:
       STAGE: pr-${{ github.event.pull_request.number }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  moduleE2E:
+    name: Module E2E
+    needs: ephemeralEnv
+    uses: ./.github/workflows/_moduleE2E.yml
+    with:
+      AWS_REGION: 'eu-west-2'
+      STAGE: pr-${{ github.event.pull_request.number }}
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

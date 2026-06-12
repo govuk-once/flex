@@ -1,4 +1,4 @@
-import { getJwtClient } from "../tests/e2e/src/setup.global";
+import { getJwtClient } from "../libs/testing/src/e2e/setup.global";
 import fs from "node:fs";
 
 async function main() {

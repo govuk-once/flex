@@ -1,4 +1,4 @@
-import { getJwtClient } from "../tests/e2e/src/setup.global";
+import { getJwtClient } from "../libs/testing/src/e2e/setup.global";
 
 async function main() {
   const stage = process.env.STAGE || "development";
