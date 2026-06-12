@@ -1,4 +1,4 @@
-import { createRouteContext, createRouteHandler } from "./route";
+import { createRouteContext, createRouteHandler } from "../route";
 import type {
   DomainConfig,
   DomainResult,
@@ -6,7 +6,7 @@ import type {
   InferFeatureFlagKeys,
   InferIntegrationKeys,
   InferResourceKeys,
-} from "./types";
+} from "../types";
 
 export function domain<
   const Config extends DomainConfig<
