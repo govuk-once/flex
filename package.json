@@ -19,8 +19,8 @@
   "devDependencies": {
     "@flex/cli": "workspace:*",
     "@flex/config": "workspace:*",
-    "esbuild": "0.28.0",
-    "eslint": "10.4.1",
+    "esbuild": "0.28.1",
+    "eslint": "10.5.0",
     "nx": "22.7.5",
     "serve": "14.2.6",
     "tsx": "4.22.4",
