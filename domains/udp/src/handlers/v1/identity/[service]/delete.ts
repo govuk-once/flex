@@ -1,38 +1,39 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { updateIdentityList } from "@services/identities";
-import {
-  deleteServiceIdentity,
-  getServiceIdentityLink,
-} from "@services/identity";
+import { deleteOrchestrateIdentityUnlink } from "@services/identities";
+import { getServiceIdentityLink } from "@services/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
 
 export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   const { auth, pathParams, integrations } = ctx;
+  const service = pathParams.service.toLowerCase();
 
   // TODO: SDK auth alias
   const userId = auth.pairwiseId as UserId;
 
-  const identity = await getServiceIdentityLink(userId);
-
+  const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();
 
   /**
    * NOTE:
    * For now ignoring the response from DVLA as they are just returning 404
    */
-  if (pathParams.service === "dvla") {
+  if (service === "dvla") {
     await integrations.dvlaUnlinkUser({
       body: {},
       path: `/${identity.serviceId}`,
     });
   }
 
-  await Promise.all([
-    deleteServiceIdentity(identity.serviceName, identity.serviceId),
-    updateIdentityList(ctx, pathParams.service, "remove"),
-  ]);
+  // 2. Offload the sequential delete workflow to the service layer
+  await deleteOrchestrateIdentityUnlink({
+    ctx,
+    userId,
+    service,
+    serviceId: identity.serviceId,
+    serviceName: identity.serviceName,
+  });
 
   return { status: status.NO_CONTENT };
 });

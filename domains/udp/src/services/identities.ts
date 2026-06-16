@@ -1,7 +1,10 @@
 import { routeContext } from "@domain";
+import { UserId } from "@flex/utils";
 import { GetIdentitiesGWResponse } from "@schemas/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
+
+import { deleteServiceIdentity, postServiceIdentity } from "./identity";
 
 type PostRoute = "POST /v1/identity/:service";
 type DeleteRoute = "DELETE /v1/identity/:service";
@@ -14,6 +17,21 @@ const _getCtx = routeContext<GetAllRoute>;
 type UpdateRouteContext =
   | ReturnType<typeof _postCtx>
   | ReturnType<typeof _deleteCtx>;
+
+interface LinkIdentityArgs {
+  ctx: ReturnType<typeof _postCtx>;
+  userId: UserId;
+  service: string;
+  serviceId: string;
+}
+
+interface DeleteIdentityArgs {
+  ctx: ReturnType<typeof _deleteCtx>;
+  userId: UserId;
+  service: string;
+  serviceId: string;
+  serviceName: string;
+}
 
 type GetRouteContext = UpdateRouteContext | ReturnType<typeof _getCtx>;
 
@@ -62,11 +80,82 @@ export async function postIdentities(
 }
 
 /**
+ * Handles the dual-write orchestration required by UDP to link an identity.
+ * Uses a sequential approach with an automated rollback to protect against data drift.
+ */
+export async function postOrchestrateIdentityLink({
+  ctx,
+  userId,
+  service,
+  serviceId,
+}: LinkIdentityArgs): Promise<void> {
+  // Step A: Store linkingId in UDP
+  await postServiceIdentity(serviceId, service);
+
+  try {
+    // Step B: Append service to the identity array
+    await updateIdentityList(ctx, service, "append");
+  } catch (error) {
+    ctx.logger.error(
+      "Data drift detected: Failed to update master identity list after KV creation. Rolling back mapping.",
+      { userId, service, serviceId, error },
+    );
+
+    /**
+     * Rollback:
+     *  - Attempt to remove the orphaned key-value link if the array listing failed
+     */
+    try {
+      await deleteServiceIdentity(service, serviceId);
+    } catch (rollbackError) {
+      ctx.logger.error(
+        "CRITICAL: Failed to rollback orphaned service identity link",
+        {
+          userId,
+          service,
+          rollbackError,
+        },
+      );
+    }
+
+    throw new createHttpError.BadGateway();
+  }
+}
+
+/**
+ * Handles the dual-delete orchestration required by UDP to unlink an identity.
+ * Removes the master list reference first. If clearing the specific key-value link
+ * fails, it catches the error to log a warning about the orphaned record.
+ */
+export async function deleteOrchestrateIdentityUnlink({
+  ctx,
+  userId,
+  service,
+  serviceId,
+  serviceName,
+}: DeleteIdentityArgs): Promise<void> {
+  // Step A: Remove service from identity list from UDP
+  await updateIdentityList(ctx, service, "remove");
+
+  try {
+    // Step B: Remove linking id from UDP
+    await deleteServiceIdentity(serviceName, serviceId);
+  } catch (error) {
+    ctx.logger.error(
+      "Data drift detected: Failed to delete key-value identity link after array removal.",
+      { userId, service, serviceId, error },
+    );
+
+    throw new createHttpError.BadGateway();
+  }
+}
+
+/**
  * The following function is used to append or remove identities from a user
  */
 type IdentityAction = "append" | "remove";
 
-export async function updateIdentityList(
+async function updateIdentityList(
   ctx: UpdateRouteContext,
   targetIdentity: string,
   action: IdentityAction,
