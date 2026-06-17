@@ -31,7 +31,6 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
     userId,
     service,
     serviceId: identity.serviceId,
-    serviceName: identity.serviceName,
   });
 
   return { status: status.NO_CONTENT };

@@ -30,7 +30,6 @@ interface DeleteIdentityArgs {
   userId: UserId;
   service: string;
   serviceId: string;
-  serviceName: string;
 }
 
 type GetRouteContext = UpdateRouteContext | ReturnType<typeof _getCtx>;
@@ -130,12 +129,11 @@ export async function deleteOrchestrateIdentityUnlink({
   userId,
   service,
   serviceId,
-  serviceName,
 }: DeleteIdentityArgs): Promise<void> {
   await updateIdentityList(ctx, service, "remove");
 
   try {
-    await deleteServiceIdentity(serviceName, serviceId);
+    await deleteServiceIdentity(service, serviceId);
   } catch (error) {
     ctx.logger.error(
       "Data drift detected: Failed to delete key-value identity link after array removal.",
