@@ -276,7 +276,9 @@ describe("DELETE /v1/identity/:service", () => {
     http
       .gateway("udp")
       .get(`/identities/${userId}`)
-      .reply(200, { data: { services: [normalizedServiceName, activeService] } });
+      .reply(200, {
+        data: { services: [normalizedServiceName, activeService] },
+      });
 
     http
       .gateway("udp")
