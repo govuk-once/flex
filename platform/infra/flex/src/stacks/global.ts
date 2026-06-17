@@ -11,6 +11,7 @@ import {
 import {
   AllowedMethods,
   CachePolicy,
+  CfnDistribution,
   Distribution,
   FunctionEventType,
   OriginRequestPolicy,
@@ -408,6 +409,8 @@ export class FlexGlobalStack extends BaseStack {
       domainNames: [subdomainName ?? domainName],
       certificate: cert,
     });
+    const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
+    cfnDistribution.overrideLogicalId("CloudfrontDistributionD69C1995");
 
     new CloudFrontAlarms(this, "Alarms", {
       alarmNamePrefix: `${stage}-cloudfront`,
