@@ -122,7 +122,7 @@ export async function postOrchestrateIdentityLink({
 /**
  * Handles the dual-delete orchestration required by UDP to unlink an identity.
  * Removes the master list reference first. If clearing the specific key-value link
- * fails, it catches the error to log a warning about the orphaned record.
+ * fails, it catches the error and attempts to re-append the identity to the master list.
  */
 export async function deleteOrchestrateIdentityUnlink({
   ctx,
@@ -130,15 +130,31 @@ export async function deleteOrchestrateIdentityUnlink({
   service,
   serviceId,
 }: DeleteIdentityArgs): Promise<void> {
-  await updateIdentityList(ctx, service, "remove");
+  const listResult = await updateIdentityList(ctx, service, "remove");
 
   try {
     await deleteServiceIdentity(service, serviceId);
   } catch (error) {
     ctx.logger.error(
-      "Data drift detected: Failed to delete key-value identity link after array removal.",
+      "Data drift detected: Failed to delete key-value identity link after array removal. Initiating rollback.",
       { userId, service, serviceId, error },
     );
+
+    /**
+     * Rollback Guard:
+     * Only attempt to add it back if it actually existed in the array
+     * in the first place (i.e., listResult was not a 404).
+     */
+    if (listResult !== status.NOT_FOUND) {
+      try {
+        await updateIdentityList(ctx, service, "append");
+      } catch (rollbackError) {
+        ctx.logger.error(
+          "CRITICAL: Failed to rollback master identity list array after KV deletion failure",
+          { userId, service, serviceId, rollbackError },
+        );
+      }
+    }
 
     throw new createHttpError.BadGateway();
   }
