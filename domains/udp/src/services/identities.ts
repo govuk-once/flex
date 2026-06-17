@@ -89,11 +89,9 @@ export async function postOrchestrateIdentityLink({
   service,
   serviceId,
 }: LinkIdentityArgs): Promise<void> {
-  // Step A: Store linkingId in UDP
   await postServiceIdentity(serviceId, service);
 
   try {
-    // Step B: Append service to the identity array
     await updateIdentityList(ctx, service, "append");
   } catch (error) {
     ctx.logger.error(
@@ -134,11 +132,9 @@ export async function deleteOrchestrateIdentityUnlink({
   serviceId,
   serviceName,
 }: DeleteIdentityArgs): Promise<void> {
-  // Step A: Remove service from identity list from UDP
   await updateIdentityList(ctx, service, "remove");
 
   try {
-    // Step B: Remove linking id from UDP
     await deleteServiceIdentity(serviceName, serviceId);
   } catch (error) {
     ctx.logger.error(

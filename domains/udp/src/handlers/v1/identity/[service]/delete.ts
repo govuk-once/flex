@@ -26,7 +26,6 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
     });
   }
 
-  // 2. Offload the sequential delete workflow to the service layer
   await deleteOrchestrateIdentityUnlink({
     ctx,
     userId,
