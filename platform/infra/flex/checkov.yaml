@@ -4,5 +4,5 @@ skip-check:
   - CKV_AWS_116
   - CKV_AWS_117
   - CKV_AWS_158
-  - CKV_AWS_173 # TODO: confirm if we need to encrypt lambda environment variables
+  - CKV_AWS_173 # CDK-internal Lambdas (BucketDeployment, AwsCustomResource) — env vars are CDK-managed, not sensitive; user Lambdas encrypted via FlexBaseFunction
   - CKV_AWS_68 # TODO: awaiting WAF
