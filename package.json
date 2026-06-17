@@ -13,10 +13,11 @@
     "test:e2e": "nx run-many --target=test:e2e --run",
     "jwt": "tsx scripts/generateToken.ts",
     "dastSetup": "tsx scripts/dastSetup.ts",
-    "openapi:generate": "tsx scripts/generate-openapi.ts",
+    "openapi:generate": "tsx scripts/generateOpenapi.ts",
     "docs:serve": "pnpm openapi:generate && serve docs"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "3.1064.0",
     "@flex/cli": "workspace:*",
     "@flex/config": "workspace:*",
     "esbuild": "0.28.0",
