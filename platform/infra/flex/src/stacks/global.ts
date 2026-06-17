@@ -182,7 +182,7 @@ export class FlexGlobalStack extends BaseStack {
 
   #createCloudfrontWebAcl({ criticalAction, warningAction }: AlarmActionProps) {
     const e2eBypassSecret = new Secret(this, "E2EBypassSecret", {
-      secretName: `/${stage}/flex-secret/e2e-bypass`,
+      secretName: `/${stage}/flex-secret/waf/e2e-bypass`,
       generateSecretString: {
         excludePunctuation: true,
         passwordLength: 32,
