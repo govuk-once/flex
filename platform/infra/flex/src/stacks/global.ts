@@ -305,7 +305,7 @@ export class FlexGlobalStack extends BaseStack {
     });
 
     new WafAlarms(this, "CloudFrontWafAlarms", {
-      alarmNamePrefix: `${stage}-cf-waf`,
+      alarmNamePrefix: `${stage}-cloudfront-waf`,
       criticalAction,
       warningAction,
       webAcl,
@@ -410,7 +410,7 @@ export class FlexGlobalStack extends BaseStack {
     });
 
     new CloudFrontAlarms(this, "Alarms", {
-      alarmNamePrefix: `${stage}-cf`,
+      alarmNamePrefix: `${stage}-cloudfront`,
       distribution,
       criticalAction,
       warningAction,
