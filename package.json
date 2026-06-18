@@ -14,14 +14,18 @@
     "jwt": "tsx scripts/generateToken.ts",
     "dastSetup": "tsx scripts/dastSetup.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
-    "docs:serve": "pnpm openapi:generate && serve docs"
+    "docs:serve": "pnpm openapi:generate && serve docs",
+    "semantic:release": "semantic-release"
   },
   "devDependencies": {
     "@flex/cli": "workspace:*",
     "@flex/config": "workspace:*",
+    "@semantic-release/exec": "7.1.0",
+    "conventional-changelog-conventionalcommits": "9.3.1",
     "esbuild": "0.28.0",
     "eslint": "10.4.1",
     "nx": "22.7.5",
+    "semantic-release": "25.0.5",
     "serve": "14.2.6",
     "tsx": "4.22.4",
     "typescript": "6.0.3",

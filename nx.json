@@ -1,10 +1,5 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "packageManager": "pnpm",
-  "release": {
-    "version": {
-      "conventionalCommits": true
-    }
-  },
   "analytics": false
 }

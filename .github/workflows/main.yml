@@ -17,9 +17,94 @@ jobs:
       SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
       SONAR_URL: ${{ secrets.SONAR_URL }}
 
+  release:
+    name: Release
+    needs: qualityChecks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Serialise tag creation between near-simultaneous merges. Job-level on
+    # purpose: a workflow-level group would be held by runs waiting at the
+    # manual deployment approval gates
+    concurrency:
+      group: semantic-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+    outputs:
+      released: ${{ steps.semantic.outputs.released }}
+      version: ${{ steps.semantic.outputs.version }}
+      type: ${{ steps.semantic.outputs.type }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run semantic release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm run semantic:release
+
+      - name: Version
+        if: steps.semantic.outputs.released == 'true'
+        run: echo "Released version ${{ steps.semantic.outputs.version }} (${{ steps.semantic.outputs.type }})"
+
+      - name: Configure AWS credentials
+        if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+          aws-region: "eu-west-2"
+          role-session-name: ${{ github.run_id }}
+
+      - name: Notify Slack
+        if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
+        # A failed notification must not block deployment
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.semantic.outputs.version }}
+          TYPE: ${{ steps.semantic.outputs.type }}
+        run: |
+          gh release view "v${VERSION}" --json body --jq .body > release-notes.md
+
+          TOPIC_ARN=$(aws ssm get-parameter \
+            --name "/development/flex/topic/release-notifications" \
+            --query "Parameter.Value" --output text)
+
+          MESSAGE=$(jq -n \
+            --arg title "Flex ${TYPE} release: v${VERSION}" \
+            --arg url "https://github.com/${{ github.repository }}/releases/tag/v${VERSION}" \
+            --rawfile notes release-notes.md \
+            '{
+              version: "1.0",
+              source: "custom",
+              content: {
+                textType: "client-markdown",
+                title: $title,
+                description: ($notes[0:1500] + "\n\n" + $url)
+              }
+            }')
+
+          aws sns publish --topic-arn "$TOPIC_ARN" --message "$MESSAGE"
+
   deployDev:
     name: Deploy to Development
-    needs: qualityChecks
+    needs: [qualityChecks, release]
     uses: ./.github/workflows/_buildDeploy.yml
     with:
       AWS_REGION: "eu-west-2"

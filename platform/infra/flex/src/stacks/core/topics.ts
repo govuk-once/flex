@@ -30,3 +30,13 @@ export function createAlarmTopics(scope: Construct) {
 
   return { criticalTopic, warningTopic, alarmTopicKey };
 }
+
+export function createReleaseTopic(scope: Construct, alarmTopicKey: Key) {
+  const releaseTopic = new Topic(scope, "ReleaseTopic", {
+    topicName: "flex-release-notifications",
+    displayName: "flex-release-notifications",
+    masterKey: alarmTopicKey,
+  });
+
+  return { releaseTopic };
+}

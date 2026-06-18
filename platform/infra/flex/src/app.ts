@@ -41,6 +41,8 @@ app.addExternalExports(region, [
     : []),
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
+  // Release Slack notifications only exist in the development environment
+  ...(env === Environment.development ? [ENV_KEYS.ReleaseSlackChannelId] : []),
   ENV_KEYS.FlexEncryptionKey,
 ]);
 
