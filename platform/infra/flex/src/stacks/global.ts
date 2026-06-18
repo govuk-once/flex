@@ -30,6 +30,7 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import {
   ARecord,
+  CfnRecordSet,
   HostedZone,
   IHostedZone,
   RecordTarget,
@@ -478,11 +479,13 @@ export class FlexGlobalStack extends BaseStack {
     hostedZone: IHostedZone;
     subdomainName?: string;
   }) {
-    new ARecord(this, "DomainAliasRecord", {
+    const domainAliasRecord = new ARecord(this, "DomainAliasRecord", {
       zone: hostedZone,
       recordName: subdomainName ? `${subdomainName}.` : undefined,
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
     });
+    const cfnRecordSet = domainAliasRecord.node.defaultChild as CfnRecordSet;
+    cfnRecordSet.overrideLogicalId("CloudfrontDomainAliasRecord0A299B62");
   }
 
   #createOpenApiSpecBucket() {
