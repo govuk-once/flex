@@ -12,6 +12,7 @@ import {
   AllowedMethods,
   CachePolicy,
   CfnDistribution,
+  CfnMonitoringSubscription,
   Distribution,
   FunctionEventType,
   OriginRequestPolicy,
@@ -411,6 +412,12 @@ export class FlexGlobalStack extends BaseStack {
     });
     const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
     cfnDistribution.overrideLogicalId("CloudfrontDistributionD69C1995");
+    const cfnMonitoringSubscription = distribution.node.findChild(
+      "MonitoringSubscription",
+    ) as CfnMonitoringSubscription;
+    cfnMonitoringSubscription.overrideLogicalId(
+      "CloudfrontDistributionMonitoringSubscription4785C264",
+    );
 
     new CloudFrontAlarms(this, "Alarms", {
       alarmNamePrefix: `${stage}-cloudfront`,
