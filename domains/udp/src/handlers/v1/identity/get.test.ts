@@ -27,7 +27,7 @@ describe("GET /v1/identity", () => {
     expect(JSON.parse(result.body)).toStrictEqual({ services });
   });
 
-  it("returns 204 when the user identity does not exist", async ({
+  it("returns 200 with an empty services list when the user identity does not exist", async ({
     http,
     sdk,
   }) => {
@@ -38,8 +38,9 @@ describe("GET /v1/identity", () => {
       sdk.context(),
     );
 
-    expect(result.statusCode).toBe(204);
-    expect(result.body).toBe("");
+    expect(result.statusCode).toBe(200);
+
+    expect(JSON.parse(result.body)).toStrictEqual({ services: [] });
   });
 
   it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(

@@ -10,7 +10,8 @@ import { describe, expect } from "vitest";
 import { handler } from "./delete";
 
 describe("DELETE /v1/identity/:service", () => {
-  const endpoint = `/identity/${serviceName}`;
+  const normalizedServiceName = serviceName.toLowerCase();
+  const endpoint = `/identity/${normalizedServiceName}`;
 
   const activeService = createServiceName("test-active-service");
 
@@ -20,24 +21,31 @@ describe("DELETE /v1/identity/:service", () => {
   }) => {
     http
       .gateway("udp")
-      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(200, serviceIdentityLink);
+
     http
       .gateway("udp")
       .get(`/identities/${userId}`)
-      .reply(200, { data: { services: [serviceName, activeService] } });
-    http
-      .gateway("udp")
-      .delete(
-        `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
-      )
-      .reply(204);
+      .reply(200, {
+        data: { services: [normalizedServiceName, activeService] },
+      });
+
     http
       .gateway("udp")
       .post(`/identities/${userId}`, {
         body: { data: { services: [activeService] } },
       })
       .reply(200);
+
+    http
+      .gateway("udp")
+      .delete(
+        `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
+      )
+      .reply(204);
 
     const result = await handler(
       sdk.event.delete(endpoint, {
@@ -57,22 +65,27 @@ describe("DELETE /v1/identity/:service", () => {
   }) => {
     http
       .gateway("udp")
-      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(200, serviceIdentityLink);
+
     http
       .gateway("udp")
       .get(`/identities/${userId}`)
-      .reply(200, { data: { services: [serviceName] } });
+      .reply(200, { data: { services: [normalizedServiceName] } });
+
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, { body: { data: { services: [] } } })
+      .reply(200);
+
     http
       .gateway("udp")
       .delete(
         `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
       )
       .reply(204);
-    http
-      .gateway("udp")
-      .post(`/identities/${userId}`, { body: { data: { services: [] } } })
-      .reply(200);
 
     const result = await handler(
       sdk.event.delete(endpoint, {
@@ -92,15 +105,19 @@ describe("DELETE /v1/identity/:service", () => {
   }) => {
     http
       .gateway("udp")
-      .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(200, serviceIdentityLink);
+
+    http.gateway("udp").get(`/identities/${userId}`).reply(404);
+
     http
       .gateway("udp")
       .delete(
         `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
       )
       .reply(204);
-    http.gateway("udp").get(`/identities/${userId}`).reply(404);
 
     const result = await handler(
       sdk.event.delete(endpoint, {
@@ -122,7 +139,9 @@ describe("DELETE /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(upstream);
 
       const result = await handler(
@@ -146,12 +165,21 @@ describe("DELETE /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(200, serviceIdentityLink);
+
       http
         .gateway("udp")
         .get(`/identities/${userId}`)
-        .reply(200, { data: { services: [serviceName] } });
+        .reply(200, { data: { services: [normalizedServiceName] } });
+
+      http
+        .gateway("udp")
+        .post(`/identities/${userId}`, { body: { data: { services: [] } } })
+        .reply(200);
+
       http
         .gateway("udp")
         .delete(
@@ -177,14 +205,11 @@ describe("DELETE /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(200, serviceIdentityLink);
-      http
-        .gateway("udp")
-        .delete(
-          `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
-        )
-        .reply(204);
+
       http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
       const result = await handler(
@@ -205,18 +230,18 @@ describe("DELETE /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(200, serviceIdentityLink);
+
       http
         .gateway("udp")
         .get(`/identities/${userId}`)
-        .reply(200, { data: { services: [serviceName, activeService] } });
-      http
-        .gateway("udp")
-        .delete(
-          `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
-        )
-        .reply(204);
+        .reply(200, {
+          data: { services: [normalizedServiceName, activeService] },
+        });
+
       http
         .gateway("udp")
         .post(`/identities/${userId}`, {
@@ -236,4 +261,59 @@ describe("DELETE /v1/identity/:service", () => {
       expect(result.body).toBe("");
     },
   );
+
+  it("attempts to roll back by re-appending the service to the master list if the key-value link deletion fails", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
+      .reply(200, serviceIdentityLink);
+
+    http
+      .gateway("udp")
+      .get(`/identities/${userId}`)
+      .reply(200, {
+        data: { services: [normalizedServiceName, activeService] },
+      });
+
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [activeService] } },
+      })
+      .reply(200);
+
+    http
+      .gateway("udp")
+      .delete(
+        `/identity/${serviceIdentityLink.serviceName}/${serviceIdentityLink.serviceId}`,
+      )
+      .reply(500);
+
+    http
+      .gateway("udp")
+      .get(`/identities/${userId}`)
+      .reply(200, { data: { services: [activeService] } });
+
+    http
+      .gateway("udp")
+      .post(`/identities/${userId}`, {
+        body: { data: { services: [activeService, normalizedServiceName] } },
+      })
+      .reply(200);
+
+    const result = await handler(
+      sdk.event.delete(endpoint, {
+        userId,
+        params: { service: serviceName },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(502);
+  });
 });
