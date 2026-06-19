@@ -18,7 +18,7 @@
     "@flex/logging": "workspace:*",
     "http-errors": "2.0.1",
     "zod": "4.4.3",
-    "zod-openapi": "5.4.6"
+    "zod-openapi": "6.0.0"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudformation": "3.1060.0",
