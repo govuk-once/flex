@@ -99,7 +99,7 @@ function runOasdiff(latest: string, current: string) {
   if (res.status !== 0 && !out) {
     throw new Error(`oasdiff failed on ${current}: ${res.stderr}`);
   }
-  return out ? OasDiffBreakingSchema.parse(out) : [];
+  return out ? OasDiffBreakingSchema.parse(JSON.parse(out)) : [];
 }
 
 async function main(): Promise<number> {
