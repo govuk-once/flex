@@ -162,14 +162,6 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/resources/runtime": {
-        GET: {
-          public: {
-            name: "get-runtime-resource",
-            resources: ["privateGatewaysRoot"],
-          },
-        },
-      },
       "/identity/:service": {
         GET: {
           public: {
