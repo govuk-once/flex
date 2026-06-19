@@ -12,7 +12,7 @@
     "@aws-lambda-powertools/parameters": "2.33.1",
     "@aws-sdk/client-ssm": "3.1060.0",
     "@flex/logging": "workspace:*",
-    "@middy/core": "7.6.5",
+    "@middy/core": "7.6.7",
     "aws-jwt-verify": "5.2.1",
     "http-errors": "2.0.1",
     "zod": "4.4.3"
@@ -24,9 +24,9 @@
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
     "@types/node": "25.9.2",
-    "eslint": "10.4.1",
+    "eslint": "10.5.0",
     "nock": "15.0.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.9"
   }
 }
