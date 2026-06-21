@@ -1,0 +1,20 @@
+{
+  "name": "@platform/viewer-request-cff-platform",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@types/aws-lambda": "8.10.162",
+    "@types/node": "25.9.2",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  }
+}

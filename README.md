@@ -34,7 +34,7 @@ pnpm jwt
 STAGE=staging pnpm jwt
 
 # Generate OpenAPI specs for every domain
-# (writes one JSON per domain plus an index manifest to docs/specs/)
+# (writes one JSON per domain plus an index manifest to dist/openapi/current)
 pnpm openapi:generate
 
 # Regenerate specs and open them in a local Swagger UI

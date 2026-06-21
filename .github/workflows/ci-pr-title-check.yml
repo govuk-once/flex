@@ -1,5 +1,13 @@
+name: Validate PR Title
+
 on:
-  workflow_call:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
   validate-pr-title:

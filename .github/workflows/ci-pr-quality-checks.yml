@@ -2,7 +2,7 @@ name: Release Candidate
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, synchronize, reopened]
     branches: [main]
 
 concurrency:
@@ -10,27 +10,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-pr:
-    name: Validate PR
-    uses: ./.github/workflows/_validatePR.yml
-  ci:
-    needs: validate-pr
+  validate-openapi:
+    name: Validate Open API Spec
+    uses: ./.github/workflows/_validate-openapi.yml
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  quality-checks:
     name: Quality Checks
-    uses: ./.github/workflows/_qualityChecks.yml
+    uses: ./.github/workflows/_quality-checks.yml
     with:
-      AWS_REGION: 'eu-west-2'
-      STAGE: 'development'
+      AWS_REGION: "eu-west-2"
+      STAGE: "development"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
       SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
       SONAR_URL: ${{ secrets.SONAR_URL }}
 
-  ephemeralEnv:
-    needs: validate-pr
+  ephemeral-env:
     name: Ephemeral Environment branch tests
-    uses: ./.github/workflows/_buildDeploy.yml
+    uses: ./.github/workflows/_build-deploy.yml
     with:
-      AWS_REGION: 'eu-west-2'
+      AWS_REGION: "eu-west-2"
       STAGE: pr-${{ github.event.pull_request.number }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

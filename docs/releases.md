@@ -30,7 +30,7 @@ A GitHub release means the code is merged and tagged. It does not mean the code 
 
 ## Commit Message Format
 
-Pull requests are squash merged, so the PR title becomes the commit message on `main` and drives versioning. Titles are validated by [`_validatePR.yml`](/.github/workflows/_validatePR.yml) and must follow:
+Pull requests are squash merged, so the PR title becomes the commit message on `main` and drives versioning. Titles are validated by [`ci-pr-title-check.yml`](/.github/workflows/ci-pr-title-check.yml) and must follow:
 
 ```txt
 <JIRA-REF> <type>(<scope>)?: <description>

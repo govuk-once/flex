@@ -24,12 +24,12 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@smithy/types": "4.14.3",
+    "@smithy/types": "4.15.0",
     "@types/node": "25.9.2",
-    "@vitest/coverage-v8": "4.1.8",
-    "eslint": "10.4.1",
+    "@vitest/coverage-v8": "4.1.9",
+    "eslint": "10.5.0",
     "nock": "14.0.15",
     "typescript": "6.0.3",
-    "vitest": "4.1.8"
+    "vitest": "4.1.9"
   }
 }

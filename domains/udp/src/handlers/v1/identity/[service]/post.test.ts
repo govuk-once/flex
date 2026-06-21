@@ -405,13 +405,6 @@ describe("POST /v1/identity/:service", () => {
         .gateway("udp")
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(404);
-      http.gateway("udp").get(`/identities/${userId}`).reply(404);
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: { data: { services: [serviceName] } },
-        })
-        .reply(200);
 
       http
         .gateway("udp")
@@ -451,6 +444,11 @@ describe("POST /v1/identity/:service", () => {
 
       http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
+      http
+        .gateway("udp")
+        .delete(`/identity/${serviceName}/${serviceId}`)
+        .reply(204);
+
       const result = await handler(
         sdk.event.post(endpoint, {
           userId,
@@ -467,24 +465,17 @@ describe("POST /v1/identity/:service", () => {
   );
 
   it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
-    "returns $expected when the UDP post service identities integration $reason",
+    "returns $expected when the UDP create service identity integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(404);
-      http.gateway("udp").get(`/identities/${userId}`).reply(404);
+
       http
         .gateway("udp")
         .post(`/identity/${serviceName}/${serviceId}`, {
           body: serviceIdentityLinkRequest,
-        })
-        .reply(201);
-
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: { data: { services: [serviceName] } },
         })
         .reply(upstream);
 

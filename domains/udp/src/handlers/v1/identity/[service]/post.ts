@@ -1,10 +1,9 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { updateIdentityList } from "@services/identities";
+import { postOrchestrateIdentityLink } from "@services/identities";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
-  postServiceIdentity,
 } from "@services/identity";
 import { extractServiceId } from "@services/linkingId";
 import createHttpError from "http-errors";
@@ -12,8 +11,8 @@ import status from "http-status";
 
 export const handler = route("POST /v1/identity/:service", async (ctx) => {
   const { pathParams, auth, logger, headers } = ctx;
-  const { service } = pathParams;
   const { linkingToken } = headers;
+  const service = pathParams.service.toLowerCase();
 
   const serviceId = await extractServiceId(service, linkingToken, ctx);
   if (serviceId === null) {
@@ -26,21 +25,23 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
 
   // TODO: SDK auth alias
   const userId = auth.pairwiseId as UserId;
-  const identity = await getServiceIdentityLink(userId);
+  const identity = await getServiceIdentityLink(userId, service);
 
   if (identity) {
     if (identity.serviceId === serviceId) {
       return { status: status.NO_CONTENT };
     }
 
-    /** Remove old link if user is already linked and has a new linking ID */
+    /** Remove old linking ID and update with new linking ID */
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
 
-  await Promise.all([
-    postServiceIdentity(serviceId),
-    updateIdentityList(ctx, pathParams.service, "append"),
-  ]);
+  await postOrchestrateIdentityLink({
+    ctx,
+    userId,
+    service,
+    serviceId,
+  });
 
   return { status: status.CREATED };
 });
