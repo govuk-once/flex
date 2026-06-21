@@ -65,6 +65,8 @@ jobs:
 
       - name: Configure AWS credentials
         if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
+        # A failed notification must not block deployment
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
