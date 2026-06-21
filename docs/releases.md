@@ -8,12 +8,12 @@ This guide describes how release versions are created, how release notes are gen
 
 On every push to `main`, the `Release` job in the [Continuous Deployment pipeline](/.github/workflows/main.yml) runs semantic-release before anything is deployed. It analyses every commit since the last release tag and calculates the next semantic version:
 
-| Commit type                                  | Version bump          | Example                                   |
-| -------------------------------------------- | --------------------- | ----------------------------------------- |
-| `feat`                                       | Minor (`1.2.0`)       | `FLEX-123 feat: add preferences endpoint` |
-| `fix`, `perf`                                | Patch (`1.1.1`)       | `FLEX-456 fix: handle empty payload`      |
-| Any type with `!` or a `BREAKING CHANGE:` footer | Major (`2.0.0`)   | `FLEX-789 feat!: drop legacy auth`        |
-| `chore`, `docs`, `style`, `refactor`, `test`, `ci`, `build`, `revert` | None | `FLEX-321 chore: tidy lint config`  |
+| Commit type                                                           | Version bump    | Example                                   |
+| --------------------------------------------------------------------- | --------------- | ----------------------------------------- |
+| `feat`                                                                | Minor (`1.2.0`) | `FLEX-123 feat: add preferences endpoint` |
+| `fix`, `perf`                                                         | Patch (`1.1.1`) | `FLEX-456 fix: handle empty payload`      |
+| Any type with `!` or a `BREAKING CHANGE:` footer                      | Major (`2.0.0`) | `FLEX-789 feat!: drop legacy auth`        |
+| `chore`, `docs`, `style`, `refactor`, `test`, `ci`, `build`, `revert` | None            | `FLEX-321 chore: tidy lint config`        |
 
 When the analysed commits produce a version bump, the pipeline:
 
@@ -42,7 +42,6 @@ Examples:
 FLEX-123 feat: add user preferences endpoint
 FLEX-456 fix(udp): handle empty payload
 FLEX-789 feat!: drop legacy auth
-GOVUKAPP-3392 chore: update WAF rules
 ```
 
 Notes:
@@ -74,9 +73,9 @@ A failed Slack notification never blocks deployment (the step is `continue-on-er
 
 ## Troubleshooting
 
-| Symptom                                   | Likely cause                                                                  |
-| ----------------------------------------- | ----------------------------------------------------------------------------- |
-| Merge produced no tag or release          | No `feat`/`fix`/`perf`/breaking commits since the last tag; this is expected  |
-| Release job failed                        | Check the semantic-release log in the job output; deployment is blocked until fixed |
-| No Slack message for a release            | Patch releases are silent by design; for major/minor, check the Notify Slack step |
-| Wrong bump for a breaking change          | Ensure `!` follows the type/scope (`feat!:`) or the body has a `BREAKING CHANGE:` footer |
+| Symptom                          | Likely cause                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| Merge produced no tag or release | No `feat`/`fix`/`perf`/breaking commits since the last tag; this is expected             |
+| Release job failed               | Check the semantic-release log in the job output; deployment is blocked until fixed      |
+| No Slack message for a release   | Patch releases are silent by design; for major/minor, check the Notify Slack step        |
+| Wrong bump for a breaking change | Ensure `!` follows the type/scope (`feat!:`) or the body has a `BREAKING CHANGE:` footer |

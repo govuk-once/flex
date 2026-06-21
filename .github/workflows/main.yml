@@ -22,9 +22,6 @@ jobs:
     needs: qualityChecks
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Serialise tag creation between near-simultaneous merges. Job-level on
-    # purpose: a workflow-level group would be held by runs waiting at the
-    # manual deployment approval gates
     concurrency:
       group: semantic-release
       cancel-in-progress: false
