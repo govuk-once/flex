@@ -18,6 +18,7 @@
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
+    "jose": "6.2.3",
     "zod": "4.4.3"
   },
   "devDependencies": {

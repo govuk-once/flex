@@ -23,11 +23,25 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   apiUsername: "dvla-user",
   apiPublicKey: "dvla-test-public-key", // pragma: allowlist secret
   apiPassword: "dvla-password", // pragma: allowlist secret
+  wellKnownJwkUrl: "https://dvla-jwks.example.test",
 };
 
 const MOCK_AUTH_RESPONSE = {
   "id-token": "mock-jwt-token",
   apiKeyExpiry: "2030-01-01T00:00:00Z", // pragma: allowlist secret
+};
+
+const MOCK_JWKS_RESPONSE = {
+  keys: [
+    {
+      kty: "RSA",
+      use: "sig",
+      alg: "PS256",
+      kid: "alias/nonprod-govuk-app-jwt-signing-key",
+      n: "mock-n-string",
+      e: "AQAB",
+    },
+  ],
 };
 
 const MOCK_LICENCE_RESPONSE = {
@@ -103,6 +117,13 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_AUTH_RESPONSE,
+    }),
+  },
+  wellKnownJwk: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_JWKS_RESPONSE,
     }),
   },
   licence: {
@@ -202,6 +223,23 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.authentication.get).toHaveBeenCalled();
+  });
+
+  it("dispatches GET /v1/well-known-jwks and returns public key sets", async ({
+    privateGatewayEvent,
+  }) => {
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/dvla/v1/well-known-jwks"),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_JWKS_RESPONSE),
+    });
+
+    expect(remoteClient.wellKnownJwk.get).toHaveBeenCalled();
   });
 
   it("dispatches GET /v1/licence/:id and returns licence info", async ({

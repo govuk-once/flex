@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https://validator.swagger.io;
+        font-src 'self';
+        connect-src 'self';
+        object-src 'none';
+        base-uri 'self';
+      "
+    />
+    <title>FLEX API Docs</title>
+    <link rel="icon" href="data:," />
+    <link
+      rel="stylesheet"
+      href="/docs/vendor/swagger-ui.css"
+      integrity="sha384-L5kzQeHI1/Y029qY1YYPnxfAIP4+x90SHzihbZj3gljCL5dGBz/iJtnNZCIjQHiR"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      header {
+        padding: 12px 24px;
+        background: #1b1b1b;
+        color: #fff;
+        font-size: 14px;
+      }
+      header strong {
+        margin-right: 12px;
+      }
+      #swagger-ui {
+        max-width: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>FLEX API Docs</strong>
+      <span id="status">loading domain list…</span>
+    </header>
+    <div id="swagger-ui"></div>
+    <script
+      src="/docs/vendor/swagger-ui-bundle.js"
+      integrity="sha384-5pJ0WTdlisgUSpFVUqrDk5KvGdkcrrZzPIMRFdXR59a4BO8gH/iUmQIQ1pN9C5yl"
+    ></script>
+    <script
+      src="/docs/vendor/swagger-ui-standalone-preset.js"
+      integrity="sha384-CPkPI2mXFRwSmGrRenxoJiS8EycOZKVPqCGZmtHZhCXgV/czHjgs7j8mbuEJRZlW"
+    ></script>
+    <script
+      src="/docs/init.js"
+      integrity="sha384-Kpji3ibL2OHdSbfU+XFw+3Bcw+xWFefyhpNrRW5QiSybx9NIf9Nj/phC92MO5/+g"
+    ></script>
+  </body>
+</html>

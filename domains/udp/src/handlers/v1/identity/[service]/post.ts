@@ -1,76 +1,47 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { updateIdentityList } from "@services/identities";
+import { postOrchestrateIdentityLink } from "@services/identities";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
-  postServiceIdentity,
 } from "@services/identity";
+import { extractServiceId } from "@services/linkingId";
 import createHttpError from "http-errors";
 import status from "http-status";
 
 export const handler = route("POST /v1/identity/:service", async (ctx) => {
   const { pathParams, auth, logger, headers } = ctx;
-  const { service } = pathParams;
   const { linkingToken } = headers;
+  const service = pathParams.service.toLowerCase();
 
-  const serviceId = extractServiceId(service, linkingToken);
+  const serviceId = await extractServiceId(service, linkingToken, ctx);
   if (serviceId === null) {
     logger.error(`Failed to get linking id`, {
       service,
       serviceId,
     });
-    throw new createHttpError.BadRequest();
+    throw new createHttpError.Unauthorized();
   }
 
   // TODO: SDK auth alias
   const userId = auth.pairwiseId as UserId;
-  const identity = await getServiceIdentityLink(userId);
+  const identity = await getServiceIdentityLink(userId, service);
 
   if (identity) {
     if (identity.serviceId === serviceId) {
       return { status: status.NO_CONTENT };
     }
 
-    /** Remove old link if user is already linked and has a new linking ID */
+    /** Remove old linking ID and update with new linking ID */
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
 
-  await Promise.all([
-    postServiceIdentity(serviceId),
-    updateIdentityList(ctx, pathParams.service, "append"),
-  ]);
+  await postOrchestrateIdentityLink({
+    ctx,
+    userId,
+    service,
+    serviceId,
+  });
 
   return { status: status.CREATED };
 });
-
-/**
- * Extracts the identity linking ID. For the DVLA service, this requires
- * parsing the identifier directly out of the provided JWT payload.
- * - TODO: Verify the JWT signature and handle token decryption.
- */
-interface DvlaJwtPayload {
-  linking_id?: string;
-  [key: string]: unknown;
-}
-
-function extractServiceId(service: string, token: string): string | null {
-  if (service.toLowerCase() === "dvla") {
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) return null;
-
-      const [, payloadB64 = ""] = parts;
-
-      const payload = JSON.parse(
-        Buffer.from(payloadB64, "base64").toString("utf-8"),
-      ) as DvlaJwtPayload;
-
-      return payload.linking_id ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  return token;
-}

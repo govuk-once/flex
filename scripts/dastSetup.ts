@@ -1,4 +1,4 @@
-import { getJwtClient } from "../libs/testing/src/e2e/setup.global";
+import { getJwtClient } from "@flex/testing/e2e/setup";
 import fs from "node:fs";
 
 async function main() {
@@ -24,12 +24,14 @@ async function main() {
     }
 
     console.log("\n--------------------------------------------------");
-
   } catch (error) {
     console.error("\nError generating token:");
 
     if (error instanceof Error) {
-      if (error.name.includes("Credentials") || error.message.includes("credentials")) {
+      if (
+        error.name.includes("Credentials") ||
+        error.message.includes("credentials")
+      ) {
         console.error("AWS credentials not found.");
       } else {
         console.error(error.message);
@@ -39,4 +41,4 @@ async function main() {
   }
 }
 
-main();
+void main();

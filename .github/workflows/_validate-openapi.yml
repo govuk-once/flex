@@ -1,0 +1,67 @@
+name: Validate Open API Spec
+
+on:
+  workflow_call:
+    secrets:
+      ROLE_TO_ASSUME:
+        description: "AWS deployment role to assume"
+        required: true
+
+jobs:
+  openapi:
+    name: Validate Open API Spec
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # OIDC for AWS
+      contents: read
+    env:
+      OVERRIDE: ${{ contains(github.event.pull_request.labels.*.name, 'breaking-change-accepted') }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Setup node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate OpenAPI docs
+        run: pnpm openapi:generate
+
+      - name: Install oasdiff
+        env:
+          OASDIFF_VERSION: 1.11.10
+          # sha256 of oasdiff_1.11.10_linux_amd64.tar.gz - verify when bumping:
+          # https://github.com/oasdiff/oasdiff/releases
+          OASDIFF_SHA256: 6d5880efb3422401f14c85f3c1347d6c41de3e4ea7c04e3ca7dc5c8f452e8ba2 # pragma: allowlist secret
+        run: |
+          curl -fsSL -o oasdiff.tar.gz \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          echo "${OASDIFF_SHA256}  oasdiff.tar.gz" | sha256sum -c -
+          tar -xzf oasdiff.tar.gz oasdiff
+          mkdir -p "$HOME/.local/bin"
+          install -m 0755 oasdiff "$HOME/.local/bin/oasdiff"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"   # PATH applies from the NEXT step
+          rm -f oasdiff oasdiff.tar.gz
+          "$HOME/.local/bin/oasdiff" --version
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: us-east-1 # bucket region
+          role-session-name: oasdiff-${{ github.run_id }}
+
+      - name: Check for breaking changes
+        run: pnpm exec tsx scripts/checkOpenapiBreaking.ts

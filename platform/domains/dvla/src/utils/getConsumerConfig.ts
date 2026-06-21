@@ -8,6 +8,7 @@ const consumerConfigSchema = z.object({
   apiPublicKey: NonEmptyString,
   apiUsername: NonEmptyString,
   apiPassword: NonEmptyString,
+  wellKnownJwkUrl: NonEmptyString,
 });
 
 export type ConsumerConfig = z.output<typeof consumerConfigSchema>;

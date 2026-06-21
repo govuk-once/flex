@@ -9,18 +9,66 @@ import {
   serviceName,
   userId,
 } from "@tests/fixtures";
-import { describe, expect } from "vitest";
+import * as jose from "jose";
+import { beforeAll, describe, expect } from "vitest";
 
 import { handler } from "./post";
 
-const createMockDvlaJwt = (linkingId: string) => {
-  const header = Buffer.from(
-    JSON.stringify({ alg: "RS256", typ: "JWT" }),
-  ).toString("base64");
-  const payload = Buffer.from(
-    JSON.stringify({ linking_id: linkingId }),
-  ).toString("base64");
-  return `${header}.${payload}.signaturehere`;
+type ExtractCryptoKey = jose.GenerateKeyPairResult["privateKey"];
+
+let privateKey: ExtractCryptoKey;
+let mockJwkSetResponse: { keys: unknown[] };
+
+beforeAll(async () => {
+  const { privateKey: priv, publicKey: pub } = await jose.generateKeyPair(
+    "PS256",
+    {
+      modulusLength: 2048,
+    },
+  );
+  privateKey = priv;
+
+  const publicJwk = await jose.exportJWK(pub);
+
+  mockJwkSetResponse = {
+    keys: [
+      {
+        ...publicJwk,
+        use: "sig",
+        alg: "PS256",
+        kid: "alias/nonprod-govuk-app-jwt-signing-key",
+      },
+    ],
+  };
+});
+
+const createMockDvlaJwt = async (
+  linkingId: string,
+  options?: { isExpired?: boolean; invalidAlg?: boolean },
+) => {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const alg = options?.invalidAlg ? "RS256" : "PS256";
+
+  const jwtSigner = new jose.SignJWT({
+    iss: "https://govuk-app-external-ui.dvla.gov.uk",
+    linking_id: linkingId,
+  })
+    .setProtectedHeader({
+      alg,
+      typ: "JWT",
+      kid: "alias/nonprod-govuk-app-jwt-signing-key",
+    })
+    .setIssuedAt(options?.isExpired ? nowSeconds - 7200 : nowSeconds)
+    .setExpirationTime(
+      options?.isExpired ? nowSeconds - 3600 : nowSeconds + 3600,
+    );
+
+  if (options?.invalidAlg) {
+    const { privateKey: badPriv } = await jose.generateKeyPair("RS256");
+    return await jwtSigner.sign(badPriv);
+  }
+
+  return await jwtSigner.sign(privateKey);
 };
 
 describe("POST /v1/identity/:service", () => {
@@ -65,43 +113,116 @@ describe("POST /v1/identity/:service", () => {
     expect(result.body).toBe("");
   });
 
-  it("extracts serviceId securely from JWT payload when the service is DVLA", async ({
-    http,
-    sdk,
-  }) => {
+  describe("DVLA Integration Testing", () => {
     const dvlaService = "dvla";
     const targetDvlaEndpoint = `/identity/${dvlaService}`;
-    const dvlaToken = createMockDvlaJwt(serviceId);
+    const jwksPath = "/well-known-jwks";
 
-    http
-      .gateway("udp")
-      .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
-      .reply(404);
-    http.gateway("udp").get(`/identities/${userId}`).reply(404);
-    http
-      .gateway("udp")
-      .post(`/identity/${dvlaService}/${serviceId}`, {
-        body: serviceIdentityLinkRequest,
-      })
-      .reply(201);
-    http
-      .gateway("udp")
-      .post(`/identities/${userId}`, {
-        body: { data: { services: [dvlaService] } },
-      })
-      .reply(200);
+    it("extracts serviceId securely from JWT payload and updates it when the service is DVLA", async ({
+      http,
+      sdk,
+    }) => {
+      const dvlaToken = await createMockDvlaJwt(serviceId);
 
-    const result = await handler(
-      sdk.event.post(targetDvlaEndpoint, {
-        userId,
-        body: serviceIdentityLinkRequest,
-        params: { service: dvlaService },
-        headers: { "x-linking-token": dvlaToken },
-      }),
-      sdk.context(),
-    );
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
-    expect(result.statusCode).toBe(201);
+      http
+        .gateway("udp")
+        .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
+        .reply(404);
+      http.gateway("udp").get(`/identities/${userId}`).reply(404);
+      http
+        .gateway("udp")
+        .post(`/identity/${dvlaService}/${serviceId}`, {
+          body: serviceIdentityLinkRequest,
+        })
+        .reply(201);
+      http
+        .gateway("udp")
+        .post(`/identities/${userId}`, {
+          body: { data: { services: [dvlaService] } },
+        })
+        .reply(200);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": dvlaToken },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(201);
+    });
+
+    it("returns 401 Unauthorized when the DVLA linking token has expired", async ({
+      http,
+      sdk,
+    }) => {
+      const expiredDvlaToken = await createMockDvlaJwt(serviceId, {
+        isExpired: true,
+      });
+
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": expiredDvlaToken },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(401);
+    });
+
+    it("returns 401 Unauthorized when token signature algorithm does not match the patched JWK parameters", async ({
+      http,
+      sdk,
+    }) => {
+      const invalidAlgToken = await createMockDvlaJwt(serviceId, {
+        invalidAlg: true,
+      });
+
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": invalidAlgToken },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(401);
+    });
+
+    it("returns 502 Bad Gateway when fetching the DVLA well-known JWK endpoint fails", async ({
+      http,
+      sdk,
+    }) => {
+      const dvlaToken = await createMockDvlaJwt(serviceId);
+
+      http.gateway("dvla").get(jwksPath).reply(500);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": dvlaToken },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(502);
+    });
   });
 
   it("returns 201 when the service identity link is already tracked", async ({
@@ -284,13 +405,6 @@ describe("POST /v1/identity/:service", () => {
         .gateway("udp")
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(404);
-      http.gateway("udp").get(`/identities/${userId}`).reply(404);
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: { data: { services: [serviceName] } },
-        })
-        .reply(200);
 
       http
         .gateway("udp")
@@ -330,6 +444,11 @@ describe("POST /v1/identity/:service", () => {
 
       http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
+      http
+        .gateway("udp")
+        .delete(`/identity/${serviceName}/${serviceId}`)
+        .reply(204);
+
       const result = await handler(
         sdk.event.post(endpoint, {
           userId,
@@ -346,24 +465,17 @@ describe("POST /v1/identity/:service", () => {
   );
 
   it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
-    "returns $expected when the UDP post service identities integration $reason",
+    "returns $expected when the UDP create service identity integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
         .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
         .reply(404);
-      http.gateway("udp").get(`/identities/${userId}`).reply(404);
+
       http
         .gateway("udp")
         .post(`/identity/${serviceName}/${serviceId}`, {
           body: serviceIdentityLinkRequest,
-        })
-        .reply(201);
-
-      http
-        .gateway("udp")
-        .post(`/identities/${userId}`, {
-          body: { data: { services: [serviceName] } },
         })
         .reply(upstream);
 

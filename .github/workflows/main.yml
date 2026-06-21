@@ -8,7 +8,7 @@ on:
 jobs:
   qualityChecks:
     name: Quality Checks
-    uses: ./.github/workflows/_qualityChecks.yml
+    uses: ./.github/workflows/_quality-checks.yml
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -20,7 +20,7 @@ jobs:
   deployDev:
     name: Deploy to Development
     needs: qualityChecks
-    uses: ./.github/workflows/_buildDeploy.yml
+    uses: ./.github/workflows/_build-deploy.yml
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -40,7 +40,7 @@ jobs:
   deployStaging:
     name: Deploy to Staging
     needs: deployDev
-    uses: ./.github/workflows/_buildDeploy.yml
+    uses: ./.github/workflows/_build-deploy.yml
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "staging"
@@ -60,7 +60,7 @@ jobs:
   deployProd:
     name: Deploy to Production
     needs: deployStaging
-    uses: ./.github/workflows/_buildDeploy.yml
+    uses: ./.github/workflows/_build-deploy.yml
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "production"

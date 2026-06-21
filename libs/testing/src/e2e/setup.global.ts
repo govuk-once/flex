@@ -13,7 +13,7 @@ import {
 config({ quiet: true });
 
 async function getE2eBypassToken(stage: string): Promise<string> {
-  const token = await getSecret(`/${stage}/flex-secret/e2e-bypass`);
+  const token = await getSecret(`/${stage}/flex-secret/waf/e2e-bypass`);
 
   if (!token) {
     throw new Error(`E2E bypass secret not found for stage "${stage}"`);
