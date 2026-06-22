@@ -1,15 +1,11 @@
 import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
+import type { HttpMethod, LogLevel } from "@flex/utils";
+import { HeaderValidationError, RequestBodyParseError } from "@flex/utils";
 import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
-import type {
-  HttpMethod,
-  LambdaContext,
-  LambdaEvent,
-  LogLevel,
-} from "../types";
-import { HeaderValidationError, RequestBodyParseError } from "../utils/errors";
+import type { LambdaContext, LambdaEvent } from "../types";
 import { buildHandlerContext } from "./build-context";
 import { createRouteContext, createRouteHandler } from "./create-route";
 import { mergeHeaders } from "./headers";

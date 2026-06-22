@@ -6,6 +6,12 @@ export {
   isPersistentEnvironment,
   isStageAllowed,
 } from "./environments";
+export {
+  HeaderValidationError,
+  QueryParametersParseError,
+  RequestBodyParseError,
+} from "./errors";
+export { assertNever } from "./errors/assert";
 export { getHeader } from "./http/getHeader";
 export type { QueryParams } from "./http/query-params";
 export { extractQueryParams } from "./http/query-params";
@@ -16,6 +22,8 @@ export { validatePathParams } from "./http/validatePathParams";
 export { findProjectRoot, getStackOutputs, sanitiseStageName } from "./infra";
 export * from "./openapi/domain/hello-world";
 export * from "./openapi/domain/topics";
+export { splitRouteKey, splitVersionedPath } from "./path/route";
+export { matchPathSegments, toPathSegments } from "./path/segments";
 export { jsonResponse } from "./response/json";
 export * from "./schemas/common";
 export * from "./schemas/domain/hello-world";

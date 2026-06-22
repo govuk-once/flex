@@ -1,7 +1,7 @@
 import { it } from "@flex/testing";
+import type { HeaderConfig } from "@flex/utils";
 import { describe, expect } from "vitest";
 
-import type { HeaderConfig } from "../types";
 import { mergeHeaders, resolveHeaders } from "./headers";
 
 describe("mergeHeaders", () => {

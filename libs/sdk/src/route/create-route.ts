@@ -1,4 +1,9 @@
 import { logger } from "@flex/logging";
+import {
+  HeaderValidationError,
+  QueryParametersParseError,
+  RequestBodyParseError,
+} from "@flex/utils";
 import createHttpError from "http-errors";
 
 import type {
@@ -12,12 +17,7 @@ import type {
 } from "../types";
 import { cache } from "../utils/cache";
 import { clearTmp } from "../utils/cleanup";
-import {
-  AuthorizationError,
-  HeaderValidationError,
-  QueryParametersParseError,
-  RequestBodyParseError,
-} from "../utils/errors";
+import { AuthorizationError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { mergeHeaders } from "./headers";
 import { buildDomainIntegrations } from "./integrations";
