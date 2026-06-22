@@ -9,11 +9,10 @@ import {
 } from "@aws-sdk/client-s3";
 import { z } from "zod";
 
-const SPEC_PREFIX = "docs/specs";
 const SPECS_CURRENT_DIR = "dist/openapi/current";
 const SPECS_LATEST_DIR = "dist/openapi/latest";
 const OVERRIDE_LABEL = "breaking-change-accepted";
-const BUCKET_NAME = `flex-development-openapi-specs`;
+const BUCKET_NAME = "flex-development-openapi-specs";
 
 const EnvSchema = z.object({
   OVERRIDE: z
@@ -52,7 +51,7 @@ async function downloadLatestSpecFiles() {
     const listed = await s3.send(
       new ListObjectsV2Command({
         Bucket: BUCKET_NAME,
-        Prefix: SPEC_PREFIX,
+        Prefix: "docs",
       }),
     );
 
@@ -100,7 +99,7 @@ function runOasdiff(latest: string, current: string) {
   if (res.status !== 0 && !out) {
     throw new Error(`oasdiff failed on ${current}: ${res.stderr}`);
   }
-  return out ? OasDiffBreakingSchema.parse(out) : [];
+  return out ? OasDiffBreakingSchema.parse(JSON.parse(out)) : [];
 }
 
 async function main(): Promise<number> {
