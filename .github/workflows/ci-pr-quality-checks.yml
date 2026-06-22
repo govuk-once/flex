@@ -38,7 +38,7 @@ jobs:
 
   moduleE2E:
     name: Module E2E
-    needs: ephemeralEnv
+    needs: ephemeral-env
     uses: ./.github/workflows/_moduleE2E.yml
     with:
       AWS_REGION: 'eu-west-2'
