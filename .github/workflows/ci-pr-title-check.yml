@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
 
+permissions:
+  pull-requests: write
+
 jobs:
   validate-pr-title:
     name: Validate PR Title
@@ -20,12 +23,98 @@ jobs:
         run: echo "Skipping Jira title check for Dependabot"
 
       - name: Validate PR title format
+        id: validate
         if: github.actor != 'dependabot[bot]'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
           echo "Checking PR title: $TITLE"
 
-          if ! echo "$TITLE" | grep -Eq '^([A-Z]+-[0-9]+ )?(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\([^)]+\))?!?: .+'; then
-            echo "::error ::PR title must be '<JIRA-REF> <type>(<scope>)?: <description>', e.g 'FLEX-123 feat: add user preferences endpoint'. Types: feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert. Append ! to the type for breaking changes. See docs/releases.md"
-            exit 1
+          if echo "$TITLE" | grep -Eq '^([A-Z]+-[0-9]+ )?(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\([^)]+\))?!?: .+'; then
+            echo "valid=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "valid=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Comment with PR title guidance
+        if: github.actor != 'dependabot[bot]'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const valid = '${{ steps.validate.outputs.valid }}' === 'true';
+            const marker = '<!-- pr-title-check -->';
+
+            const invalidBody = [
+              marker,
+              "### ❌ Invalid PR title",
+              "",
+              "This PR title is squash merged onto `main` and drives semantic versioning, so it must follow the Conventional Commits format:",
+              "",
+              "```txt",
+              "<JIRA-REF> <type>(<scope>)?: <description>",
+              "```",
+              "",
+              "**Examples**",
+              "",
+              "```txt",
+              "FLEX-123 feat: add user preferences endpoint",
+              "FLEX-456 fix(udp): handle empty payload",
+              "FLEX-789 feat!: drop legacy auth",
+              "```",
+              "",
+              "**Rules**",
+              "",
+              "- The Jira reference (e.g. `FLEX-123`) comes first, then the type.",
+              "- `<type>` must be one of: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `test`, `perf`, `ci`, `build`, `revert`.",
+              "- `<scope>` is optional, in parentheses, e.g. `fix(udp):`.",
+              "- Append `!` after the type or scope for a breaking change, e.g. `feat!:`.",
+              "- A `<description>` is required after the colon and space.",
+              "",
+              "See [docs/releases.md](https://github.com/" + context.repo.owner + "/" + context.repo.repo + "/blob/main/docs/releases.md) for how versions are determined.",
+            ].join("\n");
+
+            const validBody = [
+              marker,
+              "### ✅ Valid PR title",
+              "",
+              "Thanks, this PR title follows the required Conventional Commits format.",
+            ].join("\n");
+
+            const body = valid ? validBody : invalidBody;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const existing = comments.find(
+              (c) => c.user.type === "Bot" && c.body && c.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else if (!valid) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Fail if PR title is invalid
+        if: github.actor != 'dependabot[bot]' && steps.validate.outputs.valid != 'true'
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "::error ::PR title must be '<JIRA-REF> <type>(<scope>)?: <description>', e.g 'FLEX-123 feat: add user preferences endpoint'. Types: feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert. Append ! to the type for breaking changes. See docs/releases.md"
+          exit 1
