@@ -1,12 +1,11 @@
-import { config } from "@flex/config/vitest";
+import { e2eConfig } from "@flex/config/vitest/e2e";
 import { defineConfig, mergeConfig } from "vitest/config";
 
+// UDP's E2E calls are slow enough to need a longer timeout than the default.
 export default mergeConfig(
-  config,
+  e2eConfig,
   defineConfig({
     test: {
-      globalSetup: ["@flex/testing/e2e/setup"],
-      include: ["e2e/**/*.test.ts"],
       testTimeout: 40_000,
     },
   }),

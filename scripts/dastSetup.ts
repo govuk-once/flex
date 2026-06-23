@@ -1,5 +1,6 @@
-import { getJwtClient } from "@flex/testing/e2e/setup";
 import fs from "node:fs";
+
+import { getJwtClient } from "@flex/testing/e2e/setup";
 
 async function main() {
   const stage = process.env.STAGE || "development";
