@@ -1,5 +1,5 @@
-import type { HttpMethod, IacDomainConfig } from "@flex/sdk";
-import type { Stage } from "@flex/utils";
+import type { IacDomainConfig } from "@flex/sdk";
+import type { HttpMethod, Stage } from "@flex/utils";
 import { isPersistentEnvironment, isStageAllowed } from "@flex/utils";
 
 type RouteGateway = NonNullable<

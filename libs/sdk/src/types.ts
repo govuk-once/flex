@@ -1,6 +1,13 @@
 import type { FlexFetchRequestInit } from "@flex/flex-fetch";
 import type { Logger } from "@flex/logging";
-import type { Environment } from "@flex/utils";
+import type {
+  Environment,
+  ExtractPathParams,
+  HeaderConfig,
+  HttpMethod,
+  LogLevel,
+  RouteAccess,
+} from "@flex/utils";
 import type {
   APIGatewayProxyEventBase,
   APIGatewayProxyResult,
@@ -13,20 +20,13 @@ import {
   DomainFeatureFlagSchema,
   DomainResourceSchema,
   FunctionConfigSchema,
-  HeaderConfigSchema,
-  HttpMethodSchema,
-  LogLevelSchema,
-  RouteAccessSchema,
 } from "./config/schema";
 
 // ----------------------------------------------------------------------------
 // Exported inferred types
 // ----------------------------------------------------------------------------
-export type HttpMethod = z.infer<typeof HttpMethodSchema>;
-export type LogLevel = z.infer<typeof LogLevelSchema>;
-export type RouteAccess = z.infer<typeof RouteAccessSchema>;
+
 export type FunctionConfig = z.infer<typeof FunctionConfigSchema>;
-export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
 export type DomainResource = z.infer<typeof DomainResourceSchema>;
 export type IacDomainConfig = z.infer<typeof DomainConfigSchema>;
 export type FeatureFlagConfig = z.infer<typeof DomainFeatureFlagSchema>;
@@ -243,13 +243,6 @@ export type InferEnvironmentKeys<Config extends DomainConfig> = Config extends {
 }
   ? DomainEnvironmentKeys
   : Environment;
-
-type ExtractPathParams<Path extends string> =
-  Path extends `${string}:${infer PathParam}/${infer RemainingPath}`
-    ? PathParam | ExtractPathParams<`/${RemainingPath}`>
-    : Path extends `${string}:${infer PathParam}`
-      ? PathParam
-      : never;
 
 type ExtractRouteSegments<Route extends string> =
   Route extends `${infer Method extends HttpMethod} /${infer Version}/${infer Path} [private]`

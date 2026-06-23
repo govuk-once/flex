@@ -1,3 +1,9 @@
+import type {
+  HeaderConfig,
+  HttpMethod,
+  LogLevel,
+  RouteAccess,
+} from "@flex/utils";
 import { Environment, isPersistentEnvironment } from "@flex/utils";
 import type { ZodType } from "zod";
 
@@ -5,10 +11,6 @@ import type {
   DomainConfig,
   DomainIntegrations,
   DomainResource,
-  HeaderConfig,
-  HttpMethod,
-  LogLevel,
-  RouteAccess,
 } from "../types";
 
 interface RouteConfigOptions {

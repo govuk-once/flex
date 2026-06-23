@@ -1,9 +1,9 @@
 import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
+import { RequestBodyParseError } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
 import z from "zod";
 
-import { RequestBodyParseError } from "../utils/errors";
 import type { BuildContextOptions } from "./build-context";
 import { buildHandlerContext } from "./build-context";
 

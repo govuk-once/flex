@@ -98,3 +98,42 @@ export type ApiGatewayUrl = z.output<typeof ApiGatewayUrlSchema>;
 
 export const UserId = NonEmptyString.brand<"UserId">();
 export type UserId = z.output<typeof UserId>;
+
+export const HeaderConfigSchema = z.object({
+  name: NonEmptyString,
+  required: z.boolean().optional(),
+});
+export type HeaderConfig = z.output<typeof HeaderConfigSchema>;
+
+export const RouteKeySchema = NonEmptyString.regex(
+  /^(GET|POST|PUT|PATCH|DELETE) \/.+/,
+  { error: 'Route key must be "METHOD /path"' },
+);
+
+export const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
+export type RouteAccess = z.output<typeof RouteAccessSchema>;
+
+export const LogLevelSchema = z.enum([
+  "TRACE",
+  "DEBUG",
+  "INFO",
+  "WARN",
+  "ERROR",
+  "SILENT",
+  "CRITICAL",
+]);
+export type LogLevel = z.output<typeof LogLevelSchema>;
+
+export const HttpMethodSchema = z.enum([
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+]);
+export type HttpMethod = z.output<typeof HttpMethodSchema>;
+
+export const ResourceScopeSchema = z.enum(["environment", "stage"]);
+export type ResourceScope = z.output<typeof ResourceScopeSchema>;

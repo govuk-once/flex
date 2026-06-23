@@ -1,7 +1,8 @@
 import { it } from "@flex/testing";
+import type { HttpMethod } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
 
-import type { DomainConfig, DomainResource, HttpMethod } from "../types";
+import type { DomainConfig, DomainResource } from "../types";
 import {
   getRouteAccess,
   getRouteConfig,
