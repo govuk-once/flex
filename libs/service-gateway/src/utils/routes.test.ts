@@ -1,6 +1,6 @@
-import type { GatewayRoute, GatewayRoutes } from "@types";
 import { describe, expect, it } from "vitest";
 
+import type { GatewayRoute, GatewayRoutes } from "../types";
 import { buildRoutes, lookupRoute } from "./routes";
 
 const route: GatewayRoute = { name: "example" };

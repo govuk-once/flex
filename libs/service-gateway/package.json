@@ -28,6 +28,7 @@
     "@types/http-errors": "2.0.5",
     "@vitest/coverage-v8": "4.1.9",
     "eslint": "10.5.0",
+    "memfs": "4.57.7",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
   }

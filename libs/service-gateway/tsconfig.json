@@ -2,12 +2,7 @@
   "extends": "@flex/config/tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@client/*": ["./src/client/*"],
-      "@config/*": ["./src/config/*"],
-      "@handler/*": ["./src/handler/*"],
-      "@tests/fixtures": ["./src/tests/fixtures.ts"],
-      "@types": ["./src/types.ts"],
-      "@utils/*": ["./src/utils/*"]
+      "@tests/fixtures": ["./src/tests/fixtures.ts"]
     }
   },
   "include": ["src/**/*.ts", "vitest.config.ts"]

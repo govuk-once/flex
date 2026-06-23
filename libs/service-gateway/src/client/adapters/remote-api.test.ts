@@ -2,15 +2,15 @@ import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { typedFetch } from "@flex/flex-fetch";
 import { it } from "@flex/testing";
 import { extractQueryParams } from "@flex/utils";
-import type {
-  GatewayResources,
-  RemoteApiDownstream,
-  RemoteApiRequest,
-} from "@types";
 import type { Mock } from "vitest";
 import { describe, expect, vi } from "vitest";
 import z from "zod";
 
+import type {
+  GatewayResources,
+  RemoteApiDownstream,
+  RemoteApiRequest,
+} from "../../types";
 import { buildFetcher } from "../fetchers/build-fetcher";
 import { createRemoteApiClient } from "./remote-api";
 

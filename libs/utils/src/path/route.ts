@@ -8,6 +8,19 @@ export function splitRouteKey(
   return method && path ? [method, path] : null;
 }
 
+export function stripPathPrefix(path: string, prefix: string) {
+  if (!path.startsWith(prefix)) return path;
+
+  const isMatch = path === prefix;
+  const isSegmentMatch = path[prefix.length] === "/";
+
+  if (!isMatch && !isSegmentMatch) return path;
+
+  const result = path.slice(prefix.length);
+
+  return result.length > 0 ? result : "/";
+}
+
 export function splitVersionedPath(
   path: string,
 ): [version: string, path: string] | null {

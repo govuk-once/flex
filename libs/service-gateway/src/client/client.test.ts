@@ -1,13 +1,13 @@
+import { describe, expect, it, vi } from "vitest";
+
 import type {
   EventBusDownstream,
   GatewayConfig,
   GatewayDownstream,
   RemoteApiDownstream,
-} from "@types";
-import { describe, expect, it, vi } from "vitest";
-
+} from "../types";
+import { createDownstreamClient } from ".";
 import { createEventBusClient, createRemoteApiClient } from "./adapters";
-import { createDownstreamClient } from "./downstream-client";
 
 vi.mock("./adapters");
 

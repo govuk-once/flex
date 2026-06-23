@@ -1,11 +1,11 @@
 import { assertNever } from "@flex/utils";
+
 import type {
   DownstreamClient,
   GatewayConfig,
   GatewayDownstream,
   GatewayResources,
-} from "@types";
-
+} from "../types";
 import { createEventBusClient, createRemoteApiClient } from "./adapters";
 
 export function createDownstreamClient<Config extends GatewayConfig>(

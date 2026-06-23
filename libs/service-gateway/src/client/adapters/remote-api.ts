@@ -3,13 +3,13 @@ import type { ApiResult } from "@flex/flex-fetch";
 import { typedFetch } from "@flex/flex-fetch";
 import type { Json } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
+
 import type {
   GatewayResource,
   GatewayResources,
   RemoteApiDownstream,
   RemoteApiRequest,
-} from "@types";
-
+} from "../../types";
 import { buildFetcher } from "../fetchers/build-fetcher";
 
 export async function createRemoteApiClient(

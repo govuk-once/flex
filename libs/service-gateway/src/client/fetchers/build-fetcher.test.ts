@@ -1,7 +1,7 @@
 import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
-import type { DownstreamAuth } from "@types";
 import { describe, expect, it, vi } from "vitest";
 
+import type { DownstreamAuth } from "../../types";
 import { buildFetcher } from "./build-fetcher";
 import { createPublicFetch } from "./public-fetcher";
 

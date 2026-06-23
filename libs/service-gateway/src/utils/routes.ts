@@ -1,6 +1,7 @@
 import type { HttpMethod } from "@flex/utils";
 import { matchPathSegments, splitRouteKey, toPathSegments } from "@flex/utils";
-import type { GatewayRoute, GatewayRoutes, RouteKey } from "@types";
+
+import type { GatewayRoute, GatewayRoutes, RouteKey } from "../types";
 
 interface ParsedRoute {
   config: GatewayRoute;

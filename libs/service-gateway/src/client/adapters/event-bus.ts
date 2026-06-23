@@ -1,5 +1,6 @@
 import type { ApiResult } from "@flex/flex-fetch";
-import type { EventBusDownstream, EventBusRequest } from "@types";
+
+import type { EventBusDownstream, EventBusRequest } from "../../types";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function createEventBusClient(

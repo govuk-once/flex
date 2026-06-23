@@ -206,7 +206,7 @@ export type GatewayHandlerMap<Config extends GatewayConfig> = {
   [Route in RouteKeys<Config>]: HandlerFn<GatewayHandlerContext<Config, Route>>;
 };
 
-export interface GatewayStore {
+export interface GatewayContext {
   readonly logger: Logger;
   readonly client: GatewayClient;
   readonly pathParams?: ReadonlyRecord<string, string>;
@@ -215,7 +215,7 @@ export interface GatewayStore {
   readonly body?: unknown;
 }
 
-export type GatewayHandler = HandlerFn<GatewayStore>;
+export type GatewayHandler = HandlerFn<GatewayContext>;
 
 // Gateway
 

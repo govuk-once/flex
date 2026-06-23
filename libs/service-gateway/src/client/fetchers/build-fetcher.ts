@@ -1,8 +1,8 @@
 import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
 import { assertNever, NonEmptyString } from "@flex/utils";
-import type { DownstreamAuth } from "@types";
 import z from "zod";
 
+import type { DownstreamAuth } from "../../types";
 import { createPublicFetch } from "./public-fetcher";
 
 const PublicFetcherSchema = z.object({ apiUrl: NonEmptyString });
