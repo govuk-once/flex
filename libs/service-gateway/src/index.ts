@@ -1,2 +1,7 @@
-export type * from "./";
-export { createPublicFetch } from "./client/fetcher";
+export { createPublicFetch } from "./client/fetchers/public-fetcher";
+export type {
+  Gateway,
+  GatewayConfig,
+  GatewayHandlerContext,
+  GatewayHandlerMap,
+} from "./types";
