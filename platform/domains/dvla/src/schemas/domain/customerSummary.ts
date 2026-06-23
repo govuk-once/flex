@@ -14,10 +14,10 @@ const retrieve_customer_response = z.object({
       customerType: z.enum(["Individual", "Organisation"]).nullish(),
       address: z
         .union([
-          z.object({ structuredAddress: z.any() }),
-          z.object({ unstructuredAddress: z.any() }),
-          z.object({ bfpoAddress: z.any() }),
-          z.object({ internationalAddress: z.any() }),
+          z.object({ structuredAddress: z.any().nullish() }),
+          z.object({ unstructuredAddress: z.any().nullish() }),
+          z.object({ bfpoAddress: z.any().nullish() }),
+          z.object({ internationalAddress: z.any().nullish() }),
         ])
         .nullish(),
       emailAddress: z.string().nullish(),
