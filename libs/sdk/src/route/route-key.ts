@@ -1,4 +1,4 @@
-import type { HttpMethod } from "../types";
+import type { HttpMethod } from "@flex/utils";
 
 export interface RouteKeySegments {
   method: HttpMethod;

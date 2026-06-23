@@ -1,11 +1,11 @@
 import type { ApiResult, FlexFetchRequestInit } from "@flex/flex-fetch";
 import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
+import type { HttpMethod } from "@flex/utils";
 import { type ZodType } from "zod";
 
 import type {
   DomainConfig,
   DomainIntegrations,
-  HttpMethod,
   IntegrationResult,
 } from "../types";
 import { extractRouteKeySegments } from "./route-key";

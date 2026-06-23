@@ -1,19 +1,16 @@
 import type { Logger } from "@flex/logging";
+import type { HeaderConfig } from "@flex/utils";
+import { QueryParametersParseError, RequestBodyParseError } from "@flex/utils";
 import type { ZodType } from "zod";
 import { ZodError } from "zod";
 
 import type {
   DomainIntegrations,
-  HeaderConfig,
   LambdaContext,
   LambdaEvent,
   RouteAuth,
 } from "../types";
-import {
-  AuthorizationError,
-  QueryParametersParseError,
-  RequestBodyParseError,
-} from "../utils/errors";
+import { AuthorizationError } from "../utils/errors";
 import { resolveHeaders } from "./headers";
 import type { ResolvedResource } from "./resolve-config";
 import type { RouteStore } from "./store";

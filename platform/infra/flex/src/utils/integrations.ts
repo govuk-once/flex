@@ -1,5 +1,6 @@
-import type { DomainIntegration, HttpMethod } from "@flex/sdk";
+import type { DomainIntegration } from "@flex/sdk";
 import { extractRouteKeySegments } from "@flex/sdk";
+import type { HttpMethod } from "@flex/utils";
 import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";

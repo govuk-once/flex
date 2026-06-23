@@ -1,5 +1,5 @@
-import { IacDomainConfig, RouteAccess } from "@flex/sdk";
-import type { Stage } from "@flex/utils";
+import { IacDomainConfig } from "@flex/sdk";
+import type { RouteAccess, Stage } from "@flex/utils";
 import {
   AuthorizationType,
   IdentitySource,

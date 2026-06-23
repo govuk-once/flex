@@ -1,5 +1,5 @@
-import type { HeaderConfig } from "../types";
-import { HeaderValidationError } from "../utils/errors";
+import type { HeaderConfig } from "@flex/utils";
+import { HeaderValidationError } from "@flex/utils";
 
 type RouteHeaders = Readonly<Record<string, HeaderConfig>>;
 type EventHeaders = Readonly<Record<string, string | undefined>>;

@@ -2,9 +2,8 @@ import type {
   DomainIntegration,
   DomainResource,
   IacDomainConfig,
-  RouteAccess,
 } from "@flex/sdk";
-import type { Stage } from "@flex/utils";
+import type { RouteAccess, Stage } from "@flex/utils";
 
 import type { DomainRouteEntry } from "./deployment";
 import { getDeployableRoutes } from "./deployment";

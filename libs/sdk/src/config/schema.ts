@@ -1,38 +1,18 @@
-import { EnvironmentSchema, NonEmptyString } from "@flex/utils";
+import {
+  EnvironmentSchema,
+  HeaderConfigSchema,
+  HttpMethodSchema,
+  LogLevelSchema,
+  NonEmptyString,
+  RouteAccessSchema,
+} from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
-
-export const RouteAccessSchema = z.enum(["public", "private", "isolated"]);
-
-export const LogLevelSchema = z.enum([
-  "TRACE",
-  "DEBUG",
-  "INFO",
-  "WARN",
-  "ERROR",
-  "SILENT",
-  "CRITICAL",
-]);
-
-export const HttpMethodSchema = z.enum([
-  "GET",
-  "POST",
-  "PUT",
-  "PATCH",
-  "DELETE",
-  "HEAD",
-  "OPTIONS",
-]);
 
 export const FunctionConfigSchema = z.object({
   environment: z.record(NonEmptyString, NonEmptyString).optional(),
   memorySize: z.number().int().min(128).max(10240).optional(),
   timeoutSeconds: z.number().int().min(1).max(900).optional(),
-});
-
-export const HeaderConfigSchema = z.object({
-  name: NonEmptyString,
-  required: z.boolean().optional(),
 });
 
 const DomainIntegrationBaseSchema = z.object({
