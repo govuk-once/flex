@@ -51,7 +51,7 @@ jobs:
           <!-- pr-title-check -->
           ### ✅ Valid PR title
 
-          Thanks, this PR title follows the required Conventional Commits format.
+          Thanks, this PR title follows the required format.
           EOF
           else
             cat > comment.md <<'EOF'
