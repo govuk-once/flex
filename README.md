@@ -130,6 +130,7 @@ flex/
 | [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
 | [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
 | [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
+| [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications            |
 | [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
 | [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
 

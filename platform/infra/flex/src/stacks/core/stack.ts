@@ -1,3 +1,4 @@
+import { Environment, getEnvConfig } from "@flex/utils";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
@@ -6,8 +7,10 @@ import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createElastiCacheCluster } from "./cache";
 import { addVpcEndpoints } from "./endpoints";
 import { createSlackNotifications } from "./notifications";
-import { createAlarmTopics } from "./topics";
+import { createAlarmTopics, createReleaseTopic } from "./topics";
 import { createVpc } from "./vpc";
+
+const { env, stage } = getEnvConfig();
 
 export class FlexCoreStack extends BaseStack {
   constructor(scope: Construct, id: string) {
@@ -46,11 +49,30 @@ export class FlexCoreStack extends BaseStack {
       createAlarmTopics(this);
 
     createSlackNotifications(this, {
-      alarmTopicKey,
+      id: "SlackChannel",
+      channelConfigurationName: `flex-alerts-${stage}`,
+      topicKey: alarmTopicKey,
       topics: [warningTopic, criticalTopic],
       slackWorkspaceId: this.import(ENV_KEYS.MonitoringSlackWorkspaceId),
       slackChannelId: this.import(ENV_KEYS.MonitoringSlackChannelId),
     });
+
+    // Release notifications are published once per pipeline run, so the
+    // topic and channel config only exist in the development environment
+    if (env === Environment.development) {
+      const { releaseTopic } = createReleaseTopic(this, alarmTopicKey);
+      createSlackNotifications(this, {
+        id: "ReleaseSlackChannel",
+        channelConfigurationName: `flex-releases-${stage}`,
+        topicKey: alarmTopicKey,
+        topics: [releaseTopic],
+        slackWorkspaceId: this.import(ENV_KEYS.MonitoringSlackWorkspaceId),
+        slackChannelId: this.import(ENV_KEYS.ReleaseSlackChannelId),
+      });
+      this.exports({
+        [ENV_KEYS.TopicReleaseNotifications]: releaseTopic.topicArn,
+      });
+    }
 
     this.exportVpc(ENV_KEYS.Vpc, vpc);
     this.exports({

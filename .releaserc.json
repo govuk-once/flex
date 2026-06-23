@@ -1,0 +1,42 @@
+{
+  "branches": ["main"],
+  "tagFormat": "v${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "parserOpts": {
+          "headerPattern": "^(?:[A-Z]+-\\d+[ :-]+)?(\\w+)(?:\\(([^)]*)\\))?!?: (.+)$",
+          "breakingHeaderPattern": "^(?:[A-Z]+-\\d+[ :-]+)?(\\w+)(?:\\(([^)]*)\\))?!: (.+)$",
+          "headerCorrespondence": ["type", "scope", "subject"]
+        }
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "parserOpts": {
+          "headerPattern": "^(?:[A-Z]+-\\d+[ :-]+)?(\\w+)(?:\\(([^)]*)\\))?!?: (.+)$",
+          "breakingHeaderPattern": "^(?:[A-Z]+-\\d+[ :-]+)?(\\w+)(?:\\(([^)]*)\\))?!: (.+)$",
+          "headerCorrespondence": ["type", "scope", "subject"]
+        }
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "successCommentCondition": false,
+        "failCommentCondition": false,
+        "releasedLabels": false
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "successCmd": "echo \"released=true\" >> \"$GITHUB_OUTPUT\"; echo \"version=${nextRelease.version}\" >> \"$GITHUB_OUTPUT\"; echo \"type=${nextRelease.type}\" >> \"$GITHUB_OUTPUT\""
+      }
+    ]
+  ]
+}

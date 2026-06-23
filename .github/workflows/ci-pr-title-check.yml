@@ -19,13 +19,13 @@ jobs:
         if: github.actor == 'dependabot[bot]'
         run: echo "Skipping Jira title check for Dependabot"
 
-      - name: Validate PR title contains Jira ticket
+      - name: Validate PR title format
         if: github.actor != 'dependabot[bot]'
         run: |
           TITLE="${{ github.event.pull_request.title }}"
           echo "Checking PR title: $TITLE"
 
-          if ! echo "$TITLE" | grep -Eq '^[A-Z]+-[0-9]+'; then
-            echo "::error ::PR title must start with a Jira ticket key, e.g FLEX-123 Add user preferences endpoint"
+          if ! echo "$TITLE" | grep -Eq '^([A-Z]+-[0-9]+ )?(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\([^)]+\))?!?: .+'; then
+            echo "::error ::PR title must be '<JIRA-REF> <type>(<scope>)?: <description>', e.g 'FLEX-123 feat: add user preferences endpoint'. Types: feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert. Append ! to the type for breaking changes. See docs/releases.md"
             exit 1
           fi
