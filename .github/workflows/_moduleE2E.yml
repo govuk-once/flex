@@ -32,8 +32,6 @@ jobs:
 
       - name: List domains with a test:e2e script
         id: list
-        # Emits a JSON array of { name, package } for every domain that declares
-        # a test:e2e script. See scripts/listE2eModules.ts.
         run: |
           modules=$(node --experimental-strip-types scripts/listE2eModules.ts)
           echo "modules=$modules" >> "$GITHUB_OUTPUT"
