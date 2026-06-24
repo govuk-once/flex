@@ -60,8 +60,8 @@ function toAuthConfig(
     password: config.userPassword,
     totp: config.userTotp,
     clientId: config.clientId,
-    clientSecret: config.clientSecret,
     authUrl: config.authUrl,
+    tokenUrl: config.tokenUrl,
     redirectUri: config.redirectUri,
     oneLoginEnvironment: config.oneLoginEnvironment,
   };
