@@ -1,5 +1,6 @@
-import type { DomainConfig, DomainRoutes, IacDomainConfig } from "@flex/sdk";
 import { getEnvConfig, isStageAllowed } from "@flex/utils";
+
+import type { DomainConfig, DomainRoutes, IacDomainConfig } from "../types";
 
 export function isDomainDeployed(config: IacDomainConfig) {
   return isStageAllowed(config.environments, getEnvConfig().stage);

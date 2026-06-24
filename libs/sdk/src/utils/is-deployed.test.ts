@@ -1,7 +1,7 @@
-import type { IacDomainConfig } from "@flex/sdk";
 import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
+import type { IacDomainConfig } from "../types";
 import { isDomainDeployed, isRouteDeployed } from "./is-deployed";
 
 const mockDomain = {

@@ -6,6 +6,7 @@ packages:
   - platform/shared
   - tests/*
   - tests/performance/*
+  - scripts
 
 minimumReleaseAge: 2880
 

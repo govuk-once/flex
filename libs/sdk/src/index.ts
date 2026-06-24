@@ -3,3 +3,4 @@ export { domain } from "./domain";
 export * from "./route";
 export type * from "./types";
 export { clearTmp } from "./utils/cleanup";
+export { isDomainDeployed, isRouteDeployed } from "./utils/is-deployed";

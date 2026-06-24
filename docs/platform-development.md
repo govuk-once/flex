@@ -470,10 +470,10 @@ pnpm --filter @flex/<package> test --watch
 pnpm --filter @platform/<domain> test --watch
 
 # Run E2E tests against your personal environment
-pnpm --filter @flex/e2e test:e2e
+pnpm --filter @flex/e2e test:e2e:platform
 
 # Run E2E tests against a specific environment
-STAGE=development pnpm --filter @flex/e2e test:e2e
+STAGE=development pnpm --filter @flex/e2e test:e2e:platform
 ```
 
 ### Validating Infrastructure
@@ -499,7 +499,7 @@ pnpm --filter @platform/<name> diff
 2. Create `README.md` using the [FLEX Platform SDK template](/docs/documentation-guide.md#flex-platform-sdk)
 3. Implement functionality with tests
 4. Run tests locally with `pnpm --filter @flex/<package> test`
-5. Deploy and run E2E tests with `pnpm --filter @flex/e2e test:e2e`
+5. Deploy and run E2E tests with `pnpm --filter @flex/e2e test:e2e:platform`
 6. Update the [Domain Development Guide](/docs/domain-development.md) if the package is intended for domain developers
 
 ### Adding a New Platform Domain Handler
@@ -507,7 +507,7 @@ pnpm --filter @platform/<name> diff
 1. Create handler structure (see [Platform Domain Development](#platform-domain-development))
 2. Implement handler with tests
 3. Run tests locally with `pnpm --filter @platform/<domain> test`
-4. Deploy and run E2E tests with `pnpm --filter @flex/e2e test:e2e`
+4. Deploy and run E2E tests with `pnpm --filter @flex/e2e test:e2e:platform`
 5. Add resources to `@platform/flex` infrastructure
 6. Create `README.md` using the [FLEX Platform Domain template](/docs/documentation-guide.md#flex-platform-domain)
 

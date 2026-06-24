@@ -1,13 +1,13 @@
+import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
+import { it } from "@flex/testing/e2e";
+import { describe, expect } from "vitest";
+
+import { config as udpConfig } from "../domain.config";
 import type {
   GetUserResponse,
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
-} from "@flex/udp-domain";
-import { config as udpConfig } from "@flex/udp-domain/config";
-import { describe, expect } from "vitest";
-
-import { it } from "../extend/it";
-import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
+} from "../src";
 
 const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");

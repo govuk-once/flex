@@ -1,5 +1,5 @@
-import { config as exampleConfig } from "@flex/example-domain/config";
-import { STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
+import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
+import { it, STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
@@ -9,8 +9,7 @@ import { NotificationsResponseSchema } from "@flex/uns-domain";
 import { config as unsConfig } from "@flex/uns-domain/config";
 import { describe, expect } from "vitest";
 
-import { it } from "../extend/it";
-import { isDomainDeployed, isRouteDeployed } from "../utils/is-deployed";
+import { config as exampleConfig } from "../domain.config";
 
 // TODO: Fine for now, but need a better solution for tests with cross-domain dependencies
 const udpGetUsersDeployed = () =>
