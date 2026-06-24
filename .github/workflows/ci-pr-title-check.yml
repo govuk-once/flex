@@ -30,7 +30,7 @@ jobs:
         run: |
           echo "Checking PR title: $TITLE"
 
-          if echo "$TITLE" | grep -Eq '^([A-Z]+-[0-9]+ )?(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\([^)]+\))?!?: .+'; then
+          if echo "$TITLE" | grep -Eq '^([A-Z]+-[0-9]+ )(feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert)(\([^)]+\))?!?: .+'; then
             echo "valid=true" >> "$GITHUB_OUTPUT"
           else
             echo "valid=false" >> "$GITHUB_OUTPUT"
