@@ -1,50 +1,7 @@
-import type { IacDomainConfig } from "@flex/sdk";
-import type { HttpMethod, Stage } from "@flex/utils";
+import type { DomainRouteEntry, IacDomainConfig } from "@flex/sdk";
+import { getDomainRouteEntries } from "@flex/sdk";
+import type { Stage } from "@flex/utils";
 import { isPersistentEnvironment, isStageAllowed } from "@flex/utils";
-
-type RouteGateway = NonNullable<
-  IacDomainConfig["routes"][string][string][HttpMethod]
->;
-
-const GATEWAY_SUFFIX = { public: "", private: " [private]" } as const;
-
-export interface DomainRouteEntry {
-  readonly version: string;
-  readonly path: string;
-  readonly routeKey: string;
-  readonly method: HttpMethod;
-  readonly gateway: "public" | "private";
-  readonly routeConfig: NonNullable<RouteGateway["public" | "private"]>;
-}
-
-function getDomainRouteEntries(
-  routes: IacDomainConfig["routes"],
-): readonly DomainRouteEntry[] {
-  const entries: DomainRouteEntry[] = [];
-
-  for (const [version, paths] of Object.entries(routes)) {
-    for (const [path, methods] of Object.entries(paths)) {
-      for (const [method, gateways] of Object.entries(methods)) {
-        for (const gateway of ["public", "private"] as const) {
-          const routeConfig = gateways[gateway];
-
-          if (!routeConfig) continue;
-
-          entries.push({
-            version,
-            path,
-            routeKey: `${method} /${version}${path}${GATEWAY_SUFFIX[gateway]}`,
-            method: method as HttpMethod,
-            gateway,
-            routeConfig,
-          });
-        }
-      }
-    }
-  }
-
-  return entries;
-}
 
 export function getDeployableRoutes(
   config: IacDomainConfig,

@@ -1,11 +1,11 @@
 import type {
   DomainIntegration,
   DomainResource,
+  DomainRouteEntry,
   IacDomainConfig,
 } from "@flex/sdk";
 import type { RouteAccess, Stage } from "@flex/utils";
 
-import type { DomainRouteEntry } from "./deployment";
 import { getDeployableRoutes } from "./deployment";
 
 export interface FlatRoute extends DomainRouteEntry {
