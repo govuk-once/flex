@@ -119,6 +119,8 @@ export class FlexSmokeTestStack extends BaseStack {
       privateEgressSg,
       criticalAction,
       warningAction,
+      // The explicit SmokeTestAlarm below already covers this lambda's health
+      disableDefaultAlarms: true,
     });
 
     applyCheckovSkips(smokeTest.function, [
