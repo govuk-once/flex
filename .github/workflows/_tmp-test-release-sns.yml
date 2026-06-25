@@ -1,0 +1,34 @@
+# TEMPORARY: delete before merging PR #373.
+# Confirms the DEV_DEPLOYMENT_ROLE can publish to the KMS-encrypted release
+# topic and that Amazon Q forwards it to #govuk-once-flex-release.
+# Run from the Actions tab (Run workflow) on this branch.
+name: TMP Test Release SNS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-publish:
+    name: Test SNS publish as deploy role
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+          aws-region: "eu-west-2"
+          role-session-name: ${{ github.run_id }}
+
+      - name: Publish test message to release topic
+        run: |
+          set -x
+          TOPIC_ARN=$(aws ssm get-parameter \
+            --name "/development/flex/topic/release-notifications" \
+            --query "Parameter.Value" --output text)
+
+          aws sns publish --topic-arn "$TOPIC_ARN" \
+            --message '{"version":"1.0","source":"custom","content":{"textType":"client-markdown","title":"Pipeline role test","description":"Confirming DEV_DEPLOYMENT_ROLE can publish to the encrypted release topic."}}'
