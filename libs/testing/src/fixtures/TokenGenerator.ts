@@ -1,9 +1,8 @@
-import { createServer } from "node:http";
 import querystring from "node:querystring";
 
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
-import axios, { AxiosInstance } from "axios";
+import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { load } from "cheerio";
 import pkceChallenge from "pkce-challenge";
@@ -15,7 +14,7 @@ export interface BaseTokenGenerator {
   getToken(): Promise<string>;
 }
 
-interface JwtAuthConfig {
+export interface OneLoginAuthConfig {
   email: string;
   password: string;
   totp: string;
@@ -24,135 +23,115 @@ interface JwtAuthConfig {
   authUrl: string;
   redirectUri: string;
   oneLoginEnvironment: string;
+  attestationToken?: string;
 }
 
-interface TokenResponse {
-  access_token: string;
-  id_token: string;
-  refresh_token?: string;
-  expires_in: number;
-  token_type: string;
+export async function getAccessToken(
+  config: OneLoginAuthConfig,
+): Promise<string> {
+  const jar = new CookieJar();
+  const client = wrapper(
+    axios.create({
+      jar,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    }),
+  );
+
+  const { code_verifier, code_challenge } = await pkceChallenge();
+  const query = querystring.stringify({
+    client_id: config.clientId,
+    response_type: "code",
+    redirect_uri: config.redirectUri,
+    scope: "openid email",
+    code_challenge,
+    code_challenge_method: "S256",
+    state: "smoke-test",
+    idpidentifier: "onelogin",
+  });
+
+  const initResponse = await client.get<string>(
+    `https://${config.authUrl}/oauth2/authorize?${query}`,
+    {
+      headers: {
+        ...(config.attestationToken && {
+          "X-Firebase-App-Check": config.attestationToken,
+        }),
+      },
+    },
+  );
+
+  const $ = load(initResponse.data);
+  const csrfToken = $('input[name="_csrf"]').val() as string;
+  if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
+
+  const oneLoginDomain = `signin.${config.oneLoginEnvironment}.account.gov.uk`;
+  const post = (path: string, data: object) =>
+    client.post(
+      `https://${oneLoginDomain}${path}`,
+      querystring.stringify({ _csrf: csrfToken, ...data }),
+    );
+
+  await post("/sign-in-or-create?", {});
+  await post("/enter-email?", { email: config.email });
+  await post("/enter-password?", { password: config.password });
+
+  const { otp } = await TOTP.generate(config.totp);
+
+  let codeRedirectUrl: string | undefined;
+
+  try {
+    await client.post(
+      `https://${oneLoginDomain}/enter-authenticator-app-code?`,
+      querystring.stringify({ _csrf: csrfToken, code: otp }),
+      {
+        beforeRedirect: (
+          _options: Record<string, unknown>,
+          responseDetails: { headers: Record<string, string> },
+        ) => {
+          codeRedirectUrl = responseDetails.headers["location"];
+        },
+      },
+    );
+  } catch (error) {
+    if (!codeRedirectUrl) throw error;
+  }
+
+  if (!codeRedirectUrl) throw new Error("TOTP step did not produce a redirect");
+
+  const code = new URL(codeRedirectUrl).searchParams.get("code");
+  if (!code) throw new Error("No code found in redirect URL");
+
+  const response = await fetch(`https://${config.authUrl}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: querystring.stringify({
+      grant_type: "authorization_code",
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      redirect_uri: config.redirectUri,
+      code_verifier,
+      scope: "email openid",
+    }),
+  });
+
+  if (!response.ok)
+    throw new Error(`Token exchange failed: ${await response.text()}`);
+
+  const { access_token } = (await response.json()) as { access_token: string };
+  return access_token;
 }
 
 class TokenGenerator implements BaseTokenGenerator {
-  private readonly client: AxiosInstance;
-
-  constructor(private readonly config: JwtAuthConfig) {
-    const jar = new CookieJar();
-    this.client = wrapper(
-      axios.create({
-        jar,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }),
-    );
-  }
+  constructor(private readonly config: OneLoginAuthConfig) {}
 
   async getToken(): Promise<string> {
     try {
-      const { csrfToken, code_verifier } = await this.startAuthFlow();
-      const code = await this.submitFormsAndGetCode(csrfToken);
-      const tokens = await this.exchangeCodeForTokens(code, code_verifier);
-      return tokens.access_token;
+      return await getAccessToken(this.config);
     } catch (error) {
       console.error("Failed to execute E2E login flow:", error);
       throw error;
     }
-  }
-
-  private async startAuthFlow(): Promise<{
-    csrfToken: string;
-    code_verifier: string;
-  }> {
-    const { code_verifier, code_challenge } = await pkceChallenge();
-    const query = querystring.stringify({
-      client_id: this.config.clientId,
-      response_type: "code",
-      redirect_uri: `http://${this.config.redirectUri}`,
-      scope: "openid email",
-      code_challenge,
-      code_challenge_method: "S256",
-      state: "debug123",
-      idpidentifier: "onelogin",
-    });
-
-    const response = await this.client.get<string>(
-      `https://${this.config.authUrl}/oauth2/authorize?${query}`,
-    );
-    const $ = load(response.data);
-    const csrfToken = $('input[name="_csrf"]').val() as string;
-
-    if (!csrfToken) throw new Error("Could not find CSRF token");
-    return { csrfToken, code_verifier };
-  }
-
-  private async submitFormsAndGetCode(csrfToken: string): Promise<string> {
-    const oneLoginDomain = `signin.${this.config.oneLoginEnvironment}.account.gov.uk`;
-    let capturedCode: string | undefined;
-
-    const server = createServer((req, res) => {
-      const host = req.headers.host ?? this.config.redirectUri;
-      const url = new URL(req.url || "", `http://${host}`);
-
-      capturedCode = url.searchParams.get("code") ?? undefined;
-
-      res.writeHead(200);
-      res.end("Captured");
-    });
-
-    await new Promise<void>((resolve) =>
-      server.listen(3000, () => {
-        resolve();
-      }),
-    );
-
-    try {
-      const post = (path: string, data: object) =>
-        this.client.post(
-          `https://${oneLoginDomain}${path}`,
-          querystring.stringify({ _csrf: csrfToken, ...data }),
-        );
-
-      await post("/sign-in-or-create?", {});
-      await post("/enter-email?", { email: this.config.email });
-      await post("/enter-password?", { password: this.config.password });
-
-      const { otp } = await TOTP.generate(this.config.totp);
-
-      await post("/enter-authenticator-app-code?", { code: otp });
-
-      if (!capturedCode) {
-        throw new Error("Redirect happened but no code was found in the URL.");
-      }
-
-      return capturedCode;
-    } finally {
-      server.close();
-    }
-  }
-
-  private async exchangeCodeForTokens(
-    code: string,
-    code_verifier: string,
-  ): Promise<TokenResponse> {
-    const response = await fetch(
-      `https://${this.config.authUrl}/oauth2/token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: querystring.stringify({
-          grant_type: "authorization_code",
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-          code,
-          redirect_uri: `http://${this.config.redirectUri}`,
-          code_verifier,
-          scope: "email openid",
-        }),
-      },
-    );
-
-    if (!response.ok) throw new Error(await response.text());
-    return (await response.json()) as TokenResponse;
   }
 }
 
@@ -176,9 +155,7 @@ export async function getTokenGenerator(
     oneLoginEnvironment,
     authUrl,
   ] = await Promise.all([
-    getSecret(`/${stage}/flex-secret/e2e/test_user`, {
-      transform: "json",
-    }),
+    getSecret(`/${stage}/flex-secret/e2e/test_user`, { transform: "json" }),
     getSecret(`/${stage}/flex-secret/auth/client_secret`, {
       transform: "json",
     }),
@@ -190,7 +167,7 @@ export async function getTokenGenerator(
   const userSecret = UserSecretSchema.parse(userSecretRaw);
   const clientSecret = ClientSecretSchema.parse(clientSecretRaw);
 
-  const config: JwtAuthConfig = {
+  return new TokenGenerator({
     email: userSecret.email,
     password: userSecret.password,
     totp: userSecret.totp,
@@ -198,8 +175,6 @@ export async function getTokenGenerator(
     clientSecret: clientSecret.clientSecret,
     oneLoginEnvironment: oneLoginEnvironment as string,
     authUrl: authUrl as string,
-    redirectUri: "localhost:3000",
-  };
-
-  return new TokenGenerator(config);
+    redirectUri: "govuk://govuk/login-auth-callback",
+  });
 }
