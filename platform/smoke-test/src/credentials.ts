@@ -1,8 +1,8 @@
-import { getStubTokenGenerator } from "@flex/testing/e2e";
+import { getStubTokenGenerator } from "@flex/testing/auth";
 import {
   getAccessToken,
   type OneLoginAuthConfig as AuthConfig,
-} from "@flex/testing/e2e";
+} from "@flex/testing/auth";
 
 import { loadApiUrl, loadConfig, loadGcpConfig } from "./config";
 import { getAttestationToken } from "./gcp";

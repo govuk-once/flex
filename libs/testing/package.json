@@ -5,6 +5,7 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
+    "./auth": "./src/index.auth.ts",
     "./e2e": "./src/index.e2e.ts",
     "./e2e/setup": "./src/e2e/setup.global.ts",
     "./setup/sdk": "./src/setup/sdk.ts",
