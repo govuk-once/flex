@@ -37,11 +37,13 @@ export class FlexPrivateIsolatedFunction extends Construct {
       retention: RetentionDays.ONE_YEAR,
     });
 
+    const encryptionKey = resolveEncryptionKey(this);
+
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       ...functionProps,
-      environmentEncryption: resolveEncryptionKey(this),
+      environmentEncryption: encryptionKey,
       environment: {
         ...functionProps.environment,
         FLEX_ENVIRONMENT: stage,
@@ -53,6 +55,8 @@ export class FlexPrivateIsolatedFunction extends Construct {
         subnetType: SubnetType.PRIVATE_ISOLATED,
       },
     });
+
+    encryptionKey.grantDecrypt(this.function);
 
     new LambdaAlarms(this, `${id}Alarm`, {
       fn: this.function,
