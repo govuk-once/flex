@@ -32,6 +32,12 @@ export const ENV_KEYS = {
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
 
+export const SMOKE_TEST_KEYS = {
+  GcpCredentialConfig: `/${env}/flex/smoke-test/gcp-credential-config`,
+  GcpServiceAccountEmail: `/${env}/flex/smoke-test/gcp-service-account-email`,
+  FirebaseAppId: `/${env}/flex/smoke-test/firebase-app-id`,
+} as const;
+
 export const STAGE_KEYS = {
   ApigwPublicRestId: `/${stage}/flex/apigw/public/rest-api-id`,
   ApigwPublicAppRoot: `/${stage}/flex/apigw/public/app-root`,
