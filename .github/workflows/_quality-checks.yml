@@ -81,6 +81,9 @@ jobs:
       - name: Type Check
         run: pnpm run tsc
 
+      - name: Validate domain integration routes
+        run: pnpm run validate:integrations
+
   sonarScan:
     name: SonarQube
     runs-on: ubuntu-latest
