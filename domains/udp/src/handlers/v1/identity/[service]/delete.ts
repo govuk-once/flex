@@ -18,6 +18,7 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   /**
    * NOTE:
    * - Commenting out for now as causing issues due to deleting the linking id
+   *   on DVLA side
    */
   // if (service === "dvla") {
   //   await integrations.dvlaUnlinkUser({
