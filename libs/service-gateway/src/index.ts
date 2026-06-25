@@ -5,4 +5,5 @@ export type {
   GatewayConfig,
   GatewayHandlerContext,
   GatewayHandlerMap,
+  GatewayLambda,
 } from "./types";

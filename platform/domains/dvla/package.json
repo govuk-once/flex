@@ -18,6 +18,7 @@
     "@flex/logging": "workspace:*",
     "@flex/platform-shared": "workspace:*",
     "@flex/sdk": "workspace:*",
+    "@flex/service-gateway": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.6.7",
     "http-errors": "2.0.1",
