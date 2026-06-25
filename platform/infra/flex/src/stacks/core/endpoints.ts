@@ -89,11 +89,20 @@ export function addVpcEndpoints({
     securityGroup,
   });
 
+  const kmsEndpoint = addVpcEndpoint({
+    vpc,
+    name: "KMS",
+    service: InterfaceVpcEndpointAwsService.KMS,
+    securityGroup,
+    allowIngressFromIsolatedSubnets: true,
+  });
+
   return {
     apiGatewayEndpoint,
     cloudwatchEndpoint,
     secretsManagerEndpoint,
     ssmEndpoint,
     stsEndpoint,
+    kmsEndpoint,
   };
 }
