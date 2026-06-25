@@ -1,11 +1,14 @@
 # TEMPORARY: delete before merging PR #373.
 # Confirms the DEV_DEPLOYMENT_ROLE can publish to the KMS-encrypted release
 # topic and that Amazon Q forwards it to #govuk-once-flex-release.
-# Run from the Actions tab (Run workflow) on this branch.
+# Runs automatically on every push to this branch (workflow_dispatch can't be
+# used because the file isn't on the default branch yet). Delete when done.
 name: TMP Test Release SNS
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - chore/FLEX-345-versioning
 
 permissions:
   id-token: write
