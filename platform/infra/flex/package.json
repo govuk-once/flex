@@ -8,6 +8,7 @@
     "deploy": "cdk deploy --all --concurrency 4 --require-approval never",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
+    "validate:integrations": "tsx src/scripts/validate-integrations.ts",
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"

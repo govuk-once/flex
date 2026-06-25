@@ -17,6 +17,8 @@ export {
   getRouteResources,
 } from "./resolve-config";
 export { toApiGatewayResponse, validateHandlerResponse } from "./response";
+export type { DomainRouteEntry } from "./route-entries";
+export { getDomainRouteEntries } from "./route-entries";
 export type { RouteKeySegments } from "./route-key";
 export {
   extractRouteKeySegments,
@@ -24,3 +26,8 @@ export {
 } from "./route-key";
 export type { RouteStore } from "./store";
 export { getRouteStore, routeStorage } from "./store";
+export type {
+  IntegrationViolation,
+  IntegrationViolationReason,
+} from "./validate-integrations";
+export { validateDomainIntegrations } from "./validate-integrations";
