@@ -1,11 +1,12 @@
+import { loadEnvFile } from "node:process";
+
 import {
   createTokenGeneratorFromConfig,
   type JwtAuthConfig,
-} from "@flex/testing/e2e";
-import { config as loadDotenv } from "dotenv";
+} from "@flex/testing/auth";
 import { z } from "zod";
 
-loadDotenv({ quiet: true });
+loadEnvFile(".env");
 
 const PlaygroundEnvSchema = z.object({
   PLAYGROUND_EMAIL: z.email(),
