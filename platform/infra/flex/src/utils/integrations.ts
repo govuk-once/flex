@@ -1,9 +1,7 @@
 import type { DomainIntegration } from "@flex/sdk";
 import { extractRouteKeySegments } from "@flex/sdk";
 import type { HttpMethod } from "@flex/utils";
-import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
-import type { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 
 import { toPascalCase } from "./routes";
 
@@ -48,11 +46,23 @@ interface RoutePermissionOption {
   keys: readonly string[];
   integrations: ReadonlyMap<string, DomainIntegration>;
   domain: string;
-  api: IRestApi;
+  api: RoutePermissionApi;
+}
+
+interface RoutePermissionApi {
+  arnForExecuteApi(method: string, path: string, stage: string): string;
+}
+
+interface RoutePermissionTarget {
+  readonly role?:
+    | {
+        addToPrincipalPolicy(statement: PolicyStatement): unknown;
+      }
+    | undefined;
 }
 
 export function grantRoutePermissions(
-  target: NodejsFunction,
+  target: RoutePermissionTarget,
   { keys, integrations, domain, api }: RoutePermissionOption,
 ) {
   if (!target.role || keys.length === 0) return;
