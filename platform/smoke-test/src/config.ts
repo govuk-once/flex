@@ -35,20 +35,26 @@ export async function loadApiUrl(): Promise<string> {
 export async function loadConfig(env: string): Promise<SmokeTestConfig> {
   const paramPrefix = `/${env}/flex-param`;
 
-  const [authUrl, tokenUrl, clientId, oneLoginEnvironment, apiUrl, userSecretRaw] =
-    await Promise.all([
-      getParameter(`${paramPrefix}/auth/auth-url`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/token-url`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/client-id`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/one-login-environment`, {
-        forceFetch: true,
-      }),
-      getParameter(`/infra/dns/hostedzonename`, { forceFetch: true }),
-      getSecret(`/${env}/flex-secret/smoke-test/user`, {
-        transform: "json",
-        forceFetch: true,
-      }),
-    ]);
+  const [
+    authUrl,
+    tokenUrl,
+    clientId,
+    oneLoginEnvironment,
+    apiUrl,
+    userSecretRaw,
+  ] = await Promise.all([
+    getParameter(`${paramPrefix}/auth/auth-url`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/token-url`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/client-id`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/one-login-environment`, {
+      forceFetch: true,
+    }),
+    getParameter(`/infra/dns/hostedzonename`, { forceFetch: true }),
+    getSecret(`/${env}/flex-secret/smoke-test/user`, {
+      transform: "json",
+      forceFetch: true,
+    }),
+  ]);
 
   const user = UserSecretSchema.parse(userSecretRaw);
 
