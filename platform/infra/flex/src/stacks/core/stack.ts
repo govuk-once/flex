@@ -1,4 +1,5 @@
 import { Environment, getEnvConfig } from "@flex/utils";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
@@ -61,14 +62,28 @@ export class FlexCoreStack extends BaseStack {
     // topic and channel config only exist in the development environment
     if (env === Environment.development) {
       const { releaseTopic } = createReleaseTopic(this, alarmTopicKey);
-      createSlackNotifications(this, {
-        id: "ReleaseSlackChannel",
-        channelConfigurationName: `flex-releases-${stage}`,
-        topicKey: alarmTopicKey,
-        topics: [releaseTopic],
-        slackWorkspaceId: this.import(ENV_KEYS.MonitoringSlackWorkspaceId),
-        slackChannelId: this.import(ENV_KEYS.ReleaseSlackChannelId),
+
+      // Resolved at synth time
+      const releaseChannelIds = StringParameter.valueFromLookup(
+        this,
+        ENV_KEYS.ReleaseSlackChannelId,
+      )
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
+      releaseChannelIds.forEach((slackChannelId, index) => {
+        createSlackNotifications(this, {
+          id: `ReleaseSlackChannel${String(index)}`,
+          channelConfigurationName: `flex-releases-${stage}-${String(index)}`,
+          topicKey: alarmTopicKey,
+          topics: [releaseTopic],
+          slackWorkspaceId,
+          slackChannelId,
+        });
       });
+
       this.exports({
         [ENV_KEYS.TopicReleaseNotifications]: releaseTopic.topicArn,
       });

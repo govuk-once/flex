@@ -63,9 +63,11 @@ The configuration lives in [`.releaserc.json`](/.releaserc.json). No CHANGELOG.m
 
 ## Slack Notifications
 
-The `#govuk-once-flex-release` channel is notified for **major and minor** releases only. Patch releases are still tagged and released on GitHub but are deliberately silent.
+Slack is notified for **major and minor** releases only. Patch releases are still tagged and released on GitHub but are deliberately silent.
 
 The notification contains the version, the release type, a summary of the release notes and a link to the GitHub release. Delivery reuses the existing AWS Chatbot (Amazon Q) mechanism used for alerts: the pipeline publishes a message to the `flex-release-notifications` SNS topic in the development account, which AWS Chatbot forwards to Slack. The topic and channel configuration are defined in the [core stack](/platform/infra/flex/src/stacks/core/stack.ts) and only exist in the development environment.
+
+The notification is sent to every channel listed in the `releaseSlackChannelId` SSM parameter (`/development/flex-param/monitoring/releaseSlackChannelId`), which holds a comma-separated list of Slack channel IDs. The pipeline publishes once to the topic, and one AWS Chatbot configuration per channel fans the message out, so adding or removing a channel is a change to that parameter only, no code change. The default channel is `#govuk-once-flex-release`.
 
 A failed Slack notification never blocks deployment (the step is `continue-on-error`).
 
