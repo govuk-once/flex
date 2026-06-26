@@ -40,7 +40,7 @@ export async function loadConfig(env: string): Promise<SmokeTestConfig> {
     await Promise.all([
       getParameter(`${paramPrefix}/auth/auth-url`, { forceFetch: true }),
       getParameter(`${paramPrefix}/auth/client-id`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/onelogin-environment`, {
+      getParameter(`${paramPrefix}/auth/one-login-environment`, {
         forceFetch: true,
       }),
       getParameter(`/infra/dns/hostedzonename`, { forceFetch: true }),
