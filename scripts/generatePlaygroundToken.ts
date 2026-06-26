@@ -41,7 +41,7 @@ function readConfig(): JwtAuthConfig {
     authUrl: env.PLAYGROUND_AUTH_URL,
     tokenUrl: env.PLAYGROUND_TOKEN_URL,
     oneLoginEnvironment: env.PLAYGROUND_ONE_LOGIN_ENV,
-    redirectUri: "localhost:3000",
+    redirectUri: "govuk://govuk/login-auth-callback",
   };
 }
 
