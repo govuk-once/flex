@@ -1,4 +1,4 @@
-import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
+import { createSigv4FetchWithCredentials } from "@flex/sdk";
 import { describe, expect, it, vi } from "vitest";
 
 import type { RestAuth } from "./build";
@@ -6,7 +6,7 @@ import { buildFetcher } from "./build";
 import { createPublicFetch } from "./public";
 
 const mockSigv4Fetcher = vi.hoisted(() => vi.fn());
-vi.mock("@flex/flex-fetch", () => ({
+vi.mock("@flex/sdk", () => ({
   createSigv4FetchWithCredentials: vi.fn(() => mockSigv4Fetcher),
 }));
 

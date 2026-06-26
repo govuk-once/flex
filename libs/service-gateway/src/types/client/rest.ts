@@ -1,4 +1,4 @@
-import type { ApiResult } from "@flex/flex-fetch";
+import type { ApiResult } from "@flex/sdk";
 import type { Json, QueryParams, ReadonlyRecord } from "@flex/utils";
 import type { z } from "zod";
 

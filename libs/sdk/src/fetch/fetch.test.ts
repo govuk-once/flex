@@ -4,7 +4,7 @@ import * as backOff from "exponential-backoff";
 import nock from "nock";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
-import { flexFetch } from "./index";
+import { flexFetch } from "./fetch";
 
 vi.mock("@flex/logging");
 
@@ -35,7 +35,7 @@ describe("flex-fetch", () => {
     expect(resBody).toStrictEqual(okResponse);
     expect(nock.isDone()).toBe(true);
 
-    expect(backoffSpy).not.toHaveBeenCalled();
+    expect(backoffSpy).toHaveBeenCalledOnce();
   });
 
   it("uses backOff when retryAttempts is provided and eventually succeeds", async () => {
@@ -67,7 +67,7 @@ describe("flex-fetch", () => {
     expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
-        numOfAttempts: 3,
+        numOfAttempts: 4,
         maxDelay: 500,
         jitter: "full",
       }),
@@ -123,7 +123,7 @@ describe("flex-fetch", () => {
 
     await expect(request).rejects.toThrow("This operation was aborted");
     expect(nock.isDone()).toBe(true);
-    expect(backoffSpy).not.toHaveBeenCalled();
+    expect(backoffSpy).toHaveBeenCalledOnce();
   });
 
   it("stops retries when aborted during retry", async () => {
@@ -181,7 +181,7 @@ describe("flex-fetch", () => {
 
   it("logs errors on failure using logger.error", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).twice().replyWithError(err);
 
     const { request } = flexFetch(new URL("https://example.com/data"), {
       retryAttempts: 1,

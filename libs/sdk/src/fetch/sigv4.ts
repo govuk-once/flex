@@ -7,7 +7,7 @@ import type {
 } from "@smithy/types";
 import { createSignedFetcher } from "aws-sigv4-fetch";
 
-import { flexFetch, type FlexFetchRequestInit } from "../fetch";
+import { flexFetch, type FlexFetchRequestInit } from "./fetch";
 
 export interface Sigv4FetcherOptions {
   region?: string;

@@ -20,7 +20,7 @@ const handler: MiddyfiedHandler<
   .use(
     injectLambdaContext(logger, {
       clearState: true,
-      correlationIdPath: "requestContext.requestId",
+      correlationIdPath: 'headers."x-correlation-id"',
     }),
   )
   .handler(

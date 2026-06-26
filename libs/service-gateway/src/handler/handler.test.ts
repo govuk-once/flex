@@ -1,5 +1,5 @@
-import type { ApiResult } from "@flex/flex-fetch";
 import { logger } from "@flex/logging";
+import type { ApiResult } from "@flex/sdk";
 import { clearTmp } from "@flex/sdk";
 import {
   HeaderValidationError,
