@@ -18,6 +18,7 @@ export const NotificationSchema = z.object({
   MessageBody: NonEmptyString,
   DispatchedDateTime: IsoDateTime,
   Status: NotificationStatusSchema.optional(),
+  Metadata: z.object({ Sender: z.object({ DisplayName: z.string() }) }),
 });
 
 export type Notification = z.infer<typeof NotificationSchema>;
