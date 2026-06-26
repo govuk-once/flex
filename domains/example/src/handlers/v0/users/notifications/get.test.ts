@@ -16,6 +16,11 @@ describe("GET /v0/users/notifications", () => {
       DispatchedDateTime: "2026-01-01T00:00:00Z",
       MessageTitle: "message title",
       MessageBody: "message body",
+      Metadata: {
+        Sender: {
+          DisplayName: "UNS",
+        },
+      },
     },
   ];
 
