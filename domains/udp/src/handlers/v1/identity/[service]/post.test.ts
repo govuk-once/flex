@@ -16,12 +16,13 @@ vi.mock("@aws-sdk/client-kms", () => {
       send = mockKmsSend;
     },
     DecryptCommand: class {
-      constructor(public args: any) { }
+      constructor(public args: { CiphertextBlob?: Uint8Array }) {}
     },
   };
 });
 
 import * as nodeCrypto from "node:crypto";
+
 import { it } from "@flex/testing";
 import {
   createServiceId,
@@ -33,9 +34,8 @@ import {
   serviceName,
   userId,
 } from "@tests/fixtures";
-
 import * as jose from "jose";
-import { beforeAll, describe, expect, beforeEach } from "vitest";
+import { beforeAll, beforeEach, describe, expect } from "vitest";
 
 import { handler } from "./post";
 
@@ -128,30 +128,36 @@ describe("POST /v1/identity/:service", () => {
 
   const existingService = createServiceName("test-existing-service");
 
+  interface MockCommand {
+    args?: { CiphertextBlob?: Uint8Array };
+    CiphertextBlob?: Uint8Array;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Attach implementation directly to the shared mock reference
-    mockKmsSend.mockImplementation(async (command: any) => {
-      const ciphertextBlob = command.args?.CiphertextBlob || command.CiphertextBlob;
+    mockKmsSend.mockImplementation((command: MockCommand) => {
+      const ciphertextBlob =
+        command.args?.CiphertextBlob ?? command.CiphertextBlob;
 
       if (!ciphertextBlob) {
-        throw new Error("Mock Error: CiphertextBlob was missing in KMS DecryptCommand");
+        throw new Error(
+          "Mock Error: CiphertextBlob was missing in KMS DecryptCommand",
+        );
       }
 
-      // Decrypt the CEK using Node's native RSA cryptography
       const decryptedCek = nodeCrypto.privateDecrypt(
         {
           key: kmsPrivateKey,
           padding: nodeCrypto.constants.RSA_PKCS1_OAEP_PADDING,
           oaepHash: "sha1",
         },
-        Buffer.from(ciphertextBlob)
+        Buffer.from(ciphertextBlob),
       );
 
-      return {
+      return Promise.resolve({
         Plaintext: new Uint8Array(decryptedCek),
-      };
+      });
     });
   });
 
