@@ -80,15 +80,24 @@ beforeAll(async () => {
 
 const createMockDvlaJwt = async (
   linkingId: string,
-  options?: { isExpired?: boolean; invalidAlg?: boolean },
+  options?: {
+    isExpired?: boolean;
+    invalidAlg?: boolean;
+    omitLinkingId?: boolean;
+  },
 ) => {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const alg = options?.invalidAlg ? "RS256" : "PS256";
 
-  const jwtSigner = new jose.SignJWT({
+  const payload: Record<string, string> = {
     iss: "https://govuk-app-external-ui.dvla.gov.uk",
-    linking_id: linkingId,
-  })
+  };
+
+  if (!options?.omitLinkingId) {
+    payload.linking_id = linkingId;
+  }
+
+  const jwtSigner = new jose.SignJWT(payload)
     .setProtectedHeader({
       alg,
       typ: "JWT",
@@ -109,14 +118,16 @@ const createMockDvlaJwt = async (
 
 const createMockDvlaJwe = async (
   linkingId: string,
-  options?: { isExpired?: boolean; invalidAlg?: boolean },
+  options?: {
+    isExpired?: boolean;
+    invalidAlg?: boolean;
+    omitLinkingId?: boolean;
+  },
 ) => {
   const signedJwt = await createMockDvlaJwt(linkingId, options);
 
-  // Import the KMS mock public key created in beforeAll
   const publicKey = await jose.importSPKI(kmsPublicKeyPem, "RSA-OAEP");
 
-  // Generate and return the JWE wrapper
   return await new jose.CompactEncrypt(new TextEncoder().encode(signedJwt))
     .setProtectedHeader({ alg: "RSA-OAEP", enc: "A256GCM" })
     .encrypt(publicKey);
@@ -307,6 +318,103 @@ describe("POST /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(502);
+    });
+
+    it("returns 400 Bad Request when the JWE token format is invalid (not 5 parts)", async ({
+      sdk,
+    }) => {
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": "eyJhbGciOi.InvalidToken" },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("returns 400 Bad Request when essential JWE token blocks are empty", async ({
+      sdk,
+    }) => {
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": "part1.part2..part4.part5" },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("returns 500 Internal Server Error when KMS fails to return a decrypted Plaintext CEK", async ({
+      sdk,
+    }) => {
+      mockKmsSend.mockResolvedValueOnce({ Plaintext: undefined });
+
+      const validJwe = await createMockDvlaJwe(serviceId);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": validJwe },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(500);
+    });
+
+    it("returns 400 Bad Request when internal AES-GCM decryption fails (tampered payload)", async ({
+      sdk,
+    }) => {
+      const validJwe = await createMockDvlaJwe(serviceId);
+
+      const parts = validJwe.split(".");
+      parts[3] = "tampered_ciphertext_to_break_decryption_completely";
+      const tamperedJwe = parts.join(".");
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": tamperedJwe },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("returns 401 when the decrypted JWT is missing the linking_id claim", async ({
+      http,
+      sdk,
+    }) => {
+      const tokenWithoutLinkingId = await createMockDvlaJwe(serviceId, {
+        omitLinkingId: true,
+      });
+
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: { "x-linking-token": tokenWithoutLinkingId },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(401);
     });
   });
 

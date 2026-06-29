@@ -13,7 +13,7 @@ interface DvlaJwtPayload extends jose.JWTPayload {
 }
 
 const kmsClient = new KMSClient({
-  region: process.env.AWS_REGION || "eu-west-1",
+  region: process.env.AWS_REGION,
 });
 const KMS_KEY_ID = process.env.decyrptionKey;
 
