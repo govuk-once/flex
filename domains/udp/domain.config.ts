@@ -29,6 +29,11 @@ export const { config, route, routeContext } = domain({
       scope: "stage",
     },
     encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
+    decyrptionKey: {
+      type: "kms",
+      path: "/third-party-encryption-key-test",
+      scope: "stage",
+    },
     udpNotificationSecret: {
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
@@ -123,7 +128,10 @@ export const { config, route, routeContext } = domain({
         POST: {
           public: {
             name: "create-service-identity-link",
-            resources: ["privateGatewayUrl"],
+            resources: [
+              "privateGatewayUrl",
+              "decyrptionKey",
+            ],
             integrations: [
               "udpCreateIdentity",
               "udpDeleteIdentity",
