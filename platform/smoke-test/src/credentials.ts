@@ -41,14 +41,15 @@ async function getProductionCredentials(): Promise<Credentials> {
     loadConfig("production"),
     loadGcpConfig("production"),
   ]);
-  const [accessToken, attestationToken] = await Promise.all([
-    getAccessToken(toAuthConfig(config)),
-    getAttestationToken(
-      gcpConfig.gcpCredentialConfig,
-      gcpConfig.gcpServiceAccountEmail,
-      gcpConfig.firebaseAppId,
-    ),
-  ]);
+  const attestationToken = await getAttestationToken(
+    gcpConfig.gcpCredentialConfig,
+    gcpConfig.gcpServiceAccountEmail,
+    gcpConfig.firebaseAppId,
+  );
+  const accessToken = await getAccessToken({
+    ...toAuthConfig(config),
+    attestationToken,
+  });
   return { accessToken, attestationToken, apiUrl: config.apiUrl };
 }
 

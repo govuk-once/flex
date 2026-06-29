@@ -105,7 +105,12 @@ export async function getAccessToken(
 
   const response = await fetch(`https://${config.tokenUrl}/oauth2/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...(config.attestationToken && {
+        "x-attestation-token": config.attestationToken,
+      }),
+    },
     body: querystring.stringify({
       grant_type: "authorization_code",
       client_id: config.clientId,
