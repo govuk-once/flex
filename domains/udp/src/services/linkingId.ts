@@ -130,7 +130,7 @@ async function verifyJwtAndExtractLinkingId(
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
     const { payload } = await jose.jwtVerify<DvlaJwtPayload>(signedJwt, JWKS, {
-      currentDate: oneYearAgo,
+      currentDate: new Date(), // oneYearAgo,
       clockTolerance: 0,
     });
 

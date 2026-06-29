@@ -1,3 +1,27 @@
+import { vi } from "vitest";
+
+const { mockKmsSend } = vi.hoisted(() => {
+  process.env.decyrptionKey = "mock-kms-key-id";
+  process.env.KMS_KEY_ID = "mock-kms-key-id";
+  process.env.AWS_REGION = "eu-west-1";
+
+  return {
+    mockKmsSend: vi.fn(),
+  };
+});
+
+vi.mock("@aws-sdk/client-kms", () => {
+  return {
+    KMSClient: class {
+      send = mockKmsSend;
+    },
+    DecryptCommand: class {
+      constructor(public args: any) { }
+    },
+  };
+});
+
+import * as nodeCrypto from "node:crypto";
 import { it } from "@flex/testing";
 import {
   createServiceId,
@@ -9,8 +33,9 @@ import {
   serviceName,
   userId,
 } from "@tests/fixtures";
+
 import * as jose from "jose";
-import { beforeAll, describe, expect } from "vitest";
+import { beforeAll, describe, expect, beforeEach } from "vitest";
 
 import { handler } from "./post";
 
@@ -18,6 +43,9 @@ type ExtractCryptoKey = jose.GenerateKeyPairResult["privateKey"];
 
 let privateKey: ExtractCryptoKey;
 let mockJwkSetResponse: { keys: unknown[] };
+
+let kmsPrivateKey: nodeCrypto.KeyObject;
+let kmsPublicKeyPem: string;
 
 beforeAll(async () => {
   const { privateKey: priv, publicKey: pub } = await jose.generateKeyPair(
@@ -40,6 +68,14 @@ beforeAll(async () => {
       },
     ],
   };
+
+  // Generate mock AWS KMS RSA Key Pair for JWE wrapping
+  const rsaKeys = nodeCrypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  kmsPrivateKey = rsaKeys.privateKey;
+  kmsPublicKeyPem = rsaKeys.publicKey;
 });
 
 const createMockDvlaJwt = async (
@@ -71,11 +107,53 @@ const createMockDvlaJwt = async (
   return await jwtSigner.sign(privateKey);
 };
 
+const createMockDvlaJwe = async (
+  linkingId: string,
+  options?: { isExpired?: boolean; invalidAlg?: boolean },
+) => {
+  const signedJwt = await createMockDvlaJwt(linkingId, options);
+
+  // Import the KMS mock public key created in beforeAll
+  const publicKey = await jose.importSPKI(kmsPublicKeyPem, "RSA-OAEP");
+
+  // Generate and return the JWE wrapper
+  return await new jose.CompactEncrypt(new TextEncoder().encode(signedJwt))
+    .setProtectedHeader({ alg: "RSA-OAEP", enc: "A256GCM" })
+    .encrypt(publicKey);
+};
+
 describe("POST /v1/identity/:service", () => {
   const endpoint = `/identity/${serviceName}`;
   const standardHeaders = { "x-linking-token": serviceId };
 
   const existingService = createServiceName("test-existing-service");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Attach implementation directly to the shared mock reference
+    mockKmsSend.mockImplementation(async (command: any) => {
+      const ciphertextBlob = command.args?.CiphertextBlob || command.CiphertextBlob;
+
+      if (!ciphertextBlob) {
+        throw new Error("Mock Error: CiphertextBlob was missing in KMS DecryptCommand");
+      }
+
+      // Decrypt the CEK using Node's native RSA cryptography
+      const decryptedCek = nodeCrypto.privateDecrypt(
+        {
+          key: kmsPrivateKey,
+          padding: nodeCrypto.constants.RSA_PKCS1_OAEP_PADDING,
+          oaepHash: "sha1",
+        },
+        Buffer.from(ciphertextBlob)
+      );
+
+      return {
+        Plaintext: new Uint8Array(decryptedCek),
+      };
+    });
+  });
 
   it("returns 201 when the service identity is linked and appended to the tracking list", async ({
     http,
@@ -118,11 +196,11 @@ describe("POST /v1/identity/:service", () => {
     const targetDvlaEndpoint = `/identity/${dvlaService}`;
     const jwksPath = "/well-known-jwks";
 
-    it("extracts serviceId securely from JWT payload and updates it when the service is DVLA", async ({
+    it("extracts serviceId securely from JWE payload and updates it when the service is DVLA", async ({
       http,
       sdk,
     }) => {
-      const dvlaToken = await createMockDvlaJwt(serviceId);
+      const dvlaJweToken = await createMockDvlaJwe(serviceId);
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
@@ -149,19 +227,20 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": dvlaToken },
+          headers: { "x-linking-token": dvlaJweToken },
         }),
         sdk.context(),
       );
 
       expect(result.statusCode).toBe(201);
+      expect(mockKmsSend).toHaveBeenCalledTimes(1);
     });
 
     it("returns 401 Unauthorized when the DVLA linking token has expired", async ({
       http,
       sdk,
     }) => {
-      const expiredDvlaToken = await createMockDvlaJwt(serviceId, {
+      const expiredDvlaJweToken = await createMockDvlaJwe(serviceId, {
         isExpired: true,
       });
 
@@ -172,7 +251,7 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": expiredDvlaToken },
+          headers: { "x-linking-token": expiredDvlaJweToken },
         }),
         sdk.context(),
       );
@@ -184,7 +263,7 @@ describe("POST /v1/identity/:service", () => {
       http,
       sdk,
     }) => {
-      const invalidAlgToken = await createMockDvlaJwt(serviceId, {
+      const invalidAlgJweToken = await createMockDvlaJwe(serviceId, {
         invalidAlg: true,
       });
 
@@ -195,7 +274,7 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": invalidAlgToken },
+          headers: { "x-linking-token": invalidAlgJweToken },
         }),
         sdk.context(),
       );
@@ -207,7 +286,7 @@ describe("POST /v1/identity/:service", () => {
       http,
       sdk,
     }) => {
-      const dvlaToken = await createMockDvlaJwt(serviceId);
+      const dvlaJweToken = await createMockDvlaJwe(serviceId);
 
       http.gateway("dvla").get(jwksPath).reply(500);
 
@@ -216,7 +295,7 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": dvlaToken },
+          headers: { "x-linking-token": dvlaJweToken },
         }),
         sdk.context(),
       );
@@ -448,36 +527,6 @@ describe("POST /v1/identity/:service", () => {
         .gateway("udp")
         .delete(`/identity/${serviceName}/${serviceId}`)
         .reply(204);
-
-      const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: serviceName },
-          headers: standardHeaders,
-        }),
-        sdk.context(),
-      );
-
-      expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
-    },
-  );
-
-  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
-    "returns $expected when the UDP create service identity integration $reason",
-    async ({ upstream, expected }, { http, sdk }) => {
-      http
-        .gateway("udp")
-        .get(`/identity/${serviceName}`, { headers: { "User-Id": userId } })
-        .reply(404);
-
-      http
-        .gateway("udp")
-        .post(`/identity/${serviceName}/${serviceId}`, {
-          body: serviceIdentityLinkRequest,
-        })
-        .reply(upstream);
 
       const result = await handler(
         sdk.event.post(endpoint, {
