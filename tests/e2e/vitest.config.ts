@@ -5,7 +5,7 @@ export default mergeConfig(
   config,
   defineConfig({
     test: {
-      globalSetup: "./src/setup.global.ts",
+      globalSetup: "@flex/testing/e2e/setup",
       testTimeout: 40_000,
     },
   }),

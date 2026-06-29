@@ -10,5 +10,11 @@
       "@utils/*": ["./src/utils/*"]
     }
   },
-  "include": ["src/**/*.ts", "vitest.config.ts", "domain.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "e2e/**/*.ts",
+    "vitest.config.ts",
+    "vitest.e2e.config.ts",
+    "domain.config.ts"
+  ]
 }

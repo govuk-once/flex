@@ -6,7 +6,7 @@ import createHttpError from "http-errors";
 import status from "http-status";
 
 export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
-  const { auth, pathParams, integrations } = ctx;
+  const { auth, pathParams } = ctx;
   const service = pathParams.service.toLowerCase();
 
   // TODO: SDK auth alias
@@ -17,14 +17,15 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
 
   /**
    * NOTE:
-   * For now ignoring the response from DVLA as they are just returning 404
+   * - Commenting out for now as causing issues due to deleting the linking id
+   *   on DVLA side
    */
-  if (service === "dvla") {
-    await integrations.dvlaUnlinkUser({
-      body: {},
-      path: `/${identity.serviceId}`,
-    });
-  }
+  // if (service === "dvla") {
+  //   await integrations.dvlaUnlinkUser({
+  //     body: {},
+  //     path: `/${identity.serviceId}`,
+  //   });
+  // }
 
   await deleteOrchestrateIdentityUnlink({
     ctx,

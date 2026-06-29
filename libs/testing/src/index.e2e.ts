@@ -1,5 +1,6 @@
 export type { E2EEnv } from "./config/env";
 export { e2eEnvSchema } from "./config/env";
+export { it } from "./e2e/it";
 export { extendIt } from "./extend/it.e2e";
 export type { ApiResponse } from "./fixtures/api";
 export { createApi } from "./fixtures/api";
@@ -11,5 +12,7 @@ export {
 } from "./fixtures/StubTokenGenerator";
 export {
   type BaseTokenGenerator,
+  createTokenGeneratorFromConfig,
   getTokenGenerator,
+  type JwtAuthConfig,
 } from "./fixtures/TokenGenerator";

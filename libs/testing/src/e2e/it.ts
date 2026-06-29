@@ -1,9 +1,8 @@
-import type { ApiResponse } from "@flex/testing/e2e";
-import { extendIt } from "@flex/testing/e2e";
-import type { GetUserResponse } from "@flex/udp-domain";
+import { extendIt } from "../extend/it.e2e";
+import type { ApiResponse } from "../fixtures/api";
 
 interface UdpFixtures {
-  udpUser: GetUserResponse;
+  udpUser: unknown;
   withCleanIdentity: (service: string) => Promise<void>;
   withIdentityLink: (
     service: string,
@@ -13,13 +12,10 @@ interface UdpFixtures {
 
 export const it = extendIt().extend<UdpFixtures>({
   udpUser: async ({ cloudfront, authHeader }, use) => {
-    const result = await cloudfront.client.get<GetUserResponse>(
-      "/udp/v1/users/me",
-      {
-        headers: authHeader,
-      },
-    );
-    await use(result.body as GetUserResponse);
+    const result = await cloudfront.client.get("/udp/v1/users/me", {
+      headers: authHeader,
+    });
+    await use(result.body);
   },
 
   withCleanIdentity: async ({ cloudfront, udpUser: _, authHeader }, use) => {

@@ -4,8 +4,10 @@ packages:
   - platform/domains/*
   - platform/infra/*
   - platform/shared
+  - platform/smoke-test
   - tests/*
   - tests/performance/*
+  - scripts
 
 minimumReleaseAge: 2880
 
@@ -16,6 +18,7 @@ overrides:
   "tar": "7.5.13"
   "protobufjs": "^8.0.1"
   "minimatch": "^10.0.1"
+  "engine.io-client": "6.6.6"
 
 allowBuilds:
   "@playwright/browser-chromium": true

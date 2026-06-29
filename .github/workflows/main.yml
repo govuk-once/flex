@@ -127,6 +127,16 @@ jobs:
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
+  moduleE2EDev:
+    name: Module E2E (Development)
+    needs: deployDev
+    uses: ./.github/workflows/_moduleE2E.yml
+    with:
+      AWS_REGION: "eu-west-2"
+      STAGE: "development"
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
   deployStaging:
     name: Deploy to Staging
     needs: deployDev
@@ -146,6 +156,16 @@ jobs:
       VERSION: ${{ needs.release.outputs.version }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  moduleE2EStaging:
+    name: Module E2E (Staging)
+    needs: deployStaging
+    uses: ./.github/workflows/_moduleE2E.yml
+    with:
+      AWS_REGION: "eu-west-2"
+      STAGE: "staging"
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
 
   deployProd:
     name: Deploy to Production

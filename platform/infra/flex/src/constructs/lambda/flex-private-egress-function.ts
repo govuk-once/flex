@@ -15,6 +15,7 @@ const { stage } = getEnvConfig();
 interface FlexPrivateEgressFunctionProps extends FlexFunctionProps {
   vpc: IVpc;
   privateEgressSg: ISecurityGroup;
+  disableDefaultAlarms?: boolean;
 }
 
 export class FlexPrivateEgressFunction extends Construct {
@@ -28,6 +29,7 @@ export class FlexPrivateEgressFunction extends Construct {
       privateEgressSg,
       criticalAction,
       warningAction,
+      disableDefaultAlarms,
       ...functionProps
     }: FlexPrivateEgressFunctionProps,
   ) {
@@ -37,11 +39,13 @@ export class FlexPrivateEgressFunction extends Construct {
       retention: RetentionDays.ONE_YEAR,
     });
 
+    const encryptionKey = resolveEncryptionKey(this);
+
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       ...functionProps,
-      environmentEncryption: resolveEncryptionKey(this),
+      environmentEncryption: encryptionKey,
       environment: {
         ...functionProps.environment,
         FLEX_ENVIRONMENT: stage,
@@ -54,12 +58,16 @@ export class FlexPrivateEgressFunction extends Construct {
       },
     });
 
-    new LambdaAlarms(this, "Alarm", {
-      fn: this.function,
-      alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
-      criticalAction,
-      warningAction,
-    });
+    encryptionKey.grantDecrypt(this.function);
+
+    if (!disableDefaultAlarms) {
+      new LambdaAlarms(this, "Alarm", {
+        fn: this.function,
+        alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
+        criticalAction,
+        warningAction,
+      });
+    }
 
     if (functionProps.domain) {
       Tags.of(this.function).add("ResourceOwner", functionProps.domain, {

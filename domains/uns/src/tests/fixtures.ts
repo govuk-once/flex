@@ -26,6 +26,11 @@ export const createNotification = (overrides?: DeepPartial<Notification>) =>
       DispatchedDateTime: timestamp,
       MessageTitle: "message title",
       MessageBody: "message body",
+      Metadata: {
+        Sender: {
+          DisplayName: "UNS",
+        },
+      },
     },
     overrides,
   );

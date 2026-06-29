@@ -1,6 +1,5 @@
+import { it } from "@flex/testing/e2e";
 import { describe, expect, inject } from "vitest";
-
-import { it } from "../extend/it";
 
 describe("authentication", () => {
   describe("CloudFront viewer-request", () => {
