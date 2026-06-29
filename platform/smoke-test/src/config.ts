@@ -6,13 +6,12 @@ const UserSecretSchema = z.object({
   email: z.email(),
   password: z.string(),
   totp: z.string(),
-  clientSecret: z.string(),
 });
 
 export interface SmokeTestConfig {
   authUrl: string;
+  tokenUrl: string;
   clientId: string;
-  clientSecret: string;
   redirectUri: string;
   oneLoginEnvironment: string;
   apiUrl: string;
@@ -36,26 +35,33 @@ export async function loadApiUrl(): Promise<string> {
 export async function loadConfig(env: string): Promise<SmokeTestConfig> {
   const paramPrefix = `/${env}/flex-param`;
 
-  const [authUrl, clientId, oneLoginEnvironment, apiUrl, userSecretRaw] =
-    await Promise.all([
-      getParameter(`${paramPrefix}/auth/auth-url`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/client-id`, { forceFetch: true }),
-      getParameter(`${paramPrefix}/auth/one-login-environment`, {
-        forceFetch: true,
-      }),
-      getParameter(`/infra/dns/hostedzonename`, { forceFetch: true }),
-      getSecret(`/${env}/flex-secret/smoke-test/user`, {
-        transform: "json",
-        forceFetch: true,
-      }),
-    ]);
+  const [
+    authUrl,
+    tokenUrl,
+    clientId,
+    oneLoginEnvironment,
+    apiUrl,
+    userSecretRaw,
+  ] = await Promise.all([
+    getParameter(`${paramPrefix}/auth/auth-url`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/token-url`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/client-id`, { forceFetch: true }),
+    getParameter(`${paramPrefix}/auth/one-login-environment`, {
+      forceFetch: true,
+    }),
+    getParameter(`/infra/dns/hostedzonename`, { forceFetch: true }),
+    getSecret(`/${env}/flex-secret/smoke-test/user`, {
+      transform: "json",
+      forceFetch: true,
+    }),
+  ]);
 
   const user = UserSecretSchema.parse(userSecretRaw);
 
   return {
     authUrl: authUrl as string,
+    tokenUrl: tokenUrl as string,
     clientId: clientId as string,
-    clientSecret: user.clientSecret,
     redirectUri: "govuk://govuk/login-auth-callback",
     oneLoginEnvironment: oneLoginEnvironment as string,
     apiUrl: apiUrl as string,

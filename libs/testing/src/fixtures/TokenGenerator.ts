@@ -14,17 +14,19 @@ export interface BaseTokenGenerator {
   getToken(): Promise<string>;
 }
 
-export interface OneLoginAuthConfig {
+export interface JwtAuthConfig {
   email: string;
   password: string;
   totp: string;
   clientId: string;
-  clientSecret: string;
   authUrl: string;
+  tokenUrl: string;
   redirectUri: string;
   oneLoginEnvironment: string;
   attestationToken?: string;
 }
+
+export type OneLoginAuthConfig = JwtAuthConfig;
 
 export async function getAccessToken(
   config: OneLoginAuthConfig,
@@ -101,13 +103,12 @@ export async function getAccessToken(
   const code = new URL(codeRedirectUrl).searchParams.get("code");
   if (!code) throw new Error("No code found in redirect URL");
 
-  const response = await fetch(`https://${config.authUrl}/oauth2/token`, {
+  const response = await fetch(`https://${config.tokenUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: querystring.stringify({
       grant_type: "authorization_code",
       client_id: config.clientId,
-      client_secret: config.clientSecret,
       code,
       redirect_uri: config.redirectUri,
       code_verifier,
@@ -141,40 +142,34 @@ const UserSecretSchema = z.object({
   totp: z.string(),
 });
 
-const ClientSecretSchema = z.object({
-  clientSecret: z.string(),
-});
-
 export async function getTokenGenerator(
   stage: "staging" | "production",
 ): Promise<TokenGenerator> {
-  const [
-    userSecretRaw,
-    clientSecretRaw,
-    clientId,
-    oneLoginEnvironment,
-    authUrl,
-  ] = await Promise.all([
-    getSecret(`/${stage}/flex-secret/e2e/test_user`, { transform: "json" }),
-    getSecret(`/${stage}/flex-secret/auth/client_secret`, {
-      transform: "json",
-    }),
-    getParameter(`/${stage}/flex-param/auth/client-id`),
-    getParameter(`/${stage}/flex-param/auth/one-login-environment`),
-    getParameter(`/${stage}/flex-param/auth/auth-url`),
-  ]);
+  const [userSecretRaw, clientId, oneLoginEnvironment, authUrl, tokenUrl] =
+    await Promise.all([
+      getSecret(`/${stage}/flex-secret/e2e/test_user`, { transform: "json" }),
+      getParameter(`/${stage}/flex-param/auth/client-id`),
+      getParameter(`/${stage}/flex-param/auth/one-login-environment`),
+      getParameter(`/${stage}/flex-param/auth/auth-url`),
+      getParameter(`/${stage}/flex-param/auth/token-url`),
+    ]);
 
   const userSecret = UserSecretSchema.parse(userSecretRaw);
-  const clientSecret = ClientSecretSchema.parse(clientSecretRaw);
 
   return new TokenGenerator({
     email: userSecret.email,
     password: userSecret.password,
     totp: userSecret.totp,
     clientId: clientId as string,
-    clientSecret: clientSecret.clientSecret,
     oneLoginEnvironment: oneLoginEnvironment as string,
     authUrl: authUrl as string,
+    tokenUrl: tokenUrl as string,
     redirectUri: "govuk://govuk/login-auth-callback",
   });
+}
+
+export function createTokenGeneratorFromConfig(
+  config: JwtAuthConfig,
+): TokenGenerator {
+  return new TokenGenerator(config);
 }

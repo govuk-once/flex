@@ -12,7 +12,7 @@ export {
 } from "./fixtures/StubTokenGenerator";
 export {
   type BaseTokenGenerator,
-  getAccessToken,
+  createTokenGeneratorFromConfig,
   getTokenGenerator,
-  type OneLoginAuthConfig,
+  type JwtAuthConfig,
 } from "./fixtures/TokenGenerator";
