@@ -45,7 +45,6 @@ export const handler: MiddyfiedHandler<
       const result = await execute(event, remoteClient);
 
       if (!result.ok) {
-        console.log(JSON.stringify(result.error.body))
         return mapRemoteErrorToGatewayResponse(result.error);
       }
 

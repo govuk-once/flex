@@ -31,7 +31,7 @@ export const { config, route, routeContext } = domain({
     encryptionKey: { type: "kms", path: "/flex-secret/encryption-key" },
     decyrptionKey: {
       type: "kms",
-      path: "/third-party-encryption-key-test",
+      path: "/third-party-encryption-key",
       scope: "stage",
     },
     udpNotificationSecret: {
