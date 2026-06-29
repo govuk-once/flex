@@ -128,10 +128,7 @@ export const { config, route, routeContext } = domain({
         POST: {
           public: {
             name: "create-service-identity-link",
-            resources: [
-              "privateGatewayUrl",
-              "decyrptionKey",
-            ],
+            resources: ["privateGatewayUrl", "decyrptionKey"],
             integrations: [
               "udpCreateIdentity",
               "udpDeleteIdentity",
