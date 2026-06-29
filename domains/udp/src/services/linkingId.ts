@@ -1,8 +1,3 @@
-/**
- * Note I have created a test:
- * - kms vpc endpoint needs deleting
- * - test kms key
- */
 import { routeContext } from "@domain";
 import { JwkSet } from "@schemas/wellKnownJwks";
 import createHttpError from "http-errors";
@@ -65,10 +60,10 @@ async function decryptJweToken(jweToken: string, ctx: PostRouteContext): Promise
     const ciphertext = Buffer.from(ciphertextB64, "base64url");
     const tag = Buffer.from(tagB64, "base64url");
 
-    // In Web Crypto API, the authentication tag must be appended to the end of the ciphertext buffer
+    /** In Web Crypto API, the authentication tag must be appended to the end of the ciphertext buffer */
     const encryptedDataWithTag = Buffer.concat([ciphertext, tag]);
 
-    // In the JWE specification, the ASCII representation of the base64url protected header acts as the AAD
+    /** In the JWE specification, the ASCII representation of the base64url protected header acts as the AAD */
     const additionalAuthenticatedData = Buffer.from(protectedHeaderB64, "ascii");
 
     ctx.logger.info("Decrypting internal JWE payload via native AES-256-GCM...");
@@ -103,7 +98,10 @@ async function verifyJwtAndExtractLinkingId(
   try {
     const JWKS = jose.createLocalJWKSet(jwkSet);
 
-    // TODO remove the below for actually PR back to present date
+    /**
+     * TODO
+     *  - remove the below for actually PR back to present date
+     */
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
