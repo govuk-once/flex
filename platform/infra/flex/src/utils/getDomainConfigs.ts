@@ -13,16 +13,16 @@ async function loadDomainConfig<T extends z.ZodType>(
   schema: T,
   domain: string,
   filename?: string,
-): Promise<z.infer<T> | undefined> {
+) {
+  const filepath = filename ? path.join(domain, filename) : domain;
+
   try {
-    const filepath = filename ? path.join(domain, filename) : domain;
-
     const file = await jiti.import(filepath);
-    const parseResult = schema.safeParse(file);
-
-    return parseResult.success ? parseResult.data : undefined;
-  } catch {
-    return;
+    return schema.parse(file);
+  } catch (err: unknown) {
+    throw new Error(`Failed to parse domain config: ${filepath}`, {
+      cause: err,
+    });
   }
 }
 
@@ -40,9 +40,6 @@ export async function getDomainConfigs() {
   for await (const entry of glob("*/domain.config.ts", { cwd: domainsRoot })) {
     const absolutePath = path.join(domainsRoot, entry);
     const config = await loadDomainConfig(configSchema, absolutePath);
-
-    if (!config) continue;
-
     domains.push(config.config);
   }
 

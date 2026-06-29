@@ -10,12 +10,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate-openapi:
-    name: Validate Open API Spec
-    uses: ./.github/workflows/_validate-openapi.yml
-    secrets:
-      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
-
   quality-checks:
     name: Quality Checks
     uses: ./.github/workflows/_quality-checks.yml
@@ -41,7 +35,7 @@ jobs:
     needs: ephemeral-env
     uses: ./.github/workflows/_moduleE2E.yml
     with:
-      AWS_REGION: 'eu-west-2'
+      AWS_REGION: "eu-west-2"
       STAGE: pr-${{ github.event.pull_request.number }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

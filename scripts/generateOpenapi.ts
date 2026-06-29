@@ -119,7 +119,7 @@ function buildOperation(
   return operation;
 }
 
-function buildPaths(config: DomainConfig) {
+function buildPaths(name: string, config: DomainConfig) {
   const paths: ZodOpenApiPathsObject = {};
 
   for (const [version, routes] of Object.entries(config.routes ?? {})) {
@@ -131,7 +131,7 @@ function buildPaths(config: DomainConfig) {
         const route = byMethod[method]?.private ?? byMethod[method]?.public;
         if (!route) continue;
 
-        const openApiPath = `/${version}${toOpenApiPath(sdkPath)}`;
+        const openApiPath = `/app/${name}/${version}${toOpenApiPath(sdkPath)}`;
         paths[openApiPath] ??= {};
         paths[openApiPath][method.toLowerCase() as Lowercase<HttpMethod>] =
           buildOperation(method, sdkPath, openApiPath, route);
@@ -149,7 +149,7 @@ function buildDomainDocument(name: string, config: DomainConfig) {
       title: `${name} domain`,
       version: "1.0.0",
     },
-    paths: buildPaths(config),
+    paths: buildPaths(name, config),
   });
 }
 
