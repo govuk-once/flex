@@ -83,3 +83,7 @@ export type Json =
 export type ReadonlyRecord<Key extends PropertyKey, Value> = Readonly<
   Record<Key, Value>
 >;
+
+export type Prettify<T> = {
+  [Key in keyof T]: T[Key];
+} & {};

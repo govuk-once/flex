@@ -6,7 +6,8 @@
       "@config/*": ["./src/config/*"],
       "@handler/*": ["./src/handler/*"],
       "@tests/fixtures": ["./src/tests/fixtures.ts"],
-      "@types": ["./src/types.ts"],
+      "@types": ["./src/types/index.ts"],
+      "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"]
     }
   },

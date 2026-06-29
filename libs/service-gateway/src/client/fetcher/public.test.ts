@@ -1,14 +1,13 @@
+import { flexFetch } from "@flex/flex-fetch";
 import { describe, expect, it, vi } from "vitest";
 
-import { createPublicFetch } from "./fetcher";
+import { createPublicFetch } from "./public";
 
 vi.mock("@flex/flex-fetch", () => ({
   flexFetch: vi
     .fn()
     .mockReturnValue({ request: Promise.resolve(new Response()) }),
 }));
-
-import { flexFetch } from "@flex/flex-fetch";
 
 describe("createPublicFetch", () => {
   it("prepends baseUrl for relative URLs", () => {
