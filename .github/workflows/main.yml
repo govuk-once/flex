@@ -30,7 +30,7 @@ jobs:
       id-token: write
     outputs:
       released: ${{ steps.semantic.outputs.released }}
-      version: ${{ steps.semantic.outputs.version }}
+      version: ${{ steps.version.outputs.value }}
       type: ${{ steps.semantic.outputs.type }}
     steps:
       - name: Checkout repo
@@ -56,9 +56,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm run semantic:release
 
+      # Always emit a version for downstream deploy notifications: the version
+      # just released, else the latest existing tag, else the short commit SHA.
+      - name: Resolve deployed version
+        id: version
+        env:
+          RELEASED_VERSION: ${{ steps.semantic.outputs.version }}
+        run: |
+          VERSION="$RELEASED_VERSION"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
+          fi
+          if [ -z "$VERSION" ]; then
+            VERSION="$(git rev-parse --short HEAD)"
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Version
         if: steps.semantic.outputs.released == 'true'
-        run: echo "Released version ${{ steps.semantic.outputs.version }} (${{ steps.semantic.outputs.type }})"
+        run: echo "Released version ${{ steps.version.outputs.value }} (${{ steps.semantic.outputs.type }})"
 
       - name: Configure AWS credentials
         if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
@@ -131,6 +147,16 @@ jobs:
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
 
+  notifyStaging:
+    name: Notify Staging Deployment
+    needs: [release, deployStaging]
+    uses: ./.github/workflows/_notify-deployment.yml
+    with:
+      ENVIRONMENT: staging
+      VERSION: ${{ needs.release.outputs.version }}
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
   moduleE2EStaging:
     name: Module E2E (Staging)
     needs: deployStaging
@@ -150,3 +176,13 @@ jobs:
       STAGE: "production"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.PROD_DEPLOYMENT_ROLE }}
+
+  notifyProd:
+    name: Notify Production Deployment
+    needs: [release, deployProd]
+    uses: ./.github/workflows/_notify-deployment.yml
+    with:
+      ENVIRONMENT: production
+      VERSION: ${{ needs.release.outputs.version }}
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

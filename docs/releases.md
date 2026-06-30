@@ -63,11 +63,19 @@ The configuration lives in [`.releaserc.json`](/.releaserc.json). No CHANGELOG.m
 
 ## Slack Notifications
 
-The `#govuk-once-flex-release` channel is notified for **major and minor** releases only. Patch releases are still tagged and released on GitHub but are deliberately silent.
+Slack is notified for **major and minor** releases only. Patch releases are still tagged and released on GitHub but are deliberately silent.
 
 The notification contains the version, the release type, a summary of the release notes and a link to the GitHub release. Delivery reuses the existing AWS Chatbot (Amazon Q) mechanism used for alerts: the pipeline publishes a message to the `flex-release-notifications` SNS topic in the development account, which AWS Chatbot forwards to Slack. The topic and channel configuration are defined in the [core stack](/platform/infra/flex/src/stacks/core/stack.ts) and only exist in the development environment.
 
+The notification is sent to every channel listed in the `releaseSlackChannelId` SSM parameter (`/development/flex-param/monitoring/releaseSlackChannelId`), which holds a comma-separated list of Slack channel IDs. The pipeline publishes once to the topic, and one AWS Chatbot configuration per channel fans the message out, so adding or removing a channel is a change to that parameter only, no code change. The default channel is `#govuk-once-flex-release`.
+
 A failed Slack notification never blocks deployment (the step is `continue-on-error`).
+
+### Deployment notifications
+
+After the **staging** and **production** environments are deployed, a separate notification is sent to the same channels stating the version and the environment, for example "Flex deployed: v1.2.0 to staging". Development deployments are not announced. Unlike release notifications, these are sent for every staging and production deployment, not just major and minor, so the path to production is visible. The version reported is the one just released, or, when a merge produced no new release, the latest existing tag.
+
+These notifications reuse the same `flex-release-notifications` topic, so they reach the same channels. They are published from the development account by the [`_notify-deployment.yml`](/.github/workflows/_notify-deployment.yml) reusable workflow, which runs after the staging and production deploy stages in [`main.yml`](/.github/workflows/main.yml). Publishing from the development account avoids cross-account access to the topic.
 
 ---
 

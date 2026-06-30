@@ -1,0 +1,58 @@
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        description: "Environment that was deployed (e.g. development, staging, production)"
+        required: true
+        type: string
+      VERSION:
+        description: "Version that was deployed"
+        required: true
+        type: string
+    secrets:
+      ROLE_TO_ASSUME:
+        description: "Dev-account role; the release topic lives in the development account"
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  notify:
+    name: Notify deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: "eu-west-2"
+          role-session-name: ${{ github.run_id }}
+
+      - name: Publish deployment notification
+        # A failed notification must not fail the pipeline
+        continue-on-error: true
+        env:
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          VERSION: ${{ inputs.VERSION }}
+        run: |
+          TOPIC_ARN=$(aws ssm get-parameter \
+            --name "/development/flex/topic/release-notifications" \
+            --query "Parameter.Value" --output text)
+
+          MESSAGE=$(jq -n \
+            --arg title "Flex deployed: v${VERSION} to ${ENVIRONMENT}" \
+            --arg desc "Version *v${VERSION}* has been deployed to *${ENVIRONMENT}*." \
+            '{
+              version: "1.0",
+              source: "custom",
+              content: {
+                textType: "client-markdown",
+                title: $title,
+                description: $desc
+              }
+            }')
+
+          aws sns publish --topic-arn "$TOPIC_ARN" --message "$MESSAGE"
