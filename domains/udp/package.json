@@ -14,6 +14,7 @@
     "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-kms": "3.1060.0",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
