@@ -1,3 +1,5 @@
+import { webcrypto as crypto } from "node:crypto";
+
 import { DecryptCommand, KMSClient } from "@aws-sdk/client-kms";
 import { routeContext } from "@domain";
 import { JwkSet } from "@schemas/wellKnownJwks";
@@ -44,6 +46,11 @@ async function decryptJweToken(
       );
     }
 
+    /**
+     * NOTE: We manually split and decrypt the JWE here instead of using `jose.compactDecrypt`
+     * because standard libraries do not natively support passing an asymmetric AWS KMS client
+     * for the initial Content Encryption Key (CEK) decryption.
+     */
     ctx.logger.info("Extracting and decrypting JWE CEK via AWS KMS...");
 
     /** Send the encrypted CEK segment to AWS KMS to decrypt via RSA-OAEP (SHA-1) */
@@ -142,7 +149,9 @@ export async function extractServiceId(
   if (service.toLowerCase() === "dvla") {
     const decryptedSignedJwt = await decryptJweToken(token, ctx);
 
+    ctx.logger.info("Fetching JWKS from DVLA integration...");
     const result = await ctx.integrations.dvlaGetWellKnownJwk({});
+
     if (!result.ok) {
       ctx.logger.error("Failed to fetch DVLA well-known JWKs", {
         error: result.error,
