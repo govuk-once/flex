@@ -66,7 +66,10 @@ export async function getAccessToken(
   const csrfToken = $('input[name="_csrf"]').val() as string;
   if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
 
-  const oneLoginDomain = `signin.${config.oneLoginEnvironment}.account.gov.uk`;
+  const oneLoginDomain =
+    config.oneLoginEnvironment === "production"
+      ? "signin.account.gov.uk"
+      : `signin.${config.oneLoginEnvironment}.account.gov.uk`;
   const post = (path: string, data: object) =>
     client.post(
       `https://${oneLoginDomain}${path}`,
