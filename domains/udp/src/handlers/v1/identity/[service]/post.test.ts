@@ -1,4 +1,20 @@
-import { vi } from "vitest";
+import * as nodeCrypto from "node:crypto";
+
+import { it } from "@flex/testing";
+import {
+  createServiceId,
+  createServiceIdentityLink,
+  createServiceName,
+  serviceId,
+  serviceIdentityLink,
+  serviceIdentityLinkRequest,
+  serviceName,
+  userId,
+} from "@tests/fixtures";
+import * as jose from "jose";
+import { beforeAll, beforeEach, describe, expect, vi } from "vitest";
+
+import { handler } from "./post";
 
 const { mockKmsSend } = vi.hoisted(() => {
   process.env.decyrptionKey = "mock-kms-key-id";
@@ -20,24 +36,6 @@ vi.mock("@aws-sdk/client-kms", () => {
     },
   };
 });
-
-import * as nodeCrypto from "node:crypto";
-
-import { it } from "@flex/testing";
-import {
-  createServiceId,
-  createServiceIdentityLink,
-  createServiceName,
-  serviceId,
-  serviceIdentityLink,
-  serviceIdentityLinkRequest,
-  serviceName,
-  userId,
-} from "@tests/fixtures";
-import * as jose from "jose";
-import { beforeAll, beforeEach, describe, expect } from "vitest";
-
-import { handler } from "./post";
 
 type ExtractCryptoKey = jose.GenerateKeyPairResult["privateKey"];
 
