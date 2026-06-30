@@ -17,13 +17,12 @@ on:
         type: string
         default: eu-west-2
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   performance:
     name: Performance Tests (${{ inputs.STAGE }})
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     environment: ${{ inputs.STAGE }}
     env:
@@ -86,6 +85,8 @@ jobs:
 
   generate-report:
     needs: performance
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
