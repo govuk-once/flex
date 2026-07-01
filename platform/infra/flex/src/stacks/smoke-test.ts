@@ -113,7 +113,8 @@ export class FlexSmokeTestStack extends BaseStack {
       role,
       criticalAction,
       warningAction,
-      disableDefaultAlarms: true,
+      // smoke test function already covers lambda health, so we don't need to create additional alarms for it
+      enableDefaultAlarms: false,
     });
 
     const rule = new Rule(this, "SmokeTestSchedule", {

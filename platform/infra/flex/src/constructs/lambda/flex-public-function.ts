@@ -12,7 +12,7 @@ import { FlexFunctionProps } from "../types";
 const { stage } = getEnvConfig();
 
 interface FlexPublicFunctionProps extends FlexFunctionProps {
-  disableDefaultAlarms?: boolean;
+  enableDefaultAlarms?: boolean;
 }
 
 export class FlexPublicFunction extends Construct {
@@ -24,7 +24,7 @@ export class FlexPublicFunction extends Construct {
     {
       criticalAction,
       warningAction,
-      disableDefaultAlarms,
+      enableDefaultAlarms = true,
       ...functionProps
     }: FlexPublicFunctionProps,
   ) {
@@ -50,7 +50,7 @@ export class FlexPublicFunction extends Construct {
 
     encryptionKey.grantDecrypt(this.function);
 
-    if (!disableDefaultAlarms) {
+    if (enableDefaultAlarms) {
       new LambdaAlarms(this, `${id}Alarm`, {
         fn: this.function,
         alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
