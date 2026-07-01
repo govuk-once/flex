@@ -9,25 +9,25 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.33.0",
-    "@aws-sdk/client-cloudwatch": "3.1032.0",
+    "@aws-lambda-powertools/parameters": "2.33.1",
+    "@aws-sdk/client-cloudwatch": "3.1083.0",
     "@flex/testing": "workspace:*",
-    "axios": "1.16.0",
+    "axios": "1.18.1",
     "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
     "firebase-admin": "12.7.0",
     "google-auth-library": "9.15.1",
     "pkce-challenge": "6.0.0",
     "totp-generator": "2.0.1",
-    "tough-cookie": "6.0.1",
+    "tough-cookie": "6.0.2",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "25.6.0",
-    "eslint": "10.3.0",
+    "@types/node": "26.1.1",
+    "eslint": "10.6.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.5"
+    "vitest": "4.1.10"
   }
 }

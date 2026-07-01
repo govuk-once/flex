@@ -21,16 +21,16 @@
     "zod-openapi": "6.0.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "3.1060.0",
+    "@aws-sdk/client-cloudformation": "3.1083.0",
     "@flex/config": "workspace:*",
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
-    "@types/node": "25.9.2",
-    "eslint": "10.5.0",
+    "@types/node": "26.1.1",
+    "eslint": "10.6.0",
     "http-server": "14.1.1",
-    "tsx": "4.22.4",
+    "tsx": "4.23.0",
     "typescript": "6.0.3",
-    "undici-types": "8.5.0",
-    "vitest": "4.1.9"
+    "undici-types": "8.7.0",
+    "vitest": "4.1.10"
   }
 }

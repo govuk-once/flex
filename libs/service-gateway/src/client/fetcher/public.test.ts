@@ -35,7 +35,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource");
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +49,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource", { headers: { "X-API-KEY": "secret" } });
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({
         headers: { "Content-Type": "application/json", "X-API-KEY": "secret" },
       }),
@@ -62,7 +62,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource", { headers });
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({
         headers: { "Content-Type": "application/json", "x-custom": "value" },
       }),
@@ -74,7 +74,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource", { headers: [["X-Request-Id", "123"]] });
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({
         headers: { "Content-Type": "application/json", "X-Request-Id": "123" },
       }),
@@ -86,7 +86,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource");
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({ retryAttempts: 3 }),
     );
   });
@@ -96,7 +96,7 @@ describe("createPublicFetch", () => {
     fetch("/v1/resource", { retryAttempts: 0 });
 
     expect(flexFetch).toHaveBeenCalledWith(
-      expect.any(String),
+      "https://api.example.com/v1/resource",
       expect.objectContaining({ retryAttempts: 0 }),
     );
   });

@@ -19,9 +19,9 @@
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@vitest/coverage-v8": "4.1.9",
-    "eslint": "10.5.0",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.6.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   }
 }

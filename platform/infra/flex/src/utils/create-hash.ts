@@ -1,9 +1,8 @@
-import type { BinaryToTextEncoding } from "node:crypto";
 import crypto from "node:crypto";
 
 interface CreateHashOptions {
   algorithm?: string;
-  encoding?: BinaryToTextEncoding;
+  encoding?: BufferEncoding;
   start?: number;
   end?: number;
 }
