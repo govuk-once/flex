@@ -93,27 +93,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.semantic.outputs.version }}
-          TYPE: ${{ steps.semantic.outputs.type }}
+          TITLE: "Flex ${{ steps.semantic.outputs.type }} release: v${{ steps.semantic.outputs.version }}"
+          URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.semantic.outputs.version }}
         run: |
-          gh release view "v${VERSION}" --json body --jq .body > release-notes.md
+          # buildReleaseNotification converts the GitHub markdown notes to Slack
+          # mrkdwn and emits the AWS Chatbot message JSON (see scripts/).
+          MESSAGE=$(gh release view "v${VERSION}" --json body --jq .body \
+            | pnpm exec tsx scripts/buildReleaseNotification.ts)
 
           TOPIC_ARN=$(aws ssm get-parameter \
             --name "/development/flex/topic/release-notifications" \
             --query "Parameter.Value" --output text)
-
-          MESSAGE=$(jq -n \
-            --arg title "Flex ${TYPE} release: v${VERSION}" \
-            --arg url "https://github.com/${{ github.repository }}/releases/tag/v${VERSION}" \
-            --rawfile notes release-notes.md \
-            '{
-              version: "1.0",
-              source: "custom",
-              content: {
-                textType: "client-markdown",
-                title: $title,
-                description: ($notes[0:1500] + "\n\n" + $url)
-              }
-            }')
 
           aws sns publish --topic-arn "$TOPIC_ARN" --message "$MESSAGE"
 
