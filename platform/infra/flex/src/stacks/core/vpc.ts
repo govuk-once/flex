@@ -1,15 +1,26 @@
+import { Stack } from "aws-cdk-lib";
 import {
   AclCidr,
   AclTraffic,
   Action,
+  FlowLogDestination,
+  FlowLogFileFormat,
+  FlowLogMaxAggregationInterval,
+  FlowLogTrafficType,
   IpAddresses,
+  IVpc,
+  LogFormat,
   NetworkAcl,
   SecurityGroup,
   SubnetType,
   TrafficDirection,
   Vpc,
 } from "aws-cdk-lib/aws-ec2";
+import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Key } from "aws-cdk-lib/aws-kms";
 import { Construct } from "constructs";
+
+import { FlowLogBucket } from "../../constructs/s3/FlowLogBucket";
 
 function addInboundDenies90to100(prefix: string, nacl: NetworkAcl) {
   nacl.addEntry(`${prefix}DenyInboundSystemPortsTcp`, {
@@ -123,6 +134,57 @@ function applyPrivateIsolatedRules(scope: Construct, vpc: Vpc) {
   addInboundDenies90to100(prefix, privateIsolatedNacl);
 }
 
+// Enables VPC-wide flow logs to a dedicated, KMS-encrypted S3 bucket.
+function createFlowLogs(scope: Construct, vpc: IVpc) {
+  const stack = Stack.of(scope);
+
+  const flowLogKey = new Key(scope, "FlowLogKey", {
+    alias: "alias/flex-vpc-flow-logs-key",
+    description: "KMS key for VPC flow log encryption",
+    enableKeyRotation: true,
+  });
+
+  // Only grants the write path used by log delivery. Read access
+  // (kms:Decrypt) is intentionally not granted to any role here - grant it to
+  // a specific role in a follow-up once a reader (e.g. an investigator role
+  // or Athena) is needed.
+  flowLogKey.addToResourcePolicy(
+    new PolicyStatement({
+      sid: "AllowVpcFlowLogDelivery",
+      effect: Effect.ALLOW,
+      principals: [new ServicePrincipal("delivery.logs.amazonaws.com")],
+      actions: ["kms:Encrypt", "kms:GenerateDataKey*", "kms:DescribeKey"],
+      resources: ["*"],
+      conditions: {
+        StringEquals: { "aws:SourceAccount": stack.account },
+        ArnLike: {
+          "aws:SourceArn": stack.formatArn({ service: "logs", resource: "*" }),
+        },
+      },
+    }),
+  );
+
+  const { bucket } = new FlowLogBucket(scope, "FlowLogBucket", flowLogKey);
+
+  vpc.addFlowLog("FlowLog", {
+    destination: FlowLogDestination.toS3(bucket, undefined, {
+      fileFormat: FlowLogFileFormat.PLAIN_TEXT,
+    }),
+    trafficType: FlowLogTrafficType.ALL,
+    maxAggregationInterval: FlowLogMaxAggregationInterval.ONE_MINUTE,
+    logFormat: [
+      LogFormat.ALL_DEFAULT_FIELDS,
+      LogFormat.VPC_ID,
+      LogFormat.SUBNET_ID,
+      LogFormat.INSTANCE_ID,
+      LogFormat.TCP_FLAGS,
+      LogFormat.PKT_SRC_ADDR,
+      LogFormat.PKT_DST_ADDR,
+      LogFormat.FLOW_DIRECTION,
+    ],
+  });
+}
+
 export function createVpc(scope: Construct) {
   const vpc = new Vpc(scope, "Vpc", {
     ipAddresses: IpAddresses.cidr("10.0.0.0/16"),
@@ -150,6 +212,7 @@ export function createVpc(scope: Construct) {
   applyPublicRules(scope, vpc);
   applyPrivateEgressRules(scope, vpc);
   applyPrivateIsolatedRules(scope, vpc);
+  createFlowLogs(scope, vpc);
 
   const privateEgress = new SecurityGroup(scope, "PrivateEgress", {
     vpc,
