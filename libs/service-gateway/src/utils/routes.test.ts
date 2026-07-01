@@ -1,6 +1,6 @@
-import type { GatewayRoute, GatewayRoutes } from "@types";
 import { describe, expect, it } from "vitest";
 
+import type { GatewayRoute } from "../types";
 import { buildRoutes, lookupRoute } from "./routes";
 
 const route: GatewayRoute = { name: "example" };
@@ -54,9 +54,7 @@ describe("buildRoutes", () => {
   it("throws when a route key is invalid", () => {
     const invalidRouteKey = "INVALID";
 
-    expect(() =>
-      buildRoutes({ [invalidRouteKey]: route } as unknown as GatewayRoutes),
-    ).toThrow(
+    expect(() => buildRoutes({ [invalidRouteKey as never]: route })).toThrow(
       `Invalid route key. Expected "METHOD /version/path", but got: "${invalidRouteKey}"`,
     );
   });

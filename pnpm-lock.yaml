@@ -574,6 +574,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../logging
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
@@ -811,6 +814,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
+      '@flex/service-gateway':
+        specifier: workspace:*
+        version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
@@ -866,6 +872,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
+      '@flex/service-gateway':
+        specifier: workspace:*
+        version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
@@ -921,6 +930,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
+      '@flex/service-gateway':
+        specifier: workspace:*
+        version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
