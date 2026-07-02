@@ -11,10 +11,6 @@ const GITHUB_BOLD = /\*\*([^*]+)\*\*/g;
 const LIST_MARKER = /^\s*[*-]\s+/gm;
 const BLANK_LINE_RUN = /\n{3,}/g;
 
-/**
- * Converts the GitHub-flavoured markdown semantic-release produces into the
- * Slack mrkdwn that AWS Chatbot renders for its `client-markdown` text type.
- */
 export function githubMarkdownToSlackMarkdown(markdown: string): string {
   return markdown
     .replace(VERSION_HEADER, "") // remove the leading version header; it's redundant with the notification title
