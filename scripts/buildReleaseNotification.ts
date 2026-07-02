@@ -13,7 +13,7 @@ const BLANK_LINE_RUN = /\n{3,}/g;
 
 export function githubMarkdownToSlackMarkdown(markdown: string): string {
   return markdown
-    .replace(VERSION_HEADER, "") // remove the leading version header; it's redundant with the notification title
+    .replace(VERSION_HEADER, "") // the version header duplicates the notification title
     .replace(HEADING, "*$1*")
     .replace(INLINE_LINK, "<$2|$1>")
     .replace(GITHUB_BOLD, "*$1*")

@@ -1,0 +1,21 @@
+name: Validate OpenAPI Spec
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize, reopened]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate-openapi:
+    name: Validate Open API Spec
+    uses: ./.github/workflows/_validate-openapi.yml
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}

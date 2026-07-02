@@ -15,7 +15,7 @@ const { stage } = getEnvConfig();
 interface FlexPrivateEgressFunctionProps extends FlexFunctionProps {
   vpc: IVpc;
   privateEgressSg: ISecurityGroup;
-  disableDefaultAlarms?: boolean;
+  enableDefaultAlarms?: boolean;
 }
 
 export class FlexPrivateEgressFunction extends Construct {
@@ -29,7 +29,7 @@ export class FlexPrivateEgressFunction extends Construct {
       privateEgressSg,
       criticalAction,
       warningAction,
-      disableDefaultAlarms,
+      enableDefaultAlarms = true,
       ...functionProps
     }: FlexPrivateEgressFunctionProps,
   ) {
@@ -60,7 +60,7 @@ export class FlexPrivateEgressFunction extends Construct {
 
     encryptionKey.grantDecrypt(this.function);
 
-    if (!disableDefaultAlarms) {
+    if (enableDefaultAlarms) {
       new LambdaAlarms(this, "Alarm", {
         fn: this.function,
         alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,

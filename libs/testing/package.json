@@ -1,6 +1,5 @@
 {
   "name": "@flex/testing",
-  "version": "0.0.1",
   "type": "module",
   "private": true,
   "exports": {
@@ -8,7 +7,8 @@
     "./auth": "./src/index.auth.ts",
     "./e2e": "./src/index.e2e.ts",
     "./e2e/setup": "./src/e2e/setup.global.ts",
-    "./setup/sdk": "./src/setup/sdk.ts"
+    "./setup/sdk": "./src/setup/sdk.ts",
+    "./setup/service-gateway": "./src/setup/service-gateway.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",

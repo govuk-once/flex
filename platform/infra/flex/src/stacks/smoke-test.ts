@@ -19,9 +19,8 @@ import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
-import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, PLATFORM_KEYS } from "../ssm-keys";
-import { applyCheckovSkips } from "../utils/applyCheckovSkip";
 import { getPlatformSmokeTestEntry } from "../utils/getEntry";
 
 const { env, stage } = getEnvConfig();
@@ -49,7 +48,7 @@ export class FlexSmokeTestStack extends BaseStack {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName(
-          "service-role/AWSLambdaVPCAccessExecutionRole",
+          "service-role/AWSLambdaBasicExecutionRole",
         ),
       ],
     });
@@ -108,28 +107,15 @@ export class FlexSmokeTestStack extends BaseStack {
       );
     }
 
-    const vpc = this.importVpc(ENV_KEYS.Vpc);
-    const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
-
-    const smokeTest = new FlexPrivateEgressFunction(this, "SmokeTestFunction", {
+    const smokeTest = new FlexPublicFunction(this, "SmokeTestFunction", {
       entry: getPlatformSmokeTestEntry("handler.ts"),
       timeout: Duration.minutes(2),
       role,
-      vpc,
-      privateEgressSg,
       criticalAction,
       warningAction,
-      // The explicit SmokeTestAlarm below already covers this lambda's health
-      disableDefaultAlarms: true,
+      // smoke test function already covers lambda health, so we don't need to create additional alarms for it
+      enableDefaultAlarms: false,
     });
-
-    applyCheckovSkips(smokeTest.function, [
-      {
-        id: "CKV_AWS_117",
-        comment:
-          "Smoke test Lambda intentionally in VPC for egress to external auth services",
-      },
-    ]);
 
     const rule = new Rule(this, "SmokeTestSchedule", {
       schedule: Schedule.rate(Duration.minutes(5)),

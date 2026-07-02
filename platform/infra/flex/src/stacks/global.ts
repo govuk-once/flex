@@ -21,6 +21,7 @@ import {
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin, S3BucketOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
+import { CfnAlarm } from "aws-cdk-lib/aws-cloudwatch";
 import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import {
@@ -453,20 +454,28 @@ export class FlexGlobalStack extends BaseStack {
   }: {
     distribution: Distribution;
   } & AlarmActionProps) {
-    // Shield Advanced is only enable in the production account currently so this
-    // is required else deployments will fail in accounts that don't have it enabled
-    if (env === Environment.production) {
-      new CfnProtection(this, "ShieldProtection", {
+    if (env !== Environment.development) {
+      const cfnProtection = new CfnProtection(this, "ShieldProtection", {
         name: `${stage}-flex-cloudfront`,
         resourceArn: `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
       });
+      cfnProtection.overrideLogicalId("CloudfrontShieldProtection235622B4");
 
-      new ShieldAlarms(this, "ShieldAlarms", {
+      const shieldAlarms = new ShieldAlarms(this, "ShieldAlarms", {
         alarmNamePrefix: `${stage}-shield`,
         resourceArn: distribution.distributionArn,
         criticalAction,
         warningAction,
       });
+      (
+        shieldAlarms.ddosDetectedAlarm.node.defaultChild as CfnAlarm
+      ).overrideLogicalId("CloudfrontShieldAlarmsDDoSDetected3029FCB9");
+      (
+        shieldAlarms.ddosAttackRequestsPerSecondAlarm.node
+          .defaultChild as CfnAlarm
+      ).overrideLogicalId(
+        "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
+      );
     }
   }
 

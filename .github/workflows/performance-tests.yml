@@ -17,13 +17,12 @@ on:
         type: string
         default: eu-west-2
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   performance:
     name: Performance Tests (${{ inputs.STAGE }})
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
     environment: ${{ inputs.STAGE }}
     env:
@@ -50,7 +49,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ inputs.STAGE == 'staging' && secrets.STAGING_DEPLOYMENT_ROLE || secrets.DEV_DEPLOYMENT_ROLE }}
           aws-region: ${{ inputs.AWS_REGION }}
@@ -86,6 +85,8 @@ jobs:
 
   generate-report:
     needs: performance
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

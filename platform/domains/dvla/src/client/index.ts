@@ -1,8 +1,8 @@
 import { ApiResult, typedFetch } from "@flex/flex-fetch";
+import { createPublicFetch } from "@flex/service-gateway";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";
 import { JwkSet } from "../schemas/remote/wellKnownJwk";
-import { createPublicFetch } from "../utils/createPublicFetch";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
 let jwksCache: ApiResult<JwkSet> | null = null;
