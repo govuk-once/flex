@@ -11,7 +11,7 @@ import type {
 // createSigv4Fetcher and createSigv4FetchWithCredentials are stubbed because
 // they pull in @aws-sdk/credential-providers and SigV4 signing internals that
 // don't belong in unit tests.
-export { flexFetch } from "../fetch";
+export { flexFetch } from "..";
 export { typedFetch } from "../typed-fetch";
 
 /** Strips SigV4 signing — delegates to plain `fetch` so nock can intercept. */

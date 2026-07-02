@@ -40,7 +40,7 @@ export function configureMiddleware({
     .use(
       injectLambdaContext(logger, {
         logEvent: logLevel === "DEBUG" || logLevel === "TRACE",
-        correlationIdPath: "requestContext.requestId",
+        correlationIdPath: 'headers."x-correlation-id"',
       }),
     );
 

@@ -1,9 +1,9 @@
-import { flexFetch } from "@flex/flex-fetch";
+import { flexFetch } from "@flex/sdk";
 import { describe, expect, it, vi } from "vitest";
 
 import { createPublicFetch } from "./public";
 
-vi.mock("@flex/flex-fetch", () => ({
+vi.mock("@flex/sdk", () => ({
   flexFetch: vi
     .fn()
     .mockReturnValue({ request: Promise.resolve(new Response()) }),

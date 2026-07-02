@@ -85,7 +85,7 @@ describe("configureMiddleware", () => {
 
       expect(mockMiddyUse).toHaveBeenCalledWith({});
       expect(injectLambdaContext).toHaveBeenCalledExactlyOnceWith(logger, {
-        correlationIdPath: "requestContext.requestId",
+        correlationIdPath: 'headers."x-correlation-id"',
         logEvent: false,
       });
     });

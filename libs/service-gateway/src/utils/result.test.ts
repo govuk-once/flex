@@ -1,4 +1,4 @@
-import type { ApiResult } from "@flex/flex-fetch";
+import type { ApiResult } from "@flex/sdk";
 import { describe, expect, it, vi } from "vitest";
 
 import { mapApiResult } from "./result";

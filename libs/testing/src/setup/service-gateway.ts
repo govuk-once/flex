@@ -5,7 +5,7 @@ vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
 }));
 
 const mockFetcher = vi.hoisted(() => vi.fn());
-vi.mock("@flex/flex-fetch", () => ({
+vi.mock("@flex/sdk", () => ({
   createSigv4FetchWithCredentials: vi.fn(() => mockFetcher),
   typedFetch: vi.fn(),
 }));

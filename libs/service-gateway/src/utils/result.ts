@@ -1,4 +1,4 @@
-import type { ApiResult } from "@flex/flex-fetch";
+import type { ApiResult } from "@flex/sdk";
 
 export function mapApiResult<In, Out>(
   result: ApiResult<In>,

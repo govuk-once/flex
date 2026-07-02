@@ -1,4 +1,4 @@
-import { ApiResult, typedFetch } from "@flex/flex-fetch";
+import { ApiResult, typedFetch } from "@flex/sdk";
 import { createPublicFetch } from "@flex/service-gateway";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";

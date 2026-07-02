@@ -4,8 +4,8 @@ import { memoize } from "@smithy/property-provider";
 import type { AwsCredentialIdentity } from "@smithy/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { flexFetch } from "../fetch";
-import { createSigv4Fetcher, createSigv4FetchWithCredentials } from ".";
+import { flexFetch } from "./fetch";
+import { createSigv4Fetcher, createSigv4FetchWithCredentials } from "./sigv4";
 
 const createSignedFetcherMock = vi.fn((_opts: unknown) =>
   vi.fn(() => Promise.resolve(new Response("{}"))),
@@ -33,7 +33,7 @@ vi.mock("aws-sigv4-fetch", () => ({
   createSignedFetcher: (opts: unknown) => createSignedFetcherMock(opts),
 }));
 
-vi.mock("../fetch", () => ({
+vi.mock("./fetch", () => ({
   flexFetch: vi.fn(
     (_url: string | URL, _options: object, _fetcher: typeof fetch) => ({
       request: Promise.resolve(new Response("{}")),

@@ -2,6 +2,8 @@ import { logger } from "@flex/logging";
 import { NumberUpTo } from "@flex/utils";
 import { backOff } from "exponential-backoff";
 
+import { buildHeaders } from "./headers";
+
 const MAX_ATTEMPTS = 6;
 const MIN_DELAY_MS = 10;
 const MAX_DELAY_MS = 1000;
@@ -42,37 +44,47 @@ export function flexFetch(
   logger.debug("flex-fetch called", { url });
   logger.debug("flex-fetch options", { options });
 
-  const { retryAttempts, maxRetryDelay, ...fetchOptions } = options ?? {};
+  const {
+    retryAttempts,
+    maxRetryDelay,
+    headers: inputHeaders,
+    signal: callerSignal,
+    ...fetchOptions
+  } = options ?? {};
+
+  const headers = buildHeaders(url, inputHeaders);
 
   const controller = new AbortController();
+  const signal = callerSignal
+    ? AbortSignal.any([controller.signal, callerSignal])
+    : controller.signal;
 
   const retryDelayNormalised = Math.max(
     MIN_DELAY_MS,
-    Math.min(MAX_DELAY_MS, maxRetryDelay ?? MIN_DELAY_MS),
+    Math.min(MAX_DELAY_MS, maxRetryDelay ?? MAX_DELAY_MS),
   );
 
-  const retryAttemptsNormalised = Math.min(retryAttempts ?? 1, MAX_ATTEMPTS);
-  const retry = !!retryAttempts;
-
-  const backOffWrapper = retry ? backOff : <T>(fn: () => Promise<T>) => fn();
+  const totalAttempts = Math.min((retryAttempts ?? 0) + 1, MAX_ATTEMPTS);
 
   return {
-    request: backOffWrapper(
+    request: backOff(
       () => {
-        return fetcher(url, { ...fetchOptions, signal: controller.signal });
+        return fetcher(url, { ...fetchOptions, headers, signal });
       },
       {
-        numOfAttempts: retryAttemptsNormalised,
+        numOfAttempts: totalAttempts,
         maxDelay: retryDelayNormalised,
         jitter: "full",
         retry(error, attemptNumber) {
+          if (signal.aborted) return false;
+          if (attemptNumber >= totalAttempts) return false;
+
           logger.warn("flex-fetch retrying request", {
             url,
             error,
             attemptNumber,
           });
-          logger.debug("options", fetchOptions);
-          return !controller.signal.aborted;
+          return true;
         },
       },
     ).catch((error: unknown) => {

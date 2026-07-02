@@ -1,4 +1,4 @@
-import { typedFetch } from "@flex/flex-fetch";
+import { typedFetch } from "@flex/sdk";
 import type { HttpMethod, ReadonlyRecord } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 

@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.33.1",
-    "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
     "@flex/platform-shared": "workspace:*",
     "@flex/service-gateway": "workspace:*",

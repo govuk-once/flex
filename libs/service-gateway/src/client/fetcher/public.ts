@@ -1,5 +1,5 @@
-import type { FlexFetchRequestInit } from "@flex/flex-fetch";
-import { flexFetch } from "@flex/flex-fetch";
+import type { FlexFetchRequestInit } from "@flex/sdk";
+import { flexFetch } from "@flex/sdk";
 
 function normaliseHeaders(
   headers: Headers | Record<string, string> | [string, string][] | undefined,

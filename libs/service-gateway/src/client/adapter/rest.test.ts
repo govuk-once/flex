@@ -1,5 +1,5 @@
-import type { ApiResult } from "@flex/flex-fetch";
-import { typedFetch } from "@flex/flex-fetch";
+import type { ApiResult } from "@flex/sdk";
+import { typedFetch } from "@flex/sdk";
 import type { HttpMethod } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 import { describe, expect, it, vi } from "vitest";
@@ -10,7 +10,7 @@ import { buildFetcher } from "../fetcher/build";
 import type { RestAuth } from "./rest";
 import { createRestClient } from "./rest";
 
-vi.mock("@flex/flex-fetch", () => ({ typedFetch: vi.fn() }));
+vi.mock("@flex/sdk", () => ({ typedFetch: vi.fn() }));
 
 vi.mock("../fetcher/build");
 

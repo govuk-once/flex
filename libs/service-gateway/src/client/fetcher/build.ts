@@ -1,4 +1,4 @@
-import { createSigv4FetchWithCredentials } from "@flex/flex-fetch";
+import { createSigv4FetchWithCredentials } from "@flex/sdk";
 import { assertNever } from "@flex/utils";
 
 import { createPublicFetch } from "./public";

@@ -15,8 +15,8 @@ const mockFetcher = vi.hoisted(() => vi.fn());
 const mockTypedFetch = vi.hoisted(() => vi.fn());
 const mockCreateSigv4Fetcher = vi.hoisted(() => vi.fn(() => mockFetcher));
 
-vi.mock("@flex/flex-fetch", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@flex/flex-fetch")>()),
+vi.mock("../fetch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../fetch")>()),
   createSigv4Fetcher: mockCreateSigv4Fetcher,
   typedFetch: mockTypedFetch,
 }));

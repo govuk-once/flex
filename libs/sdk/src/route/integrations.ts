@@ -1,8 +1,12 @@
-import type { ApiResult, FlexFetchRequestInit } from "@flex/flex-fetch";
-import { createSigv4Fetcher, typedFetch } from "@flex/flex-fetch";
 import type { HttpMethod } from "@flex/utils";
 import { type ZodType } from "zod";
 
+import {
+  ApiResult,
+  createSigv4Fetcher,
+  FlexFetchRequestInit,
+  typedFetch,
+} from "../fetch";
 import type {
   DomainConfig,
   DomainIntegrations,

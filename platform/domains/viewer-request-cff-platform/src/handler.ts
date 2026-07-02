@@ -9,6 +9,7 @@
 import { CloudFrontFunctionsEvent } from "aws-lambda";
 
 import { unathorizedResponse } from "./responses/unathorized";
+import { isUuidV4, requestIdToUuidV4 } from "./utils/uuid";
 import { validateAuthorization } from "./validators/authoriztion";
 import { validateJwt } from "./validators/jwt";
 
@@ -21,6 +22,14 @@ import { validateJwt } from "./validators/jwt";
 export function handler(event: CloudFrontFunctionsEvent) {
   const request = event.request;
   const headers = request.headers;
+
+  const correlationId = headers["x-correlation-id"]?.value;
+  headers["x-correlation-id"] = {
+    value:
+      correlationId && isUuidV4(correlationId)
+        ? correlationId
+        : requestIdToUuidV4(event.context.requestId),
+  };
 
   try {
     const maybeJwt = validateAuthorization(headers.authorization?.value);
