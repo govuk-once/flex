@@ -72,10 +72,8 @@ export class FlexCoreStack extends BaseStack {
         .map((id) => id.trim())
         .filter(Boolean);
 
-      // AWS Chatbot allows only one configuration per Slack channel per
-      // account, and CloudFormation creates a renamed resource before deleting
-      // the old one, so changing a channel's position here forces a colliding
-      // duplicate. Append new channels to the end; do not reorder existing ones.
+      // NOTE: order is important as CDK creates renamed resources before deleting old ones, which
+      // causes a conflict.
       const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
       releaseChannelIds.forEach((slackChannelId, index) => {
         createSlackNotifications(this, {
