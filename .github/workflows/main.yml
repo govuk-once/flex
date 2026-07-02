@@ -9,6 +9,9 @@ jobs:
   qualityChecks:
     name: Quality Checks
     uses: ./.github/workflows/_quality-checks.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -121,6 +124,9 @@ jobs:
     name: Deploy to Development
     needs: [qualityChecks, release]
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -131,6 +137,9 @@ jobs:
     name: Module E2E (Development)
     needs: deployDev
     uses: ./.github/workflows/_moduleE2E.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -141,6 +150,9 @@ jobs:
     name: Deploy to Staging
     needs: deployDev
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "staging"
@@ -151,6 +163,9 @@ jobs:
     name: Notify Staging Deployment
     needs: [release, deployStaging]
     uses: ./.github/workflows/_notify-deployment.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       ENVIRONMENT: staging
       VERSION: ${{ needs.release.outputs.version }}
@@ -161,6 +176,9 @@ jobs:
     name: Module E2E (Staging)
     needs: deployStaging
     uses: ./.github/workflows/_moduleE2E.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "staging"
@@ -171,6 +189,9 @@ jobs:
     name: Deploy to Production
     needs: deployStaging
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "production"
@@ -181,6 +202,9 @@ jobs:
     name: Notify Production Deployment
     needs: [release, deployProd]
     uses: ./.github/workflows/_notify-deployment.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       ENVIRONMENT: production
       VERSION: ${{ needs.release.outputs.version }}
