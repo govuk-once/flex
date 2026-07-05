@@ -378,72 +378,71 @@ const shareTokenSchema = z.object({
 // ---------------------------------------------------------
 
 export const customerDriversLicenceSchema = z
-  .object(
-    {
-      customerDrivingLicence: z.object({
-        licenceType: z.enum(["Provisional", "Full"]).describe("The licence type"),
+  .object({
+    customerDrivingLicence: z.object({
+      licenceType: z.enum(["Provisional", "Full"]).describe("The licence type"),
 
-        drivingLicenceNumber: z
-          .string()
-          .min(5)
-          .max(16)
-          .regex(/^[a-zA-Z0-9]*$/)
-          .describe("A UK driving licence number"),
+      drivingLicenceNumber: z
+        .string()
+        .min(5)
+        .max(16)
+        .regex(/^[a-zA-Z0-9]*$/)
+        .describe("A UK driving licence number"),
 
-        driverTitle: z
-          .string()
-          .optional()
-          .describe("Title in full mode of address, e.g. Mr, Miss, Lord"),
-        driverFirstNames: z
-          .string()
-          .optional()
-          .describe("The first name(s) of the driver"),
-        driverLastName: z
-          .string()
-          .optional()
-          .describe("The last name of the driver"),
-        driverFullAddress: z
-          .string()
-          .optional()
-          .describe(
-            String.raw`Driver full address in a single string with the format "line1\nline2\nline3\nline4\nline5\npostcode"`,
-          ),
-        tokenValidToDate: z
-          .string()
-          .optional()
-          .describe("The date the token is valid to"),
+      driverTitle: z
+        .string()
+        .optional()
+        .describe("Title in full mode of address, e.g. Mr, Miss, Lord"),
+      driverFirstNames: z
+        .string()
+        .optional()
+        .describe("The first name(s) of the driver"),
+      driverLastName: z
+        .string()
+        .optional()
+        .describe("The last name of the driver"),
+      driverFullAddress: z
+        .string()
+        .optional()
+        .describe(
+          String.raw`Driver full address in a single string with the format "line1\nline2\nline3\nline4\nline5\npostcode"`,
+        ),
+      tokenValidToDate: z
+        .string()
+        .optional()
+        .describe("The date the token is valid to"),
 
-        endorsements: z
-          .array(endorsementSchema)
-          .optional()
-          .describe("All endorsements against the driver"),
+      endorsements: z
+        .array(endorsementSchema)
+        .optional()
+        .describe("All endorsements against the driver"),
 
-        licenceStatus: z
-          .enum([
-            "Valid",
-            "Disqualified",
-            "Revoked",
-            "Revoked for medical reasons",
-            "Surrendered",
-            "Surrendered voluntarily",
-            "Surrendered for medical reasons",
-            "Expired",
-            "Exchanged",
-            "Refused",
-            "Refused for medical reasons",
-          ])
-          .optional()
-          .describe("The current activation state of the licence"),
+      licenceStatus: z
+        .enum([
+          "Valid",
+          "Disqualified",
+          "Revoked",
+          "Revoked for medical reasons",
+          "Surrendered",
+          "Surrendered voluntarily",
+          "Surrendered for medical reasons",
+          "Expired",
+          "Exchanged",
+          "Refused",
+          "Refused for medical reasons",
+        ])
+        .optional()
+        .describe("The current activation state of the licence"),
 
-        entitlements: z
-          .array(entitlementSchema)
-          .optional()
-          .describe("All of the entitlements the driver has"),
+      entitlements: z
+        .array(entitlementSchema)
+        .optional()
+        .describe("All of the entitlements the driver has"),
 
-        shareCodes: z
-          .array(shareTokenSchema)
-          .optional()
-          .describe("All tokens found matching the criteria"),
-      })
-    })
+      shareCodes: z
+        .array(shareTokenSchema)
+        .optional()
+        .describe("All tokens found matching the criteria"),
+    }),
+  })
   .describe("GovUK App Customer Driver's Licence");

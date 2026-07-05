@@ -12,8 +12,6 @@ export const handler = route(endpoint, async (ctx) => {
     getUserLinkingId(ctx),
     getDvlaAuthToken(ctx),
   ]);
-  // TODO remove for PR
-  console.log(`linking id: ${userLinkingId}`);
 
   const response = await integrations.dvlaGetCustomerVehicles({
     headers: { auth },

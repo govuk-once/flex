@@ -18,7 +18,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/authenticate",
     remotePath: "/v1/authenticate",
-    toRemote: () => { },
+    toRemote: () => {},
     callRemote: (client) => client.authentication.get(),
   },
   "GET:/v1/well-known-jwks": {
@@ -26,7 +26,7 @@ export const ROUTE_CONTRACTS = {
     method: "GET",
     inboundPath: "/v1/well-known-jwks",
     remotePath: "",
-    toRemote: () => { },
+    toRemote: () => {},
     callRemote: (client) => client.wellKnownJwk.get(),
   },
   "POST:/v1/test-notification/:id": {
