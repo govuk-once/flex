@@ -18,6 +18,15 @@ const remoteClient = {
   customer: {
     get: vi.fn(),
   },
+  customerVehicles: {
+    get: vi.fn(),
+  },
+  customerVehicle: {
+    get: vi.fn(),
+  },
+  customerDrivingLicence: {
+    get: vi.fn(),
+  },
   notification: {
     post: vi.fn(),
   },
@@ -121,6 +130,67 @@ describe("DVLA Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.customer.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/vehicles",
+      operation: "getCustomerVehicles",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerVehicles.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { customerVehicles: [] },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerVehicles.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/vehicle/veh-789",
+      operation: "getCustomerVehicle",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerVehicle.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { customerVehicleDetails: {} },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerVehicle.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+          "veh-789",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/licence",
+      operation: "getCustomerLicence",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerDrivingLicence.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { driver: {}, licence: {} },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerDrivingLicence.get).toHaveBeenCalledWith(
           "linking-id-456",
           "Bearer jwt-123",
         );

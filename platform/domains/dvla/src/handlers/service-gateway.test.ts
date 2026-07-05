@@ -56,6 +56,19 @@ const MOCK_CUSTOMER_RESPONSE = {
   },
 };
 
+const MOCK_CUSTOMER_VEHICLES_RESPONSE = {
+  customerVehicles: [],
+};
+
+const MOCK_CUSTOMER_VEHICLE_RESPONSE = {
+  customerVehicleDetails: { vehicleId: "veh-789", make: "FORD" },
+};
+
+const MOCK_CUSTOMER_LICENCE_RESPONSE = {
+  driver: { lastName: "DOE" },
+  licence: { status: "Valid" },
+};
+
 const MOCK_DRIVER_SUMMARY_RESPONSE = {
   linkingId: "test-linking-id",
   hasErrors: false,
@@ -138,6 +151,27 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_CUSTOMER_RESPONSE,
+    }),
+  },
+  customerVehicles: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_CUSTOMER_VEHICLES_RESPONSE,
+    }),
+  },
+  customerVehicle: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_CUSTOMER_VEHICLE_RESPONSE,
+    }),
+  },
+  customerDrivingLicence: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_CUSTOMER_LICENCE_RESPONSE,
     }),
   },
   driver: {
@@ -284,6 +318,86 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.customer.get).toHaveBeenCalledWith(linkingId, jwt);
+  });
+
+  it("dispatches GET /v1/customer/vehicles and returns vehicles list", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "link-123";
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/dvla/v1/customer/vehicles", {
+        headers: { auth: jwt },
+        queryStringParameters: { linkingId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_CUSTOMER_VEHICLES_RESPONSE),
+    });
+
+    expect(remoteClient.customerVehicles.get).toHaveBeenCalledWith(
+      linkingId,
+      jwt,
+    );
+  });
+
+  it("dispatches GET /v1/customer/vehicle/:id and returns vehicle details", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "link-123";
+    const vehicleId = "veh-789";
+
+    const response = await handler(
+      privateGatewayEvent.get(`/gateways/dvla/v1/customer/vehicle/${vehicleId}`, {
+        headers: { auth: jwt },
+        queryStringParameters: { linkingId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_CUSTOMER_VEHICLE_RESPONSE),
+    });
+
+    expect(remoteClient.customerVehicle.get).toHaveBeenCalledWith(
+      linkingId,
+      jwt,
+      vehicleId,
+    );
+  });
+
+  it("dispatches GET /v1/customer/licence and returns customer driving licence", async ({
+    privateGatewayEvent,
+  }) => {
+    const jwt = "test-token";
+    const linkingId = "link-123";
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
+        headers: { auth: jwt },
+        queryStringParameters: { linkingId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_CUSTOMER_LICENCE_RESPONSE),
+    });
+
+    expect(remoteClient.customerDrivingLicence.get).toHaveBeenCalledWith(
+      linkingId,
+      jwt,
+    );
   });
 
   it("dispatches POST /v1/notification/:id and returns success", async ({
