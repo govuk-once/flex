@@ -37,7 +37,11 @@ const customerVehicleSchema = z.object({
 
   make: NonEmptyString.describe("Vehicle Brand"),
 
-  // TODO ask dvla as this is coming through as undefined
+  /**
+   * NOTE
+   * - keeping model nullish for now as test data is returning undefined,
+   *   will remove once DVLA fix on their end
+   */
   model: NonEmptyString.nullish().describe("Vehicle Brand Series"),
 
   taxStatus: z
