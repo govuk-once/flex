@@ -1,7 +1,7 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-const customerVehicleDetailsSchema = z.object({
+export const customerVehicleDetailsSchema = z.object({
   vehicleId: z.number().int().describe("Id of the vehicle within the SOR"),
 
   registrationNumber: NonEmptyString.describe("Formatted registration number"),
