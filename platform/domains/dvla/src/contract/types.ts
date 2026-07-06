@@ -4,6 +4,10 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import type { DvlaRemoteClient } from "../client/index";
 import { AuthenticateResponseSchema } from "../schemas/remote/authenticate";
 import {
+  CustomerDriversLicenceResponse,
+  CustomerDrivingLicenceRequestSchema,
+} from "../schemas/remote/custmerDrivingLicence";
+import {
   GetCustomerRequestSchema,
   GetCustomerResponseSchema,
 } from "../schemas/remote/customer";
@@ -11,6 +15,14 @@ import {
   GetCustomerSummaryRequestSchema,
   GetCustomerSummaryResponseSchema,
 } from "../schemas/remote/customerSummary";
+import {
+  CustomerVehicleRequestSchema,
+  CustomerVehicleResponse,
+} from "../schemas/remote/customerVehicle";
+import {
+  CustomerVehiclesRequestSchema,
+  CustomerVehiclesResponse,
+} from "../schemas/remote/customerVehicles";
 import {
   GetDriverSummaryRequestSchema,
   GetDriverSummaryResponseSchema,
@@ -45,7 +57,10 @@ export type RouteOperation =
   | "postShareCode"
   | "postShareCodeCancel"
   | "getShareCodes"
-  | "postUnlinkUser";
+  | "postUnlinkUser"
+  | "getCustomerVehicles"
+  | "getCustomerVehicle"
+  | "getCustomerLicence";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -164,6 +179,30 @@ export type PostUnlinkUser = BaseRouteContract<
   unknown
 >;
 
+export type GetCustomerVehicleRouteContract = BaseRouteContract<
+  "getCustomerVehicle",
+  "GET",
+  CustomerVehicleRequestSchema,
+  unknown,
+  CustomerVehicleResponse
+>;
+
+export type GetCustomerVehiclesRouteContract = BaseRouteContract<
+  "getCustomerVehicles",
+  "GET",
+  CustomerVehiclesRequestSchema,
+  unknown,
+  CustomerVehiclesResponse
+>;
+
+export type GetCustomerDrivingLicenceRouteContract = BaseRouteContract<
+  "getCustomerLicence",
+  "GET",
+  CustomerDrivingLicenceRequestSchema,
+  unknown,
+  CustomerDriversLicenceResponse
+>;
+
 export type RouteContract =
   | GetAuthenticateRouteContract
   | GetWellKnownJwkRouteContract
@@ -176,4 +215,7 @@ export type RouteContract =
   | PostShareCode
   | PostShareCodeCancel
   | GetShareCodes
-  | PostUnlinkUser;
+  | PostUnlinkUser
+  | GetCustomerVehicleRouteContract
+  | GetCustomerVehiclesRouteContract
+  | GetCustomerDrivingLicenceRouteContract;

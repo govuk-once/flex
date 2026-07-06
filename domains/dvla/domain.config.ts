@@ -1,6 +1,9 @@
 import {
   authenticateResponseSchema,
+  customerDriversLicenceSchema,
   CustomerSummaryWithoutIdSchema,
+  customerVehicleDetailsSchema,
+  customerVehiclesResponseSchema,
   DriverSummaryWithoutIdSchema,
   MultiShareCodeResponseSchema,
   MultiShareCodeResponseSchemaWithoutIdSchmea,
@@ -94,20 +97,62 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/share-codes",
       response: MultiShareCodeResponseSchema,
     },
+    dvlaGetCustomerVehicle: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/customer/vehicle/*",
+      response: customerVehicleDetailsSchema,
+    },
+    dvlaGetCustomerVehicles: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/customer/vehicles",
+      response: customerVehiclesResponseSchema,
+    },
+    dvlaGetCustomerLicence: {
+      type: "gateway",
+      target: "dvla",
+      route: "GET /v1/customer/licence",
+      response: customerDriversLicenceSchema,
+    },
   },
   routes: {
     v1: {
-      "/driving-licence": {
+      "/customer/licence": {
         GET: {
           public: {
-            name: "get-users-drivers-licence",
+            name: "get-customer-licence",
             integrations: [
               "dvlaAuthenticate",
-              "dvlaRetrieveLicence",
-              "dvlaCustomerSummary",
+              "dvlaGetCustomerLicence",
               "udpGetLinkingId",
             ],
-            response: viewDriverResponseSchema,
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/customer/vehicle/:id": {
+        GET: {
+          public: {
+            name: "get-customer-vehicle",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaGetCustomerVehicle",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/customer/vehicles": {
+        GET: {
+          public: {
+            name: "get-customer-vehicles",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaGetCustomerVehicles",
+              "udpGetLinkingId",
+            ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
@@ -125,34 +170,6 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/customer-summary": {
-        GET: {
-          public: {
-            name: "get-customer-summary",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaCustomerSummary",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: CustomerSummaryWithoutIdSchema,
-          },
-        },
-      },
-      "/driver-summary": {
-        GET: {
-          public: {
-            name: "get-driver-summary",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaDriverSummary",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: DriverSummaryWithoutIdSchema,
-          },
-        },
-      },
       "/vehicle-enquiry/:reg": {
         GET: {
           public: {
@@ -164,20 +181,6 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-          },
-        },
-      },
-      "/share-codes": {
-        GET: {
-          public: {
-            name: "get-share-codes",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaGetShareCodes",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: MultiShareCodeResponseSchemaWithoutIdSchmea,
           },
         },
       },
@@ -219,6 +222,67 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      /**
+       * The following endpoints are now deprecated, they will be removed once
+       * the app has migrated across to the new endpoints
+       */
+      "/share-codes": {
+        GET: {
+          public: {
+            name: "get-share-codes",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaGetShareCodes",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: MultiShareCodeResponseSchemaWithoutIdSchmea,
+          },
+        },
+      },
+      "/driving-licence": {
+        GET: {
+          public: {
+            name: "get-users-drivers-licence",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaRetrieveLicence",
+              "dvlaCustomerSummary",
+              "udpGetLinkingId",
+            ],
+            response: viewDriverResponseSchema,
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+          },
+        },
+      },
+      "/customer-summary": {
+        GET: {
+          public: {
+            name: "get-customer-summary",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaCustomerSummary",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: CustomerSummaryWithoutIdSchema,
+          },
+        },
+      },
+      "/driver-summary": {
+        GET: {
+          public: {
+            name: "get-driver-summary",
+            integrations: [
+              "dvlaAuthenticate",
+              "dvlaDriverSummary",
+              "udpGetLinkingId",
+            ],
+            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: DriverSummaryWithoutIdSchema,
           },
         },
       },

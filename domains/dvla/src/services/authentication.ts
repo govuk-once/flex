@@ -7,6 +7,8 @@ type CommonDvlaContext =
   | InferRouteContext<
       typeof config,
       | "GET /v1/customer-summary"
+      | "GET /v1/customer/licence"
+      | "GET /v1/customer/vehicles"
       | "GET /v1/driver-summary"
       | "GET /v1/driving-licence"
       | "GET /v1/share-codes"
@@ -15,7 +17,9 @@ type CommonDvlaContext =
     >
   | InferRouteContext<
       typeof config,
-      "POST /v1/share-code/:id/cancel" | "POST /v1/unlink/:id [private]"
+      | "POST /v1/share-code/:id/cancel"
+      | "POST /v1/unlink/:id [private]"
+      | "GET /v1/customer/vehicle/:id"
     >;
 
 export async function getUserLinkingId(

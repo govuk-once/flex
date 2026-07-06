@@ -1,7 +1,9 @@
 import { it } from "@flex/testing";
+import { APIGatewayProxyEvent } from "aws-lambda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { execute } from "./executor";
+import { ROUTE_CONTRACTS } from "./route";
 
 vi.mock("@flex/logging");
 
@@ -16,6 +18,15 @@ const remoteClient = {
     get: vi.fn(),
   },
   customer: {
+    get: vi.fn(),
+  },
+  customerVehicles: {
+    get: vi.fn(),
+  },
+  customerVehicle: {
+    get: vi.fn(),
+  },
+  customerDrivingLicence: {
     get: vi.fn(),
   },
   notification: {
@@ -121,6 +132,67 @@ describe("DVLA Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.customer.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/vehicles",
+      operation: "getCustomerVehicles",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerVehicles.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { customerVehicles: [] },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerVehicles.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/vehicle/veh-789",
+      operation: "getCustomerVehicle",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerVehicle.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { customerVehicleDetails: {} },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerVehicle.get).toHaveBeenCalledWith(
+          "linking-id-456",
+          "Bearer jwt-123",
+          "veh-789",
+        );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/customer/licence",
+      operation: "getCustomerLicence",
+      headers: { auth: "Bearer jwt-123" },
+      queryParams: { linkingId: "linking-id-456" },
+      configureRemoteClient: () => {
+        remoteClient.customerDrivingLicence.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: { driver: {}, licence: {} },
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.customerDrivingLicence.get).toHaveBeenCalledWith(
           "linking-id-456",
           "Bearer jwt-123",
         );
@@ -370,6 +442,87 @@ describe("DVLA Executor", () => {
       const result = await execute(event, remoteClient);
 
       expect(result.ok).toBe(false);
+    });
+  });
+
+  describe("ROUTE_CONTRACTS toRemote validation", () => {
+    const baseEvent = {
+      headers: { auth: "Bearer jwt-123" },
+    } as unknown as APIGatewayProxyEvent;
+
+    it("throws 400 when linking-id query parameter is missing", () => {
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer/vehicles"].toRemote(baseEvent);
+      }).toThrow("Missing linking-id query parameter");
+    });
+
+    it("throws 400 when customer linking id path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/unlink-user",
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["POST:/v1/unlink-user/:id"].toRemote(event);
+      }).toThrow("Missing customer linking id in path");
+    });
+
+    it("throws 400 when vehicleId path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/customer/vehicle",
+        queryStringParameters: { linkingId: "linking-123" },
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer/vehicle/:id"].toRemote(event);
+      }).toThrow("Missing vehicleId form path");
+    });
+
+    it("throws 400 when registrationNumber path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/vehicle-enquiry",
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/vehicle-enquiry"].toRemote(event);
+      }).toThrow("Missing registrationNumber form path");
+    });
+
+    it("throws 400 when shareCodeId path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/share-codes",
+        queryStringParameters: { linkingId: "linking-123" },
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["POST:/v1/share-code/:id/cancel"].toRemote(event);
+      }).toThrow("Missing shareCodeid in path");
+    });
+
+    it("throws 400 when customer linking id path parameter is missing for customer summary", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/customer-summary",
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(event);
+      }).toThrow("Missing customer linking id in path");
+    });
+
+    it("throws 400 when auth header is missing for customer summary", () => {
+      const eventWithoutAuth = {
+        headers: {},
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(
+          eventWithoutAuth,
+        );
+      }).toThrow("Missing auth header");
     });
   });
 });

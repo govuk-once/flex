@@ -13,7 +13,10 @@ type Endpoints =
   | "GET /v1/customer-summary"
   | "GET /v1/driver-summary"
   | "GET /v1/vehicle-enquiry/:reg"
-  | "POST /v1/share-code/:id/cancel";
+  | "POST /v1/share-code/:id/cancel"
+  | "GET /v1/customer/licence"
+  | "GET /v1/customer/vehicles"
+  | "GET /v1/customer/vehicle/:id";
 
 const context = routeContext<Endpoints>;
 
