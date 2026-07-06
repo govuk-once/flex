@@ -505,7 +505,7 @@ describe("DVLA Executor", () => {
     it("throws 400 when customer linking id path parameter is missing for customer summary", () => {
       const event = {
         ...baseEvent,
-        path: "/v1/customer-summary"
+        path: "/v1/customer-summary",
       } as unknown as APIGatewayProxyEvent;
 
       expect(() => {
@@ -515,11 +515,13 @@ describe("DVLA Executor", () => {
 
     it("throws 400 when auth header is missing for customer summary", () => {
       const eventWithoutAuth = {
-        headers: {}
+        headers: {},
       } as unknown as APIGatewayProxyEvent;
 
       expect(() => {
-        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(eventWithoutAuth);
+        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(
+          eventWithoutAuth,
+        );
       }).toThrow("Missing auth header");
     });
   });
