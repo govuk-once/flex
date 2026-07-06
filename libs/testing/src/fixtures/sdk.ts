@@ -48,7 +48,6 @@ export const baseSdkEvent: SdkEvent = {
       integrationLatency: 0,
       pairwiseId: "test-pairwise-id",
     },
-    // NOSONAR temporary until fixtures/apigateway.ts mocks have been removed
     protocol: "HTTP/1.1",
     httpMethod: "GET",
     path: "/",

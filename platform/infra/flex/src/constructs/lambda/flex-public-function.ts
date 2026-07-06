@@ -11,13 +11,22 @@ import { FlexFunctionProps } from "../types";
 
 const { stage } = getEnvConfig();
 
+interface FlexPublicFunctionProps extends FlexFunctionProps {
+  enableDefaultAlarms?: boolean;
+}
+
 export class FlexPublicFunction extends Construct {
   public readonly function: NodejsFunction;
 
   constructor(
     scope: Construct,
     id: string,
-    { criticalAction, warningAction, ...functionProps }: FlexFunctionProps,
+    {
+      criticalAction,
+      warningAction,
+      enableDefaultAlarms = true,
+      ...functionProps
+    }: FlexPublicFunctionProps,
   ) {
     super(scope, id);
 
@@ -41,12 +50,14 @@ export class FlexPublicFunction extends Construct {
 
     encryptionKey.grantDecrypt(this.function);
 
-    new LambdaAlarms(this, `${id}Alarm`, {
-      fn: this.function,
-      alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
-      criticalAction,
-      warningAction,
-    });
+    if (enableDefaultAlarms) {
+      new LambdaAlarms(this, `${id}Alarm`, {
+        fn: this.function,
+        alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
+        criticalAction,
+        warningAction,
+      });
+    }
 
     if (functionProps.domain) {
       Tags.of(this.function).add("ResourceOwner", functionProps.domain, {

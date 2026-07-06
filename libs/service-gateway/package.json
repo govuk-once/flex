@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.33.1",
-    "@flex/flex-fetch": "workspace:*",
     "@flex/logging": "workspace:*",
+    "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.6.5",
     "http-errors": "2.0.1",

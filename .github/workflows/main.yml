@@ -9,6 +9,10 @@ jobs:
   qualityChecks:
     name: Quality Checks
     uses: ./.github/workflows/_quality-checks.yml
+    permissions:
+      id-token: write
+      contents: read
+      actions: read # required by nrwl/nx-set-shas to find the last successful workflow run on main
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -56,8 +60,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm run semantic:release
 
-      # Always emit a version for downstream deploy notifications: the version
-      # just released, else the latest existing tag, else the short commit SHA.
       - name: Resolve deployed version
         id: version
         env:
@@ -78,7 +80,6 @@ jobs:
 
       - name: Configure AWS credentials
         if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
-        # A failed notification must not block deployment
         continue-on-error: true
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
@@ -88,32 +89,19 @@ jobs:
 
       - name: Notify Slack
         if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
-        # A failed notification must not block deployment
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.semantic.outputs.version }}
-          TYPE: ${{ steps.semantic.outputs.type }}
+          TITLE: "Flex ${{ steps.semantic.outputs.type }} release: v${{ steps.semantic.outputs.version }}"
+          URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.semantic.outputs.version }}
         run: |
-          gh release view "v${VERSION}" --json body --jq .body > release-notes.md
+          MESSAGE=$(gh release view "v${VERSION}" --json body --jq .body \
+            | pnpm exec tsx scripts/buildReleaseNotification.ts)
 
           TOPIC_ARN=$(aws ssm get-parameter \
             --name "/development/flex/topic/release-notifications" \
             --query "Parameter.Value" --output text)
-
-          MESSAGE=$(jq -n \
-            --arg title "Flex ${TYPE} release: v${VERSION}" \
-            --arg url "https://github.com/${{ github.repository }}/releases/tag/v${VERSION}" \
-            --rawfile notes release-notes.md \
-            '{
-              version: "1.0",
-              source: "custom",
-              content: {
-                textType: "client-markdown",
-                title: $title,
-                description: ($notes[0:1500] + "\n\n" + $url)
-              }
-            }')
 
           aws sns publish --topic-arn "$TOPIC_ARN" --message "$MESSAGE"
 
@@ -121,6 +109,9 @@ jobs:
     name: Deploy to Development
     needs: [qualityChecks, release]
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -131,6 +122,9 @@ jobs:
     name: Module E2E (Development)
     needs: deployDev
     uses: ./.github/workflows/_moduleE2E.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "development"
@@ -141,6 +135,9 @@ jobs:
     name: Deploy to Staging
     needs: deployDev
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "staging"
@@ -151,6 +148,9 @@ jobs:
     name: Notify Staging Deployment
     needs: [release, deployStaging]
     uses: ./.github/workflows/_notify-deployment.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       ENVIRONMENT: staging
       VERSION: ${{ needs.release.outputs.version }}
@@ -161,6 +161,9 @@ jobs:
     name: Module E2E (Staging)
     needs: deployStaging
     uses: ./.github/workflows/_moduleE2E.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "staging"
@@ -171,6 +174,9 @@ jobs:
     name: Deploy to Production
     needs: deployStaging
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       AWS_REGION: "eu-west-2"
       STAGE: "production"
@@ -181,6 +187,9 @@ jobs:
     name: Notify Production Deployment
     needs: [release, deployProd]
     uses: ./.github/workflows/_notify-deployment.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       ENVIRONMENT: production
       VERSION: ${{ needs.release.outputs.version }}

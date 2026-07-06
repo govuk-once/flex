@@ -21,8 +21,11 @@ export class FlexCloudfrontFunction extends Construct {
       entryPoints: [functionSourcePath],
       format: "esm",
       target: "es5",
+      platform: "neutral",
+      treeShaking: false,
 
       bundle: true,
+      external: ["crypto", "querystring", "buffer"],
 
       // If identifiers are minified `handler` will be renamed, and will break the function
       minify: false,

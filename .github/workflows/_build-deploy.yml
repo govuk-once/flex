@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       id-token: write # Required for OIDC authentication with AWS
+      contents: read
     env:
       STAGE: ${{ inputs.STAGE }}
     environment: ${{ inputs.STAGE }}

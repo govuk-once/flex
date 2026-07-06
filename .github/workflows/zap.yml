@@ -7,11 +7,6 @@ on:
       - completed
   workflow_dispatch:
 
-permissions:
-  id-token: write # Required for AWS OIDC
-  contents: read
-  security-events: write # Required for SARIF upload
-
 jobs:
   zap_scan:
     if: |
@@ -19,6 +14,10 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     name: ⚡️ Zap staging
+    permissions:
+      id-token: write # Required for AWS OIDC
+      contents: read
+      security-events: write # Required for SARIF upload
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -75,5 +74,6 @@ jobs:
   workflow_fail:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - run: echo "❌ Continuous Deployment workflow failed"

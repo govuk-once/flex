@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.33.1",
-    "@flex/flex-fetch": "workspace:*",
+    "@flex/sdk": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

@@ -277,13 +277,13 @@ const result = await integrations.udpPatchUser({
 
 ### Options
 
-| Name            | Description                                                                     |
-| --------------- | ------------------------------------------------------------------------------- |
-| `target`        | Target domain name (Default to same domain)                                     |
-| `body`          | Request body schema                                                             |
-| `response`      | Response schema                                                                 |
-| `retryAttempts` | Number of retry attempts on failed requests (default set by `@flex/flex-fetch`) |
-| `maxRetryDelay` | Maximum delay between each retry (default set by `@flex/flex-fetch`)            |
+| Name            | Description                                 |
+| --------------- | ------------------------------------------- |
+| `target`        | Target domain name (Default to same domain) |
+| `body`          | Request body schema                         |
+| `response`      | Response schema                             |
+| `retryAttempts` | Number of retry attempts on failed requests |
+| `maxRetryDelay` | Maximum delay between each retry            |
 
 > Any route using integrations must explicitly include the private gateway URL resource (e.g. `flexPrivateGatewayUrl`) in its route config `resources`.
 

@@ -2,7 +2,7 @@ import {
   ApiResult,
   createSigv4FetchWithCredentials,
   typedFetch,
-} from "@flex/flex-fetch";
+} from "@flex/sdk";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
 import {

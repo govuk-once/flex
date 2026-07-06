@@ -72,6 +72,8 @@ export class FlexCoreStack extends BaseStack {
         .map((id) => id.trim())
         .filter(Boolean);
 
+      // NOTE: order is important as CDK creates renamed resources before deleting old ones, which
+      // causes a conflict.
       const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
       releaseChannelIds.forEach((slackChannelId, index) => {
         createSlackNotifications(this, {

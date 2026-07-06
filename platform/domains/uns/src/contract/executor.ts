@@ -1,4 +1,4 @@
-import type { ApiResult } from "@flex/flex-fetch";
+import { ApiResult } from "@flex/sdk";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 

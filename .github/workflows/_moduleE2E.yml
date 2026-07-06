@@ -19,6 +19,8 @@ jobs:
   discover:
     name: Discover module E2E suites
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       modules: ${{ steps.list.outputs.modules }}
     steps:
@@ -43,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:

@@ -1,4 +1,4 @@
-import { ApiResult } from "@flex/flex-fetch";
+import { ApiResult } from "@flex/sdk";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
 import type { UnsRemoteClient } from "../client/index";

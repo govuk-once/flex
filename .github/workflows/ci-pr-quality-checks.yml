@@ -9,6 +9,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: false
 
+permissions:
+  id-token: write
+  contents: read
+  actions: read # ceiling for _quality-checks.yml jobs using nrwl/nx-set-shas
+
 jobs:
   quality-checks:
     name: Quality Checks

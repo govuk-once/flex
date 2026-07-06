@@ -137,14 +137,14 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
               ...authHeader,
               "x-example-id": "example-123",
               "x-request-id": "request-123",
-              "x-correlation-id": "correlation-123",
+              "x-correlation-id": "fea49641-a847-46f4-98b4-7c604db826c2",
             },
           });
 
           expect(result.status).toBe(200);
           expect(result.body).toStrictEqual({
             requestId: "request-123",
-            correlationId: "correlation-123",
+            correlationId: "fea49641-a847-46f4-98b4-7c604db826c2",
             exampleId: "example-123",
           });
         });

@@ -1,6 +1,7 @@
 import type { HttpMethod } from "@flex/utils";
 import { matchPathSegments, splitRouteKey, toPathSegments } from "@flex/utils";
-import type { GatewayRoute, GatewayRoutes, RouteKey } from "@types";
+
+import type { GatewayRoute, GatewayRouteMap, RouteKey } from "../types";
 
 interface ParsedRoute {
   config: GatewayRoute;
@@ -9,7 +10,7 @@ interface ParsedRoute {
   segments: string[];
 }
 
-export function buildRoutes(routes: GatewayRoutes): ParsedRoute[] {
+export function buildRoutes(routes: GatewayRouteMap): ParsedRoute[] {
   return Object.entries(routes).map(([key, config]) => {
     const { method, path } = parseRouteKey(key);
 

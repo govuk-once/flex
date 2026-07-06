@@ -1,4 +1,3 @@
-import type { FlexFetchRequestInit } from "@flex/flex-fetch";
 import type { Logger } from "@flex/logging";
 import type {
   Environment,
@@ -21,6 +20,7 @@ import {
   DomainResourceSchema,
   FunctionConfigSchema,
 } from "./config/schema";
+import { FlexFetchRequestInit } from "./fetch";
 
 // ----------------------------------------------------------------------------
 // Exported inferred types
