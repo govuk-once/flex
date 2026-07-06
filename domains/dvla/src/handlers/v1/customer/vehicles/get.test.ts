@@ -34,8 +34,9 @@ describe("GET /v1/customer/vehicles", () => {
 
     http
       .gateway("dvla")
-      .get(`/customer/vehicles?linkingId=${linkingId}`, {
+      .get("/customer/vehicles", {
         headers: { auth: token },
+        query: { linkingId },
       })
       .reply(200, mockVehiclesResponse);
 

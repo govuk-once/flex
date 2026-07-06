@@ -45,11 +45,9 @@ export const handler: MiddyfiedHandler<
       const result = await execute(event, remoteClient);
 
       if (!result.ok) {
-        console.log(`response: ${JSON.stringify(result.error)}`);
         return mapRemoteErrorToGatewayResponse(result.error);
       }
 
-      console.log(`response: ${JSON.stringify(result.data)}`);
       return jsonResponse(result.status, result.data);
     } catch (error) {
       logger.error("Internal server error", { error });

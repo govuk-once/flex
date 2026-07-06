@@ -43,8 +43,9 @@ describe("GET /v1/customer/licence", () => {
 
     http
       .gateway("dvla")
-      .get(`/customer/licence?linkingId=${linkingId}`, {
+      .get("/customer/licence", {
         headers: { auth: token },
+        query: { linkingId },
       })
       .reply(200, mockLicenceResponse);
 
@@ -117,8 +118,9 @@ describe("GET /v1/customer/licence", () => {
 
       http
         .gateway("dvla")
-        .get(`/customer/licence?linkingId=${linkingId}`, {
+        .get("/customer/licence", {
           headers: { auth: token },
+          query: { linkingId },
         })
         .reply(upstream);
 

@@ -35,8 +35,9 @@ describe("GET /v1/customer/vehicle/:id", () => {
 
     http
       .gateway("dvla")
-      .get(`/customer/vehicle/${vehicleId}?linkingId=${linkingId}`, {
+      .get(`/customer/vehicle/${vehicleId}`, {
         headers: { auth: token },
+        query: { linkingId },
       })
       .reply(200, mockVehicleResponse);
 
@@ -112,8 +113,9 @@ describe("GET /v1/customer/vehicle/:id", () => {
 
       http
         .gateway("dvla")
-        .get(`/customer/vehicle/${vehicleId}?linkingId=${linkingId}`, {
+        .get(`/customer/vehicle/${vehicleId}`, {
           headers: { auth: token },
+          query: { linkingId },
         })
         .reply(upstream);
 
