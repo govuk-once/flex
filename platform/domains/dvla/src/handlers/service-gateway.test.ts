@@ -354,10 +354,13 @@ describe("DVLA Service Gateway", () => {
     const vehicleId = "veh-789";
 
     const response = await handler(
-      privateGatewayEvent.get(`/gateways/dvla/v1/customer/vehicle/${vehicleId}`, {
-        headers: { auth: jwt },
-        queryStringParameters: { linkingId },
-      }),
+      privateGatewayEvent.get(
+        `/gateways/dvla/v1/customer/vehicle/${vehicleId}`,
+        {
+          headers: { auth: jwt },
+          queryStringParameters: { linkingId },
+        },
+      ),
       context,
     );
 
