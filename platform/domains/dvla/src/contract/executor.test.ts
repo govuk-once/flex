@@ -1,7 +1,9 @@
 import { it } from "@flex/testing";
+import { APIGatewayProxyEvent } from "aws-lambda";
 import { beforeEach, describe, expect, vi } from "vitest";
 
 import { execute } from "./executor";
+import { ROUTE_CONTRACTS } from "./route";
 
 vi.mock("@flex/logging");
 
@@ -440,6 +442,64 @@ describe("DVLA Executor", () => {
       const result = await execute(event, remoteClient);
 
       expect(result.ok).toBe(false);
+    });
+  });
+
+  describe("ROUTE_CONTRACTS toRemote validation", () => {
+    const baseEvent = {
+      headers: { auth: "Bearer jwt-123" },
+    } as unknown as APIGatewayProxyEvent;
+
+    it("throws 400 when linking-id query parameter is missing", () => {
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer/vehicles"].toRemote(baseEvent);
+      }).toThrow("Missing linking-id query parameter");
+    });
+
+    it("throws 400 when customer linking id path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/unlink-user",
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["POST:/v1/unlink-user/:id"].toRemote(event);
+      }).toThrow("Missing customer linking id in path");
+    });
+
+    it("throws 400 when vehicleId path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/customer/vehicle",
+        queryStringParameters: { linkingId: "linking-123" },
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/customer/vehicle/:id"].toRemote(event);
+      }).toThrow("Missing vehicleId form path");
+    });
+
+    it("throws 400 when registrationNumber path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/vehicle-enquiry",
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["GET:/v1/vehicle-enquiry"].toRemote(event);
+      }).toThrow("Missing registrationNumber form path");
+    });
+
+    it("throws 400 when shareCodeId path parameter is missing", () => {
+      const event = {
+        ...baseEvent,
+        path: "/v1/share-codes",
+        queryStringParameters: { linkingId: "linking-123" },
+      } as unknown as APIGatewayProxyEvent;
+
+      expect(() => {
+        ROUTE_CONTRACTS["POST:/v1/share-code/:id/cancel"].toRemote(event);
+      }).toThrow("Missing shareCodeid in path");
     });
   });
 });
