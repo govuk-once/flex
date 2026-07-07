@@ -5,9 +5,7 @@ import {
 } from "@flex/sdk";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import {
-  CreateIdentityBodyRequest,
-} from "../schemas/remote/identity";
+import { CreateIdentityBodyRequest } from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,

@@ -6,7 +6,6 @@ import {
   deleteIdentityRequestSchema,
   getIdentityRequestSchema,
   getIdentityResponseSchema,
-  identitiesPostRequestSchema,
   identitiesRequestSchema,
   identitiesResponseSchema,
   identityResponseSchema,
@@ -26,8 +25,6 @@ export type GetIdentityRequest = z.infer<typeof getIdentityRequestSchema>;
 
 export type GetIdentityResponse = z.infer<typeof getIdentityResponseSchema>;
 
-export type GetIdentitiesResponse = z.infer<typeof identitiesResponseSchema>;
-
 export type GetIdentitiesRequest = z.infer<typeof identitiesRequestSchema>;
 
-export type PostIdentitiesBody = z.infer<typeof identitiesPostRequestSchema>;
+export type GetIdentitiesReponse = z.infer<typeof identitiesResponseSchema>;

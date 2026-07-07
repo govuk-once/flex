@@ -1,6 +1,9 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { getServiceIdentityLink, deleteServiceIdentity } from "@services/identity";
+import {
+  deleteServiceIdentity,
+  getServiceIdentityLink,
+} from "@services/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
 

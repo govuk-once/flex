@@ -31,7 +31,7 @@ vi.mock("@aws-sdk/client-kms", () => {
       send = mockKmsSend;
     },
     DecryptCommand: class {
-      constructor(public args: { CiphertextBlob?: Uint8Array }) { }
+      constructor(public args: { CiphertextBlob?: Uint8Array }) {}
     },
   };
 });
@@ -174,7 +174,9 @@ describe("POST /v1/identity/:service", () => {
   }) => {
     http
       .gateway("udp")
-      .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(404);
     http
       .gateway("udp")
@@ -402,7 +404,9 @@ describe("POST /v1/identity/:service", () => {
   }) => {
     http
       .gateway("udp")
-      .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(200, serviceIdentityLink);
 
     const result = await handler(
@@ -427,17 +431,18 @@ describe("POST /v1/identity/:service", () => {
     const existingServiceIdentity = createServiceIdentityLink({
       serviceId: oldServiceId,
     });
-    const normalizedExistingService = existingServiceIdentity.serviceName.toLowerCase();
+    const normalizedExistingService =
+      existingServiceIdentity.serviceName.toLowerCase();
 
     http
       .gateway("udp")
-      .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+      .get(`/identity/${normalizedServiceName}`, {
+        headers: { "User-Id": userId },
+      })
       .reply(200, existingServiceIdentity);
     http
       .gateway("udp")
-      .delete(
-        `/identity/${normalizedExistingService}/${oldServiceId}`,
-      )
+      .delete(`/identity/${normalizedExistingService}/${oldServiceId}`)
       .reply(204);
     http
       .gateway("udp")
@@ -463,7 +468,9 @@ describe("POST /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(upstream);
 
       const result = await handler(
@@ -491,18 +498,19 @@ describe("POST /v1/identity/:service", () => {
       const existingServiceIdentity = createServiceIdentityLink({
         serviceId: oldServiceId,
       });
-      const normalizedExistingService = existingServiceIdentity.serviceName.toLowerCase();
+      const normalizedExistingService =
+        existingServiceIdentity.serviceName.toLowerCase();
 
       http
         .gateway("udp")
-        .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(200, existingServiceIdentity);
 
       http
         .gateway("udp")
-        .delete(
-          `/identity/${normalizedExistingService}/${oldServiceId}`,
-        )
+        .delete(`/identity/${normalizedExistingService}/${oldServiceId}`)
         .reply(upstream);
 
       const result = await handler(
@@ -525,7 +533,9 @@ describe("POST /v1/identity/:service", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .gateway("udp")
-        .get(`/identity/${normalizedServiceName}`, { headers: { "User-Id": userId } })
+        .get(`/identity/${normalizedServiceName}`, {
+          headers: { "User-Id": userId },
+        })
         .reply(404);
 
       http

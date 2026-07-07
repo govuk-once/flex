@@ -7,8 +7,8 @@ import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import {
   CreateIdentityRequest,
   DeleteIdentityRequest,
+  GetIdentitiesReponse,
   GetIdentitiesRequest,
-  GetIdentitiesResponse,
   GetIdentityRequest,
   GetIdentityResponse,
   IdentityResponse,
@@ -112,7 +112,7 @@ export type GetIdentitiesRouteContract = BaseRouteContract<
   "GET",
   GetIdentitiesRequest,
   unknown,
-  GetIdentitiesResponse
+  GetIdentitiesReponse
 >;
 
 export type RouteContract =

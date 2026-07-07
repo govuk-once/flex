@@ -23,14 +23,7 @@ export const identityResponseSchema = z.object({
 });
 
 export const identitiesResponseSchema = z.object({
-  data: z.object({
-    services: z.array(NonEmptyString),
-  }),
-});
-
-export const identitiesPostRequestSchema = z.object({
-  body: identitiesResponseSchema,
-  identifier: NonEmptyString,
+  linkedServices: z.array(NonEmptyString),
 });
 
 export const deleteIdentityRequestSchema = z.object({

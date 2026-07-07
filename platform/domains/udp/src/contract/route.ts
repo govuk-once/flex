@@ -3,10 +3,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
 import z from "zod";
 
-import {
-  createIdentityRequestBodySchema,
-  identitiesResponseSchema,
-} from "../schemas/domain/identity";
+import { createIdentityRequestBodySchema } from "../schemas/domain/identity";
 import { inboundCreateOrUpdateNotificationsRequestSchema } from "../schemas/domain/notifications";
 import { inboundCreateUserRequestSchema } from "../schemas/domain/user";
 import { normalizeInboundPath } from "../utils/normalizeInboundPath";
@@ -25,7 +22,7 @@ export const UDP_REMOTE_BASE = "/v1";
 export const UDP_REMOTE_ROUTES = {
   notifications: `${UDP_REMOTE_BASE}/notifications`,
   user: `${UDP_REMOTE_BASE}/user`,
-  identity: `${UDP_REMOTE_BASE}/identity`
+  identity: `${UDP_REMOTE_BASE}/identity`,
 } as const;
 
 export const ROUTE_CONTRACTS = {

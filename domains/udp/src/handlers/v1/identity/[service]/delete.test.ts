@@ -1,9 +1,5 @@
 import { it } from "@flex/testing";
-import {
-  serviceIdentityLink,
-  serviceName,
-  userId,
-} from "@tests/fixtures";
+import { serviceIdentityLink, serviceName, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./delete";

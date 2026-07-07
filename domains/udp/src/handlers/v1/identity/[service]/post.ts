@@ -36,7 +36,7 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
 
-  await postServiceIdentity(serviceId, service)
+  await postServiceIdentity(serviceId, service);
 
   return { status: status.CREATED };
 });
