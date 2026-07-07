@@ -195,3 +195,22 @@ jobs:
       VERSION: ${{ needs.release.outputs.version }}
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+
+  notifyFailure:
+    name: Notify Deployment Failure
+    needs: [release, deployDev, deployStaging, deployProd]
+    if: >-
+      always() &&
+      (needs.deployDev.result == 'failure' ||
+       needs.deployStaging.result == 'failure' ||
+       needs.deployProd.result == 'failure')
+    uses: ./.github/workflows/_notify-deployment.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      ENVIRONMENT: ${{ (needs.deployDev.result == 'failure' && 'development') || (needs.deployStaging.result == 'failure' && 'staging') || 'production' }}
+      VERSION: ${{ needs.release.outputs.version }}
+      STATUS: failure
+    secrets:
+      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
