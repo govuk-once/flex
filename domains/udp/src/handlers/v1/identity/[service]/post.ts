@@ -3,6 +3,7 @@ import type { UserId } from "@flex/utils";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
+  postServiceIdentity,
 } from "@services/identity";
 import { extractServiceId } from "@services/linkingId";
 import createHttpError from "http-errors";
@@ -34,6 +35,8 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
     /** Remove old linking ID and update with new linking ID */
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
+
+  await postServiceIdentity(serviceId, service)
 
   return { status: status.CREATED };
 });

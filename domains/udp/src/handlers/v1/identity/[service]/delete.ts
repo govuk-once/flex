@@ -1,6 +1,6 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { getServiceIdentityLink } from "@services/identity";
+import { getServiceIdentityLink, deleteServiceIdentity } from "@services/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
 
@@ -13,6 +13,8 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
 
   const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();
+
+  await deleteServiceIdentity(identity.serviceName, identity.serviceId);
 
   /**
    * NOTE:

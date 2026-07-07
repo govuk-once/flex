@@ -16,7 +16,6 @@ const remoteClient = {
   },
   services: {
     get: vi.fn(),
-    post: vi.fn(),
   },
   serviceLink: {
     create: vi.fn(),
@@ -112,26 +111,6 @@ describe("Executor", () => {
       },
     },
     {
-      method: "POST",
-      path: "/v1/identity/my-service/user-abc-123",
-      operation: "createServiceLink",
-      body: { appId: "pairwise-999" },
-      configureRemoteClient: () => {
-        remoteClient.serviceLink.create.mockResolvedValue({
-          ok: true,
-          status: 201,
-          data: undefined,
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.serviceLink.create).toHaveBeenCalledWith(
-          "my-service",
-          "user-abc-123",
-          { appId: "pairwise-999" },
-        );
-      },
-    },
-    {
       method: "DELETE",
       path: "/v1/identity/my-service/pairwise-999",
       operation: "deleteIdentityLink",
@@ -183,35 +162,12 @@ describe("Executor", () => {
           ok: true,
           status: 200,
           data: {
-            data: { services: ["dvla"] },
+            linkedServices: ["dvla"],
           },
         });
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.services.get).toHaveBeenCalledWith(
-          "onelogin_user123",
-        );
-      },
-    },
-    {
-      method: "POST",
-      path: "/v1/identities/onelogin_user123",
-      operation: "postIdentities",
-      body: {
-        data: { services: ["dvla", "hmrc"] },
-      },
-      configureRemoteClient: () => {
-        remoteClient.services.post.mockResolvedValue({
-          ok: true,
-          status: 200,
-          data: undefined,
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.services.post).toHaveBeenCalledWith(
-          {
-            data: { services: ["dvla", "hmrc"] },
-          },
           "onelogin_user123",
         );
       },
