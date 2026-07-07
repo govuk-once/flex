@@ -4,8 +4,8 @@ import {
   CreateNotificationPreferencesRequestSchema,
   CreateNotificationPreferencesResponseSchema,
   CreateUserRequestSchema,
-  GetIdentitiesGWResponseSchema,
   GetIdentitiesResponseSchema,
+  GetIdentitiesGWResponseSchema,
   GetNotificationPreferencesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
@@ -64,10 +64,6 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/identities/*",
       response: GetIdentitiesGWResponseSchema,
     },
-    udpPostIdentities: {
-      type: "gateway",
-      route: "POST /v1/identities/*",
-    },
     dvlaGetWellKnownJwk: {
       type: "gateway",
       target: "dvla",
@@ -121,7 +117,6 @@ export const { config, route, routeContext } = domain({
               "udpGetIdentity",
               "dvlaUnlinkUser",
               "udpGetIdentities",
-              "udpPostIdentities",
             ],
           },
         },
@@ -134,7 +129,6 @@ export const { config, route, routeContext } = domain({
               "udpDeleteIdentity",
               "udpGetIdentity",
               "udpGetIdentities",
-              "udpPostIdentities",
               "dvlaGetWellKnownJwk",
             ],
             headers: {

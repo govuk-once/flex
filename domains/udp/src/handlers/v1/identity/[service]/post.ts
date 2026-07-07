@@ -1,6 +1,5 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { postOrchestrateIdentityLink } from "@services/identities";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
@@ -35,13 +34,6 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
     /** Remove old linking ID and update with new linking ID */
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
-
-  await postOrchestrateIdentityLink({
-    ctx,
-    userId,
-    service,
-    serviceId,
-  });
 
   return { status: status.CREATED };
 });

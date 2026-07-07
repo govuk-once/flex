@@ -12,7 +12,6 @@ import {
   GetIdentityRequest,
   GetIdentityResponse,
   IdentityResponse,
-  PostIdentitiesBody,
 } from "../schemas/remote/identity";
 import type {
   CreateOrUpdateNotificationsRequest,
@@ -29,8 +28,7 @@ export type RouteOperation =
   | "createIdentityLink"
   | "deleteIdentityLink"
   | "getIdentityLink"
-  | "getIdentities"
-  | "postIdentities";
+  | "getIdentities";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -117,14 +115,6 @@ export type GetIdentitiesRouteContract = BaseRouteContract<
   GetIdentitiesResponse
 >;
 
-export type PostIdentitiesRouteContract = BaseRouteContract<
-  "postIdentities",
-  "POST",
-  PostIdentitiesBody,
-  unknown,
-  unknown
->;
-
 export type RouteContract =
   | GetNotificationPreferencesRouteContract
   | UpdateNotificationPreferencesRouteContract
@@ -133,5 +123,4 @@ export type RouteContract =
   | CreateIdentityLinkRouteContract
   | DeleteIdentityLinkRouteContract
   | GetIdentityLinkRouteContract
-  | GetIdentitiesRouteContract
-  | PostIdentitiesRouteContract;
+  | GetIdentitiesRouteContract;
