@@ -154,7 +154,7 @@ function createFlowLogs(scope: Construct, vpc: IVpc) {
       effect: Effect.ALLOW,
       principals: [new ServicePrincipal("delivery.logs.amazonaws.com")],
       actions: ["kms:Encrypt", "kms:GenerateDataKey*", "kms:DescribeKey"],
-      resources: ["*"],
+      resources: [flowLogKey.keyArn],
       conditions: {
         StringEquals: { "aws:SourceAccount": stack.account },
         ArnLike: {
