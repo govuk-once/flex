@@ -180,7 +180,7 @@ describe("POST /v1/identity/:service", () => {
       .reply(404);
     http
       .gateway("udp")
-      .post(`/identity/${normalizedServiceName}/${serviceId}`) // Removed strict body matching
+      .post(`/identity/${normalizedServiceName}/${serviceId}`)
       .reply(201);
 
     const result = await handler(
@@ -216,7 +216,7 @@ describe("POST /v1/identity/:service", () => {
         .reply(404);
       http
         .gateway("udp")
-        .post(`/identity/${dvlaService}/${serviceId}`) // Removed strict body matching
+        .post(`/identity/${dvlaService}/${serviceId}`)
         .reply(201);
 
       const result = await handler(
@@ -446,7 +446,7 @@ describe("POST /v1/identity/:service", () => {
       .reply(204);
     http
       .gateway("udp")
-      .post(`/identity/${normalizedServiceName}/${serviceId}`) // Removed strict body matching
+      .post(`/identity/${normalizedServiceName}/${serviceId}`)
       .reply(201);
 
     const result = await handler(
@@ -540,7 +540,7 @@ describe("POST /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .post(`/identity/${normalizedServiceName}/${serviceId}`) // Removed strict body matching
+        .post(`/identity/${normalizedServiceName}/${serviceId}`)
         .reply(upstream);
 
       const result = await handler(

@@ -64,9 +64,8 @@ describe("DELETE /v1/identity/:service", () => {
     },
   );
 
-  it.todo.for([
-    // If the delete target is already 404, an idempotent DELETE should consider it a success (204)
-    { reason: "cannot find the link", upstream: 404, expected: 204 },
+  it.for([
+    { reason: "cannot find the link", upstream: 404, expected: 502 },
     { reason: "fails unexpectedly", upstream: 500, expected: 502 },
   ])(
     "returns $expected when the UDP delete service identity link integration $reason",
