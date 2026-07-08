@@ -19,6 +19,7 @@ interface UnsServiceGatewayProps extends AlarmActionProps {
   encryptionKeyArn: string;
 }
 
+// Testing new consumer on E2E
 export function createUnsServiceGateway(
   scope: Construct,
   {
