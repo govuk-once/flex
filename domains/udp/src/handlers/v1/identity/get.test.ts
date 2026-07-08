@@ -16,7 +16,7 @@ describe("GET /v1/identity", () => {
     http
       .gateway("udp")
       .get(`/identities/${userId}`)
-      .reply(200, { data: { services } });
+      .reply(200, { linkedServices: services });
 
     const result = await handler(
       sdk.event.get(endpoint, { userId }),

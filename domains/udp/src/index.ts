@@ -10,7 +10,6 @@ export type {
 export {
   CreateServiceIdentityLinkRequestSchema,
   DeleteServiceIdentityLinkResponseSchema,
-  GetIdentitiesGWResponseSchema,
   GetIdentitiesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
   ServiceIdentityLinkRequestSchema,

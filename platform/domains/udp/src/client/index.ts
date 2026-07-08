@@ -5,10 +5,7 @@ import {
 } from "@flex/sdk";
 
 import { UDP_REMOTE_ROUTES } from "../contract/route";
-import {
-  CreateIdentityBodyRequest,
-  GetIdentitiesResponse,
-} from "../schemas/remote/identity";
+import { CreateIdentityBodyRequest } from "../schemas/remote/identity";
 import {
   CreateOrUpdateNotificationsRequest,
   createOrUpdateNotificationsResponseSchema,
@@ -93,29 +90,16 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
 
     services: {
       get: (identifier: string): Promise<ApiResult<void>> => {
-        const { request } = fetcher(UDP_REMOTE_ROUTES.identities, {
-          method: "GET",
-          headers: {
-            ...defaultHeaders,
-            "requesting-service": "app",
-            "requesting-service-user-id": identifier,
+        const serviceName = "app";
+        const { request } = fetcher(
+          `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}/linked-services`,
+          {
+            method: "GET",
+            headers: {
+              ...defaultHeaders,
+            },
           },
-        });
-        return typedFetch(request);
-      },
-      post: (
-        body: GetIdentitiesResponse,
-        identifier: string,
-      ): Promise<ApiResult<void>> => {
-        const { request } = fetcher(UDP_REMOTE_ROUTES.identities, {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            ...defaultHeaders,
-            "requesting-service": "app",
-            "requesting-service-user-id": identifier,
-          },
-        });
+        );
         return typedFetch(request);
       },
     },

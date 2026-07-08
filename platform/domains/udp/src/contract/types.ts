@@ -7,12 +7,11 @@ import { DomainNotificationsResponse } from "../schemas/domain/notifications";
 import {
   CreateIdentityRequest,
   DeleteIdentityRequest,
+  GetIdentitiesReponse,
   GetIdentitiesRequest,
-  GetIdentitiesResponse,
   GetIdentityRequest,
   GetIdentityResponse,
   IdentityResponse,
-  PostIdentitiesBody,
 } from "../schemas/remote/identity";
 import type {
   CreateOrUpdateNotificationsRequest,
@@ -29,8 +28,7 @@ export type RouteOperation =
   | "createIdentityLink"
   | "deleteIdentityLink"
   | "getIdentityLink"
-  | "getIdentities"
-  | "postIdentities";
+  | "getIdentities";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
@@ -114,15 +112,7 @@ export type GetIdentitiesRouteContract = BaseRouteContract<
   "GET",
   GetIdentitiesRequest,
   unknown,
-  GetIdentitiesResponse
->;
-
-export type PostIdentitiesRouteContract = BaseRouteContract<
-  "postIdentities",
-  "POST",
-  PostIdentitiesBody,
-  unknown,
-  unknown
+  GetIdentitiesReponse
 >;
 
 export type RouteContract =
@@ -133,5 +123,4 @@ export type RouteContract =
   | CreateIdentityLinkRouteContract
   | DeleteIdentityLinkRouteContract
   | GetIdentityLinkRouteContract
-  | GetIdentitiesRouteContract
-  | PostIdentitiesRouteContract;
+  | GetIdentitiesRouteContract;

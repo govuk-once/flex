@@ -1,7 +1,9 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { deleteOrchestrateIdentityUnlink } from "@services/identities";
-import { getServiceIdentityLink } from "@services/identity";
+import {
+  deleteServiceIdentity,
+  getServiceIdentityLink,
+} from "@services/identity";
 import createHttpError from "http-errors";
 import status from "http-status";
 
@@ -15,6 +17,8 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();
 
+  await deleteServiceIdentity(identity.serviceName, identity.serviceId);
+
   /**
    * NOTE:
    * - Commenting out for now as causing issues due to deleting the linking id
@@ -26,13 +30,6 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   //     path: `/${identity.serviceId}`,
   //   });
   // }
-
-  await deleteOrchestrateIdentityUnlink({
-    ctx,
-    userId,
-    service,
-    serviceId: identity.serviceId,
-  });
 
   return { status: status.NO_CONTENT };
 });
