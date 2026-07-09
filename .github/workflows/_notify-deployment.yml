@@ -9,6 +9,11 @@ on:
         description: "Version that was deployed"
         required: true
         type: string
+      STATUS:
+        description: "Outcome of the deployment (success or failure)"
+        required: false
+        type: string
+        default: "success"
     secrets:
       ROLE_TO_ASSUME:
         description: "Dev-account role; the release topic lives in the development account"
@@ -25,6 +30,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Configure AWS credentials
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
@@ -37,14 +43,25 @@ jobs:
         env:
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           VERSION: ${{ inputs.VERSION }}
+          STATUS: ${{ inputs.STATUS }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           TOPIC_ARN=$(aws ssm get-parameter \
             --name "/development/flex/topic/release-notifications" \
             --query "Parameter.Value" --output text)
 
+          if [ "$STATUS" = "failure" ]; then
+            TITLE="Flex deployment failed: v${VERSION} to ${ENVIRONMENT}"
+            DESC=$(printf 'Deployment of *v%s* to *%s* failed.\n\n<%s|View workflow run>' \
+              "$VERSION" "$ENVIRONMENT" "$RUN_URL")
+          else
+            TITLE="Flex deployed: v${VERSION} to ${ENVIRONMENT}"
+            DESC="Version *v${VERSION}* has been deployed to *${ENVIRONMENT}*."
+          fi
+
           MESSAGE=$(jq -n \
-            --arg title "Flex deployed: v${VERSION} to ${ENVIRONMENT}" \
-            --arg desc "Version *v${VERSION}* has been deployed to *${ENVIRONMENT}*." \
+            --arg title "$TITLE" \
+            --arg desc "$DESC" \
             '{
               version: "1.0",
               source: "custom",
