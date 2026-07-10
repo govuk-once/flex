@@ -25,7 +25,9 @@ import type {
   GatewayHandlerMap,
   RestClient,
 } from "../types";
+import { parseRequest } from "../utils/request";
 import { resolveResources } from "../utils/resources";
+import type { RouteTable } from "../utils/routes";
 import { buildRoutes, lookupRoute } from "../utils/routes";
 import { buildHandler } from ".";
 import { buildContext } from "./context";
@@ -53,6 +55,7 @@ vi.mock("@flex/logging", () => ({
   },
 }));
 vi.mock("../utils/resources", () => ({ resolveResources: vi.fn() }));
+vi.mock("../utils/request", () => ({ parseRequest: vi.fn() }));
 vi.mock("../utils/routes");
 vi.mock("./context");
 vi.mock("./middleware");
@@ -61,6 +64,7 @@ const mockHandler = (result: ApiResult<unknown>) =>
   vi.fn(() => Promise.resolve(result));
 
 const mockResources = { consumerConfig: { apiKey: "test-api-key" } }; // pragma: allowlist secret
+const mockParsedRequest = { queryParams: { key: "value" } };
 
 const mockRestClient: RestClient = {
   get: vi.fn(),
@@ -86,6 +90,11 @@ const mockMiddleware = { handler: (fn: unknown) => fn } as ReturnType<
   typeof buildMiddleware
 >;
 
+const mockRouteTable: RouteTable = {
+  static: new Map(),
+  dynamic: [],
+};
+
 const mockRoutes: GatewayHandlerMap<GatewayConfig, GatewayClientMap> = {
   [routeKey]: mockHandler({ ok: true, status: 200, data: { result: "ok" } }),
 };
@@ -103,8 +112,9 @@ describe("buildHandler", () => {
   beforeEach(() => {
     vi.mocked(buildMiddleware).mockReturnValue(mockMiddleware);
     vi.mocked(resolveResources).mockResolvedValue(mockResources);
-    vi.mocked(buildRoutes).mockReturnValue([]);
+    vi.mocked(buildRoutes).mockReturnValue(mockRouteTable);
     vi.mocked(lookupRoute).mockReturnValue(matchedRoute);
+    vi.mocked(parseRequest).mockReturnValue(mockParsedRequest);
     vi.mocked(buildContext).mockReturnValue(mockContext);
   });
 
@@ -130,7 +140,11 @@ describe("buildHandler", () => {
   it("strips the gateway prefix from the inbound path before matching the route", async () => {
     await invokeHandler();
 
-    expect(lookupRoute).toHaveBeenCalledExactlyOnceWith([], "GET", "/v1/path");
+    expect(lookupRoute).toHaveBeenCalledExactlyOnceWith(
+      mockRouteTable,
+      "GET",
+      "/v1/path",
+    );
   });
 
   it("returns 404 when the inbound path does not match a route", async () => {
@@ -153,6 +167,15 @@ describe("buildHandler", () => {
     });
   });
 
+  it("parses the inbound request against the matched route", async () => {
+    await invokeHandler();
+
+    expect(parseRequest).toHaveBeenCalledExactlyOnceWith(
+      gatewayEvent,
+      matchedRoute,
+    );
+  });
+
   it("resolves the gateway resources with the resource config", async () => {
     await invokeHandler();
 
@@ -167,35 +190,46 @@ describe("buildHandler", () => {
     expect(buildMockClients).toHaveBeenCalledExactlyOnceWith(mockResources);
   });
 
-  it("passes gateway clients and resolved resources to the handler context", async () => {
+  it("passes the parsed request, clients and resources to the handler context", async () => {
     await invokeHandler();
 
-    expect(buildContext).toHaveBeenCalledExactlyOnceWith(
-      gatewayEvent,
-      expect.objectContaining({
-        clients: mockClients,
-        resources: mockResources,
-        logger,
-        route: matchedRoute,
-      }),
-    );
+    expect(buildContext).toHaveBeenCalledExactlyOnceWith(mockParsedRequest, {
+      clients: mockClients,
+      resources: mockResources,
+      logger,
+    });
   });
 
-  it("skips resource resolution and client instantiation when the inbound path does not match a route", async () => {
-    vi.mocked(lookupRoute).mockReturnValue(undefined);
+  it.for<{
+    reason: string;
+    setup: () => GatewayHandlerMap<GatewayConfig, GatewayClientMap>;
+  }>([
+    {
+      reason: "the inbound path does not match a route",
+      setup: () => {
+        vi.mocked(lookupRoute).mockReturnValue(undefined);
+        return mockRoutes;
+      },
+    },
+    { reason: "the matched route does not have a handler", setup: () => ({}) },
+    {
+      reason: "the request validation fails",
+      setup: () => {
+        vi.mocked(parseRequest).mockImplementation(() => {
+          throw new RequestBodyParseError("test body error");
+        });
+        return mockRoutes;
+      },
+    },
+  ])(
+    "skips resource resolution and client instantiation when $reason",
+    async ({ setup }) => {
+      await invokeHandler(setup());
 
-    await invokeHandler();
-
-    expect(resolveResources).not.toHaveBeenCalled();
-    expect(buildMockClients).not.toHaveBeenCalled();
-  });
-
-  it("skips resource resolution and client instantiation when the matched route has no handler", async () => {
-    await invokeHandler({});
-
-    expect(resolveResources).not.toHaveBeenCalled();
-    expect(buildMockClients).not.toHaveBeenCalled();
-  });
+      expect(resolveResources).not.toHaveBeenCalled();
+      expect(buildMockClients).not.toHaveBeenCalled();
+    },
+  );
 
   it("returns 502 when the outbound response schema validation fails", async () => {
     const schema = z.object({ key: z.string() });

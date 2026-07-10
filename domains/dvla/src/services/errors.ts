@@ -1,6 +1,5 @@
 import { IntegrationResult } from "@flex/sdk";
-import createHttpError from "http-errors";
-import { isHttpError } from "http-errors";
+import createHttpError, { isHttpError } from "http-errors";
 import status from "http-status";
 
 import { routeContext } from "../../domain.config";

@@ -45,7 +45,13 @@ function isResolvableResource(
 async function resolveResource(resource: ResolvableResource) {
   const rawValue = await loadSecret(resolveArn(resource));
 
-  return resource.config.parse(rawValue);
+  const parsed = resource.config.safeParse(rawValue);
+
+  if (!parsed.success) {
+    throw new Error(`Invalid config for "${resource.path}"`);
+  }
+
+  return parsed.data;
 }
 
 function resolveArn({ env, path }: ResolvableResource) {
