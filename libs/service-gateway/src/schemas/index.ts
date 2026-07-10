@@ -7,7 +7,7 @@ import {
   RouteKeySchema,
 } from "@flex/utils";
 import type { ZodType } from "zod";
-import z from "zod";
+import { z } from "zod";
 
 const ResourceSchema = z.discriminatedUnion("type", [
   z.object({
@@ -34,43 +34,27 @@ const ResourceSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const DownstreamAuthSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("public") }),
-  z.object({
-    type: z.literal("sigv4"),
-    role: NonEmptyString,
-    roleName: NonEmptyString,
-  }),
-]);
-
-const DownstreamSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("remote-api"),
-    ref: NonEmptyString,
-    auth: DownstreamAuthSchema,
-  }),
-  z.object({
-    type: z.literal("event-bus"),
-    ref: NonEmptyString,
-    auth: DownstreamAuthSchema,
-  }),
-]);
-
 const PolicySchema = z.object({});
+
+const FunctionConfigSchema = z.object({
+  enableDefaultAlarms: z.boolean().optional(),
+});
 
 const RouteSchema = z.object({
   name: NonEmptyString,
   headers: z.record(NonEmptyString, HeaderConfigSchema).optional(),
   query: z.custom<ZodType>().optional(),
   body: z.custom<ZodType>().optional(),
+  response: z.custom<ZodType>().optional(),
 });
+
 export const GatewayConfigSchema = z.object({
   name: NonEmptyString,
-  environments: z.array(EnvironmentSchema).readonly().optional(),
+  environments: z.array(EnvironmentSchema).readonly(),
   access: RouteAccessSchema,
   resources: z.record(NonEmptyString, ResourceSchema),
-  downstream: DownstreamSchema,
-  policy: PolicySchema,
+  policy: PolicySchema.optional(),
+  function: FunctionConfigSchema.optional(),
   routes: z.record(RouteKeySchema, RouteSchema),
 });
 

@@ -26,6 +26,7 @@ import type {
   RestClient,
 } from "../types";
 import { resolveResources } from "../utils/resources";
+import type { RouteTable } from "../utils/routes";
 import { buildRoutes, lookupRoute } from "../utils/routes";
 import { buildHandler } from ".";
 import { buildContext } from "./context";
@@ -86,6 +87,11 @@ const mockMiddleware = { handler: (fn: unknown) => fn } as ReturnType<
   typeof buildMiddleware
 >;
 
+const mockRouteTable: RouteTable = {
+  static: new Map(),
+  dynamic: [],
+};
+
 const mockRoutes: GatewayHandlerMap<GatewayConfig, GatewayClientMap> = {
   [routeKey]: mockHandler({ ok: true, status: 200, data: { result: "ok" } }),
 };
@@ -103,7 +109,7 @@ describe("buildHandler", () => {
   beforeEach(() => {
     vi.mocked(buildMiddleware).mockReturnValue(mockMiddleware);
     vi.mocked(resolveResources).mockResolvedValue(mockResources);
-    vi.mocked(buildRoutes).mockReturnValue([]);
+    vi.mocked(buildRoutes).mockReturnValue(mockRouteTable);
     vi.mocked(lookupRoute).mockReturnValue(matchedRoute);
     vi.mocked(buildContext).mockReturnValue(mockContext);
   });
@@ -130,7 +136,11 @@ describe("buildHandler", () => {
   it("strips the gateway prefix from the inbound path before matching the route", async () => {
     await invokeHandler();
 
-    expect(lookupRoute).toHaveBeenCalledExactlyOnceWith([], "GET", "/v1/path");
+    expect(lookupRoute).toHaveBeenCalledExactlyOnceWith(
+      mockRouteTable,
+      "GET",
+      "/v1/path",
+    );
   });
 
   it("returns 404 when the inbound path does not match a route", async () => {

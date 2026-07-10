@@ -50,5 +50,6 @@ export {
   token,
   uuid,
 } from "./fixtures/common";
+export type { HttpFixture } from "./fixtures/http";
 export { createUserId, userId } from "./fixtures/user";
 export { mergeFixture } from "./utils/merge-fixture";

@@ -6,48 +6,32 @@ import { buildRoutes, lookupRoute } from "./routes";
 const route: GatewayRoute = { name: "example" };
 
 describe("buildRoutes", () => {
-  it("returns a list of parsed routes", () => {
-    expect(buildRoutes({ "GET /v1/example": route })).toStrictEqual([
-      {
-        config: route,
-        key: "GET /v1/example",
-        method: "GET",
-        segments: ["v1", "example"],
-      },
-    ]);
-  });
-
-  it("parses path param segments", () => {
-    expect(buildRoutes({ "GET /v1/example/:id": route })).toStrictEqual([
-      {
-        config: route,
-        key: "GET /v1/example/:id",
-        method: "GET",
-        segments: ["v1", "example", ":id"],
-      },
-    ]);
-  });
-
-  it("parses multiple routes", () => {
+  it("parses routes into static and dynamic groups", () => {
     const result = buildRoutes({
       "GET /v1/example": route,
-      "POST /v1/example": route,
+      "GET /v1/example/:id": route,
+      "GET /v1/example/path": route,
     });
 
-    const [getRoute, postRoute] = result;
-
-    expect(result).toHaveLength(2);
-    expect(getRoute).toMatchObject({
+    expect(result.static.size).toBe(2);
+    expect(result.static.get("GET /v1/example")).toStrictEqual({
       config: route,
       key: "GET /v1/example",
       method: "GET",
       segments: ["v1", "example"],
     });
-    expect(postRoute).toMatchObject({
+    expect(result.static.get("GET /v1/example/path")).toStrictEqual({
       config: route,
-      key: "POST /v1/example",
-      method: "POST",
-      segments: ["v1", "example"],
+      key: "GET /v1/example/path",
+      method: "GET",
+      segments: ["v1", "example", "path"],
+    });
+    expect(result.dynamic).toHaveLength(1);
+    expect(result.dynamic[0]).toStrictEqual({
+      config: route,
+      key: "GET /v1/example/:id",
+      method: "GET",
+      segments: ["v1", "example", ":id"],
     });
   });
 
@@ -65,6 +49,22 @@ describe("lookupRoute", () => {
     "GET /v1/example": route,
     "GET /v1/example/:id": route,
     "POST /v1/example": route,
+  });
+
+  it("returns the static route when a static and dynamic route conflict", () => {
+    const staticRoute: GatewayRoute = { name: "static" };
+    const dynamicRoute: GatewayRoute = { name: "dynamic" };
+
+    const routes = buildRoutes({
+      "GET /v1/example/:id": dynamicRoute,
+      "GET /v1/example/path": staticRoute,
+    });
+
+    expect(lookupRoute(routes, "GET", "/v1/example/path")).toStrictEqual({
+      config: staticRoute,
+      key: "GET /v1/example/path",
+      params: {},
+    });
   });
 
   it("returns the matched route", () => {
