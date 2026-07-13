@@ -3,6 +3,7 @@ import z from "zod";
 
 export const vehicleEnquiryRequestBodySchema = z.object({
   registrationNumber: NonEmptyString,
+  jwt: NonEmptyString,
 });
 
 export const vehicleEnquiryResponseSchema = z

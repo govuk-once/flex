@@ -1,13 +1,20 @@
 import { route } from "@domain";
 import { handleStandardErrors } from "@services/errors";
+import { getDvlaAuthToken } from "@services/authentication";
 import { status } from "http-status";
 
 const endpoint = "GET /v1/vehicle-enquiry/:reg";
 
-export const handler = route(endpoint, async ({ integrations, pathParams }) => {
+export const handler = route(endpoint, async (ctx) => {
+  const { integrations, pathParams } = ctx;
   const { reg } = pathParams;
 
-  const response = await integrations.dvlaVehicleEnquiry({ path: `/${reg}` });
+  const auth = await getDvlaAuthToken(ctx)
+
+  const response = await integrations.dvlaVehicleEnquiry({
+    path: `/${reg}`,
+    headers: { auth },
+  });
 
   handleStandardErrors(response, endpoint);
 

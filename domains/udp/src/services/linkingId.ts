@@ -129,8 +129,16 @@ async function verifyJwtAndExtractLinkingId(
   try {
     const JWKS = jose.createLocalJWKSet(jwkSet);
 
+    // const { payload } = await jose.jwtVerify<DvlaJwtPayload>(signedJwt, JWKS, {
+    //   currentDate: new Date(),
+    //   clockTolerance: 0,
+    // });
+
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     const { payload } = await jose.jwtVerify<DvlaJwtPayload>(signedJwt, JWKS, {
-      currentDate: new Date(),
+      currentDate: oneYearAgo,
       clockTolerance: 0,
     });
 

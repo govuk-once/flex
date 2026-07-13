@@ -138,14 +138,15 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
       },
     },
     vehicle: {
-      get: (registrationNumber: string): Promise<ApiResult<void>> => {
+      get: (registrationNumber: string, jwt: string): Promise<ApiResult<void>> => {
         const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.vehicleEnquiry}/vehicles`,
+          `${DVLA_REMOTE_ROUTES.app}/retrieve-vehicle-by-vrn`,
           {
             method: "POST",
             headers: {
               ...defaultHeaders,
-              "X-API-KEY": config.apiPublicKey,
+              "X-API-KEY": config.apiKey,
+              Authorization: jwt.trim(),
             },
             body: JSON.stringify({
               registrationNumber: registrationNumber,
@@ -211,92 +212,6 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
             linkingId,
           }),
         }).request;
-        return typedFetch(request);
-      },
-    },
-    /**
-     * The below endpoints are now deprecated:
-     *  - retrieve-customer-summary
-     *  - retrieve-driver-summary
-     *  - list-driving-licence-share-codes
-     *  - driving-licences/retrieve
-     */
-    driver: {
-      get: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.app}/retrieve-driver-summary`,
-          {
-            method: "POST",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-              Authorization: jwt.trim(),
-            },
-            body: JSON.stringify({
-              linkingId,
-            }),
-          },
-        ).request;
-        return typedFetch(request);
-      },
-    },
-    shareCodes: {
-      get: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.app}/list-driving-licence-share-codes`,
-          {
-            method: "POST",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-              Authorization: jwt.trim(),
-            },
-            body: JSON.stringify({
-              linkingId,
-            }),
-          },
-        ).request;
-        return typedFetch(request);
-      },
-    },
-    customer: {
-      get: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.app}/retrieve-customer-summary`,
-          {
-            method: "POST",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-              Authorization: jwt.trim(),
-            },
-            body: JSON.stringify({
-              linkingId,
-            }),
-          },
-        ).request;
-        return typedFetch(request);
-      },
-    },
-    licence: {
-      get: (linkingId: string, jwt: string): Promise<ApiResult<void>> => {
-        const request = fetcher(
-          `${DVLA_REMOTE_ROUTES.licence}/driving-licences/retrieve`,
-          {
-            method: "POST",
-            headers: {
-              ...defaultHeaders,
-              "X-API-KEY": config.apiKey,
-              Authorization: jwt.trim(),
-            },
-            body: JSON.stringify({
-              drivingLicenceNumber: linkingId,
-              includeCPC: false,
-              includeTacho: false,
-              acceptPartialResponse: false,
-            }),
-          },
-        ).request;
         return typedFetch(request);
       },
     },

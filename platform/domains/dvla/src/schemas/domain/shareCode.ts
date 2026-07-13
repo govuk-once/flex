@@ -69,19 +69,6 @@ export const SingleShareCodeResponseSchema =
     linkingId: z.uuid(),
   }).meta({ id: "SingleShareCodeResponse" });
 
-export const MultiShareCodeResponseSchemaWithoutIdSchmea = z
-  .object({
-    shareCodes: z
-      .array(ShareCodeSchema)
-      .describe("A list of share driving licence tokens"),
-  })
-  .meta({ id: "MultiShareCodeResponseWithoutId" });
-
-export const MultiShareCodeResponseSchema =
-  MultiShareCodeResponseSchemaWithoutIdSchmea.extend({
-    linkingId: z.uuid().describe("Unique identifier linking the share request"),
-  }).meta({ id: "MultiShareCodeResponse" });
-
 export const postShareCodeCancelRequestSchema = commonRequestSchema.extend({
   shareCodeId: NonEmptyString.describe(
     "The unique identifier (tokenId) of the share code to be deleted",
