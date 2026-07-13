@@ -14,6 +14,7 @@
     "jwt": "tsx scripts/generateToken.ts",
     "jwt:playground": "tsx scripts/generatePlaygroundToken.ts",
     "dastSetup": "tsx scripts/dastSetup.ts",
+    "s3:enforce-tls": "tsx scripts/enforceS3SecureTransport.ts",
     "semantic:release": "semantic-release",
     "openapi:generate": "tsx scripts/generateOpenapi.ts",
     "validate:integrations": "pnpm --filter @platform/flex run validate:integrations"
