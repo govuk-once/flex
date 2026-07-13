@@ -388,6 +388,12 @@ export class FlexPlatformStack extends BaseStack {
       "Using AWS managed keys is fine in this case and lets us replicate cross region without issues",
     );
 
+    const webAclMetricName = "OriginVerifyWebAcl";
+    const metricName = {
+      AWSManagedRulesKnownBadInputsRuleSet:
+        "AWSManagedRulesKnownBadInputsRuleSet",
+    };
+
     const webAcl = new CfnWebACL(this, "ApiWebAcl", {
       scope: "REGIONAL",
       defaultAction: {
@@ -396,7 +402,7 @@ export class FlexPlatformStack extends BaseStack {
       visibilityConfig: {
         sampledRequestsEnabled: true,
         cloudWatchMetricsEnabled: true,
-        metricName: "OriginVerifyWebAcl",
+        metricName: webAclMetricName,
       },
       dataProtectionConfig: {
         dataProtections: [
@@ -413,10 +419,26 @@ export class FlexPlatformStack extends BaseStack {
       },
       rules: [
         {
-          name: "RequireOriginSecret",
+          name: metricName.AWSManagedRulesKnownBadInputsRuleSet,
           priority: 0,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: metricName.AWSManagedRulesKnownBadInputsRuleSet,
+            },
+          },
           visibilityConfig: {
-            cloudWatchMetricsEnabled: false,
+            cloudWatchMetricsEnabled: true,
+            metricName: metricName.AWSManagedRulesKnownBadInputsRuleSet,
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "RequireOriginSecret",
+          priority: 1,
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
             sampledRequestsEnabled: false,
             metricName: "RequireOriginSecret",
           },
@@ -434,24 +456,6 @@ export class FlexPlatformStack extends BaseStack {
             },
           },
         },
-        {
-          name: "AWSManagedRulesKnownBadInputsRuleSet",
-          priority: 1,
-          visibilityConfig: {
-            cloudWatchMetricsEnabled: false,
-            sampledRequestsEnabled: false,
-            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
-          },
-          overrideAction: {
-            none: {},
-          },
-          statement: {
-            managedRuleGroupStatement: {
-              name: "AWSManagedRulesKnownBadInputsRuleSet",
-              vendorName: "AWS",
-            },
-          },
-        },
       ],
     });
 
@@ -460,11 +464,13 @@ export class FlexPlatformStack extends BaseStack {
       resourceArn: restApiStageArn,
     });
 
-    new WafAlarms(this, "ApiWafAlarms", {
-      alarmNamePrefix: `${stage}-waf`,
+    new WafAlarms(this, "WafApiAlarms", {
+      alarmNamePrefix: `${stage}-api-waf`,
+      webAclScope: "REGIONAL",
+      webAclMetricName,
+      managedRuleMetricNames: ["ALL"],
       criticalAction,
       warningAction,
-      webAcl,
     });
 
     return { originVerifySecret };
