@@ -21,6 +21,7 @@ interface Options {
   apply: boolean;
   region: string;
   bucket?: string;
+  showPolicy: boolean;
 }
 
 interface CallerIdentity {
@@ -60,6 +61,7 @@ function parseArgs(argv: string[]): Options {
     region:
       readFlag(argv, "--region") ?? process.env.AWS_REGION ?? DEFAULT_REGION,
     bucket: readFlag(argv, "--bucket"),
+    showPolicy: argv.includes("--show-policy"),
   };
 }
 
@@ -143,9 +145,12 @@ async function listBucketNames(
     .filter((name): name is string => Boolean(name));
 }
 
-function actionLabel(status: ReportStatus): string {
-  return status === "missing-policy" ? "create policy" : "merge deny statement";
-}
+const ACTION_BY_STATUS: Record<ReportStatus, string> = {
+  compliant: "ok",
+  "missing-policy": "add policy",
+  "policy-without-tls": "merge deny",
+  error: "skipped",
+};
 
 function printBanner(
   options: Options,
@@ -167,17 +172,25 @@ function printBanner(
 }
 
 function printReportTable(reports: BucketReport[]): void {
-  const width = Math.max(...reports.map((report) => report.name.length), 10);
-  console.log(`${"BUCKET".padEnd(width)}  STATUS`);
+  const nameWidth = Math.max(...reports.map((report) => report.name.length), 6);
+  const statusWidth = Math.max(
+    ...reports.map((report) => report.status.length),
+    6,
+  );
+  console.log(
+    `${"BUCKET".padEnd(nameWidth)}  ${"STATUS".padEnd(statusWidth)}  ACTION`,
+  );
   reports.forEach((report) => {
-    console.log(`${report.name.padEnd(width)}  ${report.status}`);
+    console.log(
+      `${report.name.padEnd(nameWidth)}  ${report.status.padEnd(statusWidth)}  ${ACTION_BY_STATUS[report.status]}`,
+    );
   });
 }
 
 function printPlannedPolicies(reports: BucketReport[]): void {
   console.log("\nPlanned policy changes:");
   reports.forEach((report) => {
-    console.log(`\n# ${report.name} (${actionLabel(report.status)})`);
+    console.log(`\n# ${report.name} (${ACTION_BY_STATUS[report.status]})`);
     console.log(
       JSON.stringify(mergePolicy(report.policy, report.name), null, 2),
     );
@@ -229,15 +242,23 @@ async function main(): Promise<number> {
     console.log(
       "\nAll buckets already enforce SecureTransport. Nothing to do.",
     );
-    return errored.length > 0 ? 1 : 0;
+    return options.apply && errored.length > 0 ? 1 : 0;
   }
 
   if (!options.apply) {
-    printPlannedPolicies(needingChange);
+    if (options.showPolicy) {
+      printPlannedPolicies(needingChange);
+    }
+    const compliant = reports.filter(
+      (report) => report.status === "compliant",
+    ).length;
+    const hint = options.showPolicy
+      ? ""
+      : " (add --show-policy to see the exact JSON)";
     console.log(
-      `\nDry run: ${String(needingChange.length)} bucket(s) would be updated. Re-run with --apply to write.`,
+      `\nDry run: ${String(needingChange.length)} to update, ${String(errored.length)} skipped, ${String(compliant)} already compliant. Re-run with --apply to write${hint}.`,
     );
-    return errored.length > 0 ? 1 : 0;
+    return 0;
   }
 
   const results = await Promise.all(
