@@ -38,6 +38,7 @@ import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
+import { createTravelServiceGateway } from "../constructs/gateways/travel";
 
 const { env, stage } = getEnvConfig();
 
@@ -349,6 +350,14 @@ export class FlexPlatformStack extends BaseStack {
         criticalAction,
         warningAction,
         encryptionKeyArn: flexEncryptionKeyArn,
+      });
+
+      createTravelServiceGateway(this, {
+        vpc,
+        gatewaysResource: gatewaysRoot,
+        privateEgressSg,
+        criticalAction,
+        warningAction,
       });
     }
 
