@@ -20,6 +20,15 @@ type Endpoints =
 
 const context = routeContext<Endpoints>;
 
+interface UpstreamErrorBody {
+  error?: {
+    errors?: Array<{
+      code?: string;
+      title?: string;
+    }>;
+  };
+}
+
 export function handleStandardErrors(
   response: IntegrationResult,
   route: Endpoints,
@@ -38,13 +47,23 @@ export function handleStandardErrors(
       errorBody,
     });
 
+    const typedBody = errorBody as UpstreamErrorBody | undefined;
+    const providerErrorCode = typedBody?.error?.errors?.[0]?.code;
+    const providerErrorTitle = typedBody?.error?.errors?.[0]?.title;
+
     switch (errorStatus) {
       case status.BAD_REQUEST:
         throw new createHttpError.BadRequest();
+
       case status.NOT_FOUND:
-        throw new createHttpError.NotFound();
+        throw createHttpError(status.NOT_FOUND, "Resource not found", {
+          code: providerErrorCode,
+          message: providerErrorTitle ?? "Not found",
+        });
+
       case status.TOO_MANY_REQUESTS:
         throw new createHttpError.TooManyRequests();
+
       default:
         throw new createHttpError.BadGateway();
     }

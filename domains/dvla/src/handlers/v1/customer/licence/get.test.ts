@@ -104,11 +104,44 @@ describe("GET /v1/customer/licence", () => {
   it.for([
     { reason: "returns a bad request", upstream: 400, expected: 400 },
     { reason: "cannot find the link", upstream: 404, expected: 404 },
+    {
+      reason: "cannot find the link (GUK-404-04)",
+      upstream: 404,
+      expected: 404,
+      upstreamBody: {
+        error: {
+          errors: [{ code: "GUK-404-04", title: "Driving Licence not found" }],
+        },
+      },
+      expectedProviderCode: "GUK-404-04",
+      expectedMessage: "Driving Licence not found",
+    },
+    {
+      reason: "cannot find the link (GUK-404-05)",
+      upstream: 404,
+      expected: 404,
+      upstreamBody: {
+        error: {
+          errors: [{ code: "GUK-404-05", title: "Resource not found" }],
+        },
+      },
+      expectedProviderCode: "GUK-404-05",
+      expectedMessage: "Resource not found",
+    },
     { reason: "is rate limited", upstream: 429, expected: 429 },
     { reason: "fails unexpectedly", upstream: 500, expected: 502 },
   ])(
     "returns $expected when the DVLA get customer licence integration $reason",
-    async ({ upstream, expected }, { http, sdk }) => {
+    async (
+      {
+        upstream,
+        expected,
+        upstreamBody,
+        expectedProviderCode,
+        expectedMessage,
+      },
+      { http, sdk },
+    ) => {
       http
         .domain("udp")
         .get("/identity/dvla", { headers: { "User-Id": userId } })
@@ -122,7 +155,7 @@ describe("GET /v1/customer/licence", () => {
           headers: { auth: token },
           query: { linkingId },
         })
-        .reply(upstream);
+        .reply(upstream, upstreamBody);
 
       const result = await handler(
         sdk.event.get(endpoint, { userId }),
@@ -130,7 +163,18 @@ describe("GET /v1/customer/licence", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
+
+      const body = JSON.parse(result.body || "{}") as Record<
+        string,
+        Record<string, string>
+      >;
+
+      const actualCode = body.error?.code;
+      const actualMessage = body.error?.message;
+
+      expect(actualCode).toBe(expectedProviderCode);
+      expect(actualMessage).toBe(expectedMessage);
+      expect(result.body === "").toBe(!expectedProviderCode);
     },
   );
 });
