@@ -99,3 +99,16 @@ export function mergePolicy(
     Statement: [...statements, denyStatement],
   };
 }
+
+const PERSISTENT_ENVIRONMENTS = new Set([
+  "development",
+  "staging",
+  "production",
+]);
+const STAGE_STACK_PREFIX = /^(.+?)-flex[a-z]/;
+
+export function isEphemeralStageBucket(name: string): boolean {
+  const stage = name.match(STAGE_STACK_PREFIX)?.[1];
+  if (!stage) return false;
+  return !PERSISTENT_ENVIRONMENTS.has(stage);
+}

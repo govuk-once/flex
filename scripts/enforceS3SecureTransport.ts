@@ -11,6 +11,7 @@ import {
 import type { BucketPolicy, BucketStatus } from "./lib/s3SecureTransport";
 import {
   classifyPolicy,
+  isEphemeralStageBucket,
   mergePolicy,
   parsePolicy,
 } from "./lib/s3SecureTransport";
@@ -22,6 +23,7 @@ interface Options {
   region: string;
   bucket?: string;
   showPolicy: boolean;
+  noEphemeral: boolean;
 }
 
 interface CallerIdentity {
@@ -62,6 +64,7 @@ function parseArgs(argv: string[]): Options {
       readFlag(argv, "--region") ?? process.env.AWS_REGION ?? DEFAULT_REGION,
     bucket: readFlag(argv, "--bucket"),
     showPolicy: argv.includes("--show-policy"),
+    noEphemeral: argv.includes("--no-ephemeral"),
   };
 }
 
@@ -212,7 +215,16 @@ async function main(): Promise<number> {
   }
 
   const client = new S3Client({ region: options.region });
-  const names = await listBucketNames(client, options.bucket);
+  const allNames = await listBucketNames(client, options.bucket);
+  const names = options.noEphemeral
+    ? allNames.filter((name) => !isEphemeralStageBucket(name))
+    : allNames;
+
+  if (options.noEphemeral) {
+    console.log(
+      `Excluded ${String(allNames.length - names.length)} ephemeral bucket(s).\n`,
+    );
+  }
 
   if (names.length === 0) {
     console.log("No buckets found.");
