@@ -86,6 +86,11 @@ function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function errorReason(error: unknown): string {
+  if (error instanceof S3ServiceException) return error.name;
+  return describeError(error);
+}
+
 function isNoSuchBucketPolicy(error: unknown): boolean {
   return (
     error instanceof S3ServiceException && error.name === "NoSuchBucketPolicy"
@@ -115,7 +120,7 @@ async function inspectBucket(
     const policy = await fetchPolicy(client, name);
     return { name, status: classifyPolicy(policy), policy };
   } catch (error) {
-    return { name, status: "error", error: describeError(error) };
+    return { name, status: "error", error: errorReason(error) };
   }
 }
 
@@ -174,6 +179,13 @@ function printBanner(
   console.log("");
 }
 
+function reportAction(report: BucketReport): string {
+  if (report.status === "error") {
+    return `skipped: ${report.error ?? "unknown"}`;
+  }
+  return ACTION_BY_STATUS[report.status];
+}
+
 function printReportTable(reports: BucketReport[]): void {
   const nameWidth = Math.max(...reports.map((report) => report.name.length), 6);
   const statusWidth = Math.max(
@@ -185,7 +197,7 @@ function printReportTable(reports: BucketReport[]): void {
   );
   reports.forEach((report) => {
     console.log(
-      `${report.name.padEnd(nameWidth)}  ${report.status.padEnd(statusWidth)}  ${ACTION_BY_STATUS[report.status]}`,
+      `${report.name.padEnd(nameWidth)}  ${report.status.padEnd(statusWidth)}  ${reportAction(report)}`,
     );
   });
 }
@@ -238,11 +250,6 @@ async function main(): Promise<number> {
   printReportTable(reports);
 
   const errored = reports.filter((report) => report.status === "error");
-  errored.forEach((report) => {
-    console.warn(
-      `  skipped ${report.name}: ${report.error ?? "unknown error"}`,
-    );
-  });
 
   const needingChange = reports.filter(
     (report) =>
