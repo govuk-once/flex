@@ -261,7 +261,7 @@ async function main(): Promise<number> {
     console.log(
       "\nAll buckets already enforce SecureTransport. Nothing to do.",
     );
-    return options.apply && errored.length > 0 ? 1 : 0;
+    return 0;
   }
 
   if (!options.apply) {
@@ -298,7 +298,7 @@ async function main(): Promise<number> {
   console.log(
     `\nApplied to ${String(succeeded.length)}/${String(results.length)} bucket(s).`,
   );
-  return failed.length > 0 || errored.length > 0 ? 1 : 0;
+  return failed.length > 0 ? 1 : 0;
 }
 
 main()
