@@ -4,7 +4,7 @@ import { ForeignTravelAdviceResponse } from "../schemas/remote/foreign-travel-ad
 export function toCountries(advice: ForeignTravelAdviceResponse): Country[] {
   return advice.links.children.map((child) => ({
     countryId: child.content_id,
-    countryName: lastPathSegment(child.api_path),
+    countryName: child.details.country.name,
   }));
 }
 
