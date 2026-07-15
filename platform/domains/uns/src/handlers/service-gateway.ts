@@ -36,12 +36,18 @@ export const handler: MiddyfiedHandler<
     logger.setLogLevel("INFO");
 
     try {
+      logger.info("Loading config");
       const config = configSchema.parse(process.env);
+
+      logger.info("Fetching config");
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
 
+      logger.info("Creating remote client");
       const remoteClient = createUnsRemoteClient(consumerConfig);
+
+      logger.info("Executing an API call");
       const result = await execute(event, remoteClient);
 
       if (!result.ok) {
@@ -50,7 +56,10 @@ export const handler: MiddyfiedHandler<
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
-      logger.error("Internal server error", { error });
+      logger.error("Internal server error", {
+        error,
+        serializedError: JSON.stringify(error),
+      });
       if (createHttpError.isHttpError(error)) {
         return jsonResponse(error.statusCode, {
           message: error.message,
