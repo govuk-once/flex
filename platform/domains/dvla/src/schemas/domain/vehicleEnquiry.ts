@@ -6,8 +6,10 @@ export const vehicleEnquiryRequestBodySchema = z.object({
   jwt: NonEmptyString,
 });
 
-export const vehicleEnquiryResponseSchema = z
+export const vehicleSchema = z
   .object({
+    vehicleId: z.number().int().describe("Id of the vehicle within the SOR"),
+
     registrationNumber: NonEmptyString.describe(
       "Registration number of the vehicle",
     ),
@@ -17,13 +19,9 @@ export const vehicleEnquiryResponseSchema = z
       .optional()
       .describe("Tax status of the vehicle"),
 
-    taxDueDate: NonEmptyString.pipe(z.coerce.date())
+    taxedUntil: NonEmptyString.pipe(z.coerce.date())
       .optional()
-      .describe("Date of tax liability"),
-
-    artEndDate: NonEmptyString.pipe(z.coerce.date())
-      .optional()
-      .describe("Additional Rate of Tax End Date"),
+      .describe("The date the vehicle is taxed until"),
 
     motStatus: z
       .enum([
@@ -41,23 +39,15 @@ export const vehicleEnquiryResponseSchema = z
 
     make: NonEmptyString.optional().describe("Vehicle make"),
 
-    monthOfFirstDvlaRegistration: NonEmptyString.regex(
-      /^\d{4}-(0[1-9]|1[0-2])$/,
-    )
+    dateOfFirstRegistration: NonEmptyString.pipe(z.coerce.date())
       .optional()
-      .describe("Month of First DVLA Registration (YYYY-MM)"),
-
-    monthOfFirstRegistration: NonEmptyString.regex(/^\d{4}-(0[1-9]|1[0-2])$/)
-      .optional()
-      .describe("Month of First Registration (YYYY-MM)"),
-
-    yearOfManufacture: WholeNumber.optional().describe("Year of Manufacture"),
+      .describe("Date Vehicle Was First Registered"),
 
     engineCapacity: WholeNumber.optional().describe(
       "Engine capacity in cubic centimetres",
     ),
 
-    co2Emissions: WholeNumber.optional().describe(
+    exhaustEmissionsCo2: WholeNumber.optional().describe(
       "Carbon Dioxide emissions in grams per kilometre",
     ),
 
@@ -65,33 +55,12 @@ export const vehicleEnquiryResponseSchema = z
       "Fuel type (Method of Propulsion)",
     ),
 
-    markedForExport: z
-      .boolean()
-      .optional()
-      .describe("True only if vehicle has been export marked"),
-
     colour: NonEmptyString.optional().describe("Vehicle colour"),
 
-    typeApproval: NonEmptyString.optional().describe(
-      "Vehicle Type Approval Category",
-    ),
-
-    wheelplan: NonEmptyString.optional().describe("Vehicle wheel plan"),
-
-    revenueWeight: WholeNumber.optional().describe(
-      "Revenue weight in kilograms",
-    ),
-
-    realDrivingEmissions: NonEmptyString.optional().describe(
-      "Real Driving Emissions value",
-    ),
-
-    dateOfLastV5CIssued: NonEmptyString.pipe(z.coerce.date())
-      .optional()
-      .describe("Date of last V5C issued"),
-
-    euroStatus: NonEmptyString.optional().describe("Euro Status"),
-
-    automatedVehicle: z.boolean().optional().describe("Automated Vehicle (AV)"),
+    secondaryColour: NonEmptyString.optional().describe("Secondary vehicle colour"),
   })
-  .meta({ id: "VehicleEnquiryResponse" });
+  .meta({ id: "Vehicle" });
+
+export const vehicleEnquiryResponseSchema = z.object({
+  vehicle: vehicleSchema
+}).meta({ id: "VehicleEnquiryResponse" });

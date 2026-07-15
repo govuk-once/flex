@@ -119,6 +119,7 @@ export const ROUTE_CONTRACTS = {
       const jwt = assertRequiredHeaderAndReturn(event, "auth");
       const pathParams = normalizeInboundPath(event.path).split("/");
       const registrationNumber = pathParams[3];
+      console.log(`REG NUMBER: ${registrationNumber}`);
 
       if (!registrationNumber) {
         throw new createHttpError.BadRequest(
