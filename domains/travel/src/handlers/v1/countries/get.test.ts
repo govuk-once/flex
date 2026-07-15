@@ -27,7 +27,7 @@ describe("GET /v1/countries", () => {
 
   it.for([
     { reason: "Fails unexpectedly", upstream: 500, expected: 502 },
-    { reason: "Fails unexpectedly", upstream: 500, expected: 502 },
+    { reason: "is a bad gateway", upstream: 502, expected: 502 },
   ])(
     "returns $expected when the travel gateway $reason",
     async ({ upstream, expected }, { http, sdk }) => {
