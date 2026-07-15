@@ -32,12 +32,14 @@ export function createUnsServiceGateway(
     encryptionKeyArn,
   }: UnsServiceGatewayProps,
 ) {
+  consumerConfigArn =
+    "arn:aws:secretsmanager:eu-west-2:674663567518:secret:uns-dev/flex/consumer-dC41Ci";
   const unsServiceGateway = new FlexPrivateIsolatedFunction(
     scope,
     "unsPrivateServiceGateway",
     {
       entry: getPlatformEntry("uns", "handlers/service-gateway.ts"),
-      domain: "udp",
+      domain: "uns",
       environment: {
         FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN: consumerConfigArn,
       },

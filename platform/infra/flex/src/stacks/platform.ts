@@ -348,7 +348,7 @@ export class FlexPlatformStack extends BaseStack {
         privateIsolatedSg,
         criticalAction,
         warningAction,
-        encryptionKeyArn: flexEncryptionKeyArn,
+        encryptionKeyArn: `arn:aws:kms:eu-west-2:674663567518:key/632235bc-02c0-41d6-ae18-9160d5c3eab4`,
       });
     }
 

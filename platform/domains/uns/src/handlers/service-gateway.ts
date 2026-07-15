@@ -36,12 +36,18 @@ export const handler: MiddyfiedHandler<
     logger.setLogLevel("INFO");
 
     try {
+      logger.info(`Fetching config`);
       const config = configSchema.parse(process.env);
+
+      logger.info(`Fetching consumer config`);
       const consumerConfig = await getConsumerConfig(
         config.FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN,
       );
 
+      logger.info(`Creating client`);
       const remoteClient = createUnsRemoteClient(consumerConfig);
+
+      logger.info(`Executing API call`);
       const result = await execute(event, remoteClient);
 
       if (!result.ok) {
