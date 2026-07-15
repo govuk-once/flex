@@ -2,7 +2,7 @@ import { domain } from "@flex/sdk";
 import { GetCountriesResponseSchema } from "@flex/travel-service-gateway";
 
 export const { config, route, routeContext } = domain({
-  name: "udp",
+  name: "travel",
   environments: ["development", "staging", "production"],
   common: {
     access: "isolated",
