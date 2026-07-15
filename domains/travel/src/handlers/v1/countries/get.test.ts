@@ -24,4 +24,18 @@ describe("GET /v1/countries", () => {
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toStrictEqual(countries);
   });
+
+  it.for([
+    { reason: "Fails unexpectedly", upstream: 500, expected: 502 },
+    { reason: "Fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the travel gateway $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("travel").get("/countries").reply(upstream);
+
+      const result = await handler(sdk.event.get(endpoint), sdk.context());
+
+      expect(result.statusCode).toBe(expected);
+    },
+  );
 });
