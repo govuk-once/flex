@@ -3,6 +3,7 @@ import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 const consumerConfigSchema = z.object({
+  apiUrl: NonEmptyString,
   apiKey: NonEmptyString,
   roleArn: NonEmptyString,
   privateApiUrl: NonEmptyString,
