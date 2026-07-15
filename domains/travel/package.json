@@ -10,8 +10,7 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest --passWithNoTests",
-    "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
+    "test": "vitest --passWithNoTests"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "3.1060.0",
