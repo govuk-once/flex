@@ -1,4 +1,5 @@
 import { defineGateway } from "@flex/service-gateway";
+
 import { GetCountriesResponseSchema } from "./src";
 
 export const { config, createHandler } = defineGateway({

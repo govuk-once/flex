@@ -7,8 +7,3 @@ export function toCountries(advice: ForeignTravelAdviceResponse): Country[] {
     countryName: child.details.country.name,
   }));
 }
-
-function lastPathSegment(apiPath: string): string {
-  const segments = apiPath.split("/").filter(Boolean);
-  return segments[segments.length - 1] ?? "";
-}

@@ -1,11 +1,12 @@
-import { Construct } from "constructs";
-import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
-import { getPlatformEntry } from "../../utils/getEntry";
 import { Duration } from "aws-cdk-lib";
-import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
 import { IResource } from "aws-cdk-lib/aws-apigateway";
 import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
+import { Construct } from "constructs";
+
+import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
+import { getPlatformEntry } from "../../utils/getEntry";
 import { AlarmActionProps } from "../alarms/types";
+import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
 
 interface TravelServiceGatewayProps extends AlarmActionProps {
   gatewaysResource: IResource;

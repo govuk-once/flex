@@ -1,7 +1,8 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
+
 import { createHandler } from "../../gateway.config";
-import { toCountries } from "../utils/to-countries";
 import { ForeignTravelAdviceResponseSchema } from "../schemas/remote/foreign-travel-advice";
+import { toCountries } from "../utils/to-countries";
 
 const GOV_UK_BASE_URL = "https://www.gov.uk";
 const FOREIGN_TRAVEL_ADVICE_PATH = "/api/content/foreign-travel-advice";
