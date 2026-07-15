@@ -13,6 +13,7 @@ import {
   classifyPolicy,
   isEphemeralStageBucket,
   mergePolicy,
+  parseBucketList,
   parsePolicy,
 } from "./lib/s3SecureTransport";
 
@@ -21,7 +22,8 @@ type ReportStatus = BucketStatus | "error";
 interface Options {
   apply: boolean;
   region: string;
-  bucket?: string;
+  buckets: string[];
+  explicitBuckets: boolean;
   showPolicy: boolean;
   noEphemeral: boolean;
 }
@@ -58,11 +60,17 @@ function readFlag(argv: string[], flag: string): string | undefined {
 }
 
 function parseArgs(argv: string[]): Options {
+  const single = readFlag(argv, "--bucket");
+  const list = parseBucketList(readFlag(argv, "--buckets"));
+  const buckets = [...new Set(single ? [single, ...list] : list)];
+  const explicitBuckets =
+    argv.includes("--bucket") || argv.includes("--buckets");
   return {
     apply: argv.includes("--apply"),
     region:
       readFlag(argv, "--region") ?? process.env.AWS_REGION ?? DEFAULT_REGION,
-    bucket: readFlag(argv, "--bucket"),
+    buckets,
+    explicitBuckets,
     showPolicy: argv.includes("--show-policy"),
     noEphemeral: argv.includes("--no-ephemeral"),
   };
@@ -144,9 +152,9 @@ async function applyPolicy(
 
 async function listBucketNames(
   client: S3Client,
-  only: string | undefined,
+  explicit: string[],
 ): Promise<string[]> {
-  if (only) return [only];
+  if (explicit.length > 0) return explicit;
   const response = await client.send(new ListBucketsCommand({}));
   return (response.Buckets ?? [])
     .map((bucket) => bucket.Name)
@@ -171,10 +179,14 @@ function printBanner(
   const caller = identity.ok
     ? `account ${identity.account ?? "unknown"} (${identity.arn ?? "unknown"})`
     : "unknown (aws sts get-caller-identity failed)";
+  const scope = options.explicitBuckets
+    ? `${String(options.buckets.length)} explicit bucket(s)`
+    : "all account buckets";
   console.log("S3 SecureTransport enforcement");
   console.log(`  mode:   ${mode}`);
   console.log(`  stage:  ${stage}`);
   console.log(`  region: ${options.region}`);
+  console.log(`  scope:  ${scope}`);
   console.log(`  caller: ${caller}`);
   console.log("");
 }
@@ -226,8 +238,15 @@ async function main(): Promise<number> {
     return 2;
   }
 
+  if (options.explicitBuckets && options.buckets.length === 0) {
+    console.error(
+      'A bucket list was requested but contained no valid names. Provide --buckets with a comma-separated list, e.g. --buckets "bucket-a, bucket-b".',
+    );
+    return 2;
+  }
+
   const client = new S3Client({ region: options.region });
-  const allNames = await listBucketNames(client, options.bucket);
+  const allNames = await listBucketNames(client, options.buckets);
   const names = options.noEphemeral
     ? allNames.filter((name) => !isEphemeralStageBucket(name))
     : allNames;

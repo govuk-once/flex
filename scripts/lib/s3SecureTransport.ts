@@ -112,3 +112,12 @@ export function isEphemeralStageBucket(name: string): boolean {
   if (!stage) return false;
   return !PERSISTENT_ENVIRONMENTS.has(stage);
 }
+
+export function parseBucketList(raw: string | undefined): string[] {
+  if (!raw) return [];
+  const names = raw
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+  return [...new Set(names)];
+}
