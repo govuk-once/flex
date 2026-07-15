@@ -15,6 +15,7 @@ export const { config, createHandler } = defineGateway({
       scope: "environment",
       config: z.object({
         apiKey: NonEmptyString,
+        apiUrl: NonEmptyString,
         privateApiUrl: NonEmptyString,
         region: NonEmptyString,
         roleArn: NonEmptyString,
