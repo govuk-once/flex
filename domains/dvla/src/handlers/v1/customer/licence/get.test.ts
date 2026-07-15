@@ -174,7 +174,13 @@ describe("GET /v1/customer/licence", () => {
 
       expect(actualCode).toBe(expectedProviderCode);
       expect(actualMessage).toBe(expectedMessage);
-      expect(result.body === "").toBe(!expectedProviderCode);
+
+      /**
+       * If expectedProviderCode exists, result.body should NOT be empty.
+       * If expectedProviderCode is undefined, result.body SHOULD be empty.
+       */
+      const expectedToBeEmpty = expectedProviderCode ? false : true;
+      expect(result.body === "").toBe(expectedToBeEmpty);
     },
   );
 });
