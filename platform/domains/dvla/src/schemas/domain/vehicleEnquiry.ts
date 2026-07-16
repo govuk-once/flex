@@ -57,10 +57,14 @@ export const vehicleSchema = z
 
     colour: NonEmptyString.optional().describe("Vehicle colour"),
 
-    secondaryColour: NonEmptyString.optional().describe("Secondary vehicle colour"),
+    secondaryColour: NonEmptyString.optional().describe(
+      "Secondary vehicle colour",
+    ),
   })
   .meta({ id: "Vehicle" });
 
-export const vehicleEnquiryResponseSchema = z.object({
-  vehicle: vehicleSchema
-}).meta({ id: "VehicleEnquiryResponse" });
+export const vehicleEnquiryResponseSchema = z
+  .object({
+    vehicle: vehicleSchema,
+  })
+  .meta({ id: "VehicleEnquiryResponse" });

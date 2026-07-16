@@ -1,10 +1,5 @@
 import { SSMProvider } from "@aws-lambda-powertools/parameters/ssm";
-import {
-  MultiShareCodeResponseSchemaWithoutIdSchmea,
-  SingleShareCodeResponseSchemaWithoutIdSchema,
-  vehicleEnquiryResponseSchema,
-  viewDriverResponseSchema,
-} from "@flex/dvla-service-gateway";
+import { vehicleEnquiryResponseSchema } from "@flex/dvla-service-gateway";
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
@@ -34,45 +29,6 @@ describe.runIf(isDomainDeployed(dvlaConfig)).todo("DVLA domain", () => {
     }
 
     linkingId = rawLinkingId;
-  });
-
-  describe("/dvla/v1/driving-licence", () => {
-    const endpoint = "/dvla/v1/driving-licence";
-
-    describe.runIf(
-      isRouteDeployed(dvlaConfig, "GET /v1/driving-licence") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
-    )("GET", () => {
-      it("returns 200 and valid data when identity is linked", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
-        });
-        expect(result.status).toBe(200);
-
-        const validation = viewDriverResponseSchema.safeParse(result.body);
-        expect(validation.success).toBe(true);
-      });
-
-      it("returns 404 when user is not linked", async ({
-        cloudfront,
-        withCleanIdentity,
-        authHeader,
-      }) => {
-        await withCleanIdentity("dvla");
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
-        });
-        expect(result.status).toBe(404);
-      });
-    });
   });
 
   describe("/dvla/v1/test-notification", () => {
@@ -108,82 +64,6 @@ describe.runIf(isDomainDeployed(dvlaConfig)).todo("DVLA domain", () => {
         const result = await cloudfront.client.post(endpoint, {
           headers: authHeader,
           body: {},
-        });
-
-        expect(result.status).toBe(404);
-      });
-    });
-  });
-
-  describe("/dvla/v1/driver-summary", () => {
-    const endpoint = "/dvla/v1/driver-summary";
-
-    describe.runIf(
-      isRouteDeployed(dvlaConfig, "GET /v1/driver-summary") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
-    )("GET", () => {
-      it("returns 200 when identity is linked and driver-summary is fetched", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
-        });
-
-        expect(result.status).toBe(200);
-      });
-
-      it("returns 404 when user has no identity link", async ({
-        cloudfront,
-        withCleanIdentity,
-        authHeader,
-      }) => {
-        await withCleanIdentity("dvla");
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
-        });
-
-        expect(result.status).toBe(404);
-      });
-    });
-  });
-
-  describe("/dvla/v1/customer-summary", () => {
-    const endpoint = "/dvla/v1/customer-summary";
-
-    describe.runIf(
-      isRouteDeployed(dvlaConfig, "GET /v1/customer-summary") &&
-        udpCreateIdentityDeployed() &&
-        udpDeleteIdentityDeployed(),
-    )("GET", () => {
-      it("returns 200 when identity is linked and customer-summary is fetched", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
-        });
-
-        expect(result.status).toBe(200);
-      });
-
-      it("returns 404 when user has no identity link", async ({
-        cloudfront,
-        withCleanIdentity,
-        authHeader,
-      }) => {
-        await withCleanIdentity("dvla");
-
-        const result = await cloudfront.client.get(endpoint, {
-          headers: authHeader,
         });
 
         expect(result.status).toBe(404);
@@ -245,105 +125,5 @@ describe.runIf(isDomainDeployed(dvlaConfig)).todo("DVLA domain", () => {
         });
       },
     );
-  });
-
-  describe("/dvla/v1/share-code(s)", () => {
-    const listEndpoint = "/dvla/v1/share-codes";
-    const baseEndpoint = "/dvla/v1/share-code";
-    let createdTokenId: string;
-
-    describe("Flow: Create, List, and Delete", () => {
-      it("POST: returns 200 and creates a new share code", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        const result = await cloudfront.client.post(baseEndpoint, {
-          headers: authHeader,
-          body: {},
-        });
-
-        expect(result.status).toBe(200);
-
-        const validation =
-          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
-        expect(validation.success).toBe(true);
-
-        if (validation.success) {
-          createdTokenId = validation.data.shareCode.tokenId;
-        }
-      });
-
-      it("GET: returns 200 and lists all share codes", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        const result = await cloudfront.client.get(listEndpoint, {
-          headers: authHeader,
-        });
-
-        expect(result.status).toBe(200);
-
-        const validation =
-          MultiShareCodeResponseSchemaWithoutIdSchmea.safeParse(result.body);
-        expect(validation.success).toBe(true);
-
-        if (validation.success) {
-          const exists = validation.data.shareCodes.some(
-            (sc) => sc.tokenId === createdTokenId,
-          );
-          expect(exists).toBe(true);
-        }
-      });
-
-      it("POST: returns 200 and cancels the specified share code", async ({
-        cloudfront,
-        withIdentityLink,
-        authHeader,
-      }) => {
-        await withIdentityLink("dvla", linkingId);
-
-        expect(createdTokenId).toBeDefined();
-
-        const result = await cloudfront.client.post(
-          `${baseEndpoint}/${createdTokenId}/cancel`,
-          {
-            headers: authHeader,
-            body: {},
-          },
-        );
-
-        expect(result.status).toBe(200);
-
-        const validation =
-          SingleShareCodeResponseSchemaWithoutIdSchema.safeParse(result.body);
-        expect(validation.success).toBe(true);
-
-        if (validation.success) {
-          expect(validation.data.shareCode.state).toBe("cancelled");
-          expect(validation.data.shareCode.tokenId).toBe(createdTokenId);
-        }
-      });
-    });
-
-    describe("Edge Cases", () => {
-      it("GET: returns 404 when user is not linked", async ({
-        cloudfront,
-        withCleanIdentity,
-        authHeader,
-      }) => {
-        await withCleanIdentity("dvla");
-
-        const result = await cloudfront.client.get(listEndpoint, {
-          headers: authHeader,
-        });
-        expect(result.status).toBe(404);
-      });
-    });
   });
 });

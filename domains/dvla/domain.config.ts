@@ -143,10 +143,7 @@ export const { config, route, routeContext } = domain({
         GET: {
           public: {
             name: "get-vehicle-enquiry",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaVehicleEnquiry",
-            ],
+            integrations: ["dvlaAuthenticate", "dvlaVehicleEnquiry"],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },

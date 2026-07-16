@@ -138,7 +138,10 @@ export function createDvlaRemoteClient(config: ConsumerConfig) {
       },
     },
     vehicle: {
-      get: (registrationNumber: string, jwt: string): Promise<ApiResult<void>> => {
+      get: (
+        registrationNumber: string,
+        jwt: string,
+      ): Promise<ApiResult<void>> => {
         console.log(`REG NUMBER SENDING TO DVLA: ${registrationNumber}`);
         const request = fetcher(
           `${DVLA_REMOTE_ROUTES.app}/retrieve-vehicle-by-vrn`,

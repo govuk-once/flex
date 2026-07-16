@@ -7,11 +7,7 @@ import { routeContext } from "../../domain.config";
 type Endpoints =
   | "POST /v1/unlink/:id [private]"
   | "POST /v1/share-code"
-  | "GET /v1/share-codes"
-  | "GET /v1/driving-licence"
   | "POST /v1/test-notification"
-  | "GET /v1/customer-summary"
-  | "GET /v1/driver-summary"
   | "GET /v1/vehicle-enquiry/:reg"
   | "POST /v1/share-code/:id/cancel"
   | "GET /v1/customer/licence"

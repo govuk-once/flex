@@ -13,7 +13,8 @@ const BaseShareCodeSchema = z.object({
     .min(8)
     .max(8)
     .regex(/^[^aeilouAEIOU01]{8}$/, {
-      message: "A driver licence share token (8 chars, excluding vowels and 0/1)",
+      message:
+        "A driver licence share token (8 chars, excluding vowels and 0/1)",
     }),
 
   drivingLicenceNumber: DrivingLicenceNumber.describe(
@@ -40,7 +41,10 @@ const BaseShareCodeSchema = z.object({
     message: "The date-time the token will expire",
   }),
 
-  status: z.string().nullish().describe("The current status of a driving licence share token"),
+  status: z
+    .string()
+    .nullish()
+    .describe("The current status of a driving licence share token"),
 
   redeemed: z.iso.datetime().nullish(),
 });
@@ -48,29 +52,36 @@ const BaseShareCodeSchema = z.object({
 export const ShareCodeSchema = z
   .discriminatedUnion("state", [
     BaseShareCodeSchema.extend({
-      state: z.literal("valid").describe("The state of an active share driving licence token"),
+      state: z
+        .literal("valid")
+        .describe("The state of an active share driving licence token"),
       cancelled: z.iso.datetime().nullish(),
     }),
 
     BaseShareCodeSchema.extend({
-      state: z.literal("cancelled").describe("The state of a cancelled share driving licence token"),
+      state: z
+        .literal("cancelled")
+        .describe("The state of a cancelled share driving licence token"),
       cancelled: z.iso.datetime({
         message: "The date-time the token was cancelled",
       }),
     }),
 
     BaseShareCodeSchema.extend({
-      state: z.enum(["expired", "redeemed", "invalid"]).describe("Other token states"),
+      state: z
+        .enum(["expired", "redeemed", "invalid"])
+        .describe("Other token states"),
       cancelled: z.iso.datetime().nullish(),
     }),
   ])
   .meta({ id: "ShareCode" });
 
-export const SingleShareCodeResponseSchemaWithoutIdSchema = ShareCodeSchema
-  .meta({ id: "SingleShareCodeResponseWithoutId" });
+export const SingleShareCodeResponseSchemaWithoutIdSchema =
+  ShareCodeSchema.meta({ id: "SingleShareCodeResponseWithoutId" });
 
-export const SingleShareCodeResponseSchema = ShareCodeSchema
-  .meta({ id: "SingleShareCodeResponse" });
+export const SingleShareCodeResponseSchema = ShareCodeSchema.meta({
+  id: "SingleShareCodeResponse",
+});
 
 export const postShareCodeCancelRequestSchema = commonRequestSchema.extend({
   shareCodeId: NonEmptyString.describe(

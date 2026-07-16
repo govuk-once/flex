@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import { registrationNumber, userId, vehicle } from "@tests/fixtures";
+import { registrationNumber, session, vehicle } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
@@ -8,13 +8,18 @@ describe("GET /v1/vehicle-enquiry/:reg", () => {
   const endpoint = `/vehicle-enquiry/${registrationNumber}`;
 
   it("returns 200 with the vehicle details", async ({ http, sdk }) => {
+    http.gateway("dvla").get("/authenticate").reply(200, session);
+
     http
       .gateway("dvla")
       .get(`/vehicle-enquiry/${registrationNumber}`)
       .reply(200, vehicle);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { reg: registrationNumber } }),
+      sdk.event.get(endpoint, {
+        params: { reg: registrationNumber },
+        headers: { auth: "jwt" },
+      }),
       sdk.context(),
     );
 
@@ -30,6 +35,8 @@ describe("GET /v1/vehicle-enquiry/:reg", () => {
   ])(
     "returns $expected when the DVLA post share code integration integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
+      http.gateway("dvla").get("/authenticate").reply(200, session);
+
       http
         .gateway("dvla")
         .get(`/vehicle-enquiry/${registrationNumber}`)
@@ -37,8 +44,8 @@ describe("GET /v1/vehicle-enquiry/:reg", () => {
 
       const result = await handler(
         sdk.event.get(endpoint, {
-          userId,
           params: { reg: registrationNumber },
+          headers: { auth: "jwt" },
         }),
         sdk.context(),
       );
