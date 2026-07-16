@@ -199,12 +199,21 @@ export class FlexGlobalStack extends BaseStack {
       "Using AWS managed keys is fine in this case and lets us keep the pattern consistent with origin-verify-secret",
     );
 
+    const webAclMetricName = "CfWebAcl";
+    const metricName = {
+      AWSManagedRulesCommonRuleSet: "AWSManagedRulesCommonRuleSet",
+      AWSManagedRulesKnownBadInputsRuleSet:
+        "AWSManagedRulesKnownBadInputsRuleSet",
+      AWSManagedRulesAmazonIpReputationList:
+        "AWSManagedRulesAmazonIpReputationList",
+    };
+
     const webAcl = new CfnWebACL(this, "CfWebAcl", {
       scope: "CLOUDFRONT",
       defaultAction: { allow: {} },
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,
-        metricName: "WebAcl",
+        metricName: webAclMetricName,
         sampledRequestsEnabled: true,
       },
       dataProtectionConfig: {
@@ -222,34 +231,34 @@ export class FlexGlobalStack extends BaseStack {
       },
       rules: [
         {
-          name: "AWSManagedRulesCommonRuleSet",
+          name: metricName.AWSManagedRulesCommonRuleSet,
           priority: 0,
           overrideAction: { none: {} },
           statement: {
             managedRuleGroupStatement: {
               vendorName: "AWS",
-              name: "AWSManagedRulesCommonRuleSet",
+              name: metricName.AWSManagedRulesCommonRuleSet,
             },
           },
           visibilityConfig: {
             cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRulesCommonRuleSet",
+            metricName: metricName.AWSManagedRulesCommonRuleSet,
             sampledRequestsEnabled: true,
           },
         },
         {
-          name: "AWSManagedRulesKnownBadInputsRuleSet",
+          name: metricName.AWSManagedRulesKnownBadInputsRuleSet,
           priority: 1,
           overrideAction: { none: {} },
           statement: {
             managedRuleGroupStatement: {
               vendorName: "AWS",
-              name: "AWSManagedRulesKnownBadInputsRuleSet",
+              name: metricName.AWSManagedRulesKnownBadInputsRuleSet,
             },
           },
           visibilityConfig: {
             cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRulesKnownBadInputsRuleSet",
+            metricName: metricName.AWSManagedRulesKnownBadInputsRuleSet,
             sampledRequestsEnabled: true,
           },
         },
@@ -274,18 +283,18 @@ export class FlexGlobalStack extends BaseStack {
           },
         },
         {
-          name: "AWSManagedRulesAmazonIpReputationList",
+          name: metricName.AWSManagedRulesAmazonIpReputationList,
           priority: 3,
           overrideAction: { none: {} },
           statement: {
             managedRuleGroupStatement: {
               vendorName: "AWS",
-              name: "AWSManagedRulesAmazonIpReputationList",
+              name: metricName.AWSManagedRulesAmazonIpReputationList,
             },
           },
           visibilityConfig: {
             cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRulesAmazonIpReputationList",
+            metricName: metricName.AWSManagedRulesAmazonIpReputationList,
             sampledRequestsEnabled: true,
           },
         },
@@ -310,9 +319,11 @@ export class FlexGlobalStack extends BaseStack {
 
     new WafAlarms(this, "CloudFrontWafAlarms", {
       alarmNamePrefix: `${stage}-cloudfront-waf`,
+      webAclScope: "CLOUDFRONT",
+      webAclMetricName,
+      managedRuleMetricNames: Object.values(metricName),
       criticalAction,
       warningAction,
-      webAcl,
     });
 
     return { e2eBypassSecret, webAcl };
