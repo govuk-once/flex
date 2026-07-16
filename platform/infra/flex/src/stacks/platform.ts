@@ -31,6 +31,7 @@ import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { createServiceGateway } from "../constructs/gateways/public";
+import { createTravelServiceGateway } from "../constructs/gateways/travel";
 import { createUdpServiceGateway } from "../constructs/gateways/udp";
 import { createUnsServiceGateway } from "../constructs/gateways/uns";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
@@ -349,6 +350,14 @@ export class FlexPlatformStack extends BaseStack {
         criticalAction,
         warningAction,
         encryptionKeyArn: flexEncryptionKeyArn,
+      });
+
+      createTravelServiceGateway(this, {
+        vpc,
+        gatewaysResource: gatewaysRoot,
+        privateEgressSg,
+        criticalAction,
+        warningAction,
       });
     }
 
