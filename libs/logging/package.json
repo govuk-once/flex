@@ -12,7 +12,7 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-lambda-powertools/logger": "2.33.1"
+    "@aws-lambda-powertools/logger": "2.34.0"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
