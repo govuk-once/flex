@@ -29,7 +29,7 @@
     "eslint": "10.6.0",
     "http-server": "14.1.1",
     "tsx": "4.23.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "undici-types": "8.7.0",
     "vitest": "4.1.10"
   }

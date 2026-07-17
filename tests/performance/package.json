@@ -34,6 +34,6 @@
     "@flex/config": "workspace:*",
     "@types/node": "26.1.1",
     "artillery": "2.0.33",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }
