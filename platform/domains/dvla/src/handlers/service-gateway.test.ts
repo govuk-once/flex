@@ -21,7 +21,6 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   apiUrl: "https://dvla-remote.example.test",
   apiKey: "dvla-test-key", // pragma: allowlist secret
   apiUsername: "dvla-user",
-  apiPublicKey: "dvla-test-public-key", // pragma: allowlist secret
   apiPassword: "dvla-password", // pragma: allowlist secret
   wellKnownJwkUrl: "https://dvla-jwks.example.test",
 };
