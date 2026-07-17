@@ -13,7 +13,7 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@aws-lambda-powertools/parameters": "2.33.1",
+    "@aws-lambda-powertools/parameters": "2.34.0",
     "@flex/logging": "workspace:*",
     "@flex/platform-shared": "workspace:*",
     "@flex/sdk": "workspace:*",

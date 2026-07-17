@@ -21,7 +21,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/parameters": "2.33.1",
+    "@aws-lambda-powertools/parameters": "2.34.0",
     "@flex/config": "workspace:*",
     "@flex/dvla-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",
