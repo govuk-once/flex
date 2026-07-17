@@ -321,22 +321,19 @@ export class FlexPlatformStack extends BaseStack {
       warningAction,
     });
 
-    // TODO: remove guard when DVLA and UNS are ready for production
-    if (!isProduction) {
-      const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+    const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
-      createServiceGateway(this, {
-        vpc,
-        consumerConfigArn: dvlaConsumerConfigArn,
-        gatewaysResource: gatewaysRoot,
-        privateEgressSg,
-        secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
-        service: "dvla",
-        criticalAction,
-        warningAction,
-        encryptionKeyArn: flexEncryptionKeyArn,
-      });
-    }
+    createServiceGateway(this, {
+      vpc,
+      consumerConfigArn: dvlaConsumerConfigArn,
+      gatewaysResource: gatewaysRoot,
+      privateEgressSg,
+      secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
+      service: "dvla",
+      criticalAction,
+      warningAction,
+      encryptionKeyArn: flexEncryptionKeyArn,
+    });
 
     const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
     const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
