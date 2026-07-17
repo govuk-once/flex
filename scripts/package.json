@@ -9,13 +9,13 @@
     "test": "vitest --passWithNoTests"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "3.1064.0",
+    "@aws-sdk/client-s3": "3.1083.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/node": "25.9.2",
-    "eslint": "10.5.0",
+    "@types/node": "26.1.1",
+    "eslint": "10.6.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9",
+    "vitest": "4.1.10",
     "zod": "4.4.3",
     "zod-openapi": "6.0.0"
   }

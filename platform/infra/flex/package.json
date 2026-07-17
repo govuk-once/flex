@@ -15,10 +15,10 @@
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"
   },
   "dependencies": {
-    "@aws-sdk/client-ssm": "3.1060.0",
+    "@aws-sdk/client-ssm": "3.1083.0",
     "@flex/sdk": "workspace:*",
-    "aws-cdk": "2.1126.0",
-    "aws-cdk-lib": "2.260.0",
+    "aws-cdk": "2.1129.0",
+    "aws-cdk-lib": "2.261.0",
     "constructs": "10.6.0",
     "graphology": "0.26.0",
     "graphology-dag": "0.4.1",
@@ -28,10 +28,10 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "25.9.2",
-    "eslint": "10.5.0",
-    "tsx": "4.22.4",
+    "@types/node": "26.1.1",
+    "eslint": "10.6.0",
+    "tsx": "4.23.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   }
 }

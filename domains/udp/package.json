@@ -14,7 +14,7 @@
     "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1060.0",
+    "@aws-sdk/client-kms": "3.1083.0",
     "@flex/sdk": "workspace:*",
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
@@ -27,11 +27,11 @@
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
-    "@types/ramda": "0.31.1",
-    "eslint": "10.5.0",
-    "nock": "14.0.15",
+    "@types/ramda": "0.32.0",
+    "eslint": "10.6.0",
+    "nock": "14.0.16",
     "ramda": "0.32.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   }
 }

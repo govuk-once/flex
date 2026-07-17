@@ -16,6 +16,7 @@
     "noUncheckedIndexedAccess": true,
     "outDir": "dist",
     "resolveJsonModule": true,
+    "rootDir": "${configDir}",
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022"

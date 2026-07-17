@@ -12,11 +12,11 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/node": "25.9.2",
+    "@types/node": "26.1.1",
     "dotenv": "17.4.2",
-    "eslint": "10.5.0",
+    "eslint": "10.6.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9",
+    "vitest": "4.1.10",
     "zod": "4.4.3"
   }
 }

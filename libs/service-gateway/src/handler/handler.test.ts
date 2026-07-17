@@ -215,7 +215,11 @@ describe("buildHandler", () => {
     });
     expect(logger.error).toHaveBeenCalledExactlyOnceWith(
       "Gateway response schema validation failed",
-      expect.objectContaining({ issues: expect.any(String) as string }),
+      expect.objectContaining({
+        issues: expect.stringContaining(
+          "Invalid input: expected string",
+        ) as string,
+      }),
     );
   });
 

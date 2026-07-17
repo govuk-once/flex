@@ -62,7 +62,7 @@ export class WafAlarms extends Construct {
     );
 
     this.managedRuleBlocksAlarm = new Alarm(this, "ManagedRuleBlocks", {
-      alarmName: `${alarmNamePrefix}-managed-rules-blocked-requests`,
+      alarmName: `${alarmNamePrefix}-managed-rules-blocked-requests-v2`,
       alarmDescription:
         "Critical: AWS managed rules blocking requests (known-bad inputs)",
       metric: new MathExpression({
@@ -83,7 +83,7 @@ export class WafAlarms extends Construct {
       this,
       "Blocking90PercentRequests",
       {
-        alarmName: `${alarmNamePrefix}-blocking-90-percent-requests`,
+        alarmName: `${alarmNamePrefix}-blocking-90-percent-requests-v2`,
         alarmDescription:
           "Critical: WAF blocking >90% of total requests over 5 minutes",
         metric: new MathExpression({
@@ -104,7 +104,7 @@ export class WafAlarms extends Construct {
       this,
       "BlockedRequestsSpike",
       {
-        alarmName: `${alarmNamePrefix}-blocked-requests-spike-anomaly`,
+        alarmName: `${alarmNamePrefix}-blocked-requests-spike-anomaly-v2`,
         alarmDescription:
           "Warning: blocked requests deviate from expected baseline",
         metric: blocked,

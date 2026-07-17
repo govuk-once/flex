@@ -20,17 +20,17 @@
     "ink-text-input": "6.0.0",
     "mustache": "4.2.0",
     "react": "19.2.7",
-    "tsx": "4.22.4",
+    "tsx": "4.23.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/mustache": "4.2.6",
-    "@types/node": "25.9.2",
+    "@types/node": "26.1.1",
     "@types/react": "19.2.17",
-    "eslint": "10.5.0",
+    "eslint": "10.6.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.10"
   }
 }

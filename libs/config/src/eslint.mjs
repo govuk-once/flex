@@ -144,6 +144,7 @@ export const config = [
       "@typescript-eslint/unbound-method": "off",
       "vitest/no-standalone-expect": "off",
       "vitest/no-focused-tests": ["error", { fixable: false }],
+      "vitest/valid-expect": "off",
     },
     settings: {
       vitest: { vitestImports: ["@flex/e2e", "@flex/testing"] },

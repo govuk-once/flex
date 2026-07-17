@@ -9,7 +9,7 @@ packages:
   - tests/performance/*
   - scripts
 
-minimumReleaseAge: 2880
+minimumReleaseAge: 10080
 
 savePrefix: ""
 
