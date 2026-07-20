@@ -20,14 +20,12 @@ describe("POST /v1/share-code/:id/cancel", () => {
     sdk,
   }) => {
     const cancelledSingleShareCode = createSingleShareCode({
-      shareCode: {
-        state: "cancelled",
-        token: "B2CDFGHJ",
-        documentReference: "REF12345",
-        expiry: "2026-05-22T10:00:00Z",
-        status: "inactive",
-        cancelled: "2026-05-07T14:00:00Z",
-      },
+      state: "cancelled",
+      token: "B2CDFGHJ",
+      documentReference: "REF12345",
+      expiry: "2026-05-22T10:00:00Z",
+      status: "inactive",
+      cancelled: "2026-05-07T14:00:00Z",
     });
 
     http

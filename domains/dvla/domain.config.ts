@@ -1,18 +1,11 @@
 import {
   authenticateResponseSchema,
   customerDriversLicenceSchema,
-  CustomerSummaryWithoutIdSchema,
   customerVehicleDetailsSchema,
   customerVehiclesResponseSchema,
-  DriverSummaryWithoutIdSchema,
-  MultiShareCodeResponseSchema,
-  MultiShareCodeResponseSchemaWithoutIdSchmea,
-  RetrieveCustomerSummaryByLinkingIdResponse,
-  RetrieveDriverSummaryByLinkingIdResponse,
   SingleShareCodeResponseSchema,
   SingleShareCodeResponseSchemaWithoutIdSchema,
   vehicleEnquiryResponseSchema,
-  viewDriverResponseSchema,
 } from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
@@ -43,29 +36,11 @@ export const { config, route, routeContext } = domain({
       target: "dvla",
       route: "POST /v1/test-notification/*",
     },
-    dvlaRetrieveLicence: {
-      type: "gateway",
-      target: "dvla",
-      route: "GET /v1/licence/*",
-      response: viewDriverResponseSchema,
-    },
     dvlaAuthenticate: {
       type: "gateway",
       target: "dvla",
       route: "GET /v1/authenticate",
       response: authenticateResponseSchema,
-    },
-    dvlaCustomerSummary: {
-      type: "gateway",
-      target: "dvla",
-      route: "GET /v1/customer-summary/*",
-      response: RetrieveCustomerSummaryByLinkingIdResponse,
-    },
-    dvlaDriverSummary: {
-      type: "gateway",
-      target: "dvla",
-      route: "GET /v1/driver-summary/*",
-      response: RetrieveDriverSummaryByLinkingIdResponse,
     },
     dvlaVehicleEnquiry: {
       type: "gateway",
@@ -90,12 +65,6 @@ export const { config, route, routeContext } = domain({
       target: "dvla",
       route: "POST /v1/share-code/*",
       response: SingleShareCodeResponseSchema,
-    },
-    dvlaGetShareCodes: {
-      type: "gateway",
-      target: "dvla",
-      route: "GET /v1/share-codes",
-      response: MultiShareCodeResponseSchema,
     },
     dvlaGetCustomerVehicle: {
       type: "gateway",
@@ -174,12 +143,7 @@ export const { config, route, routeContext } = domain({
         GET: {
           public: {
             name: "get-vehicle-enquiry",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaDriverSummary",
-              "dvlaVehicleEnquiry",
-              "udpGetLinkingId",
-            ],
+            integrations: ["dvlaAuthenticate", "dvlaVehicleEnquiry"],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
           },
         },
@@ -222,67 +186,6 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-          },
-        },
-      },
-      /**
-       * The following endpoints are now deprecated, they will be removed once
-       * the app has migrated across to the new endpoints
-       */
-      "/share-codes": {
-        GET: {
-          public: {
-            name: "get-share-codes",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaGetShareCodes",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: MultiShareCodeResponseSchemaWithoutIdSchmea,
-          },
-        },
-      },
-      "/driving-licence": {
-        GET: {
-          public: {
-            name: "get-users-drivers-licence",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaRetrieveLicence",
-              "dvlaCustomerSummary",
-              "udpGetLinkingId",
-            ],
-            response: viewDriverResponseSchema,
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-          },
-        },
-      },
-      "/customer-summary": {
-        GET: {
-          public: {
-            name: "get-customer-summary",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaCustomerSummary",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: CustomerSummaryWithoutIdSchema,
-          },
-        },
-      },
-      "/driver-summary": {
-        GET: {
-          public: {
-            name: "get-driver-summary",
-            integrations: [
-              "dvlaAuthenticate",
-              "dvlaDriverSummary",
-              "udpGetLinkingId",
-            ],
-            resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: DriverSummaryWithoutIdSchema,
           },
         },
       },

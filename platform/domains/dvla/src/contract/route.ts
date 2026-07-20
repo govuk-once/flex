@@ -8,8 +8,6 @@ import { RouteContract } from "./types";
 export const DVLA_REMOTE_ROUTES = {
   authenticate: `/thirdparty-access/v1`,
   app: `/govuk-app-service/v1`,
-  licence: `/full-driver-enquiry/v1`,
-  vehicleEnquiry: `/vehicle-enquiry/v1`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -118,6 +116,7 @@ export const ROUTE_CONTRACTS = {
     inboundPath: "/v1/vehicle-enquiry",
     remotePath: "/v1/vehicle-enquiry",
     toRemote: (event) => {
+      const jwt = assertRequiredHeaderAndReturn(event, "auth");
       const pathParams = normalizeInboundPath(event.path).split("/");
       const registrationNumber = pathParams[3];
 
@@ -126,9 +125,10 @@ export const ROUTE_CONTRACTS = {
           "Missing registrationNumber form path",
         );
       }
-      return { registrationNumber };
+      return { registrationNumber, jwt };
     },
-    callRemote: (client, data) => client.vehicle.get(data.registrationNumber),
+    callRemote: (client, data) =>
+      client.vehicle.get(data.registrationNumber, data.jwt),
   },
   "POST:/v1/share-code/:id/cancel": {
     operation: "postShareCodeCancel",
@@ -190,102 +190,6 @@ export const ROUTE_CONTRACTS = {
       return { id, jwt };
     },
     callRemote: (client, data) => client.unlink.post(data.id, data.jwt),
-  },
-  /** The following below are deprecated endpoints */
-  "GET:/v1/share-codes": {
-    operation: "getShareCodes",
-    method: "GET",
-    inboundPath: "/v1/share-codes",
-    remotePath: "/v1/share-codes",
-    toRemote: (event) => {
-      const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const id = event.queryStringParameters?.linkingId;
-      if (!id) {
-        throw new createHttpError.BadRequest(
-          "Missing linking-id query parameter",
-        );
-      }
-
-      return { id, jwt };
-    },
-    callRemote: (client, data) => client.shareCodes.get(data.id, data.jwt),
-  },
-  "GET:/v1/customer-summary/:id": {
-    operation: "getCustomerSummary",
-    method: "GET",
-    inboundPath: "/v1/customer-summary",
-    remotePath: "/v1/customer-summary",
-    toRemote: (event) => {
-      const jwt = assertRequiredHeaderAndReturn(event, "auth");
-
-      const pathParams = normalizeInboundPath(event.path).split("/");
-      const id = pathParams[3];
-      if (!id) {
-        throw new createHttpError.BadRequest(
-          "Missing customer linking id in path",
-        );
-      }
-
-      return { id, jwt };
-    },
-    callRemote: (client, data) => client.customer.get(data.id, data.jwt),
-  },
-  "GET:/v1/driver-summary/:id": {
-    operation: "getDriverSummary",
-    method: "GET",
-    inboundPath: "/v1/driver-summary",
-    remotePath: "/v1/driver-summary",
-    toRemote: (event) => {
-      const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
-      const id = pathParams[3];
-      if (!id) {
-        throw new createHttpError.BadRequest(
-          "Missing customer linking id in path",
-        );
-      }
-
-      return { id, jwt };
-    },
-    callRemote: (client, data) => client.driver.get(data.id, data.jwt),
-  },
-  "GET:/v1/customer/:id": {
-    operation: "getRetrieveCustomer",
-    method: "GET",
-    inboundPath: "/v1/customer",
-    remotePath: "/v1/customer",
-    toRemote: (event) => {
-      const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
-      const id = pathParams[3];
-      if (!id) {
-        throw new createHttpError.BadRequest(
-          "Missing customer linking id in path",
-        );
-      }
-
-      return { id, jwt };
-    },
-    callRemote: (client, data) => client.customer.get(data.id, data.jwt),
-  },
-  "GET:/v1/licence/:id": {
-    operation: "getRetrieveDrivingLicences",
-    method: "GET",
-    inboundPath: "/v1/licence",
-    remotePath: "/v1/licence",
-    toRemote: (event) => {
-      const jwt = assertRequiredHeaderAndReturn(event, "auth");
-      const pathParams = normalizeInboundPath(event.path).split("/");
-      const id = pathParams[3];
-      if (!id) {
-        throw new createHttpError.BadRequest(
-          "Missing customer linking id in path",
-        );
-      }
-
-      return { id, jwt };
-    },
-    callRemote: (client, data) => client.licence.get(data.id, data.jwt),
   },
 } as const satisfies Record<string, RouteContract>;
 

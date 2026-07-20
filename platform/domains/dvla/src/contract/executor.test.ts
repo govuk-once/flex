@@ -14,12 +14,6 @@ const remoteClient = {
   wellKnownJwk: {
     get: vi.fn(),
   },
-  licence: {
-    get: vi.fn(),
-  },
-  customer: {
-    get: vi.fn(),
-  },
   customerVehicles: {
     get: vi.fn(),
   },
@@ -32,19 +26,13 @@ const remoteClient = {
   notification: {
     post: vi.fn(),
   },
-  driver: {
-    get: vi.fn(),
-  },
   vehicle: {
     get: vi.fn(),
   },
-  shareCode: {
+  cancelShareCode: {
     post: vi.fn(),
   },
-  shareCodes: {
-    get: vi.fn(),
-  },
-  cancelShareCode: {
+  shareCode: {
     post: vi.fn(),
   },
   unlink: {
@@ -97,44 +85,6 @@ describe("DVLA Executor", () => {
       },
       assertRemoteClientCall: () => {
         expect(remoteClient.wellKnownJwk.get).toHaveBeenCalled();
-      },
-    },
-    {
-      method: "GET",
-      path: "/v1/licence/SMITH999999AB9YZ",
-      operation: "getLicence",
-      headers: { auth: "Bearer jwt-123" },
-      configureRemoteClient: () => {
-        remoteClient.licence.get.mockResolvedValue({
-          ok: true,
-          status: 200,
-          data: { driver: { lastName: "DOE" }, licence: { status: "Valid" } },
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.licence.get).toHaveBeenCalledWith(
-          "SMITH999999AB9YZ",
-          "Bearer jwt-123",
-        );
-      },
-    },
-    {
-      method: "GET",
-      path: "/v1/customer/linking-id-456",
-      operation: "getCustomer",
-      headers: { auth: "Bearer jwt-123" },
-      configureRemoteClient: () => {
-        remoteClient.customer.get.mockResolvedValue({
-          ok: true,
-          status: 200,
-          data: { linkingId: "linking-id-456", customer: {} },
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.customer.get).toHaveBeenCalledWith(
-          "linking-id-456",
-          "Bearer jwt-123",
-        );
       },
     },
     {
@@ -199,28 +149,6 @@ describe("DVLA Executor", () => {
       },
     },
     {
-      method: "GET",
-      path: "/v1/driver-summary/550e8400-e29b-41d4-a716-446655440000",
-      operation: "getDriver",
-      headers: { auth: "Bearer jwt-123" },
-      configureRemoteClient: () => {
-        remoteClient.driver.get.mockResolvedValue({
-          ok: true,
-          status: 200,
-          data: {
-            linkingId: "550e8400-e29b-41d4-a716-446655440000",
-            driverViewResponse: { driver: {}, licence: {} },
-          },
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.driver.get).toHaveBeenCalledWith(
-          "550e8400-e29b-41d4-a716-446655440000",
-          "Bearer jwt-123",
-        );
-      },
-    },
-    {
       method: "POST",
       path: "/v1/test-notification/test-id-123",
       operation: "postNotification",
@@ -243,6 +171,7 @@ describe("DVLA Executor", () => {
       method: "GET",
       path: "/v1/vehicle-enquiry/AA11ABC",
       operation: "getVehicle",
+      headers: { auth: "Bearer jwt-123" },
       configureRemoteClient: () => {
         remoteClient.vehicle.get.mockResolvedValue({
           ok: true,
@@ -251,41 +180,8 @@ describe("DVLA Executor", () => {
         });
       },
       assertRemoteClientCall: () => {
-        expect(remoteClient.vehicle.get).toHaveBeenCalledWith("AA11ABC");
-      },
-    },
-    {
-      method: "GET",
-      path: "/v1/share-codes",
-      operation: "getShareCodes",
-      headers: { auth: "Bearer jwt-123" },
-      queryParams: { linkingId: "test-id-123" },
-      configureRemoteClient: () => {
-        remoteClient.shareCodes.get.mockResolvedValue({
-          ok: true,
-          status: 200,
-          data: {
-            linkingId: "550e8400-e29b-41d4-a716-446655440000",
-            shareCodes: [
-              {
-                state: "valid",
-                tokenId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-                token: "B2CDFGHJ",
-                drivingLicenceNumber: "SMITH952052S99ABC",
-                driverId: "f47ac10b-58cc-4372-a567-0e02b2c3d480",
-                documentReference: "REF12345",
-                created: "2026-05-01T10:00:00Z",
-                expiry: "2026-05-22T10:00:00Z",
-                status: "active",
-                cancelled: "2026-05-22T10:00:00Z",
-              },
-            ],
-          },
-        });
-      },
-      assertRemoteClientCall: () => {
-        expect(remoteClient.shareCodes.get).toHaveBeenCalledWith(
-          "test-id-123",
+        expect(remoteClient.vehicle.get).toHaveBeenCalledWith(
+          "AA11ABC",
           "Bearer jwt-123",
         );
       },
@@ -421,7 +317,7 @@ describe("DVLA Executor", () => {
     it("throws 400 when auth header is missing for protected routes", async ({
       privateGatewayEvent,
     }) => {
-      const event = privateGatewayEvent.get("/v1/licence/12345");
+      const event = privateGatewayEvent.get("/v1/customer/licence");
 
       await expect(execute(event, remoteClient)).rejects.toMatchObject({
         statusCode: 400,
@@ -500,29 +396,6 @@ describe("DVLA Executor", () => {
       expect(() => {
         ROUTE_CONTRACTS["POST:/v1/share-code/:id/cancel"].toRemote(event);
       }).toThrow("Missing shareCodeid in path");
-    });
-
-    it("throws 400 when customer linking id path parameter is missing for customer summary", () => {
-      const event = {
-        ...baseEvent,
-        path: "/v1/customer-summary",
-      } as unknown as APIGatewayProxyEvent;
-
-      expect(() => {
-        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(event);
-      }).toThrow("Missing customer linking id in path");
-    });
-
-    it("throws 400 when auth header is missing for customer summary", () => {
-      const eventWithoutAuth = {
-        headers: {},
-      } as unknown as APIGatewayProxyEvent;
-
-      expect(() => {
-        ROUTE_CONTRACTS["GET:/v1/customer-summary/:id"].toRemote(
-          eventWithoutAuth,
-        );
-      }).toThrow("Missing auth header");
     });
   });
 });

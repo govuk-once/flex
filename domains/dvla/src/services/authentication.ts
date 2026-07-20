@@ -6,12 +6,8 @@ import { status } from "http-status";
 type CommonDvlaContext =
   | InferRouteContext<
       typeof config,
-      | "GET /v1/customer-summary"
       | "GET /v1/customer/licence"
       | "GET /v1/customer/vehicles"
-      | "GET /v1/driver-summary"
-      | "GET /v1/driving-licence"
-      | "GET /v1/share-codes"
       | "POST /v1/share-code"
       | "POST /v1/test-notification"
     >
@@ -44,7 +40,9 @@ export async function getUserLinkingId(
 }
 
 export async function getDvlaAuthToken(
-  ctx: CommonDvlaContext,
+  ctx:
+    | CommonDvlaContext
+    | InferRouteContext<typeof config, "GET /v1/vehicle-enquiry/:reg">,
 ): Promise<string> {
   const { integrations, logger } = ctx;
 

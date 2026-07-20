@@ -9,14 +9,8 @@ import {
 } from "@flex/testing";
 import type { ServiceIdentityLink } from "@flex/udp-domain";
 import type { DeepPartial } from "@flex/utils";
-import { CustomerSummary } from "@schemas/customer";
-import { DriverSummary, Licence } from "@schemas/driver";
 import { Session } from "@schemas/session";
-import {
-  MultiShareCode,
-  ShareCode,
-  SingleShareCode,
-} from "@schemas/share-code";
+import { ShareCode, SingleShareCode } from "@schemas/share-code";
 import { Vehicle } from "@schemas/vehicle";
 
 export { createUserId };
@@ -79,55 +73,17 @@ export const createSession = (overrides?: DeepPartial<Session>) =>
   );
 export const session = createSession();
 
-export const createCustomerSummary = (
-  overrides?: DeepPartial<CustomerSummary>,
-) =>
-  mergeFixture<CustomerSummary>(
-    {
-      hasErrors: false,
-      customerResponse: {
-        customer: {
-          customerId,
-          customerNumber: "123456",
-          products: [{ productType: "Driving Licence", productKey }],
-        },
-      },
-    },
-    overrides,
-  );
-export const customerSummary = createCustomerSummary();
-
-export const createDriverSummary = (overrides?: DeepPartial<DriverSummary>) =>
-  mergeFixture<DriverSummary>(
-    {
-      hasErrors: false,
-      driverViewResponse: {
-        driver: { drivingLicenceNumber, firstNames: "JANE", lastName: "SMITH" },
-        licence: { type: "Full", status: "Valid" },
-      },
-    },
-    overrides,
-  );
-export const driverSummary = createDriverSummary();
-
-export const createLicence = (overrides?: DeepPartial<Licence>) =>
-  mergeFixture<Licence>(
-    {
-      driver: { drivingLicenceNumber, firstNames: "JANE", lastName: "DOE" },
-      licence: { type: "Full", status: "Valid" },
-    },
-    overrides,
-  );
-export const licence = createLicence();
-
 export const createVehicle = (overrides?: DeepPartial<Vehicle>) =>
   mergeFixture<Vehicle>(
     {
-      registrationNumber: registrationNumber,
-      make: "TOYOTA",
-      colour: "BLUE",
-      fuelType: "PETROL",
-      taxStatus: "Taxed",
+      vehicle: {
+        vehicleId: 123456,
+        registrationNumber: registrationNumber,
+        make: "TOYOTA",
+        colour: "BLUE",
+        fuelType: "PETROL",
+        taxStatus: "Taxed",
+      },
     },
     overrides,
   );
@@ -152,12 +108,8 @@ export const shareCode = createShareCode();
 
 export const createSingleShareCode = (
   overrides?: DeepPartial<SingleShareCode>,
-) => mergeFixture<SingleShareCode>({ shareCode }, overrides);
+) => mergeFixture<SingleShareCode>({ ...shareCode }, overrides);
 export const singleShareCode = createSingleShareCode();
-
-export const createMultiShareCode = (overrides?: DeepPartial<MultiShareCode>) =>
-  mergeFixture<MultiShareCode>({ shareCodes: [shareCode] }, overrides);
-export const multiShareCode = createMultiShareCode();
 
 export const createUnlinkResult = (success = true) => ({ success });
 export const unlinkResult = createUnlinkResult();

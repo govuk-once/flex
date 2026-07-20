@@ -21,7 +21,6 @@ const TEST_CONSUMER_CONFIG: ConsumerConfig = {
   apiUrl: "https://dvla-remote.example.test",
   apiKey: "dvla-test-key", // pragma: allowlist secret
   apiUsername: "dvla-user",
-  apiPublicKey: "dvla-test-public-key", // pragma: allowlist secret
   apiPassword: "dvla-password", // pragma: allowlist secret
   wellKnownJwkUrl: "https://dvla-jwks.example.test",
 };
@@ -44,18 +43,6 @@ const MOCK_JWKS_RESPONSE = {
   ],
 };
 
-const MOCK_LICENCE_RESPONSE = {
-  driver: { lastName: "DOE", drivingLicenceNumber: "SMITH999" },
-  licence: { status: "Valid", type: "Full" },
-};
-
-const MOCK_CUSTOMER_RESPONSE = {
-  linkingId: "test-linking-id",
-  customerResponse: {
-    customer: { customerId: "cust-123" },
-  },
-};
-
 const MOCK_CUSTOMER_VEHICLES_RESPONSE = {
   customerVehicles: [],
 };
@@ -67,15 +54,6 @@ const MOCK_CUSTOMER_VEHICLE_RESPONSE = {
 const MOCK_CUSTOMER_LICENCE_RESPONSE = {
   driver: { lastName: "DOE" },
   licence: { status: "Valid" },
-};
-
-const MOCK_DRIVER_SUMMARY_RESPONSE = {
-  linkingId: "test-linking-id",
-  hasErrors: false,
-  driverViewResponse: {
-    driver: { drivingLicenceNumber: "SMITH999", lastName: "DOE" },
-    licence: { status: "Valid", type: "Full" },
-  },
 };
 
 const MOCK_VEHICLE_RESPONSE = {
@@ -117,11 +95,6 @@ const MOCK_SINGLE_SHARE_CODE_RESPONSE = {
   shareCode: MOCK_SHARE_CODE,
 };
 
-const MOCK_MULTI_SHARE_CODE_RESPONSE = {
-  linkingId: "test-linking-id",
-  shareCodes: [MOCK_SHARE_CODE],
-};
-
 const MOCK_UNLINK_RESPONSE = { success: true };
 
 const remoteClient = {
@@ -137,20 +110,6 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_JWKS_RESPONSE,
-    }),
-  },
-  licence: {
-    get: vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: MOCK_LICENCE_RESPONSE,
-    }),
-  },
-  customer: {
-    get: vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: MOCK_CUSTOMER_RESPONSE,
     }),
   },
   customerVehicles: {
@@ -174,13 +133,6 @@ const remoteClient = {
       data: MOCK_CUSTOMER_LICENCE_RESPONSE,
     }),
   },
-  driver: {
-    get: vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: MOCK_DRIVER_SUMMARY_RESPONSE,
-    }),
-  },
   notification: {
     post: vi.fn().mockResolvedValue({
       ok: true,
@@ -193,13 +145,6 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_VEHICLE_RESPONSE,
-    }),
-  },
-  shareCodes: {
-    get: vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: MOCK_MULTI_SHARE_CODE_RESPONSE,
     }),
   },
   shareCode: {
@@ -274,50 +219,6 @@ describe("DVLA Service Gateway", () => {
     });
 
     expect(remoteClient.wellKnownJwk.get).toHaveBeenCalled();
-  });
-
-  it("dispatches GET /v1/licence/:id and returns licence info", async ({
-    privateGatewayEvent,
-  }) => {
-    const licenceId = "SMITH999";
-    const jwt = "test-token";
-
-    const response = await handler(
-      privateGatewayEvent.get(`/gateways/dvla/v1/licence/${licenceId}`, {
-        headers: { auth: jwt },
-      }),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(MOCK_LICENCE_RESPONSE),
-    });
-
-    expect(remoteClient.licence.get).toHaveBeenCalledWith(licenceId, jwt);
-  });
-
-  it("dispatches GET /v1/customer/:id and returns customer info", async ({
-    privateGatewayEvent,
-  }) => {
-    const linkingId = "link-123";
-    const jwt = "test-token";
-
-    const response = await handler(
-      privateGatewayEvent.get(`/gateways/dvla/v1/customer/${linkingId}`, {
-        headers: { auth: jwt },
-      }),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(MOCK_CUSTOMER_RESPONSE),
-    });
-
-    expect(remoteClient.customer.get).toHaveBeenCalledWith(linkingId, jwt);
   });
 
   it("dispatches GET /v1/customer/vehicles and returns vehicles list", async ({
@@ -429,33 +330,6 @@ describe("DVLA Service Gateway", () => {
     expect(remoteClient.notification.post).toHaveBeenCalledWith(linkingId, jwt);
   });
 
-  it("dispatches GET /v1/driver-summary/:id and returns driver summary", async ({
-    privateGatewayEvent,
-  }) => {
-    const jwt = "test-token";
-
-    const response = await handler(
-      privateGatewayEvent.get(
-        "/gateways/dvla/v1/driver-summary/test-linking-id",
-        {
-          headers: { auth: jwt },
-        },
-      ),
-      context,
-    );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(MOCK_DRIVER_SUMMARY_RESPONSE),
-    });
-
-    expect(remoteClient.driver.get).toHaveBeenCalledWith(
-      "test-linking-id",
-      jwt,
-    );
-  });
-
   it("dispatches GET /v1/vehicle-enquiry and returns full vehicle details", async ({
     privateGatewayEvent,
   }) => {
@@ -470,7 +344,7 @@ describe("DVLA Service Gateway", () => {
     const response = await handler(
       privateGatewayEvent.get(
         `/gateways/dvla/v1/vehicle-enquiry/${registrationNumber}`,
-        {},
+        { headers: { auth: "jwt" } },
       ),
       context,
     );
@@ -481,30 +355,10 @@ describe("DVLA Service Gateway", () => {
       body: JSON.stringify(MOCK_VEHICLE_RESPONSE),
     });
 
-    expect(remoteClient.vehicle.get).toHaveBeenCalledWith(registrationNumber);
-  });
-
-  it("dispatches GET /v1/share-codes and returns multiple share codes", async ({
-    privateGatewayEvent,
-  }) => {
-    const jwt = "test-token";
-    const linkingId = "test-linking-id";
-
-    const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/share-codes", {
-        headers: { auth: jwt },
-        queryStringParameters: { linkingId },
-      }),
-      context,
+    expect(remoteClient.vehicle.get).toHaveBeenCalledWith(
+      registrationNumber,
+      "jwt",
     );
-
-    expect(response).toEqual({
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(MOCK_MULTI_SHARE_CODE_RESPONSE),
-    });
-
-    expect(remoteClient.shareCodes.get).toHaveBeenCalledWith(linkingId, jwt);
   });
 
   it("dispatches POST /v1/share-code and returns created share code", async ({
@@ -594,7 +448,7 @@ describe("DVLA Service Gateway", () => {
   it("maps remote 5xx errors to 502 with sanitized message", async ({
     privateGatewayEvent,
   }) => {
-    remoteClient.licence.get.mockResolvedValue({
+    remoteClient.customerDrivingLicence.get.mockResolvedValue({
       ok: false,
       error: {
         status: 500,
@@ -604,8 +458,9 @@ describe("DVLA Service Gateway", () => {
     });
 
     const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/licence/ID123", {
+      privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
         headers: { auth: "jwt" },
+        queryStringParameters: { linkingId: "123" },
       }),
       context,
     );
@@ -622,7 +477,7 @@ describe("DVLA Service Gateway", () => {
   it("passes through remote 4xx status and error body", async ({
     privateGatewayEvent,
   }) => {
-    remoteClient.customer.get.mockResolvedValue({
+    remoteClient.customerDrivingLicence.get.mockResolvedValue({
       ok: false,
       error: {
         status: 404,
@@ -632,8 +487,9 @@ describe("DVLA Service Gateway", () => {
     });
 
     const response = await handler(
-      privateGatewayEvent.get("/gateways/dvla/v1/customer/MISSING", {
+      privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
         headers: { auth: "jwt" },
+        queryStringParameters: { linkingId: "123" },
       }),
       context,
     );

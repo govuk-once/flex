@@ -23,7 +23,7 @@ export const handler = route("POST /v1/share-code/:id/cancel", async (ctx) => {
 
   handleStandardErrors(response, endpoint);
 
-  const { linkingId: _, ...shareCode } = response.data;
+  const { data } = response;
 
-  return { status: status.OK, data: shareCode };
+  return { status: status.OK, data };
 });
