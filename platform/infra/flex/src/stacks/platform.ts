@@ -337,8 +337,9 @@ export class FlexPlatformStack extends BaseStack {
         encryptionKeyArn: flexEncryptionKeyArn,
       });
 
-      const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecretArn);
+      const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
       const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
+      const unsCmkArn = this.import(ENV_KEYS.UnsCmkArn);
 
       createUnsServiceGateway(this, {
         vpc,
@@ -348,7 +349,7 @@ export class FlexPlatformStack extends BaseStack {
         privateIsolatedSg,
         criticalAction,
         warningAction,
-        encryptionKeyArn: flexEncryptionKeyArn,
+        encryptionKeyArn: unsCmkArn,
       });
     }
 

@@ -38,6 +38,8 @@ app.addExternalExports(region, [
         ENV_KEYS.DvlaConfigSecretArn,
         ENV_KEYS.UnsConfigSecretArn,
         ENV_KEYS.UnsCustomerRole,
+        ENV_KEYS.UnsConfigSecret,
+        ENV_KEYS.UnsCmkArn,
       ]
     : []),
   ENV_KEYS.MonitoringSlackWorkspaceId,
