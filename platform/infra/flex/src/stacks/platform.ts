@@ -296,8 +296,6 @@ export class FlexPlatformStack extends BaseStack {
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
-    const isProduction = env === Environment.production;
-
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
     const udpConsumerRoleArn = this.import(ENV_KEYS.UdpConfigRoleArn);
@@ -321,22 +319,19 @@ export class FlexPlatformStack extends BaseStack {
       warningAction,
     });
 
-    // TODO: remove guard when DVLA and UNS are ready for production
-    if (!isProduction) {
-      const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+    const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
-      createServiceGateway(this, {
-        vpc,
-        consumerConfigArn: dvlaConsumerConfigArn,
-        gatewaysResource: gatewaysRoot,
-        privateEgressSg,
-        secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
-        service: "dvla",
-        criticalAction,
-        warningAction,
-        encryptionKeyArn: flexEncryptionKeyArn,
-      });
-    }
+    createServiceGateway(this, {
+      vpc,
+      consumerConfigArn: dvlaConsumerConfigArn,
+      gatewaysResource: gatewaysRoot,
+      privateEgressSg,
+      secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
+      service: "dvla",
+      criticalAction,
+      warningAction,
+      encryptionKeyArn: flexEncryptionKeyArn,
+    });
 
     const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
     const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);

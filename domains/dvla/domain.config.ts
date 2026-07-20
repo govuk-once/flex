@@ -12,7 +12,7 @@ import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",
-  environments: ["development", "staging"],
+  environments: ["development", "staging", "production"],
   common: {
     access: "private",
     function: { timeoutSeconds: 30 },
