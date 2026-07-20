@@ -336,22 +336,22 @@ export class FlexPlatformStack extends BaseStack {
         warningAction,
         encryptionKeyArn: flexEncryptionKeyArn,
       });
-
-      const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
-      const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
-      const unsCmkArn = this.import(ENV_KEYS.UnsCmkArn);
-
-      createUnsServiceGateway(this, {
-        vpc,
-        consumerConfigArn: unsConsumerConfigArn,
-        consumerRoleArn: unsConsumerRoleArn,
-        gatewaysResource: gatewaysRoot,
-        privateIsolatedSg,
-        criticalAction,
-        warningAction,
-        encryptionKeyArn: unsCmkArn,
-      });
     }
+
+    const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
+    const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
+    const unsCmkArn = this.import(ENV_KEYS.UnsCmkArn);
+
+    createUnsServiceGateway(this, {
+      vpc,
+      consumerConfigArn: unsConsumerConfigArn,
+      consumerRoleArn: unsConsumerRoleArn,
+      gatewaysResource: gatewaysRoot,
+      privateIsolatedSg,
+      criticalAction,
+      warningAction,
+      encryptionKeyArn: unsCmkArn,
+    });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
