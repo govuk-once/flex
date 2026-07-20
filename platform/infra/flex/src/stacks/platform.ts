@@ -296,8 +296,6 @@ export class FlexPlatformStack extends BaseStack {
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
 
-    const isProduction = env === Environment.production;
-
     const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
     const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
     const udpConsumerRoleArn = this.import(ENV_KEYS.UdpConfigRoleArn);
