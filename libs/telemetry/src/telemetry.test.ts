@@ -12,21 +12,21 @@ describe("emitTelemetry", () => {
   });
 
   it("logs the event under the telemetry namespace", () => {
-    emitTelemetry(TelemetryEvent.example_event, { userId: "123" });
+    emitTelemetry(TelemetryEvent.auth_success, { userId: "123" });
 
     expect(logger.info).toHaveBeenCalledExactlyOnceWith("telemetry", {
       telemetry: {
-        event: TelemetryEvent.example_event,
+        event: TelemetryEvent.auth_success,
         details: { userId: "123" },
       },
     });
   });
 
   it("omits details when none are provided", () => {
-    emitTelemetry(TelemetryEvent.example_event);
+    emitTelemetry(TelemetryEvent.auth_success);
 
     expect(logger.info).toHaveBeenCalledExactlyOnceWith("telemetry", {
-      telemetry: { event: TelemetryEvent.example_event },
+      telemetry: { event: TelemetryEvent.auth_success },
     });
   });
 });

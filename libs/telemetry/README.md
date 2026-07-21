@@ -9,7 +9,7 @@ logger's standard context (service, org, team, request id, trace id, etc).
 ```ts
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 
-emitTelemetry(TelemetryEvent.example_event, { userId: "123" });
+emitTelemetry(TelemetryEvent.auth_success, { userId: "123" });
 ```
 
 Each event produces an `INFO` log line with the message `telemetry` and a
@@ -22,7 +22,7 @@ Each event produces an `INFO` log line with the message `telemetry` and a
   "service": "...",
   "timestamp": "...",
   "telemetry": {
-    "event": "example_event",
+    "event": "auth_success",
     "details": { "userId": "123" }
   }
 }
@@ -49,5 +49,5 @@ A vitest manual mock ships with the package:
 ```ts
 vi.mock("@flex/telemetry");
 
-expect(emitTelemetry).toHaveBeenCalledWith(TelemetryEvent.example_event);
+expect(emitTelemetry).toHaveBeenCalledWith(TelemetryEvent.auth_success);
 ```

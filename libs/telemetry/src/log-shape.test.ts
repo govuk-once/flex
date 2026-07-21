@@ -9,7 +9,7 @@ describe("emitted log shape", () => {
       .spyOn(process.stdout, "write")
       .mockImplementationOnce(() => true);
 
-    emitTelemetry(TelemetryEvent.example_event, { userId: "123" });
+    emitTelemetry(TelemetryEvent.auth_success, { userId: "123" });
 
     const line = write.mock.calls
       .map((call) => String(call[0]))
@@ -21,7 +21,7 @@ describe("emitted log shape", () => {
       level: "INFO",
       message: "telemetry",
       telemetry: {
-        event: "example_event",
+        event: "auth_success",
         details: { userId: "123" },
       },
     });
