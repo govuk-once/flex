@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./edge": "./src/edge.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",

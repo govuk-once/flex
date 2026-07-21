@@ -1,11 +1,14 @@
+import { EdgeTelemetryEvent, emitEdgeTelemetry } from "@flex/telemetry/edge";
 import {
   buildCloudFrontEvent,
   buildCloudFrontEventWithAuthorizationHeader,
   buildCloudFrontFunctionErrorResponse,
 } from "@flex/testing";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handler } from "./handler";
+
+vi.mock("@flex/telemetry/edge");
 
 const validHeader = "eyJoZWxsbyI6ICJ3b3JsZCJ9";
 const validBody = "eyJoZWxsbyI6ICJUb20ifQ==";
@@ -13,6 +16,10 @@ const validSignature = "c2lnbmF0dXJl";
 const validToken = `${validHeader}.${validBody}.${validSignature}`;
 
 describe("CloudFront Function Handler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it.each([
     {
       description: "fails with missing authorization header",
@@ -20,6 +27,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_missing,
     },
     {
       description: "fails with empty authorization header",
@@ -27,6 +35,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_missing,
     },
     {
       description: "fails with malformed authorization header",
@@ -34,6 +43,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description: "fails with only 'Bearer' in authorization header",
@@ -41,6 +51,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_missing,
     },
     {
       description: "fails with too many segments in auth header",
@@ -50,6 +61,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description: "fails with invalid JWT header",
@@ -59,6 +71,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description: "fails with invalid JWT body",
@@ -68,6 +81,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description:
@@ -78,6 +92,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description: "fails with authorization header with missing body",
@@ -87,6 +102,7 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
     {
       description:
@@ -97,11 +113,19 @@ describe("CloudFront Function Handler", () => {
       expected: buildCloudFrontFunctionErrorResponse(
         '{"message":"Unauthorized"}',
       ),
+      expectedTelemetryEvent: EdgeTelemetryEvent.edge_token_invalid,
     },
-  ])("$description", ({ event, expected }) => {
+  ])("$description", ({ event, expected, expectedTelemetryEvent }) => {
     const result = handler(event);
 
     expect(result).toEqual(expected);
+    expect(emitEdgeTelemetry).toHaveBeenCalledExactlyOnceWith(
+      expectedTelemetryEvent,
+      {
+        correlationId: expect.any(String) as string,
+        reason: expect.any(String) as string,
+      },
+    );
   });
 
   it("returns the original request when authorization header is present", () => {
@@ -111,5 +135,9 @@ describe("CloudFront Function Handler", () => {
     const result = handler(event);
 
     expect(result).toBe(event.request);
+    expect(emitEdgeTelemetry).toHaveBeenCalledExactlyOnceWith(
+      EdgeTelemetryEvent.edge_token_validated,
+      { correlationId: expect.any(String) as string },
+    );
   });
 });

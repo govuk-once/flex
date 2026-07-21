@@ -8,6 +8,9 @@
     "lint": "eslint --max-warnings=0 .",
     "test": "vitest --passWithNoTests"
   },
+  "dependencies": {
+    "@flex/telemetry": "workspace:*"
+  },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",

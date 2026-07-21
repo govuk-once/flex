@@ -1,3 +1,7 @@
+import { EdgeTelemetryEvent } from "@flex/telemetry/edge";
+
+import { validationError } from "../utils/errors";
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -23,7 +27,7 @@ export function validateJson(
   const result = safeParseJson(jsonString);
 
   if (!isObject(result)) {
-    throw new Error(message);
+    throw validationError(message, EdgeTelemetryEvent.edge_token_invalid);
   }
 
   return result;
