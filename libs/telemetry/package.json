@@ -1,0 +1,24 @@
+{
+  "name": "@flex/telemetry",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "eslint": "10.5.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.9"
+  }
+}
