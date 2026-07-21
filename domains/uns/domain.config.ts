@@ -9,7 +9,7 @@ import {
 
 export const { config, route } = domain({
   name: "uns",
-  environments: ["development", "staging"],
+  environments: ["development", "staging", "production"],
   common: {
     access: "isolated",
     function: { timeoutSeconds: 30 },
