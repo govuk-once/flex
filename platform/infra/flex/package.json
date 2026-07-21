@@ -15,7 +15,7 @@
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"
   },
   "dependencies": {
-    "@aws-sdk/client-ssm": "3.1084.0",
+    "@aws-sdk/client-ssm": "3.1086.0",
     "@flex/sdk": "workspace:*",
     "aws-cdk": "2.1130.0",
     "aws-cdk-lib": "2.261.0",
@@ -29,8 +29,8 @@
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/node": "26.1.1",
-    "eslint": "10.6.0",
-    "tsx": "4.23.0",
+    "eslint": "10.7.0",
+    "tsx": "4.23.1",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }

@@ -19,17 +19,17 @@
     "validate:integrations": "pnpm --filter @platform/flex run validate:integrations"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "3.1084.0",
+    "@aws-sdk/client-s3": "3.1086.0",
     "@flex/cli": "workspace:*",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@semantic-release/exec": "7.1.0",
     "conventional-changelog-conventionalcommits": "10.2.1",
     "esbuild": "0.28.1",
-    "eslint": "10.6.0",
-    "nx": "23.0.1",
-    "semantic-release": "25.0.5",
-    "tsx": "4.23.0",
+    "eslint": "10.7.0",
+    "nx": "23.1.0",
+    "semantic-release": "25.0.7",
+    "tsx": "4.23.1",
     "typescript": "6.0.3",
     "zod": "4.4.3",
     "zod-openapi": "6.0.0"

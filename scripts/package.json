@@ -9,11 +9,11 @@
     "test": "vitest --passWithNoTests"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "3.1084.0",
+    "@aws-sdk/client-s3": "3.1086.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/node": "26.1.1",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10",
     "zod": "4.4.3",

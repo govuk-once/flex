@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.34.0",
-    "@aws-sdk/client-ssm": "3.1084.0",
+    "@aws-sdk/client-ssm": "3.1086.0",
     "@flex/logging": "workspace:*",
     "@middy/core": "7.7.0",
     "aws-jwt-verify": "5.2.1",
@@ -24,7 +24,7 @@
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
     "@types/node": "26.1.1",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "nock": "14.0.16",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
