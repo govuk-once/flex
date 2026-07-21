@@ -38,7 +38,7 @@ importers:
         version: 0.28.1
       eslint:
         specifier: 10.6.0
-        version: 10.6.0(jiti@2.7.0)(supports-color@8.1.1)
+        version: 10.6.0(jiti@2.7.0)
       nx:
         specifier: 23.0.1
         version: 23.0.1
@@ -430,16 +430,19 @@ importers:
 
   libs/logging:
     dependencies:
+      '@aws-lambda-powertools/jmespath':
+        specifier: 2.34.0
+        version: 2.34.0
       '@aws-lambda-powertools/logger':
         specifier: 2.34.0
-        version: 2.34.0(@middy/core@7.7.0)
+        version: 2.34.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.0)
     devDependencies:
       '@flex/config':
         specifier: workspace:*
         version: link:../config
       eslint:
         specifier: 10.6.0
-        version: 10.6.0(jiti@2.7.0)
+        version: 10.6.0(jiti@2.7.0)(supports-color@8.1.1)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1246,6 +1249,9 @@ packages:
 
   '@aws-lambda-powertools/commons@2.34.0':
     resolution: {integrity: sha512-ga89L3UznCwkApsrVAYGywifAh9PpccXZAVE053B6IdKvZrwjv+L+ja1WyzU9sy9UR3wPEdh0LFiUCRZRhTfvQ==}
+
+  '@aws-lambda-powertools/jmespath@2.34.0':
+    resolution: {integrity: sha512-lOWwQvK6FaRA0GyO0GwM6uq8CO5NjA+vyHRrWM2a6mkA6dtfyvSlytzUrMvaHUv6YdpQ8hnKsGQM7U8L07zhLQ==}
 
   '@aws-lambda-powertools/logger@2.34.0':
     resolution: {integrity: sha512-FIWQcdX/dqfKE+4H8N9w7y7/3/ANmDpKDgMlMc+yPNx2XDpKK6Ou1zLFYoNt5mV6dOZunFQcKbRWUy6zIDdE0w==}
@@ -7352,11 +7358,16 @@ snapshots:
     dependencies:
       '@aws/lambda-invoke-store': 0.3.0
 
-  '@aws-lambda-powertools/logger@2.34.0(@middy/core@7.7.0)':
+  '@aws-lambda-powertools/jmespath@2.34.0':
+    dependencies:
+      '@aws-lambda-powertools/commons': 2.34.0
+
+  '@aws-lambda-powertools/logger@2.34.0(@aws-lambda-powertools/jmespath@2.34.0)(@middy/core@7.7.0)':
     dependencies:
       '@aws-lambda-powertools/commons': 2.34.0
       '@aws/lambda-invoke-store': 0.3.0
     optionalDependencies:
+      '@aws-lambda-powertools/jmespath': 2.34.0
       '@middy/core': 7.7.0
 
   '@aws-lambda-powertools/parameters@2.34.0(@aws-sdk/client-secrets-manager@3.1084.0)(@aws-sdk/client-ssm@3.1084.0)(@middy/core@7.7.0)':

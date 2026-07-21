@@ -12,6 +12,7 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
+    "@aws-lambda-powertools/jmespath": "2.34.0",
     "@aws-lambda-powertools/logger": "2.34.0"
   },
   "devDependencies": {
