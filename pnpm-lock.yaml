@@ -978,6 +978,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
+      '@flex/service-gateway':
+        specifier: workspace:*
+        version: link:../../../libs/service-gateway
       aws-cdk:
         specifier: 2.1130.0
         version: 2.1130.0

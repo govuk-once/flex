@@ -1,8 +1,14 @@
 import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
-// TODO: verify config against existing SG
+import { createIdentityRequestBodySchema } from "./src/schemas/domain/identity";
+import {
+  domainNotificationsResponseSchema,
+  inboundCreateOrUpdateNotificationsRequestSchema,
+} from "./src/schemas/domain/notifications";
+import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
+
 export const { config, createHandler } = defineGateway({
   name: "udp",
   environments: ["development", "staging", "production"],
@@ -33,9 +39,14 @@ export const { config, createHandler } = defineGateway({
   },
   policy: {},
   routes: {
-    "POST /v1/users": {
-      name: "createUser",
-      body: z.object({ userId: NonEmptyString, pushId: NonEmptyString }),
+    "GET /v1/identities/:id": {
+      name: "getIdentities",
+    },
+    "GET /v1/identity/:serviceName": {
+      name: "getIdentityLink",
+      headers: {
+        userId: { name: "User-Id", required: true },
+      },
     },
     "GET /v1/notifications": {
       name: "getNotificationPreferences",
@@ -45,6 +56,11 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
+      response: domainNotificationsResponseSchema,
+    },
+    "POST /v1/identity/:serviceName/:identifier": {
+      name: "createIdentityLink",
+      body: createIdentityRequestBodySchema,
     },
     "POST /v1/notifications": {
       name: "updateNotificationPreferences",
@@ -54,6 +70,15 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
+      body: inboundCreateOrUpdateNotificationsRequestSchema,
+      response: domainNotificationsResponseSchema,
+    },
+    "POST /v1/users": {
+      name: "createUser",
+      body: inboundCreateUserRequestSchema,
+    },
+    "DELETE /v1/identity/:serviceName/:identifier": {
+      name: "deleteIdentityLink",
     },
     "DELETE /v1/notifications": {
       name: "deleteNotificationPreferences",
@@ -63,27 +88,6 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-    },
-    "GET /v1/identity/:serviceName": {
-      name: "getIdentityLink",
-      headers: {
-        userId: {
-          name: "User-Id",
-          required: true,
-        },
-      },
-    },
-    "POST /v1/identity/:serviceName/:identifier": {
-      name: "createIdentityLink",
-    },
-    "DELETE /v1/identity/:serviceName/:identifier": {
-      name: "deleteIdentityLink",
-    },
-    "GET /v1/identities/:id": {
-      name: "getIdentities",
-    },
-    "POST /v1/identities/:id": {
-      name: "postIdentities",
     },
   },
 });

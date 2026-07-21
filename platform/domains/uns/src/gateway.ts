@@ -2,7 +2,6 @@ import { createRestClient } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
 
-// TODO: verify route context/schemas/request-responsetransforms against existing SG
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
     api: createRestClient({
@@ -13,9 +12,7 @@ export const handler = createHandler({
         roleArn: consumerConfig.roleArn,
         roleName: "uns-consumer-session",
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     }),
   }),
   routes: {
@@ -25,12 +22,8 @@ export const handler = createHandler({
       queryParams: { externalUserID },
     }) => {
       return api.get("/notifications", {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
+        headers: { "X-API-KEY": consumerConfig.apiKey },
+        query: { externalUserID },
       });
     },
     "GET /v1/notifications/:id": ({
@@ -40,12 +33,21 @@ export const handler = createHandler({
       queryParams: { externalUserID },
     }) => {
       return api.get(`/notifications/${id}`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
+        headers: { "X-API-KEY": consumerConfig.apiKey },
+        query: { externalUserID },
+      });
+    },
+    "PATCH /v1/notifications/:id/status": ({
+      clients: { api },
+      resources: { consumerConfig },
+      pathParams: { id },
+      queryParams: { externalUserID },
+      body,
+    }) => {
+      return api.patch(`/notifications/${id}/status`, {
+        headers: { "X-API-KEY": consumerConfig.apiKey },
+        query: { externalUserID },
+        body,
       });
     },
     "DELETE /v1/notifications/:id": ({
@@ -55,29 +57,8 @@ export const handler = createHandler({
       queryParams: { externalUserID },
     }) => {
       return api.delete(`/notifications/${id}`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
-      });
-    },
-    "PATCH /v1/notifications/:id/status": ({
-      clients: { api },
-      resources: { consumerConfig },
-      // body,
-      pathParams: { id },
-      queryParams: { externalUserID },
-    }) => {
-      return api.patch(`/notifications/${id}/status`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
-        // body,
+        headers: { "X-API-KEY": consumerConfig.apiKey },
+        query: { externalUserID },
       });
     },
   },

@@ -51,6 +51,6 @@ function normaliseHeaders(headers: RequestHeaders) {
   return new Map(
     Object.entries(headers)
       .filter((entry): entry is [string, string] => entry[1] !== undefined)
-      .map(([k, v]) => [k.toLowerCase(), v]),
+      .map(([k, v]) => [k.toLowerCase(), v.trim()]),
   );
 }

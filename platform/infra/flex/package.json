@@ -17,6 +17,7 @@
   "dependencies": {
     "@aws-sdk/client-ssm": "3.1084.0",
     "@flex/sdk": "workspace:*",
+    "@flex/service-gateway": "workspace:*",
     "aws-cdk": "2.1130.0",
     "aws-cdk-lib": "2.261.0",
     "constructs": "10.6.0",

@@ -1,5 +1,7 @@
+import type { ValidatedGatewayConfig } from "@flex/service-gateway";
 import { Environment, getEnvConfig } from "@flex/utils";
 import { CfnOutput, Duration } from "aws-cdk-lib";
+import type { IResource } from "aws-cdk-lib/aws-apigateway";
 import {
   AccessLogFormat,
   AuthorizationType,
@@ -28,11 +30,9 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
-import { AlarmActionProps } from "../constructs/alarms/types";
+import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
-import { createServiceGateway } from "../constructs/gateways/public";
-import { createUdpServiceGateway } from "../constructs/gateways/udp";
-import { createUnsServiceGateway } from "../constructs/gateways/uns";
+import { createServiceGateway } from "../constructs/gateways/service-gateway";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -41,7 +41,14 @@ import { getPlatformEntry } from "../utils/getEntry";
 
 const { env, stage } = getEnvConfig();
 
+interface RouteBinding {
+  readonly method: string;
+  readonly path: string;
+}
+
 export class FlexPlatformStack extends BaseStack {
+  public readonly privateRouteBindings: readonly RouteBinding[];
+
   #createStubJwksService() {
     const jwksEndpointStubFunction = new NodejsFunction(
       this,
@@ -224,6 +231,32 @@ export class FlexPlatformStack extends BaseStack {
     };
   }
 
+  #createServiceGateways(
+    gatewaysResource: IResource,
+    serviceGatewayConfigs: readonly ValidatedGatewayConfig[],
+    { criticalAction, warningAction }: AlarmActionProps,
+  ) {
+    if (serviceGatewayConfigs.length === 0) return [];
+
+    const vpc = this.importVpc(ENV_KEYS.Vpc);
+    const securityGroups = {
+      isolated: this.importSecurityGroup(ENV_KEYS.SgPrivateIsolated),
+      private: this.importSecurityGroup(ENV_KEYS.SgPrivateEgress),
+    };
+
+    return serviceGatewayConfigs.map((config) =>
+      createServiceGateway(this, {
+        config,
+        vpc,
+        securityGroups,
+        gatewaysResource,
+        importValue: (key) => this.import(key),
+        criticalAction,
+        warningAction,
+      }),
+    );
+  }
+
   #createPrivateRestApi({ criticalAction, warningAction }: AlarmActionProps) {
     const apiGatewayEndpoint = this.importInterfaceVpcEndpoint(
       ENV_KEYS.VpcEApiGateway,
@@ -295,58 +328,6 @@ export class FlexPlatformStack extends BaseStack {
 
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
-
-    const udpConsumerConfigArn = this.import(ENV_KEYS.UdpConfigSecretArn);
-    const udpCmkArn = this.import(ENV_KEYS.UdpCmkArn);
-    const udpConsumerRoleArn = this.import(ENV_KEYS.UdpConfigRoleArn);
-
-    const flexEncryptionKeyArn = this.import(ENV_KEYS.FlexEncryptionKey);
-
-    const vpc = this.importVpc(ENV_KEYS.Vpc);
-    const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
-    const privateIsolatedSg = this.importSecurityGroup(
-      ENV_KEYS.SgPrivateIsolated,
-    );
-
-    createUdpServiceGateway(this, {
-      gatewaysResource: gatewaysRoot,
-      cmkArn: udpCmkArn,
-      consumerConfigArn: udpConsumerConfigArn,
-      consumerRoleArn: udpConsumerRoleArn,
-      privateIsolatedSg,
-      vpc,
-      criticalAction,
-      warningAction,
-    });
-
-    const dvlaConsumerConfigArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
-
-    createServiceGateway(this, {
-      vpc,
-      consumerConfigArn: dvlaConsumerConfigArn,
-      gatewaysResource: gatewaysRoot,
-      privateEgressSg,
-      secretArnEnvVarName: "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN", // pragma: allowlist secret
-      service: "dvla",
-      criticalAction,
-      warningAction,
-      encryptionKeyArn: flexEncryptionKeyArn,
-    });
-
-    const unsConsumerConfigArn = this.import(ENV_KEYS.UnsConfigSecret);
-    const unsConsumerRoleArn = this.import(ENV_KEYS.UnsCustomerRole);
-    const unsCmkArn = this.import(ENV_KEYS.UnsCmkArn);
-
-    createUnsServiceGateway(this, {
-      vpc,
-      consumerConfigArn: unsConsumerConfigArn,
-      consumerRoleArn: unsConsumerRoleArn,
-      gatewaysResource: gatewaysRoot,
-      privateIsolatedSg,
-      criticalAction,
-      warningAction,
-      encryptionKeyArn: unsCmkArn,
-    });
 
     const privateGatewayUrl = privateGateway.url.replace(/\/$/, ""); // remove trailing slash
 
@@ -472,7 +453,11 @@ export class FlexPlatformStack extends BaseStack {
     return { originVerifySecret };
   }
 
-  constructor(scope: Construct, id: string) {
+  constructor(
+    scope: Construct,
+    id: string,
+    serviceGatewayConfigs: readonly ValidatedGatewayConfig[],
+  ) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -509,6 +494,12 @@ export class FlexPlatformStack extends BaseStack {
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });
+
+    this.privateRouteBindings = this.#createServiceGateways(
+      gatewaysRoot,
+      serviceGatewayConfigs,
+      { criticalAction, warningAction },
+    );
 
     const permissionsBoundary = createPermissionsBoundary(
       this,
