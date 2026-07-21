@@ -32,16 +32,11 @@ app.addExternalExports(region, [
   ENV_KEYS.UdpCmkArn,
   ENV_KEYS.UdpConfigRoleArn,
   ENV_KEYS.UdpConfigSecretArn,
-  // TODO: remove guard when DVLA and UNS are ready for production
-  ...(env !== Environment.production
-    ? [
-        ENV_KEYS.DvlaConfigSecretArn,
-        ENV_KEYS.UnsConfigSecretArn,
-        ENV_KEYS.UnsCustomerRole,
-        ENV_KEYS.UnsConfigSecret,
-        ENV_KEYS.UnsCmkArn,
-      ]
-    : []),
+  ENV_KEYS.DvlaConfigSecretArn,
+  ENV_KEYS.UnsConfigSecretArn,
+  ENV_KEYS.UnsCustomerRole,
+  ENV_KEYS.UnsConfigSecret,
+  ENV_KEYS.UnsCmkArn,
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
   // Release Slack notifications only exist in the development environment
