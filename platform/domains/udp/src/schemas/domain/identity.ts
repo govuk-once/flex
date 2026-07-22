@@ -6,6 +6,10 @@ export const createIdentityRequestBodySchema = z.object({
   accessToken: NonEmptyString.optional(),
   refreshToken: NonEmptyString.optional(),
   idToken: NonEmptyString.optional(),
+  expiresAt: z
+    .number()
+    .int()
+    .optional(),
 });
 
 export const createIdentityRequestSchema = z.object({

@@ -110,11 +110,18 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
         identifier: string,
         body: CreateIdentityBodyRequest,
       ): Promise<ApiResult<void>> => {
+
+        const SIXTY_DAYS_IN_SECONDS = 60 * 24 * 60 * 60; // 5,184,000
+        const payload = {
+          ...body,
+          expiresAt: Math.floor(Date.now() / 1000) + SIXTY_DAYS_IN_SECONDS,
+        };
+
         const { request } = fetcher(
           `${UDP_REMOTE_ROUTES.identity}/${serviceName}/${identifier}`,
           {
             method: "POST",
-            body: JSON.stringify(body),
+            body: JSON.stringify(payload),
             headers: defaultHeaders,
           },
         );
