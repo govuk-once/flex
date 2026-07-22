@@ -110,7 +110,6 @@ export function createUdpRemoteClient(config: ConsumerConfig) {
         identifier: string,
         body: CreateIdentityBodyRequest,
       ): Promise<ApiResult<void>> => {
-
         const SIXTY_DAYS_IN_SECONDS = 60 * 24 * 60 * 60; // 5,184,000
         const payload = {
           ...body,

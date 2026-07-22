@@ -1,7 +1,7 @@
+import { logger } from "@flex/logging";
 import { ApiResult, typedFetch } from "@flex/sdk";
 import { createPublicFetch } from "@flex/service-gateway";
 import { v4 as uuidv4 } from "uuid";
-import { logger } from "@flex/logging";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";
 import { JwkSet } from "../schemas/remote/wellKnownJwk";
