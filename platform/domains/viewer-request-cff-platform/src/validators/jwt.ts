@@ -1,4 +1,4 @@
-import { EdgeTelemetryEvent } from "@flex/telemetry/edge";
+import { CffTelemetryEvent } from "@flex/telemetry/cff";
 
 import { validationError } from "../utils/errors";
 import { validateJson } from "./json";
@@ -20,28 +20,28 @@ export function validateJwt(maybeJwt: string) {
   if (rest.length > 0) {
     throw validationError(
       "Invalid JWT: too many segments: " + JSON.stringify(rest),
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
   if (!header) {
     throw validationError(
       "Invalid JWT: missing header",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
   if (!body) {
     throw validationError(
       "Invalid JWT: missing body",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
   if (!signature) {
     throw validationError(
       "Invalid JWT: missing signature",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
@@ -53,7 +53,7 @@ export function validateJwt(maybeJwt: string) {
   if (parsedHeader.alg === "none") {
     throw validationError(
       "Invalid JWT: Unsecure JWTs are not allowed",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 

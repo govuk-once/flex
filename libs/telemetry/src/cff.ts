@@ -4,18 +4,18 @@ import type { TelemetryDetails } from "./telemetry";
 export type { TelemetryEvent } from "./events";
 export type { TelemetryDetails } from "./telemetry";
 
-// Edge functions are limited in size. This module minimizes what the edge
-// function has to import to a minimum.
+// CloudFront Functions are limited in size. This module minimizes what the
+// CloudFront function has to import to a minimum.
 
-export const EdgeTelemetryEvent = {
-  edge_token_validated: "edge_token_validated",
-  edge_token_missing: "edge_token_missing",
-  edge_token_invalid: "edge_token_invalid",
+export const CffTelemetryEvent = {
+  cff_token_validated: "cff_token_validated",
+  cff_token_missing: "cff_token_missing",
+  cff_token_invalid: "cff_token_invalid",
 } as const satisfies {
-  [K in TelemetryEvent as K extends `edge_${string}` ? K : never]: K;
+  [K in TelemetryEvent as K extends `cff_${string}` ? K : never]: K;
 };
 
-export function emitEdgeTelemetry(
+export function emitCffTelemetry(
   event: TelemetryEvent,
   details?: TelemetryDetails,
 ): void {

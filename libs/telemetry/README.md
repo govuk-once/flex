@@ -37,21 +37,21 @@ Query events in CloudWatch Logs Insights with:
 filter ispresent(telemetry.event)
 ```
 
-## Edge (CloudFront Functions)
+## CloudFront Functions
 
 CloudFront Functions cannot run `@flex/logging` (no Node APIs, 10KB code
-limit), so the package provides a dependency-free edge entry point that
+limit), so the package provides a dependency-free `cff` entry point that
 writes the same queryable JSON shape straight to `console.log`:
 
 ```ts
-import { EdgeTelemetryEvent, emitEdgeTelemetry } from "@flex/telemetry/edge";
+import { CffTelemetryEvent, emitCffTelemetry } from "@flex/telemetry/cff";
 
-emitEdgeTelemetry(EdgeTelemetryEvent.edge_token_validated, { correlationId });
+emitCffTelemetry(CffTelemetryEvent.cff_token_validated, { correlationId });
 ```
 
-`EdgeTelemetryEvent` is a plain object holding the `edge_*` subset of the
+`CffTelemetryEvent` is a plain object holding the `cff_*` subset of the
 registry; a compile-time check keeps it in sync with the central enum. Timestamps come from CloudWatch. Note there is no
-sanitization at the edge, so details must not contain sensitive values.
+sanitization in CloudFront Functions, so details must not contain sensitive values.
 
 ## Adding an event
 
@@ -68,4 +68,4 @@ vi.mock("@flex/telemetry");
 expect(emitTelemetry).toHaveBeenCalledWith(TelemetryEvent.auth_success);
 ```
 
-The edge entry point has its own mock: `vi.mock("@flex/telemetry/edge")`.
+The `cff` entry point has its own mock: `vi.mock("@flex/telemetry/cff")`.

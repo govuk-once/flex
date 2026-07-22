@@ -1,4 +1,4 @@
-import { EdgeTelemetryEvent } from "@flex/telemetry/edge";
+import { CffTelemetryEvent } from "@flex/telemetry/cff";
 
 import { validationError } from "../utils/errors";
 
@@ -27,7 +27,7 @@ export function validateJson(
   const result = safeParseJson(jsonString);
 
   if (!isObject(result)) {
-    throw validationError(message, EdgeTelemetryEvent.edge_token_invalid);
+    throw validationError(message, CffTelemetryEvent.cff_token_invalid);
   }
 
   return result;

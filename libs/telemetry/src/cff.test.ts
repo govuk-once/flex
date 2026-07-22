@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { EdgeTelemetryEvent, emitEdgeTelemetry } from "./edge";
+import { CffTelemetryEvent, emitCffTelemetry } from "./cff";
 
-describe("emitEdgeTelemetry", () => {
+describe("emitCffTelemetry", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -12,7 +12,7 @@ describe("emitEdgeTelemetry", () => {
       .spyOn(console, "log")
       .mockImplementationOnce(() => undefined);
 
-    emitEdgeTelemetry(EdgeTelemetryEvent.edge_token_validated, {
+    emitCffTelemetry(CffTelemetryEvent.cff_token_validated, {
       correlationId: "abc",
     });
 
@@ -22,7 +22,7 @@ describe("emitEdgeTelemetry", () => {
       level: "INFO",
       message: "telemetry",
       telemetry: {
-        event: "edge_token_validated",
+        event: "cff_token_validated",
         details: { correlationId: "abc" },
       },
     });
@@ -33,14 +33,14 @@ describe("emitEdgeTelemetry", () => {
       .spyOn(console, "log")
       .mockImplementationOnce(() => undefined);
 
-    emitEdgeTelemetry(EdgeTelemetryEvent.edge_token_invalid);
+    emitCffTelemetry(CffTelemetryEvent.cff_token_invalid);
 
     expect(log).toHaveBeenCalledTimes(1);
     const parsed = JSON.parse(log.mock.calls[0]?.[0] as string) as unknown;
     expect(parsed).toEqual({
       level: "INFO",
       message: "telemetry",
-      telemetry: { event: "edge_token_invalid" },
+      telemetry: { event: "cff_token_invalid" },
     });
   });
 });

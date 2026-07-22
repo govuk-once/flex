@@ -5,7 +5,7 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
-    "./edge": "./src/edge.ts"
+    "./cff": "./src/cff.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",

@@ -1,4 +1,4 @@
-import type { TelemetryEvent } from "@flex/telemetry/edge";
+import type { TelemetryEvent } from "@flex/telemetry/cff";
 
 export interface ValidationError extends Error {
   telemetryEvent: TelemetryEvent;

@@ -6,7 +6,7 @@
  * The handler function must be at the top level and will be transpiled to plain JavaScript.
  */
 
-import { EdgeTelemetryEvent, emitEdgeTelemetry } from "@flex/telemetry/edge";
+import { CffTelemetryEvent, emitCffTelemetry } from "@flex/telemetry/cff";
 import { CloudFrontFunctionsEvent } from "aws-lambda";
 
 import { unathorizedResponse } from "./responses/unathorized";
@@ -38,10 +38,10 @@ export function handler(event: CloudFrontFunctionsEvent) {
   } catch (err: unknown) {
     // Cloudfront functions only reliably support console.log(...) for logging.
     if (err instanceof Error) console.log(err.message);
-    emitEdgeTelemetry(
+    emitCffTelemetry(
       isValidationError(err)
         ? err.telemetryEvent
-        : EdgeTelemetryEvent.edge_token_invalid,
+        : CffTelemetryEvent.cff_token_invalid,
       err instanceof Error
         ? { correlationId, reason: err.message }
         : { correlationId },
@@ -49,7 +49,7 @@ export function handler(event: CloudFrontFunctionsEvent) {
     return unathorizedResponse;
   }
 
-  emitEdgeTelemetry(EdgeTelemetryEvent.edge_token_validated, {
+  emitCffTelemetry(CffTelemetryEvent.cff_token_validated, {
     correlationId,
   });
 

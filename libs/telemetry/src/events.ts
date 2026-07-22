@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 export const TelemetryEventSchema = z.enum([
-  // Edge
-  "edge_token_validated",
-  "edge_token_missing",
-  "edge_token_invalid",
+  // CloudFront Functions
+  // Note: because of size limitation
+  "cff_token_validated",
+  "cff_token_missing",
+  "cff_token_invalid",
 
   // Auth
   "auth_success",

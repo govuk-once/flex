@@ -1,4 +1,4 @@
-import { EdgeTelemetryEvent } from "@flex/telemetry/edge";
+import { CffTelemetryEvent } from "@flex/telemetry/cff";
 
 import { validationError } from "../utils/errors";
 
@@ -12,7 +12,7 @@ export function validateAuthorization(authorization?: string) {
   if (!authorization) {
     throw validationError(
       "No authorization value provided",
-      EdgeTelemetryEvent.edge_token_missing,
+      CffTelemetryEvent.cff_token_missing,
     );
   }
 
@@ -25,21 +25,21 @@ export function validateAuthorization(authorization?: string) {
   if (bearerLabel !== "Bearer") {
     throw validationError(
       "Authorization value does not start with 'Bearer'",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
   if (rest.length > 0) {
     throw validationError(
       "Authorization value has too many segments'",
-      EdgeTelemetryEvent.edge_token_invalid,
+      CffTelemetryEvent.cff_token_invalid,
     );
   }
 
   if (!token) {
     throw validationError(
       "No token provided in authorization header",
-      EdgeTelemetryEvent.edge_token_missing,
+      CffTelemetryEvent.cff_token_missing,
     );
   }
 

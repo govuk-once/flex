@@ -46,9 +46,9 @@ Rejected responses include the `X-Rejected-By: cloudfront-function` header.
 
 ### Telemetry
 
-The handler emits telemetry events via `@flex/telemetry/edge`:
-`edge_token_validated` on pass-through, `edge_token_missing` when no
-authorization value or token is present, and `edge_token_invalid` for any
+The handler emits telemetry events via `@flex/telemetry/cff`:
+`cff_token_validated` on pass-through, `cff_token_missing` when no
+authorization value or token is present, and `cff_token_invalid` for any
 other structural failure. Each event carries the correlation id and, for
 failures, the rejection reason.
 
