@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.34.0",
-    "@aws-sdk/client-cloudwatch": "3.1084.0",
+    "@aws-sdk/client-cloudwatch": "3.1087.0",
     "@flex/testing": "workspace:*",
     "axios": "1.18.1",
     "axios-cookiejar-support": "7.0.0",
@@ -26,7 +26,7 @@
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/node": "26.1.1",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
