@@ -96,4 +96,74 @@ describe("DELETE /v1/identity/:service", () => {
       expect(result.body).toBe("");
     },
   );
+
+  describe("Unlink tests when service is 'dvla'", () => {
+    const dvlaEndpoint = "/identity/dvla";
+
+    it("calls dvlaUnlinkUser integration, logs the result, and returns 204", async ({
+      http,
+      sdk,
+    }) => {
+      const dvlaResponse = { success: true };
+
+      http
+        .gateway("udp")
+        .get("/identity/dvla", {
+          headers: { "User-Id": userId },
+        })
+        .reply(200, { ...serviceIdentityLink, serviceName: "dvla" });
+
+      http
+        .gateway("udp")
+        .delete(`/identity/dvla/${serviceIdentityLink.serviceId}`)
+        .reply(204);
+
+      http
+        .domain("dvla")
+        .post(`/unlink/${serviceIdentityLink.serviceId}`)
+        .reply(200, dvlaResponse);
+
+      const result = await handler(
+        sdk.event.delete(dvlaEndpoint, {
+          userId,
+          params: { service: "dvla" },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(204);
+    });
+
+    it("still returns 204 even if dvlaUnlinkUser integration fails", async ({
+      http,
+      sdk,
+    }) => {
+      http
+        .gateway("udp")
+        .get("/identity/dvla", {
+          headers: { "User-Id": userId },
+        })
+        .reply(200, { ...serviceIdentityLink, serviceName: "dvla" });
+
+      http
+        .gateway("udp")
+        .delete(`/identity/dvla/${serviceIdentityLink.serviceId}`)
+        .reply(204);
+
+      http
+        .domain("dvla")
+        .post(`/unlink/${serviceIdentityLink.serviceId}`)
+        .reply(500, { message: "DVLA system error" });
+
+      const result = await handler(
+        sdk.event.delete(dvlaEndpoint, {
+          userId,
+          params: { service: "DVLA" },
+        }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(204);
+    });
+  });
 });
