@@ -1,5 +1,6 @@
 import { logger } from "@flex/logging";
 import { clearTmp } from "@flex/sdk";
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { jsonResponse, stripPathPrefix } from "@flex/utils";
 import createHttpError from "http-errors";
 import { z } from "zod";
@@ -42,6 +43,12 @@ export function buildHandler<
   const coreHandler: GatewayLambda = async (event) => {
     try {
       const inboundPath = stripPathPrefix(event.path, gatewayPathPrefix);
+
+      emitTelemetry(TelemetryEvent.service_gateway_request_received, {
+        method: event.httpMethod,
+        path: inboundPath,
+      });
+
       const route = lookupRoute(routes, event.httpMethod, inboundPath);
 
       if (!route) {
@@ -83,12 +90,22 @@ export function buildHandler<
           logger.error("Gateway response schema validation failed", {
             issues: z.prettifyError(parsed.error),
           });
+          emitTelemetry(TelemetryEvent.response_validation_failed, {
+            path: event.path,
+          });
+          emitTelemetry(TelemetryEvent.service_gateway_error_returned, {
+            status: 502,
+          });
 
           return jsonResponse(502, {
             message: `${config.name.toUpperCase()} upstream response invalid`,
           });
         }
       }
+
+      emitTelemetry(TelemetryEvent.service_gateway_response_returned, {
+        status: result.status,
+      });
 
       return jsonResponse(result.status, result.data);
     } catch (error) {
