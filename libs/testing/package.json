@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@aws-lambda-powertools/parameters": "2.34.0",
-    "@aws-sdk/client-secrets-manager": "3.1084.0",
+    "@aws-sdk/client-secrets-manager": "3.1088.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.7.0",
@@ -31,7 +31,7 @@
     "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
     "dotenv": "17.4.2",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "jose": "6.2.3",
     "nock": "14.0.16",
     "pkce-challenge": "6.0.0",
