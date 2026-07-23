@@ -1,4 +1,5 @@
 import { typedFetch } from "@flex/sdk";
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import type { HttpMethod, ReadonlyRecord } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 
@@ -21,7 +22,7 @@ export function createRestClient({
 }: RestClientOptions): RestClient {
   const fetcher = buildFetcher({ auth, baseUrl });
 
-  const send = (
+  const send = async (
     method: HttpMethod,
     path: string,
     options: RestWriteOperationOptions = {},
@@ -33,13 +34,28 @@ export function createRestClient({
 
     const url = query ? `${path}${queryString}` : path;
 
+    emitTelemetry(TelemetryEvent.third_party_request_sent, {
+      method,
+      baseUrl,
+      path,
+    });
+
     const { request } = fetcher(url, {
       method,
       headers: { Accept: "application/json", ...baseHeaders, ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
+      thirdParty: true,
     });
 
-    return typedFetch(request, schema);
+    const result = await typedFetch(request, schema);
+
+    emitTelemetry(TelemetryEvent.third_party_response_received, {
+      baseUrl,
+      path,
+      status: result.ok ? result.status : result.error.status,
+    });
+
+    return result;
   };
 
   return {

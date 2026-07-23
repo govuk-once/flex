@@ -455,6 +455,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../logging
+      '@flex/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
@@ -540,6 +543,9 @@ importers:
       '@flex/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@flex/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       '@flex/utils':
         specifier: workspace:*
         version: link:../utils
@@ -738,6 +744,9 @@ importers:
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
+      '@flex/telemetry':
+        specifier: workspace:*
+        version: link:../../../libs/telemetry
       '@middy/core':
         specifier: 7.7.0
         version: 7.7.0

@@ -1,4 +1,5 @@
 import { logger } from "@flex/logging";
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { NumberUpTo } from "@flex/utils";
 import { backOff } from "exponential-backoff";
 
@@ -11,6 +12,12 @@ const MAX_DELAY_MS = 1000;
 export interface FlexFetchRequestInit extends RequestInit {
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
   maxRetryDelay?: number;
+  /**
+   * Marks this request as an outbound third party call so retry, timeout and
+   * failure telemetry is emitted. Leave unset for platform-internal calls
+   * (e.g. domain to service gateway).
+   */
+  thirdParty?: boolean;
 }
 
 /**
@@ -47,11 +54,13 @@ export function flexFetch(
   const {
     retryAttempts,
     maxRetryDelay,
+    thirdParty,
     headers: inputHeaders,
     signal: callerSignal,
     ...fetchOptions
   } = options ?? {};
 
+  const requestUrl = url instanceof Request ? url.url : url.toString();
   const headers = buildHeaders(url, inputHeaders);
 
   const controller = new AbortController();
@@ -84,16 +93,34 @@ export function flexFetch(
             error,
             attemptNumber,
           });
+          if (thirdParty) {
+            emitTelemetry(TelemetryEvent.third_party_request_retried, {
+              url: requestUrl,
+              attemptNumber,
+            });
+          }
           return true;
         },
       },
     ).catch((error: unknown) => {
-      const requestUrl = url instanceof Request ? url.url : url.toString();
       logger.error("flex-fetch failed", {
         url: requestUrl,
         error,
       });
       logger.debug("options", fetchOptions);
+      if (thirdParty) {
+        const isTimeout =
+          error instanceof Error && error.name === "TimeoutError";
+        emitTelemetry(
+          isTimeout
+            ? TelemetryEvent.third_party_request_timeout
+            : TelemetryEvent.third_party_request_error,
+          {
+            url: requestUrl,
+            ...(error instanceof Error && { reason: error.message }),
+          },
+        );
+      }
       throw error;
     }),
     abort: () => {

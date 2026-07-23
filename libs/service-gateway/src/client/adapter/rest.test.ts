@@ -1,5 +1,6 @@
 import type { ApiResult } from "@flex/sdk";
 import { typedFetch } from "@flex/sdk";
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import type { HttpMethod } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 import { describe, expect, it, vi } from "vitest";
@@ -11,6 +12,8 @@ import type { RestAuth } from "./rest";
 import { createRestClient } from "./rest";
 
 vi.mock("@flex/sdk", () => ({ typedFetch: vi.fn() }));
+
+vi.mock("@flex/telemetry");
 
 vi.mock("../fetcher/build");
 
@@ -64,6 +67,7 @@ describe("createRestClient", () => {
       method,
       headers: { Accept: "application/json" },
       body: undefined,
+      thirdParty: true,
     });
   });
 
@@ -97,6 +101,7 @@ describe("createRestClient", () => {
       method,
       headers: { Accept: "application/json" },
       body: JSON.stringify({ key: "value" }),
+      thirdParty: true,
     });
   });
 
@@ -156,6 +161,7 @@ describe("createRestClient", () => {
         "x-conflict": "request-value",
       },
       body: undefined,
+      thirdParty: true,
     });
   });
 
@@ -169,6 +175,23 @@ describe("createRestClient", () => {
     await client.get("/v1/example", { schema });
 
     expect(typedFetch).toHaveBeenCalledExactlyOnceWith(request, schema);
+  });
+
+  it("emits third party telemetry around the request", async () => {
+    buildMockFetcher();
+
+    const client = createRestClient({ baseUrl, auth: mockPublicAuth });
+
+    await client.get("/v1/example");
+
+    expect(emitTelemetry).toHaveBeenCalledWith(
+      TelemetryEvent.third_party_request_sent,
+      { method: "GET", baseUrl, path: "/v1/example" },
+    );
+    expect(emitTelemetry).toHaveBeenCalledWith(
+      TelemetryEvent.third_party_response_received,
+      { baseUrl, path: "/v1/example", status: 200 },
+    );
   });
 
   it("returns the API response", async () => {

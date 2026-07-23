@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@flex/logging": "workspace:*",
+    "@flex/telemetry": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.7.0",
     "@middy/http-error-handler": "7.7.0",
