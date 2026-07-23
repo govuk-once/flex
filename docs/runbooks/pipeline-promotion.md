@@ -54,13 +54,13 @@ flowchart TD
 > paste the same fenced blocks into the **Mermaid** macro (or a Mermaid plugin) so they
 > render there too.
 
-| You need to… | Go to |
-| --- | --- |
-| Watch a promotion | GitHub → **Actions** → **Continuous Deployment** → the run for your merge |
-| Approve staging or production | The run page → **Review deployments** button → tick the environment → **Approve and deploy** |
-| Start a promotion by hand | Actions → Continuous Deployment → **Run workflow** (branch `main`), or `gh workflow run main.yml` |
-| Re-run only what failed | The run page → **Re-run failed jobs**, or `gh run rerun <run-id> --failed` |
-| See what deployed to staging/production | `#govuk-once-flex-release` Slack channel |
+| You need to…                            | Go to                                                                                             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Watch a promotion                       | GitHub → **Actions** → **Continuous Deployment** → the run for your merge                         |
+| Approve staging or production           | The run page → **Review deployments** button → tick the environment → **Approve and deploy**      |
+| Start a promotion by hand               | Actions → Continuous Deployment → **Run workflow** (branch `main`), or `gh workflow run main.yml` |
+| Re-run only what failed                 | The run page → **Re-run failed jobs**, or `gh run rerun <run-id> --failed`                        |
+| See what deployed to staging/production | `#govuk-once-flex-release` Slack channel                                                          |
 
 **Source of truth:** [`.github/workflows/main.yml`](/.github/workflows/main.yml). If this
 runbook and that file ever disagree, the workflow wins — raise a change to fix the runbook.
@@ -146,27 +146,27 @@ flowchart TD
     class e2eDev,e2eStg side;
 ```
 
-| Order | Job (UI name) | Environment / stage | Approval before it runs? | Gates promotion? |
-| --- | --- | --- | --- | --- |
-| 1 | Quality Checks / Hygiene, SonarQube, Security | `development` creds | No | **Yes** — Release waits on all three |
-| 2 | Release | — | No | **Yes** — deploys wait on it |
-| 3 | Deploy to Development / buildAndDeploy | `development` | No (no protection) | **Yes** — staging waits on it |
-| 4 | Module E2E (Development) | `development` | No | **No** (see 3.2) |
-| 5 | Deploy to Staging / buildAndDeploy | `staging` | **Yes — staging approval** | **Yes** — production waits on it |
-| 6 | Notify Staging Deployment | — | No | No |
-| 7 | Module E2E (Staging) | `staging` | No | **No** (see 3.2) |
-| 8 | Deploy to Production / buildAndDeploy | `production` | **Yes — production approval** | End of line |
-| 9 | Notify Production Deployment | — | No | No |
-| — | Notify Deployment Failure | — | Runs only if a deploy job failed | No |
+| Order | Job (UI name)                                 | Environment / stage | Approval before it runs?         | Gates promotion?                     |
+| ----- | --------------------------------------------- | ------------------- | -------------------------------- | ------------------------------------ |
+| 1     | Quality Checks / Hygiene, SonarQube, Security | `development` creds | No                               | **Yes** — Release waits on all three |
+| 2     | Release                                       | —                   | No                               | **Yes** — deploys wait on it         |
+| 3     | Deploy to Development / buildAndDeploy        | `development`       | No (no protection)               | **Yes** — staging waits on it        |
+| 4     | Module E2E (Development)                      | `development`       | No                               | **No** (see 3.2)                     |
+| 5     | Deploy to Staging / buildAndDeploy            | `staging`           | **Yes — staging approval**       | **Yes** — production waits on it     |
+| 6     | Notify Staging Deployment                     | —                   | No                               | No                                   |
+| 7     | Module E2E (Staging)                          | `staging`           | No                               | **No** (see 3.2)                     |
+| 8     | Deploy to Production / buildAndDeploy         | `production`        | **Yes — production approval**    | End of line                          |
+| 9     | Notify Production Deployment                  | —                   | No                               | No                                   |
+| —     | Notify Deployment Failure                     | —                   | Runs only if a deploy job failed | No                                   |
 
 ### 3.1 What actually gates each stage
 
 - **Quality Checks → Release → Deploy to Development** are chained by `needs:`, so each
   waits for the previous to succeed. Development has no environment protection, so it
   deploys as soon as Release finishes.
-- **Deploy to Staging** waits on **Deploy to Development succeeding** *and* on the
+- **Deploy to Staging** waits on **Deploy to Development succeeding** _and_ on the
   **staging approval** (environment protection rule).
-- **Deploy to Production** waits on **Deploy to Staging succeeding** *and* on the
+- **Deploy to Production** waits on **Deploy to Staging succeeding** _and_ on the
   **production approval**. It does **not** wait for staging's notifications or module E2E.
 - Inside each deploy job there is a post-deploy **Platform E2E** step
   (`_build-deploy.yml`). Because it runs in the same job as the deploy, a Platform E2E
@@ -195,11 +195,11 @@ them**. Consequences to be aware of on-call:
 Approvals are GitHub **Environment protection rules**, not anything in the repository
 code. They are configured under repo **Settings → Environments**.
 
-| Environment | Requires approval? | Who can approve | Branch policy |
-| --- | --- | --- | --- |
-| `development` | No | — (auto-deploys) | `main` only |
-| `staging` | **Yes** | Any member of the **`govuk-once-flex-developers`** team | `main` only |
-| `production` | **Yes** | Any member of the **`govuk-once-flex-developers`** team | `main` only |
+| Environment   | Requires approval? | Who can approve                                         | Branch policy |
+| ------------- | ------------------ | ------------------------------------------------------- | ------------- |
+| `development` | No                 | — (auto-deploys)                                        | `main` only   |
+| `staging`     | **Yes**            | Any member of the **`govuk-once-flex-developers`** team | `main` only   |
+| `production`  | **Yes**            | Any member of the **`govuk-once-flex-developers`** team | `main` only   |
 
 There is no wait-timer on either gate; the promotion pauses until a human approves.
 
@@ -228,12 +228,12 @@ There is no wait-timer on either gate; the promotion pauses until a human approv
 
 ## 5. Is it succeeding, stalled, or failed?
 
-| State | What you see | Meaning |
-| --- | --- | --- |
-| **In progress** | Run status **In progress**; a deploy job shows a spinner | Normal; a CDK deploy takes a few minutes per stage |
+| State                 | What you see                                                                                                                       | Meaning                                                        |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **In progress**       | Run status **In progress**; a deploy job shows a spinner                                                                           | Normal; a CDK deploy takes a few minutes per stage             |
 | **Stalled at a gate** | Run status **Waiting**; "Deploy to Staging" or "Deploy to Production" is **queued/waiting**; **Review deployments** button present | Not a failure — it is waiting for a human approval (section 4) |
-| **Succeeded** | All jobs green; Slack posts "Flex deployed: v&lt;x&gt; to staging" then "…to production" | Change is live in that environment |
-| **Failed** | A job is red; run status **failure**; Slack posts "Flex deployment failed: v&lt;x&gt; to &lt;env&gt;" with a link to the run | A stage failed; promotion stopped there (section 7) |
+| **Succeeded**         | All jobs green; Slack posts "Flex deployed: v&lt;x&gt; to staging" then "…to production"                                           | Change is live in that environment                             |
+| **Failed**            | A job is red; run status **failure**; Slack posts "Flex deployment failed: v&lt;x&gt; to &lt;env&gt;" with a link to the run       | A stage failed; promotion stopped there (section 7)            |
 
 Signals to rely on:
 
@@ -286,11 +286,11 @@ service check after approving:
 
 ### Difference in validation: staging vs production
 
-| | Staging | Production |
-| --- | --- | --- |
-| Platform E2E (in deploy job) | **Yes**, gates the stage | **No** |
-| Module E2E (separate job) | **Yes** (non-gating) | **No** |
-| Verification is therefore | Largely automated | **Manual** — you must check it |
+|                              | Staging                  | Production                     |
+| ---------------------------- | ------------------------ | ------------------------------ |
+| Platform E2E (in deploy job) | **Yes**, gates the stage | **No**                         |
+| Module E2E (separate job)    | **Yes** (non-gating)     | **No**                         |
+| Verification is therefore    | Largely automated        | **Manual** — you must check it |
 
 The practical implication: **staging is where the change is actually tested**. Production
 is protected only by the staging results plus the human at the production gate. Do the
@@ -350,16 +350,16 @@ with a proper fix-forward PR so `main` and production match again.
 
 ## 8. Diagnosing failures by stage
 
-| Stage fails | Where to look | Common causes | Response |
-| --- | --- | --- | --- |
-| **Quality Checks** (Hygiene) | Job log: pre-commit / lint / tsc / `validate:integrations` | Lint or type error, secret detected, invalid domain integration route | Fix on a branch, re-merge. Nothing deployed yet |
-| **Quality Checks** (SonarQube) | SonarQube scan step + Sonar dashboard | Quality gate failed, unit test failure | Fix and re-merge |
-| **Quality Checks** (Security) | Checkov + Dependency Review steps | New IaC finding, high-severity dependency | Fix, or add a justified checkov skip; re-merge |
-| **Release** | "Run semantic release" step | Bad commit history, GitHub token/permission issue | Deployment is blocked until fixed; see [Releases troubleshooting](/docs/releases.md#troubleshooting) |
-| **Deploy to Development/Staging/Production** | "Deploy FLEX AWS infra" step | CloudFormation error, drift, IAM/OIDC issue, missing SSM param from core stack | Read the CFN error; if transient, **Re-run failed jobs**; if a real infra bug, fix forward. See [Deployment troubleshooting](/docs/deployment.md#troubleshooting) |
-| **Platform E2E** (inside a deploy job, dev/staging) | "Platform E2E tests" step in the deploy job | Regression, or stale/missing stack outputs | Investigate the failing assertion; fix forward. This **blocks** the next stage by design |
-| **Module E2E (Development/Staging)** | The per-domain matrix job | Domain-level regression, test/data issue | **Non-gating** — the pipeline will not stop. Decide whether to **halt manually** (section 7) |
-| **Notify (staging/production/failure)** | Notify job log | SNS/SSM access, missing topic | Cosmetic only (`continue-on-error`); the deploy itself is unaffected |
+| Stage fails                                         | Where to look                                              | Common causes                                                                  | Response                                                                                                                                                          |
+| --------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Quality Checks** (Hygiene)                        | Job log: pre-commit / lint / tsc / `validate:integrations` | Lint or type error, secret detected, invalid domain integration route          | Fix on a branch, re-merge. Nothing deployed yet                                                                                                                   |
+| **Quality Checks** (SonarQube)                      | SonarQube scan step + Sonar dashboard                      | Quality gate failed, unit test failure                                         | Fix and re-merge                                                                                                                                                  |
+| **Quality Checks** (Security)                       | Checkov + Dependency Review steps                          | New IaC finding, high-severity dependency                                      | Fix, or add a justified checkov skip; re-merge                                                                                                                    |
+| **Release**                                         | "Run semantic release" step                                | Bad commit history, GitHub token/permission issue                              | Deployment is blocked until fixed; see [Releases troubleshooting](/docs/releases.md#troubleshooting)                                                              |
+| **Deploy to Development/Staging/Production**        | "Deploy FLEX AWS infra" step                               | CloudFormation error, drift, IAM/OIDC issue, missing SSM param from core stack | Read the CFN error; if transient, **Re-run failed jobs**; if a real infra bug, fix forward. See [Deployment troubleshooting](/docs/deployment.md#troubleshooting) |
+| **Platform E2E** (inside a deploy job, dev/staging) | "Platform E2E tests" step in the deploy job                | Regression, or stale/missing stack outputs                                     | Investigate the failing assertion; fix forward. This **blocks** the next stage by design                                                                          |
+| **Module E2E (Development/Staging)**                | The per-domain matrix job                                  | Domain-level regression, test/data issue                                       | **Non-gating** — the pipeline will not stop. Decide whether to **halt manually** (section 7)                                                                      |
+| **Notify (staging/production/failure)**             | Notify job log                                             | SNS/SSM access, missing topic                                                  | Cosmetic only (`continue-on-error`); the deploy itself is unaffected                                                                                              |
 
 General approach to any failed stage:
 
