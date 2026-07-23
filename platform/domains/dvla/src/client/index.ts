@@ -1,5 +1,7 @@
+import { logger } from "@flex/logging";
 import { ApiResult, typedFetch } from "@flex/sdk";
 import { createPublicFetch } from "@flex/service-gateway";
+import { v4 as uuidv4 } from "uuid";
 
 import { DVLA_REMOTE_ROUTES } from "../contract/route";
 import { JwkSet } from "../schemas/remote/wellKnownJwk";
@@ -15,9 +17,13 @@ let jwksCache: ApiResult<JwkSet> | null = null;
  */
 export function createDvlaRemoteClient(config: ConsumerConfig) {
   const fetcher = createPublicFetch({ baseUrl: config.apiUrl });
+  const correlationId = uuidv4();
+
+  logger.info(`DVLA Correlation ID: ${correlationId}`);
 
   const defaultHeaders = {
     Accept: "application/json",
+    "X-Correlation-Id": correlationId,
   };
 
   return {

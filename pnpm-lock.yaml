@@ -38,7 +38,7 @@ importers:
         version: 0.28.1
       eslint:
         specifier: 10.6.0
-        version: 10.6.0(jiti@2.7.0)
+        version: 10.6.0(jiti@2.7.0)(supports-color@8.1.1)
       nx:
         specifier: 23.0.1
         version: 23.0.1
@@ -442,7 +442,7 @@ importers:
         version: link:../config
       eslint:
         specifier: 10.6.0
-        version: 10.6.0(jiti@2.7.0)(supports-color@8.1.1)
+        version: 10.6.0(jiti@2.7.0)
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -786,6 +786,9 @@ importers:
       http-errors:
         specifier: 2.0.1
         version: 2.0.1
+      uuid:
+        specifier: 14.0.1
+        version: 14.0.1
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -6910,6 +6913,10 @@ packages:
 
   uuid@11.1.1:
     resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
+    hasBin: true
+
+  uuid@14.0.1:
+    resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
 
   uuid@9.0.1:
@@ -14244,6 +14251,8 @@ snapshots:
   uuid@10.0.0: {}
 
   uuid@11.1.1: {}
+
+  uuid@14.0.1: {}
 
   uuid@9.0.1:
     optional: true
