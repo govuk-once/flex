@@ -11,8 +11,7 @@ const _deleteCtx = routeContext<DeleteRoute>;
 const _getCtx = routeContext<GetAllRoute>;
 
 type UpdateRouteContext =
-  | ReturnType<typeof _postCtx>
-  | ReturnType<typeof _deleteCtx>;
+  ReturnType<typeof _postCtx> | ReturnType<typeof _deleteCtx>;
 
 type GetRouteContext = UpdateRouteContext | ReturnType<typeof _getCtx>;
 

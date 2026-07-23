@@ -14,12 +14,10 @@ export async function resolveResources<Resources extends ResourceMap>(
   const entries = await Promise.all(
     Object.entries(resources)
       .filter(isResolvableResource)
-      .map(
-        async ([key, resource]): Promise<[string, unknown]> => [
-          key,
-          await resolveResource(resource),
-        ],
-      ),
+      .map(async ([key, resource]): Promise<[string, unknown]> => [
+        key,
+        await resolveResource(resource),
+      ]),
   );
 
   return Object.fromEntries(entries) as ResolvedResources<Resources>;
