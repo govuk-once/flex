@@ -1,7 +1,7 @@
-import type { TelemetryEvent } from "@flex/telemetry/cff";
+import type { CffTelemetryEvent } from "@flex/telemetry/cff";
 
 export interface ValidationError extends Error {
-  telemetryEvent: TelemetryEvent;
+  telemetryEvent: CffTelemetryEvent;
 }
 
 /**
@@ -12,7 +12,7 @@ export interface ValidationError extends Error {
  */
 export function validationError(
   message: string,
-  telemetryEvent: TelemetryEvent,
+  telemetryEvent: CffTelemetryEvent,
 ): ValidationError {
   const error = new Error(message) as ValidationError;
   error.telemetryEvent = telemetryEvent;

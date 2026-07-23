@@ -15,12 +15,6 @@ import type {
 import { createPolicy } from "./createPolicy";
 import { createAuthService } from "./services/auth-service";
 
-/**
- * JwtExpiredError and the other claim errors subclass FailedAssertionError,
- * so the checks run from most to least specific. The bare
- * FailedAssertionError cases are the two assertions thrown by the auth
- * service itself, distinguished by their expected values.
- */
 function toAuthTelemetryEvent(error: unknown): TelemetryEvent {
   if (error instanceof JwtExpiredError) {
     return TelemetryEvent.auth_token_expired;

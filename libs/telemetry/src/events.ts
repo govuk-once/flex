@@ -1,12 +1,8 @@
 import { z } from "zod";
 
+// CloudFront Function events live in the cff module, which cannot share this
+// zod enum because of the CloudFront Function bundle size limit.
 export const TelemetryEventSchema = z.enum([
-  // CloudFront Functions
-  // Note: because of size limitation
-  "cff_token_validated",
-  "cff_token_missing",
-  "cff_token_invalid",
-
   // Auth
   "auth_success",
   "auth_token_missing",

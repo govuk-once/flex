@@ -49,14 +49,23 @@ import { CffTelemetryEvent, emitCffTelemetry } from "@flex/telemetry/cff";
 emitCffTelemetry(CffTelemetryEvent.cff_token_validated, { correlationId });
 ```
 
-`CffTelemetryEvent` is a plain object holding the `cff_*` subset of the
-registry; a compile-time check keeps it in sync with the central enum. Timestamps come from CloudWatch. Note there is no
-sanitization in CloudFront Functions, so details must not contain sensitive values.
+`CffTelemetryEvent` is the single registry of CloudFront Function events. It
+is a plain object kept separate from `TelemetryEventSchema` because the zod
+enum cannot be bundled into a CloudFront Function. Timestamps come from
+CloudWatch. Note there is no sanitization in CloudFront Functions, so details
+must not contain sensitive values.
 
 ## Adding an event
 
 Add the event name to `TelemetryEventSchema` in `src/events.ts`. For readability outside of the codebase
 they're in snake_case.
+
+Special case: events emitted from CloudFront Functions go in the
+`CffTelemetryEvent` object in `src/cff.ts` instead, not in
+`TelemetryEventSchema`. The two registries are deliberately separate (see the
+CloudFront Functions section above), so a `cff_*` event should exist in
+exactly one place. Use the `cff_` prefix so the origin stays obvious in the
+data.
 
 ## Testing
 
