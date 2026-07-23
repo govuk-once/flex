@@ -15,7 +15,7 @@
     "axios": "1.18.1",
     "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
-    "firebase-admin": "12.7.0",
+    "firebase-admin": "14.1.0",
     "google-auth-library": "10.9.0",
     "pkce-challenge": "6.0.0",
     "totp-generator": "2.0.1",
