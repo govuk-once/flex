@@ -67,7 +67,6 @@ describe("createRestClient", () => {
       method,
       headers: { Accept: "application/json" },
       body: undefined,
-      thirdParty: true,
     });
   });
 
@@ -101,7 +100,6 @@ describe("createRestClient", () => {
       method,
       headers: { Accept: "application/json" },
       body: JSON.stringify({ key: "value" }),
-      thirdParty: true,
     });
   });
 
@@ -161,7 +159,6 @@ describe("createRestClient", () => {
         "x-conflict": "request-value",
       },
       body: undefined,
-      thirdParty: true,
     });
   });
 

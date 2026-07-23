@@ -44,7 +44,6 @@ export function createRestClient({
       method,
       headers: { Accept: "application/json", ...baseHeaders, ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
-      thirdParty: true,
     });
 
     const result = await typedFetch(request, schema);

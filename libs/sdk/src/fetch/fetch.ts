@@ -12,12 +12,6 @@ const MAX_DELAY_MS = 1000;
 export interface FlexFetchRequestInit extends RequestInit {
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
   maxRetryDelay?: number;
-  /**
-   * Marks this request as an outbound third party call so retry, timeout and
-   * failure telemetry is emitted. Leave unset for platform-internal calls
-   * (e.g. domain to service gateway).
-   */
-  thirdParty?: boolean;
 }
 
 /**
@@ -54,7 +48,6 @@ export function flexFetch(
   const {
     retryAttempts,
     maxRetryDelay,
-    thirdParty,
     headers: inputHeaders,
     signal: callerSignal,
     ...fetchOptions
@@ -93,12 +86,10 @@ export function flexFetch(
             error,
             attemptNumber,
           });
-          if (thirdParty) {
-            emitTelemetry(TelemetryEvent.third_party_request_retried, {
-              url: requestUrl,
-              attemptNumber,
-            });
-          }
+          emitTelemetry(TelemetryEvent.third_party_request_retried, {
+            url: requestUrl,
+            attemptNumber,
+          });
           return true;
         },
       },
@@ -108,19 +99,16 @@ export function flexFetch(
         error,
       });
       logger.debug("options", fetchOptions);
-      if (thirdParty) {
-        const isTimeout =
-          error instanceof Error && error.name === "TimeoutError";
-        emitTelemetry(
-          isTimeout
-            ? TelemetryEvent.third_party_request_timeout
-            : TelemetryEvent.third_party_request_error,
-          {
-            url: requestUrl,
-            ...(error instanceof Error && { reason: error.message }),
-          },
-        );
-      }
+      const isTimeout = error instanceof Error && error.name === "TimeoutError";
+      emitTelemetry(
+        isTimeout
+          ? TelemetryEvent.third_party_request_timeout
+          : TelemetryEvent.third_party_request_error,
+        {
+          url: requestUrl,
+          ...(error instanceof Error && { reason: error.message }),
+        },
+      );
       throw error;
     }),
     abort: () => {
