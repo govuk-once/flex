@@ -206,8 +206,7 @@ export interface IntegrationServiceGateway<
 }
 
 export type DomainIntegration =
-  | IntegrationDomainService
-  | IntegrationServiceGateway;
+  IntegrationDomainService | IntegrationServiceGateway;
 
 // ----------------------------------------------------------------------------
 // Utility
@@ -532,7 +531,9 @@ type WithIntegrations<
       ? unknown
       : {
           readonly integrations: {
-            readonly [Key in IntegrationKey]: Key extends keyof RouteIntegrations
+            readonly [
+              Key in IntegrationKey
+            ]: Key extends keyof RouteIntegrations
               ? IntegrationInvoke<RouteIntegrations[Key]>
               : never;
           };
@@ -585,20 +586,17 @@ interface HandlerNoContentResult {
 }
 
 export type HandlerResult =
-  | HandlerSuccessResult
-  | HandlerErrorResult
-  | HandlerNoContentResult;
+  HandlerSuccessResult | HandlerErrorResult | HandlerNoContentResult;
 
 type RouteHandlerResult<RouteConfig> = RouteConfig extends {
   readonly response: ZodType<infer Data>;
 }
-  ?
-      | { readonly status: number; readonly data: Data; readonly error?: never }
-      | {
-          readonly status: number;
-          readonly data?: never;
-          readonly error?: unknown;
-        }
+  ? | { readonly status: number; readonly data: Data; readonly error?: never }
+    | {
+        readonly status: number;
+        readonly data?: never;
+        readonly error?: unknown;
+      }
   : HandlerResult;
 
 type RouteContext<

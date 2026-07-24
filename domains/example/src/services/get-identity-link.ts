@@ -4,8 +4,7 @@ import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 type IdentityRoutes =
-  | "GET /v0/identity/:service"
-  | "GET /v0/identity/:service [private]";
+  "GET /v0/identity/:service" | "GET /v0/identity/:service [private]";
 
 const context = routeContext<IdentityRoutes>;
 

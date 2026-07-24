@@ -73,12 +73,7 @@ export type ExtractPathParams<Path extends string> =
       : never;
 
 export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | Json[]
-  | { [key: string]: Json };
+  string | number | boolean | null | Json[] | { [key: string]: Json };
 
 export type ReadonlyRecord<Key extends PropertyKey, Value> = Readonly<
   Record<Key, Value>

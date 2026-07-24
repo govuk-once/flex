@@ -29,10 +29,7 @@ export interface SsmResource extends ResourceCommon {
 }
 
 export type Resource =
-  | KmsResource
-  | RoleResource
-  | SecretResource
-  | SsmResource;
+  KmsResource | RoleResource | SecretResource | SsmResource;
 
 export type ResourceMap = ReadonlyRecord<string, Resource>;
 
@@ -44,9 +41,11 @@ export type ResolvableResource = Extract<
 >;
 
 export type ResolvedResources<Resources extends ResourceMap> = Prettify<{
-  readonly [Key in keyof Resources as Resources[Key] extends ResolvableResource
-    ? Key
-    : never]: Resources[Key] extends { config: infer Schema extends z.ZodType }
+  readonly [
+    Key in keyof Resources as Resources[Key] extends ResolvableResource
+      ? Key
+      : never
+  ]: Resources[Key] extends { config: infer Schema extends z.ZodType }
     ? z.output<Schema>
     : unknown;
 }>;
