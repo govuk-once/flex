@@ -22,23 +22,6 @@ The practical difference: for **UDP** and **UNS** you can usually reach the owni
 
 ---
 
-## How FLEX Calls Them
-
-Understanding the call path tells you where each failure surfaces. A domain does not call an external service directly; it declares a named **integration** (`type: "gateway", target: "uns", route: "GET /v1/notifications"`) and the platform routes the call through:
-
-```text
-domain handler → service-gateway (REST client) → flexFetch → typedFetch → ApiResult
-```
-
-Two things about this chain drive everything below:
-
-1. **`flexFetch` retries transient failures** with exponential backoff and jitter (delays between 10ms and 1000ms). Gateway calls default to 3 attempts; integrations can set their own `retryAttempts` and `maxRetryDelay`. When the retries are exhausted the call throws, which surfaces as a Lambda error and inflates its duration.
-2. **`typedFetch` classifies the outcome** into an `ApiResult`. An upstream non-2xx becomes `{ ok: false, error: { status, message } }` with the upstream status preserved. A response that does not match the expected schema becomes a `422 "Response validation failed"`, which usually means the provider changed its contract rather than went down. A handler that rejects a non-ok result (the common pattern, `throw new createHttpError.BadGateway()`) returns a `502` to the caller, so a downstream fault typically reaches users as a 502 while the underlying status stays in the logs.
-
-So a hard outage shows up as Lambda errors, raised latency and 502s; a contract fault shows up as a `502` at the edge with `Response validation failed` in the logs. Keep that distinction in mind.
-
----
-
 ## Step 1: Identify and Confirm an Outage
 
 Do not assume; confirm. Establish that there is a real, current, dependency-related fault before acting.
@@ -98,7 +81,7 @@ Match what you are seeing to one of these, because the pattern determines the mi
 | Pattern                            | How it presents                                                                                                         | Likely meaning                                                                                                          |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | **Timeouts / connection failures** | `flex-fetch retrying request` then `flex-fetch failed`; Lambda errors and raised p99 duration; integration latency high | Dependency is down or unreachable; retries are absorbing some load but exhausting                                       |
-| **5xx responses**                  | `ApiResult` `ok:false` with a 5xx status forwarded; API Gateway 5XX alarm                                               | Dependency is up but erroring; usually a provider-side incident                                                         |
+| **5xx responses**                  | 5xx forwarded from the dependency; API Gateway 5XX alarm                                               | Dependency is up but erroring; usually a provider-side incident                                                         |
 | **4xx responses**                  | Forwarded 4xx statuses (e.g. licence `404`); 4XX rate alarm (warning)                                                   | Often expected (not found) rather than an outage; confirm before escalating                                             |
 | **Degraded performance**           | Latency and duration alarms fire before any hard errors                                                                 | Dependency is slow, not down; retries and backoff are inflating FLEX latency                                            |
 | **Contract drift**                 | Reaches callers as a `502` at the edge; `Response validation failed` in the logged error body                           | Provider changed its response shape and the handler rejects the mismatched body; a FLEX-side schema fix, not escalation |
@@ -112,7 +95,7 @@ Pick the smallest action that protects the user journey. Anything shipped as cod
 
 **Retries.** Retry with backoff is already built into the gateway and cushions brief blips automatically. For a dependency that is slow rather than down, tuning an integration's `retryAttempts` or `maxRetryDelay` can help or hurt: more retries against a failing service add load and latency without helping. Treat retry tuning as a considered fix forward, not a reflex.
 
-**Fallbacks.** Where a journey can tolerate it, having the handler return a degraded but usable response on an `ApiResult` `ok:false` (a cached value, a partial result, a graceful "try again later") keeps the wider journey alive while the dependency is down. This is a code change deployed as a fix forward.
+**Fallbacks.** Where a journey can tolerate it, having the handler return a degraded but usable response when the downstream call fails (a cached value, a partial result, a graceful "try again later") keeps the wider journey alive while the dependency is down. This is a code change deployed as a fix forward.
 
 **Feature toggles.** Feature flags are defined per environment in each domain's `domain.config.ts`, resolved in the order: `process.env` override, then environment membership, then default, then off. Turning a dependent feature off for production is normally a config change deployed through the pipeline. In a severe incident, the `process.env` override lets an operator flip a flag out of band by updating the Lambda's environment variable directly (`aws lambda update-function-configuration --environment`), which takes effect immediately. That change is overwritten by the next deploy and must be reconciled through `main` afterwards, exactly as the Fix Forward Runbook describes for any direct change.
 
