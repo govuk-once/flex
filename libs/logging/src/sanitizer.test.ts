@@ -158,12 +158,6 @@ describe("sanitizer", () => {
   });
 
   describe("addSensitiveKey", () => {
-    it("redacts values when key matches a custom string pattern", () => {
-      addSensitiveKey("passport");
-
-      expect(sanitize("passportNumber", "123456789")).toBe(REDACTED);
-    });
-
     it("redacts values when key matches a custom RegExp pattern", () => {
       addSensitiveKey(/\bdriving.?licen[cs]e\b/i);
 
@@ -172,12 +166,6 @@ describe("sanitizer", () => {
   });
 
   describe("addSensitivePattern", () => {
-    it("redacts values matching a custom string pattern", () => {
-      addSensitivePattern(String.raw`\b[A-Z]{2}\d{7}\b`);
-
-      expect(sanitize("data", "Passport: AB1234567")).toBe(REDACTED);
-    });
-
     it("redacts values matching a custom RegExp pattern", () => {
       addSensitivePattern(/\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b/);
 

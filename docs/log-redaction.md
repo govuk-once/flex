@@ -8,11 +8,11 @@ How FLEX prevents sensitive information from reaching log aggregators, following
 
 FLEX uses three layers of protection to ensure sensitive data is never persisted in logs:
 
-| Layer            | Mechanism                        | What it prevents                                           |
-| ---------------- | -------------------------------- | ---------------------------------------------------------- |
-| **Sanitiser**    | Key and value pattern matching   | PII and secrets in log attributes at any log level         |
+| Layer            | Mechanism                        | What it prevents                                              |
+| ---------------- | -------------------------------- | ------------------------------------------------------------- |
+| **Sanitiser**    | Key and value pattern matching   | PII and secrets in log attributes at any log level            |
 | **Log clamping** | `FLEX_LOG_LEVEL_CEILING` env var | DEBUG/TRACE logs with detailed data from firing in production |
-| **PII toggle**   | `FLEX_LOG_PII_DEBUG` env var     | Relaxed redaction physically impossible in production      |
+| **PII toggle**   | `FLEX_LOG_PII_DEBUG` env var     | Relaxed redaction physically impossible in production         |
 
 ---
 
@@ -38,13 +38,13 @@ These protect personally identifiable information and comply with data protectio
 
 **By value:**
 
-| Pattern               | Example             |
-| --------------------- | ------------------- |
-| Email addresses       | `user@example.com`  |
-| UK phone numbers      | `+447700900000`     |
-| National Insurance    | `AB123456C`         |
-| UK postcodes          | `SW1A 1AA`          |
-| IPv4 addresses        | `192.168.1.1`       |
+| Pattern            | Example            |
+| ------------------ | ------------------ |
+| Email addresses    | `user@example.com` |
+| UK phone numbers   | `+447700900000`    |
+| National Insurance | `AB123456C`        |
+| UK postcodes       | `SW1A 1AA`         |
+| IPv4 addresses     | `192.168.1.1`      |
 
 All redacted values are replaced with `***REDACTED***`.
 
@@ -65,14 +65,14 @@ Domains can register additional sensitive patterns at runtime without modifying 
 ```typescript
 import { addSensitiveKey, addSensitivePattern } from "@flex/logging";
 
-addSensitiveKey("passport");                    // redact by key name
-addSensitivePattern(/\b[A-Z]{2}\d{7}\b/);      // redact by value content
+addSensitiveKey(/passport/i); // redact by key name
+addSensitivePattern(/\b[A-Z]{2}\d{7}\b/); // redact by value content
 ```
 
 - `addSensitiveKey(pattern)` — redact values under matching keys
 - `addSensitivePattern(pattern)` — redact values containing matching content
 
-Both accept a `string` (converted to a case-insensitive regex) or a `RegExp`. These follow the same rules as built-in PII patterns: bypassed by the debug toggle, always active in production.
+Both accept a `RegExp`. These follow the same rules as built-in PII patterns: bypassed by the debug toggle, always active in production.
 
 ---
 
