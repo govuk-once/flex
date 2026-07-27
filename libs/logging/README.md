@@ -148,14 +148,14 @@ Domains can register additional sensitive patterns at startup:
 ```typescript
 import { addSensitiveKey, addSensitivePattern } from "@flex/logging";
 
-addSensitiveKey("passport"); // redact by key name
+addSensitiveKey(/passport/i); // redact by key name
 addSensitivePattern(/\b[A-Z]{2}\d{7}\b/); // redact by value content
 ```
 
 - `addSensitiveKey(pattern)` — redact values under matching keys
 - `addSensitivePattern(pattern)` — redact values containing matching content
 
-Both accept a `string` (converted to a case-insensitive regex) or a `RegExp`. Both follow PII rules: bypassed by `FLEX_LOG_PII_DEBUG` in non-production, always active in production.
+Both accept a `RegExp`. Both follow PII rules: bypassed by `FLEX_LOG_PII_DEBUG` in non-production, always active in production.
 
 ### Other mechanisms
 
