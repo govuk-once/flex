@@ -104,7 +104,7 @@ If a fix is already merged and you need to re-run deployment (for example the pi
 
 Reserve this for a severe production incident where the pipeline itself is unavailable or too slow to be viable, and only with incident lead authorisation. It bypasses quality checks, versioning and the approval gates, so the safety burden moves entirely onto you and your reviewer.
 
-Deploy a single domain to the affected stage from a trusted workstation with the correct AWS credentials:
+Deploy a single domain to the affected stage from a trusted workstation with the correct AWS credentials. Verify your local credentials first with [Environment setup](/docs/environment-setup.md#aws-credentials), then deploy:
 
 ```bash
 domain=<name> STAGE=production pnpm deploy
