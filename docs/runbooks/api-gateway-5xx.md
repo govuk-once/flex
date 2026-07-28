@@ -14,10 +14,10 @@ A request runs through `API Gateway → Lambda handler → (optional) integratio
 
 | Status | Served by | Meaning in FLEX |
 | ------ | --------- | --------------- |
-| **500** | The FLEX handler | An unhandled or unexpected error, logged as `Internal server error` or `Unhandled error`; also returned when a handler's response fails its own schema (`Failed handler response validation`) |
-| **502** | The FLEX handler, via the gateway helper | A downstream integration returned a 5xx; FLEX maps it to `"<integration> upstream service unavailable"`. Also served by API Gateway itself if the Lambda crashed, ran out of memory, or returned a malformed payload |
+| **500** | The FLEX handler | An unhandled or unexpected error, logged as `Internal server error` or `Unhandled error`; also returned when a handler's response fails its own schema (logged as `Response validation failed`) |
+| **502** | The FLEX handler, via the gateway helper | A downstream integration returned a 5xx; FLEX maps it to `"<integration> upstream service unavailable"`, or a gateway response fails its own schema, logged as `Gateway response schema validation failed`. Also served by API Gateway itself if the Lambda crashed, ran out of memory, or returned a malformed payload |
 | **503** | API Gateway | The function was throttled or there was no capacity to serve the request |
-| **504** | API Gateway | The integration exceeded its timeout; the Lambda ran past the timeout (30s by default) before responding |
+| **504** | API Gateway | The integration exceeded its timeout; the Lambda ran past the timeout (15s by default, higher where a domain sets it) before responding |
 
 The important split: **500 and a mapped 502 come from FLEX code and are logged with a clear message; a native 502, 503 or 504 comes from API Gateway and will not have a matching FLEX log line for that request** because the Lambda never returned cleanly. Which of the two you are looking at decides where you investigate.
 
@@ -69,8 +69,9 @@ Confirm the cause with the specific evidence.
 | ----------- | ------- |
 | `Unhandled error` | An exception Middy caught and turned into a 500; the `detail` field carries the name, message and stack |
 | `Internal server error` | An unexpected error mapped to a 500 |
-| `Failed handler response validation` | The handler produced data that did not match its response schema, returned as a 500; a code or contract bug, not an outage |
-| `upstream service unavailable` | A downstream integration returned a 5xx and FLEX mapped it to a 502; the message names the integration |
+| `Response validation failed` | The handler produced data that did not match its response schema, returned as a 500; a code or contract bug, not an outage. The related `Failed handler response validation` detail only appears at DEBUG or TRACE log level |
+| `Gateway response schema validation failed` | A service gateway response did not match its schema, returned as a 502; a code or contract bug, not an outage |
+| `upstream service unavailable` | A downstream integration returned a 5xx and FLEX mapped it to a 502; the message names the integration. It is the 502 response body and a DEBUG-level log only, so at normal log level query `flex-fetch failed` or the access-log 502 instead |
 | `flex-fetch failed` | Calls to a downstream exhausted their retries; correlate the `url` to the target service |
 
 **Metrics.** Plot `5XXError` against `IntegrationLatency` and `Latency` over the incident window. If integration latency climbs while API Gateway's own overhead stays flat, the delay is in the backend. Check Lambda `Errors`, `Duration` and `Throttles` for the affected function: throttles alongside 5xx point at a concurrency limit rather than a code fault.
@@ -88,7 +89,7 @@ Match the evidence to a cause, because the cause decides the fix.
 | **Integration timeout** | 504s; Lambda duration near the timeout; integration latency alarm | A downstream service is slow or hanging |
 | **Downstream service failure** | 502s with `upstream service unavailable`; `flex-fetch failed` | The dependency is erroring; see the External Service Outage Runbook |
 | **Unhandled exception** | 500s with `Unhandled error` and a stack; often follows a recent deploy | A bug in the handler |
-| **Response validation failure** | 500s with `Failed handler response validation` | The handler or a downstream contract changed shape |
+| **Response validation failure** | 500s with `Response validation failed`, or 502s with `Gateway response schema validation failed` | The handler or a gateway response contract changed shape |
 | **Throttling / concurrency** | 503s or 5xx with Lambda `Throttles` above zero | Reserved or account concurrency exhausted, or a downstream throttling FLEX |
 | **Misconfiguration** | 500s or 502s starting exactly at a deploy, across routes | A missing or wrong resource (SSM parameter, secret, role, env var) |
 
@@ -104,7 +105,7 @@ Choose the smallest action that restores service. Anything shipped as code follo
 
 **If it is throttling** (503s, Lambda throttles), the fix is capacity, not code: review the function's concurrency and whether a downstream is rate-limiting FLEX. Escalate to raise a limit if the ceiling is the cause.
 
-**When to escalate.** Escalate when the fault is outside FLEX's control (a failing dependency, a hit account or concurrency limit) and when impact is severe or prolonged and you cannot restore the journey with a FLEX-side change. A `500` from FLEX's own code (`Unhandled error`, `Failed handler response validation`) is a fix forward, not an escalation.
+**When to escalate.** Escalate when the fault is outside FLEX's control (a failing dependency, a hit account or concurrency limit) and when impact is severe or prolonged and you cannot restore the journey with a FLEX-side change. A `500` from FLEX's own code (`Unhandled error`, `Response validation failed`) is a fix forward, not an escalation.
 
 Communicate throughout as set out in the Fix Forward Runbook: state the status code and route affected, the cause you have confirmed, the mitigation applied, and confirm in the incident channel when the 5xx rate returns to baseline.
 
