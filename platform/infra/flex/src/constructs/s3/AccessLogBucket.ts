@@ -1,6 +1,5 @@
 import { Duration } from "aws-cdk-lib";
 import {
-  BlockPublicAccess,
   Bucket,
   BucketAccessControl,
   ObjectLockMode,

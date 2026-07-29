@@ -1,7 +1,6 @@
 import { Duration } from "aws-cdk-lib";
 import { IKey } from "aws-cdk-lib/aws-kms";
 import {
-  BlockPublicAccess,
   Bucket,
   BucketAccessControl,
   BucketEncryption,
