@@ -82,7 +82,7 @@ const createMockSession = async (jti: string) => {
   });
   const accessToken = await new jose.SignJWT({})
     .setProtectedHeader({
-      alg: 'PS256'
+      alg: "PS256",
     })
     .setJti(jti)
     .sign(privateKey);
