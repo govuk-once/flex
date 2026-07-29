@@ -80,7 +80,12 @@ const createMockSession = async (jti: string) => {
   const { privateKey } = await jose.generateKeyPair("PS256", {
     modulusLength: 2048,
   });
-  const accessToken = await new jose.SignJWT({}).setJti(jti).sign(privateKey);
+  const accessToken = await new jose.SignJWT({})
+    .setProtectedHeader({
+      alg: 'PS256'
+    })
+    .setJti(jti)
+    .sign(privateKey);
   const sessionHash = nodeCrypto
     .createHmac("sha256", "test-key")
     .update(jti)
