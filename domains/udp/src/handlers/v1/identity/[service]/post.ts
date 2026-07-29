@@ -14,7 +14,12 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
   const { linkingToken, accessToken } = headers;
   const service = pathParams.service.toLowerCase();
 
-  const serviceId = await extractServiceId(service, linkingToken, accessToken, ctx);
+  const serviceId = await extractServiceId(
+    service,
+    linkingToken,
+    accessToken,
+    ctx,
+  );
   if (serviceId === null) {
     logger.error(`Failed to get linking id`, {
       service,

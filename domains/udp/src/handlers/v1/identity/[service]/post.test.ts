@@ -77,19 +77,19 @@ beforeAll(async () => {
 });
 
 const createMockSession = async (jti: string) => {
-  const { privateKey } = await jose.generateKeyPair(
-    "PS256",
-    {
-      modulusLength: 2048,
-    },
-  );
+  const { privateKey } = await jose.generateKeyPair("PS256", {
+    modulusLength: 2048,
+  });
   const accessToken = await new jose.SignJWT({}).setJti(jti).sign(privateKey);
-  const sessionHash = nodeCrypto.createHmac('sha256', 'test-key').update(jti).digest('hex');
+  const sessionHash = nodeCrypto
+    .createHmac("sha256", "test-key")
+    .update(jti)
+    .digest("hex");
   return {
     accessToken,
-    sessionHash
-  }
-}
+    sessionHash,
+  };
+};
 
 const createMockDvlaJwt = async (
   linkingId: string,
@@ -105,11 +105,11 @@ const createMockDvlaJwt = async (
 
   const payload: Record<string, string> = {
     iss: "https://govuk-app-external-ui.dvla.gov.uk",
+    session: sessionHash,
   };
 
   if (!options?.omitLinkingId) {
     payload.linking_id = linkingId;
-    sessionHash;
   }
 
   const jwtSigner = new jose.SignJWT(payload)
@@ -192,7 +192,7 @@ describe("POST /v1/identity/:service", () => {
     sdk,
   }) => {
     const jti = uuid;
-    const {accessToken} = await createMockSession(jti);
+    const { accessToken } = await createMockSession(jti);
 
     http
       .gateway("udp")
@@ -210,9 +210,9 @@ describe("POST /v1/identity/:service", () => {
         userId,
         body: serviceIdentityLinkRequest,
         params: { service: serviceName },
-        headers: {...standardHeaders, Authorization: accessToken},
+        headers: { ...standardHeaders, Authorization: accessToken },
       }),
-      sdk.context({secrets}),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(201);
@@ -229,7 +229,7 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
+      const { accessToken, sessionHash } = await createMockSession(jti);
       const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
@@ -248,9 +248,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": dvlaJweToken, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": dvlaJweToken,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(201);
@@ -262,8 +265,12 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
-      const expiredDvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash, {isExpired: true});
+      const { accessToken, sessionHash } = await createMockSession(jti);
+      const expiredDvlaJweToken = await createMockDvlaJwe(
+        serviceId,
+        sessionHash,
+        { isExpired: true },
+      );
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
@@ -272,9 +279,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": expiredDvlaJweToken, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": expiredDvlaJweToken,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(401);
@@ -285,10 +295,14 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
-      const invalidAlgJweToken = await createMockDvlaJwe(serviceId, sessionHash {
-        invalidAlg: true,
-      });
+      const { accessToken, sessionHash } = await createMockSession(jti);
+      const invalidAlgJweToken = await createMockDvlaJwe(
+        serviceId,
+        sessionHash,
+        {
+          invalidAlg: true,
+        },
+      );
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
@@ -297,9 +311,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": invalidAlgJweToken, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": invalidAlgJweToken,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(401);
@@ -310,7 +327,7 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
+      const { accessToken, sessionHash } = await createMockSession(jti);
       const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
       http.gateway("dvla").get(jwksPath).reply(500);
@@ -320,9 +337,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": dvlaJweToken, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": dvlaJweToken,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(502);
@@ -332,16 +352,19 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
+      const { accessToken } = await createMockSession(jti);
 
       const result = await handler(
         sdk.event.post(targetDvlaEndpoint, {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": "eyJhbGciOi.InvalidToken", "Authorization": accessToken },
+          headers: {
+            "x-linking-token": "eyJhbGciOi.InvalidToken",
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(400);
@@ -351,16 +374,19 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
+      const { accessToken } = await createMockSession(jti);
 
       const result = await handler(
         sdk.event.post(targetDvlaEndpoint, {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": "part1.part2..part4.part5", "Authorization": accessToken },
+          headers: {
+            "x-linking-token": "part1.part2..part4.part5",
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(400);
@@ -372,7 +398,7 @@ describe("POST /v1/identity/:service", () => {
       mockKmsSend.mockResolvedValueOnce({ Plaintext: undefined });
 
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
+      const { accessToken, sessionHash } = await createMockSession(jti);
       const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
       const result = await handler(
@@ -380,9 +406,9 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": validJwe, "Authorization": accessToken },
+          headers: { "x-linking-token": validJwe, Authorization: accessToken },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(500);
@@ -392,7 +418,7 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
+      const { accessToken, sessionHash } = await createMockSession(jti);
       const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
       const parts = validJwe.split(".");
@@ -404,9 +430,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": tamperedJwe, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": tamperedJwe,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(400);
@@ -417,10 +446,14 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken, sessionHash} = await createMockSession(jti);
-      const tokenWithoutLinkingId = await createMockDvlaJwe(serviceId, sessionHash, {
-        omitLinkingId: true,
-      });
+      const { accessToken, sessionHash } = await createMockSession(jti);
+      const tokenWithoutLinkingId = await createMockDvlaJwe(
+        serviceId,
+        sessionHash,
+        {
+          omitLinkingId: true,
+        },
+      );
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
@@ -429,9 +462,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": tokenWithoutLinkingId, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": tokenWithoutLinkingId,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(401);
@@ -442,8 +478,11 @@ describe("POST /v1/identity/:service", () => {
       sdk,
     }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
-      const tokenWithMismatchedHash = await createMockDvlaJwe(serviceId, 'mismatched-hash');
+      const { accessToken } = await createMockSession(jti);
+      const tokenWithMismatchedHash = await createMockDvlaJwe(
+        serviceId,
+        "mismatched-hash",
+      );
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
@@ -452,9 +491,12 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
-          headers: { "x-linking-token": tokenWithMismatchedHash, "Authorization": accessToken },
+          headers: {
+            "x-linking-token": tokenWithMismatchedHash,
+            Authorization: accessToken,
+          },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(401);
@@ -466,7 +508,7 @@ describe("POST /v1/identity/:service", () => {
     sdk,
   }) => {
     const jti = uuid;
-    const {accessToken} = await createMockSession(jti);
+    const { accessToken } = await createMockSession(jti);
 
     http
       .gateway("udp")
@@ -480,9 +522,9 @@ describe("POST /v1/identity/:service", () => {
         userId,
         body: serviceIdentityLinkRequest,
         params: { service: serviceName },
-        headers: {...standardHeaders, "Authorization": accessToken},
+        headers: { ...standardHeaders, Authorization: accessToken },
       }),
-      sdk.context({secrets}),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(204);
@@ -501,7 +543,7 @@ describe("POST /v1/identity/:service", () => {
       existingServiceIdentity.serviceName.toLowerCase();
 
     const jti = uuid;
-    const {accessToken} = await createMockSession(jti);
+    const { accessToken } = await createMockSession(jti);
 
     http
       .gateway("udp")
@@ -523,9 +565,9 @@ describe("POST /v1/identity/:service", () => {
         userId,
         body: serviceIdentityLinkRequest,
         params: { service: serviceName },
-        headers: {...standardHeaders, "Authorization": accessToken},
+        headers: { ...standardHeaders, Authorization: accessToken },
       }),
-      sdk.context({secrets}),
+      sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(201);
@@ -536,7 +578,7 @@ describe("POST /v1/identity/:service", () => {
     "returns $expected when the UDP get service identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
+      const { accessToken } = await createMockSession(jti);
 
       http
         .gateway("udp")
@@ -550,9 +592,9 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: serviceName },
-          headers: {...standardHeaders, "Authorization": accessToken},
+          headers: { ...standardHeaders, Authorization: accessToken },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(expected);
@@ -567,7 +609,7 @@ describe("POST /v1/identity/:service", () => {
     "returns $expected when the UDP delete service identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
+      const { accessToken } = await createMockSession(jti);
 
       const oldServiceId = createServiceId("test-old-service-id");
       const existingServiceIdentity = createServiceIdentityLink({
@@ -593,9 +635,9 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: serviceName },
-          headers: {...standardHeaders, "Authorization": accessToken},
+          headers: { ...standardHeaders, Authorization: accessToken },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(expected);
@@ -607,7 +649,7 @@ describe("POST /v1/identity/:service", () => {
     "returns $expected when the UDP create service identity integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       const jti = uuid;
-      const {accessToken} = await createMockSession(jti);
+      const { accessToken } = await createMockSession(jti);
 
       http
         .gateway("udp")
@@ -626,9 +668,9 @@ describe("POST /v1/identity/:service", () => {
           userId,
           body: serviceIdentityLinkRequest,
           params: { service: serviceName },
-          headers: {...standardHeaders, "Authorization": accessToken},
+          headers: { ...standardHeaders, Authorization: accessToken },
         }),
-        sdk.context({secrets}),
+        sdk.context({ secrets }),
       );
 
       expect(result.statusCode).toBe(expected);

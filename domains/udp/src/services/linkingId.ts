@@ -142,21 +142,37 @@ async function verifyJwtAndExtractPayload(
   }
 }
 
-async function verifySessionHash(sessionHash: string, accessToken: string, ctx: PostRouteContext): Promise<void> {
-  const accessTokenPayload = JSON.parse(Buffer.from(accessToken.split('.')[1]!, 'base64').toString())
-  const jti = accessTokenPayload['jti'];
+function verifySessionHash(
+  sessionHash: string,
+  accessToken: string,
+  ctx: PostRouteContext,
+): void {
+  //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const payloadBase64Url = accessToken.split(".")[1]!;
+  const payloadBase64 = payloadBase64Url
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(
+      payloadBase64Url.length + ((4 - (payloadBase64Url.length % 4)) % 4),
+      "=",
+    );
 
-  const calculatedHash = createHmac('sha256', ctx.resources.sessionHashKey)
-      .update(jti)
-      .digest('hex');
+  const accessTokenPayload = JSON.parse(
+    Buffer.from(payloadBase64, "base64").toString(),
+  ) as Record<string, string>;
+  const jti = accessTokenPayload["jti"] as string;
+
+  const calculatedHash = createHmac("sha256", ctx.resources.sessionHashKey)
+    .update(jti)
+    .digest("hex");
 
   if (!(sessionHash === calculatedHash)) {
     ctx.logger.error("Session hash did not match", {
       sessionHash,
-      calculatedHash
-    })
+      calculatedHash,
+    });
     throw new createHttpError.Unauthorized();
-  };
+  }
 }
 
 export async function extractServiceId(
@@ -187,7 +203,7 @@ export async function extractServiceId(
     if (payload === null) {
       return null;
     }
-    await verifySessionHash(payload.session, accessToken, ctx);
+    verifySessionHash(payload.session, accessToken, ctx);
     return payload.linking_id;
   }
 

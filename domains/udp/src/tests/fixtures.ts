@@ -18,7 +18,7 @@ export const createSecrets = (overrides?: Record<string, string>) =>
   mergeFixture(
     {
       udpNotificationSecret: "test-notification-secret", //pragma: allowlist secret
-      sessionHashKey: 'test-key'
+      sessionHashKey: "test-key",
     },
     overrides,
   );

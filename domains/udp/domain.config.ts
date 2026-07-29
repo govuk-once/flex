@@ -40,8 +40,8 @@ export const { config, route, routeContext } = domain({
     },
     sessionHashKey: {
       type: "secret",
-      path: "/flex-secret/udp/dvla-session-hash-secret"
-    }
+      path: "/flex-secret/udp/dvla-session-hash-secret",
+    },
   },
   integrations: {
     udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
@@ -143,7 +143,7 @@ export const { config, route, routeContext } = domain({
               accessToken: {
                 name: "Authorization",
                 required: true,
-              }
+              },
             },
           },
         },
