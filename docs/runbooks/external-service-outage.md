@@ -91,7 +91,7 @@ Match what you are seeing to one of these, because the pattern determines the mi
 
 ## Step 4: Mitigate Impact and When to Escalate
 
-Pick the smallest action that protects the user journey. Anything shipped as code follows the [Fix Forward Runbook](/docs/runbooks/fix-forward-runbook.md).
+Pick the smallest action that protects the user journey. Anything shipped as code follows the [Fix Forward Runbook](/docs/runbooks/fix-forward.md).
 
 **Retries.** Retry with backoff is already built into the gateway and cushions brief blips automatically. For a dependency that is slow rather than down, tuning an integration's `retryAttempts` or `maxRetryDelay` can help or hurt: more retries against a failing service add load and latency without helping. Treat retry tuning as a considered fix forward, not a reflex.
 
@@ -123,7 +123,7 @@ Communicate throughout as set out in the Fix Forward Runbook: state which depend
 
 **Guides:**
 
-- [Fix Forward Runbook](/docs/runbooks/fix-forward-runbook.md)
+- [Fix Forward Runbook](/docs/runbooks/fix-forward.md)
 - [Deployment Guide](/docs/deployment.md)
 - [Log Redaction](/docs/log-redaction.md)
 - [Release Notifications and Alerting](/docs/release-notifications.md)
