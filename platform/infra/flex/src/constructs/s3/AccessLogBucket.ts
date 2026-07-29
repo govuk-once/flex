@@ -19,7 +19,6 @@ export class AccessLogBucket extends Construct {
     this.bucket = new Bucket(this, "AccessLogBucket", {
       enforceSSL: true,
       publicReadAccess: false,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
       accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
       versioned: true,

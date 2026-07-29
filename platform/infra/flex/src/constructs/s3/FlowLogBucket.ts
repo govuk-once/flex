@@ -21,7 +21,6 @@ export class FlowLogBucket extends Construct {
     this.bucket = new Bucket(this, "FlowLogBucket", {
       enforceSSL: true,
       publicReadAccess: false,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
       accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
       encryption: BucketEncryption.KMS,
