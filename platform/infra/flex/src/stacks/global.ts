@@ -38,6 +38,7 @@ import {
 } from "aws-cdk-lib/aws-route53";
 import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 import {
+  BlockPublicAccess,
   Bucket,
   BucketEncryption,
 } from "aws-cdk-lib/aws-s3";
@@ -516,6 +517,7 @@ export class FlexGlobalStack extends BaseStack {
     return new Bucket(this, "OpenApiSpecsBucket", {
       // NOSONAR S6249 enforceSSL applied globally via EnforceS3Https
       bucketName: `flex-${stage}-openapi-specs`,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: RemovalPolicy.RETAIN,
       versioned: true,
