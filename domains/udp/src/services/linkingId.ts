@@ -11,8 +11,8 @@ const _postCtx = routeContext<PostRoute>;
 type PostRouteContext = ReturnType<typeof _postCtx>;
 
 interface DvlaJwtPayload extends jose.JWTPayload {
-  linking_id: string;
-  session: string;
+  linking_id?: string;
+  session?: string;
 }
 
 const kmsClient = new KMSClient({
@@ -200,7 +200,7 @@ export async function extractServiceId(
       ctx,
     );
 
-    if (payload === null || payload.linking_id === null) {
+    if (payload === null || !payload.linking_id || !payload.session) {
       return null;
     }
     verifySessionHash(payload.session, accessToken, ctx);
