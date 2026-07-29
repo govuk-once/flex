@@ -200,7 +200,7 @@ export async function extractServiceId(
       ctx,
     );
 
-    if (payload === null) {
+    if (payload === null || payload.linking_id === null) {
       return null;
     }
     verifySessionHash(payload.session, accessToken, ctx);
