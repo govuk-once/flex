@@ -97,11 +97,11 @@ Match the evidence to a cause, because the cause decides the fix.
 
 ## Step 4: Resolve, Mitigate and Escalate
 
-Choose the smallest action that restores service. Anything shipped as code follows the [Fix Forward Runbook](/docs/runbooks/fix-forward-runbook.md).
+Choose the smallest action that restores service. Anything shipped as code follows the [Fix Forward Runbook](/docs/runbooks/fix-forward.md).
 
 **If it followed a deploy** (unhandled exceptions or misconfiguration starting at a known release), the fastest safe route is usually to revert the offending change forward, or to correct the missing configuration. Line the 5xx start time up against the deployment notifications in `#govuk-once-flex-release` to confirm.
 
-**If a downstream service is failing or timing out** (502s, 504s, `upstream service unavailable`), this is a dependency incident: apply the mitigations in the [External Service Outage Runbook](/docs/runbooks/external-service-outage-runbook.md) (retries, fallbacks, feature toggles) and escalate to the dependency owner. Do not keep retrying harder against a service that is down; it adds load and latency without helping.
+**If a downstream service is failing or timing out** (502s, 504s, `upstream service unavailable`), this is a dependency incident: apply the mitigations in the [External Service Outage Runbook](/docs/runbooks/external-service-outage.md) (retries, fallbacks, feature toggles) and escalate to the dependency owner. Do not keep retrying harder against a service that is down; it adds load and latency without helping.
 
 **If it is throttling** (503s, Lambda throttles), the fix is capacity, not code: review the function's concurrency and whether a downstream is rate-limiting FLEX. Escalate to raise a limit if the ceiling is the cause.
 
@@ -125,7 +125,7 @@ Communicate throughout as set out in the Fix Forward Runbook: state the status c
 **Guides:**
 
 - [Fix Forward Runbook](/docs/runbooks/fix-forward.md)
-- [External Service Outage Runbook](/docs/runbooks/external-service-outage-runbook.md)
+- [External Service Outage Runbook](/docs/runbooks/external-service-outage.md)
 - [Deployment Guide](/docs/deployment.md)
 - [Log Redaction](/docs/log-redaction.md)
 
