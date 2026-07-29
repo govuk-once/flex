@@ -124,7 +124,7 @@ Communicate throughout as set out in the Fix Forward Runbook: state the status c
 
 **Guides:**
 
-- [Fix Forward Runbook](/docs/runbooks/fix-forward-runbook.md)
+- [Fix Forward Runbook](/docs/runbooks/fix-forward.md)
 - [External Service Outage Runbook](/docs/runbooks/external-service-outage-runbook.md)
 - [Deployment Guide](/docs/deployment.md)
 - [Log Redaction](/docs/log-redaction.md)
