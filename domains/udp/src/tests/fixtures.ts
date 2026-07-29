@@ -16,7 +16,10 @@ export const userId = createUserId("test-udp-user");
 
 export const createSecrets = (overrides?: Record<string, string>) =>
   mergeFixture(
-    { udpNotificationSecret: "test-notification-secret" }, // pragma: allowlist secret
+    {
+      udpNotificationSecret: "test-notification-secret", //pragma: allowlist secret
+      sessionHashKey: 'test-key'
+    },
     overrides,
   );
 export const secrets = createSecrets();
