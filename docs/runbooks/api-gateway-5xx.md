@@ -45,7 +45,7 @@ Establish the scale and the shape of the failure before tracing individual reque
    | sort @timestamp desc
    ```
 
-3. **Interpret the spread.** All 504s on one route points at a slow or hanging integration. A mix of 500s across many routes points at a shared fault (a resource, config, or the platform). A burst of 502s naming one integration points at a downstream outage (see the [External Service Outage Runbook](/docs/runbooks/external-service-outage-runbook.md)).
+3. **Interpret the spread.** All 504s on one route points at a slow or hanging integration. A mix of 500s across many routes points at a shared fault (a resource, config, or the platform). A burst of 502s naming one integration points at a downstream outage (see the [External Service Outage Runbook](/docs/runbooks/external-service-outage.md)).
 
 ---
 
