@@ -1,6 +1,7 @@
 import { createUserId, mergeFixture, timestamp } from "@flex/testing";
 import type { PushId } from "@flex/udp-domain";
 import type { DeepPartial } from "@flex/utils";
+import { Group } from "@schemas/group";
 import type { Notification, NotificationStatus } from "@schemas/notification";
 
 export { createUserId };
@@ -42,3 +43,18 @@ export const createSecrets = (overrides?: Record<string, string>) =>
     overrides,
   );
 export const secrets = createSecrets();
+
+export const createGroup = (overrides?: DeepPartial<Group>) =>
+  mergeFixture<Group>(
+    {
+      Namespace: "travel",
+      Group: "test country",
+      Subgroup: "test frequency",
+    },
+    overrides,
+  );
+export const group = createGroup();
+export const groupWithoutSubgroup: Group = {
+  Namespace: "travel",
+  Group: "another test country",
+};
