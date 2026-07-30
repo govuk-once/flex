@@ -3,6 +3,7 @@ import { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
   Alarm,
   ComparisonOperator,
+  MathExpression,
   Metric,
   Stats,
   TreatMissingData,
@@ -31,88 +32,132 @@ export class ApiGatewayAlarms extends Construct {
       Stage: api.deploymentStage.stageName,
     };
 
-    // 5XXError is reported as a ratio (errors / requests) when averaged.
-    // 1% threshold = 0.01.
+    const errorRatePeriod = Duration.minutes(1);
+    const errorRateEvaluationPeriods = 5;
+    const fiveXxErrorRatePercent = 1;
+    const fourXxErrorRatePercent = 5;
+
+    // 5XXError and 4XXError are reported as ratios (errors / requests) when
+    // averaged, so the percent thresholds are divided by 100.
     this.fiveXxAlarm = new Alarm(this, "5xxErrorRate", {
       alarmName: `${alarmNamePrefix}-5xx-error-rate`,
       alarmDescription:
-        "Critical: 5XX error rate above 1% over 5 consecutive 1 minute periods",
+        `Critical: 5XX error rate above ${fiveXxErrorRatePercent.toString()}% ` +
+        `over ${errorRateEvaluationPeriods.toString()} consecutive ` +
+        `${errorRatePeriod.toMinutes().toString()} minute periods`,
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "5XXError",
         dimensionsMap: dimensions,
         statistic: Stats.AVERAGE,
-        period: Duration.minutes(1),
+        period: errorRatePeriod,
       }),
-      threshold: 0.01,
-      evaluationPeriods: 5,
+      threshold: fiveXxErrorRatePercent / 100,
+      evaluationPeriods: errorRateEvaluationPeriods,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
     this.fiveXxAlarm.addAlarmAction(criticalAction);
 
-    // 4XXError as a ratio. 5% threshold = 0.05.
     this.fourXxAlarm = new Alarm(this, "4xxErrorRate", {
       alarmName: `${alarmNamePrefix}-4xx-error-rate`,
       alarmDescription:
-        "Warning: 4XX error rate above 5% over 5 consecutive 1 minute periods",
+        `Warning: 4XX error rate above ${fourXxErrorRatePercent.toString()}% ` +
+        `over ${errorRateEvaluationPeriods.toString()} consecutive ` +
+        `${errorRatePeriod.toMinutes().toString()} minute periods`,
       metric: new Metric({
         namespace: "AWS/ApiGateway",
         metricName: "4XXError",
         dimensionsMap: dimensions,
         statistic: Stats.AVERAGE,
-        period: Duration.minutes(1),
+        period: errorRatePeriod,
       }),
-      threshold: 0.05,
-      evaluationPeriods: 5,
+      threshold: fourXxErrorRatePercent / 100,
+      evaluationPeriods: errorRateEvaluationPeriods,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
     this.fourXxAlarm.addAlarmAction(warningAction);
 
-    // p95 end-to-end latency. p95 (not p99) and an M-of-N evaluation window
-    // keep transient cold-start spikes from paging while still catching a
-    // sustained regression.
-    this.p95LatencyAlarm = new Alarm(this, "P95Latency", {
+    const latencyPeriod = Duration.minutes(5);
+    const latencyEvaluationPeriods = 3;
+    const latencyDatapointsToAlarm = 2;
+    const latencyThresholdMs = 3000;
+    const integrationLatencyThresholdMs = 2900;
+    const minRequestsForLatencyAlarms = 40;
+
+    const requestCount = new Metric({
+      namespace: "AWS/ApiGateway",
+      metricName: "Count",
+      dimensionsMap: dimensions,
+      statistic: Stats.SUM,
+      period: latencyPeriod,
+    });
+
+    const gatedP95Latency = new MathExpression({
+      expression: `IF(requests >= ${minRequestsForLatencyAlarms.toString()}, latency, 0)`,
+      usingMetrics: {
+        latency: new Metric({
+          namespace: "AWS/ApiGateway",
+          metricName: "Latency",
+          dimensionsMap: dimensions,
+          statistic: Stats.p(95),
+          period: latencyPeriod,
+        }),
+        requests: requestCount,
+      },
+      period: latencyPeriod,
+      label: `p95 latency (min ${minRequestsForLatencyAlarms.toString()} requests per period)`,
+    });
+
+    this.p95LatencyAlarm = gatedP95Latency.createAlarm(this, "P95Latency", {
       alarmName: `${alarmNamePrefix}-p95-latency`,
       alarmDescription:
-        "Warning: p95 latency above 3000ms for 2 of 3 consecutive 5 minute periods",
-      metric: new Metric({
-        namespace: "AWS/ApiGateway",
-        metricName: "Latency",
-        dimensionsMap: dimensions,
-        statistic: Stats.p(95),
-        period: Duration.minutes(5),
-      }),
-      threshold: 3000,
-      evaluationPeriods: 3,
-      datapointsToAlarm: 2,
+        `Warning: p95 latency above ${latencyThresholdMs.toString()}ms ` +
+        `for ${latencyDatapointsToAlarm.toString()} of ${latencyEvaluationPeriods.toString()} consecutive ` +
+        `${latencyPeriod.toMinutes().toString()} minute periods ` +
+        `(suppressed below ${minRequestsForLatencyAlarms.toString()} requests per period)`,
+      threshold: latencyThresholdMs,
+      evaluationPeriods: latencyEvaluationPeriods,
+      datapointsToAlarm: latencyDatapointsToAlarm,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
     this.p95LatencyAlarm.addAlarmAction(warningAction);
 
-    // p95 integration latency - backend-only latency, helps distinguish
-    // API Gateway overhead from backend slowness when p95 latency fires.
-    // Same p95 + M-of-N tuning as the end-to-end alarm to ride out cold-start
-    // spikes.
-    this.integrationP95LatencyAlarm = new Alarm(this, "IntegrationP95Latency", {
-      alarmName: `${alarmNamePrefix}-integration-p95-latency`,
-      alarmDescription:
-        "Warning: integration p95 latency above 2900ms for 2 of 3 consecutive 5 minute periods",
-      metric: new Metric({
-        namespace: "AWS/ApiGateway",
-        metricName: "IntegrationLatency",
-        dimensionsMap: dimensions,
-        statistic: Stats.p(95),
-        period: Duration.minutes(5),
-      }),
-      threshold: 2900,
-      evaluationPeriods: 3,
-      datapointsToAlarm: 2,
-      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
+    const gatedIntegrationP95Latency = new MathExpression({
+      expression: `IF(requests >= ${minRequestsForLatencyAlarms.toString()}, latency, 0)`,
+      usingMetrics: {
+        latency: new Metric({
+          namespace: "AWS/ApiGateway",
+          metricName: "IntegrationLatency",
+          dimensionsMap: dimensions,
+          statistic: Stats.p(95),
+          period: latencyPeriod,
+        }),
+        requests: requestCount,
+      },
+      period: latencyPeriod,
+      label: `integration p95 latency (min ${minRequestsForLatencyAlarms.toString()} requests per period)`,
     });
+
+    this.integrationP95LatencyAlarm = gatedIntegrationP95Latency.createAlarm(
+      this,
+      "IntegrationP95Latency",
+      {
+        alarmName: `${alarmNamePrefix}-integration-p95-latency`,
+        alarmDescription:
+          `Warning: integration p95 latency above ${integrationLatencyThresholdMs.toString()}ms ` +
+          `for ${latencyDatapointsToAlarm.toString()} of ${latencyEvaluationPeriods.toString()} consecutive ` +
+          `${latencyPeriod.toMinutes().toString()} minute periods ` +
+          `(suppressed below ${minRequestsForLatencyAlarms.toString()} requests per period)`,
+        threshold: integrationLatencyThresholdMs,
+        evaluationPeriods: latencyEvaluationPeriods,
+        datapointsToAlarm: latencyDatapointsToAlarm,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+      },
+    );
     this.integrationP95LatencyAlarm.addAlarmAction(warningAction);
   }
 }
