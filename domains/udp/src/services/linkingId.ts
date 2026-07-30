@@ -1,4 +1,4 @@
-import { webcrypto as crypto } from "node:crypto";
+import { createHmac, webcrypto as crypto } from "node:crypto";
 
 import { DecryptCommand, KMSClient } from "@aws-sdk/client-kms";
 import { routeContext } from "@domain";
@@ -12,6 +12,7 @@ type PostRouteContext = ReturnType<typeof _postCtx>;
 
 interface DvlaJwtPayload extends jose.JWTPayload {
   linking_id?: string;
+  session?: string;
 }
 
 const kmsClient = new KMSClient({
@@ -121,11 +122,11 @@ async function decryptJweToken(
   }
 }
 
-async function verifyJwtAndExtractLinkingId(
+async function verifyJwtAndExtractPayload(
   signedJwt: string,
   jwkSet: JwkSet,
   ctx: PostRouteContext,
-): Promise<string | null> {
+): Promise<DvlaJwtPayload | null> {
   try {
     const JWKS = jose.createLocalJWKSet(jwkSet);
 
@@ -134,20 +135,54 @@ async function verifyJwtAndExtractLinkingId(
       clockTolerance: 0,
     });
 
-    return payload.linking_id ?? null;
+    return payload;
   } catch (error) {
     ctx.logger.error("Failed to verify internal JWT signature", { error });
     return null;
   }
 }
 
+function verifySessionHash(
+  sessionHash: string,
+  accessToken: string,
+  ctx: PostRouteContext,
+): void {
+  //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const payloadBase64Url = accessToken.split(".")[1]!;
+  const payloadBase64 = payloadBase64Url
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(
+      payloadBase64Url.length + ((4 - (payloadBase64Url.length % 4)) % 4),
+      "=",
+    );
+
+  const accessTokenPayload = JSON.parse(
+    Buffer.from(payloadBase64, "base64").toString(),
+  ) as Record<string, string>;
+  const jti = accessTokenPayload["jti"] as string;
+
+  const calculatedHash = createHmac("sha256", ctx.resources.sessionHashKey)
+    .update(jti)
+    .digest("hex");
+
+  if (!(sessionHash === calculatedHash)) {
+    ctx.logger.error("Session hash did not match", {
+      sessionHash,
+      calculatedHash,
+    });
+    throw new createHttpError.Unauthorized();
+  }
+}
+
 export async function extractServiceId(
   service: string,
-  token: string,
+  linkingToken: string,
+  accessToken: string,
   ctx: PostRouteContext,
 ): Promise<string | null> {
   if (service.toLowerCase() === "dvla") {
-    const decryptedSignedJwt = await decryptJweToken(token, ctx);
+    const decryptedSignedJwt = await decryptJweToken(linkingToken, ctx);
 
     ctx.logger.info("Fetching JWKS from DVLA integration...");
     const result = await ctx.integrations.dvlaGetWellKnownJwk({});
@@ -159,12 +194,18 @@ export async function extractServiceId(
       throw new createHttpError.BadGateway();
     }
 
-    return await verifyJwtAndExtractLinkingId(
+    const payload = await verifyJwtAndExtractPayload(
       decryptedSignedJwt,
       result.data,
       ctx,
     );
+
+    if (payload === null || !payload.linking_id || !payload.session) {
+      return null;
+    }
+    verifySessionHash(payload.session, accessToken, ctx);
+    return payload.linking_id;
   }
 
-  return token;
+  return linkingToken;
 }

@@ -38,6 +38,10 @@ export const { config, route, routeContext } = domain({
       type: "secret",
       path: "/flex-secret/udp/notification-hash-secret",
     },
+    sessionHashKey: {
+      type: "secret",
+      path: "/flex-secret/udp/dvla-session-hash-secret",
+    },
   },
   integrations: {
     udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
@@ -123,7 +127,7 @@ export const { config, route, routeContext } = domain({
         POST: {
           public: {
             name: "create-service-identity-link",
-            resources: ["privateGatewayUrl", "decyrptionKey"],
+            resources: ["privateGatewayUrl", "decyrptionKey", "sessionHashKey"],
             integrations: [
               "udpCreateIdentity",
               "udpDeleteIdentity",
@@ -134,6 +138,10 @@ export const { config, route, routeContext } = domain({
             headers: {
               linkingToken: {
                 name: "x-linking-token",
+                required: true,
+              },
+              accessToken: {
+                name: "Authorization",
                 required: true,
               },
             },
