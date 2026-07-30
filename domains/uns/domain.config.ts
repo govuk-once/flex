@@ -2,12 +2,6 @@ import { domain } from "@flex/sdk";
 import { GetUserPushIdResponseSchema } from "@flex/udp-domain";
 
 import {
-  GroupsRequestSchema,
-  GroupsResponseSchema,
-  UnsGroupsRequestSchema,
-  UnsGroupsResponseSchema,
-} from "./src/schemas/group";
-import {
   NotificationSchema,
   NotificationsResponseSchema,
   PatchNotificationBodySchema,
@@ -60,19 +54,6 @@ export const { config, route } = domain({
       target: "udp",
       route: "GET /v1/users/push-id",
       response: GetUserPushIdResponseSchema,
-    },
-    unsGetGroups: {
-      type: "gateway",
-      target: "uns",
-      route: "GET /v1/groups",
-      response: UnsGroupsResponseSchema,
-    },
-    unsPostGroups: {
-      type: "gateway",
-      target: "uns",
-      route: "POST /v1/groups",
-      body: UnsGroupsRequestSchema,
-      response: UnsGroupsResponseSchema,
     },
   },
   routes: {
@@ -127,33 +108,6 @@ export const { config, route } = domain({
               "privateGatewayUrl",
             ],
             integrations: ["unsPatchNotification", "udpGetPushId"],
-          },
-        },
-      },
-      "/groups": {
-        GET: {
-          public: {
-            name: "get-groups",
-            response: GroupsResponseSchema,
-            resources: [
-              "udpNotificationSecret",
-              "encryptionKey",
-              "privateGatewayUrl",
-            ],
-            integrations: ["unsGetGroups", "udpGetPushId"],
-          },
-        },
-        POST: {
-          public: {
-            name: "post-groups",
-            response: GroupsResponseSchema,
-            body: GroupsRequestSchema,
-            resources: [
-              "udpNotificationSecret",
-              "encryptionKey",
-              "privateGatewayUrl",
-            ],
-            integrations: ["unsPostGroups", "udpGetPushId"],
           },
         },
       },
