@@ -23,7 +23,7 @@ export const UnsGroupActionSchema = UnsGroupSchema.extend({
 export const UnsGroupsRequestSchema = z.array(UnsGroupActionSchema);
 
 export const GroupSubscriptionActionSchema = GroupSubscriptionSchema.extend({
-    Action: z.enum(["JOIN", "LEAVE"]),
-  });
+  Action: z.enum(["JOIN", "LEAVE"]),
+});
 
 export const GroupsRequestSchema = z.array(GroupSubscriptionActionSchema);

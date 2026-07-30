@@ -51,4 +51,7 @@ export const createGroup = (overrides?: DeepPartial<Group>) =>
   );
 export const group = createGroup();
 
-export const withSubgroup = <T extends object>(obj: T, value = "test frequency") => ({ ...obj, Subgroup: value });
+export const withSubgroup = <T extends object>(
+  obj: T,
+  value = "test frequency",
+) => ({ ...obj, Subgroup: value });

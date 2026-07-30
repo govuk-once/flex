@@ -34,11 +34,7 @@ describe("POST /v1/groups", () => {
 
   const unsResponse = [group, groupWithSubgroup];
 
-  it("returns 200 with the user's active groups", async ({ 
-    http, 
-    sdk, 
-   }) => {
-
+  it("returns 200 with the user's active groups", async ({ http, sdk }) => {
     http
       .domain("udp")
       .get("/users/push-id", {

@@ -12,7 +12,9 @@ export const handler = route(
     });
 
     if (!pushIdResponse.ok) {
-      logger.error("Call to get push id failed for get groups endpoint", pushIdResponse.error.message,
+      logger.error(
+        "Call to get push id failed for get groups endpoint",
+        pushIdResponse.error.message,
       );
 
       throw new createHttpError.BadGateway();
@@ -25,7 +27,7 @@ export const handler = route(
     });
 
     if (!response.ok) {
-      logger.error( "Call to get groups failed", response.error.message );
+      logger.error("Call to get groups failed", response.error.message);
       throw new createHttpError.BadGateway();
     }
 

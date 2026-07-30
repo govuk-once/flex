@@ -2,11 +2,16 @@ import { domain } from "@flex/sdk";
 import { GetUserPushIdResponseSchema } from "@flex/udp-domain";
 
 import {
+  GroupsRequestSchema,
+  GroupsResponseSchema,
+  UnsGroupsRequestSchema,
+  UnsGroupsResponseSchema,
+} from "./src/schemas/group";
+import {
   NotificationSchema,
   NotificationsResponseSchema,
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
-import { GroupsRequestSchema, GroupsResponseSchema, UnsGroupsRequestSchema, UnsGroupsResponseSchema } from "./src/schemas/group";
 
 export const { config, route } = domain({
   name: "uns",
@@ -133,7 +138,7 @@ export const { config, route } = domain({
             resources: [
               "udpNotificationSecret",
               "encryptionKey",
-              "privateGatewayUrl"
+              "privateGatewayUrl",
             ],
             integrations: ["unsGetGroups", "udpGetPushId"],
           },
@@ -146,7 +151,7 @@ export const { config, route } = domain({
             resources: [
               "udpNotificationSecret",
               "encryptionKey",
-              "privateGatewayUrl"
+              "privateGatewayUrl",
             ],
             integrations: ["unsPostGroups", "udpGetPushId"],
           },
