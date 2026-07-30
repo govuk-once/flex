@@ -3,8 +3,8 @@ import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 export const handler = route(
-  "GET /v1/groups",
-  async ({ auth, integrations, logger }) => {
+  "POST /v1/groups",
+  async ({ auth, integrations, body,logger }) => {
     const userId = auth.pairwiseId as UserId;
 
     const pushIdResponse = await integrations.udpGetPushId({
@@ -12,7 +12,7 @@ export const handler = route(
     });
 
     if (!pushIdResponse.ok) {
-      logger.error("Call to get push id failed for get groups endpoint", pushIdResponse.error.message,
+      logger.error("Call to get push id failed for post groups endpoint", pushIdResponse.error.message,
       );
 
       throw new createHttpError.BadGateway();
@@ -20,12 +20,15 @@ export const handler = route(
 
     const { pushId } = pushIdResponse.data;
 
-    const response = await integrations.unsGetGroups({
+    const request = body.map(({ Type, ...group }) => group)
+
+    const response = await integrations.unsPostGroups({
       query: { pushID: pushId },
+      body: request
     });
 
     if (!response.ok) {
-      logger.error( "Call to get groups failed", response.error.message );
+      logger.error( "Call to post  groups failed", response.error.message );
       throw new createHttpError.BadGateway();
     }
 

@@ -1,17 +1,18 @@
 import { it } from "@flex/testing";
-import { group, groupWithoutSubgroup, pushId, secrets, userId } from "@tests/fixtures";
+import { group, pushId, secrets, userId, withSubgroup } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
 describe("GET /v1/groups", () => {
   const endpoint = "/groups";
+  const groupWithSubgroup = withSubgroup(group);
 
   it("returns 200 with groups mapped as notification subscriptions", async ({
     http,
     sdk,
   }) => {
-    const groups = [group, groupWithoutSubgroup];
+    const groups = [group, groupWithSubgroup];
 
     http
       .domain("udp")
@@ -35,7 +36,7 @@ describe("GET /v1/groups", () => {
         Type: "NOTIFICATION",
       },
       {
-        ...groupWithoutSubgroup,
+        ...groupWithSubgroup,
         Type: "NOTIFICATION",
       },
     ]);

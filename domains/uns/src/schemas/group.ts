@@ -15,3 +15,15 @@ export const GroupSubscriptionSchema = UnsGroupSchema.extend({
 });
 
 export const GroupsResponseSchema = z.array(GroupSubscriptionSchema);
+
+export const UnsGroupActionSchema = UnsGroupSchema.extend({
+  Action: z.enum(["JOIN", "LEAVE"]),
+});
+
+export const UnsGroupsRequestSchema = z.array(UnsGroupActionSchema);
+
+export const GroupSubscriptionActionSchema = GroupSubscriptionSchema.extend({
+    Action: z.enum(["JOIN", "LEAVE"]),
+  });
+
+export const GroupsRequestSchema = z.array(GroupSubscriptionActionSchema);

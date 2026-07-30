@@ -6,7 +6,7 @@ import {
   NotificationsResponseSchema,
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
-import { GroupsResponseSchema, UnsGroupsResponseSchema } from "@schemas/group";
+import { GroupsRequestSchema, GroupsResponseSchema, UnsGroupsRequestSchema, UnsGroupsResponseSchema } from "@schemas/group";
 
 export const { config, route } = domain({
   name: "uns",
@@ -60,6 +60,13 @@ export const { config, route } = domain({
       type: "gateway",
       target: "uns",
       route: "GET /v1/groups",
+      response: UnsGroupsResponseSchema,
+    },
+    unsPostGroups: {
+      type: "gateway",
+      target: "uns",
+      route: "POST /v1/groups",
+      body: UnsGroupsRequestSchema,
       response: UnsGroupsResponseSchema,
     },
   },
@@ -129,6 +136,19 @@ export const { config, route } = domain({
               "privateGatewayUrl"
             ],
             integrations: ["unsGetGroups", "udpGetPushId"],
+          },
+        },
+        POST: {
+          public: {
+            name: "post-groups",
+            response: GroupsResponseSchema,
+            body: GroupsRequestSchema,
+            resources: [
+              "udpNotificationSecret",
+              "encryptionKey",
+              "privateGatewayUrl"
+            ],
+            integrations: ["unsPostGroups", "udpGetPushId"],
           },
         },
       },
