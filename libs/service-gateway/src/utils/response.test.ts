@@ -19,6 +19,7 @@ vi.mock("@flex/utils", async (importOriginal) => ({
 vi.mock("@flex/logging", () => ({
   logger: { warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
+vi.mock("@flex/telemetry");
 
 describe("toGatewayErrorResponse", () => {
   it("maps a header validation error to 400 with the missing headers", () => {

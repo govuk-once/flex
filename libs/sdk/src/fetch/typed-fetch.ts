@@ -1,3 +1,4 @@
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { parseResponseBody } from "@flex/utils";
 import { z } from "zod";
 
@@ -30,6 +31,10 @@ export async function typedFetch<T>(
   };
 
   if (!parsed.success) {
+    emitTelemetry(TelemetryEvent.response_validation_failed, {
+      url: res.url,
+      status: res.status,
+    });
     return {
       ok: false,
       error: {

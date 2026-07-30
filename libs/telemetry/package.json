@@ -1,23 +1,25 @@
 {
-  "name": "@platform/viewer-request-cff-platform",
+  "name": "@flex/telemetry",
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./cff": "./src/cff.ts"
+  },
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@flex/telemetry": "workspace:*"
+    "@flex/logging": "workspace:*",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
-    "@types/node": "26.1.1",
-    "eslint": "10.6.0",
+    "eslint": "10.5.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.9"
   }
 }

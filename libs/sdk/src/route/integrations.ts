@@ -1,3 +1,4 @@
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import type { HttpMethod } from "@flex/utils";
 import { type ZodType } from "zod";
 
@@ -126,8 +127,15 @@ export function createIntegrationInvoker(
   integration: IntegrationInvokerConfig,
 ): (...args: never[]) => Promise<IntegrationResult> {
   return async (options?: InvokerOptions): Promise<IntegrationResult> => {
+    const url = buildFetcherUrl(integration, options);
+
+    emitTelemetry(TelemetryEvent.service_gateway_request_sent, {
+      method: integration.method,
+      path: url,
+    });
+
     const { request } = fetcher(
-      buildFetcherUrl(integration, options),
+      url,
       buildFetcherOptions(integration.method, integration, options),
     );
 

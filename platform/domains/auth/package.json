@@ -12,6 +12,7 @@
     "@aws-lambda-powertools/parameters": "2.34.0",
     "@aws-sdk/client-ssm": "3.1084.0",
     "@flex/logging": "workspace:*",
+    "@flex/telemetry": "workspace:*",
     "@middy/core": "7.7.0",
     "aws-jwt-verify": "5.2.1",
     "http-errors": "2.0.1",

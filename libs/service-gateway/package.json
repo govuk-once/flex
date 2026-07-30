@@ -16,6 +16,7 @@
     "@aws-lambda-powertools/parameters": "2.34.0",
     "@flex/logging": "workspace:*",
     "@flex/sdk": "workspace:*",
+    "@flex/telemetry": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.7.0",
     "http-errors": "2.0.1",
