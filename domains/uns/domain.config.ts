@@ -6,7 +6,7 @@ import {
   NotificationsResponseSchema,
   PatchNotificationBodySchema,
 } from "./src/schemas/notification";
-import { GroupsRequestSchema, GroupsResponseSchema, UnsGroupsRequestSchema, UnsGroupsResponseSchema } from "@schemas/group";
+import { GroupsRequestSchema, GroupsResponseSchema, UnsGroupsRequestSchema, UnsGroupsResponseSchema } from "./src/schemas/group";
 
 export const { config, route } = domain({
   name: "uns",
