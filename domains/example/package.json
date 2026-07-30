@@ -29,7 +29,7 @@
     "@middy/ssm": "7.7.0",
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "nock": "14.0.16",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
