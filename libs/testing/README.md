@@ -42,8 +42,6 @@ Alternatively, run `pnpm <command>` from within `libs/testing/`.
 | [`response`](#response)                                   | Base HTTP responses                         | [View](./src/fixtures/response.ts)   |
 | [`createResponse`](#createresponse)                       | Factory for HTTP responses                  | [View](./src/fixtures/response.ts)   |
 | [`config`](#config)                                       | Test configuration defaults                 | [View](./src/config/index.ts)        |
-| [`ENV_DEFAULTS`](#env_defaults)                           | Default environment variables               | [View](./src/config/index.ts)        |
-| [`SSM_DEFAULTS`](#ssm_defaults)                           | Default SSM parameter values                | [View](./src/config/index.ts)        |
 
 ### @flex/testing/e2e
 
@@ -103,65 +101,6 @@ describe("GET /example", () => {
 });
 ```
 
-#### With Environment Variables
-
-The `env` fixture automatically stubs environment variables.
-
-```typescript
-import { context, event, it } from "@flex/testing";
-
-import { handler } from "./handler";
-
-it("uses custom env", async ({ env }) => {
-  env.delete("UNUSED_VAR");
-  env.set({ MY_VAR: "custom-value" });
-
-  const result = await handler(event, context);
-});
-```
-
-#### With SSM Parameters
-
-The `ssm` fixture provides a mock SSM parameter store.
-
-```typescript
-import { context, event, it } from "@flex/testing";
-
-it("uses custom SSM", async ({ ssm }) => {
-  ssm.set({ "/my/param": "custom-value" });
-
-  const result = await handler(event, context);
-});
-```
-
-#### With Redis
-
-The `redis` fixture provides a mock Redis client with an in-memory store.
-
-```typescript
-import { context, event, it } from "@flex/testing";
-import { describe, expect, vi } from "vitest";
-
-import { getRedisClient } from "./redis";
-import { handler } from "./handler";
-
-vi.mock("./redis");
-
-// Global hooks do not have access to custom fixtures.
-// Use hooks from the extended `it` function instead.
-it.beforeEach(({ redis }) => {
-  vi.mocked(getRedisClient).mockReturnValue(redis.client);
-});
-
-it("caches data", async ({ redis }) => {
-  redis.store.set("key", "value");
-
-  const result = await handler(event, context);
-
-  expect(redis.client.get).toHaveBeenCalledExactlyOnceWith("key");
-});
-```
-
 ### Fixtures
 
 | Fixture               | Description                      | Auto |
@@ -173,9 +112,7 @@ it("caches data", async ({ redis }) => {
 | `event`               | API Gateway event builder        | -    |
 | `eventWithAuthorizer` | Event with authorizer builder    | -    |
 | `middy`               | Middy request builder            | -    |
-| `redis`               | Mock Redis client and store      | Yes  |
 | `response`            | HTTP response builder            | -    |
-| `ssm`                 | Mock SSM parameter store         | Yes  |
 
 See [Vitest Automatic Fixtures](https://vitest.dev/guide/test-context.html#automatic-fixture) for more information on automatic fixtures
 
@@ -482,18 +419,6 @@ it("error response", async ({ event, response }) => {
 ## `config`
 
 Test configuration object containing default values for environment variables and SSM parameters.
-
----
-
-## `ENV_DEFAULTS`
-
-Default environment variable mappings applied automatically by the `env` fixture.
-
----
-
-## `SSM_DEFAULTS`
-
-Default SSM parameter values applied automatically by the `ssm` fixture.
 
 ---
 

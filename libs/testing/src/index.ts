@@ -1,4 +1,3 @@
-export { config, ENV_DEFAULTS, SSM_DEFAULTS } from "./config";
 export { it } from "./extend/it";
 export type {
   ApiResponse,

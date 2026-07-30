@@ -50,7 +50,6 @@ if (persistent) {
 } else if (env === Environment.development) {
   // Add these as external deps as we reuse the development env vpc
   app.addExternalExports(region, [
-    ENV_KEYS.CacheEndpoint,
     ENV_KEYS.SgPrivateEgress,
     ENV_KEYS.SgPrivateIsolated,
     ENV_KEYS.TopicCriticalAlarms,
