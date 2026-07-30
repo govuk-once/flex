@@ -21,6 +21,7 @@ overrides:
   "engine.io-client": "6.6.6"
 
 allowBuilds:
+  "@firebase/util": false
   "@playwright/browser-chromium": true
   esbuild: true
   nx: false
