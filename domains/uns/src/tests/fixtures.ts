@@ -46,15 +46,15 @@ export const secrets = createSecrets();
 
 export const createGroup = (overrides?: DeepPartial<Group>) =>
   mergeFixture<Group>(
-    {
-      Namespace: "travel",
-      Group: "test country",
-      Subgroup: "test frequency",
-    },
+    { Namespace: "travel", Group: "test country" },
     overrides,
   );
 export const group = createGroup();
-export const groupWithoutSubgroup: Group = {
-  Namespace: "travel",
-  Group: "another test country",
+
+// Approach #1: Use the `with*` pattern for passing through the subgroup, unaware of the base object
+export const withSubgroup = <T extends object>(obj: T, value = "test frequency") => ({ ...obj, Subgroup: value });
+
+// Approach #2: Create `*WithSubgroup` mock, knows the base
+export const groupWithSubgroup = createGroup({
+  Subgroup: "test frequency"
 };
