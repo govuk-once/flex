@@ -113,7 +113,6 @@ Core infrastructure includes:
 - VPC with public, private egress, and private isolated subnets
 - Security groups for private egress and private isolated Lambdas
 - VPC endpoints (API Gateway, CloudWatch Logs, Secrets Manager)
-- ElastiCache Redis cluster
 
 ---
 

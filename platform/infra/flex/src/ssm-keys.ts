@@ -12,7 +12,6 @@ export const ENV_KEYS = {
   AuthClientIdStub: `/${env}/flex-param/auth/stub/client-id`,
   AuthUserPoolId: `/${env}/flex-param/auth/user-pool-id`,
   AuthUserPoolIdStub: `/${env}/flex-param/auth/stub/user-pool-id`,
-  CacheEndpoint: `/${env}/flex/cache/endpoint`,
   SgPrivateEgress: `/${env}/flex/sg/private-egress`,
   SgPrivateIsolated: `/${env}/flex/sg/private-isolated`,
   TopicCriticalAlarms: `/${env}/flex/topic/critical-alarms`,

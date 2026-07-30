@@ -1,4 +1,5 @@
 import { logger } from "@flex/logging";
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
   HeaderValidationError,
   QueryParametersParseError,
@@ -81,6 +82,11 @@ export function createRouteHandler<const Config extends DomainConfig>(
       context: LambdaContext,
     ): Promise<LambdaResult> => {
       try {
+        emitTelemetry(TelemetryEvent.domain_request_received, {
+          method: event.httpMethod,
+          path: event.path,
+        });
+
         const integrations = routeConfig.integrations?.length
           ? getRouteIntegrations(
               cachedBuildDomainIntegrations(),
@@ -118,15 +124,34 @@ export function createRouteHandler<const Config extends DomainConfig>(
               errors,
               ...(verboseLogs && { handlerResult }),
             });
+            emitTelemetry(TelemetryEvent.response_validation_failed, {
+              path: event.path,
+            });
           }
 
-          return toApiGatewayResponse(result);
+          const response = toApiGatewayResponse(result);
+          emitTelemetry(TelemetryEvent.domain_response_returned, {
+            status: response.statusCode,
+          });
+          return response;
         });
       } catch (error) {
+        const emitDomainError = (status: number) => {
+          emitTelemetry(TelemetryEvent.domain_error_returned, {
+            status,
+            path: event.path,
+          });
+        };
+
         if (error instanceof HeaderValidationError) {
           const { headers, message, statusCode } = error;
 
           logger.warn("Missing required headers", { headers });
+          emitTelemetry(TelemetryEvent.request_validation_failed, {
+            part: "headers",
+            path: event.path,
+          });
+          emitDomainError(statusCode);
 
           return {
             statusCode,
@@ -139,6 +164,11 @@ export function createRouteHandler<const Config extends DomainConfig>(
           const { message, statusCode } = error;
 
           logger.warn("Invalid request body", { message });
+          emitTelemetry(TelemetryEvent.request_validation_failed, {
+            part: "body",
+            path: event.path,
+          });
+          emitDomainError(statusCode);
 
           return {
             statusCode,
@@ -151,6 +181,11 @@ export function createRouteHandler<const Config extends DomainConfig>(
           const { message, statusCode, errors } = error;
 
           logger.warn("Invalid query parameters", { errors });
+          emitTelemetry(TelemetryEvent.request_validation_failed, {
+            part: "query",
+            path: event.path,
+          });
+          emitDomainError(statusCode);
 
           return {
             statusCode,
@@ -163,6 +198,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
           const { message, statusCode } = error;
 
           logger.error("Authorization failed", { detail: message });
+          emitDomainError(statusCode);
 
           return {
             statusCode,
@@ -176,9 +212,16 @@ export function createRouteHandler<const Config extends DomainConfig>(
           const level = statusCode >= 500 ? "error" : "warn";
 
           logger[level](message, { statusCode });
+          emitDomainError(statusCode);
 
           return { statusCode, body: "" };
         }
+
+        emitTelemetry(TelemetryEvent.error_thrown, {
+          path: event.path,
+          ...(error instanceof Error && { reason: error.message }),
+        });
+        emitDomainError(500);
 
         throw error;
       } finally {

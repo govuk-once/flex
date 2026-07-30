@@ -16,6 +16,7 @@
     "@aws-lambda-powertools/parameters": "2.34.0",
     "@flex/logging": "workspace:*",
     "@flex/sdk": "workspace:*",
+    "@flex/telemetry": "workspace:*",
     "@flex/utils": "workspace:*",
     "@middy/core": "7.7.0",
     "http-errors": "2.0.1",
@@ -27,7 +28,7 @@
     "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
     "@vitest/coverage-v8": "4.1.10",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }

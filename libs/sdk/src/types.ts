@@ -626,7 +626,9 @@ export interface RouteHandler<Config extends DomainConfig> {
     route: Route,
     handler: (
       context: RouteContext<Route, Config, ResolveRouteConfig<Config, Route>>,
-    ) => Promise<RouteHandlerResult<ResolveRouteConfig<Config, Route>>>,
+    ) =>
+      | Promise<RouteHandlerResult<ResolveRouteConfig<Config, Route>>>
+      | RouteHandlerResult<ResolveRouteConfig<Config, Route>>,
   ): FlexLambdaHandler;
 }
 

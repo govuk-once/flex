@@ -1,3 +1,4 @@
+import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
   context,
   createTokenAuthorizerEvent,
@@ -18,6 +19,8 @@ import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
 import { createAuthService } from "./services/auth-service";
+
+vi.mock("@flex/telemetry");
 
 const TEST_USERPOOL_ID = "eu-west-2_testUserPoolId";
 const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
@@ -74,6 +77,10 @@ describe("Authorizer Handler", () => {
     expect(await handler(tokenAuthorizerEvent, context)).toEqual(
       authorizerResult.allowWithPairwiseId(),
     );
+    expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
+      TelemetryEvent.auth_success,
+      { pairwiseId: expect.any(String) as string },
+    );
   });
 
   it.each([
@@ -82,34 +89,44 @@ describe("Authorizer Handler", () => {
       event: createTokenAuthorizerEvent().missingToken(),
       cognitoResponseStatus: undefined,
       cognitoResponseBody: undefined,
+      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
     },
     {
       label: "the Bearer token is empty",
       event: createTokenAuthorizerEvent().withToken(""),
       cognitoResponseStatus: undefined,
       cognitoResponseBody: undefined,
+      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
     },
     {
       label: "the JWT is invalid",
       event: createTokenAuthorizerEvent().withToken(invalidJwt),
       cognitoResponseStatus: undefined,
       cognitoResponseBody: undefined,
+      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
     },
     {
       label: "the JWT is valid but missing the username claim",
       event: createTokenAuthorizerEvent().withToken(jwtMissingUsername),
       cognitoResponseStatus: 200,
       cognitoResponseBody: publicJWKS,
+      expectedTelemetryEvent: TelemetryEvent.auth_claim_missing,
     },
     {
       label: "the JWKS endpoint is unavailable",
       event: createTokenAuthorizerEvent().withToken(validJwt),
       cognitoResponseStatus: 500,
       cognitoResponseBody: "Internal Server Error",
+      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
     },
   ])(
     "returns explicit deny when $label",
-    async ({ event, cognitoResponseStatus, cognitoResponseBody }) => {
+    async ({
+      event,
+      cognitoResponseStatus,
+      cognitoResponseBody,
+      expectedTelemetryEvent,
+    }) => {
       if (typeof cognitoResponseStatus === "number") {
         nock(COGNITO_BASE_URL)
           .get(JWKS_PATH)
@@ -117,6 +134,10 @@ describe("Authorizer Handler", () => {
       }
       await expect(handler(event, context)).resolves.toEqual(
         expectDenyPolicy(),
+      );
+      expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
+        expectedTelemetryEvent,
+        { reason: expect.any(String) as string },
       );
     },
   );
@@ -126,6 +147,7 @@ describe("Authorizer Handler", () => {
       label: "JwtExpiredError",
       error: new JwtExpiredError("JWT expired", null, "exp"),
       expectedContext: { errorMessage: "JWT expired" },
+      expectedTelemetryEvent: TelemetryEvent.auth_token_expired,
     },
     {
       label: "FailedAssertionError",
@@ -135,21 +157,27 @@ describe("Authorizer Handler", () => {
         "authorization token",
       ),
       expectedContext: undefined,
+      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
     },
     {
       label: "generic JwtBaseError",
       error: new JwtParseError("Invalid JWT header"),
       expectedContext: undefined,
+      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
     },
   ])(
     "returns Deny with expected context for $label",
-    async ({ error, expectedContext }) => {
+    async ({ error, expectedContext, expectedTelemetryEvent }) => {
       vi.mocked(createAuthService).mockReturnValueOnce({
         extractPairwiseId: vi.fn().mockRejectedValue(error),
       });
 
       await expect(handler(tokenAuthorizerEvent, context)).resolves.toEqual(
         expectDenyPolicy(expectedContext),
+      );
+      expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
+        expectedTelemetryEvent,
+        { reason: expect.any(String) as string },
       );
     },
   );
@@ -164,5 +192,9 @@ describe("Authorizer Handler", () => {
     await expect(
       handler(createTokenAuthorizerEvent().withToken(validJwt), context),
     ).resolves.toEqual(expectDenyPolicy());
+    expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
+      TelemetryEvent.auth_failure,
+      { reason: "Unknown error" },
+    );
   });
 });

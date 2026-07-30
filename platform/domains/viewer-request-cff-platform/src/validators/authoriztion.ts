@@ -1,3 +1,7 @@
+import { CffTelemetryEvent } from "@flex/telemetry/cff";
+
+import { validationError } from "../utils/errors";
+
 /**
  * Validates an Authorization value and returns the token part
  *
@@ -6,7 +10,10 @@
  */
 export function validateAuthorization(authorization?: string) {
   if (!authorization) {
-    throw new Error("No authorization value provided");
+    throw validationError(
+      "No authorization value provided",
+      CffTelemetryEvent.cff_token_missing,
+    );
   }
 
   // destructuring is not supported in CloudFront Functions
@@ -16,15 +23,24 @@ export function validateAuthorization(authorization?: string) {
   const rest = headerParts.slice(2);
 
   if (bearerLabel !== "Bearer") {
-    throw new Error("Authorization value does not start with 'Bearer'");
+    throw validationError(
+      "Authorization value does not start with 'Bearer'",
+      CffTelemetryEvent.cff_token_invalid,
+    );
   }
 
   if (rest.length > 0) {
-    throw new Error("Authorization value has too many segments'");
+    throw validationError(
+      "Authorization value has too many segments'",
+      CffTelemetryEvent.cff_token_invalid,
+    );
   }
 
   if (!token) {
-    throw new Error("No token provided in authorization header");
+    throw validationError(
+      "No token provided in authorization header",
+      CffTelemetryEvent.cff_token_missing,
+    );
   }
 
   return token;

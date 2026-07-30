@@ -19,8 +19,10 @@ overrides:
   "protobufjs": "^8.0.1"
   "minimatch": "^10.0.1"
   "engine.io-client": "6.6.6"
+  "axios@>=1.15.2 <1.18.0": ">=1.18.0"
 
 allowBuilds:
+  "@firebase/util": false
   "@playwright/browser-chromium": true
   esbuild: true
   nx: false
