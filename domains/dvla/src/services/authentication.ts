@@ -1,5 +1,6 @@
 import { config } from "@domain";
-import { InferRouteContext } from "@flex/sdk";
+import type { Logger } from "@flex/logging";
+import type { InferRouteContext } from "@flex/sdk";
 import createHttpError from "http-errors";
 import { status } from "http-status";
 
@@ -13,11 +14,44 @@ type CommonDvlaContext =
     >
   | InferRouteContext<
       typeof config,
-      | "POST /v1/share-code/:id/cancel"
-      | "POST /v1/unlink/:id [private]"
-      | "GET /v1/customer/vehicle/:id"
+      "POST /v1/share-code/:id/cancel" | "GET /v1/customer/vehicle/:id"
     >;
 
+type UnlinkContext = InferRouteContext<
+  typeof config,
+  "POST /v1/unlink [private]"
+>;
+
+interface GetLinkingIdOptions {
+  integrations: Pick<UnlinkContext["integrations"], "udpGetLinkingId">;
+  logger: Logger;
+}
+
+export async function getLinkingId(
+  subject: string,
+  { integrations, logger }: GetLinkingIdOptions,
+) {
+  const result = await integrations.udpGetLinkingId({
+    path: "/dvla",
+    headers: { "User-Id": subject },
+  });
+
+  if (!result.ok) {
+    if (result.error.status === status.NOT_FOUND) {
+      logger.debug("Service linked for DVLA NotFound");
+      throw new createHttpError.NotFound();
+    }
+
+    logger.debug("Call to UDP failed", result.error.message);
+    throw new createHttpError.BadGateway();
+  }
+
+  return result.data.serviceId;
+}
+
+/**
+ * TODO: use `getLinkingId` instead
+ */
 export async function getUserLinkingId(
   ctx: CommonDvlaContext,
 ): Promise<string> {
@@ -42,6 +76,7 @@ export async function getUserLinkingId(
 export async function getDvlaAuthToken(
   ctx:
     | CommonDvlaContext
+    | UnlinkContext
     | InferRouteContext<typeof config, "GET /v1/vehicle-enquiry/:reg">,
 ): Promise<string> {
   const { integrations, logger } = ctx;

@@ -176,7 +176,7 @@ export const { config, route, routeContext } = domain({
           },
         },
       },
-      "/unlink/:id": {
+      "/unlink": {
         POST: {
           private: {
             name: "unlink-user",
@@ -186,6 +186,9 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            headers: {
+              userId: { name: "User-Id", required: true },
+            },
           },
         },
       },
