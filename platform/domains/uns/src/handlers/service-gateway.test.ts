@@ -33,6 +33,32 @@ const MOCK_NOTIFICATION_RESPONSE = {
 
 const MOCK_NOTIFICATIONS_LIST = [{ id: "notif-123", status: "READ" }];
 
+const MOCK_GROUPS_RESPONSE = [
+  {
+    Namespace: "travel",
+    Group: "france",
+  },
+  {
+    Namespace: "travel",
+    Group: "spain",
+    Subgroup: "instant",
+  },
+];
+
+const MOCK_GROUPS_POST_BODY = [
+  {
+    Namespace: "travel",
+    Group: "france",
+    Action: "JOIN",
+  },
+  {
+    Namespace: "travel",
+    Group: "spain",
+    Subgroup: "majorca",
+    Action: "LEAVE",
+  },
+];
+
 const remoteClient = {
   notification: {
     get: vi.fn().mockResolvedValue({
@@ -56,6 +82,18 @@ const remoteClient = {
       ok: true,
       status: 200,
       data: MOCK_NOTIFICATIONS_LIST,
+    }),
+  },
+  groups: {
+    get: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_GROUPS_RESPONSE,
+    }),
+    post: vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: MOCK_GROUPS_RESPONSE,
     }),
   },
 };
@@ -183,6 +221,52 @@ describe("UNS Service Gateway", () => {
     expect(remoteClient.notifications.get).toHaveBeenCalledWith(pushId);
   });
 
+  it("dispatches GET /v1/groups and returns group subscriptions", async ({
+    privateGatewayEvent,
+  }) => {
+    const pushId = "push-123";
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/groups", {
+        queryStringParameters: { pushID: pushId },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_GROUPS_RESPONSE),
+    });
+
+    expect(remoteClient.groups.get).toHaveBeenCalledWith(pushId);
+  });
+
+  it("dispatches POST /v1/groups and returns updated group subscriptions", async ({
+    privateGatewayEvent,
+  }) => {
+    const pushId = "push-123";
+
+    const response = await handler(
+      privateGatewayEvent.post("/gateways/uns/v1/groups", {
+        queryStringParameters: { pushID: pushId },
+        body: MOCK_GROUPS_POST_BODY,
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(MOCK_GROUPS_RESPONSE),
+    });
+
+    expect(remoteClient.groups.post).toHaveBeenCalledWith(
+      pushId,
+      MOCK_GROUPS_POST_BODY,
+    );
+  });
+
   it("maps remote 5xx errors to 502 with sanitized message", async ({
     privateGatewayEvent,
   }) => {
@@ -299,6 +383,107 @@ describe("UNS Service Gateway", () => {
       statusCode: 404,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: "Not Found" }),
+    });
+  });
+
+  it("returns 400 when pushID is missing for GET /v1/groups", async ({
+    privateGatewayEvent,
+  }) => {
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/groups"),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Missing or invalid pushID query parameter",
+      }),
+    });
+
+    expect(remoteClient.groups.get).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when POST /v1/groups body is missing", async ({
+    privateGatewayEvent,
+  }) => {
+    const response = await handler(
+      privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/gateways/uns/v1/groups",
+        queryStringParameters: { pushID: "push-123" },
+        body: null,
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Request body is missing",
+      }),
+    });
+
+    expect(remoteClient.groups.post).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when POST /v1/groups body has an invalid action", async ({
+    privateGatewayEvent,
+  }) => {
+    const response = await handler(
+      privateGatewayEvent.post("/gateways/uns/v1/groups", {
+        queryStringParameters: { pushID: "push-123" },
+        body: [
+          {
+            Namespace: "travel",
+            Group: "france",
+            Action: "SUBSCRIBE",
+          },
+        ],
+      }),
+      context,
+    );
+
+    expect(response).toMatchObject({
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const responseBody = JSON.parse((response as { body: string }).body) as {
+      message: string;
+    };
+
+    expect(responseBody.message).toContain("Validation failed");
+
+    expect(remoteClient.groups.post).not.toHaveBeenCalled();
+  });
+
+  it("maps a Groups remote 5xx error to 502", async ({
+    privateGatewayEvent,
+  }) => {
+    remoteClient.groups.get.mockResolvedValueOnce({
+      ok: false,
+      error: {
+        status: 503,
+        message: "Service Unavailable",
+      },
+    });
+
+    const response = await handler(
+      privateGatewayEvent.get("/gateways/uns/v1/groups", {
+        queryStringParameters: { pushID: "push-123" },
+      }),
+      context,
+    );
+
+    expect(response).toEqual({
+      statusCode: 502,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "UNS upstream service unavailable",
+      }),
     });
   });
 });

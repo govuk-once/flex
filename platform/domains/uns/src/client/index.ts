@@ -5,6 +5,7 @@ import {
 } from "@flex/sdk";
 
 import { UNS_REMOTE_ROUTES } from "../contract/route";
+import { UnsGroupsRequestBody } from "../schemas/remote/groups";
 import { NotificationPatchBody } from "../schemas/remote/notification";
 import { ConsumerConfig } from "../utils/getConsumerConfig";
 
@@ -81,6 +82,28 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
         const request = fetcher(`${UNS_REMOTE_ROUTES.notification}?${params}`, {
           method: "GET",
           headers: defaultHeaders,
+        }).request;
+        return typedFetch(request);
+      },
+    },
+    groups: {
+      get: (pushId: string): Promise<ApiResult<void>> => {
+        const params = new URLSearchParams({ pushID: pushId });
+        const request = fetcher(`${UNS_REMOTE_ROUTES.groups}?${params}`, {
+          method: "GET",
+          headers: defaultHeaders,
+        }).request;
+        return typedFetch(request);
+      },
+      post: (
+        pushId: string,
+        body: UnsGroupsRequestBody,
+      ): Promise<ApiResult<void>> => {
+        const params = new URLSearchParams({ pushID: pushId });
+        const request = fetcher(`${UNS_REMOTE_ROUTES.groups}?${params}`, {
+          method: "POST",
+          headers: defaultHeaders,
+          body: JSON.stringify(body),
         }).request;
         return typedFetch(request);
       },
