@@ -108,9 +108,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .get("/identity/dvla", {
-          headers: { "User-Id": userId },
-        })
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
         .reply(200, { ...serviceIdentityLink, serviceName: "dvla" });
 
       http
@@ -120,7 +118,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .domain("dvla")
-        .post(`/unlink/${serviceIdentityLink.serviceId}`)
+        .post("/unlink", { headers: { "User-Id": userId } })
         .reply(200, dvlaResponse);
 
       const result = await handler(
@@ -140,9 +138,7 @@ describe("DELETE /v1/identity/:service", () => {
     }) => {
       http
         .gateway("udp")
-        .get("/identity/dvla", {
-          headers: { "User-Id": userId },
-        })
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
         .reply(200, { ...serviceIdentityLink, serviceName: "dvla" });
 
       http
@@ -152,7 +148,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       http
         .domain("dvla")
-        .post(`/unlink/${serviceIdentityLink.serviceId}`)
+        .post("/unlink", { headers: { "User-Id": userId } })
         .reply(500, { message: "DVLA system error" });
 
       const result = await handler(

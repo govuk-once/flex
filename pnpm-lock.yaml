@@ -61,6 +61,9 @@ importers:
 
   domains/dvla:
     dependencies:
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../../libs/logging
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
