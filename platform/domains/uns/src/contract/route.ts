@@ -14,7 +14,7 @@ import { RouteContract } from "./types";
 
 export const UNS_REMOTE_ROUTES = {
   notification: `/notifications`,
-  groups: `/groups`,
+  groups: `/v1/groups`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
