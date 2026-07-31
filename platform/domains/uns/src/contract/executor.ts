@@ -1,4 +1,3 @@
-import { logger } from "@flex/logging";
 import { ApiResult } from "@flex/sdk";
 import type { APIGatewayProxyEvent } from "aws-lambda";
 import createHttpError from "http-errors";
@@ -47,27 +46,9 @@ async function run(
 ) {
   const data = await contract.toRemote(event);
 
-  logger.info("Calling remote UNS operation", {
-    operation: contract.operation,
-    method: contract.method,
-    remotePath: contract.remotePath,
-  });
-
   const result = await contract.callRemote(client, data as never);
 
-  if (!result.ok) {
-    logger.error("Remote UNS operation failed", {
-      operation: contract.operation,
-      status: result.error.status,
-      message: result.error.message,
-    });
-    return result;
-  }
-
-  logger.info("Remote UNS operation succeeded", {
-    operation: contract.operation,
-    status: result.status,
-  });
+  if (!result.ok) return result;
 
   return {
     ok: result.ok,
@@ -88,13 +69,6 @@ export async function execute(
   if (!mapping) {
     throw new createHttpError.NotFound("Route not found");
   }
-
-  logger.info("UNS gateway route matched", {
-    operation: mapping.operation,
-    method: mapping.method,
-    inboundPath: mapping.inboundPath,
-    remotePath: mapping.remotePath,
-  });
 
   return run(mapping, event, client);
 }

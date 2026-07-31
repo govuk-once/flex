@@ -1,4 +1,3 @@
-import { logger } from "@flex/logging";
 import {
   ApiResult,
   createSigv4FetchWithCredentials,
@@ -90,13 +89,7 @@ export function createUnsRemoteClient(config: ConsumerConfig) {
     groups: {
       get: (pushId: string): Promise<ApiResult<void>> => {
         const params = new URLSearchParams({ pushID: pushId });
-        const route = `${UNS_REMOTE_ROUTES.groups}?${params}`;
-        logger.info("Calling remote UNS groups endpoint", {
-          method: "GET",
-          baseUrl: config.privateApiUrl,
-          route: UNS_REMOTE_ROUTES.groups,
-        });
-        const request = fetcher(route, {
+        const request = fetcher(`${UNS_REMOTE_ROUTES.groups}?${params}`, {
           method: "GET",
           headers: defaultHeaders,
         }).request;
