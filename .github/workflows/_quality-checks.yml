@@ -215,19 +215,31 @@ jobs:
 
       - name: IAM Access Analyzer - Validate Best Practices
         run: |
-          # Catch syntax errors, malformed JSON, and iam:PassRole wildcards
-          cfn-policy-validator validate \
-            --template-path platform/infra/flex/cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
-            --region eu-west-2 \
-            --treat-finding-type-as-blocking ERROR,SECURITY_WARNING,WARNING
+          for template in platform/infra/flex/cdk.out/*-FlexPlatform.template.json; do
+            echo "=== Auditing Template: $template ==="
 
-          # Catch dangerous internal actions granted
-          cfn-policy-validator check-access-not-granted \
-          --template-path platform/infra/flex/cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
-          --actions "kms:Decrypt" "kms:*" "lambda:InvokeFunction" \
-          --region eu-west-2
+            # Extract all parameter keys from the CFN template and format as "Key1=dummy Key2=dummy" (dummy values are intentional)
+            PARAMS=$(jq -r '.Parameters // {} | keys | map("\(.)=dummy-value") | join(" ")' "$template")
 
-          # Catch resource policies that expose resources to the public internet
-          cfn-policy-validator check-no-public-access \
-          --template-path platform/infra/flex/cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
-          --region eu-west-2
+            echo "Supplying parameters"
+
+            # Catch syntax errors, malformed JSON, and iam:PassRole wildcards
+            cfn-policy-validator validate \
+              --template-path "$template" \
+              --region eu-west-2 \
+              --parameters $PARAMS \
+              --treat-finding-type-as-blocking ERROR,SECURITY_WARNING
+
+            # Catch dangerous internal actions granted
+            cfn-policy-validator check-access-not-granted \
+              --template-path "$template" \
+              --actions "kms:Decrypt" "kms:*" "lambda:InvokeFunction" \
+              --region eu-west-2 \
+              --parameters $PARAMS
+
+            # Catch resource policies that expose resources to the public internet
+            cfn-policy-validator check-no-public-access \
+              --template-path "$template" \
+              --region eu-west-2 \
+              --parameters $PARAMS
+          done
