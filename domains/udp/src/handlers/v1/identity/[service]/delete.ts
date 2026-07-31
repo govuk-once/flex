@@ -17,12 +17,13 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();
 
-  await deleteServiceIdentity(identity.serviceName, identity.serviceId);
-
+  /**
+   * Must run before deleteServiceIdentity, DVLA runs its own lookup to verify matching IDs
+   */
   if (service === "dvla") {
     const result = await integrations.dvlaUnlinkUser({
+      headers: { "User-Id": userId },
       body: {},
-      path: `/${identity.serviceId}`,
     });
 
     /**
@@ -32,6 +33,8 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
      */
     logger.info(JSON.stringify(result));
   }
+
+  await deleteServiceIdentity(identity.serviceName, identity.serviceId);
 
   return { status: status.NO_CONTENT };
 });
