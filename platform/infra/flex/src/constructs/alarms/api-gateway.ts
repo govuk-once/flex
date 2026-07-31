@@ -19,7 +19,7 @@ export interface ApiGatewayAlarmsProps extends BaseAlarmsProps {
 export class ApiGatewayAlarms extends Construct {
   public readonly fiveXxAlarm: Alarm;
   public readonly fourXxAlarm: Alarm;
-  public readonly p95LatencyAlarm: Alarm;
+  public readonly endToEndP95LatencyAlarm: Alarm;
   public readonly integrationP95LatencyAlarm: Alarm;
 
   constructor(scope: Construct, id: string, props: ApiGatewayAlarmsProps) {
@@ -82,7 +82,7 @@ export class ApiGatewayAlarms extends Construct {
     const latencyPeriod = Duration.minutes(5);
     const latencyEvaluationPeriods = 3;
     const latencyDatapointsToAlarm = 2;
-    const latencyThresholdMs = 3000;
+    const endToEndLatencyThresholdMs = 3000;
     const integrationLatencyThresholdMs = 2900;
     const minRequestsForLatencyAlarms = 40;
 
@@ -94,7 +94,7 @@ export class ApiGatewayAlarms extends Construct {
       period: latencyPeriod,
     });
 
-    const gatedP95Latency = new MathExpression({
+    const gatedEndToEndP95Latency = new MathExpression({
       expression: `IF(requests >= ${minRequestsForLatencyAlarms.toString()}, latency, 0)`,
       usingMetrics: {
         latency: new Metric({
@@ -107,23 +107,27 @@ export class ApiGatewayAlarms extends Construct {
         requests: requestCount,
       },
       period: latencyPeriod,
-      label: `p95 latency (min ${minRequestsForLatencyAlarms.toString()} requests per period)`,
+      label: `end-to-end p95 latency (min ${minRequestsForLatencyAlarms.toString()} requests per period)`,
     });
 
-    this.p95LatencyAlarm = gatedP95Latency.createAlarm(this, "P95Latency", {
-      alarmName: `${alarmNamePrefix}-p95-latency`,
-      alarmDescription:
-        `Warning: p95 latency above ${latencyThresholdMs.toString()}ms ` +
-        `for ${latencyDatapointsToAlarm.toString()} of ${latencyEvaluationPeriods.toString()} consecutive ` +
-        `${latencyPeriod.toMinutes().toString()} minute periods ` +
-        `(suppressed below ${minRequestsForLatencyAlarms.toString()} requests per period)`,
-      threshold: latencyThresholdMs,
-      evaluationPeriods: latencyEvaluationPeriods,
-      datapointsToAlarm: latencyDatapointsToAlarm,
-      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
-    });
-    this.p95LatencyAlarm.addAlarmAction(warningAction);
+    this.endToEndP95LatencyAlarm = gatedEndToEndP95Latency.createAlarm(
+      this,
+      "P95Latency",
+      {
+        alarmName: `${alarmNamePrefix}-e2e-p95-latency`,
+        alarmDescription:
+          `Warning: end-to-end p95 latency above ${endToEndLatencyThresholdMs.toString()}ms ` +
+          `for ${latencyDatapointsToAlarm.toString()} of ${latencyEvaluationPeriods.toString()} consecutive ` +
+          `${latencyPeriod.toMinutes().toString()} minute periods ` +
+          `(suppressed below ${minRequestsForLatencyAlarms.toString()} requests per period)`,
+        threshold: endToEndLatencyThresholdMs,
+        evaluationPeriods: latencyEvaluationPeriods,
+        datapointsToAlarm: latencyDatapointsToAlarm,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+      },
+    );
+    this.endToEndP95LatencyAlarm.addAlarmAction(warningAction);
 
     const gatedIntegrationP95Latency = new MathExpression({
       expression: `IF(requests >= ${minRequestsForLatencyAlarms.toString()}, latency, 0)`,
