@@ -215,7 +215,19 @@ jobs:
 
       - name: IAM Access Analyzer - Validate Best Practices
         run: |
+          # Catch syntax errors, malformed JSON, and iam:PassRole wildcards
           cfn-policy-validator validate \
             --template-path cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
             --region eu-west-2 \
-            --treat-warnings-as-errors
+            --treat-finding-type-as-blocking ERROR,SECURITY_WARNING,WARNING
+
+          # Catch dangerous internal actions granted
+          cfn-policy-validator check-access-not-granted \
+          --template-path cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
+          --actions "kms:Decrypt" "kms:*" "lambda:InvokeFunction" \
+          --region eu-west-2
+
+          # Catch resource policies that expose resources to the public internet
+          cfn-policy-validator check-no-public-access \
+          --template-path cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
+          --region eu-west-2
