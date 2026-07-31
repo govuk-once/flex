@@ -184,6 +184,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install checkov
+          python3 -m pip install cfn-policy-validator
           pnpm install --frozen-lockfile
 
       - name: NX - set SHAs
@@ -207,3 +208,14 @@ jobs:
           base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
           head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
           show-openssf-scorecard: false
+
+      - name: Run cdk synth
+        run: |
+          pnpm --filter @platform/flex synth
+
+      - name: IAM Access Analyzer - Validate Best Practices
+        run: |
+          cfn-policy-validator validate \
+            --template-path cdk.out/${{ env.STAGE }}-FlexPlatform.template.json \
+            --region eu-west-2 \
+            --treat-warnings-as-errors
