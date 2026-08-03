@@ -170,14 +170,13 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
         expect(resultNotFound.status).toBe(404);
       });
     });
-  });
 
-  describe("/udp/v1/identity/:service", () => {
-    const endpoint = `/udp/v1/identity/${service}`;
+    describe("/udp/v1/identity/:service", () => {
+      const endpoint = `/udp/v1/identity/${service}`;
 
-    describe.runIf(udpCreateIdentityDeployed() && udpDeleteIdentityDeployed())(
-      "POST",
-      () => {
+      describe.runIf(
+        udpCreateIdentityDeployed() && udpDeleteIdentityDeployed(),
+      )("POST", () => {
         it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
           cloudfront,
           withCleanIdentity,
@@ -212,8 +211,8 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
           expect(swapResult.status).toBe(201);
         });
-      },
-    );
+      });
+    });
   });
 
   describe("/udp/v1/users/me", () => {
