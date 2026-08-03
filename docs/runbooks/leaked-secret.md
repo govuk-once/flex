@@ -103,13 +103,9 @@ A new secret is only live once the running services actually use it. How you mak
 
 > **Caching note.** The Middy `secrets-manager` and `ssm` middleware ([`middleware.ts`](/libs/sdk/src/route/middleware.ts)) cache a fetched value for the lifetime of a warm Lambda execution environment. A rotated `secret` or `ssm:runtime` value is therefore not reliably picked up by containers that are already warm and may still be holding the old, leaked value. Redeploying the affected domain replaces the function version and forces cold starts, which guarantees every invocation reads the new value. When a leaked secret has been rotated, redeploy; do not assume the rotation alone has taken hold.
 
-Redeploy through the normal route wherever the incident allows it. Raise the change, get it reviewed, and let the Continuous Deployment pipeline ([`main.yml`](/.github/workflows/main.yml)) carry it through development, staging and production. Where speed is critical, the deployment paths, including a direct single-domain deploy, are set out in the [Fix Forward runbook](/docs/runbooks/fix-forward.md#deploying-the-fix):
+Redeploys reach production only through the Continuous Deployment pipeline ([`main.yml`](/.github/workflows/main.yml)). No one can deploy directly to production, so a rotation reaches it the same way any change does: raise the change, get it reviewed, and let the pipeline carry it through development, staging and production, approving the staging and production gates as they are reached. Under incident conditions the pipeline is compressed, not bypassed: the review and approval gates still apply. For operating the pipeline and expediting a promotion, see the [Pipeline Promotion runbook](/docs/runbooks/pipeline-promotion-runbook.md) and the [Fix Forward runbook](/docs/runbooks/fix-forward.md).
 
-```bash
-domain=<name> STAGE=<stage> pnpm deploy
-```
-
-Rotate and redeploy every stage that shared the secret, not only the one where it leaked.
+Rotate the value first, then let the pipeline redeploy every stage that shared the secret, not only the one where it leaked.
 
 ---
 
@@ -131,14 +127,14 @@ Clear, prompt communication is part of the response, not an afterthought. A leak
 
 **During the incident:**
 
-1. Raise it in the incident channel as soon as it is confirmed, stating the secret by name and location, the type, the affected services and the severity you agreed. Never post the value.
+1. Raise it in the incident channel `#govuk-app-incident` as soon as it is confirmed, and flag it in `#govuk-once-flex-dev` so the engineering team sees it. State the secret by name and location, the type, the affected services and the severity you agreed. Never post the value.
 2. Bring in the incident lead early. A credential with access to sensitive or personal data may carry reporting duties within defined timeframes, and that clock starts at discovery, so do not sit on it.
 3. Keep a running timeline: when it was discovered, when it was revoked, when it was rotated, when each stage was redeployed, and what the misuse investigation found.
-4. Announce each redeploy as it happens, and note that a direct deploy will not send the usual "Flex deployed" notification to `#govuk-once-flex-release`, so confirm those by hand.
+4. Announce each redeploy as it happens in `#govuk-app-incident` and `#govuk-once-flex-dev`. Do not rely on the automated "Flex deployed" notification: it goes to `#govuk-once-flex-release`, which few people watch.
 
 **After the incident:**
 
-- Post a short summary: what leaked, how it was exposed, what was revoked and rotated, whether any misuse was found, and what remains outstanding.
+- Post a short summary in `#govuk-app-incident` and `#govuk-once-flex-dev`: what leaked, how it was exposed, what was revoked and rotated, whether any misuse was found, and what remains outstanding.
 - Make sure the right people beyond engineering are informed where the severity or the data involved requires it. Confirm with the incident lead who needs to know and by when.
 
 ---
@@ -148,7 +144,7 @@ Clear, prompt communication is part of the response, not an afterthought. A leak
 Revoking and rotating stabilises the situation. Closing the incident means removing the residue and making the same leak harder next time.
 
 1. **Scrub the exposure where it still exists.** Now that the secret is dead, clean up the git history, message or artefact that carried it, so it is not copied again or mistaken for live later. This is housekeeping, not containment, and it comes after revocation precisely because history is hard to scrub reliably.
-2. **Reconcile any shortcuts.** If you deployed a rotation directly to a stage, land the same change through `main` so the pipeline, the tagged release and the running code all agree. Do this before considering the incident closed.
+2. **Reconcile the rotated value.** You rotate a secret's value out of band (for example with `put-secret-value` or `put-parameter`), but the redeploy still goes through the pipeline. If that secret is managed declaratively or seeded by a script, make sure the new value is reflected there too, so a later deploy or seeding run does not revert it to the old, leaked value. Do this before considering the incident closed.
 3. **Close the loop on the failed control.** Identify which layer should have caught the leak and strengthen it: add the pattern to `detect-secrets`, extend the log sanitiser, or tighten a review step. A leak that bypassed a control is a gap in that control.
 4. **Raise the follow-up work.** Create tickets for any longer-term remediation, for example reducing the credential's scope, moving a deploy-time `ssm` secret to a runtime `secret` so future rotations need no redeploy, or shortening a credential's lifetime.
 5. **Run the post-incident review.** Capture the timeline, what went well and what slowed you down, and feed anything you had to work out under pressure back into this runbook so the next engineer moves faster.
