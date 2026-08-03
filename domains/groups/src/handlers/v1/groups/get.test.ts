@@ -65,44 +65,44 @@ describe("GET /v1/groups", () => {
     expect(JSON.parse(result.body)).toStrictEqual([]);
   });
 
-  it("returns 502 when the UDP get push ID integration fails unexpectedly", async ({
-    http,
-    sdk,
-  }) => {
-    http
-      .domain("udp")
-      .get("/users/push-id", { headers: { "User-Id": userId } })
-      .reply(500);
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP get push ID integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", { headers: { "User-Id": userId } })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.get(endpoint, { userId }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.get(endpoint, { userId }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 
-  it("returns 502 when the UNS get groups integration fails unexpectedly", async ({
-    http,
-    sdk,
-  }) => {
-    http
-      .domain("udp")
-      .get("/users/push-id", { headers: { "User-Id": userId } })
-      .reply(200, { pushId });
+  it.for([{ reason: "cannot find the route", upstream: 404, expected: 502 }])(
+    "returns $expected when the UNS get groups integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", { headers: { "User-Id": userId } })
+        .reply(200, { pushId });
 
-    http
-      .gateway("uns")
-      .get("/groups", { query: { pushID: pushId } })
-      .reply(404);
+      http
+        .gateway("uns")
+        .get("/groups", { query: { pushID: pushId } })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.get(endpoint, { userId }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.get(endpoint, { userId }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });

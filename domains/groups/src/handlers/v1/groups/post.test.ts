@@ -63,7 +63,6 @@ describe("POST /v1/groups", () => {
     );
 
     expect(result.statusCode).toBe(200);
-
     expect(JSON.parse(result.body)).toStrictEqual([
       {
         ...group,
@@ -111,55 +110,63 @@ describe("POST /v1/groups", () => {
     expect(JSON.parse(result.body)).toStrictEqual([]);
   });
 
-  it("returns 502 when the UDP get push ID integration fails unexpectedly", async ({ http, sdk }) => {
-    http
-      .domain("udp")
-      .get("/users/push-id", {
-        headers: {
-          "User-Id": userId,
-        },
-      })
-      .reply(500);
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UDP get push ID integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", {
+          headers: {
+            "User-Id": userId,
+          },
+        })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.post(endpoint, {
-        userId,
-        body: requestBody,
-      }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.post(endpoint, {
+          userId,
+          body: requestBody,
+        }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 
-  it("returns 502 when the UNS post groups integration fails unexpectedly", async ({ http, sdk }) => {
-    http
-      .domain("udp")
-      .get("/users/push-id", {
-        headers: {
-          "User-Id": userId,
-        },
-      })
-      .reply(200, { pushId });
+  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+    "returns $expected when the UNS post groups integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", {
+          headers: {
+            "User-Id": userId,
+          },
+        })
+        .reply(200, { pushId });
 
-    http
-      .gateway("uns")
-      .post("/groups", {
-        query: {
-          pushID: pushId,
-        },
-        body: unsRequestBody,
-      })
-      .reply(500);
+      http
+        .gateway("uns")
+        .post("/groups", {
+          query: {
+            pushID: pushId,
+          },
+          body: unsRequestBody,
+        })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.post(endpoint, {
-        userId,
-        body: requestBody,
-      }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.post(endpoint, {
+          userId,
+          body: requestBody,
+        }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+      expect(result.body).toBe("");
+    },
+  );
 });
