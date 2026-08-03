@@ -181,31 +181,29 @@ export async function extractServiceId(
   accessToken: string,
   ctx: PostRouteContext,
 ): Promise<string | null> {
-  if (service.toLowerCase() === "dvla") {
-    const decryptedSignedJwt = await decryptJweToken(linkingToken, ctx);
+  if (service.toLowerCase() !== "dvla") throw new createHttpError.Forbidden();
 
-    ctx.logger.info("Fetching JWKS from DVLA integration...");
-    const result = await ctx.integrations.dvlaGetWellKnownJwk({});
+  const decryptedSignedJwt = await decryptJweToken(linkingToken, ctx);
 
-    if (!result.ok) {
-      ctx.logger.error("Failed to fetch DVLA well-known JWKs", {
-        error: result.error,
-      });
-      throw new createHttpError.BadGateway();
-    }
+  ctx.logger.info("Fetching JWKS from DVLA integration...");
+  const result = await ctx.integrations.dvlaGetWellKnownJwk({});
 
-    const payload = await verifyJwtAndExtractPayload(
-      decryptedSignedJwt,
-      result.data,
-      ctx,
-    );
-
-    if (payload === null || !payload.linking_id || !payload.session) {
-      return null;
-    }
-    verifySessionHash(payload.session, accessToken, ctx);
-    return payload.linking_id;
+  if (!result.ok) {
+    ctx.logger.error("Failed to fetch DVLA well-known JWKs", {
+      error: result.error,
+    });
+    throw new createHttpError.BadGateway();
   }
 
-  return linkingToken;
+  const payload = await verifyJwtAndExtractPayload(
+    decryptedSignedJwt,
+    result.data,
+    ctx,
+  );
+
+  if (payload === null || !payload.linking_id || !payload.session) {
+    return null;
+  }
+  verifySessionHash(payload.session, accessToken, ctx);
+  return payload.linking_id;
 }
