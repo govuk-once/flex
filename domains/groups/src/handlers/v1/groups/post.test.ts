@@ -111,7 +111,7 @@ describe("POST /v1/groups", () => {
     expect(JSON.parse(result.body)).toStrictEqual([]);
   });
 
-  it("returns 502 when getting the push ID fails", async ({ http, sdk }) => {
+  it("returns 502 when the UDP get push ID integration fails unexpectedly", async ({ http, sdk }) => {
     http
       .domain("udp")
       .get("/users/push-id", {
