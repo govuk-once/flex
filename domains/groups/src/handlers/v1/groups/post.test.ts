@@ -132,7 +132,7 @@ describe("POST /v1/groups", () => {
     expect(result.statusCode).toBe(502);
   });
 
-  it("returns 502 when posting groups to UNS fails", async ({ http, sdk }) => {
+  it("returns 502 when the UNS post groups integration fails unexpectedly", async ({ http, sdk }) => {
     http
       .domain("udp")
       .get("/users/push-id", {
