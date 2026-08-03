@@ -16,6 +16,9 @@ import { beforeAll, beforeEach, describe, expect, vi } from "vitest";
 
 import { handler } from "./post";
 
+const MOCK_DVLA_JWT_ISSUER = "https://govuk-app-external-ui.dvla.gov.uk";
+const MOCK_DVLA_JWT_AUDIENCE = "https://govuk-app-external-ui-aud.dvla.gov.uk";
+
 const { mockKmsSend } = vi.hoisted(() => {
   process.env.decyrptionKey = "mock-kms-key-id";
   process.env.KMS_KEY_ID = "mock-kms-key-id";
@@ -96,27 +99,29 @@ const createMockSession = async (jti: string) => {
   };
 };
 
+type MockDvlaJwtOptions = {
+  isExpired?: boolean;
+  invalidAlg?: boolean;
+  omitLinkingId?: boolean;
+  issuer?: string;
+  audience?: string;
+};
+
 const createMockDvlaJwt = async (
   linkingId: string,
   sessionHash: string,
-  options?: {
-    isExpired?: boolean;
-    invalidAlg?: boolean;
-    omitLinkingId?: boolean;
-  },
+  options?: MockDvlaJwtOptions,
 ) => {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const alg = options?.invalidAlg ? "RS256" : "PS256";
-
   const payload: Record<string, string> = {
-    iss: "https://govuk-app-external-ui.dvla.gov.uk",
+    iss: options?.issuer ?? MOCK_DVLA_JWT_ISSUER,
+    aud: options?.audience ?? MOCK_DVLA_JWT_AUDIENCE,
     session: sessionHash,
   };
-
   if (!options?.omitLinkingId) {
     payload.linking_id = linkingId;
   }
-
   const jwtSigner = new jose.SignJWT(payload)
     .setProtectedHeader({
       alg,
@@ -127,28 +132,20 @@ const createMockDvlaJwt = async (
     .setExpirationTime(
       options?.isExpired ? nowSeconds - 3600 : nowSeconds + 3600,
     );
-
   if (options?.invalidAlg) {
     const { privateKey: badPriv } = await jose.generateKeyPair("RS256");
     return await jwtSigner.sign(badPriv);
   }
-
   return await jwtSigner.sign(privateKey);
 };
 
 const createMockDvlaJwe = async (
   linkingId: string,
   sessionHash: string,
-  options?: {
-    isExpired?: boolean;
-    invalidAlg?: boolean;
-    omitLinkingId?: boolean;
-  },
+  options?: MockDvlaJwtOptions,
 ) => {
   const signedJwt = await createMockDvlaJwt(linkingId, sessionHash, options);
-
   const publicKey = await jose.importSPKI(kmsPublicKeyPem, "RSA-OAEP");
-
   return await new jose.CompactEncrypt(new TextEncoder().encode(signedJwt))
     .setProtectedHeader({ alg: "RSA-OAEP", enc: "A256GCM" })
     .encrypt(publicKey);
@@ -287,6 +284,64 @@ describe("POST /v1/identity/:service", () => {
           headers: {
             "x-linking-token": expiredDvlaJweToken,
             Authorization: accessToken,
+          },
+        }),
+        sdk.context({ secrets }),
+      );
+
+      expect(result.statusCode).toBe(401);
+    });
+
+    it("returns 401 Unauthorized when the provided issuer does not match the DVLA JWT issuer", async ({
+      http,
+      sdk,
+    }) => {
+      const jti = uuid;
+      const { accessToken, sessionHash } = await createMockSession(jti);
+
+      const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash, {
+        issuer: "https://unknown-issuer.dvla.gov.uk",
+      });
+
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: {
+            Authorization: accessToken,
+            "x-linking-token": dvlaJweToken,
+          },
+        }),
+        sdk.context({ secrets }),
+      );
+      expect(result.statusCode).toBe(401);
+    });
+
+    it("returns 401 Unauthorized when the provided audience does not match the DVLA JWT audience", async ({
+      http,
+      sdk,
+    }) => {
+      const jti = uuid;
+
+      const { accessToken, sessionHash } = await createMockSession(jti);
+
+      const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash, {
+        audience: "https://unknown-audience.dvla.gov.uk",
+      });
+
+      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+
+      const result = await handler(
+        sdk.event.post(targetDvlaEndpoint, {
+          userId,
+          body: serviceIdentityLinkRequest,
+          params: { service: dvlaService },
+          headers: {
+            Authorization: accessToken,
+            "x-linking-token": dvlaJweToken,
           },
         }),
         sdk.context({ secrets }),

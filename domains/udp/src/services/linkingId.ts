@@ -125,7 +125,7 @@ async function decryptJweToken(
 async function verifyJwtAndExtractPayload(
   signedJwt: string,
   jwkSet: JwkSet,
-  ctx: PostRouteContext,
+  { logger, resources }: PostRouteContext,
 ): Promise<DvlaJwtPayload | null> {
   try {
     const JWKS = jose.createLocalJWKSet(jwkSet);
@@ -133,11 +133,13 @@ async function verifyJwtAndExtractPayload(
     const { payload } = await jose.jwtVerify<DvlaJwtPayload>(signedJwt, JWKS, {
       currentDate: new Date(),
       clockTolerance: 0,
+      issuer: resources.dvlaJwtIssuer,
+      audience: resources.dvlaJwtAudience,
     });
 
     return payload;
   } catch (error) {
-    ctx.logger.error("Failed to verify internal JWT signature", { error });
+    logger.error("Failed to verify internal JWT signature", { error });
     return null;
   }
 }
