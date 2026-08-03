@@ -19,30 +19,43 @@ Treat those as the source of truth and defer to them over anything here. The sec
 
 ---
 
+## Getting required access privilidges
+
+Get in touch with with Stephen Ford (stephen.ford@digital.cabinet-office.gov.uk) from Platform Team to receive required privlidges temporarely to carry out required operations.
+
+---
+
 ## What Counts as a Leaked Secret
 
 A secret is leaked the moment it becomes readable by anyone who should not have it. Common exposure routes on FLEX are a value committed to git, pasted into a pull request, ticket, Slack message or screenshot, printed into a log or error, or returned in an API response.
 
 FLEX runs several layers specifically to stop secrets escaping. A leak means one of them was bypassed, so knowing which layer failed also tells you where to add prevention afterwards:
 
-| Layer | Mechanism | What it should have caught |
-| ----- | --------- | -------------------------- |
-| Pre-commit | [`detect-secrets`](/.pre-commit-config.yaml) against `.secrets.baseline`, plus `detect-private-key` | A secret being committed locally |
-| Quality Checks | The Security job runs `pre-commit run --all-files`, SonarQube and checkov | A secret reaching a pull request or `main` |
-| Log redaction | The sanitiser ([`libs/logging/src/sanitizer.ts`](/libs/logging/src/sanitizer.ts)) and `addSecretValue()` | A secret being written to CloudWatch, see the [Log Redaction guide](/docs/log-redaction.md) |
+| Layer          | Mechanism                                                                                                | What it should have caught                                                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Pre-commit     | [`detect-secrets`](/.pre-commit-config.yaml) against `.secrets.baseline`, plus `detect-private-key`      | A secret being committed locally                                                            |
+| Quality Checks | The Security job runs `pre-commit run --all-files`, SonarQube and checkov                                | A secret reaching a pull request or `main`                                                  |
+| Log redaction  | The sanitiser ([`libs/logging/src/sanitizer.ts`](/libs/logging/src/sanitizer.ts)) and `addSecretValue()` | A secret being written to CloudWatch, see the [Log Redaction guide](/docs/log-redaction.md) |
 
 The layer that failed does not change your immediate response. Contain first; record the failed control for the follow-up.
 
 On FLEX, the actual value of any secret the platform stores lives in **AWS Secrets Manager** and nowhere else (the `secret` type). A service reads it at runtime via Middy, which attaches the value to the Lambda context; the environment variable holds only the secret's name, never its value. A third-party credential FLEX needs is stored the same way.
 
-The other resource types do not hold secret values, so a leak involving one of them is the leak of a reference, not a credential:
+| Type                   | Where it lives                       | How a service reads it                                                                        |
+| ---------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `secret`               | AWS Secrets Manager                  | Fetched at runtime via Middy and attached to the Lambda context                               |
+| `ssm:runtime`          | SSM Parameter Store                  | Fetched at runtime via Middy and attached to the Lambda context                               |
+| `ssm`                  | SSM Parameter Store                  | Read at deploy time and injected as an environment variable                                   |
+| `kms`                  | AWS KMS                              | Key reference injected as an environment variable at deploy time                              |
+| CI/CD secret           | GitHub Actions secrets (repo or org) | Read by a workflow at run time, for example `ROLE_TO_ASSUME`, `SONAR_TOKEN_FLEX`, `SONAR_URL` |
+| Third-party credential | The issuing provider                 | Used inside a domain via one of the storage types above                                       |
 
-| Type | What it holds | Notes |
-| ---- | ------------- | ----- |
-| `secret` | The secret value, in AWS Secrets Manager | The only place a real secret value lives; fetched at runtime |
-| `ssm` / `ssm:runtime` | Non-secret configuration strings in SSM Parameter Store, for example a gateway URL | Not secrets |
-| `kms` | An encryption key held in AWS KMS; services receive only the key ARN | Key material never leaves KMS |
-| CI/CD | Deployment role ARNs in GitHub Actions secrets, for example `ROLE_TO_ASSUME` | References, not credential material |
+| Type                  | What it holds                                                                      | Notes                                                        |
+| --------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `secret`              | The secret value, in AWS Secrets Manager                                           | The only place a real secret value lives; fetched at runtime |
+| `ssm` / `ssm:runtime` | Non-secret configuration strings in SSM Parameter Store, for example a gateway URL | Not secrets                                                  |
+| `kms`                 | An encryption key held in AWS KMS; services receive only the key ARN               | Key material never leaves KMS                                |
+| CI/CD                 | Deployment role ARNs in GitHub Actions secrets, for example `ROLE_TO_ASSUME`       | References, not credential material                          |
 
 The runtime versus deploy-time split ([`resolve-config.ts`](/libs/sdk/src/route/resolve-config.ts)) still matters before you rotate: it decides whether a redeploy is required, and it is covered in Rotating and Redeploying below.
 
@@ -93,11 +106,13 @@ Only once the leaked value can no longer be used should you move on to rotating 
 
 A new secret is only live once the running services actually use it. How you make that happen depends on the type, and this is where the runtime versus deploy-time split matters.
 
-| Where it lives | Rotate the value | What makes it take effect |
-| -------------- | ---------------- | ------------------------- |
-| Secrets Manager (`secret`) | `aws secretsmanager put-secret-value --secret-id <name> --secret-string <new>` | New Lambda execution environments fetch it. Warm containers keep the cached value, so **redeploy the affected domain** to force cold starts (see the caching note below) |
-| KMS key (`kms`) | Rotate or replace the key in KMS and re-encrypt anything it protected | The key reference is injected at deploy time, so **redeploy the affected domain** |
-| Deployment role or other CI/CD value (GitHub) | Update it under the repository or organisation Settings, Secrets and variables | Nothing changes until the next workflow run, so **re-run any workflow** that consumed it |
+| Type          | Update the value                                                                    | What makes it take effect                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `secret`      | `aws secretsmanager put-secret-value --secret-id <name> --secret-string <new>`      | New Lambda execution environments fetch it. Warm containers keep the cached value, so **redeploy the affected domain** to force cold starts (see the caching note below) |
+| `ssm:runtime` | `aws ssm put-parameter --name <name> --value <new> --type SecureString --overwrite` | Same as above: new value on next fetch, but **redeploy to be certain** it is live everywhere                                                                             |
+| `ssm`         | `aws ssm put-parameter --name <name> --value <new> --type SecureString --overwrite` | The value is baked into an environment variable at deploy time, so a **redeploy of the affected domain is mandatory**; the parameter change alone does nothing           |
+| `kms`         | Rotate or replace the key in KMS and re-encrypt anything it protected               | The key reference is injected at deploy time, so **redeploy the affected domain**                                                                                        |
+| CI/CD secret  | Update it under the repository or organisation Settings, Secrets and variables      | Nothing changes until the next workflow run, so **re-run any workflow** that consumed it                                                                                 |
 
 > **Caching note.** The Middy `secrets-manager` middleware ([`middleware.ts`](/libs/sdk/src/route/middleware.ts)) caches a fetched secret for the lifetime of a warm Lambda execution environment. A rotated `secret` value is therefore not reliably picked up by containers that are already warm and may still be holding the old, leaked value. Redeploying the affected domain replaces the function version and forces cold starts, which guarantees every invocation reads the new value. When a leaked secret has been rotated, redeploy; do not assume the rotation alone has taken hold.
 
