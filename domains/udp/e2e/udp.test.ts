@@ -22,7 +22,11 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
   const serviceId = "test-service-id";
   const service = "test-service";
 
-  describe("/udp/v1/identity", () => {
+  /**
+   * Skipping identity endpoints for UDP for now as only works with DVLA
+   * and is quite awkward to replicate
+   */
+  describe.todo("/udp/v1/identity", () => {
     const listEndpoint = "/udp/v1/identity";
     const endpoint = `${listEndpoint}/${service}`;
 
