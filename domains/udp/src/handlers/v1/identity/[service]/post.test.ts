@@ -248,244 +248,240 @@ describe("POST /v1/identity/:service", () => {
     expect(mockKmsSend).toHaveBeenCalledTimes(1);
   });
 
-  describe("DVLA Integration Testing", () => {
-    it("returns 401 Unauthorized when the DVLA linking token has expired", async ({
-      http,
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const expiredDvlaJweToken = await createMockDvlaJwe(
-        serviceId,
-        sessionHash,
-        { isExpired: true },
-      );
+  it("returns 401 Unauthorized when the DVLA linking token has expired", async ({
+    http,
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const expiredDvlaJweToken = await createMockDvlaJwe(
+      serviceId,
+      sessionHash,
+      { isExpired: true },
+    );
 
-      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+    http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": expiredDvlaJweToken,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": expiredDvlaJweToken,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      expect(result.statusCode).toBe(401);
+    expect(result.statusCode).toBe(401);
+  });
+
+  it("returns 401 Unauthorized when token signature algorithm does not match JWK parameters", async ({
+    http,
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const invalidAlgJweToken = await createMockDvlaJwe(serviceId, sessionHash, {
+      invalidAlg: true,
     });
 
-    it("returns 401 Unauthorized when token signature algorithm does not match JWK parameters", async ({
-      http,
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const invalidAlgJweToken = await createMockDvlaJwe(
-        serviceId,
-        sessionHash,
-        { invalidAlg: true },
-      );
+    http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
-      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": invalidAlgJweToken,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": invalidAlgJweToken,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(401);
+  });
 
-      expect(result.statusCode).toBe(401);
-    });
+  it("returns 502 Bad Gateway when fetching the DVLA well-known JWK endpoint fails", async ({
+    http,
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
-    it("returns 502 Bad Gateway when fetching the DVLA well-known JWK endpoint fails", async ({
-      http,
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
+    http.gateway("dvla").get(jwksPath).reply(500);
 
-      http.gateway("dvla").get(jwksPath).reply(500);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": dvlaJweToken,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": dvlaJweToken,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(502);
+  });
 
-      expect(result.statusCode).toBe(502);
-    });
+  it("returns 400 Bad Request when the JWE token format is invalid (not 5 parts)", async ({
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken } = await createMockSession(jti);
 
-    it("returns 400 Bad Request when the JWE token format is invalid (not 5 parts)", async ({
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken } = await createMockSession(jti);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": "eyJhbGciOi.InvalidToken",
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": "eyJhbGciOi.InvalidToken",
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(400);
+  });
 
-      expect(result.statusCode).toBe(400);
-    });
+  it("returns 400 Bad Request when essential JWE token blocks are empty", async ({
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken } = await createMockSession(jti);
 
-    it("returns 400 Bad Request when essential JWE token blocks are empty", async ({
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken } = await createMockSession(jti);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": "part1.part2..part4.part5",
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": "part1.part2..part4.part5",
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(400);
+  });
 
-      expect(result.statusCode).toBe(400);
-    });
+  it("returns 500 Internal Server Error when KMS fails to return a decrypted Plaintext CEK", async ({
+    sdk,
+  }) => {
+    mockKmsSend.mockResolvedValueOnce({ Plaintext: undefined });
 
-    it("returns 500 Internal Server Error when KMS fails to return a decrypted Plaintext CEK", async ({
-      sdk,
-    }) => {
-      mockKmsSend.mockResolvedValueOnce({ Plaintext: undefined });
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: { "x-linking-token": validJwe, Authorization: accessToken },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: { "x-linking-token": validJwe, Authorization: accessToken },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(500);
+  });
 
-      expect(result.statusCode).toBe(500);
-    });
+  it("returns 400 Bad Request when internal AES-GCM decryption fails (tampered payload)", async ({
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
-    it("returns 400 Bad Request when internal AES-GCM decryption fails (tampered payload)", async ({
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
+    const parts = validJwe.split(".");
+    parts[3] = "tampered_ciphertext_to_break_decryption_completely";
+    const tamperedJwe = parts.join(".");
 
-      const parts = validJwe.split(".");
-      parts[3] = "tampered_ciphertext_to_break_decryption_completely";
-      const tamperedJwe = parts.join(".");
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": tamperedJwe,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": tamperedJwe,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(400);
+  });
 
-      expect(result.statusCode).toBe(400);
-    });
+  it("returns 401 when the decrypted JWT is missing the linking_id claim", async ({
+    http,
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken, sessionHash } = await createMockSession(jti);
+    const tokenWithoutLinkingId = await createMockDvlaJwe(
+      serviceId,
+      sessionHash,
+      { omitLinkingId: true },
+    );
 
-    it("returns 401 when the decrypted JWT is missing the linking_id claim", async ({
-      http,
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
-      const tokenWithoutLinkingId = await createMockDvlaJwe(
-        serviceId,
-        sessionHash,
-        { omitLinkingId: true },
-      );
+    http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
-      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": tokenWithoutLinkingId,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": tokenWithoutLinkingId,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
+    expect(result.statusCode).toBe(401);
+  });
 
-      expect(result.statusCode).toBe(401);
-    });
+  it("returns 401 when the calculated session hash doesn't match the provided one", async ({
+    http,
+    sdk,
+  }) => {
+    const jti = uuid;
+    const { accessToken } = await createMockSession(jti);
+    const tokenWithMismatchedHash = await createMockDvlaJwe(
+      serviceId,
+      "mismatched-hash",
+    );
 
-    it("returns 401 when the calculated session hash doesn't match the provided one", async ({
-      http,
-      sdk,
-    }) => {
-      const jti = uuid;
-      const { accessToken } = await createMockSession(jti);
-      const tokenWithMismatchedHash = await createMockDvlaJwe(
-        serviceId,
-        "mismatched-hash",
-      );
+    http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
 
-      http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
+    const result = await handler(
+      sdk.event.post(targetDvlaEndpoint, {
+        userId,
+        body: serviceIdentityLinkRequest,
+        params: { service: dvlaService },
+        headers: {
+          "x-linking-token": tokenWithMismatchedHash,
+          Authorization: accessToken,
+        },
+      }),
+      sdk.context({ secrets }),
+    );
 
-      const result = await handler(
-        sdk.event.post(targetDvlaEndpoint, {
-          userId,
-          body: serviceIdentityLinkRequest,
-          params: { service: dvlaService },
-          headers: {
-            "x-linking-token": tokenWithMismatchedHash,
-            Authorization: accessToken,
-          },
-        }),
-        sdk.context({ secrets }),
-      );
-
-      expect(result.statusCode).toBe(401);
-    });
+    expect(result.statusCode).toBe(401);
   });
 
   it("returns 204 when the service identity is already linked with the same ID", async ({
