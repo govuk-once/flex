@@ -8,6 +8,7 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
+import { FlexMacieStack } from "./stacks/macie";
 import { FlexPlatformStack } from "./stacks/platform";
 import { FlexSmokeTestStack } from "./stacks/smoke-test";
 import { getDeployableDomains } from "./utils/deployment";
@@ -70,7 +71,13 @@ if (persistent) {
 
 new FlexPlatformStack(app, `${stage}-FlexPlatform`);
 
-new FlexGlobalStack(app, `${stage}-FlexGlobal`);
+const globalStack = new FlexGlobalStack(app, `${stage}-FlexGlobal`);
+
+if (persistent) {
+  new FlexMacieStack(app, `${env}-FlexMacie`, {
+    accessLogBucketName: globalStack.cloudfrontAccessLogBucket.bucketName,
+  });
+}
 
 const allDomainConfigs = await getDomainConfigs();
 const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);

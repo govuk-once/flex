@@ -13,8 +13,10 @@ import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 export class AccessLogBucket extends Construct {
   public readonly bucket: Bucket;
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, retentionDays = 365) {
     super(scope, id);
+
+    const retention = Duration.days(retentionDays);
 
     this.bucket = new Bucket(this, "AccessLogBucket", {
       enforceSSL: true,
@@ -26,13 +28,13 @@ export class AccessLogBucket extends Construct {
       objectLockEnabled: true,
       objectLockDefaultRetention: {
         mode: ObjectLockMode.GOVERNANCE,
-        duration: Duration.days(365),
+        duration: retention,
       },
       lifecycleRules: [
         {
-          id: "deleteLogsAfter12Months",
-          expiration: Duration.days(365),
-          noncurrentVersionExpiration: Duration.days(365),
+          id: "expireLogs",
+          expiration: retention,
+          noncurrentVersionExpiration: retention,
         },
       ],
     });

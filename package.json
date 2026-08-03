@@ -17,7 +17,8 @@
     "s3:enforce-tls": "tsx scripts/enforceS3SecureTransport.ts",
     "semantic:release": "semantic-release",
     "openapi:generate": "tsx scripts/generateOpenapi.ts",
-    "validate:integrations": "pnpm --filter @platform/flex run validate:integrations"
+    "validate:integrations": "pnpm --filter @platform/flex run validate:integrations",
+    "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1091.0",
