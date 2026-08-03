@@ -1,6 +1,10 @@
 import createHttpError from "http-errors";
 
 import {
+  UnsGroupsGetRequestSchema,
+  UnsGroupsPostRequestSchema,
+} from "../schemas/domain/groups";
+import {
   NotificationRequestSchema,
   NotificationsPatchRequestSchema,
   NotificationsRequestSchema,
@@ -10,6 +14,7 @@ import { RouteContract } from "./types";
 
 export const UNS_REMOTE_ROUTES = {
   notification: `/notifications`,
+  groups: `/v1/groups`,
 } as const;
 
 export const ROUTE_CONTRACTS = {
@@ -140,5 +145,60 @@ export const ROUTE_CONTRACTS = {
     },
     callRemote: (client, data) =>
       client.notification.patch(data.pushId, data.notificationId, data.body),
+  },
+  "GET:/v1/groups": {
+    operation: "getGroups",
+    method: "GET",
+    inboundPath: "/v1/groups",
+    remotePath: "/v1/groups",
+    toRemote: (event) => {
+      const queryParams = event.queryStringParameters || {};
+      const pushId = queryParams.pushID;
+      const validation = UnsGroupsGetRequestSchema.safeParse({
+        pushId: pushId,
+      });
+
+      if (!validation.success) {
+        throw new createHttpError.BadRequest(
+          "Missing or invalid pushID query parameter",
+        );
+      }
+
+      return { ...validation.data };
+    },
+    callRemote: (client, data) => client.groups.get(data.pushId),
+  },
+  "POST:/v1/groups": {
+    operation: "postGroups",
+    method: "POST",
+    inboundPath: "/v1/groups",
+    remotePath: "/v1/groups",
+    toRemote: (event) => {
+      if (!event.body) {
+        throw new createHttpError.BadRequest("Request body is missing");
+      }
+
+      let jsonBody: unknown;
+      try {
+        jsonBody = JSON.parse(event.body);
+      } catch (_error) {
+        throw new createHttpError.BadRequest("Invalid JSON format in body");
+      }
+
+      const queryParams = event.queryStringParameters || {};
+      const validation = UnsGroupsPostRequestSchema.safeParse({
+        pushId: queryParams.pushID,
+        body: jsonBody,
+      });
+
+      if (!validation.success) {
+        throw new createHttpError.BadRequest(
+          "Validation failed: " + validation.error.message,
+        );
+      }
+
+      return validation.data;
+    },
+    callRemote: (client, data) => client.groups.post(data.pushId, data.body),
   },
 } as const satisfies Record<string, RouteContract>;

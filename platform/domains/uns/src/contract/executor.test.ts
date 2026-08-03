@@ -14,6 +14,10 @@ const remoteClient = {
   notifications: {
     get: vi.fn(),
   },
+  groups: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
 };
 
 describe("UNS Executor", () => {
@@ -96,6 +100,73 @@ describe("UNS Executor", () => {
             Status: "READ",
           },
         );
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/groups",
+      operation: "getGroups",
+      queryStringParameters: { pushID: "push-123" },
+      configureRemoteClient: () => {
+        remoteClient.groups.get.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: [
+            {
+              Namespace: "travel",
+              Group: "france",
+            },
+          ],
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.groups.get).toHaveBeenCalledWith("push-123");
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/groups",
+      operation: "postGroups",
+      queryStringParameters: { pushID: "push-123" },
+      body: [
+        {
+          Namespace: "travel",
+          Group: "france",
+          Action: "JOIN",
+        },
+        {
+          Namespace: "travel",
+          Group: "spain",
+          Subgroup: "instant",
+          Action: "LEAVE",
+        },
+      ],
+      configureRemoteClient: () => {
+        remoteClient.groups.post.mockResolvedValue({
+          ok: true,
+          status: 200,
+          data: [
+            {
+              Namespace: "travel",
+              Group: "france",
+            },
+          ],
+        });
+      },
+      assertRemoteClientCall: () => {
+        expect(remoteClient.groups.post).toHaveBeenCalledWith("push-123", [
+          {
+            Namespace: "travel",
+            Group: "france",
+            Action: "JOIN",
+          },
+          {
+            Namespace: "travel",
+            Group: "spain",
+            Subgroup: "instant",
+            Action: "LEAVE",
+          },
+        ]);
       },
     },
   ])(
@@ -193,6 +264,122 @@ describe("UNS Executor", () => {
       await expect(execute(event, remoteClient)).rejects.toMatchObject({
         statusCode: 400,
       });
+    });
+
+    it("throws 400 when pushID is missing for GET groups", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.get("/v1/groups");
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Missing or invalid pushID query parameter",
+      });
+
+      expect(remoteClient.groups.get).not.toHaveBeenCalled();
+    });
+
+    it("throws 400 when pushID is missing for POST groups", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/v1/groups",
+        queryStringParameters: null,
+        body: JSON.stringify([
+          {
+            Namespace: "travel",
+            Group: "france",
+            Action: "JOIN",
+          },
+        ]),
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+
+      expect(remoteClient.groups.post).not.toHaveBeenCalled();
+    });
+
+    it("throws 400 when POST groups body is missing", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/v1/groups",
+        queryStringParameters: { pushID: "push-123" },
+        body: null,
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Request body is missing",
+      });
+
+      expect(remoteClient.groups.post).not.toHaveBeenCalled();
+    });
+
+    it("throws 400 when POST groups body contains invalid JSON", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/v1/groups",
+        queryStringParameters: { pushID: "push-123" },
+        body: "not-valid-json{",
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Invalid JSON format in body",
+      });
+
+      expect(remoteClient.groups.post).not.toHaveBeenCalled();
+    });
+
+    it("throws 400 when POST groups action is invalid", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/v1/groups",
+        queryStringParameters: { pushID: "push-123" },
+        body: JSON.stringify([
+          {
+            Namespace: "travel",
+            Group: "france",
+            Action: "SUBSCRIBE",
+          },
+        ]),
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+
+      expect(remoteClient.groups.post).not.toHaveBeenCalled();
+    });
+
+    it("throws 400 when POST groups body is not an array", async ({
+      privateGatewayEvent,
+    }) => {
+      const event = privateGatewayEvent.create({
+        httpMethod: "POST",
+        path: "/v1/groups",
+        queryStringParameters: { pushID: "push-123" },
+        body: JSON.stringify({
+          Namespace: "travel",
+          Group: "france",
+          Action: "JOIN",
+        }),
+      });
+
+      await expect(execute(event, remoteClient)).rejects.toMatchObject({
+        statusCode: 400,
+      });
+
+      expect(remoteClient.groups.post).not.toHaveBeenCalled();
     });
   });
 });

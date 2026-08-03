@@ -3,6 +3,11 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 
 import type { UnsRemoteClient } from "../client/index";
 import {
+  UnsGroupsGetRequestSchema,
+  UnsGroupsPostRequestSchema,
+  UnsGroupsResponseSchema,
+} from "../schemas/remote/groups";
+import {
   GetNotificationResponseSchema,
   GetNotificationsResponseSchema,
   NotificationRequestSchema,
@@ -14,11 +19,13 @@ export type RouteOperation =
   | "getNotifications"
   | "getNotificationById"
   | "deleteNotificationById"
-  | "patchNotificationById";
+  | "patchNotificationById"
+  | "getGroups"
+  | "postGroups";
 
 type BaseRouteContract<
   TOp extends RouteOperation,
-  TMethod extends "GET" | "DELETE" | "PATCH",
+  TMethod extends "GET" | "DELETE" | "PATCH" | "POST",
   TRemoteRequest,
   TRemoteResponse,
   TDomainResponse,
@@ -69,8 +76,26 @@ export type PatchNotificationsByIdRouteContract = BaseRouteContract<
   unknown
 >;
 
+export type GetGroupsRouteContract = BaseRouteContract<
+  "getGroups",
+  "GET",
+  UnsGroupsGetRequestSchema,
+  unknown,
+  UnsGroupsResponseSchema
+>;
+
+export type PostGroupsRouteContract = BaseRouteContract<
+  "postGroups",
+  "POST",
+  UnsGroupsPostRequestSchema,
+  unknown,
+  UnsGroupsResponseSchema
+>;
+
 export type RouteContract =
   | GetNotificationsRouteContract
   | GetNotificationsByIdRouteContract
   | DeleteNotificationsByIdRouteContract
-  | PatchNotificationsByIdRouteContract;
+  | PatchNotificationsByIdRouteContract
+  | GetGroupsRouteContract
+  | PostGroupsRouteContract;
