@@ -22,7 +22,11 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
   const serviceId = "test-service-id";
   const service = "test-service";
 
-  describe("/udp/v1/identity", () => {
+  /**
+   * Skipping identity endpoints for UDP for now as only works with DVLA
+   * and is quite awkward to replicate
+   */
+  describe.todo("/udp/v1/identity", () => {
     const listEndpoint = "/udp/v1/identity";
     const endpoint = `${listEndpoint}/${service}`;
 
@@ -166,14 +170,13 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
         expect(resultNotFound.status).toBe(404);
       });
     });
-  });
 
-  describe("/udp/v1/identity/:service", () => {
-    const endpoint = `/udp/v1/identity/${service}`;
+    describe("/udp/v1/identity/:service", () => {
+      const endpoint = `/udp/v1/identity/${service}`;
 
-    describe.runIf(udpCreateIdentityDeployed() && udpDeleteIdentityDeployed())(
-      "POST",
-      () => {
+      describe.runIf(
+        udpCreateIdentityDeployed() && udpDeleteIdentityDeployed(),
+      )("POST", () => {
         it("handles the service identity lifecycle (Link, Re-link, and Idempotency)", async ({
           cloudfront,
           withCleanIdentity,
@@ -208,8 +211,8 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
 
           expect(swapResult.status).toBe(201);
         });
-      },
-    );
+      });
+    });
   });
 
   describe("/udp/v1/users/me", () => {
