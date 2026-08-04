@@ -118,6 +118,21 @@ export function addSecretValue(value: unknown): void {
 }
 
 /**
+ * Coerces a value to a string for value/secret matching, but only for the
+ * primitive types that can carry a secret (string, number, boolean, bigint).
+ * Structured values (objects, arrays), null and undefined return undefined so
+ * the caller leaves them untouched for the formatter to walk.
+ */
+function toMatchableString(value: unknown): string | undefined {
+  const type = typeof value;
+  if (type === "string") return value as string;
+  if (type === "number" || type === "boolean" || type === "bigint") {
+    return String(value);
+  }
+  return undefined;
+}
+
+/**
  * Creates a JSON replacer function for sanitizing log output.
  */
 export function createSanitizer(): (key: string, value: unknown) => unknown {
@@ -126,16 +141,20 @@ export function createSanitizer(): (key: string, value: unknown) => unknown {
       return REDACTED;
     }
 
-    if (typeof value !== "string") {
+    const stringValue = toMatchableString(value);
+    if (stringValue === undefined) {
       return value;
     }
 
-    if (matchesValuePattern(value)) {
+    if (matchesValuePattern(stringValue)) {
       return REDACTED;
     }
 
     if (secretValuesRegex) {
-      return value.replace(secretValuesRegex, REDACTED);
+      const replaced = stringValue.replace(secretValuesRegex, REDACTED);
+      if (replaced !== stringValue) {
+        return replaced;
+      }
     }
 
     return value;

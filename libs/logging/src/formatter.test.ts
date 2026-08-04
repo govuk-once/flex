@@ -163,4 +163,69 @@ describe("FlexLogFormatter", () => {
       expect(output.shouldBeExcluded).toBeUndefined();
     });
   });
+
+  describe("nested and array sanitization", () => {
+    const REDACTED = "***REDACTED***";
+    const redactSensitiveKeys = (key: string, value: unknown) =>
+      /secret|token|credential|authorization/i.test(key) ? REDACTED : value;
+
+    beforeEach(() => {
+      sanitizeFn.mockImplementation(redactSensitiveKeys);
+    });
+
+    it("redacts an object nested under a sensitive key", () => {
+      const output = new FlexLogFormatter()
+        .formatAttributes(createBaseAttributes(), {
+          credentials: { value: "leak", inner: { deep: "leak" } },
+        })
+        .getAttributes();
+
+      expect(output.credentials).toBe(REDACTED);
+    });
+
+    it("redacts objects inside an array under a sensitive key", () => {
+      const output = new FlexLogFormatter()
+        .formatAttributes(createBaseAttributes(), {
+          tokens: [{ value: "leak" }, { value: "leak" }],
+        })
+        .getAttributes();
+
+      expect(output.tokens).toBe(REDACTED);
+    });
+
+    it("redacts an array of primitives under a sensitive key to a single value", () => {
+      const output = new FlexLogFormatter()
+        .formatAttributes(createBaseAttributes(), {
+          secretTokens: ["a", "b"],
+        })
+        .getAttributes();
+
+      expect(output.secretTokens).toBe(REDACTED);
+    });
+
+    it("redacts a sensitive key nested deep under non-sensitive keys", () => {
+      const output = new FlexLogFormatter()
+        .formatAttributes(createBaseAttributes(), {
+          request: { headers: { authorization: "Bearer x" }, path: "/health" },
+        })
+        .getAttributes();
+
+      expect(output.request).toEqual({
+        headers: { authorization: REDACTED },
+        path: "/health",
+      });
+    });
+
+    it("recurses into objects and arrays under non-sensitive keys", () => {
+      const output = new FlexLogFormatter()
+        .formatAttributes(createBaseAttributes(), {
+          context: { secret: "leak", safe: "ok" },
+          items: [{ token: "leak", id: 1 }],
+        })
+        .getAttributes();
+
+      expect(output.context).toEqual({ secret: REDACTED, safe: "ok" });
+      expect(output.items).toEqual([{ token: REDACTED, id: 1 }]);
+    });
+  });
 });
