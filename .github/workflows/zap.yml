@@ -5,6 +5,7 @@ on:
     workflows: [Continuous Deployment]
     types:
       - completed
+    branches: [main] # Only triggers from `main`
   workflow_dispatch:
 
 jobs:
