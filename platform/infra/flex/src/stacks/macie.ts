@@ -162,7 +162,9 @@ export class FlexMacieStack extends BaseStack {
             "macie2:CreateClassificationJob",
             "macie2:UpdateClassificationJob",
           ],
-          resources: ["*"],
+          resources: [
+            `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
+          ],
         }),
       ]),
     });
