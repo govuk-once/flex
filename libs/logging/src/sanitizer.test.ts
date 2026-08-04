@@ -92,6 +92,36 @@ describe("sanitizer", () => {
     });
   });
 
+  describe("non-string values", () => {
+    it("redacts a numeric secret registered via addSecretValue", () => {
+      addSecretValue(123456); // pragma: allowlist secret
+      expect(sanitize("pin", 123456)).toBe(REDACTED);
+    });
+
+    it("redacts a numeric value matching a registered sensitive pattern", () => {
+      addSensitivePattern(/^\d{16}$/);
+      expect(sanitize("cardNumber", 4111111111111111)).toBe(REDACTED);
+    });
+
+    it("redacts a non-string value under a sensitive key", () => {
+      expect(sanitize("secret", 123456)).toBe(REDACTED); // pragma: allowlist secret
+    });
+
+    it("preserves non-matching numeric and boolean values", () => {
+      expect(sanitize("count", 42)).toBe(42);
+      expect(sanitize("ratio", 3.14)).toBe(3.14);
+      expect(sanitize("enabled", true)).toBe(true);
+      expect(sanitize("disabled", false)).toBe(false);
+    });
+
+    it("returns objects and arrays unchanged for the formatter to walk", () => {
+      const obj = { nested: "value" };
+      const arr = [1, 2, 3];
+      expect(sanitize("data", obj)).toBe(obj);
+      expect(sanitize("data", arr)).toBe(arr);
+    });
+  });
+
   describe("addSecretValue", () => {
     it("registers secret values for partial redaction", () => {
       const secret = "my-secret-value"; // pragma: allowlist secret
