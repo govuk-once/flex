@@ -31,6 +31,7 @@ export class FlexCoreStack extends BaseStack {
     addApiGatewayCloudWatchRole(this);
 
     const {
+      natEipArns,
       securityGroups: { privateEgress, privateIsolated },
       vpc,
     } = createVpc(this);
@@ -92,6 +93,7 @@ export class FlexCoreStack extends BaseStack {
       [ENV_KEYS.TopicCriticalAlarms]: criticalTopic.topicArn,
       [ENV_KEYS.TopicWarningAlarms]: warningTopic.topicArn,
       [ENV_KEYS.VpcEApiGateway]: apiGatewayEndpoint.vpcEndpointId,
+      [ENV_KEYS.VpcNatEipArns]: natEipArns.join(","),
     });
   }
 }

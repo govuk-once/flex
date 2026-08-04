@@ -31,6 +31,7 @@ export const ENV_KEYS = {
   FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
+  VpcNatEipArns: `/${env}/flex/vpc/nat-eip-arns`,
 };
 
 export const SMOKE_TEST_KEYS = {
