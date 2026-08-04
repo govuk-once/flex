@@ -17,7 +17,6 @@ import { beforeAll, beforeEach, describe, expect, vi } from "vitest";
 import { handler } from "./post";
 
 const MOCK_DVLA_JWT_ISSUER = "https://govuk-app-external-ui.dvla.gov.uk";
-const MOCK_DVLA_JWT_AUDIENCE = "https://govuk-app-external-ui-aud.dvla.gov.uk";
 
 const { mockKmsSend } = vi.hoisted(() => {
   process.env.decyrptionKey = "mock-kms-key-id";
@@ -116,7 +115,6 @@ const createMockDvlaJwt = async (
   const alg = options?.invalidAlg ? "RS256" : "PS256";
   const payload: Record<string, string> = {
     iss: options?.issuer ?? MOCK_DVLA_JWT_ISSUER,
-    aud: options?.audience ?? MOCK_DVLA_JWT_AUDIENCE,
     session: sessionHash,
   };
   if (!options?.omitLinkingId) {

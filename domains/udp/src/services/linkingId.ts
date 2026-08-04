@@ -134,7 +134,6 @@ async function verifyJwtAndExtractPayload(
       currentDate: new Date(),
       clockTolerance: 0,
       issuer: resources.dvlaJwtIssuer,
-      audience: resources.dvlaJwtAudience,
     });
 
     return payload;

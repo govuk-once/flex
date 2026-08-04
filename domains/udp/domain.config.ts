@@ -46,10 +46,6 @@ export const { config, route, routeContext } = domain({
       type: "ssm",
       path: "/dvla/jwt-issuer",
     },
-    dvlaJwtAudience: {
-      type: "ssm",
-      path: "/dvla/jwt-audience",
-    },
   },
   integrations: {
     udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
@@ -140,7 +136,6 @@ export const { config, route, routeContext } = domain({
               "decyrptionKey",
               "sessionHashKey",
               "dvlaJwtIssuer",
-              "dvlaJwtAudience",
             ],
             integrations: [
               "udpCreateIdentity",
