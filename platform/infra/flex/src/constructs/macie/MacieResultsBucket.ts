@@ -24,7 +24,7 @@ export class MacieResultsBucket extends Construct {
       `arn:${partition}:macie2:${region}:${account}:export-configuration:*`,
       `arn:${partition}:macie2:${region}:${account}:classification-job/*`,
     ];
-    const confusedDeputy = {
+    const macieSourceConditions = {
       StringEquals: { "aws:SourceAccount": account },
       ArnLike: { "aws:SourceArn": sourceArns },
     };
@@ -41,7 +41,7 @@ export class MacieResultsBucket extends Construct {
         principals: [maciePrincipal],
         actions: ["kms:GenerateDataKey", "kms:Encrypt"],
         resources: ["*"],
-        conditions: confusedDeputy,
+        conditions: macieSourceConditions,
       }),
     );
 
@@ -62,7 +62,7 @@ export class MacieResultsBucket extends Construct {
         principals: [maciePrincipal],
         actions: ["s3:GetBucketLocation"],
         resources: [this.bucket.bucketArn],
-        conditions: confusedDeputy,
+        conditions: macieSourceConditions,
       }),
     );
     this.bucket.addToResourcePolicy(
@@ -72,7 +72,7 @@ export class MacieResultsBucket extends Construct {
         principals: [maciePrincipal],
         actions: ["s3:PutObject"],
         resources: [`${this.bucket.bucketArn}/macie-results/*`],
-        conditions: confusedDeputy,
+        conditions: macieSourceConditions,
       }),
     );
 
