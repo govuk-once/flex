@@ -9,6 +9,7 @@
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
     "validate:integrations": "tsx src/scripts/validate-integrations.ts",
+    "validate:macie-coverage": "tsx src/scripts/check-macie-coverage.ts",
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
     "test": "vitest --passWithNoTests",
