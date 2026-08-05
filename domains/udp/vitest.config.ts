@@ -13,6 +13,7 @@ export default mergeConfig(
         privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
         udpNotificationSecret: "test-notification-secret", // pragma: allowlist secret
         sessionHashKey: "test-key",
+        dvlaJwtIssuer: "https://govuk-app-external-ui.dvla.gov.uk",
       },
     },
   }),

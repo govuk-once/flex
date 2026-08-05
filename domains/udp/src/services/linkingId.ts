@@ -133,6 +133,7 @@ async function verifyJwtAndExtractPayload(
     const { payload } = await jose.jwtVerify<DvlaJwtPayload>(signedJwt, JWKS, {
       currentDate: new Date(),
       clockTolerance: 0,
+      issuer: ctx.resources.dvlaJwtIssuer,
     });
 
     return payload;

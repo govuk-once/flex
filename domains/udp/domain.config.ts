@@ -42,6 +42,10 @@ export const { config, route, routeContext } = domain({
       type: "secret",
       path: "/flex-secret/udp/dvla-session-hash-secret",
     },
+    dvlaJwtIssuer: {
+      type: "ssm",
+      path: "/dvla/jwt-issuer",
+    },
   },
   integrations: {
     udpGetIdentity: { type: "gateway", route: "GET /v1/identity/*" },
@@ -127,7 +131,12 @@ export const { config, route, routeContext } = domain({
         POST: {
           public: {
             name: "create-service-identity-link",
-            resources: ["privateGatewayUrl", "decyrptionKey", "sessionHashKey"],
+            resources: [
+              "privateGatewayUrl",
+              "decyrptionKey",
+              "sessionHashKey",
+              "dvlaJwtIssuer",
+            ],
             integrations: [
               "udpCreateIdentity",
               "udpDeleteIdentity",
