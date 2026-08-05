@@ -44,7 +44,7 @@ export const { config, route, routeContext } = domain({
     },
     dvlaJwtIssuer: {
       type: "ssm",
-      path: "/dvla/jwt-issuer",
+      path: "/flex-param/dvla/jwt-issuer",
     },
   },
   integrations: {
