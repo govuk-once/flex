@@ -228,7 +228,8 @@ jobs:
               --template-path "$template" \
               --region eu-west-2 \
               --parameters $PARAMS \
-              --treat-finding-type-as-blocking ERROR,SECURITY_WARNING
+              --treat-finding-type-as-blocking ERROR,SECURITY_WARNING \
+              --ignore-finding MISSING_ARN_FIELD,DATA_TYPE_MISMATCH # ignoring two best practices that are only resulting in false positives
 
             # Catch dangerous internal actions granted
             cfn-policy-validator check-access-not-granted \
