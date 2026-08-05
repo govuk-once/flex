@@ -213,7 +213,7 @@ jobs:
         run: |
           pnpm --filter @platform/flex synth
 
-      - name: IAM Access Analyzer - Validate Best Practices
+      - name: IAM Access Analyzer
         run: |
           for template in platform/infra/flex/cdk.out/*-FlexPlatform.template.json; do
             echo "=== Auditing Template: $template ==="
@@ -234,7 +234,9 @@ jobs:
             # Catch dangerous internal actions granted
             cfn-policy-validator check-access-not-granted \
               --template-path "$template" \
-              --actions "kms:Decrypt" "kms:*" "lambda:InvokeFunction" \
+              --actions "kms:Decrypt" \
+              --actions "kms:*" \
+              --actions "lambda:InvokeFunction" \
               --region eu-west-2 \
               --parameters $PARAMS
 
