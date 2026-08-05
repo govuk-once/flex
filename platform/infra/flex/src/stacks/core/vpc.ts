@@ -1,9 +1,8 @@
-import { ArnFormat, Stack } from "aws-cdk-lib";
+import { Stack } from "aws-cdk-lib";
 import {
   AclCidr,
   AclTraffic,
   Action,
-  CfnEIP,
   FlowLogDestination,
   FlowLogFileFormat,
   FlowLogMaxAggregationInterval,
@@ -227,18 +226,7 @@ export function createVpc(scope: Construct) {
     allowAllOutbound: false,
   });
 
-  const natEipArns = vpc.publicSubnets.map((subnet) => {
-    const eip = subnet.node.findChild("EIP") as CfnEIP;
-    return Stack.of(subnet).formatArn({
-      service: "ec2",
-      resource: "eip-allocation",
-      resourceName: eip.attrAllocationId,
-      arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
-    });
-  });
-
   return {
-    natEipArns,
     vpc,
     securityGroups: {
       privateEgress,

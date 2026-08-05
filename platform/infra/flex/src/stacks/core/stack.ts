@@ -31,7 +31,6 @@ export class FlexCoreStack extends BaseStack {
     addApiGatewayCloudWatchRole(this);
 
     const {
-      natEipArns,
       securityGroups: { privateEgress, privateIsolated },
       vpc,
     } = createVpc(this);
@@ -67,13 +66,11 @@ export class FlexCoreStack extends BaseStack {
         .map((id) => id.trim())
         .filter(Boolean);
 
-      // NOTE: order is important as CDK creates renamed resources before deleting old ones, which
-      // causes a conflict.
       const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
-      releaseChannelIds.forEach((slackChannelId, index) => {
+      releaseChannelIds.forEach((slackChannelId) => {
         createSlackNotifications(this, {
-          id: `ReleaseSlackChannel${String(index)}`,
-          channelConfigurationName: `flex-releases-${stage}-${String(index)}`,
+          id: `ReleaseSlackChannel${slackChannelId}`,
+          channelConfigurationName: `flex-releases-${stage}-${slackChannelId}`,
           topicKey: alarmTopicKey,
           topics: [releaseTopic],
           slackWorkspaceId,
@@ -93,7 +90,6 @@ export class FlexCoreStack extends BaseStack {
       [ENV_KEYS.TopicCriticalAlarms]: criticalTopic.topicArn,
       [ENV_KEYS.TopicWarningAlarms]: warningTopic.topicArn,
       [ENV_KEYS.VpcEApiGateway]: apiGatewayEndpoint.vpcEndpointId,
-      [ENV_KEYS.VpcNatEipArns]: natEipArns.join(","),
     });
   }
 }

@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { Environment, findProjectRoot, getEnvConfig } from "@flex/utils";
-import { CfnOutput, Duration, Fn, RemovalPolicy } from "aws-cdk-lib";
+import { CfnOutput, Duration, RemovalPolicy } from "aws-cdk-lib";
 import { IRestApi, RestApi } from "aws-cdk-lib/aws-apigateway";
 import {
   Certificate,
@@ -54,7 +54,7 @@ import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
-import { ShieldAlarms, ShieldEipAlarms } from "../constructs/alarms/shield";
+import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront-function";
@@ -495,15 +495,6 @@ export class FlexGlobalStack extends BaseStack {
       ).overrideLogicalId(
         "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
       );
-
-      const natEipArns = this.import(ENV_KEYS.VpcNatEipArns, "eu-west-2");
-      new ShieldEipAlarms(this, "ShieldEipAlarms", {
-        alarmNamePrefix: `${stage}-shield`,
-        resourceArns: [0, 1, 2].map((i) =>
-          Fn.select(i, Fn.split(",", natEipArns)),
-        ),
-        criticalAction,
-      });
     }
   }
 
