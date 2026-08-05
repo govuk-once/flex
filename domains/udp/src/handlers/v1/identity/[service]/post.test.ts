@@ -32,7 +32,7 @@ vi.mock("@aws-sdk/client-kms", () => {
       send = mockKmsSend;
     },
     DecryptCommand: class {
-      constructor(public args: { CiphertextBlob?: Uint8Array }) { }
+      constructor(public args: { CiphertextBlob?: Uint8Array }) {}
     },
   };
 });
