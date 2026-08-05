@@ -27,9 +27,10 @@ export class LambdaAlarms extends Construct {
 
     this.errorRateAlarm = new Alarm(this, "ErrorRate", {
       alarmName: `${alarmNamePrefix}-error-rate`,
-      alarmDescription: "Critical: error rate above 1% over 5 minutes",
+      alarmDescription:
+        "Critical: errors in two consecutive 5 minute windows, at 10+ invocations",
       metric: new MathExpression({
-        expression: "IF(invocations > 0, 100 * (errors / invocations), 0)",
+        expression: "IF(invocations >= 10, 100 * (errors / invocations), 0)",
         usingMetrics: {
           errors: fn.metricErrors({ period: Duration.minutes(5) }),
           invocations: fn.metricInvocations({ period: Duration.minutes(5) }),
@@ -38,7 +39,8 @@ export class LambdaAlarms extends Construct {
         label: "Error rate (%)",
       }),
       threshold: 1,
-      evaluationPeriods: 1,
+      evaluationPeriods: 2,
+      datapointsToAlarm: 2,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
@@ -46,20 +48,24 @@ export class LambdaAlarms extends Construct {
 
     this.throttlesAlarm = new Alarm(this, "Throttles", {
       alarmName: `${alarmNamePrefix}-throttles`,
-      alarmDescription: "Warning: function throttled for 5 consecutive minutes",
+      alarmDescription: "Critical: function throttled in a 1 minute window",
       metric: fn.metricThrottles({
         period: Duration.minutes(1),
         statistic: Stats.SUM,
       }),
       threshold: 0,
-      evaluationPeriods: 5,
+      evaluationPeriods: 1,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.throttlesAlarm.addAlarmAction(warningAction);
+    this.throttlesAlarm.addAlarmAction(criticalAction);
 
-    const timeoutMs = fn.timeout?.toMilliseconds();
-    const durationThreshold = timeoutMs ? Math.floor(timeoutMs * 0.8) : 24000; // Default to 80% of 30s
+    if (!fn.timeout) {
+      throw new Error(
+        `${alarmNamePrefix}: function must set an explicit timeout.`,
+      );
+    }
+    const durationThreshold = Math.floor(fn.timeout.toMilliseconds() * 0.8);
     this.durationAlarm = new Alarm(this, "Duration", {
       alarmName: `${alarmNamePrefix}-duration`,
       alarmDescription: `Warning: p99 duration above ${String(durationThreshold)}ms over 5 minutes`,
