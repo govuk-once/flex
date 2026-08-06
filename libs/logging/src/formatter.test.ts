@@ -219,7 +219,7 @@ describe("FlexLogFormatter", () => {
     it("recurses into objects and arrays under non-sensitive keys", () => {
       const output = new FlexLogFormatter()
         .formatAttributes(createBaseAttributes(), {
-          context: { secret: "leak", safe: "ok" },
+          context: { secret: "leak", safe: "ok" }, // pragma: allowlist secret
           items: [{ token: "leak", id: 1 }],
         })
         .getAttributes();
