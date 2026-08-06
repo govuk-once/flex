@@ -33,18 +33,18 @@ FLEX runs several layers specifically to stop secrets escaping. A leak means one
 
 The layer that failed does not change your immediate response. Contain first; record the failed control for the follow-up.
 
-Where secrets live on FLEX, and how quickly a rotation takes effect, depends on the type:
+On FLEX, the actual value of any secret the platform stores lives in **AWS Secrets Manager** and nowhere else (the `secret` type). A service reads it at runtime via Middy, which attaches the value to the Lambda context; the environment variable holds only the secret's name, never its value. A third-party credential FLEX needs is stored the same way.
 
-| Type | Where it lives | How a service reads it |
-| ---- | -------------- | ---------------------- |
-| `secret` | AWS Secrets Manager | Fetched at runtime via Middy and attached to the Lambda context |
-| `ssm:runtime` | SSM Parameter Store | Fetched at runtime via Middy and attached to the Lambda context |
-| `ssm` | SSM Parameter Store | Read at deploy time and injected as an environment variable |
-| `kms` | AWS KMS | Key reference injected as an environment variable at deploy time |
-| CI/CD secret | GitHub Actions secrets (repo or org) | Read by a workflow at run time, for example `ROLE_TO_ASSUME`, `SONAR_TOKEN_FLEX`, `SONAR_URL` |
-| Third-party credential | The issuing provider | Used inside a domain via one of the storage types above |
+The other resource types do not hold secret values, so a leak involving one of them is the leak of a reference, not a credential:
 
-The runtime versus deploy-time split ([`resolve-config.ts`](/libs/sdk/src/route/resolve-config.ts)) is the single most important thing to understand before you rotate. It decides whether a redeploy is required, and it is covered in Rotating and Redeploying below.
+| Type | What it holds | Notes |
+| ---- | ------------- | ----- |
+| `secret` | The secret value, in AWS Secrets Manager | The only place a real secret value lives; fetched at runtime |
+| `ssm` / `ssm:runtime` | Non-secret configuration strings in SSM Parameter Store, for example a gateway URL | Not secrets |
+| `kms` | An encryption key held in AWS KMS; services receive only the key ARN | Key material never leaves KMS |
+| CI/CD | Deployment role ARNs in GitHub Actions secrets, for example `ROLE_TO_ASSUME` | References, not credential material |
+
+The runtime versus deploy-time split ([`resolve-config.ts`](/libs/sdk/src/route/resolve-config.ts)) still matters before you rotate: it decides whether a redeploy is required, and it is covered in Rotating and Redeploying below.
 
 ---
 
@@ -93,15 +93,13 @@ Only once the leaked value can no longer be used should you move on to rotating 
 
 A new secret is only live once the running services actually use it. How you make that happen depends on the type, and this is where the runtime versus deploy-time split matters.
 
-| Type | Update the value | What makes it take effect |
-| ---- | ---------------- | ------------------------- |
-| `secret` | `aws secretsmanager put-secret-value --secret-id <name> --secret-string <new>` | New Lambda execution environments fetch it. Warm containers keep the cached value, so **redeploy the affected domain** to force cold starts (see the caching note below) |
-| `ssm:runtime` | `aws ssm put-parameter --name <name> --value <new> --type SecureString --overwrite` | Same as above: new value on next fetch, but **redeploy to be certain** it is live everywhere |
-| `ssm` | `aws ssm put-parameter --name <name> --value <new> --type SecureString --overwrite` | The value is baked into an environment variable at deploy time, so a **redeploy of the affected domain is mandatory**; the parameter change alone does nothing |
-| `kms` | Rotate or replace the key in KMS and re-encrypt anything it protected | The key reference is injected at deploy time, so **redeploy the affected domain** |
-| CI/CD secret | Update it under the repository or organisation Settings, Secrets and variables | Nothing changes until the next workflow run, so **re-run any workflow** that consumed it |
+| Where it lives | Rotate the value | What makes it take effect |
+| -------------- | ---------------- | ------------------------- |
+| Secrets Manager (`secret`) | `aws secretsmanager put-secret-value --secret-id <name> --secret-string <new>` | New Lambda execution environments fetch it. Warm containers keep the cached value, so **redeploy the affected domain** to force cold starts (see the caching note below) |
+| KMS key (`kms`) | Rotate or replace the key in KMS and re-encrypt anything it protected | The key reference is injected at deploy time, so **redeploy the affected domain** |
+| Deployment role or other CI/CD value (GitHub) | Update it under the repository or organisation Settings, Secrets and variables | Nothing changes until the next workflow run, so **re-run any workflow** that consumed it |
 
-> **Caching note.** The Middy `secrets-manager` and `ssm` middleware ([`middleware.ts`](/libs/sdk/src/route/middleware.ts)) cache a fetched value for the lifetime of a warm Lambda execution environment. A rotated `secret` or `ssm:runtime` value is therefore not reliably picked up by containers that are already warm and may still be holding the old, leaked value. Redeploying the affected domain replaces the function version and forces cold starts, which guarantees every invocation reads the new value. When a leaked secret has been rotated, redeploy; do not assume the rotation alone has taken hold.
+> **Caching note.** The Middy `secrets-manager` middleware ([`middleware.ts`](/libs/sdk/src/route/middleware.ts)) caches a fetched secret for the lifetime of a warm Lambda execution environment. A rotated `secret` value is therefore not reliably picked up by containers that are already warm and may still be holding the old, leaked value. Redeploying the affected domain replaces the function version and forces cold starts, which guarantees every invocation reads the new value. When a leaked secret has been rotated, redeploy; do not assume the rotation alone has taken hold.
 
 Redeploys reach production only through the Continuous Deployment pipeline ([`main.yml`](/.github/workflows/main.yml)). No one can deploy directly to production, so a rotation reaches it the same way any change does: raise the change, get it reviewed, and let the pipeline carry it through development, staging and production, approving the staging and production gates as they are reached. Under incident conditions the pipeline is compressed, not bypassed: the review and approval gates still apply. For operating the pipeline and expediting a promotion, see the [Pipeline Promotion runbook](/docs/runbooks/pipeline-promotion-runbook.md) and the [Fix Forward runbook](/docs/runbooks/fix-forward.md).
 
@@ -144,9 +142,9 @@ Clear, prompt communication is part of the response, not an afterthought. A leak
 Revoking and rotating stabilises the situation. Closing the incident means removing the residue and making the same leak harder next time.
 
 1. **Scrub the exposure where it still exists.** Now that the secret is dead, clean up the git history, message or artefact that carried it, so it is not copied again or mistaken for live later. This is housekeeping, not containment, and it comes after revocation precisely because history is hard to scrub reliably.
-2. **Reconcile the rotated value.** You rotate a secret's value out of band (for example with `put-secret-value` or `put-parameter`), but the redeploy still goes through the pipeline. If that secret is managed declaratively or seeded by a script, make sure the new value is reflected there too, so a later deploy or seeding run does not revert it to the old, leaked value. Do this before considering the incident closed.
+2. **Reconcile the rotated value.** You rotate a secret's value out of band (for example with `put-secret-value`), but the redeploy still goes through the pipeline. If that secret is managed declaratively or seeded by a script, make sure the new value is reflected there too, so a later deploy or seeding run does not revert it to the old, leaked value. Do this before considering the incident closed.
 3. **Close the loop on the failed control.** Identify which layer should have caught the leak and strengthen it: add the pattern to `detect-secrets`, extend the log sanitiser, or tighten a review step. A leak that bypassed a control is a gap in that control.
-4. **Raise the follow-up work.** Create tickets for any longer-term remediation, for example reducing the credential's scope, moving a deploy-time `ssm` secret to a runtime `secret` so future rotations need no redeploy, or shortening a credential's lifetime.
+4. **Raise the follow-up work.** Create tickets for any longer-term remediation, for example reducing the credential's scope or shortening its lifetime.
 5. **Run the post-incident review.** Capture the timeline, what went well and what slowed you down, and feed anything you had to work out under pressure back into this runbook so the next engineer moves faster.
 
 The goal is that the next leaked secret is caught before it escapes, and that if one does escape, this runbook makes the safe response the obvious one.
