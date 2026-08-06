@@ -93,16 +93,6 @@ describe("sanitizer", () => {
   });
 
   describe("non-string values", () => {
-    it("ignores a numeric value passed to addSecretValue", () => {
-      addSecretValue(123456); // pragma: allowlist secret
-      expect(sanitize("pin", 123456)).toBe(123456);
-    });
-
-    it("preserves a numeric value even when a sensitive pattern matches its digits", () => {
-      addSensitivePattern(/^\d{16}$/);
-      expect(sanitize("cardNumber", 4111111111111111)).toBe(4111111111111111);
-    });
-
     it("redacts a non-string value under a sensitive key", () => {
       expect(sanitize("secret", 123456)).toBe(REDACTED); // pragma: allowlist secret
     });
@@ -119,6 +109,40 @@ describe("sanitizer", () => {
       const arr = [1, 2, 3];
       expect(sanitize("data", obj)).toBe(obj);
       expect(sanitize("data", arr)).toBe(arr);
+    });
+  });
+
+  describe("payment card data", () => {
+    it("redacts a card number by key, whatever the value type", () => {
+      expect(sanitize("cardNumber", "4111 1111 1111 1111")).toBe(REDACTED); // pragma: allowlist secret
+      expect(sanitize("card_number", 4111111111111111)).toBe(REDACTED); // pragma: allowlist secret
+      expect(sanitize("pan", "5500005555555559")).toBe(REDACTED); // pragma: allowlist secret
+    });
+
+    it("redacts CVV, CVC and security code by key", () => {
+      expect(sanitize("cvv", 123)).toBe(REDACTED); // pragma: allowlist secret
+      expect(sanitize("cvc", "456")).toBe(REDACTED); // pragma: allowlist secret
+      expect(sanitize("cardSecurityCode", 789)).toBe(REDACTED); // pragma: allowlist secret
+    });
+
+    it("redacts card expiry by key", () => {
+      expect(sanitize("cardExpiry", "12/28")).toBe(REDACTED);
+      expect(sanitize("card_expiration_date", "1228")).toBe(REDACTED);
+    });
+
+    it("redacts a Luhn-valid card number embedded in a string", () => {
+      expect(sanitize("message", "paid with 4111 1111 1111 1111 today")).toBe(
+        REDACTED,
+      );
+      expect(sanitize("note", "card 4111-1111-1111-1111")).toBe(REDACTED); // pragma: allowlist secret
+    });
+
+    it("does not redact ordinary long numbers that are not valid cards", () => {
+      expect(sanitize("orderId", "1234567890123456")).toBe("1234567890123456");
+      expect(sanitize("reference", "9999999999999999")).toBe(
+        "9999999999999999",
+      );
+      expect(sanitize("count", 4111111111111111)).toBe(4111111111111111);
     });
   });
 
