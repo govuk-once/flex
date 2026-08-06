@@ -106,30 +106,15 @@ export function addSecretValue(value: unknown): void {
     return;
   }
 
-  if (typeof value !== "string" && typeof value !== "number") {
+  if (typeof value !== "string") {
     return;
   }
 
-  const stringValue = String(value).trim();
+  const stringValue = value.trim();
   if (stringValue && !secretValues.includes(stringValue)) {
     secretValues.push(stringValue);
     rebuildSecretRegex();
   }
-}
-
-/**
- * Coerces a value to a string for value/secret matching, but only for the
- * primitive types that can carry a secret (string, number, boolean, bigint).
- * Structured values (objects, arrays), null and undefined return undefined so
- * the caller leaves them untouched for the formatter to walk.
- */
-function toMatchableString(value: unknown): string | undefined {
-  const type = typeof value;
-  if (type === "string") return value as string;
-  if (type === "number" || type === "boolean" || type === "bigint") {
-    return String(value);
-  }
-  return undefined;
 }
 
 /**
@@ -141,18 +126,17 @@ export function createSanitizer(): (key: string, value: unknown) => unknown {
       return REDACTED;
     }
 
-    const stringValue = toMatchableString(value);
-    if (stringValue === undefined) {
+    if (typeof value !== "string") {
       return value;
     }
 
-    if (matchesValuePattern(stringValue)) {
+    if (matchesValuePattern(value)) {
       return REDACTED;
     }
 
     if (secretValuesRegex) {
-      const replaced = stringValue.replace(secretValuesRegex, REDACTED);
-      if (replaced !== stringValue) {
+      const replaced = value.replace(secretValuesRegex, REDACTED);
+      if (replaced !== value) {
         return replaced;
       }
     }

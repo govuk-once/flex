@@ -93,14 +93,14 @@ describe("sanitizer", () => {
   });
 
   describe("non-string values", () => {
-    it("redacts a numeric secret registered via addSecretValue", () => {
+    it("ignores a numeric value passed to addSecretValue", () => {
       addSecretValue(123456); // pragma: allowlist secret
-      expect(sanitize("pin", 123456)).toBe(REDACTED);
+      expect(sanitize("pin", 123456)).toBe(123456);
     });
 
-    it("redacts a numeric value matching a registered sensitive pattern", () => {
+    it("preserves a numeric value even when a sensitive pattern matches its digits", () => {
       addSensitivePattern(/^\d{16}$/);
-      expect(sanitize("cardNumber", 4111111111111111)).toBe(REDACTED);
+      expect(sanitize("cardNumber", 4111111111111111)).toBe(4111111111111111);
     });
 
     it("redacts a non-string value under a sensitive key", () => {
@@ -143,12 +143,12 @@ describe("sanitizer", () => {
       ).toBe(`Found ${REDACTED} and ${REDACTED} in logs`);
     });
 
-    it("handles numeric secret values", () => {
+    it("ignores numeric secret values", () => {
       const pin = 123456; // pragma: allowlist secret
       addSecretValue(pin);
 
       expect(sanitize("message", `Pin code is ${String(pin)}`)).toBe(
-        `Pin code is ${REDACTED}`,
+        `Pin code is ${String(pin)}`,
       );
     });
 
