@@ -2,7 +2,6 @@ import { createRestClient } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
 
-// TODO: verify route context/schemas/request-responsetransforms against existing SG
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
     api: createRestClient({
@@ -15,70 +14,56 @@ export const handler = createHandler({
       },
       headers: {
         "Content-Type": "application/json",
+        "X-API-KEY": consumerConfig.apiKey,
       },
     }),
   }),
   routes: {
+    "GET /v1/groups": ({ clients: { api }, queryParams: { pushID } }) => {
+      return api.get("/v1/groups", {
+        query: { pushID },
+      });
+    },
+    "POST /v1/groups": ({
+      clients: { api },
+      queryParams: { pushID },
+      body,
+    }) => {
+      return api.post("/v1/groups", {
+        query: { pushID },
+        body,
+      });
+    },
     "GET /v1/notifications": ({
       clients: { api },
-      resources: { consumerConfig },
       queryParams: { externalUserID },
     }) => {
-      return api.get("/notifications", {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
-      });
+      return api.get("/notifications", { query: { externalUserID } });
     },
     "GET /v1/notifications/:id": ({
       clients: { api },
-      resources: { consumerConfig },
       pathParams: { id },
       queryParams: { externalUserID },
     }) => {
-      return api.get(`/notifications/${id}`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
+      return api.get(`/notifications/${id}`, { query: { externalUserID } });
+    },
+    "PATCH /v1/notifications/:id/status": ({
+      clients: { api },
+      pathParams: { id },
+      queryParams: { externalUserID },
+      body,
+    }) => {
+      return api.patch(`/notifications/${id}/status`, {
+        query: { externalUserID },
+        body,
       });
     },
     "DELETE /v1/notifications/:id": ({
       clients: { api },
-      resources: { consumerConfig },
       pathParams: { id },
       queryParams: { externalUserID },
     }) => {
-      return api.delete(`/notifications/${id}`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
-      });
-    },
-    "PATCH /v1/notifications/:id/status": ({
-      clients: { api },
-      resources: { consumerConfig },
-      // body,
-      pathParams: { id },
-      queryParams: { externalUserID },
-    }) => {
-      return api.patch(`/notifications/${id}/status`, {
-        headers: {
-          "X-API-KEY": consumerConfig.apiKey,
-        },
-        query: {
-          externalUserID,
-        },
-        // body,
-      });
+      return api.delete(`/notifications/${id}`, { query: { externalUserID } });
     },
   },
 });

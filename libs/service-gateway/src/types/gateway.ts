@@ -14,6 +14,10 @@ export type RouteKey = `${HttpMethod} /${string}`;
 export type RouteKeyOf<Config extends GatewayConfig> = keyof Config["routes"] &
   string;
 
+export interface GatewayFunctionConfig {
+  readonly enableDefaultAlarms?: boolean;
+}
+
 export interface GatewayRoute {
   readonly name: string;
   readonly query?: z.ZodType;
@@ -29,6 +33,7 @@ export interface GatewayConfig {
   readonly environments: readonly Environment[];
   readonly access: RouteAccess;
   readonly resources: ResourceMap;
+  readonly function?: GatewayFunctionConfig;
   readonly policy?: unknown;
   readonly routes: GatewayRouteMap;
 }

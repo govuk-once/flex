@@ -1,5 +1,6 @@
 import type { DomainRouteEntry, IacDomainConfig } from "@flex/sdk";
 import { getDomainRouteEntries } from "@flex/sdk";
+import type { ValidatedGatewayConfig } from "@flex/service-gateway";
 import type { Stage } from "@flex/utils";
 import { isPersistentEnvironment, isStageAllowed } from "@flex/utils";
 
@@ -42,4 +43,15 @@ export function getDeployableDomains(
 
     return [{ ...config, routes: buildRoutes(routes) }];
   });
+}
+
+export function getDeployableServiceGateways(
+  configs: readonly ValidatedGatewayConfig[],
+  stage: Stage,
+): readonly ValidatedGatewayConfig[] {
+  return configs.filter(
+    (config) =>
+      !isPersistentEnvironment(stage) ||
+      isStageAllowed(config.environments, stage),
+  );
 }

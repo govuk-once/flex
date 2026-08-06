@@ -1,8 +1,13 @@
 import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
-// TODO: verify config against existing SG
+import {
+  UnsGroupsRequestBodySchema,
+  UnsGroupsResponseSchema,
+} from "./src/schemas/domain/groups";
+import { NotificationPatchSchema } from "./src/schemas/domain/notification";
+
 export const { config, createHandler } = defineGateway({
   name: "uns",
   environments: ["development", "staging"],
@@ -10,7 +15,7 @@ export const { config, createHandler } = defineGateway({
   resources: {
     consumerConfig: {
       type: "secret",
-      path: "/uns/consumer-config-secret-arn",
+      path: "/uns/consumer-config-secret",
       env: "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN",
       scope: "environment",
       config: z.object({
@@ -23,15 +28,26 @@ export const { config, createHandler } = defineGateway({
     },
     consumerRole: {
       type: "role",
-      path: "/uns/consumer-role-arn",
+      path: "/uns/customer-role",
     },
     encryptionKey: {
       type: "kms",
-      path: "/flex-secret/encryption-key",
+      path: "/uns/cmk-arn",
     },
   },
   policy: {},
   routes: {
+    "GET /v1/groups": {
+      name: "getGroups",
+      query: z.object({ pushID: NonEmptyString }),
+      response: UnsGroupsResponseSchema,
+    },
+    "POST /v1/groups": {
+      name: "postGroups",
+      query: z.object({ pushID: NonEmptyString }),
+      body: UnsGroupsRequestBodySchema,
+      response: UnsGroupsResponseSchema,
+    },
     "GET /v1/notifications": {
       name: "getNotifications",
       query: z.object({ externalUserID: NonEmptyString }),
@@ -40,12 +56,13 @@ export const { config, createHandler } = defineGateway({
       name: "getNotificationById",
       query: z.object({ externalUserID: NonEmptyString }),
     },
-    "DELETE /v1/notifications/:id": {
-      name: "deleteNotificationById",
-      query: z.object({ externalUserID: NonEmptyString }),
-    },
     "PATCH /v1/notifications/:id/status": {
       name: "patchNotificationById",
+      query: z.object({ externalUserID: NonEmptyString }),
+      body: NotificationPatchSchema,
+    },
+    "DELETE /v1/notifications/:id": {
+      name: "deleteNotificationById",
       query: z.object({ externalUserID: NonEmptyString }),
     },
   },
