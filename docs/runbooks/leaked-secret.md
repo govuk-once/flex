@@ -41,15 +41,6 @@ The layer that failed does not change your immediate response. Contain first; re
 
 On FLEX, the actual value of any secret the platform stores lives in **AWS Secrets Manager** and nowhere else (the `secret` type). A service reads it at runtime via Middy, which attaches the value to the Lambda context; the environment variable holds only the secret's name, never its value. A third-party credential FLEX needs is stored the same way.
 
-| Type                   | Where it lives                       | How a service reads it                                                                        |
-| ---------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `secret`               | AWS Secrets Manager                  | Fetched at runtime via Middy and attached to the Lambda context                               |
-| `ssm:runtime`          | SSM Parameter Store                  | Fetched at runtime via Middy and attached to the Lambda context                               |
-| `ssm`                  | SSM Parameter Store                  | Read at deploy time and injected as an environment variable                                   |
-| `kms`                  | AWS KMS                              | Key reference injected as an environment variable at deploy time                              |
-| CI/CD secret           | GitHub Actions secrets (repo or org) | Read by a workflow at run time, for example `ROLE_TO_ASSUME`, `SONAR_TOKEN_FLEX`, `SONAR_URL` |
-| Third-party credential | The issuing provider                 | Used inside a domain via one of the storage types above                                       |
-
 | Type                  | What it holds                                                                      | Notes                                                        |
 | --------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | `secret`              | The secret value, in AWS Secrets Manager                                           | The only place a real secret value lives; fetched at runtime |
