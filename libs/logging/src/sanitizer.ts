@@ -13,6 +13,14 @@ const secretKeyPatterns: Array<RegExp> = [
   /access.?key/i,
   /client.?secret/i,
   /signing/i,
+  /card.?number/i,
+  /\bpan\b/i,
+  /\bcvv2?\b/i,
+  /\bcvc2?\b/i,
+  /\bcsc\b/i,
+  /card.?security.?code/i,
+  /card.?verification/i,
+  /card.?expir/i,
 ];
 
 const piiKeyPatterns: Array<RegExp> = [
@@ -75,8 +83,42 @@ function matchesKeyPattern(key: string): boolean {
   return piiKeyPatterns.some((pattern) => pattern.test(key));
 }
 
+const cardNumberPrefixes: Array<RegExp> = [
+  /^4/,
+  /^5[1-5]/,
+  /^2(?:2[2-9]|[3-6]\d|7[01]|720)/,
+  /^3[47]/,
+  /^6(?:011|5|4[4-9]|22)/,
+  /^3(?:0[0-5]|[689])/,
+  /^35(?:2[89]|[3-8]\d)/,
+];
+
+function passesLuhn(digits: string): boolean {
+  const sum = Array.from(digits)
+    .reverse()
+    .reduce((acc, char, index) => {
+      const digit = Number(char);
+      const weighted = index % 2 === 1 ? digit * 2 : digit;
+      return acc + (weighted > 9 ? weighted - 9 : weighted);
+    }, 0);
+  return sum % 10 === 0;
+}
+
+function isLikelyPan(value: string): boolean {
+  const candidates = value.match(/\d(?:[ -]?\d){12,18}/g);
+  if (!candidates) return false;
+  return candidates
+    .map((candidate) => candidate.replace(/[ -]/g, ""))
+    .filter((digits) => digits.length >= 13 && digits.length <= 19)
+    .filter((digits) =>
+      cardNumberPrefixes.some((prefix) => prefix.test(digits)),
+    )
+    .some(passesLuhn);
+}
+
 function matchesValuePattern(value: string): boolean {
   if (secretValuePatterns.some((pattern) => pattern.test(value))) return true;
+  if (isLikelyPan(value)) return true;
   if (isPiiDebugEnabled()) return false;
   return piiValuePatterns.some((pattern) => pattern.test(value));
 }
@@ -106,11 +148,11 @@ export function addSecretValue(value: unknown): void {
     return;
   }
 
-  if (typeof value !== "string" && typeof value !== "number") {
+  if (typeof value !== "string") {
     return;
   }
 
-  const stringValue = String(value).trim();
+  const stringValue = value.trim();
   if (stringValue && !secretValues.includes(stringValue)) {
     secretValues.push(stringValue);
     rebuildSecretRegex();
@@ -135,7 +177,10 @@ export function createSanitizer(): (key: string, value: unknown) => unknown {
     }
 
     if (secretValuesRegex) {
-      return value.replace(secretValuesRegex, REDACTED);
+      const replaced = value.replace(secretValuesRegex, REDACTED);
+      if (replaced !== value) {
+        return replaced;
+      }
     }
 
     return value;

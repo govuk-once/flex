@@ -63,33 +63,30 @@ export class FlexLogFormatter extends LogFormatter {
   }
 
   #sanitizeAttributes(attributes: LogAttributes): LogAttributes {
-    const sanitized: LogAttributes = {};
+    const entries = Object.entries(attributes)
+      .map(([key, value]) => [key, this.#sanitizeValue(key, value)] as const)
+      .filter(([, value]) => value !== undefined);
 
-    for (const [key, value] of Object.entries(attributes)) {
-      if (Array.isArray(value)) {
-        sanitized[key] = this.#sanitizeArray(key, value);
-      } else if (value !== null && typeof value === "object") {
-        sanitized[key] = this.#sanitizeAttributes(value as LogAttributes);
-      } else {
-        const sanitizedValue = this.#sanitize(key, value);
-        if (sanitizedValue !== undefined) {
-          sanitized[key] = sanitizedValue;
-        }
-      }
+    return Object.fromEntries(entries);
+  }
+
+  #sanitizeValue(key: string, value: unknown): unknown {
+    const sanitized = this.#sanitize(key, value);
+
+    // A sensitive key (or a value/secret match) redacts the whole branch, so a
+    // nested object or array under it never gets walked in the clear.
+    if (sanitized !== value) {
+      return sanitized;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.#sanitizeValue(key, item));
+    }
+
+    if (value !== null && typeof value === "object") {
+      return this.#sanitizeAttributes(value as LogAttributes);
     }
 
     return sanitized;
-  }
-
-  #sanitizeArray(key: string, items: unknown[]): unknown[] {
-    return items.map((item) => {
-      if (item !== null && typeof item === "object" && !Array.isArray(item)) {
-        return this.#sanitizeAttributes(item as LogAttributes);
-      }
-      if (Array.isArray(item)) {
-        return this.#sanitizeArray(key, item);
-      }
-      return this.#sanitize(key, item);
-    });
   }
 }
