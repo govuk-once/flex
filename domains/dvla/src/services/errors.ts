@@ -1,5 +1,7 @@
 import { IntegrationResult } from "@flex/sdk";
+
 import createHttpError from "http-errors";
+import { isHttpError } from "http-errors";
 import status from "http-status";
 
 import { routeContext } from "../../domain.config";
@@ -64,4 +66,51 @@ export function handleStandardErrors(
         throw new createHttpError.BadGateway();
     }
   }
+}
+
+/**
+ * Common DVLA errors that apply across ALL DVLA endpoints.
+ */
+const COMMON_DVLA_ERRORS: Record<string, string> = {
+  "GUK-404-01": "Linking ID held is no longer valid.",
+};
+
+export interface DvlaErrorResponse {
+  status: number;
+  error: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Intercepts DVLA HttpErrors and returns a structured error response payload.
+ * Handles common global codes automatically (e.g. GUK-404-01) while allowing
+ * endpoint-specific code overrides.
+ */
+export function handleDvlaErrorResponse(
+  error: unknown,
+  customEndpointMappings: Record<string, string> = {}
+): DvlaErrorResponse {
+  if (
+    isHttpError(error) &&
+    error.statusCode === status.NOT_FOUND &&
+    "code" in error &&
+    typeof error.code === "string"
+  ) {
+    const errorCode = error.code;
+    const allMappings = { ...COMMON_DVLA_ERRORS, ...customEndpointMappings };
+
+    if (errorCode in allMappings) {
+      return {
+        status: status.NOT_FOUND,
+        error: {
+          code: errorCode,
+          message: allMappings[errorCode] || error.message || "Not Found",
+        },
+      };
+    }
+  }
+
+  throw error;
 }
