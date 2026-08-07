@@ -27,8 +27,8 @@ export const handler = route(endpoint, async (ctx) => {
     return { status: status.OK, data: response.data };
   } catch (error: unknown) {
     return handleDvlaErrorResponse(error, {
-      "GUK-404-04": "Customer licence record could not be located.",
-      "GUK-404-05": "Licence details are currently unavailable.",
+      "GUK-404-04": "Driving Licence not found",
+      "GUK-404-05": "Resource not found",
     });
   }
 });

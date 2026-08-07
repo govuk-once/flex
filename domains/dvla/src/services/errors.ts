@@ -71,7 +71,7 @@ export function handleStandardErrors(
  * Common DVLA errors that apply across ALL DVLA endpoints.
  */
 const COMMON_DVLA_ERRORS: Record<string, string> = {
-  "GUK-404-01": "Linking ID held is no longer valid.",
+  "GUK-404-01": "Linking ID held is no longer valid",
 };
 
 export interface DvlaErrorResponse {
