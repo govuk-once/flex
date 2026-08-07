@@ -161,10 +161,10 @@ function verifySessionHash(
   const accessTokenPayload = JSON.parse(
     Buffer.from(payloadBase64, "base64").toString(),
   ) as Record<string, string>;
-  const jti = accessTokenPayload["jti"] as string;
+  const sub = accessTokenPayload["sub"] as string;
 
   const calculatedHash = createHmac("sha256", ctx.resources.sessionHashKey)
-    .update(jti)
+    .update(sub)
     .digest("hex");
 
   if (!(sessionHash === calculatedHash)) {
