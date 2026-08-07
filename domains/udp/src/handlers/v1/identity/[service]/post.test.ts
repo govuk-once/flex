@@ -76,7 +76,7 @@ beforeAll(async () => {
   kmsPublicKeyPem = rsaKeys.publicKey;
 });
 
-const createMockSession = async (jti: string) => {
+const createMockSession = async (sub: string) => {
   const { privateKey } = await jose.generateKeyPair("PS256", {
     modulusLength: 2048,
   });
@@ -84,11 +84,11 @@ const createMockSession = async (jti: string) => {
     .setProtectedHeader({
       alg: "PS256",
     })
-    .setJti(jti)
+    .setSubject(sub)
     .sign(privateKey);
   const sessionHash = nodeCrypto
     .createHmac("sha256", "test-key")
-    .update(jti)
+    .update(sub)
     .digest("hex");
   return {
     accessToken,
@@ -193,8 +193,8 @@ describe("POST /v1/identity/:service", () => {
   });
 
   it("returns 403 Forbidden when service is not DVLA", async ({ sdk }) => {
-    const jti = uuid;
-    const { accessToken } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken } = await createMockSession(sub);
 
     const result = await handler(
       sdk.event.post("/identity/other-service", {
@@ -216,8 +216,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
     http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
@@ -254,8 +254,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const expiredDvlaJweToken = await createMockDvlaJwe(
       serviceId,
       sessionHash,
@@ -284,8 +284,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const invalidAlgJweToken = await createMockDvlaJwe(serviceId, sessionHash, {
       invalidAlg: true,
     });
@@ -312,8 +312,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
 
     const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash, {
       issuer: "https://unknown-issuer.dvla.gov.uk",
@@ -340,8 +340,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
     http.gateway("dvla").get(jwksPath).reply(500);
@@ -365,8 +365,8 @@ describe("POST /v1/identity/:service", () => {
   it("returns 400 Bad Request when the JWE token format is invalid (not 5 parts)", async ({
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken } = await createMockSession(sub);
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
@@ -387,8 +387,8 @@ describe("POST /v1/identity/:service", () => {
   it("returns 400 Bad Request when essential JWE token blocks are empty", async ({
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken } = await createMockSession(sub);
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
@@ -411,8 +411,8 @@ describe("POST /v1/identity/:service", () => {
   }) => {
     mockKmsSend.mockResolvedValueOnce({ Plaintext: undefined });
 
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
     const result = await handler(
@@ -431,8 +431,8 @@ describe("POST /v1/identity/:service", () => {
   it("returns 400 Bad Request when internal AES-GCM decryption fails (tampered payload)", async ({
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const validJwe = await createMockDvlaJwe(serviceId, sessionHash);
 
     const parts = validJwe.split(".");
@@ -459,8 +459,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const tokenWithoutLinkingId = await createMockDvlaJwe(
       serviceId,
       sessionHash,
@@ -489,8 +489,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken } = await createMockSession(sub);
     const tokenWithMismatchedHash = await createMockDvlaJwe(
       serviceId,
       "mismatched-hash",
@@ -518,8 +518,8 @@ describe("POST /v1/identity/:service", () => {
     http,
     sdk,
   }) => {
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
     http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
@@ -563,8 +563,8 @@ describe("POST /v1/identity/:service", () => {
       serviceName: dvlaService,
     });
 
-    const jti = uuid;
-    const { accessToken, sessionHash } = await createMockSession(jti);
+    const sub = uuid;
+    const { accessToken, sessionHash } = await createMockSession(sub);
     const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
     http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
@@ -604,8 +604,8 @@ describe("POST /v1/identity/:service", () => {
   it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
     "returns $expected when the UDP get service identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
+      const sub = uuid;
+      const { accessToken, sessionHash } = await createMockSession(sub);
       const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
@@ -641,8 +641,8 @@ describe("POST /v1/identity/:service", () => {
   ])(
     "returns $expected when the UDP delete service identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
+      const sub = uuid;
+      const { accessToken, sessionHash } = await createMockSession(sub);
       const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
       const oldServiceId = createServiceId("test-old-service-id");
@@ -686,8 +686,8 @@ describe("POST /v1/identity/:service", () => {
   it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
     "returns $expected when the UDP create service identity integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
-      const jti = uuid;
-      const { accessToken, sessionHash } = await createMockSession(jti);
+      const sub = uuid;
+      const { accessToken, sessionHash } = await createMockSession(sub);
       const dvlaJweToken = await createMockDvlaJwe(serviceId, sessionHash);
 
       http.gateway("dvla").get(jwksPath).reply(200, mockJwkSetResponse);
