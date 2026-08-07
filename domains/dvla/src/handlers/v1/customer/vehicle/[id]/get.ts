@@ -1,6 +1,9 @@
 import { route } from "@domain";
 import { getDvlaAuthToken, getUserLinkingId } from "@services/authentication";
-import { handleDvlaErrorResponse, handleStandardErrors } from "@services/errors";
+import {
+  handleDvlaErrorResponse,
+  handleStandardErrors,
+} from "@services/errors";
 import { status } from "http-status";
 
 const endpoint = "GET /v1/customer/vehicle/:id";

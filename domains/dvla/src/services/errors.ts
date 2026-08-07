@@ -1,5 +1,4 @@
 import { IntegrationResult } from "@flex/sdk";
-
 import createHttpError from "http-errors";
 import { isHttpError } from "http-errors";
 import status from "http-status";
@@ -90,7 +89,7 @@ export interface DvlaErrorResponse {
  */
 export function handleDvlaErrorResponse(
   error: unknown,
-  customEndpointMappings: Record<string, string> = {}
+  customEndpointMappings: Record<string, string> = {},
 ): DvlaErrorResponse {
   if (
     isHttpError(error) &&
