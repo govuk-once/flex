@@ -72,5 +72,3 @@ export function createMiddyRequest() {
     withError: (error: Error) => buildMiddyRequest({ error }),
   };
 }
-
-export const middyRequest = buildMiddyRequest();

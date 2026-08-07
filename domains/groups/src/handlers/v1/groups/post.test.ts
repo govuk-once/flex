@@ -9,27 +9,16 @@ describe("POST /v1/groups", () => {
   const groupWithSubgroup = withSubgroup(group);
 
   const requestBody = [
-    {
-      ...group,
-      Type: "NOTIFICATION" as const,
-      Action: "JOIN" as const,
-    },
+    { ...group, Type: "NOTIFICATION" as const, Action: "JOIN" as const },
     {
       ...groupWithSubgroup,
       Type: "NOTIFICATION" as const,
       Action: "LEAVE" as const,
     },
   ];
-
   const unsRequestBody = [
-    {
-      ...group,
-      Action: "JOIN" as const,
-    },
-    {
-      ...groupWithSubgroup,
-      Action: "LEAVE" as const,
-    },
+    { ...group, Action: "JOIN" as const },
+    { ...groupWithSubgroup, Action: "LEAVE" as const },
   ];
 
   const unsResponse = [group, groupWithSubgroup];
@@ -37,41 +26,22 @@ describe("POST /v1/groups", () => {
   it("returns 200 with the user's active groups", async ({ http, sdk }) => {
     http
       .domain("udp")
-      .get("/users/push-id", {
-        headers: {
-          "User-Id": userId,
-        },
-      })
+      .get("/users/push-id", { headers: { "User-Id": userId } })
       .reply(200, { pushId });
-
     http
       .gateway("uns")
-      .post("/groups", {
-        query: {
-          pushID: pushId,
-        },
-        body: unsRequestBody,
-      })
+      .post("/groups", { query: { pushID: pushId }, body: unsRequestBody })
       .reply(200, unsResponse);
 
     const result = await handler(
-      sdk.event.post(endpoint, {
-        userId,
-        body: requestBody,
-      }),
+      sdk.event.post(endpoint, { auth: userId, body: requestBody }),
       sdk.context({ secrets }),
     );
 
     expect(result.statusCode).toBe(200);
     expect(JSON.parse(result.body)).toStrictEqual([
-      {
-        ...group,
-        Type: "NOTIFICATION",
-      },
-      {
-        ...groupWithSubgroup,
-        Type: "NOTIFICATION",
-      },
+      { ...group, Type: "NOTIFICATION" },
+      { ...groupWithSubgroup, Type: "NOTIFICATION" },
     ]);
   });
 
@@ -81,28 +51,15 @@ describe("POST /v1/groups", () => {
   }) => {
     http
       .domain("udp")
-      .get("/users/push-id", {
-        headers: {
-          "User-Id": userId,
-        },
-      })
+      .get("/users/push-id", { headers: { "User-Id": userId } })
       .reply(200, { pushId });
-
     http
       .gateway("uns")
-      .post("/groups", {
-        query: {
-          pushID: pushId,
-        },
-        body: unsRequestBody,
-      })
+      .post("/groups", { query: { pushID: pushId }, body: unsRequestBody })
       .reply(200, []);
 
     const result = await handler(
-      sdk.event.post(endpoint, {
-        userId,
-        body: requestBody,
-      }),
+      sdk.event.post(endpoint, { auth: userId, body: requestBody }),
       sdk.context({ secrets }),
     );
 
@@ -115,18 +72,11 @@ describe("POST /v1/groups", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .domain("udp")
-        .get("/users/push-id", {
-          headers: {
-            "User-Id": userId,
-          },
-        })
+        .get("/users/push-id", { headers: { "User-Id": userId } })
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body: requestBody,
-        }),
+        sdk.event.post(endpoint, { auth: userId, body: requestBody }),
         sdk.context({ secrets }),
       );
 
@@ -140,28 +90,15 @@ describe("POST /v1/groups", () => {
     async ({ upstream, expected }, { http, sdk }) => {
       http
         .domain("udp")
-        .get("/users/push-id", {
-          headers: {
-            "User-Id": userId,
-          },
-        })
+        .get("/users/push-id", { headers: { "User-Id": userId } })
         .reply(200, { pushId });
-
       http
         .gateway("uns")
-        .post("/groups", {
-          query: {
-            pushID: pushId,
-          },
-          body: unsRequestBody,
-        })
+        .post("/groups", { query: { pushID: pushId }, body: unsRequestBody })
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, {
-          userId,
-          body: requestBody,
-        }),
+        sdk.event.post(endpoint, { auth: userId, body: requestBody }),
         sdk.context({ secrets }),
       );
 

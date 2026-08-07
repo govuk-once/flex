@@ -28,7 +28,7 @@ describe("DELETE /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.delete(endpoint, {
-        userId,
+        auth: userId,
         params: { service: serviceName },
       }),
       sdk.context(),
@@ -53,7 +53,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.delete(endpoint, {
-          userId,
+          auth: userId,
           params: { service: serviceName },
         }),
         sdk.context(),
@@ -86,7 +86,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.delete(endpoint, {
-          userId,
+          auth: userId,
           params: { service: serviceName },
         }),
         sdk.context(),
@@ -123,7 +123,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.delete(dvlaEndpoint, {
-          userId,
+          auth: userId,
           params: { service: "dvla" },
         }),
         sdk.context(),
@@ -153,7 +153,7 @@ describe("DELETE /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.delete(dvlaEndpoint, {
-          userId,
+          auth: userId,
           params: { service: "DVLA" },
         }),
         sdk.context(),

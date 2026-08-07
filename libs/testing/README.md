@@ -37,8 +37,6 @@ Alternatively, run `pnpm <command>` from within `libs/testing/`.
 | [`createAuthorizerResult`](#createauthorizerresult)       | Factory for Lambda authorizer results       | [View](./src/fixtures/apigateway.ts) |
 | [`context`](#context)                                     | Base Lambda context                         | [View](./src/fixtures/lambda.ts)     |
 | [`createContext`](#createcontext)                         | Factory for Lambda contexts                 | [View](./src/fixtures/lambda.ts)     |
-| [`middyRequest`](#middyrequest)                           | Base Middy request object                   | [View](./src/fixtures/middy.ts)      |
-| [`createMiddyRequest`](#createmiddyrequest)               | Factory for Middy request objects           | [View](./src/fixtures/middy.ts)      |
 | [`response`](#response)                                   | Base HTTP responses                         | [View](./src/fixtures/response.ts)   |
 | [`createResponse`](#createresponse)                       | Factory for HTTP responses                  | [View](./src/fixtures/response.ts)   |
 | [`config`](#config)                                       | Test configuration defaults                 | [View](./src/config/index.ts)        |
@@ -315,42 +313,6 @@ Base Middy request object for testing middleware.
 import { middyRequest } from "@flex/testing";
 
 await myMiddleware.before(middyRequest);
-```
-
----
-
-## `createMiddyRequest`
-
-Factory for building Middy request objects.
-
-### Usage
-
-```typescript
-it("middy requests", async ({ middy }) => {
-  const authenticated = middy.authenticated("user-123");
-  await myMiddleware.before(authenticatedRequest);
-
-  const unauthenticated = middy.unauthenticated();
-  await myMiddleware.before(unauthenticatedRequest);
-
-  const withEvent = middy.withEvent({
-    // event with authorizer overrides
-  });
-  await myMiddleware.before(customEventRequest);
-
-  const withContext = middy.withContext({
-    // overrides
-  });
-  await myMiddleware.before(customContextRequest);
-
-  const withResponse = middy.withResponse({
-    // overrides
-  });
-  await myMiddleware.after(customResponseRequest);
-
-  const withError = middy.withError(new Error("message"));
-  await myMiddleware.onError(customErrorRequest);
-});
 ```
 
 ---

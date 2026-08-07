@@ -11,10 +11,7 @@ import {
   createMiddyRequest,
   createResponse,
 } from "../fixtures";
-import {
-  createRestApiEvent,
-  createRestApiEventWithAuthorizer,
-} from "../fixtures/apigateway";
+import { createRestApiEvent } from "../fixtures/apigateway";
 import type { HttpFixture } from "../fixtures/http";
 import { createHttp } from "../fixtures/http";
 import type { SdkFixture } from "../fixtures/sdk";
@@ -35,9 +32,6 @@ interface Fixtures {
   eventWithAuthorizer: ReturnType<typeof createEventWithAuthorizer>;
   middy: ReturnType<typeof createMiddyRequest>;
   privateGatewayEvent: ReturnType<typeof createRestApiEvent>;
-  privateGatewayEventWithAuthorizer: ReturnType<
-    typeof createRestApiEventWithAuthorizer
-  >;
   response: ReturnType<typeof createResponse>;
   userId: UserId;
 }
@@ -87,8 +81,6 @@ export const it = vitestIt.extend<Fixtures>({
   eventWithAuthorizer: async ({}, use) => use(createEventWithAuthorizer()),
   middy: async ({}, use) => use(createMiddyRequest()),
   privateGatewayEvent: async ({}, use) => use(createRestApiEvent()),
-  privateGatewayEventWithAuthorizer: async ({}, use) =>
-    use(createRestApiEventWithAuthorizer()),
   response: async ({}, use) => use(createResponse()),
   userId: async ({}, use) => use(createUserId()),
 });

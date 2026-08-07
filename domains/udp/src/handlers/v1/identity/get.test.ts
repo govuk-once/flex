@@ -19,7 +19,7 @@ describe("GET /v1/identity", () => {
       .reply(200, { linkedServices: services });
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context(),
     );
 
@@ -34,7 +34,7 @@ describe("GET /v1/identity", () => {
     http.gateway("udp").get(`/identities/${userId}`).reply(404);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context(),
     );
 
@@ -49,7 +49,7 @@ describe("GET /v1/identity", () => {
       http.gateway("udp").get(`/identities/${userId}`).reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context(),
       );
 
