@@ -17,7 +17,10 @@ describe("GET /v1/identity/:service", () => {
       .reply(200, serviceIdentityLink);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { service: serviceName } }),
+      sdk.event.get(endpoint, {
+        auth: userId,
+        params: { service: serviceName },
+      }),
       sdk.context(),
     );
 
@@ -35,7 +38,10 @@ describe("GET /v1/identity/:service", () => {
       .reply(404);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { service: serviceName } }),
+      sdk.event.get(endpoint, {
+        auth: userId,
+        params: { service: serviceName },
+      }),
       sdk.context(),
     );
 
@@ -52,7 +58,10 @@ describe("GET /v1/identity/:service", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId, params: { service: serviceName } }),
+        sdk.event.get(endpoint, {
+          auth: userId,
+          params: { service: serviceName },
+        }),
         sdk.context(),
       );
 

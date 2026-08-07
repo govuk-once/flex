@@ -1,5 +1,5 @@
 import { logger } from "@flex/logging";
-import { it } from "@flex/testing";
+import { it, userId } from "@flex/testing";
 import { RequestBodyParseError } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
 import z from "zod";
@@ -10,19 +10,17 @@ import { buildHandlerContext } from "./build-context";
 vi.mock("@flex/logging");
 
 describe("buildHandlerContext", () => {
+  const endpoint = "/example";
   const contextOptions: BuildContextOptions = {
     gateway: "private",
     logger,
   };
 
   describe("Logger", () => {
-    it("includes a logger in the context", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("includes a logger in the context", ({ sdk }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         { ...contextOptions, gateway: "public" },
       );
 
@@ -31,28 +29,20 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Auth", () => {
-    it("includes auth in the context when gateway is public", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("includes auth in the context when gateway is public", ({ sdk }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
+        sdk.event.get(endpoint, { auth: userId }),
+        sdk.context(),
         { ...contextOptions, gateway: "public" },
       );
 
-      expect(store.auth).toStrictEqual({
-        pairwiseId: "test-pairwise-id",
-      });
+      expect(store.auth).toStrictEqual({ pairwiseId: userId });
     });
 
-    it("omits auth from the context when gateway is private", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("omits auth from the context when gateway is private", ({ sdk }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.authenticated(),
-        context.create(),
+        sdk.event.get(endpoint, { auth: userId }),
+        sdk.context(),
         { ...contextOptions, gateway: "private" },
       );
 
@@ -60,13 +50,12 @@ describe("buildHandlerContext", () => {
     });
 
     it("throws when pairwise ID is missing from the authorizer context", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       expect(() =>
         buildHandlerContext(
-          privateGatewayEventWithAuthorizer.unauthenticated(),
-          context.create(),
+          sdk.event.get(endpoint, { auth: false }),
+          sdk.context(),
           { ...contextOptions, gateway: "public" },
         ),
       ).toThrow("Failed to extract the pairwise ID from the request context");
@@ -74,46 +63,36 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Request Body", () => {
-    const endpoint = "/v1/endpoint";
     const body = { key: "value" };
     const schema = z.object({ key: z.literal("value") });
 
     it("parses and includes the request body in the context when a body schema is provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.post(endpoint, { body }),
-        context.create(),
+        sdk.event.post(endpoint, { body }),
+        sdk.context(),
         { ...contextOptions, bodySchema: schema },
       );
 
       expect(store.body).toStrictEqual({ key: "value" });
     });
 
-    it("omits body from the context when no schema is provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("omits body from the context when no schema is provided", ({ sdk }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.post(endpoint, { body }),
-        context.create(),
+        sdk.event.post(endpoint, { body }),
+        sdk.context(),
         contextOptions,
       );
 
       expect(store.body).toBeUndefined();
     });
 
-    it("throws when the request body fails to parse", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("throws when the request body fails to parse", ({ sdk }) => {
       expect(() =>
         buildHandlerContext(
-          privateGatewayEventWithAuthorizer.post(endpoint, {
-            body: { key: "invalid" },
-          }),
-          context.create(),
+          sdk.event.post(endpoint, { body: { key: "invalid" } }),
+          sdk.context(),
           { ...contextOptions, bodySchema: schema },
         ),
       ).toThrow(RequestBodyParseError);
@@ -122,14 +101,11 @@ describe("buildHandlerContext", () => {
 
   describe("Path Parameters", () => {
     it("includes path params in the context when the event contains at least one path parameter", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create({
-          pathParameters: { key: "value" },
-        }),
-        context.create(),
+        sdk.event.get(endpoint, { params: { key: "value" } }),
+        sdk.context(),
         contextOptions,
       );
 
@@ -137,12 +113,11 @@ describe("buildHandlerContext", () => {
     });
 
     it("omits path params from the context when the event has no path parameters", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create({ pathParameters: {} }),
-        context.create(),
+        sdk.event.get(endpoint, { params: {} }),
+        sdk.context(),
         contextOptions,
       );
 
@@ -151,17 +126,14 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Query Parameters", () => {
-    const queryStringParameters = { key: "value" };
-
     it("parses and includes query params in the context when a query schema is provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const schema = z.object({ key: z.literal("value") });
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create({ queryStringParameters }),
-        context.create(),
+        sdk.event.get(endpoint, { query: { key: "value" } }),
+        sdk.context(),
         { ...contextOptions, querySchema: schema },
       );
 
@@ -169,12 +141,11 @@ describe("buildHandlerContext", () => {
     });
 
     it("omits query params from the context when a query schema is not provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create({ queryStringParameters }),
-        context.create(),
+        sdk.event.get(endpoint, { query: { key: "value" } }),
+        sdk.context(),
         contextOptions,
       );
 
@@ -183,18 +154,15 @@ describe("buildHandlerContext", () => {
   });
 
   describe("Resources", () => {
-    it("resolves resources from the environment variables", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("resolves resources from the environment variables", ({ sdk }) => {
       const resources = {
         testKey: { type: "kms" as const, value: "test-key-value" },
         testParam: { type: "ssm" as const, value: "test-param-value" },
       };
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         { ...contextOptions, resources },
       );
 
@@ -204,10 +172,7 @@ describe("buildHandlerContext", () => {
       });
     });
 
-    it("resolves resources from the Lambda context", ({
-      context,
-      privateGatewayEventWithAuthorizer,
-    }) => {
+    it("resolves resources from the Lambda context", ({ sdk }) => {
       const resources = {
         testKey: { type: "kms" as const, value: "test-key-value" },
         testParam: { type: "ssm" as const, value: "test-param-value" },
@@ -215,8 +180,8 @@ describe("buildHandlerContext", () => {
       };
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.withSecret({ testSecret: "test-secret-value" }).create(), // pragma: allowlist secret
+        sdk.event.get(endpoint),
+        sdk.context({ secrets: { testSecret: "test-secret-value" } }), // pragma: allowlist secret
         { ...contextOptions, resources },
       );
 
@@ -228,31 +193,28 @@ describe("buildHandlerContext", () => {
     });
 
     it("throws when a resource has not been resolved by middleware", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const resources = {
         testSecret: { type: "secret" as const, value: "test-secret-name" },
       };
 
       expect(() =>
-        buildHandlerContext(
-          privateGatewayEventWithAuthorizer.create(),
-          context.create(),
-          { ...contextOptions, resources },
-        ),
+        buildHandlerContext(sdk.event.get(endpoint), sdk.context(), {
+          ...contextOptions,
+          resources,
+        }),
       ).toThrow(
         '"testSecret" (secret) resource was not resolved by middleware',
       );
     });
 
     it("omits resources from the context when the route does not reference any domain resources", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         contextOptions,
       );
 
@@ -262,8 +224,7 @@ describe("buildHandlerContext", () => {
 
   describe("Headers", () => {
     it("resolves and includes headers in the context when at least one header is provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const headers = {
         required: { name: "x-required", required: true },
@@ -271,10 +232,8 @@ describe("buildHandlerContext", () => {
       };
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create({
-          headers: { "x-required": "header-value" },
-        }),
-        context.create(),
+        sdk.event.get(endpoint, { headers: { "x-required": "header-value" } }),
+        sdk.context(),
         { ...contextOptions, headers },
       );
 
@@ -284,12 +243,11 @@ describe("buildHandlerContext", () => {
     });
 
     it("omits headers from the context when no headers have been provided", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         contextOptions,
       );
 
@@ -299,14 +257,13 @@ describe("buildHandlerContext", () => {
 
   describe("Integrations", () => {
     it("includes integrations in the context when the route references a domain integration", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const integrations = { testIntegration: vi.fn() };
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         { ...contextOptions, integrations },
       );
 
@@ -314,12 +271,11 @@ describe("buildHandlerContext", () => {
     });
 
     it("omits integrations from the context when the route does not reference any domain integrations", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         contextOptions,
       );
 
@@ -329,14 +285,13 @@ describe("buildHandlerContext", () => {
 
   describe("Feature Flags", () => {
     it("includes feature flags in the context when the route references domain feature flags", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const featureFlags = { flagA: true, flagB: false };
 
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         { ...contextOptions, featureFlags },
       );
 
@@ -344,12 +299,11 @@ describe("buildHandlerContext", () => {
     });
 
     it("omits feature flags from the context when the route does not reference any", ({
-      context,
-      privateGatewayEventWithAuthorizer,
+      sdk,
     }) => {
       const store = buildHandlerContext(
-        privateGatewayEventWithAuthorizer.create(),
-        context.create(),
+        sdk.event.get(endpoint),
+        sdk.context(),
         contextOptions,
       );
 

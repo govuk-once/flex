@@ -30,7 +30,7 @@ describe("GET /v1/users/me", () => {
       .reply(200, notification);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -70,7 +70,7 @@ describe("GET /v1/users/me", () => {
       .reply(200, notification);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -96,7 +96,7 @@ describe("GET /v1/users/me", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -120,7 +120,7 @@ describe("GET /v1/users/me", () => {
     http.gateway("udp").post("/users", { body: userProfile }).reply(500);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -153,7 +153,7 @@ describe("GET /v1/users/me", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 

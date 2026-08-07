@@ -14,7 +14,7 @@ describe("GET /v1/local-council/:id [private]", () => {
       .reply(200, localAuthority);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { id: localCouncilId } }),
+      sdk.event.get(endpoint, { auth: userId, params: { id: localCouncilId } }),
       sdk.context(),
     );
 
@@ -34,7 +34,10 @@ describe("GET /v1/local-council/:id [private]", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId, params: { id: localCouncilId } }),
+        sdk.event.get(endpoint, {
+          auth: userId,
+          params: { id: localCouncilId },
+        }),
         sdk.context(),
       );
 

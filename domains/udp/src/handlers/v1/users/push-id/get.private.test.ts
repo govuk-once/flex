@@ -14,7 +14,7 @@ describe("GET /v1/users/push-id [private]", () => {
     vi.mocked(getPushId).mockReturnValue(pushId);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, headers: { "User-Id": userId } }),
+      sdk.event.get(endpoint, { auth: userId, headers: { "User-Id": userId } }),
       sdk.context({ secrets }),
     );
 
@@ -32,7 +32,7 @@ describe("GET /v1/users/push-id [private]", () => {
     );
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, headers: { "User-Id": userId } }),
+      sdk.event.get(endpoint, { auth: userId, headers: { "User-Id": userId } }),
       sdk.context({ secrets }),
     );
 

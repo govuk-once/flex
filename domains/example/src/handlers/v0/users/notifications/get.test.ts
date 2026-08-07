@@ -35,7 +35,7 @@ describe("GET /v0/users/notifications", () => {
       .reply(200, notifications);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -47,7 +47,7 @@ describe("GET /v0/users/notifications", () => {
     http.domain("udp").get("/users/push-id").reply(500);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -69,7 +69,7 @@ describe("GET /v0/users/notifications", () => {
       .reply(404);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 

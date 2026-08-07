@@ -42,7 +42,7 @@ describe("POST /v1/share-code/:id/cancel", () => {
       .reply(200, withLinkingId(cancelledSingleShareCode));
 
     const result = await handler(
-      sdk.event.post(endpoint, { userId, params: { id: tokenId } }),
+      sdk.event.post(endpoint, { auth: userId, params: { id: tokenId } }),
       sdk.context(),
     );
 
@@ -64,7 +64,7 @@ describe("POST /v1/share-code/:id/cancel", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId, params: { id: tokenId } }),
+        sdk.event.post(endpoint, { auth: userId, params: { id: tokenId } }),
         sdk.context(),
       );
 
@@ -84,7 +84,7 @@ describe("POST /v1/share-code/:id/cancel", () => {
       http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId, params: { id: tokenId } }),
+        sdk.event.post(endpoint, { auth: userId, params: { id: tokenId } }),
         sdk.context(),
       );
 
@@ -116,7 +116,7 @@ describe("POST /v1/share-code/:id/cancel", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId, params: { id: tokenId } }),
+        sdk.event.post(endpoint, { auth: userId, params: { id: tokenId } }),
         sdk.context(),
       );
 
