@@ -22,9 +22,13 @@ describe("handleDvlaErrorResponse", () => {
   });
 
   it("WHEN an endpoint-specific code (GUK-404-04) is passed in custom mappings THEN it returns the custom error payload", () => {
-    const error = createHttpError(status.NOT_FOUND, "Driving Licence not found", {
-      code: "GUK-404-04",
-    });
+    const error = createHttpError(
+      status.NOT_FOUND,
+      "Driving Licence not found",
+      {
+        code: "GUK-404-04",
+      },
+    );
 
     const customMappings = {
       "GUK-404-04": "Driving Licence not found",
@@ -57,13 +61,15 @@ describe("handleDvlaErrorResponse", () => {
 
   it.for([
     {
-      description: "WHEN a 404 HttpError has an unmapped code THEN it re-throws",
+      description:
+        "WHEN a 404 HttpError has an unmapped code THEN it re-throws",
       error: createHttpError(status.NOT_FOUND, "Resource not found", {
         code: "GUK-404-99",
       }),
     },
     {
-      description: "WHEN a 404 HttpError has no code property THEN it re-throws",
+      description:
+        "WHEN a 404 HttpError has no code property THEN it re-throws",
       error: createHttpError(status.NOT_FOUND, "Not found"),
     },
     {
