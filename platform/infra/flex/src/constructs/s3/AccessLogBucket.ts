@@ -1,4 +1,5 @@
-import { Duration } from "aws-cdk-lib";
+import { getEnvConfig } from "@flex/utils";
+import { Duration, RemovalPolicy } from "aws-cdk-lib";
 import {
   BlockPublicAccess,
   Bucket,
@@ -9,6 +10,8 @@ import {
 import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
+
+const { persistent } = getEnvConfig();
 
 export class AccessLogBucket extends Construct {
   public readonly bucket: Bucket;
@@ -25,11 +28,12 @@ export class AccessLogBucket extends Construct {
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
       accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
       versioned: true,
-      objectLockEnabled: true,
-      objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
-        duration: retention,
-      },
+      objectLockEnabled: persistent,
+      objectLockDefaultRetention: persistent
+        ? { mode: ObjectLockMode.GOVERNANCE, duration: retention }
+        : undefined,
+      removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !persistent,
       lifecycleRules: [
         {
           id: "expireLogs",
