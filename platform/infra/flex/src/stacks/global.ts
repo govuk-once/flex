@@ -523,7 +523,8 @@ export class FlexGlobalStack extends BaseStack {
       bucketName: `flex-${stage}-openapi-specs`,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       encryption: BucketEncryption.S3_MANAGED,
-      removalPolicy: RemovalPolicy.RETAIN,
+      removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !persistent,
       versioned: true,
       lifecycleRules: [
         {
