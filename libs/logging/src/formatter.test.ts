@@ -1,11 +1,6 @@
 import type { UnformattedAttributes } from "@aws-lambda-powertools/logger/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const sanitizeFn = vi.fn((_key: string, value: unknown) => value);
-vi.mock("./sanitizer", () => ({
-  createSanitizer: () => sanitizeFn,
-}));
-
 import { FlexLogFormatter } from "./formatter";
 
 describe("FlexLogFormatter", () => {
@@ -24,8 +19,6 @@ describe("FlexLogFormatter", () => {
 
   beforeEach(() => {
     vi.unstubAllEnvs();
-    sanitizeFn.mockClear();
-    sanitizeFn.mockImplementation((_key: string, value: unknown) => value);
   });
 
   describe("formatAttributes", () => {
@@ -118,114 +111,17 @@ describe("FlexLogFormatter", () => {
       expect(output.service).toBe("overridden");
     });
 
-    it("sanitizes the log message", () => {
-      const formatter = new FlexLogFormatter();
-      formatter.formatAttributes(createBaseAttributes(), {});
-      expect(sanitizeFn).toHaveBeenCalledWith("message", "Test message");
-    });
-
-    it("applies sanitizer redaction to the log message", () => {
-      sanitizeFn.mockImplementation((key: string, value: unknown) =>
-        key === "message" ? "***REDACTED***" : value,
-      );
-      const formatter = new FlexLogFormatter();
-      const output = formatter
-        .formatAttributes(createBaseAttributes(), {})
-        .getAttributes();
-      expect(output.message).toBe("***REDACTED***");
-    });
-
-    it("delegates leaf values to the sanitizer", () => {
-      const formatter = new FlexLogFormatter();
-      formatter.formatAttributes(createBaseAttributes(), {
-        flat: "value",
-        nested: { inner: "deep" },
-        list: [{ key: "val" }],
-        tags: ["a", "b"],
-      });
-
-      expect(sanitizeFn).toHaveBeenCalledWith("flat", "value");
-      expect(sanitizeFn).toHaveBeenCalledWith("inner", "deep");
-      expect(sanitizeFn).toHaveBeenCalledWith("key", "val");
-      expect(sanitizeFn).toHaveBeenCalledWith("tags", "a");
-      expect(sanitizeFn).toHaveBeenCalledWith("tags", "b");
-    });
-
-    it("excludes attributes when sanitizer returns undefined", () => {
-      sanitizeFn.mockReturnValue(undefined);
+    it("passes additional attributes through untouched", () => {
       const formatter = new FlexLogFormatter();
       const output = formatter
         .formatAttributes(createBaseAttributes(), {
-          shouldBeExcluded: "value",
+          nested: { inner: "deep" },
+          list: [{ key: "val" }],
         })
         .getAttributes();
 
-      expect(output.shouldBeExcluded).toBeUndefined();
-    });
-  });
-
-  describe("nested and array sanitization", () => {
-    const REDACTED = "***REDACTED***";
-    const redactSensitiveKeys = (key: string, value: unknown) =>
-      /secret|token|credential|authorization/i.test(key) ? REDACTED : value;
-
-    beforeEach(() => {
-      sanitizeFn.mockImplementation(redactSensitiveKeys);
-    });
-
-    it("redacts an object nested under a sensitive key", () => {
-      const output = new FlexLogFormatter()
-        .formatAttributes(createBaseAttributes(), {
-          credentials: { value: "leak", inner: { deep: "leak" } },
-        })
-        .getAttributes();
-
-      expect(output.credentials).toBe(REDACTED);
-    });
-
-    it("redacts objects inside an array under a sensitive key", () => {
-      const output = new FlexLogFormatter()
-        .formatAttributes(createBaseAttributes(), {
-          tokens: [{ value: "leak" }, { value: "leak" }],
-        })
-        .getAttributes();
-
-      expect(output.tokens).toBe(REDACTED);
-    });
-
-    it("redacts an array of primitives under a sensitive key to a single value", () => {
-      const output = new FlexLogFormatter()
-        .formatAttributes(createBaseAttributes(), {
-          secretTokens: ["a", "b"],
-        })
-        .getAttributes();
-
-      expect(output.secretTokens).toBe(REDACTED);
-    });
-
-    it("redacts a sensitive key nested deep under non-sensitive keys", () => {
-      const output = new FlexLogFormatter()
-        .formatAttributes(createBaseAttributes(), {
-          request: { headers: { authorization: "Bearer x" }, path: "/health" },
-        })
-        .getAttributes();
-
-      expect(output.request).toEqual({
-        headers: { authorization: REDACTED },
-        path: "/health",
-      });
-    });
-
-    it("recurses into objects and arrays under non-sensitive keys", () => {
-      const output = new FlexLogFormatter()
-        .formatAttributes(createBaseAttributes(), {
-          context: { secret: "leak", safe: "ok" }, // pragma: allowlist secret
-          items: [{ token: "leak", id: 1 }],
-        })
-        .getAttributes();
-
-      expect(output.context).toEqual({ secret: REDACTED, safe: "ok" });
-      expect(output.items).toEqual([{ token: REDACTED, id: 1 }]);
+      expect(output.nested).toEqual({ inner: "deep" });
+      expect(output.list).toEqual([{ key: "val" }]);
     });
   });
 });

@@ -3,10 +3,11 @@ import { search } from "@aws-lambda-powertools/logger/correlationId";
 import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
+import { createSanitizer } from "./sanitizer";
 
 type FlexLoggerOptions = Omit<
   ConstructorParameters<typeof PowerToolsLogger>[0],
-  "logFormatter" | "logRecordOrder"
+  "logFormatter" | "logRecordOrder" | "jsonReplacerFn"
 >;
 
 class FlexLogger extends PowerToolsLogger {
@@ -18,6 +19,7 @@ class FlexLogger extends PowerToolsLogger {
       logLevel: "INFO",
       ...options,
       logFormatter: formatter,
+      jsonReplacerFn: createSanitizer(),
       correlationIdSearchFn: search,
     });
 
