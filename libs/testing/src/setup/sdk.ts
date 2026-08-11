@@ -2,6 +2,10 @@ import "./http";
 
 import { beforeEach, vi } from "vitest";
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 vi.mock("@flex/sdk", async () => ({
   ...(await vi.importActual("@flex/sdk")),
   createSigv4Fetcher: vi.fn(),
@@ -18,7 +22,3 @@ vi.mock("@middy/secrets-manager", () => ({
 vi.mock("@middy/ssm", () => ({
   default: () => ({ before: vi.fn() }),
 }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});

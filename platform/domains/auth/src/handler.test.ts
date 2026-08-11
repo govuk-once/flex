@@ -1,200 +1,169 @@
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
-  context,
-  createTokenAuthorizerEvent,
   invalidJwt,
   it,
   jwtMissingUsername,
   publicJWKS,
-  tokenAuthorizerEvent,
   validJwt,
+  validJwtUsername,
 } from "@flex/testing";
 import {
   FailedAssertionError,
   JwtExpiredError,
   JwtParseError,
 } from "aws-jwt-verify/error";
-import nock from "nock";
-import { afterEach, beforeEach, describe, expect, vi } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./handler";
 import { createAuthService } from "./services/auth-service";
 
 vi.mock("@flex/telemetry");
-
-const TEST_USERPOOL_ID = "eu-west-2_testUserPoolId";
-const COGNITO_BASE_URL = "https://cognito-idp.eu-west-2.amazonaws.com";
-const JWKS_PATH = `/${TEST_USERPOOL_ID}/.well-known/jwks.json`;
-
-vi.mock("./services/auth-service", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("./services/auth-service")>();
-
-  return {
-    ...actual,
-    createAuthService: vi.fn(actual.createAuthService),
-  };
-});
-
-function expectDenyPolicy(context?: Record<string, string>) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  return expect.objectContaining({
-    principalId: "anonymous",
-    policyDocument: {
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Action: "execute-api:Invoke",
-          Effect: "Deny",
-          Resource: tokenAuthorizerEvent.methodArn,
-        },
-      ],
-    },
-    ...(context && { context }),
-  });
-}
+vi.mock("./services/auth-service", { spy: true });
 
 describe("Authorizer Handler", () => {
-  beforeEach(() => {
-    vi.stubEnv("AWS_REGION", "eu-west-2");
-    vi.stubEnv("USERPOOL_ID", TEST_USERPOOL_ID);
-    vi.stubEnv("CLIENT_ID", "testClientId");
-    vi.stubEnv("JWKS_URI", `${COGNITO_BASE_URL}${JWKS_PATH}`);
+  const cognitoUrl = "https://cognito-idp.eu-west-2.amazonaws.com";
+  const userPoolId = "eu-west-2_testUserPoolId";
+  const clientId = "testClientId";
+  const jwksPath = `/${userPoolId}/.well-known/jwks.json`;
+  const jwksUri = `${cognitoUrl}${jwksPath}`;
+
+  it.beforeEach(({ env }) => {
+    env.set({
+      USERPOOL_ID: userPoolId,
+      CLIENT_ID: clientId,
+      JWKS_URI: jwksUri,
+    });
 
     vi.clearAllMocks();
-    nock.cleanAll();
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it("returns an allow policy containing the pairwise ID when the username can be extracted from a valid JWT", async ({
-    authorizerResult,
+  it("returns an allow policy with the pairwise ID when a valid JWT username is present", async ({
+    http,
+    platform,
   }) => {
-    nock(COGNITO_BASE_URL).get(JWKS_PATH).reply(200, publicJWKS);
+    http.url(cognitoUrl).get(jwksPath).reply(200, publicJWKS);
 
-    expect(await handler(tokenAuthorizerEvent, context)).toEqual(
-      authorizerResult.allowWithPairwiseId(),
+    const result = await handler(
+      platform.authorizerEvent(),
+      platform.context(),
+    );
+
+    expect(result).toStrictEqual(
+      platform.authorizerResult("Allow", "*", {
+        context: { pairwiseId: validJwtUsername },
+      }),
     );
     expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
       TelemetryEvent.auth_success,
-      { pairwiseId: expect.any(String) as string },
+      { pairwiseId: validJwtUsername },
     );
   });
 
-  it.each([
-    {
-      label: "the authorization header is missing",
-      event: createTokenAuthorizerEvent().missingToken(),
-      cognitoResponseStatus: undefined,
-      cognitoResponseBody: undefined,
-      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
-    },
-    {
-      label: "the Bearer token is empty",
-      event: createTokenAuthorizerEvent().withToken(""),
-      cognitoResponseStatus: undefined,
-      cognitoResponseBody: undefined,
-      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
-    },
-    {
-      label: "the JWT is invalid",
-      event: createTokenAuthorizerEvent().withToken(invalidJwt),
-      cognitoResponseStatus: undefined,
-      cognitoResponseBody: undefined,
-      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
-    },
-    {
-      label: "the JWT is valid but missing the username claim",
-      event: createTokenAuthorizerEvent().withToken(jwtMissingUsername),
-      cognitoResponseStatus: 200,
-      cognitoResponseBody: publicJWKS,
-      expectedTelemetryEvent: TelemetryEvent.auth_claim_missing,
-    },
-    {
-      label: "the JWKS endpoint is unavailable",
-      event: createTokenAuthorizerEvent().withToken(validJwt),
-      cognitoResponseStatus: 500,
-      cognitoResponseBody: "Internal Server Error",
-      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
-    },
-  ])(
-    "returns explicit deny when $label",
-    async ({
-      event,
-      cognitoResponseStatus,
-      cognitoResponseBody,
-      expectedTelemetryEvent,
-    }) => {
-      if (typeof cognitoResponseStatus === "number") {
-        nock(COGNITO_BASE_URL)
-          .get(JWKS_PATH)
-          .reply(cognitoResponseStatus, cognitoResponseBody);
-      }
-      await expect(handler(event, context)).resolves.toEqual(
-        expectDenyPolicy(),
-      );
-      expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
-        expectedTelemetryEvent,
-        { reason: expect.any(String) as string },
-      );
-    },
-  );
+  describe("Token validation", () => {
+    it.for<{
+      reason: string;
+      token: string;
+      telemetryEvent: TelemetryEvent;
+      jwks?: { status: number; body?: unknown };
+    }>([
+      {
+        reason: "the authorization token is missing",
+        token: "",
+        telemetryEvent: TelemetryEvent.auth_token_missing,
+      },
+      {
+        reason: 'the authorization token provides "Bearer" without a token',
+        token: "Bearer",
+        telemetryEvent: TelemetryEvent.auth_token_missing,
+      },
+      {
+        reason: "the authorization token JWT is invalid",
+        token: `Bearer ${invalidJwt}`,
+        telemetryEvent: TelemetryEvent.auth_token_invalid,
+      },
+      {
+        reason: "the authorization token username claim is missing",
+        token: `Bearer ${jwtMissingUsername}`,
+        telemetryEvent: TelemetryEvent.auth_claim_missing,
+        jwks: { status: 200, body: publicJWKS },
+      },
+      {
+        reason: "the JWKS endpoint is unavailable",
+        token: `Bearer ${validJwt}`,
+        telemetryEvent: TelemetryEvent.auth_token_invalid,
+        jwks: { status: 500 },
+      },
+    ])(
+      "returns a deny policy when $reason",
+      async ({ telemetryEvent, token, jwks }, { http, platform }) => {
+        if (jwks) {
+          http.url(cognitoUrl).get(jwksPath).reply(jwks.status, jwks.body);
+        }
 
-  it.each([
-    {
-      label: "JwtExpiredError",
-      error: new JwtExpiredError("JWT expired", null, "exp"),
-      expectedContext: { errorMessage: "JWT expired" },
-      expectedTelemetryEvent: TelemetryEvent.auth_token_expired,
-    },
-    {
-      label: "FailedAssertionError",
-      error: new FailedAssertionError(
-        "Missing authorization token",
-        undefined,
-        "authorization token",
-      ),
-      expectedContext: undefined,
-      expectedTelemetryEvent: TelemetryEvent.auth_token_missing,
-    },
-    {
-      label: "generic JwtBaseError",
-      error: new JwtParseError("Invalid JWT header"),
-      expectedContext: undefined,
-      expectedTelemetryEvent: TelemetryEvent.auth_token_invalid,
-    },
-  ])(
-    "returns Deny with expected context for $label",
-    async ({ error, expectedContext, expectedTelemetryEvent }) => {
-      vi.mocked(createAuthService).mockReturnValueOnce({
-        extractPairwiseId: vi.fn().mockRejectedValue(error),
-      });
+        const event = platform.authorizerEvent({ authorizationToken: token });
 
-      await expect(handler(tokenAuthorizerEvent, context)).resolves.toEqual(
-        expectDenyPolicy(expectedContext),
-      );
-      expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
-        expectedTelemetryEvent,
-        { reason: expect.any(String) as string },
-      );
-    },
-  );
+        const result = await handler(event, platform.context());
 
-  it("returns Deny on non-JwtBaseError", async () => {
-    const unknownError = new Error("Unknown error");
+        expect(result).toStrictEqual(
+          platform.authorizerResult("Deny", event.methodArn),
+        );
+        expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(telemetryEvent, {
+          reason: expect.any(String) as string,
+        });
+      },
+    );
+  });
 
-    vi.mocked(createAuthService).mockReturnValueOnce({
-      extractPairwiseId: vi.fn().mockRejectedValue(unknownError),
-    });
+  describe("Auth Service: Error handling", () => {
+    it.for<{
+      reason: string;
+      error: Error;
+      telemetryEvent: TelemetryEvent;
+      context?: { errorMessage: string };
+    }>([
+      {
+        reason: "the authorization token assertion fails",
+        error: new FailedAssertionError(
+          "Missing authorization token",
+          undefined,
+          "authorization token",
+        ),
+        telemetryEvent: TelemetryEvent.auth_token_missing,
+      },
+      {
+        reason: "the JWT parsing fails",
+        error: new JwtParseError("Invalid JWT header"),
+        telemetryEvent: TelemetryEvent.auth_token_invalid,
+      },
+      {
+        reason: "the JWT has expired",
+        error: new JwtExpiredError("JWT expired", null, "exp"),
+        telemetryEvent: TelemetryEvent.auth_token_expired,
+        context: { errorMessage: "JWT expired" },
+      },
+      {
+        reason: "the failure is not a JWT error",
+        error: new Error("Unknown error"),
+        telemetryEvent: TelemetryEvent.auth_failure,
+      },
+    ])(
+      "returns a deny policy when $reason",
+      async ({ error, telemetryEvent, context }, { platform }) => {
+        vi.mocked(createAuthService).mockReturnValueOnce({
+          extractPairwiseId: vi.fn().mockRejectedValue(error),
+        });
 
-    await expect(
-      handler(createTokenAuthorizerEvent().withToken(validJwt), context),
-    ).resolves.toEqual(expectDenyPolicy());
-    expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(
-      TelemetryEvent.auth_failure,
-      { reason: "Unknown error" },
+        const event = platform.authorizerEvent();
+
+        const result = await handler(event, platform.context());
+
+        expect(result).toStrictEqual(
+          platform.authorizerResult("Deny", event.methodArn, { context }),
+        );
+        expect(emitTelemetry).toHaveBeenCalledExactlyOnceWith(telemetryEvent, {
+          reason: error.message,
+        });
+      },
     );
   });
 });

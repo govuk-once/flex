@@ -5,7 +5,8 @@ import type {
   Context,
 } from "aws-lambda";
 
-import { createFixtureBuilder, createFixtureFactory } from "../utils/factory";
+import { createFixtureFactory } from "../utils/factory";
+import { buildLambdaContext } from "./lambda";
 import { createUserId } from "./user";
 
 // ----------------------------------------------------------------------------
@@ -127,22 +128,6 @@ export type SdkEventFactory = ReturnType<typeof createSdkEvent>;
 // Context
 // ----------------------------------------------------------------------------
 
-export const baseSdkContext: Context = {
-  callbackWaitsForEmptyEventLoop: false,
-  functionName: "test-function",
-  functionVersion: "$LATEST",
-  invokedFunctionArn:
-    "arn:aws:lambda:eu-west-2:123456789012:function:test-function",
-  memoryLimitInMB: "128",
-  awsRequestId: "test-request-id",
-  logGroupName: "/aws/lambda/test-function",
-  logStreamName: "2026/01/01/[$LATEST]test-request-id",
-  getRemainingTimeInMillis: () => 30_000,
-  done: () => {},
-  fail: () => {},
-  succeed: () => {},
-};
-
 export type SdkContext = Context & { userId: UserId };
 
 interface SdkContextOptions {
@@ -159,7 +144,7 @@ export function createSdkContext() {
     secrets,
     userId = createUserId(),
   }: SdkContextOptions = {}): SdkContext => ({
-    ...createFixtureBuilder(baseSdkContext)(overrides),
+    ...buildLambdaContext(overrides),
     ...params,
     ...secrets,
     userId,
