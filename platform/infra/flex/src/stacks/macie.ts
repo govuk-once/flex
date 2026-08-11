@@ -155,6 +155,8 @@ export class FlexMacieStack extends BaseStack {
           jobId: new PhysicalResourceIdReference(),
           jobStatus: "CANCELLED",
         },
+        ignoreErrorCodesMatching:
+          "ValidationException|ResourceNotFoundException|ConflictException",
       },
       policy: AwsCustomResourcePolicy.fromStatements([
         new PolicyStatement({
