@@ -21,17 +21,17 @@
     "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "3.1091.0",
+    "@aws-sdk/client-s3": "3.1102.0",
     "@flex/cli": "workspace:*",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@semantic-release/exec": "7.1.0",
     "conventional-changelog-conventionalcommits": "10.2.1",
     "esbuild": "0.28.1",
-    "eslint": "10.7.0",
-    "nx": "23.1.0",
+    "eslint": "10.8.0",
+    "nx": "23.1.1",
     "semantic-release": "25.0.8",
-    "tsx": "4.23.1",
+    "tsx": "4.23.5",
     "typescript": "6.0.3",
     "zod": "4.4.3",
     "zod-openapi": "6.0.0"
