@@ -104,20 +104,24 @@ function isLuhn(digits: string) {
   return sum % 10 === 0;
 }
 
-function isPan(value: string) {
+function isLikelyPan(value: string) {
   const candidates = value.match(/\d(?:[ -]?\d){12,18}/g);
   if (!candidates) return false;
   return candidates
     .map((candidate) => candidate.replace(/[ -]/g, ""))
     .filter((digits) => digits.length >= 13 && digits.length <= 19)
     .filter((digits) =>
-      cardNumberPrefixes.some((prefix) => prefix.test(digits)),
+      VALID_CARD_NUMBERS.some((prefix) => prefix.test(digits)),
     )
-    .some(passesLuhn);
+    .some(isLuhn);
 }
 
 function matchesValuePattern(value: string): boolean {
-if (isLikelyPan(value) || secretValuePatterns.some((pattern) => pattern.test(value))) return true;
+  if (
+    isLikelyPan(value) ||
+    secretValuePatterns.some((pattern) => pattern.test(value))
+  )
+    return true;
   if (isPiiDebugEnabled()) return false;
   return piiValuePatterns.some((pattern) => pattern.test(value));
 }
