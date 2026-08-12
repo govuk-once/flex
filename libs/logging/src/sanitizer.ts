@@ -83,7 +83,7 @@ function matchesKeyPattern(key: string): boolean {
   return piiKeyPatterns.some((pattern) => pattern.test(key));
 }
 
-const cardNumberPrefixes: Array<RegExp> = [
+const VALID_CARD_NUMBERS: Array<RegExp> = [
   /^4/,
   /^5[1-5]/,
   /^2(?:2[2-9]|[3-6]\d|7[01]|720)/,
@@ -93,7 +93,7 @@ const cardNumberPrefixes: Array<RegExp> = [
   /^35(?:2[89]|[3-8]\d)/,
 ];
 
-function passesLuhn(digits: string): boolean {
+function isLuhn(digits: string) {
   const sum = Array.from(digits)
     .reverse()
     .reduce((acc, char, index) => {
@@ -104,7 +104,7 @@ function passesLuhn(digits: string): boolean {
   return sum % 10 === 0;
 }
 
-function isLikelyPan(value: string): boolean {
+function isPan(value: string) {
   const candidates = value.match(/\d(?:[ -]?\d){12,18}/g);
   if (!candidates) return false;
   return candidates
@@ -117,8 +117,7 @@ function isLikelyPan(value: string): boolean {
 }
 
 function matchesValuePattern(value: string): boolean {
-  if (secretValuePatterns.some((pattern) => pattern.test(value))) return true;
-  if (isLikelyPan(value)) return true;
+if (isLikelyPan(value) || secretValuePatterns.some((pattern) => pattern.test(value))) return true;
   if (isPiiDebugEnabled()) return false;
   return piiValuePatterns.some((pattern) => pattern.test(value));
 }
