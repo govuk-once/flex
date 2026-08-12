@@ -1,11 +1,6 @@
 import type { UnformattedAttributes } from "@aws-lambda-powertools/logger/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const sanitizeFn = vi.fn((_key: string, value: unknown) => value);
-vi.mock("./sanitizer", () => ({
-  createSanitizer: () => sanitizeFn,
-}));
-
 import { FlexLogFormatter } from "./formatter";
 
 describe("FlexLogFormatter", () => {
@@ -24,8 +19,6 @@ describe("FlexLogFormatter", () => {
 
   beforeEach(() => {
     vi.unstubAllEnvs();
-    sanitizeFn.mockClear();
-    sanitizeFn.mockImplementation((_key: string, value: unknown) => value);
   });
 
   describe("formatAttributes", () => {
@@ -118,49 +111,17 @@ describe("FlexLogFormatter", () => {
       expect(output.service).toBe("overridden");
     });
 
-    it("sanitizes the log message", () => {
-      const formatter = new FlexLogFormatter();
-      formatter.formatAttributes(createBaseAttributes(), {});
-      expect(sanitizeFn).toHaveBeenCalledWith("message", "Test message");
-    });
-
-    it("applies sanitizer redaction to the log message", () => {
-      sanitizeFn.mockImplementation((key: string, value: unknown) =>
-        key === "message" ? "***REDACTED***" : value,
-      );
-      const formatter = new FlexLogFormatter();
-      const output = formatter
-        .formatAttributes(createBaseAttributes(), {})
-        .getAttributes();
-      expect(output.message).toBe("***REDACTED***");
-    });
-
-    it("delegates leaf values to the sanitizer", () => {
-      const formatter = new FlexLogFormatter();
-      formatter.formatAttributes(createBaseAttributes(), {
-        flat: "value",
-        nested: { inner: "deep" },
-        list: [{ key: "val" }],
-        tags: ["a", "b"],
-      });
-
-      expect(sanitizeFn).toHaveBeenCalledWith("flat", "value");
-      expect(sanitizeFn).toHaveBeenCalledWith("inner", "deep");
-      expect(sanitizeFn).toHaveBeenCalledWith("key", "val");
-      expect(sanitizeFn).toHaveBeenCalledWith("tags", "a");
-      expect(sanitizeFn).toHaveBeenCalledWith("tags", "b");
-    });
-
-    it("excludes attributes when sanitizer returns undefined", () => {
-      sanitizeFn.mockReturnValue(undefined);
+    it("passes additional attributes through untouched", () => {
       const formatter = new FlexLogFormatter();
       const output = formatter
         .formatAttributes(createBaseAttributes(), {
-          shouldBeExcluded: "value",
+          nested: { inner: "deep" },
+          list: [{ key: "val" }],
         })
         .getAttributes();
 
-      expect(output.shouldBeExcluded).toBeUndefined();
+      expect(output.nested).toEqual({ inner: "deep" });
+      expect(output.list).toEqual([{ key: "val" }]);
     });
   });
 });

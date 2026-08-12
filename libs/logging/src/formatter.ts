@@ -4,17 +4,13 @@ import type {
   UnformattedAttributes,
 } from "@aws-lambda-powertools/logger/types";
 
-import { createSanitizer } from "./sanitizer";
-
 /**
  * Custom log formatter for Flex platform.
  *
  * - Adds organizational context from environment variables
- * - Sanitizes sensitive data
  * - Provides consistent log structure across all domains
  */
 export class FlexLogFormatter extends LogFormatter {
-  readonly #sanitize = createSanitizer();
   #serviceName?: string;
 
   setServiceName(name: string): void {
@@ -27,7 +23,7 @@ export class FlexLogFormatter extends LogFormatter {
   ): LogItem {
     const baseAttributes: LogAttributes = {
       level: attributes.logLevel,
-      message: this.#sanitize("message", attributes.message),
+      message: attributes.message,
       timestamp: this.formatTimestamp(attributes.timestamp),
       service: this.#serviceName ?? attributes.serviceName,
     };
@@ -53,43 +49,8 @@ export class FlexLogFormatter extends LogFormatter {
     }
 
     const logItem = new LogItem({ attributes: baseAttributes });
-
-    const sanitizedAdditional = this.#sanitizeAttributes(
-      additionalLogAttributes,
-    );
-    logItem.addAttributes(sanitizedAdditional);
+    logItem.addAttributes(additionalLogAttributes);
 
     return logItem;
-  }
-
-  #sanitizeAttributes(attributes: LogAttributes): LogAttributes {
-    const sanitized: LogAttributes = {};
-
-    for (const [key, value] of Object.entries(attributes)) {
-      if (Array.isArray(value)) {
-        sanitized[key] = this.#sanitizeArray(key, value);
-      } else if (value !== null && typeof value === "object") {
-        sanitized[key] = this.#sanitizeAttributes(value as LogAttributes);
-      } else {
-        const sanitizedValue = this.#sanitize(key, value);
-        if (sanitizedValue !== undefined) {
-          sanitized[key] = sanitizedValue;
-        }
-      }
-    }
-
-    return sanitized;
-  }
-
-  #sanitizeArray(key: string, items: unknown[]): unknown[] {
-    return items.map((item) => {
-      if (item !== null && typeof item === "object" && !Array.isArray(item)) {
-        return this.#sanitizeAttributes(item as LogAttributes);
-      }
-      if (Array.isArray(item)) {
-        return this.#sanitizeArray(key, item);
-      }
-      return this.#sanitize(key, item);
-    });
   }
 }
