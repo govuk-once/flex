@@ -23,7 +23,7 @@ describe("DELETE /v1/notifications/:notificationId", () => {
       .reply(204);
 
     const result = await handler(
-      sdk.event.delete(endpoint, { userId, params: { notificationId } }),
+      sdk.event.delete(endpoint, { auth: userId, params: { notificationId } }),
       sdk.context({ secrets }),
     );
 
@@ -45,7 +45,10 @@ describe("DELETE /v1/notifications/:notificationId", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { notificationId } }),
+        sdk.event.delete(endpoint, {
+          auth: userId,
+          params: { notificationId },
+        }),
         sdk.context({ secrets }),
       );
 
@@ -74,7 +77,10 @@ describe("DELETE /v1/notifications/:notificationId", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.delete(endpoint, { userId, params: { notificationId } }),
+        sdk.event.delete(endpoint, {
+          auth: userId,
+          params: { notificationId },
+        }),
         sdk.context({ secrets }),
       );
 

@@ -25,7 +25,7 @@ describe("GET /v1/groups", () => {
       .reply(200, groups);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -57,7 +57,7 @@ describe("GET /v1/groups", () => {
       .reply(200, []);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -74,7 +74,7 @@ describe("GET /v1/groups", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context({ secrets }),
       );
 
@@ -97,7 +97,7 @@ describe("GET /v1/groups", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context({ secrets }),
       );
 

@@ -26,7 +26,7 @@ describe("PATCH /v0/notifications", () => {
     { body: {}, reason: "is empty" },
   ])("returns 400 when payload $reason", async ({ body }, { sdk }) => {
     const result = await handler(
-      sdk.event.patch(endpoint, { userId, body }),
+      sdk.event.patch(endpoint, { auth: userId, body }),
       sdk.context({ secrets }),
     );
 
@@ -46,7 +46,7 @@ describe("PATCH /v0/notifications", () => {
 
     const result = await handler(
       sdk.event.patch(endpoint, {
-        userId,
+        auth: userId,
         body: { consentStatus: "accepted" },
       }),
       sdk.context({ secrets }),
@@ -66,7 +66,7 @@ describe("PATCH /v0/notifications", () => {
 
     const result = await handler(
       sdk.event.patch(endpoint, {
-        userId,
+        auth: userId,
         body: { consentStatus: "accepted" },
       }),
       sdk.context({ secrets }),

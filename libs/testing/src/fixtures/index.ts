@@ -18,7 +18,6 @@ export {
   createAuthorizerResult,
   createEvent,
   createEventWithAuthorizer,
-  createRestApiEventWithAuthorizer,
   createTokenAuthorizerEvent,
   event,
   eventWithAuthorizer,
@@ -40,7 +39,6 @@ export {
 } from "./cloudfront";
 export type { ContextOverrides } from "./lambda";
 export { context, createContext } from "./lambda";
-export type { MiddyRequest, MiddyRequestOverrides } from "./middy";
-export { createMiddyRequest, middyRequest } from "./middy";
+export { createMiddyRequest } from "./middy";
 export type { ResponseOptions, StructuredResponse } from "./response";
 export { createResponse, response } from "./response";

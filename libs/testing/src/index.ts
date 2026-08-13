@@ -9,8 +9,6 @@ export type {
   EventOverrides,
   EventWithAuthorizer,
   EventWithAuthorizerOverrides,
-  MiddyRequest,
-  MiddyRequestOverrides,
   ResponseOptions,
   StructuredResponse,
 } from "./fixtures";
@@ -34,7 +32,6 @@ export {
   expiredJwt,
   invalidJwt,
   jwtMissingUsername,
-  middyRequest,
   publicJWKS,
   response,
   tokenAuthorizerEvent,

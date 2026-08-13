@@ -41,7 +41,7 @@ describe("GET /v1/customer/vehicles", () => {
       .reply(200, mockVehiclesResponse);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context(),
     );
 
@@ -63,7 +63,7 @@ describe("GET /v1/customer/vehicles", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -83,7 +83,7 @@ describe("GET /v1/customer/vehicles", () => {
       http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -116,7 +116,7 @@ describe("GET /v1/customer/vehicles", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context(),
       );
 

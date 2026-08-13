@@ -31,7 +31,7 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
 
     const result = await handler(
       sdk.event.patch(endpoint, {
-        userId,
+        auth: userId,
         body: { Status: notificationStatus },
         params: { notificationId },
       }),
@@ -57,7 +57,7 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
 
       const result = await handler(
         sdk.event.patch(endpoint, {
-          userId,
+          auth: userId,
           body: { Status: notificationStatus },
           params: { notificationId },
         }),
@@ -91,7 +91,7 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
 
       const result = await handler(
         sdk.event.patch(endpoint, {
-          userId,
+          auth: userId,
           body: { Status: notificationStatus },
           params: { notificationId },
         }),

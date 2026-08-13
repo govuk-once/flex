@@ -27,7 +27,7 @@ describe("POST /v1/test-notification", () => {
       .reply(202);
 
     const result = await handler(
-      sdk.event.post(endpoint, { userId }),
+      sdk.event.post(endpoint, { auth: userId }),
       sdk.context(),
     );
 
@@ -48,7 +48,7 @@ describe("POST /v1/test-notification", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -68,7 +68,7 @@ describe("POST /v1/test-notification", () => {
       http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -97,7 +97,7 @@ describe("POST /v1/test-notification", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 

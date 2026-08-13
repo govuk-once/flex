@@ -18,7 +18,7 @@ describe("GET /v1/identity/:service [private]", () => {
 
     const result = await handler(
       sdk.event.get(endpoint, {
-        userId,
+        auth: userId,
         headers: { "User-Id": userId },
         params: { service: serviceName },
       }),
@@ -32,7 +32,7 @@ describe("GET /v1/identity/:service [private]", () => {
   it('returns 400 when the "User-Id" header is missing', async ({ sdk }) => {
     const result = await handler(
       sdk.event.get(endpoint, {
-        userId,
+        auth: userId,
         params: { service: serviceName },
       }),
       sdk.context(),
@@ -62,7 +62,7 @@ describe("GET /v1/identity/:service [private]", () => {
 
       const result = await handler(
         sdk.event.get(endpoint, {
-          userId,
+          auth: userId,
           headers: { "User-Id": userId },
           params: { service: serviceName },
         }),

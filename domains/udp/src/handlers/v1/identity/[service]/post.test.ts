@@ -198,7 +198,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post("/identity/other-service", {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: "other-service" },
         headers: {
@@ -235,7 +235,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -266,7 +266,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -294,7 +294,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -323,7 +323,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -348,7 +348,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -370,7 +370,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -392,7 +392,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -417,7 +417,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: { "x-linking-token": validJwe, Authorization: accessToken },
@@ -441,7 +441,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -471,7 +471,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -500,7 +500,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -531,14 +531,12 @@ describe("POST /v1/identity/:service", () => {
 
     http
       .gateway("udp")
-      .get(`/identity/${dvlaService}`, {
-        headers: { "User-Id": userId },
-      })
+      .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
       .reply(200, dvlaLink);
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -571,9 +569,7 @@ describe("POST /v1/identity/:service", () => {
 
     http
       .gateway("udp")
-      .get(`/identity/${dvlaService}`, {
-        headers: { "User-Id": userId },
-      })
+      .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
       .reply(200, existingServiceIdentity);
     http
       .gateway("udp")
@@ -586,7 +582,7 @@ describe("POST /v1/identity/:service", () => {
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
-        userId,
+        auth: userId,
         body: serviceIdentityLinkRequest,
         params: { service: dvlaService },
         headers: {
@@ -619,7 +615,7 @@ describe("POST /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.post(targetDvlaEndpoint, {
-          userId,
+          auth: userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
           headers: {
@@ -655,9 +651,7 @@ describe("POST /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .get(`/identity/${dvlaService}`, {
-          headers: { "User-Id": userId },
-        })
+        .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
         .reply(200, existingServiceIdentity);
 
       http
@@ -667,7 +661,7 @@ describe("POST /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.post(targetDvlaEndpoint, {
-          userId,
+          auth: userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
           headers: {
@@ -694,9 +688,7 @@ describe("POST /v1/identity/:service", () => {
 
       http
         .gateway("udp")
-        .get(`/identity/${dvlaService}`, {
-          headers: { "User-Id": userId },
-        })
+        .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
         .reply(404);
 
       http
@@ -706,7 +698,7 @@ describe("POST /v1/identity/:service", () => {
 
       const result = await handler(
         sdk.event.post(targetDvlaEndpoint, {
-          userId,
+          auth: userId,
           body: serviceIdentityLinkRequest,
           params: { service: dvlaService },
           headers: {

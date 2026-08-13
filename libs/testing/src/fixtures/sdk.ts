@@ -17,10 +17,10 @@ export type SdkEvent = APIGatewayProxyWithLambdaAuthorizerEvent<{
 }>;
 
 interface SdkEventRequestOptions {
+  auth?: UserId | false;
   headers?: Record<string, string>;
   params?: Record<string, string>;
   query?: QueryParams;
-  userId?: UserId;
 }
 
 export const baseSdkEvent: SdkEvent = {
@@ -38,15 +38,9 @@ export const baseSdkEvent: SdkEvent = {
   multiValueHeaders: {},
   requestContext: {
     authorizer: {
-      /** TODO:
-       * - Existing event uses "test-pairwise-id"
-       * - Existing context uses "test-user-id" (later addition, default set by createUserId)
-       *
-       * Was this intentional or should they match moving forward?
-       */
-      principalId: "test-pairwise-id",
+      principalId: "test-user-id",
       integrationLatency: 0,
-      pairwiseId: "test-pairwise-id",
+      pairwiseId: "test-user-id",
     },
     protocol: "HTTP/1.1",
     httpMethod: "GET",
@@ -85,10 +79,16 @@ export const baseSdkEvent: SdkEvent = {
 
 type SdkEventOverrides = SdkEventRequestOptions & { body?: unknown };
 
+function toAuthorizer(auth: UserId | false) {
+  return auth === false
+    ? { integrationLatency: 0, pairwiseId: "", principalId: "" }
+    : { integrationLatency: 0, pairwiseId: auth, principalId: auth };
+}
+
 function toRequest(
   httpMethod: string,
   path: string,
-  { body, headers, params, query, userId }: SdkEventOverrides = {},
+  { auth, body, headers, params, query }: SdkEventOverrides = {},
 ): DeepPartial<SdkEvent> {
   return {
     httpMethod,
@@ -96,10 +96,8 @@ function toRequest(
     headers: { "Content-Type": "application/json", ...headers },
     queryStringParameters: extractQueryParams(query)[1],
     ...(params && { pathParameters: params }),
-    ...(userId && {
-      requestContext: {
-        authorizer: { principalId: userId, pairwiseId: userId },
-      },
+    ...(auth !== undefined && {
+      requestContext: { authorizer: toAuthorizer(auth) },
     }),
     ...(body !== undefined && { body: JSON.stringify(body) }),
   };

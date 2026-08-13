@@ -26,7 +26,7 @@ describe("GET /v1/notifications/:notificationId", () => {
       .reply(200, notification);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { notificationId } }),
+      sdk.event.get(endpoint, { auth: userId, params: { notificationId } }),
       sdk.context({ secrets }),
     );
 
@@ -44,7 +44,7 @@ describe("GET /v1/notifications/:notificationId", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId, params: { notificationId } }),
+      sdk.event.get(endpoint, { auth: userId, params: { notificationId } }),
       sdk.context({ secrets }),
     );
 
@@ -72,7 +72,7 @@ describe("GET /v1/notifications/:notificationId", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId, params: { notificationId } }),
+        sdk.event.get(endpoint, { auth: userId, params: { notificationId } }),
         sdk.context({ secrets }),
       );
 
