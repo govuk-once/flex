@@ -1,5 +1,5 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
-import { it, STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
+import { it } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
 import { describe, expect } from "vitest";
 
@@ -10,8 +10,6 @@ const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");
 
 describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
-  it.override({ authSub: STUB_DEFAULT_SUBJECT });
-
   const endpoint = "/groups/v1/groups";
 
   const group = {
