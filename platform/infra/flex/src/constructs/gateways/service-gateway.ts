@@ -44,8 +44,7 @@ export function createServiceGateway(
 ) {
   const serviceGateway = createFunction(scope, {
     access: config.access,
-    // TODO: Revert to original after dvla dev deploys
-    id: `${toPascalCase(config.name)}ServiceGateway${config.name === "dvla" ? "-temp" : ""}`,
+    id: `${toPascalCase(config.name)}ServiceGateway`,
     enableDefaultAlarms: config.function?.enableDefaultAlarms,
     securityGroups,
     functionProps: {
