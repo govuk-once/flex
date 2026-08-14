@@ -1,6 +1,4 @@
 import { injectLambdaContext, logger } from "@flex/logging";
-import { mergeFixture } from "@flex/testing";
-import type { DeepPartial } from "@flex/utils";
 import { describe, expect, it, vi } from "vitest";
 
 import type { MiddlewareOptions } from "./middleware";
@@ -13,16 +11,15 @@ const mockInstance = vi.hoisted(() => {
 const mockMiddy = vi.hoisted(() => vi.fn(() => mockInstance));
 vi.mock("@middy/core", () => ({ default: mockMiddy }));
 
-const loggingMiddleware = { before: vi.fn() };
+const loggingMiddleware = vi.hoisted(() => ({ before: vi.fn() }));
 vi.mock("@flex/logging", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@flex/logging")>()),
   injectLambdaContext: vi.fn(() => loggingMiddleware),
 }));
 
-// TODO: Move to tests/fixtures.ts
 const createMiddlewareOptions = (
-  overrides: DeepPartial<MiddlewareOptions> = {},
-) => mergeFixture<MiddlewareOptions>({ logger }, overrides);
+  overrides?: Partial<MiddlewareOptions>,
+): MiddlewareOptions => ({ logger, ...overrides });
 
 describe("buildMiddleware", () => {
   it("returns the configured middleware instance", () => {
@@ -34,8 +31,8 @@ describe("buildMiddleware", () => {
 
     expect(injectLambdaContext).toHaveBeenCalledExactlyOnceWith(logger, {
       clearState: true,
-      correlationIdPath: "requestContext.requestId",
+      correlationIdPath: 'headers."x-correlation-id"',
     });
-    expect(mockInstance.use).toHaveBeenCalledWith(loggingMiddleware);
+    expect(mockInstance.use).toHaveBeenCalledExactlyOnceWith(loggingMiddleware);
   });
 });

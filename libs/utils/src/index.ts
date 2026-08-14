@@ -28,7 +28,12 @@ export {
   splitVersionedPath,
   stripPathPrefix,
 } from "./path/route";
-export { matchPathSegments, toPathSegments } from "./path/segments";
+export {
+  isCanonicalPath,
+  joinPathSegments,
+  matchPathSegments,
+  splitPathSegments,
+} from "./path/segments";
 export { resolveRequestBody } from "./request/body";
 export { mergeHeaders, resolveHeaders } from "./request/headers";
 export { resolvePathParams } from "./request/path-params";

@@ -6,11 +6,7 @@ import type {
 } from "aws-lambda";
 
 import type { GatewayClientMap } from "./client";
-import type {
-  GatewayContext,
-  GatewayHandlerContext,
-  GatewayOutboundData,
-} from "./context";
+import type { GatewayContext, GatewayHandlerContext } from "./context";
 import type { GatewayConfig, RouteKeyOf } from "./gateway";
 import type { ResolvedResources, ResourceMap } from "./resource";
 
@@ -25,7 +21,7 @@ export type GatewayHandlerMap<
 > = {
   [Route in RouteKeyOf<Config>]: (
     context: GatewayHandlerContext<Config, Route, Clients>,
-  ) => Promise<ApiResult<GatewayOutboundData<Config["routes"][Route]>>>;
+  ) => Promise<ApiResult<unknown>>;
 };
 
 export type GatewayRouteHandler = (

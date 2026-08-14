@@ -10,7 +10,7 @@ export interface MiddlewareOptions {
 export function buildMiddleware({ logger }: MiddlewareOptions) {
   const loggingMiddleware = injectLambdaContext(logger, {
     clearState: true,
-    correlationIdPath: "requestContext.requestId",
+    correlationIdPath: 'headers."x-correlation-id"',
   });
 
   return middy<APIGatewayProxyEvent, APIGatewayProxyResultV2>().use(

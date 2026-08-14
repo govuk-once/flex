@@ -11,6 +11,7 @@ import {
 import type { APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
 
+// TODO: Fix non-client error path to fallback to gateway errors
 export function toDownstreamErrorResponse(
   name: string,
   error: { status: number; message: string; body?: unknown },

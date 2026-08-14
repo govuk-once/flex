@@ -1,4 +1,6 @@
-import { findProjectRoot } from "@flex/utils";
+import { findProjectRoot, getEnvConfig } from "@flex/utils";
+
+const { env } = getEnvConfig();
 
 export function getDomainEntry(domain: string, path: string) {
   // /domains/hello/src/handlers/hello/get.ts
@@ -12,4 +14,8 @@ export function getPlatformEntry(domain: string, path: string) {
 
 export function getPlatformSmokeTestEntry(path: string) {
   return `${findProjectRoot()}/platform/smoke-test/src/${path}`;
+}
+
+export function getFlexParamName(path: string) {
+  return `/${env}/flex-param${path}`;
 }
