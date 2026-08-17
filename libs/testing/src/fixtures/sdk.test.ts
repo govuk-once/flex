@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  baseSdkContext,
-  baseSdkEvent,
-  createSdkContext,
-  createSdkEvent,
-} from "./sdk";
+import { buildLambdaContext } from "./lambda";
+import { baseSdkEvent, createSdkContext, createSdkEvent } from "./sdk";
 import { createUserId, userId } from "./user";
 
 describe("createSdkEvent", () => {
@@ -96,33 +92,32 @@ describe("createSdkEvent", () => {
 });
 
 describe("createSdkContext", () => {
+  const baseContext = buildLambdaContext();
   const sdkContext = createSdkContext();
 
   it("returns the base context with default user ID when called with no arguments", () => {
     expect(sdkContext()).toStrictEqual({
-      ...baseSdkContext,
+      ...baseContext,
       userId: "test-user-id",
     });
   });
 
   it("returns a cloned context with overrides when provided", () => {
     expect(
-      sdkContext({
-        overrides: { functionName: "custom-function" },
-      }),
-    ).toMatchObject({ ...baseSdkContext, functionName: "custom-function" });
+      sdkContext({ overrides: { functionName: "custom-function" } }),
+    ).toMatchObject({ ...baseContext, functionName: "custom-function" });
   });
 
   it("injects user ID into context when provided", () => {
     expect(sdkContext({ userId: createUserId("custom-user") })).toMatchObject({
-      ...baseSdkContext,
+      ...baseContext,
       userId: "custom-user",
     });
   });
 
   it("injects params into context when provided", () => {
     expect(sdkContext({ params: { param: "value" } })).toMatchObject({
-      ...baseSdkContext,
+      ...baseContext,
       param: "value",
     });
   });
@@ -133,7 +128,7 @@ describe("createSdkContext", () => {
         secrets: { secret: "value" }, // pragma: allowlist secret
       }),
     ).toMatchObject({
-      ...baseSdkContext,
+      ...baseContext,
       secret: "value", // pragma: allowlist secret
     });
   });

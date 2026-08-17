@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import { it } from "@flex/testing";
+import { beforeEach, describe, expect, vi } from "vitest";
+
+import { handler } from "./jwks-endpoint";
 
 vi.mock("@aws-lambda-powertools/parameters/secrets");
 vi.mock("@flex/logging");
-
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-
-import { handler } from "./jwks-endpoint";
 
 describe("JWKS Endpoint", () => {
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe("JWKS Endpoint", () => {
 
     const result = await handler();
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -43,7 +43,7 @@ describe("JWKS Endpoint", () => {
 
     const result = await handler();
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: "Internal Server Error" }),
@@ -55,7 +55,7 @@ describe("JWKS Endpoint", () => {
 
     const result = await handler();
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: "Internal Server Error" }),

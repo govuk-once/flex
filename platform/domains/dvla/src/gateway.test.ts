@@ -1,11 +1,8 @@
-import { clearCaches } from "@aws-lambda-powertools/parameters";
 import type { HttpFixture } from "@flex/testing";
-import { context, it, publicJWKS, validJwt } from "@flex/testing";
+import { it, publicJWKS, validJwt } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { handler } from "./gateway";
-
-// TODO: FLEX-344 - Replace all mocks with platform fixtures
 
 const mockJwt = validJwt;
 const mockPublicJwks = publicJWKS;
@@ -25,12 +22,12 @@ const mockConsumerConfig = {
   apiPassword: "test-api-password", // pragma: allowlist secret
   wellKnownJwkUrl: "https://dvla-jwks-api.example.com",
 };
-const mockHeaders = {
-  default: { "Content-Type": "application/json" },
-  auth: { Authorization: mockJwt, "X-API-KEY": mockConsumerConfig.apiKey },
+
+const mockAuthHeaders = {
+  Authorization: mockJwt,
+  "X-API-KEY": mockConsumerConfig.apiKey, // pragma: allowlist secret
 };
 
-// TODO: Move to fixtures
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -43,27 +40,24 @@ const stubConsumerConfig = (http: HttpFixture) =>
 
 describe("DVLA Service Gateway", () => {
   it.beforeEach(({ env }) => {
-    clearCaches();
     env.set({ FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
   });
 
   describe("Error handling", () => {
-    it("returns 404 for an unknown route", async ({ privateGatewayEvent }) => {
+    it("returns 404 for an unknown route", async ({ platform }) => {
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/should-throw"),
-        context,
+        platform.gatewayEvent.get("/v1/should-throw"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 404,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "Route not found" }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(404, { body: { message: "Route not found" } }),
+      );
     });
 
     it("returns 502 when the upstream service returns 5xx", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       stubConsumerConfig(http);
 
@@ -78,20 +72,20 @@ describe("DVLA Service Gateway", () => {
         .reply(500);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/authenticate"),
-        context,
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 502,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "DVLA upstream service unavailable" }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(502, {
+          body: { message: "DVLA upstream service unavailable" },
+        }),
+      );
     });
 
     it("returns passthrough error provided by the upstream error response", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       stubConsumerConfig(http);
 
@@ -106,60 +100,57 @@ describe("DVLA Service Gateway", () => {
         .reply(404, { key: "value" });
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/authenticate"),
-        context,
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 404,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "Not Found", error: { key: "value" } }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(404, {
+          body: { message: "Not Found", error: { key: "value" } },
+        }),
+      );
     });
 
     it("returns 400 when a required header is missing", async ({
-      privateGatewayEvent,
+      platform,
     }) => {
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
-          queryStringParameters: { linkingId: mockLinkingId },
+        platform.gatewayEvent.get("/v1/customer/licence", {
+          query: { linkingId: mockLinkingId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 400,
-        headers: mockHeaders.default,
-        body: JSON.stringify({
-          message: "Missing headers: auth",
-          headers: ["auth"],
+      expect(result).toStrictEqual(
+        platform.gatewayResult(400, {
+          body: { message: "Missing headers: auth", headers: ["auth"] },
         }),
-      });
+      );
     });
 
     it("returns 400 when a required query parameter is missing", async ({
-      privateGatewayEvent,
+      platform,
     }) => {
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
+        platform.gatewayEvent.get("/v1/customer/licence", {
           headers: { auth: mockJwt },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 400,
-        headers: mockHeaders.default,
-        body: JSON.stringify({
-          message: "Invalid query parameters",
-          errors: [
-            {
-              field: "linkingId",
-              message: "Invalid input: expected string, received undefined",
-            },
-          ],
+      expect(result).toStrictEqual(
+        platform.gatewayResult(400, {
+          body: {
+            message: "Invalid query parameters",
+            errors: [
+              {
+                field: "linkingId",
+                message: "Invalid input: expected string, received undefined",
+              },
+            ],
+          },
         }),
-      });
+      );
     });
   });
 
@@ -170,7 +161,7 @@ describe("DVLA Service Gateway", () => {
 
     it("returns an auth token using the provided credentials", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -183,15 +174,13 @@ describe("DVLA Service Gateway", () => {
         .reply(200, mockToken);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/authenticate"),
-        context,
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockToken),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockToken }),
+      );
     });
   });
 
@@ -205,31 +194,26 @@ describe("DVLA Service Gateway", () => {
       stubConsumerConfig(http);
     });
 
-    it("returns the customer driving licence", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("returns the customer driving licence", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/retrieve-customer-driving-licence", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId },
         })
         .reply(200, mockCustomerLicence);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/customer/licence", {
+        platform.gatewayEvent.get("/v1/customer/licence", {
           headers: { auth: mockJwt },
-          queryStringParameters: { linkingId: mockLinkingId },
+          query: { linkingId: mockLinkingId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCustomerLicence),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockCustomerLicence }),
+      );
     });
   });
 
@@ -242,31 +226,26 @@ describe("DVLA Service Gateway", () => {
       stubConsumerConfig(http);
     });
 
-    it("returns the customer vehicles list", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("returns the customer vehicles list", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/find-customer-vehicles", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId },
         })
         .reply(200, mockCustomerVehicles);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/dvla/v1/customer/vehicles", {
+        platform.gatewayEvent.get("/v1/customer/vehicles", {
           headers: { auth: mockJwt },
-          queryStringParameters: { linkingId: mockLinkingId },
+          query: { linkingId: mockLinkingId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCustomerVehicles),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockCustomerVehicles }),
+      );
     });
   });
 
@@ -282,32 +261,27 @@ describe("DVLA Service Gateway", () => {
 
     it("returns the customer vehicle information for the given ID", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/retrieve-customer-vehicle-by-vehicle-id", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId, vehicleId: mockVehicleId },
         })
         .reply(200, mockCustomerVehicle);
 
       const result = await handler(
-        privateGatewayEvent.get(
-          `/gateways/dvla/v1/customer/vehicle/${mockVehicleId}`,
-          {
-            headers: { auth: mockJwt },
-            queryStringParameters: { linkingId: mockLinkingId },
-          },
-        ),
-        context,
+        platform.gatewayEvent.get(`/v1/customer/vehicle/${mockVehicleId}`, {
+          headers: { auth: mockJwt },
+          query: { linkingId: mockLinkingId },
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCustomerVehicle),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockCustomerVehicle }),
+      );
     });
   });
 
@@ -328,36 +302,34 @@ describe("DVLA Service Gateway", () => {
 
     it("returns the vehicle information for the given ID", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/retrieve-vehicle-by-vrn", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { registrationNumber: mockRegistrationNumber },
         })
         .reply(200, mockVehicleEnquiry);
 
       const result = await handler(
-        privateGatewayEvent.get(
-          `/gateways/dvla/v1/vehicle-enquiry/${mockRegistrationNumber}`,
+        platform.gatewayEvent.get(
+          `/v1/vehicle-enquiry/${mockRegistrationNumber}`,
           { headers: { auth: mockJwt } },
         ),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockVehicleEnquiry),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockVehicleEnquiry }),
+      );
     });
   });
 
   describe("GET /v1/well-known-jwks", () => {
     it("returns the public JWKS then caches for subsequent requests", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       stubConsumerConfig(http);
 
@@ -366,20 +338,19 @@ describe("DVLA Service Gateway", () => {
         .get("/.well-known/jwks.json")
         .reply(200, mockPublicJwks);
 
-      const event = privateGatewayEvent.get(
-        "/gateways/dvla/v1/well-known-jwks",
-      );
+      const event = platform.gatewayEvent.get("/v1/well-known-jwks");
+      const context = platform.context();
 
       const firstResult = await handler(event, context);
       const secondResult = await handler(event, context);
 
       const { JwkSetSchema } = await import("./schemas/domain/wellKnownJwk");
 
-      expect(firstResult).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(JwkSetSchema.parse(mockPublicJwks)),
-      });
+      expect(firstResult).toStrictEqual(
+        platform.gatewayResult(200, {
+          body: JwkSetSchema.parse(mockPublicJwks),
+        }),
+      );
       expect(secondResult).toStrictEqual(firstResult);
     });
   });
@@ -405,32 +376,26 @@ describe("DVLA Service Gateway", () => {
       stubConsumerConfig(http);
     });
 
-    it("returns the created share code", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("returns the created share code", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/create-driving-licence-share-code", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId },
         })
         .reply(201, mockCreatedShareCode);
 
       const result = await handler(
-        privateGatewayEvent.post("/gateways/dvla/v1/share-code", {
+        platform.gatewayEvent.post("/v1/share-code", {
           headers: { auth: mockJwt },
-          queryStringParameters: { linkingId: mockLinkingId },
-          body: undefined,
+          query: { linkingId: mockLinkingId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 201,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCreatedShareCode),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(201, { body: mockCreatedShareCode }),
+      );
     });
   });
 
@@ -456,35 +421,26 @@ describe("DVLA Service Gateway", () => {
       stubConsumerConfig(http);
     });
 
-    it("returns cancelled share code", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("returns cancelled share code", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/cancel-driving-licence-share-code", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId, tokenId: mockTokenId },
         })
         .reply(201, mockCancelledShareCode);
 
       const result = await handler(
-        privateGatewayEvent.post(
-          `/gateways/dvla/v1/share-code/${mockTokenId}/cancel`,
-          {
-            headers: { auth: mockJwt },
-            queryStringParameters: { linkingId: mockLinkingId },
-            body: undefined,
-          },
-        ),
-        context,
+        platform.gatewayEvent.post(`/v1/share-code/${mockTokenId}/cancel`, {
+          headers: { auth: mockJwt },
+          query: { linkingId: mockLinkingId },
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 201,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCancelledShareCode),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(201, { body: mockCancelledShareCode }),
+      );
     });
   });
 
@@ -495,29 +451,24 @@ describe("DVLA Service Gateway", () => {
 
     it("returns a success response and triggers a test notification for the given ID", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/test-notification", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockLinkingId },
         })
         .reply(200);
 
       const result = await handler(
-        privateGatewayEvent.post(
-          `/gateways/dvla/v1/test-notification/${mockLinkingId}`,
-          { headers: { auth: mockJwt }, body: undefined },
-        ),
-        context,
+        platform.gatewayEvent.post(`/v1/test-notification/${mockLinkingId}`, {
+          headers: { auth: mockJwt },
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: undefined,
-      });
+      expect(result).toStrictEqual(platform.gatewayResult(200));
     });
   });
 
@@ -531,29 +482,26 @@ describe("DVLA Service Gateway", () => {
 
     it("unlinks user for the given ID and returns the unlinked user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/govuk-app-service/v1/unlink-customer", {
-          headers: mockHeaders.auth,
+          headers: mockAuthHeaders,
           body: { linkingId: mockServiceId },
         })
         .reply(200, mockUnlinkedUser);
 
       const result = await handler(
-        privateGatewayEvent.post(
-          `/gateways/dvla/v1/unlink-user/${mockServiceId}`,
-          { headers: { auth: mockJwt }, body: undefined },
-        ),
-        context,
+        platform.gatewayEvent.post(`/v1/unlink-user/${mockServiceId}`, {
+          headers: { auth: mockJwt },
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockUnlinkedUser),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockUnlinkedUser }),
+      );
     });
   });
 });
