@@ -1,13 +1,9 @@
-import { clearCaches } from "@aws-lambda-powertools/parameters";
 import type { HttpFixture } from "@flex/testing";
-import { context, it } from "@flex/testing";
+import { it } from "@flex/testing";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./gateway";
 
-// TODO: FLEX-344 - Replace all mocks with platform fixtures
-
-// TODO: Move to service gateway setup file
 vi.mock("@flex/sdk", async (importOriginal) => ({
   ...(await importOriginal()),
   createSigv4FetchWithCredentials:
@@ -43,7 +39,6 @@ const mockConsumerConfig = {
   externalId: "test-external-id",
 };
 const mockHeaders = {
-  default: { "Content-Type": "application/json" },
   apiKey: { "x-api-key": mockConsumerConfig.apiKey }, // pragma: allowlist secret
   withServiceUserId: (requestingServiceUserId: string) => ({
     "x-api-key": mockConsumerConfig.apiKey,
@@ -68,7 +63,6 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
-// TODO: Move to fixtures
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -81,27 +75,24 @@ const stubConsumerConfig = (http: HttpFixture) =>
 
 describe("UDP Service Gateway", () => {
   it.beforeEach(({ env }) => {
-    clearCaches();
     env.set({ FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
   });
 
   describe("Error handling", () => {
-    it("returns 404 for an unknown route", async ({ privateGatewayEvent }) => {
+    it("returns 404 for an unknown route", async ({ platform }) => {
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/should-throw"),
-        context,
+        platform.gatewayEvent.get("/v1/should-throw"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 404,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "Route not found" }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(404, { body: { message: "Route not found" } }),
+      );
     });
 
     it("returns 502 when the upstream service returns 5xx", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       stubConsumerConfig(http);
 
@@ -113,24 +104,24 @@ describe("UDP Service Gateway", () => {
         .reply(500);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/notifications", {
+        platform.gatewayEvent.get("/v1/notifications", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 502,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "UDP upstream service unavailable" }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(502, {
+          body: { message: "UDP upstream service unavailable" },
+        }),
+      );
     });
 
     it("returns passthrough error provided by the upstream error response", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       stubConsumerConfig(http);
 
@@ -142,37 +133,37 @@ describe("UDP Service Gateway", () => {
         .reply(404, { key: "value" });
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/notifications", {
+        platform.gatewayEvent.get("/v1/notifications", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 404,
-        headers: mockHeaders.default,
-        body: JSON.stringify({ message: "Not Found", error: { key: "value" } }),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(404, {
+          body: { message: "Not Found", error: { key: "value" } },
+        }),
+      );
     });
 
     it("returns 400 when a required header is missing", async ({
-      privateGatewayEvent,
+      platform,
     }) => {
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/notifications"),
-        context,
+        platform.gatewayEvent.get("/v1/notifications"),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 400,
-        headers: mockHeaders.default,
-        body: JSON.stringify({
-          message: "Missing headers: requesting-service-user-id",
-          headers: ["requesting-service-user-id"],
+      expect(result).toStrictEqual(
+        platform.gatewayResult(400, {
+          body: {
+            message: "Missing headers: requesting-service-user-id",
+            headers: ["requesting-service-user-id"],
+          },
         }),
-      });
+      );
     });
   });
 
@@ -183,7 +174,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the linked services for the given ID", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -193,15 +184,13 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockIdentities);
 
       const result = await handler(
-        privateGatewayEvent.get(`/gateways/udp/v1/identities/${mockUserId}`),
-        context,
+        platform.gatewayEvent.get(`/v1/identities/${mockUserId}`),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockIdentities),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockIdentities }),
+      );
     });
   });
 
@@ -212,7 +201,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the identity link for the given service", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -223,17 +212,15 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockIdentityLink);
 
       const result = await handler(
-        privateGatewayEvent.get(`/gateways/udp/v1/identity/${mockService}`, {
+        platform.gatewayEvent.get(`/v1/identity/${mockService}`, {
           headers: { "User-Id": mockUserId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockIdentityLink),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockIdentityLink }),
+      );
     });
   });
 
@@ -244,7 +231,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the notification preferences for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -254,19 +241,17 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockUpstreamNotifications);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/notifications", {
+        platform.gatewayEvent.get("/v1/notifications", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockNotifications),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockNotifications }),
+      );
     });
   });
 
@@ -287,7 +272,7 @@ describe("UDP Service Gateway", () => {
 
     it("links the service identity for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -298,18 +283,14 @@ describe("UDP Service Gateway", () => {
         .reply(201);
 
       const result = await handler(
-        privateGatewayEvent.post(
-          `/gateways/udp/v1/identity/${mockService}/${mockIdentity}`,
+        platform.gatewayEvent.post(
+          `/v1/identity/${mockService}/${mockIdentity}`,
           { body: { appId: mockUserId } },
         ),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 201,
-        headers: mockHeaders.default,
-        body: undefined,
-      });
+      expect(result).toStrictEqual(platform.gatewayResult(201));
     });
   });
 
@@ -320,7 +301,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the updated notification preferences for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -334,20 +315,18 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockUpstreamNotifications);
 
       const result = await handler(
-        privateGatewayEvent.post("/gateways/udp/v1/notifications", {
+        platform.gatewayEvent.post("/v1/notifications", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
           body: { consentStatus: "accepted" },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockNotifications),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockNotifications }),
+      );
     });
   });
 
@@ -358,7 +337,7 @@ describe("UDP Service Gateway", () => {
 
     const mockCreatedUser = { message: "User created" };
 
-    it("returns the created user", async ({ http, privateGatewayEvent }) => {
+    it("returns the created user", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/user", {
@@ -368,17 +347,15 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockCreatedUser);
 
       const result = await handler(
-        privateGatewayEvent.post("/gateways/udp/v1/users", {
+        platform.gatewayEvent.post("/v1/users", {
           body: { pushId: mockPushId, userId: mockUserId },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockCreatedUser),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockCreatedUser }),
+      );
     });
   });
 
@@ -387,10 +364,7 @@ describe("UDP Service Gateway", () => {
       stubConsumerConfig(http);
     });
 
-    it("unlinks the service identity", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("unlinks the service identity", async ({ http, platform }) => {
       http
         .url(mockConsumerConfig.apiUrl)
         .delete(`/v1/identity/${mockService}/${mockIdentity}`, {
@@ -399,18 +373,13 @@ describe("UDP Service Gateway", () => {
         .reply(204);
 
       const result = await handler(
-        privateGatewayEvent.delete(
-          `/gateways/udp/v1/identity/${mockService}/${mockIdentity}`,
-          { body: undefined },
+        platform.gatewayEvent.delete(
+          `/v1/identity/${mockService}/${mockIdentity}`,
         ),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 204,
-        headers: mockHeaders.default,
-        body: undefined,
-      });
+      expect(result).toStrictEqual(platform.gatewayResult(204));
     });
   });
 
@@ -421,7 +390,7 @@ describe("UDP Service Gateway", () => {
 
     it("deletes the notification preferences for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -431,20 +400,15 @@ describe("UDP Service Gateway", () => {
         .reply(204);
 
       const result = await handler(
-        privateGatewayEvent.delete("/gateways/udp/v1/notifications", {
+        platform.gatewayEvent.delete("/v1/notifications", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
-          body: undefined,
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 204,
-        headers: mockHeaders.default,
-        body: undefined,
-      });
+      expect(result).toStrictEqual(platform.gatewayResult(204));
     });
   });
 

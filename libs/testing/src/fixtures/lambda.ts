@@ -2,11 +2,12 @@ import type { DeepPartial, UserId } from "@flex/utils";
 import type { Context } from "aws-lambda";
 import { mergeDeepLeft } from "ramda";
 
+import { createFixtureBuilder } from "../utils/factory";
 import { createUserId } from "./user";
 
 export type ContextOverrides = DeepPartial<Context>;
 
-const baseContext: Context = {
+export const baseLambdaContext: Context = {
   callbackWaitsForEmptyEventLoop: false,
   functionName: "test-function",
   functionVersion: "$LATEST",
@@ -22,8 +23,14 @@ const baseContext: Context = {
   succeed: () => {},
 };
 
+export const buildLambdaContext = createFixtureBuilder(baseLambdaContext);
+
+export type LambdaContextFactory = typeof buildLambdaContext;
+
+// TODO: Remove stale fixtures below
+
 function buildContext(overrides?: DeepPartial<ContextWithUserId>) {
-  return mergeDeepLeft(overrides ?? {}, baseContext) as ContextWithUserId;
+  return mergeDeepLeft(overrides ?? {}, baseLambdaContext) as ContextWithUserId;
 }
 
 export interface ContextWithUserId extends Context {

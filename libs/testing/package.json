@@ -7,8 +7,8 @@
     "./auth": "./src/index.auth.ts",
     "./e2e": "./src/index.e2e.ts",
     "./e2e/setup": "./src/e2e/setup.global.ts",
-    "./setup/sdk": "./src/setup/sdk.ts",
-    "./setup/service-gateway": "./src/setup/service-gateway.ts"
+    "./setup/platform": "./src/setup/platform.ts",
+    "./setup/sdk": "./src/setup/sdk.ts"
   },
   "scripts": {
     "tsc": "tsc --noEmit",
