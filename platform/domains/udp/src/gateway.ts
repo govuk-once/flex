@@ -142,7 +142,7 @@ export const handler = createHandler({
         },
       });
 
-      return mapApiResult(result, ({ data }) => data);
+      return mapApiResult(result, ({ data }) => data.groups);
     },
     "POST /v1/groups": async ({
       clients: { api },
@@ -157,10 +157,15 @@ export const handler = createHandler({
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
-        body: { data: body, requestingServiceUserId },
+        body: {
+          data: {
+            groups: body,
+          },
+          requestingServiceUserId,
+        },
       });
 
-      return mapApiResult(result, ({ data }) => data);
+      return mapApiResult(result, ({ data }) => data.groups);
     },
   },
 });

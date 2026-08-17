@@ -52,15 +52,17 @@ const mockHeaders = {
   }),
 };
 const mockUpstreamGroups = {
-  data: [
-    { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" },
-    {
-      Namespace: "travel",
-      Group: "test country",
-      Subgroup: "test frequency",
-      Type: "NOTIFICATION",
-    },
-  ],
+  data: {
+    groups: [
+      { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" },
+      {
+        Namespace: "travel",
+        Group: "test country",
+        Subgroup: "test frequency",
+        Type: "NOTIFICATION",
+      },
+    ],
+  },
 };
 const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
@@ -450,7 +452,7 @@ describe("UDP Service Gateway", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
-    const mockGroups = mockUpstreamGroups.data;
+    const mockGroups = mockUpstreamGroups.data.groups;
 
     it("returns the group subscriptions for the requesting user", async ({
       http,
@@ -484,7 +486,12 @@ describe("UDP Service Gateway", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
-    const mockUpstreamGroupsResponse = { data: mockGroupsBody };
+
+    const mockUpstreamGroupsResponse = {
+      data: {
+        groups: mockGroupsBody,
+      },
+    };
 
     it("returns the updated group subscriptions for the requesting user", async ({
       http,
@@ -495,7 +502,9 @@ describe("UDP Service Gateway", () => {
         .post("/v1/groups", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
           body: {
-            data: mockGroupsBody,
+            data: {
+              groups: mockGroupsBody,
+            },
             requestingServiceUserId: mockRequestingServiceUserId,
           },
         })
