@@ -5,7 +5,7 @@ import type {
   Context,
 } from "aws-lambda";
 
-import { createFixtureFactory } from "../utils/factory";
+import { createFixtureVariants } from "../utils/fixtures";
 import { buildLambdaContext } from "./lambda";
 import { createUserId } from "./user";
 
@@ -108,7 +108,7 @@ type SdkEventOptions<Body = never> = SdkEventRequestOptions &
   ([Body] extends [never] ? { body?: never } : { body: Body });
 
 export function createSdkEvent() {
-  return createFixtureFactory(baseSdkEvent, (build) => ({
+  return createFixtureVariants(baseSdkEvent, (build) => ({
     get: (path: string, options?: SdkEventOptions) =>
       build(toRequest("GET", path, options)),
     post: <Body = never>(path: string, options?: SdkEventOptions<Body>) =>

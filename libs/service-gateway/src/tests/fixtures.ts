@@ -1,104 +1,93 @@
-// TODO: (ticket) Replicate SDK fixtures in @flex/testing for service gateway
+import { logger } from "@flex/logging";
+import type { ApiResult } from "@flex/sdk";
+import { createFixtureBuilder } from "@flex/testing";
+import { vi } from "vitest";
 
-import { mergeFixture } from "@flex/testing";
-import type { DeepPartial } from "@flex/utils";
-import type { APIGatewayProxyEvent, Context } from "aws-lambda";
+import type {
+  GatewayClientBuilder,
+  GatewayClientMap,
+  GatewayConfig,
+  GatewayContext,
+  GatewayHandlerMap,
+  RestClient,
+} from "../types";
+import type { ParsedRequest } from "../utils/request";
+import type { MatchedRoute, RouteTable } from "../utils/routes";
 
-import type { GatewayConfig } from "../types";
-import type { MatchedRoute } from "../utils/routes";
+type GatewayRoutes = GatewayHandlerMap<GatewayConfig, GatewayClientMap>;
+type GatewayRouteHandler = GatewayRoutes[keyof GatewayRoutes];
 
-export const routeKey = "GET /v1/path";
+export const testGatewayName = "example";
+export const testRouteKey = "GET /v1/path";
+export const testRoutePath = "/v1/path";
 
-export const createGatewayConfig = (
-  overrides: DeepPartial<GatewayConfig> = {},
-) =>
-  mergeFixture<GatewayConfig>(
-    {
-      name: "example",
-      environments: [],
-      access: "private",
-      resources: {},
-      policy: {},
-      routes: { [routeKey]: { name: "example" } },
-    },
-    overrides,
-  );
-export const gatewayConfig = createGatewayConfig();
+export const createGatewayConfig = createFixtureBuilder<GatewayConfig>({
+  name: testGatewayName,
+  environments: [],
+  access: "private",
+  resources: {},
+  policy: {},
+  routes: { [testRouteKey]: { name: testGatewayName } },
+});
+export const testGatewayConfig = createGatewayConfig();
 
-export const createGatewayEvent = (
-  overrides: DeepPartial<APIGatewayProxyEvent> = {},
-) =>
-  mergeFixture<APIGatewayProxyEvent>(
-    {
-      body: null,
-      multiValueQueryStringParameters: {},
-      pathParameters: {},
-      queryStringParameters: {},
-      stageVariables: {},
-      resource: "/",
-      path: "/gateways/example/v1/path",
-      httpMethod: "GET",
-      headers: {},
-      multiValueHeaders: {},
-      requestContext: {
-        authorizer: null,
-        protocol: "HTTP/1.1",
-        httpMethod: "GET",
-        path: "/",
-        accountId: "123456789012",
-        apiId: "api-id",
-        domainName: "api-id.execute-api.eu-west-2.amazonaws.com",
-        domainPrefix: "api-id",
-        requestId: "test-request-id",
-        routeKey: "$default",
-        stage: "$default",
-        identity: {
-          accountId: "123456789012",
-          apiKey: null,
-          apiKeyId: null,
-          accessKey: null,
-          caller: "test-caller",
-          clientCert: null,
-          cognitoAuthenticationProvider: null,
-          cognitoAuthenticationType: null,
-          cognitoIdentityId: null,
-          cognitoIdentityPoolId: null,
-          principalOrgId: null,
-          sourceIp: "127.0.0.1",
-          user: null,
-          userAgent: "test-agent",
-          userArn: null,
-        },
-        requestTimeEpoch: 1735689600000,
-        resourceId: "test-resource-id",
-        resourcePath: "/",
-        requestTime: "01/Jan/2026:00:00:00 +0000",
-      },
-      isBase64Encoded: false,
-    },
-    overrides,
-  );
-export const gatewayEvent = createGatewayEvent();
+export const createMatchedRoute = createFixtureBuilder<MatchedRoute>({
+  key: testRouteKey,
+  params: {},
+  config: { name: testGatewayName },
+});
+export const testMatchedRoute = createMatchedRoute();
 
-export const createMatchedRoute = (overrides: DeepPartial<MatchedRoute> = {}) =>
-  mergeFixture<MatchedRoute>(
-    { key: routeKey, params: {}, config: { name: "example" } },
-    overrides,
-  );
-export const matchedRoute = createMatchedRoute();
+export const createRouteTable = (
+  overrides: Partial<RouteTable> = {},
+): RouteTable => ({ static: new Map(), dynamic: [], ...overrides });
+export const testRouteTable = createRouteTable();
 
-export const handlerContext: Context = {
-  callbackWaitsForEmptyEventLoop: false,
-  functionName: "service-gateway",
-  functionVersion: "$LATEST",
-  invokedFunctionArn:
-    "arn:aws:lambda:eu-west-2:123456789012:function:service-gateway",
-  memoryLimitInMB: "128",
-  awsRequestId: "test-request-id",
-  logGroupName: "/aws/lambda/service-gateway",
-  logStreamName: "test-stream",
-  getRemainingTimeInMillis: () => 30_000,
-  done: () => {},
-  fail: () => {},
-  succeed: () => {},
-};
+export const createGatewayRoutes = (
+  handler: GatewayRouteHandler,
+): GatewayRoutes => ({ [testRouteKey]: handler });
+
+export const createGatewayResources = createFixtureBuilder({
+  consumerConfig: { apiKey: "test-api-key" }, // pragma: allowlist secret
+});
+export const testGatewayResources = createGatewayResources();
+
+export const createMockRestClient = (): RestClient => ({
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  patch: vi.fn(),
+  delete: vi.fn(),
+});
+
+export const createGatewayClients = (): GatewayClientMap => ({
+  api: createMockRestClient(),
+});
+
+export const createGatewayContext = (
+  overrides: Partial<GatewayContext> = {},
+): GatewayContext => ({
+  logger,
+  clients: createGatewayClients(),
+  resources: testGatewayResources,
+  ...overrides,
+});
+export const testGatewayContext = createGatewayContext();
+
+export const createMockClientBuilder = vi.fn<
+  GatewayClientBuilder<GatewayConfig["resources"], GatewayClientMap>
+>(() => testGatewayContext.clients);
+
+export const stubGatewayRoutes = <T>(result: ApiResult<T>) =>
+  createGatewayRoutes(vi.fn(() => Promise.resolve(result)));
+export const testGatewayRoutes = stubGatewayRoutes({
+  ok: true,
+  status: 200,
+  data: { result: "ok" },
+});
+
+export const stubGatewayRoutesError = (error: Error) =>
+  createGatewayRoutes(vi.fn(() => Promise.reject(error)));
+
+export const createParsedRequest = createFixtureBuilder<ParsedRequest>({});
+export const testParsedRequest = createParsedRequest();

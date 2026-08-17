@@ -4,10 +4,11 @@ import { describe, expect } from "vitest";
 import { getPushId } from "./get-push-id";
 
 describe("getPushId", () => {
+  const testUserId = createUserId();
   const key = "test-secret-key-32-chars-minimum";
 
-  it("returns the same ID for identical inputs", ({ userId }) => {
-    expect(getPushId(userId, key)).toBe(getPushId(userId, key));
+  it("returns the same ID for identical inputs", () => {
+    expect(getPushId(testUserId, key)).toBe(getPushId(testUserId, key));
   });
 
   it("returns unique IDs for different user IDs", () => {
@@ -16,14 +17,14 @@ describe("getPushId", () => {
     );
   });
 
-  it("returns unique IDs for different secrets", ({ userId }) => {
-    expect(getPushId(userId, "secret-key-1-32-chars-minimum")).not.toBe(
-      getPushId(userId, "secret-key-2-32-chars-minimum"),
+  it("returns unique IDs for different secrets", () => {
+    expect(getPushId(testUserId, "secret-key-1-32-chars-minimum")).not.toBe(
+      getPushId(testUserId, "secret-key-2-32-chars-minimum"),
     );
   });
 
-  it("returns base64url encoded output", ({ userId }) => {
-    const pushId = getPushId(userId, key);
+  it("returns base64url encoded output", () => {
+    const pushId = getPushId(testUserId, key);
 
     // Base64URL should not contain +, /, or = characters
     expect(pushId).not.toContain("+");
@@ -33,11 +34,10 @@ describe("getPushId", () => {
 
   it("returns IDs of consistent length", () => {
     // HMAC-SHA256 produces 32 bytes, base64url encoded is 43 characters
-    expect(getPushId(createUserId("short"), key).length).toBe(43);
+    expect(getPushId(createUserId("short"), key)).toHaveLength(43);
     expect(
-      getPushId(createUserId("very-long-user-id-with-many-characters"), key)
-        .length,
-    ).toBe(43);
+      getPushId(createUserId("very-long-user-id-with-many-characters"), key),
+    ).toHaveLength(43);
   });
 
   describe("errors", () => {
@@ -47,8 +47,8 @@ describe("getPushId", () => {
       );
     });
 
-    it("throws when secret key is empty", ({ userId }) => {
-      expect(() => getPushId(userId, "")).toThrow(
+    it("throws when secret key is empty", () => {
+      expect(() => getPushId(testUserId, "")).toThrow(
         "User ID and secret key cannot be empty",
       );
     });
