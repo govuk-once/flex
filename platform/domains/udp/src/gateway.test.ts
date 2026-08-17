@@ -51,6 +51,20 @@ const mockHeaders = {
     "requesting-service-user-id": requestingServiceUserId,
   }),
 };
+const mockUpstreamGroups = {
+  data: [
+    { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" },
+    {
+      Namespace: "travel",
+      Group: "test country",
+      Subgroup: "test frequency",
+      Type: "NOTIFICATION",
+    },
+  ],
+};
+const mockGroupsBody = [
+  { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
+];
 
 // TODO: Move to fixtures
 const stubConsumerConfig = (http: HttpFixture) =>
@@ -428,6 +442,79 @@ describe("UDP Service Gateway", () => {
         statusCode: 204,
         headers: mockHeaders.default,
         body: undefined,
+      });
+    });
+  });
+
+  describe("GET /v1/groups", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+    const mockGroups = mockUpstreamGroups.data;
+
+    it("returns the group subscriptions for the requesting user", async ({
+      http,
+      privateGatewayEvent,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/groups", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamGroups);
+
+      const result = await handler(
+        privateGatewayEvent.get("/gateways/udp/v1/groups", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        context,
+      );
+
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: mockHeaders.default,
+        body: JSON.stringify(mockGroups),
+      });
+    });
+  });
+
+  describe("POST /v1/groups", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+    const mockUpstreamGroupsResponse = { data: mockGroupsBody };
+
+    it("returns the updated group subscriptions for the requesting user", async ({
+      http,
+      privateGatewayEvent,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/groups", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          body: {
+            data: mockGroupsBody,
+            requestingServiceUserId: mockRequestingServiceUserId,
+          },
+        })
+        .reply(200, mockUpstreamGroupsResponse);
+
+      const result = await handler(
+        privateGatewayEvent.post("/gateways/udp/v1/groups", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockGroupsBody,
+        }),
+        context,
+      );
+
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: mockHeaders.default,
+        body: JSON.stringify(mockGroupsBody),
       });
     });
   });

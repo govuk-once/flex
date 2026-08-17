@@ -1,6 +1,9 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
+import { getUserGroups } from "@services/udp";
 import createHttpError from "http-errors";
+
+import { GroupType } from "../../../types";
 
 export const handler = route(
   "POST /v1/groups",
@@ -22,22 +25,40 @@ export const handler = route(
 
     const { pushId } = pushIdResponse.data;
 
-    const request = body.map(({ Type: _type, ...group }) => group);
+    const currentUserGroups = await getUserGroups(userId);
 
-    const response = await integrations.unsPostGroups({
+    const unsRequest = body.map(({ Type: _type, ...group }) => group);
+
+    const unsResponse = await integrations.unsPostGroups({
       query: { pushID: pushId },
-      body: request,
+      body: unsRequest,
     });
 
-    if (!response.ok) {
-      logger.error("Call to post  groups failed", response.error.message);
+    if (!unsResponse.ok) {
+      logger.error("Call to uns post groups failed", unsResponse.error.message);
       throw new createHttpError.BadGateway();
     }
 
-    const groups = response.data.map((group) => ({
+    const notificationGroups = unsResponse.data.map((group) => ({
       ...group,
-      Type: "NOTIFICATION" as const,
+      Type: GroupType.NOTIFICATION,
     }));
+
+    const nonNotificationGroups = currentUserGroups.filter(
+      (group) => group.Type !== GroupType.NOTIFICATION,
+    );
+
+    const groups = [...nonNotificationGroups, ...notificationGroups];
+
+    const udpResponse = await integrations.udpPostGroups({
+      headers: { "requesting-service-user-id": userId },
+      body: groups,
+    });
+
+    if (!udpResponse.ok) {
+      logger.error("Call to udp post groups failed", udpResponse.error.message);
+      throw new createHttpError.BadGateway();
+    }
 
     return {
       status: 200,

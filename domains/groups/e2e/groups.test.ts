@@ -5,6 +5,7 @@ import { describe, expect } from "vitest";
 
 import { config as groupsConfig } from "../domain.config";
 import { GroupsRequestSchema, GroupsResponseSchema } from "../src";
+import { GroupAction, GroupType } from "../src/types";
 
 const udpGetUsersDeployed = () =>
   isRouteDeployed(udpConfig, "GET /v1/users/me");
@@ -16,7 +17,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
     Namespace: "travel",
     Group: "test country",
     Subgroup: "test frequency",
-    Type: "NOTIFICATION" as const,
+    Type: GroupType.NOTIFICATION,
   };
 
   describe("/groups/v1/groups", () => {
@@ -83,7 +84,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
             body: [
               {
                 ...group,
-                Action: "JOIN",
+                Action: GroupAction.JOIN,
               },
             ],
           });
@@ -100,7 +101,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
                 {
                   Namespace: "travel",
                   Group: "test country",
-                  Type: "NOTIFICATION",
+                  Type: GroupType.NOTIFICATION,
                 },
               ],
             });

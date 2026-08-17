@@ -2,6 +2,8 @@ import { route } from "@domain";
 import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
+import { GroupType } from "../../../types";
+
 export const handler = route(
   "GET /v1/groups",
   async ({ auth, integrations, logger }) => {
@@ -33,7 +35,7 @@ export const handler = route(
 
     const groups = response.data.map((group) => ({
       ...group,
-      Type: "NOTIFICATION" as const,
+      Type: GroupType.NOTIFICATION,
     }));
 
     return {

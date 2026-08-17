@@ -2,6 +2,7 @@ import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
+import { domainGroupsSchema } from "./src/schemas/domain/groups";
 import { createIdentityRequestBodySchema } from "./src/schemas/domain/identity";
 import {
   domainNotificationsResponseSchema,
@@ -87,6 +88,27 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
+    },
+    "GET /v1/groups": {
+      name: "getGroupSubscriptions",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      response: domainGroupsSchema,
+    },
+    "POST /v1/groups": {
+      name: "updateGroupSubscriptions",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      body: domainGroupsSchema,
+      response: domainGroupsSchema,
     },
   },
 });
