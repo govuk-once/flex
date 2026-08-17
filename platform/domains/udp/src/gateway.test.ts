@@ -420,7 +420,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the group subscriptions for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -430,19 +430,17 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockUpstreamGroups);
 
       const result = await handler(
-        privateGatewayEvent.get("/gateways/udp/v1/groups", {
+        platform.gatewayEvent.get("/v1/groups", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockGroups),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockGroups }),
+      );
     });
   });
 
@@ -459,7 +457,7 @@ describe("UDP Service Gateway", () => {
 
     it("returns the updated group subscriptions for the requesting user", async ({
       http,
-      privateGatewayEvent,
+      platform,
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
@@ -475,20 +473,18 @@ describe("UDP Service Gateway", () => {
         .reply(200, mockUpstreamGroupsResponse);
 
       const result = await handler(
-        privateGatewayEvent.post("/gateways/udp/v1/groups", {
+        platform.gatewayEvent.post("/v1/groups", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
           body: mockGroupsBody,
         }),
-        context,
+        platform.context(),
       );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: mockHeaders.default,
-        body: JSON.stringify(mockGroupsBody),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockGroupsBody }),
+      );
     });
   });
 });
