@@ -6,7 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       exclude: [...configDefaults.exclude, "e2e/**"],
-      setupFiles: ["@flex/testing/setup/service-gateway"],
+      setupFiles: ["@flex/testing/setup/platform"],
       env: {
         AWS_REGION: "eu-west-2",
         AWS_ACCESS_KEY_ID: "test-access-id", // pragma: allowlist secret
