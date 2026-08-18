@@ -843,15 +843,9 @@ importers:
 
   platform/domains/dvla:
     dependencies:
-      '@aws-lambda-powertools/parameters':
-        specifier: 2.34.0
-        version: 2.34.0(@aws-sdk/client-secrets-manager@3.1091.0)(@aws-sdk/client-ssm@3.1091.0)(@middy/core@7.7.0)
       '@flex/logging':
         specifier: workspace:*
         version: link:../../../libs/logging
-      '@flex/platform-shared':
-        specifier: workspace:*
-        version: link:../../shared
       '@flex/sdk':
         specifier: workspace:*
         version: link:../../../libs/sdk
@@ -861,12 +855,6 @@ importers:
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
-      '@middy/core':
-        specifier: 7.7.0
-        version: 7.7.0
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
       uuid:
         specifier: 14.0.1
         version: 14.0.1
@@ -880,12 +868,6 @@ importers:
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
-      '@types/aws-lambda':
-        specifier: 8.10.162
-        version: 8.10.162
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
       '@vitest/coverage-v8':
         specifier: 4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -901,30 +883,12 @@ importers:
 
   platform/domains/udp:
     dependencies:
-      '@aws-lambda-powertools/parameters':
-        specifier: 2.34.0
-        version: 2.34.0(@aws-sdk/client-secrets-manager@3.1091.0)(@aws-sdk/client-ssm@3.1091.0)(@middy/core@7.7.0)
-      '@flex/logging':
-        specifier: workspace:*
-        version: link:../../../libs/logging
-      '@flex/platform-shared':
-        specifier: workspace:*
-        version: link:../../shared
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../../libs/sdk
       '@flex/service-gateway':
         specifier: workspace:*
         version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
-      '@middy/core':
-        specifier: 7.7.0
-        version: 7.7.0
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -932,15 +896,12 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../../libs/config
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../../libs/sdk
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
-      '@types/aws-lambda':
-        specifier: 8.10.162
-        version: 8.10.162
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
       '@vitest/coverage-v8':
         specifier: 4.1.10
         version: 4.1.10(vitest@4.1.10)
@@ -956,30 +917,12 @@ importers:
 
   platform/domains/uns:
     dependencies:
-      '@aws-lambda-powertools/parameters':
-        specifier: 2.34.0
-        version: 2.34.0(@aws-sdk/client-secrets-manager@3.1091.0)(@aws-sdk/client-ssm@3.1091.0)(@middy/core@7.7.0)
-      '@flex/logging':
-        specifier: workspace:*
-        version: link:../../../libs/logging
-      '@flex/platform-shared':
-        specifier: workspace:*
-        version: link:../../shared
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../../libs/sdk
       '@flex/service-gateway':
         specifier: workspace:*
         version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
-      '@middy/core':
-        specifier: 7.7.0
-        version: 7.7.0
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -987,15 +930,12 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../../libs/config
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../../libs/sdk
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
-      '@types/aws-lambda':
-        specifier: 8.10.162
-        version: 8.10.162
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
       '@vitest/coverage-v8':
         specifier: 4.1.10
         version: 4.1.10(vitest@4.1.10)

@@ -2,7 +2,7 @@ import { logger } from "@flex/logging";
 import { it, userId } from "@flex/testing";
 import { RequestBodyParseError } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
-import z from "zod";
+import { z } from "zod";
 
 import type { BuildContextOptions } from "./build-context";
 import { buildHandlerContext } from "./build-context";

@@ -9,13 +9,13 @@ import { Key } from "aws-cdk-lib/aws-kms";
 import type { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import type { Construct } from "constructs";
 
-import { createPrivateGatewayRoute } from "../../utils/createPrivateGatewayRoute";
-import { getFlexParamName, getPlatformEntry } from "../../utils/getEntry";
-import { toPascalCase } from "../../utils/routes";
-import type { AlarmActionProps } from "../alarms/types";
-import { FlexPrivateEgressFunction } from "../lambda/flex-private-egress-function";
-import { FlexPrivateIsolatedFunction } from "../lambda/flex-private-isolated-function";
-import type { FlexFunctionProps } from "../types";
+import type { AlarmActionProps } from "../constructs/alarms/types";
+import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { FlexPrivateIsolatedFunction } from "../constructs/lambda/flex-private-isolated-function";
+import type { FlexFunctionProps } from "../constructs/types";
+import { createPrivateGatewayRoute } from "./createPrivateGatewayRoute";
+import { getFlexParamName, getPlatformEntry } from "./getEntry";
+import { toPascalCase } from "./routes";
 
 interface SecurityGroups {
   readonly private: ISecurityGroup;

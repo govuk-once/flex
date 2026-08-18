@@ -1,5 +1,5 @@
 import { NonEmptyString } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
 import { commonRequestSchema } from "../common";
 import { customerVehicleDetailsSchema as baseVehicleSchema } from "./customerVehicles";
