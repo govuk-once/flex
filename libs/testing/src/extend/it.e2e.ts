@@ -1,7 +1,7 @@
 import { inject, it as vitestIt } from "vitest";
 
 import { E2EEnv } from "../config/env";
-import { createApi } from "../fixtures";
+import { createApi } from "../fixtures/api";
 
 declare module "vitest" {
   export interface ProvidedContext {

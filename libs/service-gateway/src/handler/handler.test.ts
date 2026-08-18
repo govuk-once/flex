@@ -1,33 +1,37 @@
 import { logger } from "@flex/logging";
-import type { ApiResult } from "@flex/sdk";
 import { clearTmp } from "@flex/sdk";
+import type { PlatformFixture } from "@flex/testing";
+import { it } from "@flex/testing";
 import {
   HeaderValidationError,
   QueryParametersParseError,
   RequestBodyParseError,
 } from "@flex/utils";
 import {
-  gatewayConfig,
-  gatewayEvent,
-  handlerContext,
-  matchedRoute,
-  routeKey,
+  createMatchedRoute,
+  createMockClientBuilder,
+  stubGatewayRoutes,
+  stubGatewayRoutesError,
+  testGatewayConfig,
+  testGatewayContext,
+  testGatewayResources,
+  testGatewayRoutes,
+  testMatchedRoute,
+  testParsedRequest,
+  testRoutePath,
+  testRouteTable,
 } from "@tests/fixtures";
 import createHttpError from "http-errors";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
 import type {
-  GatewayClientBuilder,
   GatewayClientMap,
   GatewayConfig,
-  GatewayContext,
   GatewayHandlerMap,
-  RestClient,
 } from "../types";
 import { parseRequest } from "../utils/request";
 import { resolveResources } from "../utils/resources";
-import type { RouteTable } from "../utils/routes";
 import { buildRoutes, lookupRoute } from "../utils/routes";
 import { buildHandler } from ".";
 import { buildContext } from "./context";
@@ -36,13 +40,6 @@ import { buildMiddleware } from "./middleware";
 vi.mock("@flex/sdk", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@flex/sdk")>()),
   clearTmp: vi.fn(),
-}));
-vi.mock("@flex/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@flex/utils")>()),
-  jsonResponse: vi.fn((statusCode: number, body: unknown) => ({
-    statusCode,
-    body,
-  })),
 }));
 vi.mock("@flex/logging", () => ({
   logger: {
@@ -60,68 +57,42 @@ vi.mock("../utils/routes");
 vi.mock("./context");
 vi.mock("./middleware");
 
-const mockHandler = (result: ApiResult<unknown>) =>
-  vi.fn(() => Promise.resolve(result));
-
-const mockResources = { consumerConfig: { apiKey: "test-api-key" } }; // pragma: allowlist secret
-const mockParsedRequest = { queryParams: { key: "value" } };
-
-const mockRestClient: RestClient = {
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  patch: vi.fn(),
-  delete: vi.fn(),
-};
-
-const mockClients: GatewayClientMap = { api: mockRestClient };
-
-const buildMockClients = vi.fn<
-  GatewayClientBuilder<GatewayConfig["resources"], GatewayClientMap>
->(() => mockClients);
-
-const mockContext: GatewayContext = {
-  clients: mockClients,
-  resources: mockResources,
-  logger,
-};
-
-const mockMiddleware = { handler: (fn: unknown) => fn } as ReturnType<
+const testMiddleware = { handler: (fn: unknown) => fn } as ReturnType<
   typeof buildMiddleware
 >;
 
-const mockRouteTable: RouteTable = {
-  static: new Map(),
-  dynamic: [],
-};
+interface InvokeHandlerOptions {
+  routes?: GatewayHandlerMap<GatewayConfig, GatewayClientMap>;
+  path?: string;
+}
 
-const mockRoutes: GatewayHandlerMap<GatewayConfig, GatewayClientMap> = {
-  [routeKey]: mockHandler({ ok: true, status: 200, data: { result: "ok" } }),
-};
-
-const invokeHandler = (
-  routes: GatewayHandlerMap<GatewayConfig, GatewayClientMap> = mockRoutes,
-  event = gatewayEvent,
-) =>
-  buildHandler(gatewayConfig, { clients: buildMockClients, routes })(
-    event,
-    handlerContext,
-  );
+function handler(
+  platform: PlatformFixture,
+  {
+    routes = testGatewayRoutes,
+    path = testRoutePath,
+  }: InvokeHandlerOptions = {},
+) {
+  return buildHandler(testGatewayConfig, {
+    clients: createMockClientBuilder,
+    routes,
+  })(platform.gatewayEvent.get(path), platform.context());
+}
 
 describe("buildHandler", () => {
   beforeEach(() => {
-    vi.mocked(buildMiddleware).mockReturnValue(mockMiddleware);
-    vi.mocked(resolveResources).mockResolvedValue(mockResources);
-    vi.mocked(buildRoutes).mockReturnValue(mockRouteTable);
-    vi.mocked(lookupRoute).mockReturnValue(matchedRoute);
-    vi.mocked(parseRequest).mockReturnValue(mockParsedRequest);
-    vi.mocked(buildContext).mockReturnValue(mockContext);
+    vi.mocked(buildMiddleware).mockReturnValue(testMiddleware);
+    vi.mocked(resolveResources).mockResolvedValue(testGatewayResources);
+    vi.mocked(buildRoutes).mockReturnValue(testRouteTable);
+    vi.mocked(lookupRoute).mockReturnValue(testMatchedRoute);
+    vi.mocked(parseRequest).mockReturnValue(testParsedRequest);
+    vi.mocked(buildContext).mockReturnValue(testGatewayContext);
   });
 
   it("sets the logger service name and level", () => {
-    buildHandler(gatewayConfig, {
-      clients: buildMockClients,
-      routes: mockRoutes,
+    buildHandler(testGatewayConfig, {
+      clients: createMockClientBuilder,
+      routes: testGatewayRoutes,
     });
 
     expect(logger.setServiceName).toHaveBeenCalledExactlyOnceWith(
@@ -130,150 +101,175 @@ describe("buildHandler", () => {
     expect(logger.setLogLevel).toHaveBeenCalledExactlyOnceWith("INFO");
   });
 
-  it("returns the handler result for a successful request", async () => {
-    const result = await invokeHandler();
+  it("returns the handler result for a successful request", async ({
+    platform,
+  }) => {
+    const result = await handler(platform);
 
-    expect(result).toStrictEqual({ statusCode: 200, body: { result: "ok" } });
+    expect(result).toStrictEqual(
+      platform.gatewayResult(200, { body: { result: "ok" } }),
+    );
     expect(clearTmp).toHaveBeenCalledOnce();
   });
 
-  it("strips the gateway prefix from the inbound path before matching the route", async () => {
-    await invokeHandler();
+  it("strips the gateway prefix from the inbound path before matching the route", async ({
+    platform,
+  }) => {
+    await handler(platform);
 
     expect(lookupRoute).toHaveBeenCalledExactlyOnceWith(
-      mockRouteTable,
+      testRouteTable,
       "GET",
-      "/v1/path",
+      testRoutePath,
     );
   });
 
-  it("returns 404 when the inbound path does not match a route", async () => {
+  it("returns 404 when the inbound path does not match a route", async ({
+    platform,
+  }) => {
     vi.mocked(lookupRoute).mockReturnValue(undefined);
 
-    const result = await invokeHandler();
+    const result = await handler(platform);
 
-    expect(result).toStrictEqual({
-      statusCode: 404,
-      body: { message: "Route not found" },
-    });
-  });
-
-  it("returns 404 when the matched route does not have a handler", async () => {
-    const result = await invokeHandler({});
-
-    expect(result).toStrictEqual({
-      statusCode: 404,
-      body: { message: "Route handler not found" },
-    });
-  });
-
-  it("parses the inbound request against the matched route", async () => {
-    await invokeHandler();
-
-    expect(parseRequest).toHaveBeenCalledExactlyOnceWith(
-      gatewayEvent,
-      matchedRoute,
+    expect(result).toStrictEqual(
+      platform.gatewayResult(404, { body: { message: "Route not found" } }),
     );
   });
 
-  it("resolves the gateway resources with the resource config", async () => {
-    await invokeHandler();
+  it("returns 404 when the matched route does not have a handler", async ({
+    platform,
+  }) => {
+    const result = await handler(platform, { routes: {} });
 
-    expect(resolveResources).toHaveBeenCalledExactlyOnceWith(
-      gatewayConfig.resources,
-    );
-  });
-
-  it("builds gateway clients using the resolved resources", async () => {
-    await invokeHandler();
-
-    expect(buildMockClients).toHaveBeenCalledExactlyOnceWith(mockResources);
-  });
-
-  it("passes the parsed request, clients and resources to the handler context", async () => {
-    await invokeHandler();
-
-    expect(buildContext).toHaveBeenCalledExactlyOnceWith(mockParsedRequest, {
-      clients: mockClients,
-      resources: mockResources,
-      logger,
-    });
-  });
-
-  it.for<{
-    reason: string;
-    setup: () => GatewayHandlerMap<GatewayConfig, GatewayClientMap>;
-  }>([
-    {
-      reason: "the inbound path does not match a route",
-      setup: () => {
-        vi.mocked(lookupRoute).mockReturnValue(undefined);
-        return mockRoutes;
-      },
-    },
-    { reason: "the matched route does not have a handler", setup: () => ({}) },
-    {
-      reason: "the request validation fails",
-      setup: () => {
-        vi.mocked(parseRequest).mockImplementation(() => {
-          throw new RequestBodyParseError("test body error");
-        });
-        return mockRoutes;
-      },
-    },
-  ])(
-    "skips resource resolution and client instantiation when $reason",
-    async ({ setup }) => {
-      await invokeHandler(setup());
-
-      expect(resolveResources).not.toHaveBeenCalled();
-      expect(buildMockClients).not.toHaveBeenCalled();
-    },
-  );
-
-  it("returns 502 when the outbound response schema validation fails", async () => {
-    const schema = z.object({ key: z.string() });
-
-    vi.mocked(lookupRoute).mockReturnValue({
-      ...matchedRoute,
-      config: { ...matchedRoute.config, response: schema },
-    });
-
-    const result = await invokeHandler({
-      [routeKey]: mockHandler({ ok: true, status: 200, data: { key: 123 } }),
-    });
-
-    expect(result).toStrictEqual({
-      statusCode: 502,
-      body: { message: "EXAMPLE upstream response invalid" },
-    });
-    expect(logger.error).toHaveBeenCalledExactlyOnceWith(
-      "Gateway response schema validation failed",
-      expect.objectContaining({
-        issues: expect.stringContaining(
-          "Invalid input: expected string",
-        ) as string,
+    expect(result).toStrictEqual(
+      platform.gatewayResult(404, {
+        body: { message: "Route handler not found" },
       }),
     );
   });
 
-  it("returns the result unchanged when the outbound response schema validation passes", async () => {
-    const schema = z.object({ key: z.string() });
+  it("parses the inbound request against the matched route", async ({
+    platform,
+  }) => {
+    await handler(platform);
 
-    vi.mocked(lookupRoute).mockReturnValue({
-      ...matchedRoute,
-      config: { ...matchedRoute.config, response: schema },
+    expect(parseRequest).toHaveBeenCalledExactlyOnceWith(
+      platform.gatewayEvent.get(testRoutePath),
+      testMatchedRoute,
+    );
+  });
+
+  it("resolves the gateway resources with the resource config", async ({
+    platform,
+  }) => {
+    await handler(platform);
+
+    expect(resolveResources).toHaveBeenCalledExactlyOnceWith(
+      testGatewayConfig.resources,
+    );
+  });
+
+  it("builds gateway clients using the resolved resources", async ({
+    platform,
+  }) => {
+    await handler(platform);
+
+    expect(createMockClientBuilder).toHaveBeenCalledExactlyOnceWith(
+      testGatewayResources,
+    );
+  });
+
+  it("passes the parsed request, clients and resources to the handler context", async ({
+    platform,
+  }) => {
+    await handler(platform);
+
+    expect(buildContext).toHaveBeenCalledExactlyOnceWith(testParsedRequest, {
+      clients: testGatewayContext.clients,
+      resources: testGatewayResources,
+      logger,
+    });
+  });
+
+  it.for([
+    {
+      reason: "the inbound path does not match a route",
+      setup: () => vi.mocked(lookupRoute).mockReturnValue(undefined),
+      routes: testGatewayRoutes,
+    },
+    {
+      reason: "the matched route does not have a handler",
+      setup: () => {},
+      routes: {},
+    },
+    {
+      reason: "the request validation fails",
+      setup: () =>
+        vi.mocked(parseRequest).mockImplementation(() => {
+          throw new RequestBodyParseError("test body error");
+        }),
+      routes: testGatewayRoutes,
+    },
+  ])(
+    "skips resource resolution and client instantiation when $reason",
+    async ({ setup, routes }, { platform }) => {
+      setup();
+
+      await handler(platform, { routes });
+
+      expect(resolveResources).not.toHaveBeenCalled();
+      expect(createMockClientBuilder).not.toHaveBeenCalled();
+    },
+  );
+
+  it("returns 502 when the outbound response schema validation fails", async ({
+    platform,
+  }) => {
+    vi.mocked(lookupRoute).mockReturnValue(
+      createMatchedRoute({
+        config: { response: z.object({ key: z.string() }) },
+      }),
+    );
+
+    const result = await handler(platform, {
+      routes: stubGatewayRoutes({
+        ok: true,
+        status: 200,
+        data: { key: 123 },
+      }),
     });
 
-    const result = await invokeHandler({
-      [routeKey]: mockHandler({
+    expect(result).toStrictEqual(
+      platform.gatewayResult(502, {
+        body: { message: "EXAMPLE upstream response invalid" },
+      }),
+    );
+    expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+      "Gateway response schema validation failed",
+      expect.objectContaining({ issues: expect.any(String) as string }),
+    );
+  });
+
+  it("returns the result unchanged when the outbound response schema validation passes", async ({
+    platform,
+  }) => {
+    vi.mocked(lookupRoute).mockReturnValue(
+      createMatchedRoute({
+        config: { response: z.object({ key: z.string() }) },
+      }),
+    );
+
+    const result = await handler(platform, {
+      routes: stubGatewayRoutes({
         ok: true,
         status: 200,
         data: { key: "value" },
       }),
     });
 
-    expect(result).toStrictEqual({ statusCode: 200, body: { key: "value" } });
+    expect(result).toStrictEqual(
+      platform.gatewayResult(200, { body: { key: "value" } }),
+    );
   });
 
   it.for([
@@ -304,74 +300,82 @@ describe("buildHandler", () => {
     {
       reason: "passes through a 4xx without a body",
       error: { status: 400, message: "downstream error" },
-      expected: { statusCode: 400, body: { message: "downstream error" } },
+      expected: {
+        statusCode: 400,
+        body: { message: "downstream error" },
+      },
     },
-  ])("maps a downstream failure: $reason", async ({ error, expected }) => {
-    const result = await invokeHandler({
-      [routeKey]: mockHandler({ ok: false, error }),
-    });
+  ])(
+    "maps a downstream failure: $reason",
+    async ({ error, expected }, { platform }) => {
+      const result = await handler(platform, {
+        routes: stubGatewayRoutes({ ok: false, error }),
+      });
 
-    expect(result).toStrictEqual(expected);
-  });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(expected.statusCode, { body: expected.body }),
+      );
+    },
+  );
 
   it.for([
     {
       reason: "a required header is missing",
       error: new HeaderValidationError(["key"]),
-      expected: {
-        statusCode: 400,
-        body: { headers: ["key"], message: "Missing headers: key" },
-      },
+      expected: { message: "Missing headers: key", headers: ["key"] },
     },
     {
       reason: "the query parameters are invalid",
       error: new QueryParametersParseError({ issues: [] } as never),
-      expected: {
-        statusCode: 400,
-        body: { errors: [], message: "Invalid query parameters" },
-      },
+      expected: { message: "Invalid query parameters", errors: [] },
     },
     {
       reason: "the request body is invalid",
       error: new RequestBodyParseError("test body error"),
-      expected: { statusCode: 400, body: { message: "test body error" } },
+      expected: { message: "test body error" },
     },
-  ])("returns 400 when $reason", async ({ error, expected }) => {
-    const result = await invokeHandler({
-      [routeKey]: vi.fn(() => Promise.reject(error)),
+  ])("returns 400 when $reason", async ({ error, expected }, { platform }) => {
+    const result = await handler(platform, {
+      routes: stubGatewayRoutesError(error),
     });
 
-    expect(result).toStrictEqual(expected);
+    expect(result).toStrictEqual(
+      platform.gatewayResult(400, { body: expected }),
+    );
   });
 
-  it("propagates the status code thrown by http-error", async () => {
-    const httpError = new createHttpError.ImATeapot("test http-error");
-
-    const result = await invokeHandler({
-      [routeKey]: vi.fn(() => Promise.reject(httpError)),
+  it("propagates the status code thrown by http-error", async ({
+    platform,
+  }) => {
+    const result = await handler(platform, {
+      routes: stubGatewayRoutesError(
+        new createHttpError.ImATeapot("test http-error"),
+      ),
     });
 
-    expect(result).toStrictEqual({
-      statusCode: 418,
-      body: { message: "test http-error" },
-    });
+    expect(result).toStrictEqual(
+      platform.gatewayResult(418, { body: { message: "test http-error" } }),
+    );
   });
 
-  it("returns 500 when resource resolution fails unexpectedly", async () => {
+  it("returns 500 when resource resolution fails unexpectedly", async ({
+    platform,
+  }) => {
     vi.mocked(resolveResources).mockRejectedValue(new Error("error"));
 
-    const result = await invokeHandler();
+    const result = await handler(platform);
 
-    expect(result).toStrictEqual({
-      statusCode: 500,
-      body: { message: "Internal server error" },
-    });
+    expect(result).toStrictEqual(
+      platform.gatewayResult(500, {
+        body: { message: "Internal server error" },
+      }),
+    );
   });
 
-  it("clears the tmp folder when the handler throws", async () => {
+  it("clears the tmp folder when the handler throws", async ({ platform }) => {
     vi.mocked(resolveResources).mockRejectedValue(new Error("error"));
 
-    await invokeHandler();
+    await handler(platform);
 
     expect(clearTmp).toHaveBeenCalledOnce();
   });

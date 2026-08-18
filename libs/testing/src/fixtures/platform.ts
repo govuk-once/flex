@@ -12,7 +12,7 @@ import type {
   StatementEffect,
 } from "aws-lambda";
 
-import { createFixtureBuilder, createFixtureFactory } from "../utils/factory";
+import { createFixtureBuilder, createFixtureVariants } from "../utils/fixtures";
 import { validJwt } from "./auth";
 import type { LambdaContextFactory } from "./lambda";
 
@@ -104,7 +104,7 @@ type GatewayEventOptions<Body = never> = GatewayEventRequestOptions &
   ([Body] extends [never] ? { body?: never } : { body: Body });
 
 export function createPlatformGatewayEvent() {
-  return createFixtureFactory(baseGatewayEvent, (build) => ({
+  return createFixtureVariants(baseGatewayEvent, (build) => ({
     get: (path: string, options?: GatewayEventOptions) =>
       build(toGatewayRequest("GET", path, options)),
     post: <Body = never>(path: string, options?: GatewayEventOptions<Body>) =>
@@ -272,7 +272,7 @@ function toCloudFrontRequest(
 }
 
 export function createPlatformCloudFrontEvent() {
-  return createFixtureFactory(baseCloudFrontEvent, (build) => ({
+  return createFixtureVariants(baseCloudFrontEvent, (build) => ({
     get: (uri: string, options?: CloudFrontEventOptions) =>
       build(toCloudFrontRequest("GET", uri, options)),
     post: (uri: string, options?: CloudFrontEventOptions) =>
