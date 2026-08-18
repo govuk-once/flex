@@ -8,7 +8,8 @@ import createHttpError from "http-errors";
 import status from "http-status";
 
 export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
-  const { auth, pathParams, integrations, logger } = ctx;
+  const { auth, pathParams, integrations, logger, resources } = ctx;
+  const { environment } = resources;
   const service = pathParams.service.toLowerCase();
 
   // TODO: SDK auth alias
@@ -19,8 +20,11 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
 
   /**
    * Must run before deleteServiceIdentity, DVLA runs its own lookup to verify matching IDs
+   * Note:
+   * - On none production envs we will not call dvla as this will delete the
+   *   linking id and causes issues with the e2e tests
    */
-  if (service === "dvla") {
+  if (service === "dvla" && environment === "production") {
     const result = await integrations.dvlaUnlinkUser({
       headers: { "User-Id": userId },
       body: {},

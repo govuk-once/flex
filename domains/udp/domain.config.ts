@@ -23,6 +23,7 @@ export const { config, route, routeContext } = domain({
     function: { timeoutSeconds: 20 },
   },
   resources: {
+    environment: { type: "ssm", path: "/flex/environment" },
     privateGatewayUrl: {
       type: "ssm",
       path: "/flex/apigw/private/gateway-url",
@@ -119,7 +120,7 @@ export const { config, route, routeContext } = domain({
         DELETE: {
           public: {
             name: "delete-service-identity",
-            resources: ["privateGatewayUrl"],
+            resources: ["privateGatewayUrl", "environment"],
             integrations: [
               "udpDeleteIdentity",
               "udpGetIdentity",
