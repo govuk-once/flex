@@ -2,7 +2,7 @@ import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { domainGroupsSchema } from "./src/schemas/domain/groups";
+import { DomainGroupsSchema } from "./src/schemas/domain/groups";
 import { createIdentityRequestBodySchema } from "./src/schemas/domain/identity";
 import {
   domainNotificationsResponseSchema,
