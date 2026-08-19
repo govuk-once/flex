@@ -1,67 +1,64 @@
+import { clearCaches } from "@aws-lambda-powertools/parameters";
+import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import type { HttpFixture } from "@flex/testing";
 import { it } from "@flex/testing";
-import { describe, expect, vi } from "vitest";
+import { mockClient } from "aws-sdk-client-mock";
+import { afterEach, describe, expect } from "vitest";
 
 import { handler } from "./gateway";
+import { context, restApiEvent } from "./tests/fixtures";
 
-vi.mock("@flex/sdk", async (importOriginal) => ({
-  ...(await importOriginal()),
-  createSigv4FetchWithCredentials:
-    ({ baseUrl }: { baseUrl: string }) =>
-    (path: string, options?: RequestInit) => ({
-      request: fetch(`${baseUrl}${path}`, options),
-      abort: vi.fn(),
-    }),
-}));
-
-const mockUserId = "test-user-id";
-const mockPushId = "test-push-id";
-const mockService = "test-service";
-const mockIdentity = "test-identity";
-const mockIdentityLink = { identity: mockIdentity };
-const mockLinkedService = "dvla";
-const mockIdentities = { linkedService: [mockLinkedService] };
-const mockRequestingServiceUserId = "test-requesting-service-user-id";
-const mockUpstreamNotifications = {
-  data: { consentStatus: "accepted", pushId: mockPushId },
-};
-const mockNotifications = { consentStatus: "accepted", pushId: mockPushId };
+const dynamo = mockClient(DynamoDBDocumentClient);
 
 const mockSecretArn =
-  "arn:aws:secretsmanager:eu-west-2:123456789012:secret:udp-consumer";
+  "arn:aws:secretsmanager:eu-west-2:123456789012:secret:travel-consumer";
 
 const mockConsumerConfig = {
-  apiAccountId: "123456789012",
-  apiKey: "test-api-key", // pragma: allowlist secret
-  apiUrl: "https://udp-api.example.com",
-  consumerRoleArn: "arn:aws:iam::123456789012:role/udp-consumer-role",
+  sourcesTableName: "development-travel-sources",
   region: "eu-west-2",
-  externalId: "test-external-id",
+  roleArn: "arn:aws:iam::123456789012:role/travel-consumer-role",
 };
-const mockHeaders = {
-  apiKey: { "x-api-key": mockConsumerConfig.apiKey }, // pragma: allowlist secret
-  withServiceUserId: (requestingServiceUserId: string) => ({
-    "x-api-key": mockConsumerConfig.apiKey,
-    "requesting-service": "app",
-    "requesting-service-user-id": requestingServiceUserId,
-  }),
+
+const jsonHeaders = { "Content-Type": "application/json" };
+
+/** A row shaped the way the seed script writes it. */
+const sourceRow = (
+  slug: string,
+  country: string,
+  synonyms: string[] = [],
+  overrides: Record<string, unknown> = {},
+) => ({
+  sourceID: `uuid-${slug}`,
+  compositeKey: `travel/${slug}`,
+  sourceNamespace: "travel",
+  sourceGroup: slug,
+  accessMethod: "api",
+  URL: `https://www.gov.uk/api/content/foreign-travel-advice/${slug}`,
+  sourceEnabled: true,
+  lastUpdated: "2026-08-14T09:00:00.000Z",
+  sourceDetail: { slug, country, synonyms },
+  ...overrides,
+});
+
+const franceRow = sourceRow("france", "France", ["Frankreich"]);
+const germanyRow = sourceRow("germany", "Germany");
+
+const france = {
+  country: "France",
+  slug: "france",
+  lastUpdate: "2026-08-14T09:00:00.000Z",
+  synonyms: ["Frankreich"],
 };
-const mockUpstreamGroups = {
-  data: {
-    groups: [
-      { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" },
-      {
-        Namespace: "travel",
-        Group: "test country",
-        Subgroup: "test frequency",
-        Type: "NOTIFICATION",
-      },
-    ],
-  },
+const germany = {
+  country: "Germany",
+  slug: "germany",
+  lastUpdate: "2026-08-14T09:00:00.000Z",
+  synonyms: [],
 };
-const mockGroupsBody = [
-  { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
-];
+
+/** Narrows the V2 result union, which is `string | StructuredResult`. */
+const bodyOf = (result: Awaited<ReturnType<typeof handler>>): unknown =>
+  JSON.parse((result as { body: string }).body);
 
 const stubConsumerConfig = (http: HttpFixture) =>
   http
@@ -69,422 +66,163 @@ const stubConsumerConfig = (http: HttpFixture) =>
     .post("/")
     .reply(200, {
       ARN: mockSecretArn,
-      Name: "udp-consumer",
+      Name: "travel-consumer",
       SecretString: JSON.stringify(mockConsumerConfig),
     });
 
-describe("UDP Service Gateway", () => {
+describe("Travel Service Gateway", () => {
   it.beforeEach(({ env }) => {
-    env.set({ FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
+    clearCaches();
+    dynamo.reset();
+    env.set({ FLEX_TRAVEL_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
   });
 
-  describe("Error handling", () => {
-    it("returns 404 for an unknown route", async ({ platform }) => {
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/should-throw"),
-        platform.context(),
-      );
+  afterEach(() => {
+    dynamo.reset();
+  });
 
-      expect(result).toStrictEqual(
-        platform.gatewayResult(404, { body: { message: "Route not found" } }),
-      );
+  it("returns 404 for an unknown route", async () => {
+    const result = await handler(
+      restApiEvent.get("/gateways/travel/v1/should-throw"),
+      context,
+    );
+
+    expect(result).toStrictEqual({
+      statusCode: 404,
+      headers: jsonHeaders,
+      body: JSON.stringify({ message: "Route not found" }),
     });
+  });
 
-    it("returns 502 when the upstream service returns 5xx", async ({
+  describe("GET /v1/countries", () => {
+    const endpoint = "/gateways/travel/v1/countries";
+
+    it("returns every travel source mapped onto the country shape", async ({
       http,
-      platform,
     }) => {
       stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({ Items: [franceRow, germanyRow] });
 
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        })
-        .reply(500);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/notifications", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(502, {
-          body: { message: "UDP upstream service unavailable" },
-        }),
-      );
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify([france, germany]),
+      });
     });
 
-    it("returns passthrough error provided by the upstream error response", async ({
+    it("scans the sources table filtered to the travel namespace", async ({
       http,
-      platform,
     }) => {
       stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
 
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        })
-        .reply(404, { key: "value" });
+      await handler(restApiEvent.get(endpoint), context);
 
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/notifications", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(404, {
-          body: { message: "Not Found", error: { key: "value" } },
-        }),
-      );
+      expect(dynamo.commandCalls(ScanCommand)).toHaveLength(1);
+      expect(dynamo.commandCalls(ScanCommand)[0]?.args[0].input).toMatchObject({
+        TableName: "development-travel-sources",
+        FilterExpression: "#attribute = :value",
+        ExpressionAttributeNames: { "#attribute": "sourceNamespace" },
+        ExpressionAttributeValues: { ":value": "travel" },
+      });
     });
 
-    it("returns 400 when a required header is missing", async ({
-      platform,
-    }) => {
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/notifications"),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(400, {
-          body: {
-            message: "Missing headers: requesting-service-user-id",
-            headers: ["requesting-service-user-id"],
-          },
-        }),
-      );
-    });
-  });
-
-  describe("GET /v1/identities/:id", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    it("returns the linked services for the given ID", async ({
+    it("drops the table's key and internal attributes from the response", async ({
       http,
-      platform,
     }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get(`/v1/identity/app/${mockUserId}/linked-services`, {
-          headers: mockHeaders.apiKey,
-        })
-        .reply(200, mockIdentities);
-
-      const result = await handler(
-        platform.gatewayEvent.get(`/v1/identities/${mockUserId}`),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockIdentities }),
-      );
-    });
-  });
-
-  describe("GET /v1/identity/:serviceName", () => {
-    it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(bodyOf(result)).toStrictEqual([france]);
     });
 
-    it("returns the identity link for the given service", async ({
+    it("sorts by country name so the list is repeatable", async ({ http }) => {
+      stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({ Items: [germanyRow, franceRow] });
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(bodyOf(result)).toStrictEqual([france, germany]);
+    });
+
+    it("omits sources the operator has disabled", async ({ http }) => {
+      stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({
+        Items: [
+          franceRow,
+          sourceRow("germany", "Germany", [], { sourceEnabled: false }),
+        ],
+      });
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(bodyOf(result)).toStrictEqual([france]);
+    });
+
+    it("returns an empty list when the namespace holds no sources", async ({
       http,
-      platform,
     }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get("/v1/identity/exchange", {
-          headers: mockHeaders.withServiceUserId(mockUserId),
-          query: { requiredService: mockService },
-        })
-        .reply(200, mockIdentityLink);
-
-      const result = await handler(
-        platform.gatewayEvent.get(`/v1/identity/${mockService}`, {
-          headers: { "User-Id": mockUserId },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockIdentityLink }),
-      );
-    });
-  });
-
-  describe("GET /v1/notifications", () => {
-    it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
+      dynamo.on(ScanCommand).resolves({ Items: [] });
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify([]),
+      });
     });
 
-    it("returns the notification preferences for the requesting user", async ({
+    it("follows pagination until the table is exhausted", async ({ http }) => {
+      stubConsumerConfig(http);
+      dynamo
+        .on(ScanCommand)
+        .resolvesOnce({
+          Items: [franceRow],
+          LastEvaluatedKey: { sourceID: "uuid-france" },
+        })
+        .resolvesOnce({ Items: [germanyRow] });
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(dynamo.commandCalls(ScanCommand)).toHaveLength(2);
+      expect(dynamo.commandCalls(ScanCommand)[1]?.args[0].input).toMatchObject({
+        ExclusiveStartKey: { sourceID: "uuid-france" },
+      });
+      expect(bodyOf(result)).toStrictEqual([france, germany]);
+    });
+
+    it("returns 502 when the table scan fails", async ({ http }) => {
+      stubConsumerConfig(http);
+      dynamo.on(ScanCommand).rejects(new Error("ResourceNotFoundException"));
+
+      const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(result).toStrictEqual({
+        statusCode: 502,
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          message: "TRAVEL upstream service unavailable",
+        }),
+      });
+    });
+
+    it("returns 502 when a row does not match the source schema", async ({
       http,
-      platform,
     }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        })
-        .reply(200, mockUpstreamNotifications);
-
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/notifications", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockNotifications }),
-      );
-    });
-  });
-
-  describe("POST /v1/identity/:serviceName/:identifier", () => {
-    const now = new Date("2026-08-13T00:00:00.000Z");
-    const sixtyDaysInSeconds = 60 * 24 * 60 * 60;
-    const mockExpiresAt = Math.floor(now.getTime() / 1000) + sixtyDaysInSeconds;
-
-    it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
+      dynamo.on(ScanCommand).resolves({
+        Items: [sourceRow("france", "France", [], { lastUpdated: "nope" })],
+      });
 
-      return () => {
-        vi.useRealTimers();
-      };
-    });
+      const result = await handler(restApiEvent.get(endpoint), context);
 
-    it("links the service identity for the requesting user", async ({
-      http,
-      platform,
-    }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .post(`/v1/identity/${mockService}/${mockIdentity}`, {
-          headers: mockHeaders.apiKey,
-          body: { appId: mockUserId, expiresAt: mockExpiresAt },
-        })
-        .reply(201);
-
-      const result = await handler(
-        platform.gatewayEvent.post(
-          `/v1/identity/${mockService}/${mockIdentity}`,
-          { body: { appId: mockUserId } },
-        ),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(platform.gatewayResult(201));
-    });
-  });
-
-  describe("POST /v1/notifications", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    it("returns the updated notification preferences for the requesting user", async ({
-      http,
-      platform,
-    }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .post("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-          body: {
-            data: { consentStatus: "accepted" },
-            requestingServiceUserId: mockRequestingServiceUserId,
-          },
-        })
-        .reply(200, mockUpstreamNotifications);
-
-      const result = await handler(
-        platform.gatewayEvent.post("/v1/notifications", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-          body: { consentStatus: "accepted" },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockNotifications }),
-      );
-    });
-  });
-
-  describe("POST /v1/users", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    const mockCreatedUser = { message: "User created" };
-
-    it("returns the created user", async ({ http, platform }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .post("/v1/user", {
-          headers: mockHeaders.apiKey,
-          body: { pushId: mockPushId, appId: mockUserId },
-        })
-        .reply(200, mockCreatedUser);
-
-      const result = await handler(
-        platform.gatewayEvent.post("/v1/users", {
-          body: { pushId: mockPushId, userId: mockUserId },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockCreatedUser }),
-      );
-    });
-  });
-
-  describe("DELETE /v1/identity/:serviceName/:identifier", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    it("unlinks the service identity", async ({ http, platform }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .delete(`/v1/identity/${mockService}/${mockIdentity}`, {
-          headers: mockHeaders.apiKey,
-        })
-        .reply(204);
-
-      const result = await handler(
-        platform.gatewayEvent.delete(
-          `/v1/identity/${mockService}/${mockIdentity}`,
-        ),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(platform.gatewayResult(204));
-    });
-  });
-
-  describe("DELETE /v1/notifications", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    it("deletes the notification preferences for the requesting user", async ({
-      http,
-      platform,
-    }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .delete("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        })
-        .reply(204);
-
-      const result = await handler(
-        platform.gatewayEvent.delete("/v1/notifications", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(platform.gatewayResult(204));
-    });
-  });
-
-  describe("GET /v1/groups", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-    const mockGroups = mockUpstreamGroups.data.groups;
-
-    it("returns the group subscriptions for the requesting user", async ({
-      http,
-      platform,
-    }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .get("/v1/groups", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        })
-        .reply(200, mockUpstreamGroups);
-
-      const result = await handler(
-        platform.gatewayEvent.get("/v1/groups", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockGroups }),
-      );
-    });
-  });
-
-  describe("POST /v1/groups", () => {
-    it.beforeEach(({ http }) => {
-      stubConsumerConfig(http);
-    });
-
-    const mockUpstreamGroupsResponse = {
-      data: {
-        groups: mockGroupsBody,
-      },
-    };
-
-    it("returns the updated group subscriptions for the requesting user", async ({
-      http,
-      platform,
-    }) => {
-      http
-        .url(mockConsumerConfig.apiUrl)
-        .post("/v1/groups", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-          body: {
-            data: {
-              groups: mockGroupsBody,
-            },
-            requestingServiceUserId: mockRequestingServiceUserId,
-          },
-        })
-        .reply(200, mockUpstreamGroupsResponse);
-
-      const result = await handler(
-        platform.gatewayEvent.post("/v1/groups", {
-          headers: {
-            "requesting-service-user-id": mockRequestingServiceUserId,
-          },
-          body: mockGroupsBody,
-        }),
-        platform.context(),
-      );
-
-      expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: mockGroupsBody }),
-      );
+      expect(result).toMatchObject({ statusCode: 502 });
     });
   });
 });
