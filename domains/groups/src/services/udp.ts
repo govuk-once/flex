@@ -1,6 +1,6 @@
 import { routeContext } from "@domain";
 import type { UserId } from "@flex/utils";
-import { GroupSubscription } from "@schemas/group";
+import type { GroupSubscription } from "@schemas/group";
 import createHttpError from "http-errors";
 
 type Route = "POST /v1/groups";
