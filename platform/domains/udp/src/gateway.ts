@@ -151,7 +151,7 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       const result = await api.post("/v1/groups", {
-        schema: createOrUpdateGroupsResponseSchema,
+        schema: UpsertGroupsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
