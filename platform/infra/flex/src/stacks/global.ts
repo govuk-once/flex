@@ -473,6 +473,10 @@ export class FlexGlobalStack extends BaseStack {
       const cfnProtection = new CfnProtection(this, "ShieldProtection", {
         name: `${stage}-flex-cloudfront`,
         resourceArn: `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
+        applicationLayerAutomaticResponseConfiguration: {
+          action: { count: {} },
+          status: "ENABLED",
+        },
       });
       cfnProtection.overrideLogicalId("CloudfrontShieldProtection235622B4");
 
