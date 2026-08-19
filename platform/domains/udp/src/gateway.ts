@@ -134,7 +134,7 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       const result = await api.get("/v1/groups", {
-        schema: groupsResponseSchema,
+        schema: GroupsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
