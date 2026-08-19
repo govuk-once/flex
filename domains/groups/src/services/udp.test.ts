@@ -23,7 +23,7 @@ function stubContext() {
   } as never);
 }
 
-const userId = "test-user-id" as Parameters<typeof getUserGroups>[0];
+import { userId } from "@flex/testing";
 
 const existingGroups = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
