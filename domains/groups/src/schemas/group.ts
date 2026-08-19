@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { GroupAction, GroupType } from "../types";
 
 const UnsGroupSchema = z.object({
   Namespace: z.string(),
