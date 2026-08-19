@@ -1,12 +1,14 @@
 import { z } from "zod";
 
-export const notificationGroupSubscriptionSchema = z.object({
+export const NotificationGroupSubscriptionSchema = z.object({
   Namespace: z.string(),
   Group: z.string(),
   Subgroup: z.string().optional(),
   Type: z.literal("NOTIFICATION"),
 });
 
-export const domainGroupsSchema = z.array(notificationGroupSubscriptionSchema);
+export type NotificationGroupSubscription = z.infer<typeof NotificationGroupSubscriptionSchema>;
 
-export type DomainGroups = z.infer<typeof domainGroupsSchema>;
+export const DomainGroupsSchema = z.array(NotificationGroupSubscriptionSchema);
+
+export type DomainGroups = z.infer<typeof DomainGroupsSchema>;
