@@ -10,22 +10,22 @@ export const GroupsResponseSchema = z.object({
 
 export type GroupsResponse = z.infer<typeof GroupsResponseSchema>;
 
-export const createOrUpdateGroupsRequestSchema = z.object({
+export const UpsertGroupsRequestSchema = z.object({
   data: z.object({
-    groups: domainGroupsSchema,
+    groups: DomainGroupsSchema,
   }),
 });
 
-export type CreateOrUpdateGroupsRequest = z.infer<
-  typeof createOrUpdateGroupsRequestSchema
+export type UpsertGroupsRequest = z.infer<
+  typeof UpsertGroupsRequestSchema
 >;
 
-export const createOrUpdateGroupsResponseSchema = z.object({
+export const UpsertGroupsResponseSchema = z.object({
   data: z.object({
-    groups: domainGroupsSchema,
+    groups: DomainGroupsSchema,
   }),
 });
 
-export type CreateOrUpdateGroupsResponse = z.infer<
-  typeof createOrUpdateGroupsResponseSchema
+export type UpsertGroupsResponse = z.infer<
+  typeof UpsertGroupsResponseSchema
 >;
