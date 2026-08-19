@@ -55,6 +55,10 @@ const germany = {
   synonyms: [],
 };
 
+/** Narrows the V2 result union, which is `string | StructuredResult`. */
+const bodyOf = (result: Awaited<ReturnType<typeof handler>>): unknown =>
+  JSON.parse((result as { body: string }).body);
+
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -135,7 +139,7 @@ describe("Travel Service Gateway", () => {
 
       const result = await handler(privateGatewayEvent.get(endpoint), context);
 
-      expect(JSON.parse(result.body as string)).toStrictEqual([france]);
+      expect(bodyOf(result)).toStrictEqual([france]);
     });
 
     it("sorts by country name so the list is repeatable", async ({
@@ -147,10 +151,7 @@ describe("Travel Service Gateway", () => {
 
       const result = await handler(privateGatewayEvent.get(endpoint), context);
 
-      expect(JSON.parse(result.body as string)).toStrictEqual([
-        france,
-        germany,
-      ]);
+      expect(bodyOf(result)).toStrictEqual([france, germany]);
     });
 
     it("omits sources the operator has disabled", async ({
@@ -167,7 +168,7 @@ describe("Travel Service Gateway", () => {
 
       const result = await handler(privateGatewayEvent.get(endpoint), context);
 
-      expect(JSON.parse(result.body as string)).toStrictEqual([france]);
+      expect(bodyOf(result)).toStrictEqual([france]);
     });
 
     it("returns an empty list when the namespace holds no sources", async ({
@@ -205,10 +206,7 @@ describe("Travel Service Gateway", () => {
       expect(dynamo.commandCalls(ScanCommand)[1]?.args[0].input).toMatchObject({
         ExclusiveStartKey: { sourceID: "uuid-france" },
       });
-      expect(JSON.parse(result.body as string)).toStrictEqual([
-        france,
-        germany,
-      ]);
+      expect(bodyOf(result)).toStrictEqual([france, germany]);
     });
 
     it("returns 502 when the table scan fails", async ({

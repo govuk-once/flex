@@ -4,7 +4,7 @@ import createHttpError from "http-errors";
 export const handler = route(
   "GET /v1/countries",
   async ({ integrations, logger }) => {
-    const result = await integrations.travelGetCountries();
+    const result = await integrations.travelGetCountries({});
 
     if (!result.ok) {
       const { status, body } = result.error;
