@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { domainGroupsSchema } from "../domain/groups";
+import { DomainGroupsSchema } from "../domain/groups";
 
 export const groupsResponseSchema = z.object({
   data: z.object({
