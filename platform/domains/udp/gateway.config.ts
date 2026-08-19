@@ -97,7 +97,7 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      response: domainGroupsSchema,
+      response: DomainGroupsSchema,
     },
     "POST /v1/groups": {
       name: "updateGroupSubscriptions",
