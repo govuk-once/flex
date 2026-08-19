@@ -7,7 +7,9 @@ export const NotificationGroupSubscriptionSchema = z.object({
   Type: z.literal("NOTIFICATION"),
 });
 
-export type NotificationGroupSubscription = z.infer<typeof NotificationGroupSubscriptionSchema>;
+export type NotificationGroupSubscription = z.infer<
+  typeof NotificationGroupSubscriptionSchema
+>;
 
 export const DomainGroupsSchema = z.array(NotificationGroupSubscriptionSchema);
 

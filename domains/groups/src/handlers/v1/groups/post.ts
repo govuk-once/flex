@@ -1,9 +1,8 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
+import { GroupTypeSchema } from "@schemas/group";
 import { getUserGroups } from "@services/udp";
 import createHttpError from "http-errors";
-
-import { GroupTypeSchema } from "@schemas/groups";
 
 export const handler = route(
   "POST /v1/groups",
@@ -41,11 +40,11 @@ export const handler = route(
 
     const notificationGroups = unsResponse.data.map((group) => ({
       ...group,
-      Type: GroupType.NOTIFICATION,
+      Type: GroupTypeSchema.enum.NOTIFICATION,
     }));
 
     const nonNotificationGroups = currentUserGroups.filter(
-      (group) => group.Type !== GroupType.NOTIFICATION,
+      (group) => group.Type !== GroupTypeSchema.enum.NOTIFICATION,
     );
 
     const groups = [...nonNotificationGroups, ...notificationGroups];

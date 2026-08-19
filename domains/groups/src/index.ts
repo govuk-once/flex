@@ -8,3 +8,4 @@ export {
   UnsGroupsRequestSchema,
   UnsGroupsResponseSchema,
 } from "./schemas/group";
+export { groupSubscription, groupSubscriptions } from "@tests/fixtures";

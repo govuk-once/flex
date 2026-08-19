@@ -1,8 +1,8 @@
 import { it } from "@flex/testing";
+import { GroupActionSchema, GroupTypeSchema } from "@schemas/group";
 import { group, pushId, secrets, userId, withSubgroup } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import { GroupAction, GroupType } from "../../../types";
 import { handler } from "./post";
 
 describe("POST /v1/groups", () => {
@@ -12,28 +12,32 @@ describe("POST /v1/groups", () => {
   const existingNotificationGroup = {
     Namespace: "travel",
     Group: "spain",
-    Type: GroupType.NOTIFICATION,
+    Type: GroupTypeSchema.enum.NOTIFICATION,
   };
 
   const requestBody = [
-    { ...group, Type: GroupType.NOTIFICATION, Action: GroupAction.JOIN },
+    {
+      ...group,
+      Type: GroupTypeSchema.enum.NOTIFICATION,
+      Action: GroupActionSchema.enum.JOIN,
+    },
     {
       ...groupWithSubgroup,
-      Type: GroupType.NOTIFICATION,
-      Action: GroupAction.LEAVE,
+      Type: GroupTypeSchema.enum.NOTIFICATION,
+      Action: GroupActionSchema.enum.LEAVE,
     },
   ];
 
   const unsRequestBody = [
-    { ...group, Action: GroupAction.JOIN },
-    { ...groupWithSubgroup, Action: GroupAction.LEAVE },
+    { ...group, Action: GroupActionSchema.enum.JOIN },
+    { ...groupWithSubgroup, Action: GroupActionSchema.enum.LEAVE },
   ];
 
   const unsResponse = [group, groupWithSubgroup];
 
   const expectedNotificationGroups = [
-    { ...group, Type: GroupType.NOTIFICATION },
-    { ...groupWithSubgroup, Type: GroupType.NOTIFICATION },
+    { ...group, Type: GroupTypeSchema.enum.NOTIFICATION },
+    { ...groupWithSubgroup, Type: GroupTypeSchema.enum.NOTIFICATION },
   ];
 
   it("returns 200 with notification groups when the user has no existing groups", async ({

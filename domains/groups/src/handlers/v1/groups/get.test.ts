@@ -1,8 +1,8 @@
 import { it } from "@flex/testing";
+import { GroupTypeSchema } from "@schemas/group";
 import { group, pushId, secrets, userId, withSubgroup } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import { GroupType } from "../../../types";
 import { handler } from "./get";
 
 describe("GET /v1/groups", () => {
@@ -34,11 +34,11 @@ describe("GET /v1/groups", () => {
     expect(JSON.parse(result.body)).toStrictEqual([
       {
         ...group,
-        Type: GroupType.NOTIFICATION,
+        Type: GroupTypeSchema.enum.NOTIFICATION,
       },
       {
         ...groupWithSubgroup,
-        Type: GroupType.NOTIFICATION,
+        Type: GroupTypeSchema.enum.NOTIFICATION,
       },
     ]);
   });

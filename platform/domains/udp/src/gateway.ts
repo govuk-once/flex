@@ -2,8 +2,8 @@ import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
 import {
-  UpsertGroupsResponseSchema,
   GroupsResponseSchema,
+  UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
 

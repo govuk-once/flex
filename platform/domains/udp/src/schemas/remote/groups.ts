@@ -16,9 +16,7 @@ export const UpsertGroupsRequestSchema = z.object({
   }),
 });
 
-export type UpsertGroupsRequest = z.infer<
-  typeof UpsertGroupsRequestSchema
->;
+export type UpsertGroupsRequest = z.infer<typeof UpsertGroupsRequestSchema>;
 
 export const UpsertGroupsResponseSchema = z.object({
   data: z.object({
@@ -26,6 +24,4 @@ export const UpsertGroupsResponseSchema = z.object({
   }),
 });
 
-export type UpsertGroupsResponse = z.infer<
-  typeof UpsertGroupsResponseSchema
->;
+export type UpsertGroupsResponse = z.infer<typeof UpsertGroupsResponseSchema>;

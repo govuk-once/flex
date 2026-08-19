@@ -24,16 +24,9 @@ function stubContext() {
 }
 
 import { userId } from "@flex/testing";
+import { groupSubscriptions } from "@tests/fixtures";
 
-const existingGroups = [
-  { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
-  {
-    Namespace: "travel",
-    Group: "test country",
-    Subgroup: "test frequency",
-    Type: "NOTIFICATION" as const,
-  },
-];
+const existingGroups = groupSubscriptions;
 
 describe("getUserGroups", () => {
   beforeEach(() => {
