@@ -3,7 +3,7 @@ import type { UserId } from "@flex/utils";
 import { getUserGroups } from "@services/udp";
 import createHttpError from "http-errors";
 
-import { GroupType } from "../../../types";
+import { GroupTypeSchema } from "@schemas/groups";
 
 export const handler = route(
   "POST /v1/groups",
