@@ -107,8 +107,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: domainGroupsSchema,
-      response: domainGroupsSchema,
+      body: DomainGroupsSchema,
+      response: DomainGroupsSchema,
     },
   },
 });
