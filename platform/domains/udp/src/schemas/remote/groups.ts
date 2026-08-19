@@ -2,13 +2,13 @@ import { z } from "zod";
 
 import { DomainGroupsSchema } from "../domain/groups";
 
-export const groupsResponseSchema = z.object({
+export const GroupsResponseSchema = z.object({
   data: z.object({
-    groups: domainGroupsSchema,
+    groups: DomainGroupsSchema,
   }),
 });
 
-export type GroupsResponse = z.infer<typeof groupsResponseSchema>;
+export type GroupsResponse = z.infer<typeof GroupsResponseSchema>;
 
 export const createOrUpdateGroupsRequestSchema = z.object({
   data: z.object({
