@@ -153,7 +153,7 @@ describe("createDynamoClient", () => {
 
       expect(send).toHaveBeenCalledTimes(3);
       expect(
-        scanInputs().map((input) => input?.ExclusiveStartKey),
+        scanInputs().map((input) => input.ExclusiveStartKey),
       ).toStrictEqual([undefined, { slug: "france" }, { slug: "germany" }]);
       expect(result).toStrictEqual({
         ok: true,
@@ -213,7 +213,7 @@ describe("createDynamoClient", () => {
 
       expect(logger.error).toHaveBeenCalledExactlyOnceWith(
         "DynamoDB row failed schema validation",
-        { tableName, issues: expect.stringContaining("slug") },
+        { tableName, issues: expect.stringContaining("slug") as string },
       );
     });
 
