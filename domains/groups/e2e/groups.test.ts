@@ -1,6 +1,7 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import { config as udpConfig } from "@flex/udp-domain/config";
+import { GroupActionSchema, GroupTypeSchema } from "@schemas/group";
 import { describe, expect } from "vitest";
 
 import { config as groupsConfig } from "../domain.config";
@@ -16,7 +17,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
     Namespace: "travel",
     Group: "test country",
     Subgroup: "test frequency",
-    Type: "NOTIFICATION" as const,
+    Type: GroupTypeSchema.enum.NOTIFICATION,
   };
 
   describe("/groups/v1/groups", () => {
@@ -83,7 +84,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
             body: [
               {
                 ...group,
-                Action: "JOIN",
+                Action: GroupActionSchema.enum.JOIN,
               },
             ],
           });
@@ -100,7 +101,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
                 {
                   Namespace: "travel",
                   Group: "test country",
-                  Type: "NOTIFICATION",
+                  Type: GroupTypeSchema.enum.NOTIFICATION,
                 },
               ],
             });

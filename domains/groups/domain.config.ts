@@ -8,7 +8,7 @@ import {
   UnsGroupsResponseSchema,
 } from "./src/schemas/group";
 
-export const { config, route } = domain({
+export const { config, route, routeContext } = domain({
   name: "groups",
   environments: ["development", "staging"],
   common: {
@@ -33,6 +33,19 @@ export const { config, route } = domain({
       target: "udp",
       route: "GET /v1/users/push-id",
       response: GetUserPushIdResponseSchema,
+    },
+    udpGetGroups: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/groups",
+      response: GroupsResponseSchema,
+    },
+    udpPostGroups: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/groups",
+      body: GroupsResponseSchema,
+      response: GroupsResponseSchema,
     },
     unsGetGroups: {
       type: "gateway",
@@ -73,7 +86,12 @@ export const { config, route } = domain({
               "encryptionKey",
               "privateGatewayUrl",
             ],
-            integrations: ["unsPostGroups", "udpGetPushId"],
+            integrations: [
+              "unsPostGroups",
+              "udpGetPushId",
+              "udpGetGroups",
+              "udpPostGroups",
+            ],
           },
         },
       },

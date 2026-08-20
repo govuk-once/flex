@@ -1,5 +1,6 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
+import { GroupTypeSchema } from "@schemas/group";
 import createHttpError from "http-errors";
 
 export const handler = route(
@@ -33,7 +34,7 @@ export const handler = route(
 
     const groups = response.data.map((group) => ({
       ...group,
-      Type: "NOTIFICATION" as const,
+      Type: GroupTypeSchema.enum.NOTIFICATION,
     }));
 
     return {

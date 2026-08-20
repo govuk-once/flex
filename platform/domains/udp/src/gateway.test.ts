@@ -46,6 +46,22 @@ const mockHeaders = {
     "requesting-service-user-id": requestingServiceUserId,
   }),
 };
+const mockUpstreamGroups = {
+  data: {
+    groups: [
+      { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" },
+      {
+        Namespace: "travel",
+        Group: "test country",
+        Subgroup: "test frequency",
+        Type: "NOTIFICATION",
+      },
+    ],
+  },
+};
+const mockGroupsBody = [
+  { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
+];
 
 const stubConsumerConfig = (http: HttpFixture) =>
   http
@@ -393,6 +409,82 @@ describe("UDP Service Gateway", () => {
       );
 
       expect(result).toStrictEqual(platform.gatewayResult(204));
+    });
+  });
+
+  describe("GET /v1/groups", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+    const mockGroups = mockUpstreamGroups.data.groups;
+
+    it("returns the group subscriptions for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/groups", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamGroups);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/groups", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockGroups }),
+      );
+    });
+  });
+
+  describe("POST /v1/groups", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+
+    const mockUpstreamGroupsResponse = {
+      data: {
+        groups: mockGroupsBody,
+      },
+    };
+
+    it("returns the updated group subscriptions for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/groups", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          body: {
+            data: {
+              groups: mockGroupsBody,
+            },
+            requestingServiceUserId: mockRequestingServiceUserId,
+          },
+        })
+        .reply(200, mockUpstreamGroupsResponse);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/groups", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockGroupsBody,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockGroupsBody }),
+      );
     });
   });
 });

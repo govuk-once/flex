@@ -1,6 +1,10 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
+import {
+  GroupsResponseSchema,
+  UpsertGroupsResponseSchema,
+} from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
 
 export const handler = createHandler({
@@ -123,6 +127,45 @@ export const handler = createHandler({
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
+    },
+    "GET /v1/groups": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/groups", {
+        schema: GroupsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data.groups);
+    },
+    "POST /v1/groups": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.post("/v1/groups", {
+        schema: UpsertGroupsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+        body: {
+          data: {
+            groups: body,
+          },
+          requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data.groups);
     },
   },
 });
