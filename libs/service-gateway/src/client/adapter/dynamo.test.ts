@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { logger } from "@flex/logging";
 import { getAssumedRoleCredentials } from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { describe, expect, it, vi } from "vitest";
@@ -14,6 +15,8 @@ vi.mock("@aws-sdk/lib-dynamodb", () => ({
   DynamoDBDocumentClient: { from: vi.fn() },
   ScanCommand: vi.fn(),
 }));
+
+vi.mock("@flex/logging");
 
 vi.mock("@flex/sdk", () => ({ getAssumedRoleCredentials: vi.fn() }));
 
@@ -198,6 +201,22 @@ describe("createDynamoClient", () => {
       );
     });
 
+    it("logs which row failed schema validation", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [{ slug: 42 }] });
+
+      await client.scan({
+        ...scanOptions,
+        schema: z.object({ slug: z.string() }),
+      });
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "DynamoDB row failed schema validation",
+        { tableName, issues: expect.stringContaining("slug") },
+      );
+    });
+
     it("returns 502 with the failure message when the scan throws", async () => {
       const { client, send } = buildClient();
 
@@ -216,6 +235,28 @@ describe("createDynamoClient", () => {
       expect(emitTelemetry).not.toHaveBeenCalledWith(
         TelemetryEvent.third_party_response_received,
         expect.anything(),
+      );
+    });
+
+    it("logs the AWS error name so the 502 can be told apart from the others", async () => {
+      const { client, send } = buildClient();
+
+      const error = new Error(
+        "User is not authorized to perform: dynamodb:Scan",
+      );
+      error.name = "AccessDeniedException";
+
+      send.mockRejectedValue(error);
+
+      await client.scan(scanOptions);
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "DynamoDB scan failed",
+        {
+          tableName,
+          name: "AccessDeniedException",
+          reason: "User is not authorized to perform: dynamodb:Scan",
+        },
       );
     });
 
