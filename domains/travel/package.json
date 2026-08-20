@@ -10,7 +10,8 @@
   "scripts": {
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
-    "test": "vitest --passWithNoTests"
+    "test": "vitest --passWithNoTests",
+    "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
   },
   "dependencies": {
     "@flex/sdk": "workspace:*",
