@@ -1,3 +1,6 @@
+import { routeContext } from "@domain";
+import { userId } from "@flex/testing";
+import { groupSubscriptions } from "@tests/fixtures";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getUserGroups } from "./udp";
@@ -6,8 +9,6 @@ import { getUserGroups } from "./udp";
 vi.mock("@domain", () => ({
   routeContext: vi.fn(),
 }));
-
-import { routeContext } from "@domain";
 
 const mockLogger = {
   debug: vi.fn(),
@@ -22,9 +23,6 @@ function stubContext() {
     logger: mockLogger,
   } as never);
 }
-
-import { userId } from "@flex/testing";
-import { groupSubscriptions } from "@tests/fixtures";
 
 const existingGroups = groupSubscriptions;
 
