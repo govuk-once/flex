@@ -49,9 +49,7 @@ const secretValuePatterns: Array<RegExp> = [
 
 const piiValuePatterns: Array<RegExp> = [
   /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}/, // Email addresses
-  // Bounded by non-digits: unbounded, this matched any `0` inside a longer
-  // digit run, so an AWS account ID redacted the whole value it sat in.
-  /(?<!\d)(?:\+44|0)\d{9,10}(?!\d)/, // UK phone numbers
+  /(?:\+44|0)\d{9,10}/, // UK phone numbers
   /\b[A-Z]{2}\d{6}[A-D]\b/, // National Insurance numbers
   /\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/i, // UK postcodes
   /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, // IPv4 addresses
