@@ -1,11 +1,12 @@
 import { clearCaches } from "@aws-lambda-powertools/parameters";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import type { HttpFixture } from "@flex/testing";
-import { context, it } from "@flex/testing";
+import { it } from "@flex/testing";
 import { mockClient } from "aws-sdk-client-mock";
 import { afterEach, describe, expect } from "vitest";
 
 import { handler } from "./gateway";
+import { context, restApiEvent } from "./tests/fixtures";
 
 const dynamo = mockClient(DynamoDBDocumentClient);
 
@@ -80,9 +81,9 @@ describe("Travel Service Gateway", () => {
     dynamo.reset();
   });
 
-  it("returns 404 for an unknown route", async ({ privateGatewayEvent }) => {
+  it("returns 404 for an unknown route", async () => {
     const result = await handler(
-      privateGatewayEvent.get("/gateways/travel/v1/should-throw"),
+      restApiEvent.get("/gateways/travel/v1/should-throw"),
       context,
     );
 
@@ -98,12 +99,11 @@ describe("Travel Service Gateway", () => {
 
     it("returns every travel source mapped onto the country shape", async ({
       http,
-      privateGatewayEvent,
     }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({ Items: [franceRow, germanyRow] });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(result).toStrictEqual({
         statusCode: 200,
@@ -114,12 +114,11 @@ describe("Travel Service Gateway", () => {
 
     it("scans the sources table filtered to the travel namespace", async ({
       http,
-      privateGatewayEvent,
     }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
 
-      await handler(privateGatewayEvent.get(endpoint), context);
+      await handler(restApiEvent.get(endpoint), context);
 
       expect(dynamo.commandCalls(ScanCommand)).toHaveLength(1);
       expect(dynamo.commandCalls(ScanCommand)[0]?.args[0].input).toMatchObject({
@@ -132,32 +131,25 @@ describe("Travel Service Gateway", () => {
 
     it("drops the table's key and internal attributes from the response", async ({
       http,
-      privateGatewayEvent,
     }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(bodyOf(result)).toStrictEqual([france]);
     });
 
-    it("sorts by country name so the list is repeatable", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("sorts by country name so the list is repeatable", async ({ http }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({ Items: [germanyRow, franceRow] });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(bodyOf(result)).toStrictEqual([france, germany]);
     });
 
-    it("omits sources the operator has disabled", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("omits sources the operator has disabled", async ({ http }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({
         Items: [
@@ -166,19 +158,18 @@ describe("Travel Service Gateway", () => {
         ],
       });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(bodyOf(result)).toStrictEqual([france]);
     });
 
     it("returns an empty list when the namespace holds no sources", async ({
       http,
-      privateGatewayEvent,
     }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({ Items: [] });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(result).toStrictEqual({
         statusCode: 200,
@@ -187,10 +178,7 @@ describe("Travel Service Gateway", () => {
       });
     });
 
-    it("follows pagination until the table is exhausted", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("follows pagination until the table is exhausted", async ({ http }) => {
       stubConsumerConfig(http);
       dynamo
         .on(ScanCommand)
@@ -200,7 +188,7 @@ describe("Travel Service Gateway", () => {
         })
         .resolvesOnce({ Items: [germanyRow] });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(dynamo.commandCalls(ScanCommand)).toHaveLength(2);
       expect(dynamo.commandCalls(ScanCommand)[1]?.args[0].input).toMatchObject({
@@ -209,14 +197,11 @@ describe("Travel Service Gateway", () => {
       expect(bodyOf(result)).toStrictEqual([france, germany]);
     });
 
-    it("returns 502 when the table scan fails", async ({
-      http,
-      privateGatewayEvent,
-    }) => {
+    it("returns 502 when the table scan fails", async ({ http }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).rejects(new Error("ResourceNotFoundException"));
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(result).toStrictEqual({
         statusCode: 502,
@@ -229,14 +214,13 @@ describe("Travel Service Gateway", () => {
 
     it("returns 502 when a row does not match the source schema", async ({
       http,
-      privateGatewayEvent,
     }) => {
       stubConsumerConfig(http);
       dynamo.on(ScanCommand).resolves({
         Items: [sourceRow("france", "France", [], { lastUpdated: "nope" })],
       });
 
-      const result = await handler(privateGatewayEvent.get(endpoint), context);
+      const result = await handler(restApiEvent.get(endpoint), context);
 
       expect(result).toMatchObject({ statusCode: 502 });
     });
