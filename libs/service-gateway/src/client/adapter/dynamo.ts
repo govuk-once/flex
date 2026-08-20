@@ -90,7 +90,14 @@ export function createDynamoClient({
       // logs the cause at debug, which the handler's INFO level drops. Without
       // this, an AccessDenied on AssumeRole and a missing table are the same
       // opaque 502 in a deployed environment.
-      logger.error("DynamoDB scan failed", { tableName, name, message });
+      //
+      // `reason`, not `message`: powertools reserves `message` for the log's own
+      // text and silently drops the key, which is what hid the AWS detail here.
+      logger.error("DynamoDB scan failed", {
+        tableName,
+        name,
+        reason: message,
+      });
 
       emitTelemetry(TelemetryEvent.third_party_request_error, {
         service: "dynamodb",
