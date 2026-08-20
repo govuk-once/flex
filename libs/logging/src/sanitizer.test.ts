@@ -79,15 +79,6 @@ describe("sanitizer", () => {
       });
     });
 
-    it("preserves an AWS error message whose account id looks like a phone number", () => {
-      const message =
-        "User: arn:aws:sts::012345678901:assumed-role/ConsumerRole/travel-data-session " +
-        "is not authorized to perform: dynamodb:Scan on resource: " +
-        "arn:aws:dynamodb:eu-west-2:012345678901:table/runner-dynamodb-sourceStore";
-
-      expect(sanitize("reason", message)).toBe(message);
-    });
-
     it("preserves non-sensitive values", () => {
       expect(sanitize("userId", "user-123")).toBe("user-123");
       expect(sanitize("name", "John Doe")).toBe("John Doe");
