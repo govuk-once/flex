@@ -14,6 +14,8 @@ export const handler = route(
       throw new createHttpError.BadGateway();
     }
 
+    logger.info("successfull countries", { data: result.data });
+
     return { status: 200, data: result.data };
   },
 );
