@@ -13,6 +13,7 @@ const E2E_BYPASS_HEADER = "x-flex-e2e-bypass";
 
 interface Fixtures {
   cloudfront: ReturnType<typeof createApi>;
+  docs: ReturnType<typeof createApi>;
   privateGateway: ReturnType<typeof createApi>;
   authHeader: { Authorization: string; [E2E_BYPASS_HEADER]: string };
 }
@@ -22,6 +23,10 @@ export const extendIt = () =>
     cloudfront: async ({ signal }, use) => {
       const { FLEX_API_URL } = inject("e2eEnv");
       await use(createApi(`${FLEX_API_URL}/app`, { signal }));
+    },
+    docs: async ({ signal }, use) => {
+      const { FLEX_API_URL } = inject("e2eEnv");
+      await use(createApi(FLEX_API_URL, { signal }));
     },
     privateGateway: async ({ signal }, use) => {
       const { FLEX_PRIVATE_GATEWAY_URL } = inject("e2eEnv");

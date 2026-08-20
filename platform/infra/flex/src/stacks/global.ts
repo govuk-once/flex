@@ -58,6 +58,7 @@ import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront-function";
+import { FlexResponseHeadersPolicy } from "../constructs/cloudfront/flex-response-headers-policy";
 import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -382,6 +383,24 @@ export class FlexGlobalStack extends BaseStack {
       secretHeaderArn,
     );
 
+    const apiResponseHeadersPolicy = new FlexResponseHeadersPolicy(
+      this,
+      "ApiResponseHeadersPolicy",
+      {
+        policyName: `${stage}-flex-api-security-headers`,
+        contentSecurityPolicy: "default-src 'self'",
+        noStore: true,
+      },
+    ).policy;
+
+    const docsResponseHeadersPolicy = new FlexResponseHeadersPolicy(
+      this,
+      "DocsResponseHeadersPolicy",
+      {
+        policyName: `${stage}-flex-docs-security-headers`,
+      },
+    ).policy;
+
     const distribution = new Distribution(this, "Distribution", {
       comment: "Flex Platform CloudFront Distribution for Structural Checks",
       priceClass: PriceClass.PRICE_CLASS_100,
@@ -401,6 +420,7 @@ export class FlexGlobalStack extends BaseStack {
         allowedMethods: AllowedMethods.ALLOW_ALL,
         cachePolicy: CachePolicy.CACHING_DISABLED,
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        responseHeadersPolicy: apiResponseHeadersPolicy,
         functionAssociations: [
           {
             function: viewerRequestPlatformFunction,
@@ -414,6 +434,7 @@ export class FlexGlobalStack extends BaseStack {
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
           cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: docsResponseHeadersPolicy,
           functionAssociations: [
             {
               function: viewerRequestDocsFunction,
