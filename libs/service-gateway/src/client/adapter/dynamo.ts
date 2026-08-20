@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { logger } from "@flex/logging";
 import { getAssumedRoleCredentials } from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { assertNever } from "@flex/utils";
@@ -83,7 +84,13 @@ export function createDynamoClient({
         startKey = result.LastEvaluatedKey;
       } while (startKey);
     } catch (error) {
-      const { message } = error as Error;
+      const { name, message } = error as Error;
+
+      // The gateway maps 5xx to a flat "upstream service unavailable" and only
+      // logs the cause at debug, which the handler's INFO level drops. Without
+      // this, an AccessDenied on AssumeRole and a missing table are the same
+      // opaque 502 in a deployed environment.
+      logger.error("DynamoDB scan failed", { tableName, name, message });
 
       emitTelemetry(TelemetryEvent.third_party_request_error, {
         service: "dynamodb",
@@ -109,6 +116,11 @@ export function createDynamoClient({
     const parsed = z.array(schema).safeParse(items);
 
     if (!parsed.success) {
+      logger.error("DynamoDB row failed schema validation", {
+        tableName,
+        issues: z.prettifyError(parsed.error),
+      });
+
       emitTelemetry(TelemetryEvent.response_validation_failed, {
         service: "dynamodb",
         tableName,
