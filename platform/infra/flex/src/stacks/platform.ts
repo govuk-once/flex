@@ -150,8 +150,12 @@ export class FlexPlatformStack extends BaseStack {
         tracingEnabled: true,
         metricsEnabled: true,
         stageName: "prod",
-        loggingLevel: MethodLoggingLevel.ERROR,
-        dataTraceEnabled: false,
+        ...(env === Environment.production
+          ? {
+              loggingLevel: MethodLoggingLevel.ERROR,
+              dataTraceEnabled: false,
+            }
+          : {}),
         accessLogDestination: new LogGroupLogDestination(
           new LogGroup(this, "ApiAccessLogs", {
             retention: RetentionDays.ONE_YEAR,
@@ -179,11 +183,13 @@ export class FlexPlatformStack extends BaseStack {
       "Disabled for now and will renable when caching strategy is defined",
     );
 
-    const executionLogGroup = new LogGroup(this, "ApiExecutionLogs", {
-      logGroupName: `API-Gateway-Execution-Logs_${restApi.restApiId}/prod`,
-      retention: RetentionDays.ONE_YEAR,
-    });
-    restApi.deploymentStage.node.addDependency(executionLogGroup);
+    if (env === Environment.production) {
+      const executionLogGroup = new LogGroup(this, "ApiExecutionLogs", {
+        logGroupName: `API-Gateway-Execution-Logs_${restApi.restApiId}/${restApi.deploymentStage.stageName}`,
+        retention: RetentionDays.ONE_YEAR,
+      });
+      restApi.deploymentStage.node.addDependency(executionLogGroup);
+    }
 
     const cfnApi = restApi.node.defaultChild as CfnRestApi;
     cfnApi.endpointAccessMode = "BASIC";
@@ -301,15 +307,17 @@ export class FlexPlatformStack extends BaseStack {
       "Disabled for now and will renable when caching strategy is defined",
     );
 
-    const executionLogGroup = new LogGroup(
-      this,
-      "PrivateGatewayExecutionLogs",
-      {
-        logGroupName: `API-Gateway-Execution-Logs_${privateGateway.restApiId}/prod`,
-        retention: RetentionDays.ONE_YEAR,
-      },
-    );
-    privateGateway.deploymentStage.node.addDependency(executionLogGroup);
+    if (env === Environment.production) {
+      const executionLogGroup = new LogGroup(
+        this,
+        "PrivateGatewayExecutionLogs",
+        {
+          logGroupName: `API-Gateway-Execution-Logs_${privateGateway.restApiId}/${privateGateway.deploymentStage.stageName}`,
+          retention: RetentionDays.ONE_YEAR,
+        },
+      );
+      privateGateway.deploymentStage.node.addDependency(executionLogGroup);
+    }
 
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
