@@ -1,7 +1,7 @@
 import { logger } from "@flex/logging";
 import { clearTmp } from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
-import { jsonResponse, stripPathPrefix } from "@flex/utils";
+import { buildErrorResponse, jsonResponse, stripPathPrefix } from "@flex/utils";
 import createHttpError from "http-errors";
 import { z } from "zod";
 
@@ -100,9 +100,13 @@ export function buildHandler<
             status: 502,
           });
 
-          return jsonResponse(502, {
-            message: `${config.name.toUpperCase()} upstream response invalid`,
-          });
+          return jsonResponse(
+            502,
+            buildErrorResponse(
+              "server_error",
+              `${config.name.toUpperCase()} upstream response invalid`,
+            ),
+          );
         }
       }
 

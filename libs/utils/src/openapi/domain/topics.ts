@@ -1,6 +1,7 @@
 import type { ZodOpenApiOperationObject } from "zod-openapi";
 
 import { GetTopicsOutput } from "../../schemas/domain/topics";
+import { errorResponse } from "../error-response";
 
 export const getTopics: ZodOpenApiOperationObject = {
   summary: "Get topics",
@@ -18,20 +19,10 @@ export const getTopics: ZodOpenApiOperationObject = {
         },
       },
     },
-    400: {
-      description: "Invalid query parameters",
-    },
-    401: {
-      description: "Not authenticated",
-    },
-    403: {
-      description: "Not authorised to list topics",
-    },
-    429: {
-      description: "Rate limit exceeded",
-    },
-    500: {
-      description: "Internal server error",
-    },
+    400: errorResponse("Invalid query parameters"),
+    401: errorResponse("Not authenticated"),
+    403: errorResponse("Not authorised to list topics"),
+    429: errorResponse("Rate limit exceeded"),
+    500: errorResponse("Internal server error"),
   },
 };

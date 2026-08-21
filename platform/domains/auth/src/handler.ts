@@ -70,14 +70,7 @@ const handler: MiddyfiedHandler<
           ...(error instanceof Error && { reason: error.message }),
         });
 
-        switch (true) {
-          case error instanceof JwtExpiredError:
-            return createPolicy("Deny", event.methodArn, {
-              errorMessage: "JWT expired",
-            });
-          default:
-            return createPolicy("Deny", event.methodArn);
-        }
+        return createPolicy("Deny", event.methodArn);
       } finally {
         clearTmp();
       }

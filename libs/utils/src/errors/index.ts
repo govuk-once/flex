@@ -1,5 +1,7 @@
 import type { ZodError } from "zod";
 
+import { type ErrorDetail, zodIssuesToErrorDetails } from "./error-response";
+
 export class HeaderValidationError extends Error {
   readonly statusCode = 400;
   readonly headers: readonly string[];
@@ -24,15 +26,12 @@ export class RequestBodyParseError extends Error {
 
 export class QueryParametersParseError extends Error {
   readonly statusCode = 400;
-  readonly errors: { readonly field: string; readonly message: string }[];
+  readonly errors: readonly ErrorDetail[];
 
   constructor({ issues }: ZodError) {
     super("Invalid query parameters");
 
     this.name = "QueryParametersParseError";
-    this.errors = issues.map(({ message, path }) => ({
-      field: path.join("."),
-      message,
-    }));
+    this.errors = zodIssuesToErrorDetails(issues);
   }
 }
