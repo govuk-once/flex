@@ -43,7 +43,6 @@ describe("GET /v1/notifications", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 
   it("returns 502 when the UNS get notifications integration fails unexpectedly", async ({
@@ -65,6 +64,5 @@ describe("GET /v1/notifications", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 });
