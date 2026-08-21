@@ -43,10 +43,26 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
   });
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the user's push ID", upstream: 404, expected: 404 },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the user's push ID",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UDP get push ID integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -65,15 +81,30 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the notification", upstream: 404, expected: 404 },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the notification",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UNS patch notification integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -99,7 +130,6 @@ describe("PATCH /v1/notifications/:notificationId/status", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

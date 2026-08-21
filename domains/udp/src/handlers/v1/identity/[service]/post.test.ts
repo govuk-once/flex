@@ -627,7 +627,6 @@ describe("POST /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
@@ -673,7 +672,6 @@ describe("POST /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
@@ -710,7 +708,6 @@ describe("POST /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

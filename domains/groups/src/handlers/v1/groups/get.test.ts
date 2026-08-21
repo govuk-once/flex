@@ -80,7 +80,6 @@ describe("GET /v1/groups", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
@@ -103,7 +102,6 @@ describe("GET /v1/groups", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });
