@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { createDocument } from "zod-openapi";
 
+import { ErrorResponseSchema } from "../errors/error-response";
 import { getHelloWorld } from "./domain/hello-world";
 import { getTopics } from "./domain/topics";
 
@@ -13,6 +14,9 @@ const docs = createDocument({
     version: "1.0.0",
   },
   components: {
+    schemas: {
+      ErrorResponse: ErrorResponseSchema,
+    },
     securitySchemes: {
       bearerAuth: {
         type: "http",

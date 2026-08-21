@@ -1,6 +1,8 @@
 import { logger } from "@flex/logging";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
+  buildErrorResponse,
+  headersToErrorDetails,
   HeaderValidationError,
   QueryParametersParseError,
   RequestBodyParseError,
@@ -156,7 +158,13 @@ export function createRouteHandler<const Config extends DomainConfig>(
           return {
             statusCode,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, headers }),
+            body: JSON.stringify(
+              buildErrorResponse(
+                "validation_error",
+                message,
+                headersToErrorDetails(headers),
+              ),
+            ),
           };
         }
 
@@ -173,7 +181,9 @@ export function createRouteHandler<const Config extends DomainConfig>(
           return {
             statusCode,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify(
+              buildErrorResponse("validation_error", message),
+            ),
           };
         }
 
@@ -190,7 +200,9 @@ export function createRouteHandler<const Config extends DomainConfig>(
           return {
             statusCode,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, errors }),
+            body: JSON.stringify(
+              buildErrorResponse("validation_error", message, errors),
+            ),
           };
         }
 
@@ -203,7 +215,7 @@ export function createRouteHandler<const Config extends DomainConfig>(
           return {
             statusCode,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify(buildErrorResponse("auth_error", message)),
           };
         }
 

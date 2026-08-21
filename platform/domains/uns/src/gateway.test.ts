@@ -77,7 +77,7 @@ describe("UNS Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(404, {
-          body: { message: "Route not found" },
+          body: { message: "Route not found", type: "client_error" },
         }),
       );
     });
@@ -105,7 +105,10 @@ describe("UNS Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(502, {
-          body: { message: "UNS upstream service unavailable" },
+          body: {
+            message: "UNS upstream service unavailable",
+            type: "server_error",
+          },
         }),
       );
     });
@@ -133,7 +136,12 @@ describe("UNS Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(400, {
-          body: { message: "Bad Request", error: { key: "value" } },
+          body: {
+            key: "value",
+            message: "Bad Request",
+            type: "client_error",
+            error: { key: "value" },
+          },
         }),
       );
     });
@@ -150,6 +158,7 @@ describe("UNS Service Gateway", () => {
         platform.gatewayResult(400, {
           body: {
             message: "Invalid query parameters",
+            type: "validation_error",
             errors: [
               {
                 field: "externalUserID",

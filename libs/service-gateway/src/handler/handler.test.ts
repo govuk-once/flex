@@ -132,7 +132,9 @@ describe("buildHandler", () => {
     const result = await handler(platform);
 
     expect(result).toStrictEqual(
-      platform.gatewayResult(404, { body: { message: "Route not found" } }),
+      platform.gatewayResult(404, {
+        body: { message: "Route not found", type: "client_error" },
+      }),
     );
   });
 
@@ -143,7 +145,7 @@ describe("buildHandler", () => {
 
     expect(result).toStrictEqual(
       platform.gatewayResult(404, {
-        body: { message: "Route handler not found" },
+        body: { message: "Route handler not found", type: "client_error" },
       }),
     );
   });
@@ -241,7 +243,10 @@ describe("buildHandler", () => {
 
     expect(result).toStrictEqual(
       platform.gatewayResult(502, {
-        body: { message: "EXAMPLE upstream response invalid" },
+        body: {
+          message: "EXAMPLE upstream response invalid",
+          type: "server_error",
+        },
       }),
     );
     expect(logger.error).toHaveBeenCalledExactlyOnceWith(
@@ -282,7 +287,10 @@ describe("buildHandler", () => {
       },
       expected: {
         statusCode: 502,
-        body: { message: "EXAMPLE upstream service unavailable" },
+        body: {
+          message: "EXAMPLE upstream service unavailable",
+          type: "server_error",
+        },
       },
     },
     {
@@ -294,7 +302,12 @@ describe("buildHandler", () => {
       },
       expected: {
         statusCode: 404,
-        body: { message: "downstream error", error: { key: "value" } },
+        body: {
+          key: "value",
+          message: "downstream error",
+          type: "client_error",
+          error: { key: "value" },
+        },
       },
     },
     {
@@ -302,7 +315,7 @@ describe("buildHandler", () => {
       error: { status: 400, message: "downstream error" },
       expected: {
         statusCode: 400,
-        body: { message: "downstream error" },
+        body: { message: "downstream error", type: "client_error" },
       },
     },
   ])(
@@ -322,17 +335,24 @@ describe("buildHandler", () => {
     {
       reason: "a required header is missing",
       error: new HeaderValidationError(["key"]),
-      expected: { message: "Missing headers: key", headers: ["key"] },
+      expected: {
+        message: "Missing headers: key",
+        type: "validation_error",
+        errors: [{ field: "key", message: "Required header missing" }],
+      },
     },
     {
       reason: "the query parameters are invalid",
       error: new QueryParametersParseError({ issues: [] } as never),
-      expected: { message: "Invalid query parameters", errors: [] },
+      expected: {
+        message: "Invalid query parameters",
+        type: "validation_error",
+      },
     },
     {
       reason: "the request body is invalid",
       error: new RequestBodyParseError("test body error"),
-      expected: { message: "test body error" },
+      expected: { message: "test body error", type: "validation_error" },
     },
   ])("returns 400 when $reason", async ({ error, expected }, { platform }) => {
     const result = await handler(platform, {
@@ -354,7 +374,9 @@ describe("buildHandler", () => {
     });
 
     expect(result).toStrictEqual(
-      platform.gatewayResult(418, { body: { message: "test http-error" } }),
+      platform.gatewayResult(418, {
+        body: { message: "test http-error", type: "client_error" },
+      }),
     );
   });
 
@@ -367,7 +389,7 @@ describe("buildHandler", () => {
 
     expect(result).toStrictEqual(
       platform.gatewayResult(500, {
-        body: { message: "Internal server error" },
+        body: { message: "Internal server error", type: "server_error" },
       }),
     );
   });

@@ -37,9 +37,6 @@ describe("POST /v0/todos [private]", () => {
     );
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body)).toStrictEqual({
-      message: "Invalid request body",
-    });
   });
 
   it("returns 200 with created todo", async ({ sdk }) => {

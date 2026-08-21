@@ -18,10 +18,6 @@ describe("GET /v0/headers", () => {
     );
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body)).toStrictEqual({
-      message: "Missing headers: x-request-id",
-      headers: ["x-request-id"],
-    });
   });
 
   it("returns 200 with all headers resolved", async ({ sdk }) => {

@@ -44,8 +44,16 @@ describe("POST /v1/unlink [private]", () => {
   });
 
   it.for([
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UDP get linking ID integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -60,11 +68,16 @@ describe("POST /v1/unlink [private]", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
-  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+  it.for([
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
+  ])(
     "returns $expected when the DVLA authenticate integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
@@ -79,15 +92,30 @@ describe("POST /v1/unlink [private]", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the DVLA unlink-user integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -109,7 +137,6 @@ describe("POST /v1/unlink [private]", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

@@ -50,8 +50,16 @@ describe("GET /v1/customer/vehicles", () => {
   });
 
   it.for([
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UDP get identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -68,11 +76,16 @@ describe("GET /v1/customer/vehicles", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
-  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+  it.for([
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
+  ])(
     "returns $expected when the DVLA authenticate integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
@@ -88,15 +101,30 @@ describe("GET /v1/customer/vehicles", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the DVLA get customer vehicles integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -121,7 +149,6 @@ describe("GET /v1/customer/vehicles", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

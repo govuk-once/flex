@@ -467,7 +467,8 @@ describe("createRouteHandler", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: error.message,
-          headers: ["x-required"],
+          type: "validation_error",
+          errors: [{ field: "x-required", message: "Required header missing" }],
         }),
       });
     });
@@ -486,7 +487,10 @@ describe("createRouteHandler", () => {
       expect(result).toStrictEqual({
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: error.message }),
+        body: JSON.stringify({
+          message: error.message,
+          type: "validation_error",
+        }),
       });
     });
 

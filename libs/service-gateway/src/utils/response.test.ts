@@ -27,7 +27,11 @@ describe("toGatewayErrorResponse", () => {
       toGatewayErrorResponse(new HeaderValidationError(["key"])),
     ).toStrictEqual({
       statusCode: 400,
-      body: { message: "Missing headers: key", headers: ["key"] },
+      body: {
+        message: "Missing headers: key",
+        type: "validation_error",
+        errors: [{ field: "key", message: "Required header missing" }],
+      },
     });
     expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
       "Missing required headers",
@@ -42,7 +46,7 @@ describe("toGatewayErrorResponse", () => {
       ),
     ).toStrictEqual({
       statusCode: 400,
-      body: { message: "Invalid query parameters", errors: [] },
+      body: { message: "Invalid query parameters", type: "validation_error" },
     });
   });
 
@@ -51,7 +55,7 @@ describe("toGatewayErrorResponse", () => {
       toGatewayErrorResponse(new RequestBodyParseError("test error")),
     ).toStrictEqual({
       statusCode: 400,
-      body: { message: "test error" },
+      body: { message: "test error", type: "validation_error" },
     });
   });
 
@@ -60,18 +64,22 @@ describe("toGatewayErrorResponse", () => {
       error: new createHttpError.NotFound("test error"),
       level: "warn" as const,
       statusCode: 404,
+      expectedMessage: "test error",
+      type: "client_error" as const,
     },
     {
       error: new createHttpError.BadGateway("test error"),
       level: "error" as const,
       statusCode: 502,
+      expectedMessage: "Request failed",
+      type: "server_error" as const,
     },
   ])(
     "returns http-error with log level set to $level",
-    ({ error, level, statusCode }) => {
+    ({ error, level, statusCode, expectedMessage, type }) => {
       expect(toGatewayErrorResponse(error)).toStrictEqual({
         statusCode,
-        body: { message: error.message },
+        body: { message: expectedMessage, type },
       });
       expect(logger[level]).toHaveBeenCalledWith(error.message, {
         statusCode,
@@ -82,7 +90,7 @@ describe("toGatewayErrorResponse", () => {
   it("maps an unknown error to 500", () => {
     expect(toGatewayErrorResponse(new Error("test error"))).toStrictEqual({
       statusCode: 500,
-      body: { message: "Internal server error" },
+      body: { message: "Internal server error", type: "server_error" },
     });
   });
 });
@@ -99,11 +107,14 @@ describe("toDownstreamErrorResponse", () => {
       }),
     ).toStrictEqual({
       statusCode: 502,
-      body: { message: "example-domain upstream service unavailable" },
+      body: {
+        message: "example-domain upstream service unavailable",
+        type: "server_error",
+      },
     });
   });
 
-  it("passes through a 4xx error and includes the error field when a body is provided", () => {
+  it("maps a 4xx error to client_error and preserves downstream extras", () => {
     expect(
       toDownstreamErrorResponse(domain, {
         status: 404,
@@ -113,13 +124,15 @@ describe("toDownstreamErrorResponse", () => {
     ).toStrictEqual({
       statusCode: 404,
       body: {
+        detail: "test error detail",
         message: "test error message",
+        type: "client_error",
         error: { detail: "test error detail" },
       },
     });
   });
 
-  it("passes through a 4xx error and omits the error field when a body is not provided", () => {
+  it("maps a 4xx error to client_error when no downstream body is provided", () => {
     expect(
       toDownstreamErrorResponse(domain, {
         status: 400,
@@ -127,7 +140,7 @@ describe("toDownstreamErrorResponse", () => {
       }),
     ).toStrictEqual({
       statusCode: 400,
-      body: { message: "test error message" },
+      body: { message: "test error message", type: "client_error" },
     });
   });
 });

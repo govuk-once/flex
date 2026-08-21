@@ -86,7 +86,9 @@ describe("UDP Service Gateway", () => {
       );
 
       expect(result).toStrictEqual(
-        platform.gatewayResult(404, { body: { message: "Route not found" } }),
+        platform.gatewayResult(404, {
+          body: { message: "Route not found", type: "client_error" },
+        }),
       );
     });
 
@@ -114,7 +116,10 @@ describe("UDP Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(502, {
-          body: { message: "UDP upstream service unavailable" },
+          body: {
+            message: "UDP upstream service unavailable",
+            type: "server_error",
+          },
         }),
       );
     });
@@ -143,7 +148,12 @@ describe("UDP Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(404, {
-          body: { message: "Not Found", error: { key: "value" } },
+          body: {
+            key: "value",
+            message: "Not Found",
+            type: "client_error",
+            error: { key: "value" },
+          },
         }),
       );
     });
@@ -160,7 +170,13 @@ describe("UDP Service Gateway", () => {
         platform.gatewayResult(400, {
           body: {
             message: "Missing headers: requesting-service-user-id",
-            headers: ["requesting-service-user-id"],
+            type: "validation_error",
+            errors: [
+              {
+                field: "requesting-service-user-id",
+                message: "Required header missing",
+              },
+            ],
           },
         }),
       );
