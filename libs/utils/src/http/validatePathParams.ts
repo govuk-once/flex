@@ -1,7 +1,7 @@
 import { logger } from "@flex/logging";
 import { APIGatewayProxyEventPathParameters } from "aws-lambda";
 import createHttpError from "http-errors";
-import z from "zod";
+import { z } from "zod";
 
 /**
  * Validates APIGateway path parameters against a Zod schema.

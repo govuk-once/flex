@@ -1,6 +1,6 @@
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { importJWK, JWK, SignJWT } from "jose";
-import z from "zod";
+import { z } from "zod";
 
 import { BaseTokenGenerator } from "./TokenGenerator";
 

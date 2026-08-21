@@ -3,7 +3,7 @@ import { JwtVerifier } from "aws-jwt-verify";
 import { validateCognitoJwtFields } from "aws-jwt-verify/cognito-verifier";
 import { FailedAssertionError } from "aws-jwt-verify/error";
 import type { APIGatewayTokenAuthorizerEvent } from "aws-lambda";
-import z from "zod";
+import { z } from "zod";
 
 export const configSchema = z.object({
   AWS_REGION: z.string().min(1),

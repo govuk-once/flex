@@ -1,6 +1,6 @@
 import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
-import z from "zod";
+import { z } from "zod";
 
 import { toApiGatewayResponse, validateHandlerResponse } from "./response";
 
