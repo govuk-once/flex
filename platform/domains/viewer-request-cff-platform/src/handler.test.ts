@@ -85,7 +85,7 @@ describe("CloudFront Function: Flex Platform", () => {
 
         expect(result).toStrictEqual(
           platform.cloudFrontResult(401, {
-            body: { message: "Unauthorized" },
+            body: { message: "Unauthorized", type: "auth_error" },
             headers: {
               "content-type": { value: "application/json" },
               "x-rejected-by": { value: "cloudfront-function" },
