@@ -139,7 +139,6 @@ describe("Authorizer Handler", () => {
         reason: "the JWT has expired",
         error: new JwtExpiredError("JWT expired", null, "exp"),
         telemetryEvent: TelemetryEvent.auth_token_expired,
-        context: { errorMessage: "JWT expired" },
       },
       {
         reason: "the failure is not a JWT error",

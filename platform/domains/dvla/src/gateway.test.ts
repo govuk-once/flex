@@ -51,7 +51,9 @@ describe("DVLA Service Gateway", () => {
       );
 
       expect(result).toStrictEqual(
-        platform.gatewayResult(404, { body: { message: "Route not found" } }),
+        platform.gatewayResult(404, {
+          body: { message: "Route not found", type: "client_error" },
+        }),
       );
     });
 
@@ -78,7 +80,10 @@ describe("DVLA Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(502, {
-          body: { message: "DVLA upstream service unavailable" },
+          body: {
+            message: "DVLA upstream service unavailable",
+            type: "server_error",
+          },
         }),
       );
     });
@@ -106,7 +111,12 @@ describe("DVLA Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(404, {
-          body: { message: "Not Found", error: { key: "value" } },
+          body: {
+            key: "value",
+            message: "Not Found",
+            type: "client_error",
+            error: { key: "value" },
+          },
         }),
       );
     });
@@ -123,7 +133,11 @@ describe("DVLA Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(400, {
-          body: { message: "Missing headers: auth", headers: ["auth"] },
+          body: {
+            message: "Missing headers: auth",
+            type: "validation_error",
+            errors: [{ field: "auth", message: "Required header missing" }],
+          },
         }),
       );
     });
@@ -142,6 +156,7 @@ describe("DVLA Service Gateway", () => {
         platform.gatewayResult(400, {
           body: {
             message: "Invalid query parameters",
+            type: "validation_error",
             errors: [
               {
                 field: "linkingId",
