@@ -26,6 +26,19 @@ export type DynamoScanOperation = <Schema extends z.ZodType = never>(
   options: DynamoScanOptions<Schema>,
 ) => Promise<ApiResult<ResolveOutput<Schema>[]>>;
 
+export interface DynamoQueryOptions<Schema extends z.ZodType = z.ZodType> {
+  readonly indexName?: string;
+  readonly partitionKey: string;
+  readonly partitionValue: string;
+  readonly scanIndexForward?: boolean;
+  readonly schema?: Schema;
+}
+
+export type DynamoQueryOperation = <Schema extends z.ZodType = never>(
+  options: DynamoQueryOptions<Schema>,
+) => Promise<ApiResult<ResolveOutput<Schema>[]>>;
+
 export interface DynamoClient {
   readonly scan: DynamoScanOperation;
+  readonly query: DynamoQueryOperation;
 }

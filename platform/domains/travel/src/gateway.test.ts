@@ -1,5 +1,9 @@
 import { clearCaches } from "@aws-lambda-powertools/parameters";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
 import type { HttpFixture } from "@flex/testing";
 import { it } from "@flex/testing";
 import { mockClient } from "aws-sdk-client-mock";
@@ -17,6 +21,7 @@ const mockConsumerConfig = {
   sourcesTableName: "development-travel-sources",
   region: "eu-west-2",
   roleArn: "arn:aws:iam::123456789012:role/travel-consumer-role",
+  eventStoreTableName: "development-travel-events",
 };
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -60,6 +65,36 @@ const germany = {
 const bodyOf = (result: Awaited<ReturnType<typeof handler>>): unknown =>
   JSON.parse((result as { body: string }).body);
 
+const eventRow = (
+  group: string,
+  eventNote: string,
+  eventTimestamp: string,
+  overrides: Record<string, unknown> = {},
+) => ({
+  compositeKey: `travel/${group}`,
+  namespace: "travel" as const,
+  group,
+  eventNote,
+  eventTimestamp,
+  ...overrides,
+});
+
+const franceEvent1 = eventRow(
+  "france",
+  "A update for france",
+  "2026-08-15T09:00:00.000Z",
+);
+const franceEvent2 = eventRow(
+  "france",
+  "Another update for france",
+  "2026-08-14T09:00:00.000Z",
+);
+
+// The event schema strips the DynamoDB-internal compositeKey from the response.
+const toEventResponse = ({
+  compositeKey: _key,
+  ...rest
+}: typeof franceEvent1) => rest;
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -221,6 +256,108 @@ describe("Travel Service Gateway", () => {
       });
 
       const result = await handler(restApiEvent.get(endpoint), context);
+
+      expect(result).toMatchObject({ statusCode: 502 });
+    });
+  });
+
+  describe("GET /v1/events", () => {
+    const endpoint = "/gateways/travel/v1/events";
+    const query = { namespace: "travel", group: "france" };
+
+    it("returns the events for the requested namespace and group", async ({
+      http,
+    }) => {
+      stubConsumerConfig(http);
+      dynamo.on(QueryCommand).resolves({ Items: [franceEvent1, franceEvent2] });
+
+      const result = await handler(restApiEvent.get(endpoint, query), context);
+
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify([franceEvent1, franceEvent2].map(toEventResponse)),
+      });
+    });
+
+    it("queries the events table by compositeKey on the timestamp index in descending order", async ({
+      http,
+    }) => {
+      stubConsumerConfig(http);
+      dynamo.on(QueryCommand).resolves({ Items: [franceEvent1] });
+
+      await handler(restApiEvent.get(endpoint, query), context);
+
+      expect(dynamo.commandCalls(QueryCommand)).toHaveLength(1);
+      expect(dynamo.commandCalls(QueryCommand)[0]?.args[0].input).toMatchObject(
+        {
+          TableName: "development-travel-events",
+          IndexName: "timestamp-query",
+          KeyConditionExpression: "#pk = :pkValue",
+          ExpressionAttributeNames: { "#pk": "compositeKey" },
+          ExpressionAttributeValues: { ":pkValue": "travel/france" },
+          ScanIndexForward: false,
+        },
+      );
+    });
+
+    it("returns an empty list when no events exist for the group", async ({
+      http,
+    }) => {
+      stubConsumerConfig(http);
+      dynamo.on(QueryCommand).resolves({ Items: [] });
+
+      const result = await handler(restApiEvent.get(endpoint, query), context);
+
+      expect(result).toStrictEqual({
+        statusCode: 200,
+        headers: jsonHeaders,
+        body: JSON.stringify([]),
+      });
+    });
+
+    it("returns 400 when namespace query parameter is missing", async () => {
+      const result = await handler(
+        restApiEvent.get(endpoint, { group: "france" }),
+        context,
+      );
+
+      expect(result).toMatchObject({ statusCode: 400 });
+    });
+
+    it("returns 400 when group query parameter is missing", async () => {
+      const result = await handler(
+        restApiEvent.get(endpoint, { namespace: "travel" }),
+        context,
+      );
+
+      expect(result).toMatchObject({ statusCode: 400 });
+    });
+
+    it("returns 502 when the query throws", async ({ http }) => {
+      stubConsumerConfig(http);
+      dynamo.on(QueryCommand).rejects(new Error("ResourceNotFoundException"));
+
+      const result = await handler(restApiEvent.get(endpoint, query), context);
+
+      expect(result).toStrictEqual({
+        statusCode: 502,
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          message: "TRAVEL upstream service unavailable",
+        }),
+      });
+    });
+
+    it("returns 502 when a row does not match the event schema", async ({
+      http,
+    }) => {
+      stubConsumerConfig(http);
+      dynamo.on(QueryCommand).resolves({
+        Items: [eventRow("france", "A update", "not-a-date")],
+      });
+
+      const result = await handler(restApiEvent.get(endpoint, query), context);
 
       expect(result).toMatchObject({ statusCode: 502 });
     });

@@ -1,12 +1,20 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { logger } from "@flex/logging";
 import { getAssumedRoleCredentials } from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { assertNever } from "@flex/utils";
 import { z } from "zod";
 
-import type { DynamoClient, DynamoScanOptions } from "../../types";
+import type {
+  DynamoClient,
+  DynamoQueryOptions,
+  DynamoScanOptions,
+} from "../../types";
 
 export type DynamoAuth =
   | { type: "default" }
@@ -149,5 +157,94 @@ export function createDynamoClient({
     return { ok: true as const, status: 200, data: parsed.data };
   };
 
-  return { scan } as DynamoClient;
+  const query = async ({
+    indexName,
+    partitionKey,
+    partitionValue,
+    scanIndexForward,
+    schema,
+  }: DynamoQueryOptions) => {
+    emitTelemetry(TelemetryEvent.third_party_request_sent, {
+      service: "dynamodb",
+      operation: "Query",
+      tableName,
+    });
+
+    const items: Record<string, unknown>[] = [];
+    let startKey: Record<string, unknown> | undefined;
+
+    try {
+      do {
+        const result = await client.send(
+          new QueryCommand({
+            TableName: tableName,
+            IndexName: indexName,
+            KeyConditionExpression: "#pk = :pkValue",
+            ExpressionAttributeNames: { "#pk": partitionKey },
+            ExpressionAttributeValues: { ":pkValue": partitionValue },
+            ScanIndexForward: scanIndexForward,
+            ExclusiveStartKey: startKey,
+          }),
+        );
+
+        items.push(...(result.Items ?? []));
+        startKey = result.LastEvaluatedKey;
+      } while (startKey);
+    } catch (error) {
+      const { name, message } = error as Error;
+
+      logger.error("DynamoDB query failed", {
+        tableName,
+        name,
+        reason: message,
+      });
+
+      emitTelemetry(TelemetryEvent.third_party_request_error, {
+        service: "dynamodb",
+        tableName,
+      });
+
+      return {
+        ok: false as const,
+        error: { status: 502, message },
+      };
+    }
+
+    emitTelemetry(TelemetryEvent.third_party_response_received, {
+      service: "dynamodb",
+      tableName,
+      count: items.length,
+    });
+
+    if (!schema) {
+      return { ok: true as const, status: 200, data: items };
+    }
+
+    const parsed = z.array(schema).safeParse(items);
+
+    if (!parsed.success) {
+      logger.error("DynamoDB row failed schema validation", {
+        tableName,
+        issues: z.prettifyError(parsed.error),
+      });
+
+      emitTelemetry(TelemetryEvent.response_validation_failed, {
+        service: "dynamodb",
+        tableName,
+      });
+
+      return {
+        ok: false as const,
+        error: {
+          status: 502,
+          message: "Response validation failed",
+          body: z.treeifyError(parsed.error),
+        },
+      };
+    }
+
+    return { ok: true as const, status: 200, data: parsed.data };
+  };
+
+  return { scan, query } as DynamoClient;
 }

@@ -59,10 +59,14 @@ const baseEvent: APIGatewayProxyEvent = {
 };
 
 export const restApiEvent = {
-  get: (path: string): APIGatewayProxyEvent => ({
+  get: (
+    path: string,
+    queryStringParameters: Record<string, string> = {},
+  ): APIGatewayProxyEvent => ({
     ...baseEvent,
     path,
     resource: path,
+    queryStringParameters,
     requestContext: { ...baseEvent.requestContext, path, resourcePath: path },
   }),
 } as const;
