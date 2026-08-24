@@ -932,12 +932,21 @@ importers:
 
   platform/domains/travel:
     dependencies:
+      '@flex/logging':
+        specifier: workspace:*
+        version: link:../../../libs/logging
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../../libs/sdk
       '@flex/service-gateway':
         specifier: workspace:*
         version: link:../../../libs/service-gateway
       '@flex/utils':
         specifier: workspace:*
         version: link:../../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -954,12 +963,15 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../../libs/config
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../../libs/sdk
       '@flex/testing':
         specifier: workspace:*
         version: link:../../../libs/testing
+      '@types/aws-lambda':
+        specifier: 8.10.162
+        version: 8.10.162
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
       '@vitest/coverage-v8':
         specifier: 4.1.10
         version: 4.1.10(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0)))
@@ -977,6 +989,40 @@ importers:
         version: 4.1.0(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
   platform/domains/udp:
+    dependencies:
+      '@flex/service-gateway':
+        specifier: workspace:*
+        version: link:../../../libs/service-gateway
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../../libs/utils
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../../libs/config
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../../libs/sdk
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../../libs/testing
+      '@vitest/coverage-v8':
+        specifier: 4.1.10
+        version: 4.1.10(vitest@4.1.10)
+      eslint:
+        specifier: 10.7.0
+        version: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+
+  platform/domains/uns:
     dependencies:
       '@flex/service-gateway':
         specifier: workspace:*
