@@ -168,7 +168,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
       notFound: "ER19NFD",
       tooManyRequests: "ER19THR",
       upstreamError: "ER19ERR",
-      valid: "AA19EEE",
+      valid: "AA19AAA",
     };
     const endpoint = (registration: string) =>
       `/dvla/v1/vehicle-enquiry/${registration}`;
