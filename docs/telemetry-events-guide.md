@@ -6,7 +6,7 @@ Note: at present these events are written into the platform's logs (AWS CloudWat
 
 ## How to read an event name
 
-Every event has a fixed name in `snake_case` (lowercase words joined by underscores). Names follow a rough pattern of *where_what_outcome*, so `auth_token_expired` reads as: in the auth area, a token was presented and found to be expired. There are 23 events, grouped into six areas below.
+Every event has a fixed name in `snake_case` (lowercase words joined by underscores). Names follow a rough pattern of _where_what_outcome_, so `auth_token_expired` reads as: in the auth area, a token was presented and found to be expired. There are 23 events, grouped into six areas below.
 
 Each event may also carry a small set of extra fields, called details, such as the HTTP status code or a human readable reason. These are listed per event.
 
@@ -26,11 +26,11 @@ A successful request therefore produces a chain of events: `cff_token_validated`
 
 ### CFF (edge checks)
 
-| Event | Meaning |
-|---|---|
+| Event                 | Meaning                                                                         |
+| --------------------- | ------------------------------------------------------------------------------- |
 | `cff_token_validated` | A request arrived with a structurally valid login token and was passed through. |
-| `cff_token_missing` | The request had no login token (or an empty one) and was rejected. |
-| `cff_token_invalid` | A token was present but malformed, and the request was rejected. |
+| `cff_token_missing`   | The request had no login token (or an empty one) and was rejected.              |
+| `cff_token_invalid`   | A token was present but malformed, and the request was rejected.                |
 
 Details: all three carry `correlationId` (an identifier that links the events of a single request together). The two failure events also carry `reason`, a short description of what was wrong.
 
@@ -38,57 +38,57 @@ Note: rejections here happen before any real verification, so `cff_token_invalid
 
 ### Auth (login verification)
 
-| Event | Meaning |
-|---|---|
-| `auth_success` | The token was verified and the user identified. |
-| `auth_token_missing` | No token was supplied to the verifier. |
-| `auth_token_expired` | The token was genuine but past its expiry time. This is normal behaviour (sessions time out) rather than a fault. |
-| `auth_token_invalid` | The token failed verification: bad signature, wrong issuer, or the verification service itself was unreachable. |
-| `auth_claim_missing` | The token verified but did not contain the expected user identifier. |
-| `auth_failure` | An authentication failure that fits none of the above. Expected to be rare; a rise in this event is worth investigating. |
+| Event                | Meaning                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `auth_success`       | The token was verified and the user identified.                                                                          |
+| `auth_token_missing` | No token was supplied to the verifier.                                                                                   |
+| `auth_token_expired` | The token was genuine but past its expiry time. This is normal behaviour (sessions time out) rather than a fault.        |
+| `auth_token_invalid` | The token failed verification: bad signature, wrong issuer, or the verification service itself was unreachable.          |
+| `auth_claim_missing` | The token verified but did not contain the expected user identifier.                                                     |
+| `auth_failure`       | An authentication failure that fits none of the above. Expected to be rare; a rise in this event is worth investigating. |
 
 Details: `auth_success` carries `pairwiseId`, a pseudonymous user identifier (it identifies the same user consistently without revealing who they are), which supports counting distinct users. The failure events carry `reason`.
 
 ### Domain (request handling)
 
-| Event | Meaning |
-|---|---|
-| `domain_request_received` | A request reached a domain. Carries `method` (GET, POST etc.) and `path` (the address requested). |
-| `domain_response_returned` | The domain answered successfully. Carries `status` (the HTTP status code). |
-| `domain_error_returned` | The domain answered with an error. Carries `status` and `path`. |
+| Event                      | Meaning                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| `domain_request_received`  | A request reached a domain. Carries `method` (GET, POST etc.) and `path` (the address requested). |
+| `domain_response_returned` | The domain answered successfully. Carries `status` (the HTTP status code).                        |
+| `domain_error_returned`    | The domain answered with an error. Carries `status` and `path`.                                   |
 
 Every request produces exactly one `domain_request_received` and then exactly one of the other two, so the ratio between them is the domain success rate.
 
 ### Service gateway (internal relay)
 
-| Event | Meaning |
-|---|---|
-| `service_gateway_request_sent` | A domain asked the gateway for something. Carries `method` and `path`. |
-| `service_gateway_request_received` | The gateway received that request. Carries `method` and `path`. |
-| `service_gateway_response_returned` | The gateway answered successfully. Carries `status`. |
-| `service_gateway_error_returned` | The gateway answered with an error. Carries `status`, and where the cause was a failing external service, `upstreamStatus` (the status the external service actually gave, before the gateway translated it). |
+| Event                               | Meaning                                                                                                                                                                                                       |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `service_gateway_request_sent`      | A domain asked the gateway for something. Carries `method` and `path`.                                                                                                                                        |
+| `service_gateway_request_received`  | The gateway received that request. Carries `method` and `path`.                                                                                                                                               |
+| `service_gateway_response_returned` | The gateway answered successfully. Carries `status`.                                                                                                                                                          |
+| `service_gateway_error_returned`    | The gateway answered with an error. Carries `status`, and where the cause was a failing external service, `upstreamStatus` (the status the external service actually gave, before the gateway translated it). |
 
 Sent and received should track each other closely; a persistent gap between them would indicate requests being lost between domain and gateway.
 
 ### Third party (external calls)
 
-| Event | Meaning |
-|---|---|
-| `third_party_request_sent` | The gateway called an external API. Carries `method`, `baseUrl` (which organisation) and `path` (which endpoint). |
-| `third_party_response_received` | The external API answered. Carries `baseUrl`, `path` and `status`. Note this fires for error answers as well as successes; the `status` distinguishes them. |
-| `third_party_request_retried` | A call failed and was automatically retried. Carries `url` and `attemptNumber`. Retries are invisible in the sent/received counts, so this event is the measure of external flakiness: a service can look healthy on final outcomes while quietly needing three attempts per call. |
-| `third_party_request_timeout` | A call was abandoned because the external service took too long. Carries `url` and `reason`. |
-| `third_party_request_error` | A call failed outright (network failure, connection refused and similar). Carries `url` and `reason`. |
+| Event                           | Meaning                                                                                                                                                                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `third_party_request_sent`      | The gateway called an external API. Carries `method`, `baseUrl` (which organisation) and `path` (which endpoint).                                                                                                                                                                  |
+| `third_party_response_received` | The external API answered. Carries `baseUrl`, `path` and `status`. Note this fires for error answers as well as successes; the `status` distinguishes them.                                                                                                                        |
+| `third_party_request_retried`   | A call failed and was automatically retried. Carries `url` and `attemptNumber`. Retries are invisible in the sent/received counts, so this event is the measure of external flakiness: a service can look healthy on final outcomes while quietly needing three attempts per call. |
+| `third_party_request_timeout`   | A call was abandoned because the external service took too long. Carries `url` and `reason`.                                                                                                                                                                                       |
+| `third_party_request_error`     | A call failed outright (network failure, connection refused and similar). Carries `url` and `reason`.                                                                                                                                                                              |
 
 ### General (cross cutting)
 
 These three can occur in more than one area, so they are best read alongside the events around them.
 
-| Event | Meaning |
-|---|---|
-| `request_validation_failed` | An incoming request was rejected because it was badly formed. Carries `part` (whether the headers, query or body were at fault). This separates "the caller sent something wrong" from genuine platform errors, so error rates are not polluted by client mistakes. |
-| `response_validation_failed` | An answer (usually from an external service) did not match the format the platform expects. This signals a contract break, i.e. an external service changing its output, which is a different problem from that service being down. |
-| `error_thrown` | An unexpected internal error occurred. Carries `reason`. Any sustained volume of this event indicates a platform fault. |
+| Event                        | Meaning                                                                                                                                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request_validation_failed`  | An incoming request was rejected because it was badly formed. Carries `part` (whether the headers, query or body were at fault). This separates "the caller sent something wrong" from genuine platform errors, so error rates are not polluted by client mistakes. |
+| `response_validation_failed` | An answer (usually from an external service) did not match the format the platform expects. This signals a contract break, i.e. an external service changing its output, which is a different problem from that service being down.                                 |
+| `error_thrown`               | An unexpected internal error occurred. Carries `reason`. Any sustained volume of this event indicates a platform fault.                                                                                                                                             |
 
 ## Standard context on every event
 

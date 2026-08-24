@@ -201,7 +201,7 @@ This provides `logger` with all methods as `vi.fn()` spies, plus stubs for `setL
 **FLEX:**
 
 - [Auth Handler](/platform/domains/auth/README.md)
-- [Viewer Request Handler](/platform/domains/viewer-request-cff/README.md)
+- [Viewer Request Handler](/platform/domains/viewer-request-cff-platform/README.md)
 
 **External:**
 

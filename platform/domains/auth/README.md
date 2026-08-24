@@ -1,6 +1,8 @@
 # @platform/auth
 
-Lambda authorizer for API Gateway that verifies Cognito JWT tokens and provides user identity to downstream handlers.
+Lambda authorizer for API Gateway that verifies Cognito access tokens and provides user identity to downstream handlers.
+
+This workspace also defines a JWKS endpoint which is used for E2E testing purposes only.
 
 ---
 
@@ -34,21 +36,38 @@ The authorizer validates Cognito access tokens and extracts user identity:
 3. Extracts `pairwiseId` from the decoded token's `username` claim
 4. Returns an IAM Allow policy with `pairwiseId` attached to the authorizer context
 
-**Reject (401 Unauthorized):**
-
-- Missing `Authorization` header
-- JWT is either empty, invalid or expired
-- Missing `username` claim in token
-
 ### Configuration
 
-| Environment Variable     | Description                                 |
-| ------------------------ | ------------------------------------------- |
-| `AWS_REGION`             | AWS region for Cognito                      |
-| `USERPOOL_ID_PARAM_NAME` | SSM parameter name for Cognito User Pool ID |
-| `CLIENT_ID_PARAM_NAME`   | SSM parameter name for Cognito Client ID    |
+| Environment Variable | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `AWS_REGION`         | AWS region for the Cognito issuer URL         |
+| `USERPOOL_ID`        | Cognito User Pool ID                          |
+| `CLIENT_ID`          | Cognito App Client ID                         |
+| `JWKS_URI`           | JWKS endpoint used to verify token signatures |
 
-> `getConfig` strips the `_PARAM_NAME` suffix from environment variable names, so `API_KEY_PARAM_NAME` becomes `config.API_KEY` in handler code.
+### Telemetry
+
+Emits one `TelemetryEvent` per outcome:
+
+- `auth_success`
+- `auth_token_expired`
+- `auth_token_missing`
+- `auth_claim_missing`
+- `auth_token_invalid`
+- `auth_failure`
+
+Failure events assign an error message to the `reason` field.
+
+---
+
+## JWKS Endpoint
+
+| Property | Value                      |
+| -------- | -------------------------- |
+| Type     | Lambda (API Gateway proxy) |
+| Trigger  | HTTP GET                   |
+
+Serves a JSON Web Key Set built from a single RSA public key held in Secrets Manager, useful for E2E tests as it can mint tokens the authorizer will accept.
 
 ---
 
@@ -57,6 +76,7 @@ The authorizer validates Cognito access tokens and extracts user identity:
 **FLEX:**
 
 - [@flex/logging](/libs/logging/README.md)
+- [@flex/sdk](/libs/sdk/README.md)
+- [@flex/telemetry](/libs/telemetry/README.md)
 - [@flex/testing](/libs/testing/README.md)
-- [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

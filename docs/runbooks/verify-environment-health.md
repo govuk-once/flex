@@ -181,10 +181,10 @@ A full deploy creates:
 
 - `${env}-FlexCore`, `${env}-FlexSmokeTest` and `${env}-FlexParams` (persistent environments only)
 - `${stage}-FlexPlatform`, `${stage}-FlexGlobal` (`us-east-1`)
-- One `${stage}-<domain>` per deployed domain
+- One `${stage}-<domain>` per deployed domain, and one per deployed service gateway
 - `${stage}-FlexApiDeployment`
 
-Which domains are deployed varies by environment, see [Environment Differences](#environment-differences).
+Which domains and service gateways are deployed varies by environment, see [Environment Differences](#environment-differences).
 
 > `env` refers to the persistent environment (`development`, `staging`, `production`), whereas `stage` is the deployment name, which for personal and PR stacks differs from the environment.
 
@@ -221,13 +221,13 @@ You should only reach for this check after all of the previous checks are clean 
 
 You can view the X-Ray service map by navigating to the X-Ray console and selecting the `Service map` tab. All Flex Lambdas trace, so you can find additional details around errors, throttles and latency which can highlight a failing downstream service.
 
-You can also search the affected domain's log group in CloudWatch Logs Insights for common search terms:
+You can also search the affected domain or service gateway's log group in CloudWatch Logs Insights for common search terms:
 
-| Search term                                 | Description                                                                                                                                  |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `flex-fetch retrying request`               | Multiple retry attempts may indicate an issue with the downstream dependency                                                                 |
-| `flex-fetch failed`                         | The call failed after reaching the maximum retry attempts. The `url` field identifies the dependency                                         |
-| `Gateway response schema validation failed` | Successful response that contains an incorrect body shape against the expected schema. Investigate the contract drift, this is not an outage |
+| Search term                                 | Description                                                                                                                                                                         |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flex-fetch retrying request`               | Multiple retry attempts may indicate an issue with the downstream dependency                                                                                                        |
+| `flex-fetch failed`                         | The call failed after reaching the maximum retry attempts. The `url` field identifies the dependency                                                                                |
+| `Gateway response schema validation failed` | A service gateway received a successful response that contains an incorrect body shape against the route's `response` schema. Investigate the contract drift, this is not an outage |
 
 > The source code containing these search terms can be found in `libs/sdk/src/fetch/fetch.ts` and `libs/service-gateway/src/handler/index.ts`.
 
@@ -323,3 +323,4 @@ All other issues should be resolvable either by following the steps outlined in 
 - [Deployment Guide](/docs/deployment.md)
 - [Environment Setup Guide](/docs/environment-setup.md)
 - [Release Notifications and Alerting](/docs/release-notifications.md)
+- [@flex/service-gateway](/libs/service-gateway/README.md)

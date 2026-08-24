@@ -10,16 +10,18 @@ This runbook is for the on-call engineer. A 5xx means a request reached API Gate
 
 ## Where a 5xx Comes From in FLEX
 
-A request runs through `API Gateway → Lambda handler → (optional) integration → downstream service`. A 5xx is served either by API Gateway itself (the Lambda never returned a usable response) or by the FLEX handler (it returned a 5xx body on purpose). Reading the code tells you which.
+A request runs through `API Gateway → Lambda handler → (optional) integration → downstream service`. The Lambda handler is either a domain handler (`@flex/sdk`) or a service gateway handler (`@flex/service-gateway`) communicating with a remote third-party API. A 5xx is served either by API Gateway itself (the Lambda never returned a usable response) or by the FLEX handler (it returned a 5xx body on purpose). Reading the code tells you which.
 
-| Status  | Served by                                | Meaning in FLEX                                                                                                                                                                                                                                                                                                         |
-| ------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **500** | The FLEX handler                         | An unhandled or unexpected error, logged as `Internal server error` or `Unhandled error`; also returned when a handler's response fails its own schema (logged as `Response validation failed`)                                                                                                                         |
-| **502** | The FLEX handler, via the gateway helper | A downstream integration returned a 5xx; FLEX maps it to `"<integration> upstream service unavailable"`, or a gateway response fails its own schema, logged as `Gateway response schema validation failed`. Also served by API Gateway itself if the Lambda crashed, ran out of memory, or returned a malformed payload |
-| **503** | API Gateway                              | The function was throttled or there was no capacity to serve the request                                                                                                                                                                                                                                                |
-| **504** | API Gateway                              | The integration exceeded its timeout; the Lambda ran past the timeout (15s by default, higher where a domain sets it) before responding                                                                                                                                                                                 |
+| Status  | Served by                               | Meaning in FLEX                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **500** | The FLEX handler                        | An unhandled or unexpected error, logged as `Internal server error` or `Unhandled error`; also returned when a domain handler's response fails its own schema (logged as `Response validation failed`)                                                                                                                                                                                                                                   |
+| **502** | The FLEX handler, via a service gateway | A service gateway's remote call returned a 5xx; the gateway maps it to `"<gateway name> upstream service unavailable"` (see [Remote Error Mapping](/libs/service-gateway/README.md#remote-error-mapping)), or the gateway's own response fails its `response` schema, logged as `Gateway response schema validation failed`. Also served by API Gateway itself if the Lambda crashed, ran out of memory, or returned a malformed payload |
+| **503** | API Gateway                             | The function was throttled or there was no capacity to serve the request                                                                                                                                                                                                                                                                                                                                                                 |
+| **504** | API Gateway                             | The integration exceeded its timeout; the Lambda ran past the timeout (15s by default, higher where a domain sets it) before responding                                                                                                                                                                                                                                                                                                  |
 
 The important split: **500 and a mapped 502 come from FLEX code and are logged with a clear message; a native 502, 503 or 504 comes from API Gateway and will not have a matching FLEX log line for that request** because the Lambda never returned cleanly. Which of the two you are looking at decides where you investigate.
+
+A mapped 502 always names the gateway that produced it (`"<gateway name> upstream service unavailable"`), so read the name before assuming which third-party dependency is involved.
 
 ---
 
@@ -39,13 +41,13 @@ Establish the scale and the shape of the failure before tracing individual reque
 
 2. **Find the exact status code.** The 5XX alarm does not distinguish 500 from 504. Query the API access logs (a dedicated JSON CloudWatch log group per stage, with `status`, `requestId`, method, resource path and latency) to see the actual codes and which routes are affected:
 
-   ```text
+```text
    fields @timestamp, status, httpMethod, resourcePath, requestId
    | filter status >= 500
    | sort @timestamp desc
-   ```
+```
 
-3. **Interpret the spread.** All 504s on one route points at a slow or hanging integration. A mix of 500s across many routes points at a shared fault (a resource, config, or the platform). A burst of 502s naming one integration points at a downstream outage (see the [External Service Outage Runbook](/docs/runbooks/external-service-outage.md)).
+3. **Interpret the spread.** All 504s on one route points at a slow or hanging integration. A mix of 500s across many routes points at a shared fault (a resource, config, or the platform). A burst of 502s naming one integration points at a downstream outage (see [External Service Outage Runbook](/docs/runbooks/external-service-outage.md)).
 
 ---
 
@@ -54,7 +56,7 @@ Establish the scale and the shape of the failure before tracing individual reque
 Pick a representative failing request and follow it from the edge to where it broke.
 
 1. **Take the `requestId`** (and the `x-correlation-id`, if the caller sent one) from an access log entry for a failed request. FLEX threads the correlation id through its structured logs via Middy, so it links the edge log to the handler logs for the same request.
-2. **Pivot into the Lambda log group** for the route's domain and filter for that correlation id or the time window. If you find a FLEX error line (`Internal server error`, `Unhandled error`, `upstream service unavailable`), the Lambda ran and the fault is in the handler or its integration. If you find nothing for that request, the Lambda did not return cleanly, which points at a native API Gateway 502, 503 or 504 (crash, throttle or timeout).
+2. **Pivot into the Lambda log group** for the route's domain, or the service gateway's own log group if the failing route is a gateway route (`/gateways/<name>/...`), and filter for that correlation id or the time window. If you find a FLEX error line (`Internal server error`, `Unhandled error`, `upstream service unavailable`), the Lambda ran and the fault is in the handler or its integration. If you find nothing for that request, the Lambda did not return cleanly, which points at a native API Gateway 502, 503 or 504 (crash, throttle or timeout).
 3. **Use X-Ray.** Active tracing is enabled on the API. The service map and individual traces show how far a request travelled and which segment errored or timed out, which is the quickest way to separate "the Lambda is slow" from "the thing the Lambda called is slow".
 
 ---
@@ -63,16 +65,16 @@ Pick a representative failing request and follow it from the edge to where it br
 
 Confirm the cause with the specific evidence.
 
-**Logs (CloudWatch Logs Insights over the domain's Lambda log group).** These messages map directly to the causes:
+**Logs (CloudWatch Logs Insights over the domain or gateway's Lambda log group).** These messages map directly to the causes:
 
-| Search term                                 | Meaning                                                                                                                                                                                                                                        |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Unhandled error`                           | An exception Middy caught and turned into a 500; the `detail` field carries the name, message and stack                                                                                                                                        |
-| `Internal server error`                     | An unexpected error mapped to a 500                                                                                                                                                                                                            |
-| `Response validation failed`                | The handler produced data that did not match its response schema, returned as a 500; a code or contract bug, not an outage. The related `Failed handler response validation` detail only appears at DEBUG or TRACE log level                   |
-| `Gateway response schema validation failed` | A service gateway response did not match its schema, returned as a 502; a code or contract bug, not an outage                                                                                                                                  |
-| `upstream service unavailable`              | A downstream integration returned a 5xx and FLEX mapped it to a 502; the message names the integration. It is the 502 response body and a DEBUG-level log only, so at normal log level query `flex-fetch failed` or the access-log 502 instead |
-| `flex-fetch failed`                         | Calls to a downstream exhausted their retries; correlate the `url` to the target service                                                                                                                                                       |
+| Search term                                 | Meaning                                                                                                                                                                                                                                                  |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Unhandled error`                           | An exception Middy caught and turned into a 500; the `detail` field carries the name, message and stack                                                                                                                                                  |
+| `Internal server error`                     | An unexpected error mapped to a 500                                                                                                                                                                                                                      |
+| `Response validation failed`                | A domain handler produced data that did not match its response schema, returned as a 500; a code or contract bug, not an outage. The related `Failed handler response validation` detail only appears at DEBUG or TRACE log level                        |
+| `Gateway response schema validation failed` | A service gateway's remote response did not match the route's `response` schema, returned as a 502; a code or contract bug in the third-party integration, not an outage                                                                                 |
+| `upstream service unavailable`              | A service gateway's remote call returned a 5xx and the gateway mapped it to a 502; the message names the gateway. It is the 502 response body and a DEBUG-level log only, so at normal log level query `flex-fetch failed` or the access-log 502 instead |
+| `flex-fetch failed`                         | Calls to a downstream exhausted their retries; correlate the `url` to the target service                                                                                                                                                                 |
 
 **Metrics.** Plot `5XXError` against `IntegrationLatency` and `Latency` over the incident window. If integration latency climbs while API Gateway's own overhead stays flat, the delay is in the backend. Check Lambda `Errors`, `Duration` and `Throttles` for the affected function: throttles alongside 5xx point at a concurrency limit rather than a code fault.
 
@@ -84,14 +86,14 @@ Confirm the cause with the specific evidence.
 
 Match the evidence to a cause, because the cause decides the fix.
 
-| Cause                           | How it presents                                                                                  | Where it sits                                                              |
-| ------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| **Integration timeout**         | 504s; Lambda duration near the timeout; integration latency alarm                                | A downstream service is slow or hanging                                    |
-| **Downstream service failure**  | 502s with `upstream service unavailable`; `flex-fetch failed`                                    | The dependency is erroring; see the External Service Outage Runbook        |
-| **Unhandled exception**         | 500s with `Unhandled error` and a stack; often follows a recent deploy                           | A bug in the handler                                                       |
-| **Response validation failure** | 500s with `Response validation failed`, or 502s with `Gateway response schema validation failed` | The handler or a gateway response contract changed shape                   |
-| **Throttling / concurrency**    | 503s or 5xx with Lambda `Throttles` above zero                                                   | Reserved or account concurrency exhausted, or a downstream throttling FLEX |
-| **Misconfiguration**            | 500s or 502s starting exactly at a deploy, across routes                                         | A missing or wrong resource (SSM parameter, secret, role, env var)         |
+| Cause                           | How it presents                                                                                                                     | Where it sits                                                              |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Integration timeout**         | 504s; Lambda duration near the timeout; integration latency alarm                                                                   | A downstream service is slow or hanging                                    |
+| **Downstream service failure**  | 502s with `upstream service unavailable`; `flex-fetch failed`                                                                       | The dependency is erroring; see the External Service Outage Runbook        |
+| **Unhandled exception**         | 500s with `Unhandled error` and a stack; often follows a recent deploy                                                              | A bug in the handler                                                       |
+| **Response validation failure** | 500s with `Response validation failed` (domain handler), or 502s with `Gateway response schema validation failed` (service gateway) | The handler's or gateway's response contract changed shape                 |
+| **Throttling / concurrency**    | 503s or 5xx with Lambda `Throttles` above zero                                                                                      | Reserved or account concurrency exhausted, or a downstream throttling FLEX |
+| **Misconfiguration**            | 500s or 502s starting exactly at a deploy, across routes                                                                            | A missing or wrong resource (SSM parameter, secret, role, env var)         |
 
 ---
 

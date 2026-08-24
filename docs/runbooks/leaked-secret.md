@@ -107,7 +107,7 @@ A new secret is only live once the running services actually use it. How you mak
 
 > **Caching note.** The Middy `secrets-manager` middleware ([`middleware.ts`](/libs/sdk/src/route/middleware.ts)) caches a fetched secret for the lifetime of a warm Lambda execution environment. A rotated `secret` value is therefore not reliably picked up by containers that are already warm and may still be holding the old, leaked value. Redeploying the affected domain replaces the function version and forces cold starts, which guarantees every invocation reads the new value. When a leaked secret has been rotated, redeploy; do not assume the rotation alone has taken hold.
 
-Redeploys reach production only through the Continuous Deployment pipeline ([`main.yml`](/.github/workflows/main.yml)). No one can deploy directly to production, so a rotation reaches it the same way any change does: raise the change, get it reviewed, and let the pipeline carry it through development, staging and production, approving the staging and production gates as they are reached. Under incident conditions the pipeline is compressed, not bypassed: the review and approval gates still apply. For operating the pipeline and expediting a promotion, see the [Pipeline Promotion runbook](/docs/runbooks/pipeline-promotion-runbook.md) and the [Fix Forward runbook](/docs/runbooks/fix-forward.md).
+Redeploys reach production only through the Continuous Deployment pipeline ([`main.yml`](/.github/workflows/main.yml)). No one can deploy directly to production, so a rotation reaches it the same way any change does: raise the change, get it reviewed, and let the pipeline carry it through development, staging and production, approving the staging and production gates as they are reached. Under incident conditions the pipeline is compressed, not bypassed: the review and approval gates still apply. For operating the pipeline and expediting a promotion, see the [Pipeline Promotion runbook](/docs/runbooks/pipeline-promotion.md) and the [Fix Forward runbook](/docs/runbooks/fix-forward.md).
 
 Rotate the value first, then let the pipeline redeploy every stage that shared the secret, not only the one where it leaked.
 
@@ -174,7 +174,7 @@ The goal is that the next leaked secret is caught before it escapes, and that if
 **Runbooks:**
 
 - [Fix Forward Runbook](/docs/runbooks/fix-forward.md)
-- [Pipeline Promotion Runbook](/docs/runbooks/pipeline-promotion-runbook.md)
+- [Pipeline Promotion Runbook](/docs/runbooks/pipeline-promotion.md)
 
 **Configuration and code:**
 
