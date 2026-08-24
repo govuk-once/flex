@@ -1,6 +1,6 @@
-import { createServer } from "node:http";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve, extname } from "node:path";
+import { createServer } from "node:http";
+import { extname, resolve } from "node:path";
 
 const PORT = Number(process.env.DOCS_PORT) || 4400;
 
