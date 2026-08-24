@@ -42,7 +42,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicles") &&
-        isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicle/:id"),
+      isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicle/:id"),
     )("/vehicles", () => {
       let vehicleId: string | undefined;
 
@@ -106,7 +106,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "POST /v1/share-code") &&
-        isRouteDeployed(dvlaConfig, "POST /v1/share-code/:id/cancel"),
+      isRouteDeployed(dvlaConfig, "POST /v1/share-code/:id/cancel"),
     )("/dvla/v1/share-code & /dvla/v1/share-code/:id/cancel", () => {
       it("creates and then proceeds to cancel newly created share-code", async ({
         cloudfront,
@@ -168,7 +168,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
       notFound: "ER19NFD",
       tooManyRequests: "ER19THR",
       upstreamError: "ER19ERR",
-      valid: "AA19AAA",
+      valid: "AA19EEE",
     };
     const endpoint = (registration: string) =>
       `/dvla/v1/vehicle-enquiry/${registration}`;
