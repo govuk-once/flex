@@ -1,5 +1,5 @@
 import { IsoDateTime, NonEmptyString } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
 export const TodoIdBranded = NonEmptyString.brand<"TodoId">();
 export type TodoId = z.output<typeof TodoIdBranded>;

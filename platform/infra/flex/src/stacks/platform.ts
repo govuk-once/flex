@@ -32,10 +32,10 @@ import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
 import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
-import { createServiceGateway } from "../constructs/gateways/service-gateway";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 

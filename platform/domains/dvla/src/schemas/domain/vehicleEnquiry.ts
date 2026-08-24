@@ -1,5 +1,5 @@
 import { NonEmptyString, WholeNumber } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
 export const vehicleEnquiryRequestBodySchema = z.object({
   registrationNumber: NonEmptyString,

@@ -4,7 +4,7 @@ import path from "node:path";
 import { DomainConfigSchema, IacDomainConfig } from "@flex/sdk";
 import { findProjectRoot } from "@flex/utils";
 import { createJiti } from "jiti";
-import z from "zod";
+import { z } from "zod";
 
 const jiti = createJiti(import.meta.url);
 const domainsRoot = `${findProjectRoot()}/domains`;
