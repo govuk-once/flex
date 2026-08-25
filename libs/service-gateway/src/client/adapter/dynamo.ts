@@ -1,4 +1,8 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import type {
+  QueryCommandInput,
+  ScanCommandInput,
+} from "@aws-sdk/lib-dynamodb";
 import {
   DynamoDBDocumentClient,
   QueryCommand,
@@ -59,6 +63,105 @@ function buildDocumentClient({
   }
 }
 
+type PaginateOptions = {
+  readonly operation: "Scan" | "Query";
+  readonly errorMessage: string;
+  readonly schema?: z.ZodType;
+  readonly buildCommand: (
+    startKey: Record<string, unknown> | undefined,
+  ) => ScanCommandInput | QueryCommandInput;
+};
+
+/**
+ * Runs a paginated DynamoDB operation to completion, handling telemetry,
+ * error logging, and optional schema validation. `scan` and `query` each
+ * supply only the parts that differ: the operation name and the command input.
+ */
+async function paginate(
+  client: DynamoDBDocumentClient,
+  tableName: string,
+  { operation, errorMessage, schema, buildCommand }: PaginateOptions,
+) {
+  emitTelemetry(TelemetryEvent.third_party_request_sent, {
+    service: "dynamodb",
+    operation,
+    tableName,
+  });
+
+  const items: Record<string, unknown>[] = [];
+  let startKey: Record<string, unknown> | undefined;
+
+  try {
+    do {
+      const command =
+        operation === "Scan"
+          ? new ScanCommand(buildCommand(startKey))
+          : new QueryCommand(buildCommand(startKey));
+
+      const result = await client.send(command);
+
+      items.push(...(result.Items ?? []));
+      startKey = result.LastEvaluatedKey;
+    } while (startKey);
+  } catch (error) {
+    const { name, message } = error as Error;
+
+    // The gateway maps 5xx to a flat "upstream service unavailable" and only
+    // logs the cause at debug, which the handler's INFO level drops. Without
+    // this, an AccessDenied on AssumeRole and a missing table are the same
+    // opaque 502 in a deployed environment.
+    //
+    // `reason`, not `message`: powertools reserves `message` for the log's own
+    // text and silently drops the key, which is what hid the AWS detail here.
+    logger.error(errorMessage, { tableName, name, reason: message });
+
+    emitTelemetry(TelemetryEvent.third_party_request_error, {
+      service: "dynamodb",
+      tableName,
+    });
+
+    return { ok: false as const, error: { status: 502, message } };
+  }
+
+  emitTelemetry(TelemetryEvent.third_party_response_received, {
+    service: "dynamodb",
+    tableName,
+    count: items.length,
+  });
+
+  if (!schema) {
+    return { ok: true as const, status: 200, data: items };
+  }
+
+  const parsed = z.array(schema).safeParse(items);
+
+  if (!parsed.success) {
+    logger.error("DynamoDB row failed schema validation", {
+      tableName,
+      issues: z.prettifyError(parsed.error),
+    });
+
+    emitTelemetry(TelemetryEvent.response_validation_failed, {
+      service: "dynamodb",
+      tableName,
+    });
+
+    // 502 rather than typedFetch's 422: a table entry we cannot parse is an
+    // upstream data fault, and the gateway passes 4xx straight through to
+    // the caller, who did nothing wrong.
+    return {
+      ok: false as const,
+      error: {
+        status: 502,
+        message: "Response validation failed",
+        body: z.treeifyError(parsed.error),
+      },
+    };
+  }
+
+  return { ok: true as const, status: 200, data: parsed.data };
+}
+
 export function createDynamoClient({
   auth,
   region,
@@ -66,185 +169,41 @@ export function createDynamoClient({
 }: DynamoClientOptions): DynamoClient {
   const client = buildDocumentClient({ auth, region });
 
-  const scan = async ({ attribute, value, schema }: DynamoScanOptions) => {
-    emitTelemetry(TelemetryEvent.third_party_request_sent, {
-      service: "dynamodb",
+  const scan = ({ attribute, value, schema }: DynamoScanOptions) =>
+    paginate(client, tableName, {
       operation: "Scan",
-      tableName,
+      errorMessage: "DynamoDB scan failed",
+      schema,
+      buildCommand: (startKey) => ({
+        TableName: tableName,
+        FilterExpression: "#attribute = :value",
+        ExpressionAttributeNames: { "#attribute": attribute },
+        ExpressionAttributeValues: { ":value": value },
+        ExclusiveStartKey: startKey,
+      }),
     });
 
-    const items: Record<string, unknown>[] = [];
-    let startKey: Record<string, unknown> | undefined;
-
-    try {
-      do {
-        const result = await client.send(
-          new ScanCommand({
-            TableName: tableName,
-            FilterExpression: "#attribute = :value",
-            ExpressionAttributeNames: { "#attribute": attribute },
-            ExpressionAttributeValues: { ":value": value },
-            ExclusiveStartKey: startKey,
-          }),
-        );
-
-        items.push(...(result.Items ?? []));
-        startKey = result.LastEvaluatedKey;
-      } while (startKey);
-    } catch (error) {
-      const { name, message } = error as Error;
-
-      // The gateway maps 5xx to a flat "upstream service unavailable" and only
-      // logs the cause at debug, which the handler's INFO level drops. Without
-      // this, an AccessDenied on AssumeRole and a missing table are the same
-      // opaque 502 in a deployed environment.
-      //
-      // `reason`, not `message`: powertools reserves `message` for the log's own
-      // text and silently drops the key, which is what hid the AWS detail here.
-      logger.error("DynamoDB scan failed", {
-        tableName,
-        name,
-        reason: message,
-      });
-
-      emitTelemetry(TelemetryEvent.third_party_request_error, {
-        service: "dynamodb",
-        tableName,
-      });
-
-      return {
-        ok: false as const,
-        error: { status: 502, message },
-      };
-    }
-
-    emitTelemetry(TelemetryEvent.third_party_response_received, {
-      service: "dynamodb",
-      tableName,
-      count: items.length,
-    });
-
-    if (!schema) {
-      return { ok: true as const, status: 200, data: items };
-    }
-
-    const parsed = z.array(schema).safeParse(items);
-
-    if (!parsed.success) {
-      logger.error("DynamoDB row failed schema validation", {
-        tableName,
-        issues: z.prettifyError(parsed.error),
-      });
-
-      emitTelemetry(TelemetryEvent.response_validation_failed, {
-        service: "dynamodb",
-        tableName,
-      });
-
-      // 502 rather than typedFetch's 422: a table entry we cannot parse is an
-      // upstream data fault, and the gateway passes 4xx straight through to
-      // the caller, who did nothing wrong.
-      return {
-        ok: false as const,
-        error: {
-          status: 502,
-          message: "Response validation failed",
-          body: z.treeifyError(parsed.error),
-        },
-      };
-    }
-
-    return { ok: true as const, status: 200, data: parsed.data };
-  };
-
-  const query = async ({
+  const query = ({
     indexName,
     partitionKey,
     partitionValue,
     scanIndexForward,
     schema,
-  }: DynamoQueryOptions) => {
-    emitTelemetry(TelemetryEvent.third_party_request_sent, {
-      service: "dynamodb",
+  }: DynamoQueryOptions) =>
+    paginate(client, tableName, {
       operation: "Query",
-      tableName,
+      errorMessage: "DynamoDB query failed",
+      schema,
+      buildCommand: (startKey) => ({
+        TableName: tableName,
+        IndexName: indexName,
+        KeyConditionExpression: "#pk = :pkValue",
+        ExpressionAttributeNames: { "#pk": partitionKey },
+        ExpressionAttributeValues: { ":pkValue": partitionValue },
+        ScanIndexForward: scanIndexForward,
+        ExclusiveStartKey: startKey,
+      }),
     });
-
-    const items: Record<string, unknown>[] = [];
-    let startKey: Record<string, unknown> | undefined;
-
-    try {
-      do {
-        const result = await client.send(
-          new QueryCommand({
-            TableName: tableName,
-            IndexName: indexName,
-            KeyConditionExpression: "#pk = :pkValue",
-            ExpressionAttributeNames: { "#pk": partitionKey },
-            ExpressionAttributeValues: { ":pkValue": partitionValue },
-            ScanIndexForward: scanIndexForward,
-            ExclusiveStartKey: startKey,
-          }),
-        );
-
-        items.push(...(result.Items ?? []));
-        startKey = result.LastEvaluatedKey;
-      } while (startKey);
-    } catch (error) {
-      const { name, message } = error as Error;
-
-      logger.error("DynamoDB query failed", {
-        tableName,
-        name,
-        reason: message,
-      });
-
-      emitTelemetry(TelemetryEvent.third_party_request_error, {
-        service: "dynamodb",
-        tableName,
-      });
-
-      return {
-        ok: false as const,
-        error: { status: 502, message },
-      };
-    }
-
-    emitTelemetry(TelemetryEvent.third_party_response_received, {
-      service: "dynamodb",
-      tableName,
-      count: items.length,
-    });
-
-    if (!schema) {
-      return { ok: true as const, status: 200, data: items };
-    }
-
-    const parsed = z.array(schema).safeParse(items);
-
-    if (!parsed.success) {
-      logger.error("DynamoDB row failed schema validation", {
-        tableName,
-        issues: z.prettifyError(parsed.error),
-      });
-
-      emitTelemetry(TelemetryEvent.response_validation_failed, {
-        service: "dynamodb",
-        tableName,
-      });
-
-      return {
-        ok: false as const,
-        error: {
-          status: 502,
-          message: "Response validation failed",
-          body: z.treeifyError(parsed.error),
-        },
-      };
-    }
-
-    return { ok: true as const, status: 200, data: parsed.data };
-  };
 
   return { scan, query } as DynamoClient;
 }

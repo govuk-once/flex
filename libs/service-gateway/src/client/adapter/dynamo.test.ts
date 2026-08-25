@@ -1,5 +1,9 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { logger } from "@flex/logging";
 import { getAssumedRoleCredentials } from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
@@ -14,6 +18,7 @@ vi.mock("@aws-sdk/client-dynamodb", () => ({ DynamoDBClient: vi.fn() }));
 vi.mock("@aws-sdk/lib-dynamodb", () => ({
   DynamoDBDocumentClient: { from: vi.fn() },
   ScanCommand: vi.fn(),
+  QueryCommand: vi.fn(),
 }));
 
 vi.mock("@flex/logging");
@@ -37,6 +42,13 @@ const mockAssumeRoleAuth: DynamoAuth = {
 
 const scanOptions = { attribute: "sourceNamespace", value: "travel" };
 
+const queryOptions = {
+  indexName: "timestamp-query",
+  partitionKey: "compositeKey",
+  partitionValue: "travel/france",
+  scanIndexForward: false,
+};
+
 const franceRow = { slug: "france", country: "France" };
 const germanyRow = { slug: "germany", country: "Germany" };
 
@@ -52,6 +64,9 @@ const buildClient = (auth: DynamoAuth = mockDefaultAuth) => {
 
 const scanInputs = () =>
   vi.mocked(ScanCommand).mock.calls.map(([input]) => input);
+
+const queryInputs = () =>
+  vi.mocked(QueryCommand).mock.calls.map(([input]) => input);
 
 describe("createDynamoClient", () => {
   it("builds the document client against the table's region", () => {
@@ -270,6 +285,199 @@ describe("createDynamoClient", () => {
       expect(emitTelemetry).toHaveBeenCalledWith(
         TelemetryEvent.third_party_request_sent,
         { service: "dynamodb", operation: "Scan", tableName },
+      );
+      expect(emitTelemetry).toHaveBeenCalledWith(
+        TelemetryEvent.third_party_response_received,
+        { service: "dynamodb", tableName, count: 2 },
+      );
+    });
+  });
+
+  describe("query", () => {
+    it("queries the index with the correct key condition", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [] });
+
+      await client.query(queryOptions);
+
+      expect(send).toHaveBeenCalledOnce();
+      expect(queryInputs()).toStrictEqual([
+        {
+          TableName: tableName,
+          IndexName: "timestamp-query",
+          KeyConditionExpression: "#pk = :pkValue",
+          ExpressionAttributeNames: { "#pk": "compositeKey" },
+          ExpressionAttributeValues: { ":pkValue": "travel/france" },
+          ScanIndexForward: false,
+          ExclusiveStartKey: undefined,
+        },
+      ]);
+    });
+
+    it("returns the raw items when no schema is given", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [franceRow, germanyRow] });
+
+      const result = await client.query(queryOptions);
+
+      expect(result).toStrictEqual({
+        ok: true,
+        status: 200,
+        data: [franceRow, germanyRow],
+      });
+    });
+
+    it("treats a response without items as an empty page", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({});
+
+      const result = await client.query(queryOptions);
+
+      expect(result).toStrictEqual({ ok: true, status: 200, data: [] });
+    });
+
+    it("follows pagination until the index is exhausted", async () => {
+      const { client, send } = buildClient();
+
+      send
+        .mockResolvedValueOnce({
+          Items: [franceRow],
+          LastEvaluatedKey: { compositeKey: "travel/france", timestamp: "a" },
+        })
+        .mockResolvedValueOnce({
+          Items: [germanyRow],
+          LastEvaluatedKey: { compositeKey: "travel/france", timestamp: "b" },
+        })
+        .mockResolvedValueOnce({ Items: [] });
+
+      const result = await client.query(queryOptions);
+
+      expect(send).toHaveBeenCalledTimes(3);
+      expect(
+        queryInputs().map((input) => input.ExclusiveStartKey),
+      ).toStrictEqual([
+        undefined,
+        { compositeKey: "travel/france", timestamp: "a" },
+        { compositeKey: "travel/france", timestamp: "b" },
+      ]);
+      expect(result).toStrictEqual({
+        ok: true,
+        status: 200,
+        data: [franceRow, germanyRow],
+      });
+    });
+
+    it("validates each item against the schema, dropping undeclared attributes", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({
+        Items: [{ ...franceRow, internalKey: "drop" }],
+      });
+
+      const result = await client.query({
+        ...queryOptions,
+        schema: z.object({ slug: z.string(), country: z.string() }),
+      });
+
+      expect(result).toStrictEqual({
+        ok: true,
+        status: 200,
+        data: [franceRow],
+      });
+    });
+
+    it("returns 502 when an item does not match the schema", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [{ slug: 42 }] });
+
+      const result = await client.query({
+        ...queryOptions,
+        schema: z.object({ slug: z.string() }),
+      });
+
+      expect(result).toMatchObject({
+        ok: false,
+        error: { status: 502, message: "Response validation failed" },
+      });
+      expect(emitTelemetry).toHaveBeenCalledWith(
+        TelemetryEvent.response_validation_failed,
+        { service: "dynamodb", tableName },
+      );
+    });
+
+    it("logs which row failed schema validation", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [{ slug: 42 }] });
+
+      await client.query({
+        ...queryOptions,
+        schema: z.object({ slug: z.string() }),
+      });
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "DynamoDB row failed schema validation",
+        { tableName, issues: expect.stringContaining("slug") as string },
+      );
+    });
+
+    it("returns 502 with the failure message when the query throws", async () => {
+      const { client, send } = buildClient();
+
+      send.mockRejectedValue(new Error("ResourceNotFoundException"));
+
+      const result = await client.query(queryOptions);
+
+      expect(result).toStrictEqual({
+        ok: false,
+        error: { status: 502, message: "ResourceNotFoundException" },
+      });
+      expect(emitTelemetry).toHaveBeenCalledWith(
+        TelemetryEvent.third_party_request_error,
+        { service: "dynamodb", tableName },
+      );
+      expect(emitTelemetry).not.toHaveBeenCalledWith(
+        TelemetryEvent.third_party_response_received,
+        expect.anything(),
+      );
+    });
+
+    it("logs the AWS error name so the 502 can be told apart from the others", async () => {
+      const { client, send } = buildClient();
+
+      const error = new Error(
+        "User is not authorized to perform: dynamodb:Query",
+      );
+      error.name = "AccessDeniedException";
+
+      send.mockRejectedValue(error);
+
+      await client.query(queryOptions);
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "DynamoDB query failed",
+        {
+          tableName,
+          name: "AccessDeniedException",
+          reason: "User is not authorized to perform: dynamodb:Query",
+        },
+      );
+    });
+
+    it("emits third party telemetry around the query", async () => {
+      const { client, send } = buildClient();
+
+      send.mockResolvedValue({ Items: [franceRow, germanyRow] });
+
+      await client.query(queryOptions);
+
+      expect(emitTelemetry).toHaveBeenCalledWith(
+        TelemetryEvent.third_party_request_sent,
+        { service: "dynamodb", operation: "Query", tableName },
       );
       expect(emitTelemetry).toHaveBeenCalledWith(
         TelemetryEvent.third_party_response_received,
