@@ -1,6 +1,7 @@
-import { Duration } from "aws-cdk-lib";
+import { Duration, Stack } from "aws-cdk-lib";
 import type { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { CfnPermission } from "aws-cdk-lib/aws-lambda";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { Construct } from "constructs";
 
@@ -51,11 +52,6 @@ export function createDvlaSecretRotation(
     }),
   );
 
-  rotationFunction.function.addPermission("SecretsManagerInvoke", {
-    principal: new ServicePrincipal("secretsmanager.amazonaws.com"),
-    action: "lambda:InvokeFunction",
-  });
-
   const dvlaSecret = Secret.fromSecretCompleteArn(
     scope,
     "DvlaConfigSecret",
@@ -66,6 +62,23 @@ export function createDvlaSecretRotation(
     rotationLambda: rotationFunction.function,
     automaticallyAfter: Duration.days(30),
   });
+
+  rotationFunction.function.addPermission("SecretsManagerInvoke", {
+    principal: new ServicePrincipal("secretsmanager.amazonaws.com"),
+    action: "lambda:InvokeFunction",
+    sourceAccount: Stack.of(scope).account,
+  });
+
+  const cdkAutoPermission = rotationFunction.function.permissionsNode.children
+    .filter((child): child is CfnPermission => child instanceof CfnPermission)
+    .find((p) => p.node.id !== "SecretsManagerInvoke");
+
+  if (cdkAutoPermission) {
+    cdkAutoPermission.addPropertyOverride(
+      "SourceAccount",
+      Stack.of(scope).account,
+    );
+  }
 
   return { rotationFunction };
 }
