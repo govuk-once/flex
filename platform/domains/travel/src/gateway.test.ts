@@ -81,17 +81,14 @@ describe("Travel Service Gateway", () => {
     dynamo.reset();
   });
 
-  it("returns 404 for an unknown route", async () => {
+  it("returns 404 for an unknown route", async ({ platform }) => {
     const result = await handler(
-      restApiEvent.get("/gateways/travel/v1/should-throw"),
-      context,
+      platform.gatewayEvent.get("/v1/should-throw"),
+      platform.context(),
     );
-
-    expect(result).toStrictEqual({
-      statusCode: 404,
-      headers: jsonHeaders,
-      body: JSON.stringify({ message: "Route not found" }),
-    });
+    expect(result).toStrictEqual(
+      platform.gatewayResult(404, { body: { message: "Route not found" } }),
+    );
   });
 
   describe("GET /v1/countries", () => {
