@@ -14,18 +14,19 @@
   },
   "dependencies": {
     "@flex/logging": "workspace:*",
+    "@flex/sdk": "workspace:*",
     "@flex/service-gateway": "workspace:*",
     "@flex/utils": "workspace:*",
+    "http-errors": "2.0.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@aws-sdk/lib-dynamodb": "3.1091.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
+    "@types/http-errors": "2.0.5",
     "@vitest/coverage-v8": "4.1.10",
-    "aws-sdk-client-mock": "4.1.0",
     "eslint": "10.7.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.0"
+    "vitest": "4.1.10"
   }
 }

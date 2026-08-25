@@ -1,25 +1,13 @@
-import { clearCaches } from "@aws-lambda-powertools/parameters";
-import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
-import type { HttpFixture } from "@flex/testing";
 import { it } from "@flex/testing";
-import { mockClient } from "aws-sdk-client-mock";
-import { afterEach, describe, expect } from "vitest";
+import { describe, expect } from "vitest";
 
 import { handler } from "./gateway";
-import { context, restApiEvent } from "./tests/fixtures";
 
-const dynamo = mockClient(DynamoDBDocumentClient);
-
-const mockSecretArn =
-  "arn:aws:secretsmanager:eu-west-2:123456789012:secret:travel-consumer";
-
-const mockConsumerConfig = {
+const consumerConfig = {
   sourcesTableName: "development-travel-sources",
   region: "eu-west-2",
   roleArn: "arn:aws:iam::123456789012:role/travel-consumer-role",
 };
-
-const jsonHeaders = { "Content-Type": "application/json" };
 
 /** A row shaped the way the seed script writes it. */
 const sourceRow = (
@@ -56,29 +44,14 @@ const germany = {
   synonyms: [],
 };
 
-/** Narrows the V2 result union, which is `string | StructuredResult`. */
-const bodyOf = (result: Awaited<ReturnType<typeof handler>>): unknown =>
-  JSON.parse((result as { body: string }).body);
-
-const stubConsumerConfig = (http: HttpFixture) =>
-  http
-    .url("https://secretsmanager.eu-west-2.amazonaws.com")
-    .post("/")
-    .reply(200, {
-      ARN: mockSecretArn,
-      Name: "travel-consumer",
-      SecretString: JSON.stringify(mockConsumerConfig),
-    });
-
 describe("Travel Service Gateway", () => {
-  it.beforeEach(({ env }) => {
-    clearCaches();
-    dynamo.reset();
-    env.set({ FLEX_TRAVEL_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
-  });
-
-  afterEach(() => {
-    dynamo.reset();
+  it.beforeEach(({ env, platform }) => {
+    env.set({
+      FLEX_TRAVEL_CONSUMER_CONFIG_SECRET_ARN: platform.secret.resolves(
+        "travel-consumer",
+        consumerConfig,
+      ),
+    });
   });
 
   it("returns 404 for an unknown route", async ({ platform }) => {
@@ -86,40 +59,40 @@ describe("Travel Service Gateway", () => {
       platform.gatewayEvent.get("/v1/should-throw"),
       platform.context(),
     );
+
     expect(result).toStrictEqual(
       platform.gatewayResult(404, { body: { message: "Route not found" } }),
     );
   });
 
   describe("GET /v1/countries", () => {
-    const endpoint = "/gateways/travel/v1/countries";
+    const endpoint = "/v1/countries";
 
     it("returns every travel source mapped onto the country shape", async ({
-      http,
+      platform,
     }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({ Items: [franceRow, germanyRow] });
+      platform.dynamo.scan.resolves([franceRow, germanyRow]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: jsonHeaders,
-        body: JSON.stringify([france, germany]),
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: [france, germany] }),
+      );
     });
 
     it("scans the sources table filtered to the travel namespace", async ({
-      http,
+      platform,
     }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
+      platform.dynamo.scan.resolves([franceRow]);
 
-      await handler(restApiEvent.get(endpoint), context);
+      await handler(platform.gatewayEvent.get(endpoint), platform.context());
 
-      expect(dynamo.commandCalls(ScanCommand)).toHaveLength(1);
-      expect(dynamo.commandCalls(ScanCommand)[0]?.args[0].input).toMatchObject({
-        TableName: "development-travel-sources",
+      expect(platform.dynamo.scan.calls()).toHaveLength(1);
+      expect(platform.dynamo.scan.input()).toMatchObject({
+        TableName: consumerConfig.sourcesTableName,
         FilterExpression: "#attribute = :value",
         ExpressionAttributeNames: { "#attribute": "sourceNamespace" },
         ExpressionAttributeValues: { ":value": "travel" },
@@ -127,97 +100,109 @@ describe("Travel Service Gateway", () => {
     });
 
     it("drops the table's key and internal attributes from the response", async ({
-      http,
+      platform,
     }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({ Items: [franceRow] });
+      platform.dynamo.scan.resolves([franceRow]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(bodyOf(result)).toStrictEqual([france]);
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: [france] }),
+      );
     });
 
-    it("sorts by country name so the list is repeatable", async ({ http }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({ Items: [germanyRow, franceRow] });
+    it("sorts by country name so the list is repeatable", async ({
+      platform,
+    }) => {
+      platform.dynamo.scan.resolves([germanyRow, franceRow]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(bodyOf(result)).toStrictEqual([france, germany]);
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: [france, germany] }),
+      );
     });
 
-    it("omits sources the operator has disabled", async ({ http }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({
-        Items: [
-          franceRow,
-          sourceRow("germany", "Germany", [], { sourceEnabled: false }),
-        ],
-      });
+    it("omits sources the operator has disabled", async ({ platform }) => {
+      platform.dynamo.scan.resolves([
+        franceRow,
+        sourceRow("germany", "Germany", [], { sourceEnabled: false }),
+      ]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(bodyOf(result)).toStrictEqual([france]);
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: [france] }),
+      );
     });
 
     it("returns an empty list when the namespace holds no sources", async ({
-      http,
+      platform,
     }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({ Items: [] });
+      platform.dynamo.scan.resolves([]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(result).toStrictEqual({
-        statusCode: 200,
-        headers: jsonHeaders,
-        body: JSON.stringify([]),
-      });
+      expect(result).toStrictEqual(platform.gatewayResult(200, { body: [] }));
     });
 
-    it("follows pagination until the table is exhausted", async ({ http }) => {
-      stubConsumerConfig(http);
-      dynamo
-        .on(ScanCommand)
-        .resolvesOnce({
-          Items: [franceRow],
-          LastEvaluatedKey: { sourceID: "uuid-france" },
-        })
-        .resolvesOnce({ Items: [germanyRow] });
+    it("follows pagination until the table is exhausted", async ({
+      platform,
+    }) => {
+      platform.dynamo.scan.resolves([franceRow], [germanyRow]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(dynamo.commandCalls(ScanCommand)).toHaveLength(2);
-      expect(dynamo.commandCalls(ScanCommand)[1]?.args[0].input).toMatchObject({
-        ExclusiveStartKey: { sourceID: "uuid-france" },
+      expect(platform.dynamo.scan.calls()).toHaveLength(2);
+      expect(platform.dynamo.scan.input(1)).toMatchObject({
+        ExclusiveStartKey: platform.dynamo.scan.cursor(),
       });
-      expect(bodyOf(result)).toStrictEqual([france, germany]);
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: [france, germany] }),
+      );
     });
 
-    it("returns 502 when the table scan fails", async ({ http }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).rejects(new Error("ResourceNotFoundException"));
+    it("returns 502 when the table scan fails", async ({ platform }) => {
+      platform.dynamo.scan.rejects(new Error("ResourceNotFoundException"));
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
-      expect(result).toStrictEqual({
-        statusCode: 502,
-        headers: jsonHeaders,
-        body: JSON.stringify({
-          message: "TRAVEL upstream service unavailable",
+      expect(result).toStrictEqual(
+        platform.gatewayResult(502, {
+          body: { message: "TRAVEL upstream service unavailable" },
         }),
-      });
+      );
     });
 
     it("returns 502 when a row does not match the source schema", async ({
-      http,
+      platform,
     }) => {
-      stubConsumerConfig(http);
-      dynamo.on(ScanCommand).resolves({
-        Items: [sourceRow("france", "France", [], { lastUpdated: "nope" })],
-      });
+      platform.dynamo.scan.resolves([
+        sourceRow("france", "France", [], { lastUpdated: "nope" }),
+      ]);
 
-      const result = await handler(restApiEvent.get(endpoint), context);
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
 
       expect(result).toMatchObject({ statusCode: 502 });
     });

@@ -1,6 +1,7 @@
 /* eslint-disable no-empty-pattern */
 import { it as vitestIt, vi } from "vitest";
 
+import { createDynamoFixture } from "../fixtures/dynamo";
 import type { EnvFixture } from "../fixtures/env";
 import { createEnv } from "../fixtures/env";
 import type { HttpFixture } from "../fixtures/http";
@@ -17,6 +18,7 @@ import {
 } from "../fixtures/platform";
 import type { SdkFixture } from "../fixtures/sdk";
 import { createSdkContext, createSdkEvent } from "../fixtures/sdk";
+import { createSecretFixture } from "../fixtures/secret";
 
 interface Fixtures {
   env: EnvFixture;
@@ -49,6 +51,8 @@ export const it = vitestIt.extend<Fixtures>({
       cloudFrontEvent: createPlatformCloudFrontEvent(),
       cloudFrontResult: buildPlatformCloudFrontResult,
       context: buildLambdaContext,
+      dynamo: createDynamoFixture(),
+      secret: createSecretFixture(),
     });
   },
   sdk: async ({}, use) =>
