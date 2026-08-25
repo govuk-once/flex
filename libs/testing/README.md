@@ -110,9 +110,107 @@ describe("GET /example", () => {
 | `event`               | API Gateway event builder        | -    |
 | `eventWithAuthorizer` | Event with authorizer builder    | -    |
 | `middy`               | Middy request builder            | -    |
+| `platform`            | Platform gateway fixtures        | -    |
 | `response`            | HTTP response builder            | -    |
 
 See [Vitest Automatic Fixtures](https://vitest.dev/guide/test-context.html#automatic-fixture) for more information on automatic fixtures
+
+---
+
+## `platform`
+
+Fixtures for platform service gateway handlers. Requires the
+`@flex/testing/setup/platform` setup file and `FLEX_GATEWAY_NAME` in the
+package's Vitest config — the event builder prefixes paths with
+`/gateways/<name>`.
+
+| Helper             | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `gatewayEvent`     | REST API event builder, one variant per HTTP method        |
+| `gatewayResult`    | Expected handler result, `body` is serialised for you      |
+| `authorizerEvent`  | Lambda authorizer event builder                            |
+| `authorizerResult` | Lambda authorizer policy builder                           |
+| `cloudFrontEvent`  | CloudFront Function event builder                          |
+| `cloudFrontResult` | CloudFront Function result builder                         |
+| `context`          | Lambda context builder                                     |
+| `dynamo`           | Stubs the DynamoDB reads a gateway's clients make          |
+| `secret`           | Stubs the Secrets Manager reads a gateway's resources make |
+
+### Usage
+
+```typescript
+import { it } from "@flex/testing";
+import { describe, expect } from "vitest";
+
+import { handler } from "./gateway";
+
+describe("Example Service Gateway", () => {
+  it.beforeEach(({ env, platform }) => {
+    // Stubs the secret and hands back the ARN the resource resolves from
+    env.set({
+      FLEX_EXAMPLE_CONSUMER_CONFIG_SECRET_ARN: platform.secret.resolves(
+        "example-consumer",
+        { tableName: "development-example", region: "eu-west-2" },
+      ),
+    });
+  });
+
+  it("returns the rows the table holds", async ({ platform }) => {
+    platform.dynamo.scan.resolves([{ id: "1" }]);
+
+    const result = await handler(
+      platform.gatewayEvent.get("/v1/example"),
+      platform.context(),
+    );
+
+    expect(result).toStrictEqual(
+      platform.gatewayResult(200, { body: [{ id: "1" }] }),
+    );
+  });
+});
+```
+
+### `dynamo`
+
+Backed by [`aws-sdk-client-mock`](https://github.com/m-radzikowski/aws-sdk-client-mock)
+over the `@aws-sdk/lib-dynamodb` document client. The mock is installed the
+first time a test uses it, reset between tests and restored when the file
+finishes, so a suite that stubs DynamoDB over HTTP is left alone.
+
+| Helper          | Description                                                                                   |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `scan.resolves` | One argument per page; later pages are only reached if the handler follows `LastEvaluatedKey` |
+| `scan.rejects`  | Fails the read, as an unreachable table or denied role does                                   |
+| `scan.calls`    | Every Scan the handler sent, in order                                                         |
+| `scan.input`    | The nth Scan the handler sent, defaulting to the first                                        |
+| `scan.cursor`   | The key `resolves` hands back at the end of the given page                                    |
+| `client`        | The underlying client mock, for commands the helpers do not cover                             |
+
+```typescript
+it("follows pagination", async ({ platform }) => {
+  platform.dynamo.scan.resolves([firstRow], [secondRow]);
+
+  await handler(platform.gatewayEvent.get("/v1/example"), platform.context());
+
+  expect(platform.dynamo.scan.calls()).toHaveLength(2);
+  expect(platform.dynamo.scan.input(1)).toMatchObject({
+    ExclusiveStartKey: platform.dynamo.scan.cursor(),
+  });
+});
+```
+
+### `secret`
+
+Stubs Secrets Manager for the gateway's `secret` resources, which are read
+through Powertools. `resolves` and `rejects` return the ARN of the secret they
+stubbed, which is the value the resource's environment variable holds.
+
+| Helper     | Description                                               |
+| ---------- | --------------------------------------------------------- |
+| `resolves` | Stubs the secret and returns its ARN                      |
+| `rejects`  | Fails the read, as a missing secret or denied policy does |
+| `arn`      | ARN the named secret would have, without stubbing it      |
+| `calls`    | Every secret read the handler issued, in order            |
 
 ---
 
