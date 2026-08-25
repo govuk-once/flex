@@ -17,6 +17,7 @@
     "s3:enforce-tls": "tsx scripts/enforceS3SecureTransport.ts",
     "semantic:release": "semantic-release",
     "openapi:generate": "tsx scripts/generateOpenapi.ts",
+    "docs:serve": "tsx scripts/serveDocs.ts",
     "validate:integrations": "pnpm --filter @platform/flex run validate:integrations",
     "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage"
   },

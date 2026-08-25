@@ -11,6 +11,7 @@ export default mergeConfig(
         AWS_REGION: "eu-west-2",
         AWS_ACCESS_KEY_ID: "test-access-id", // pragma: allowlist secret
         AWS_SECRET_ACCESS_KEY: "test-secret-access-key", // pragma: allowlist secret
+        FLEX_GATEWAY_NAME: "travel",
       },
     },
   }),
