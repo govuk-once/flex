@@ -1,5 +1,5 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
-import type { Country } from "@flex/travel-service-gateway";
+import type { Country, Event } from "@flex/travel-service-gateway";
 
 export { createUserId };
 export const userId = createUserId("test-travel-user");
