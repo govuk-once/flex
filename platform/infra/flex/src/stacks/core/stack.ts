@@ -1,10 +1,12 @@
 import { Environment, getEnvConfig } from "@flex/utils";
+import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
 import { ENV_KEYS } from "../../ssm-keys";
 import { addApiGatewayCloudWatchRole } from "./api-gateway";
+import { createDvlaSecretRotation } from "./dvla-secret-rotation";
 import { addVpcEndpoints } from "./endpoints";
 import { createSlackNotifications } from "./notifications";
 import { createAlarmTopics, createReleaseTopic } from "./topics";
@@ -42,6 +44,19 @@ export class FlexCoreStack extends BaseStack {
 
     const { criticalTopic, warningTopic, alarmTopicKey } =
       createAlarmTopics(this);
+
+    const criticalAction = new SnsAction(criticalTopic);
+    const warningAction = new SnsAction(warningTopic);
+
+    const dvlaSecretArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
+
+    createDvlaSecretRotation(this, {
+      vpc,
+      privateEgressSg: privateEgress,
+      dvlaSecretArn,
+      criticalAction,
+      warningAction,
+    });
 
     createSlackNotifications(this, {
       id: "SlackChannel",
