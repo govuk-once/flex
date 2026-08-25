@@ -24,7 +24,7 @@
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.7.0",
+    "eslint": "10.8.1",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
