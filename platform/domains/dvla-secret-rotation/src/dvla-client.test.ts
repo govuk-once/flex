@@ -16,8 +16,8 @@ describe("dvla-client", () => {
         changePassword({
           apiUrl,
           userName: "testuser",
-          password: "oldpass",
-          newPassword: "newpass123",
+          password: "oldpass", // pragma: allowlist secret
+          newPassword: "newpass123", // pragma: allowlist secret
         }),
       ).resolves.toBeUndefined();
     });
@@ -32,8 +32,8 @@ describe("dvla-client", () => {
         changePassword({
           apiUrl,
           userName: "testuser",
-          password: "wrongpass",
-          newPassword: "newpass123",
+          password: "wrongpass", // pragma: allowlist secret
+          newPassword: "newpass123", // pragma: allowlist secret
         }),
       ).rejects.toThrow("DVLA password change failed: 401");
     });
@@ -49,7 +49,7 @@ describe("dvla-client", () => {
       const jwt = await authenticate({
         apiUrl,
         userName: "testuser",
-        password: "password123",
+        password: "password123", // pragma: allowlist secret
       });
 
       expect(jwt).toBe("jwt-token-123");
@@ -65,7 +65,7 @@ describe("dvla-client", () => {
         authenticate({
           apiUrl,
           userName: "testuser",
-          password: "wrongpass",
+          password: "wrongpass", // pragma: allowlist secret
         }),
       ).rejects.toThrow("DVLA authentication failed: 403");
     });
@@ -80,7 +80,7 @@ describe("dvla-client", () => {
         authenticate({
           apiUrl,
           userName: "testuser",
-          password: "password123",
+          password: "password123", // pragma: allowlist secret
         }),
       ).rejects.toThrow("DVLA authentication response missing id-token");
     });
@@ -89,12 +89,12 @@ describe("dvla-client", () => {
   describe("requestNewApiKey", () => {
     it("returns a new API key on success", async ({ http }) => {
       http.url(apiUrl).post("/thirdparty-access/v1/new-api-key").reply(200, {
-        newApiKey: "new-api-key-456",
+        newApiKey: "new-api-key-456", // pragma: allowlist secret
       });
 
       const newKey = await requestNewApiKey({
         apiUrl,
-        currentApiKey: "old-api-key-123",
+        currentApiKey: "old-api-key-123", // pragma: allowlist secret
         jwt: "jwt-token",
       });
 
@@ -110,7 +110,7 @@ describe("dvla-client", () => {
       await expect(
         requestNewApiKey({
           apiUrl,
-          currentApiKey: "old-api-key-123",
+          currentApiKey: "old-api-key-123", // pragma: allowlist secret
           jwt: "jwt-token",
         }),
       ).rejects.toThrow("DVLA new API key request failed: 500");
@@ -122,7 +122,7 @@ describe("dvla-client", () => {
       await expect(
         requestNewApiKey({
           apiUrl,
-          currentApiKey: "old-api-key-123",
+          currentApiKey: "old-api-key-123", // pragma: allowlist secret
           jwt: "jwt-token",
         }),
       ).rejects.toThrow("DVLA new-api-key response missing newApiKey");
