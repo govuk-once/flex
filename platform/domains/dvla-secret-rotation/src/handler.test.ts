@@ -24,9 +24,9 @@ const token = "test-client-request-token";
 
 const currentSecret = JSON.stringify({
   apiUrl: "https://dvla.example.com",
-  apiKey: "current-api-key",
+  apiKey: "current-api-key", // pragma: allowlist secret
   apiUsername: "testuser",
-  apiPassword: "current-password",
+  apiPassword: "current-password", // pragma: allowlist secret
   wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
 });
 
@@ -113,19 +113,19 @@ describe("handler", () => {
       expect(changePassword).toHaveBeenCalledWith({
         apiUrl: "https://dvla.example.com",
         userName: "testuser",
-        password: "current-password",
-        newPassword: "new-random-password1",
+        password: "current-password", // pragma: allowlist secret
+        newPassword: "new-random-password1", // pragma: allowlist secret
       });
 
       expect(authenticate).toHaveBeenCalledWith({
         apiUrl: "https://dvla.example.com",
         userName: "testuser",
-        password: "new-random-password1",
+        password: "new-random-password1", // pragma: allowlist secret
       });
 
       expect(requestNewApiKey).toHaveBeenCalledWith({
         apiUrl: "https://dvla.example.com",
-        currentApiKey: "current-api-key",
+        currentApiKey: "current-api-key", // pragma: allowlist secret
         jwt: "new-jwt-token",
       });
 
@@ -133,9 +133,9 @@ describe("handler", () => {
         secretId,
         JSON.stringify({
           apiUrl: "https://dvla.example.com",
-          apiKey: "new-api-key-value",
+          apiKey: "new-api-key-value", // pragma: allowlist secret
           apiUsername: "testuser",
-          apiPassword: "new-random-password1",
+          apiPassword: "new-random-password1", // pragma: allowlist secret
           wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
         }),
         token,
@@ -171,9 +171,9 @@ describe("handler", () => {
     it("authenticates with pending credentials", async () => {
       const pendingSecret = JSON.stringify({
         apiUrl: "https://dvla.example.com",
-        apiKey: "new-api-key",
+        apiKey: "new-api-key", // pragma: allowlist secret
         apiUsername: "testuser",
-        apiPassword: "new-password",
+        apiPassword: "new-password", // pragma: allowlist secret
         wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
       });
 
@@ -191,7 +191,7 @@ describe("handler", () => {
       expect(authenticate).toHaveBeenCalledWith({
         apiUrl: "https://dvla.example.com",
         userName: "testuser",
-        password: "new-password",
+        password: "new-password", // pragma: allowlist secret
       });
     });
 
