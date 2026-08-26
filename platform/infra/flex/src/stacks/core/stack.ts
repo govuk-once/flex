@@ -1,5 +1,6 @@
 import { Environment, getEnvConfig } from "@flex/utils";
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
+import { ManagedPolicy, PermissionsBoundary } from "aws-cdk-lib/aws-iam";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
@@ -50,12 +51,19 @@ export class FlexCoreStack extends BaseStack {
 
     const dvlaSecretArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
+    const permissionsBoundary = new ManagedPolicy(
+      this,
+      "DvlaRotationPermissionsBoundary",
+    );
+    PermissionsBoundary.of(this).apply(permissionsBoundary);
+
     createDvlaSecretRotation(this, {
       vpc,
       privateEgressSg: privateEgress,
       dvlaSecretArn,
       criticalAction,
       warningAction,
+      permissionsBoundary,
     });
 
     createSlackNotifications(this, {

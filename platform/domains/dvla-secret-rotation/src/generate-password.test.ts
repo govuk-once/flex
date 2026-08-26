@@ -13,9 +13,12 @@ describe("generatePassword", () => {
     expect(password).toHaveLength(20);
   });
 
-  it("contains only alphanumeric characters", () => {
-    const password = generatePassword(100);
-    expect(password).toMatch(/^[A-Za-z0-9]+$/);
+  it("contains at least one uppercase, lowercase, digit, and special character", () => {
+    const password = generatePassword(20);
+    expect(password).toMatch(/[A-Z]/);
+    expect(password).toMatch(/[a-z]/);
+    expect(password).toMatch(/[0-9]/);
+    expect(password).toMatch(/[!@#$%^&*()\-_=+\[\]{}|;:,.<>?]/);
   });
 
   it("generates different passwords on each call", () => {
