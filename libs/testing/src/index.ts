@@ -18,6 +18,9 @@ export {
 export type {
   DynamoFixture,
   DynamoItem,
+  DynamoQueryFixture,
+  DynamoQueryPage,
+  DynamoScanFixture,
   DynamoScanPage,
 } from "./fixtures/dynamo";
 export type { HttpFixture } from "./fixtures/http";

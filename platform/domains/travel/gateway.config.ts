@@ -3,6 +3,10 @@ import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 import { CountriesResponseSchema } from "./src/schemas/domain/country";
+import {
+  EventsQuerySchema,
+  EventsResponseSchema,
+} from "./src/schemas/domain/event";
 
 export const { config, createHandler } = defineGateway({
   name: "travel",
@@ -19,6 +23,7 @@ export const { config, createHandler } = defineGateway({
       config: z.object({
         // The shared `sources` table, which holds every namespace, not just travel.
         sourcesTableName: NonEmptyString,
+        eventStoreTableName: NonEmptyString,
         region: NonEmptyString,
         roleArn: NonEmptyString,
         externalId: NonEmptyString.optional(),
@@ -33,6 +38,11 @@ export const { config, createHandler } = defineGateway({
     "GET /v1/countries": {
       name: "getCountries",
       response: CountriesResponseSchema,
+    },
+    "GET /v1/events": {
+      name: "events",
+      query: EventsQuerySchema,
+      response: EventsResponseSchema,
     },
   },
 });

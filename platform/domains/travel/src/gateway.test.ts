@@ -5,6 +5,7 @@ import { handler } from "./gateway";
 
 const consumerConfig = {
   sourcesTableName: "development-travel-sources",
+  eventStoreTableName: "development-travel-events",
   region: "eu-west-2",
   roleArn: "arn:aws:iam::123456789012:role/travel-consumer-role",
 };
@@ -43,6 +44,37 @@ const germany = {
   lastUpdate: "2026-08-14T09:00:00.000Z",
   synonyms: [],
 };
+
+const eventRow = (
+  group: string,
+  eventNote: string,
+  eventTimestamp: string,
+  overrides: Record<string, unknown> = {},
+) => ({
+  compositeKey: `travel/${group}`,
+  namespace: "travel" as const,
+  group,
+  eventNote,
+  eventTimestamp,
+  ...overrides,
+});
+
+const franceEvent1 = eventRow(
+  "france",
+  "A update for france",
+  "2026-08-15T09:00:00.000Z",
+);
+const franceEvent2 = eventRow(
+  "france",
+  "Another update for france",
+  "2026-08-14T09:00:00.000Z",
+);
+
+// The event schema strips the DynamoDB-internal compositeKey from the response.
+const toEventResponse = ({
+  compositeKey: _key,
+  ...rest
+}: typeof franceEvent1) => rest;
 
 describe("Travel Service Gateway", () => {
   it.beforeEach(({ env, platform }) => {
@@ -201,6 +233,114 @@ describe("Travel Service Gateway", () => {
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 502 });
+    });
+  });
+
+  describe("GET /v1/events", () => {
+    const endpoint = "/v1/events";
+    const query = { namespace: "travel", group: "france" };
+
+    it("returns the events for the requested namespace and group", async ({
+      platform,
+    }) => {
+      platform.dynamo.query.resolves([franceEvent1, franceEvent2]);
+
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, {
+          body: [franceEvent1, franceEvent2].map(toEventResponse),
+        }),
+      );
+    });
+
+    it("queries the events table by compositeKey on the timestamp index in descending order", async ({
+      platform,
+    }) => {
+      platform.dynamo.query.resolves([franceEvent1]);
+
+      await handler(
+        platform.gatewayEvent.get(endpoint, { query }),
+        platform.context(),
+      );
+
+      expect(platform.dynamo.query.calls()).toHaveLength(1);
+      expect(platform.dynamo.query.input()).toMatchObject({
+        TableName: consumerConfig.eventStoreTableName,
+        IndexName: "timestamp-query",
+        KeyConditionExpression: "#pk = :pkValue",
+        ExpressionAttributeNames: { "#pk": "compositeKey" },
+        ExpressionAttributeValues: { ":pkValue": "travel/france" },
+        ScanIndexForward: false,
+      });
+    });
+
+    it("returns an empty list when no events exist for the group", async ({
+      platform,
+    }) => {
+      platform.dynamo.query.resolves([]);
+
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(platform.gatewayResult(200, { body: [] }));
+    });
+
+    it("returns 400 when namespace query parameter is missing", async ({
+      platform,
+    }) => {
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query: { group: "france" } }),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 400 });
+    });
+
+    it("returns 400 when group query parameter is missing", async ({
+      platform,
+    }) => {
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query: { namespace: "travel" } }),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 400 });
+    });
+
+    it("returns 502 when the query throws", async ({ platform }) => {
+      platform.dynamo.query.rejects(new Error("ResourceNotFoundException"));
+
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(502, {
+          body: { message: "TRAVEL upstream service unavailable" },
+        }),
+      );
+    });
+
+    it("returns 502 when a row does not match the event schema", async ({
+      platform,
+    }) => {
+      platform.dynamo.query.resolves([
+        eventRow("france", "A update", "not-a-date"),
+      ]);
+
+      const result = await handler(
+        platform.gatewayEvent.get(endpoint, { query }),
         platform.context(),
       );
 

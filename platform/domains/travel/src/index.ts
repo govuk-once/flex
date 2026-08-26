@@ -12,3 +12,9 @@ export {
   CountrySchema,
   TravelSourceSchema,
 } from "./schemas/domain/country";
+export type { Event } from "./schemas/domain/event";
+export {
+  EventSchema,
+  EventsQuerySchema,
+  EventsResponseSchema,
+} from "./schemas/domain/event";
