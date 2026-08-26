@@ -4,11 +4,10 @@ import createHttpError from "http-errors";
 export const handler = route(
   "GET /v1/events",
   async ({ integrations, queryParams, logger }) => {
+    const { group, namespace } = queryParams;
+
     const result = await integrations.travelGetEvents({
-      query: {
-        namespace: queryParams.namespace,
-        group: queryParams.group,
-      },
+      query: { namespace, group },
     });
 
     if (!result.ok) {

@@ -53,7 +53,7 @@ describe.runIf(isDomainDeployed(travelConfig))("Travel domain", () => {
     describe.runIf(isRouteDeployed(travelConfig, "GET /v1/events"))(
       "GET",
       () => {
-        it("returns 200 with the recent travle alerts", async ({
+        it("returns 200 with the recent travel alerts", async ({
           cloudfront,
           authHeader,
         }) => {
@@ -69,49 +69,50 @@ describe.runIf(isDomainDeployed(travelConfig))("Travel domain", () => {
           expect(events.success).toBe(true);
         });
 
-        it("returns 400 when namespace is missing", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.get(endpoint, {
-            headers: authHeader,
+        it.for<{
+          reason: string;
+          params: Record<string, string>;
+          expectedStatus: number;
+          withAuth: boolean;
+        }>([
+          {
+            reason: "the namespace is missing",
             params: { group: "france" },
-          });
-
-          expect(result.status).toBe(400);
-        });
-
-        it("returns 400 when group is missing", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.get(endpoint, {
-            headers: authHeader,
+            expectedStatus: 400,
+            withAuth: true,
+          },
+          {
+            reason: "the group is missing",
             params: { namespace: "travel" },
-          });
-
-          expect(result.status).toBe(400);
-        });
-
-        it("returns 400 when namespace is not 'travel'", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.get(endpoint, {
-            headers: authHeader,
+            expectedStatus: 400,
+            withAuth: true,
+          },
+          {
+            reason: 'the namespace is not "travel"',
             params: { namespace: "other namespace", group: "france" },
-          });
-
-          expect(result.status).toBe(400);
-        });
-
-        it("returns 401 when no auth is provided", async ({ cloudfront }) => {
-          const result = await cloudfront.client.get(endpoint, {
+            expectedStatus: 400,
+            withAuth: true,
+          },
+          {
+            reason: "the auth header is missing",
             params: { namespace: "travel", group: "france" },
-          });
+            expectedStatus: 401,
+            withAuth: false,
+          },
+        ])(
+          "returns $expectedStatus when $reason",
+          async (
+            { params, expectedStatus, withAuth },
+            { cloudfront, authHeader },
+          ) => {
+            const result = await cloudfront.client.get(endpoint, {
+              headers: withAuth ? authHeader : undefined,
+              params,
+            });
 
-          expect(result.status).toBe(401);
-        });
+            expect(result.status).toBe(expectedStatus);
+          },
+        );
       },
     );
   });

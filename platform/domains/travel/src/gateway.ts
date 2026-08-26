@@ -62,7 +62,7 @@ export const handler = createHandler({
         scanIndexForward: false,
         schema: EventSchema,
       });
-      return mapApiResult(result, (events) => events);
+      return result;
     },
   },
 });
