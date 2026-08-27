@@ -1,0 +1,99 @@
+name: Architecture docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/architecture/**"
+      - "domains/*/domain.config.ts"
+      - "platform/domains/*/gateway.config.ts"
+      - "scripts/architectureFacts.ts"
+      - "scripts/buildArchitectureExplorer.ts"
+      - "scripts/checkArchitectureExplorer.ts"
+      - ".github/workflows/architecture-docs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/architecture/**"
+      - "domains/*/domain.config.ts"
+      - "platform/domains/*/gateway.config.ts"
+      - "scripts/architecture*.ts"
+      - "scripts/buildArchitectureExplorer.ts"
+      - "scripts/checkArchitectureExplorer.ts"
+  workflow_dispatch:
+
+# Only the newest run per branch matters; a superseded docs build is wasted minutes.
+concurrency:
+  group: architecture-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Regenerates architecture-facts.json from the domain and gateway configs,
+      # validates every view file, then assembles the single-page explorer.
+      - name: Build
+        run: pnpm architecture:build
+
+      # The generated facts are committed so a config change shows up as a reviewable
+      # diff. If this fails, someone changed a route and did not run the build.
+      - name: Check the generated facts are up to date
+        run: |
+          if ! git diff --exit-code --stat docs/architecture/architecture-facts.json; then
+            echo "::error file=docs/architecture/architecture-facts.json::Out of date. Run 'pnpm architecture:build' and commit the result."
+            exit 1
+          fi
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Renders the built page and measures what static validation cannot see:
+      # text fit, edges crossing unrelated boxes, label collisions, empty inspectors.
+      - name: Render checks
+        run: pnpm architecture:check
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: docs
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
