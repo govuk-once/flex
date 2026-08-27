@@ -30,3 +30,7 @@ cdk.context.json
 *.http
 
 eslint-report.json
+
+# Built from docs/architecture/explorer/ — regenerate with `pnpm architecture:build`
+docs/architecture/explorer.html
+docs/index.html

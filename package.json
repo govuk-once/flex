@@ -3,6 +3,10 @@
   "type": "module",
   "scripts": {
     "dev": "flex",
+    "architecture:facts": "tsx scripts/architectureFacts.ts",
+    "architecture:build": "pnpm architecture:facts && tsx scripts/buildArchitectureExplorer.ts",
+    "architecture:check": "tsx scripts/checkArchitectureExplorer.ts",
+    "architecture:serve": "pnpm architecture:build && tsx scripts/serveArchitectureDocs.ts",
     "deploy": "pnpm openapi:generate && pnpm --filter @platform/flex run deploy",
     "checkov": "nx affected --target=checkov",
     "tsc": "nx affected --target=tsc",
