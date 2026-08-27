@@ -160,10 +160,11 @@ export class FlexMacieStack extends BaseStack {
       },
       policy: AwsCustomResourcePolicy.fromStatements([
         new PolicyStatement({
-          actions: [
-            "macie2:CreateClassificationJob",
-            "macie2:UpdateClassificationJob",
-          ],
+          actions: ["macie2:CreateClassificationJob"],
+          resources: ["*"],
+        }),
+        new PolicyStatement({
+          actions: ["macie2:UpdateClassificationJob"],
           resources: [
             `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
           ],
