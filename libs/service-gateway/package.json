@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.34.0",
+    "@aws-sdk/client-dynamodb": "3.1091.0",
+    "@aws-sdk/lib-dynamodb": "3.1091.0",
     "@flex/logging": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/telemetry": "workspace:*",

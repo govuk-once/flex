@@ -30,7 +30,7 @@ describe("PATCH /v1/users/me/notifications", () => {
       .reply(200, notification);
 
     const result = await handler(
-      sdk.event.patch(endpoint, { userId, body: { consentStatus } }),
+      sdk.event.patch(endpoint, { auth: userId, body: { consentStatus } }),
       sdk.context({ secrets }),
     );
 
@@ -50,7 +50,7 @@ describe("PATCH /v1/users/me/notifications", () => {
     },
   ])("returns 400 when payload $reason", async ({ body }, { sdk }) => {
     const result = await handler(
-      sdk.event.patch(endpoint, { userId, body }),
+      sdk.event.patch(endpoint, { auth: userId, body }),
       sdk.context({ secrets }),
     );
 
@@ -77,7 +77,7 @@ describe("PATCH /v1/users/me/notifications", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.patch(endpoint, { userId, body: { consentStatus } }),
+      sdk.event.patch(endpoint, { auth: userId, body: { consentStatus } }),
       sdk.context({ secrets }),
     );
 

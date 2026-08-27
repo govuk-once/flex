@@ -15,7 +15,7 @@ describe("POST /v1/local-council/:id [private]", () => {
 
     const result = await handler(
       sdk.event.post(endpoint, {
-        userId,
+        auth: userId,
         params: { id: localCouncilId },
         body: localAuthority,
       }),
@@ -28,7 +28,10 @@ describe("POST /v1/local-council/:id [private]", () => {
 
   it("returns 400 when the request body is invalid", async ({ sdk }) => {
     const result = await handler(
-      sdk.event.post(endpoint, { userId, params: { id: localCouncilId } }),
+      sdk.event.post(endpoint, {
+        auth: userId,
+        params: { id: localCouncilId },
+      }),
       sdk.context(),
     );
 
@@ -46,7 +49,7 @@ describe("POST /v1/local-council/:id [private]", () => {
 
     const result = await handler(
       sdk.event.post(endpoint, {
-        userId,
+        auth: userId,
         params: { id: localCouncilId },
         body: localAuthority,
       }),

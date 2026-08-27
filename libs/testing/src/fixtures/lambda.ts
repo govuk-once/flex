@@ -1,12 +1,11 @@
-import type { DeepPartial, UserId } from "@flex/utils";
+import type { DeepPartial } from "@flex/utils";
 import type { Context } from "aws-lambda";
-import { mergeDeepLeft } from "ramda";
 
-import { createUserId } from "./user";
+import { createFixtureBuilder } from "../utils/fixtures";
 
 export type ContextOverrides = DeepPartial<Context>;
 
-const baseContext: Context = {
+export const baseLambdaContext: Context = {
   callbackWaitsForEmptyEventLoop: false,
   functionName: "test-function",
   functionVersion: "$LATEST",
@@ -22,72 +21,6 @@ const baseContext: Context = {
   succeed: () => {},
 };
 
-function buildContext(overrides?: DeepPartial<ContextWithUserId>) {
-  return mergeDeepLeft(overrides ?? {}, baseContext) as ContextWithUserId;
-}
+export const buildLambdaContext = createFixtureBuilder(baseLambdaContext);
 
-export interface ContextWithUserId extends Context {
-  userId: UserId;
-}
-
-type Secrets = Record<string, unknown>;
-type Params = Record<string, unknown>;
-
-class BuildContext {
-  overrides?: DeepPartial<Context> & Partial<Secrets>;
-  pairwiseId?: string = undefined;
-  secrets?: Secrets = undefined;
-  params?: Params = undefined;
-
-  constructor(overrides?: DeepPartial<Context> & Partial<Secrets>) {
-    this.overrides = overrides;
-  }
-
-  withPairwiseId(pairwiseId: string = createUserId()) {
-    this.pairwiseId = pairwiseId;
-    return this;
-  }
-
-  withSecret(secrets: Record<string, unknown>) {
-    this.secrets = secrets;
-    return this;
-  }
-
-  withParams(params: Record<string, unknown>) {
-    this.params = params;
-    return this;
-  }
-
-  create(overrides?: DeepPartial<Context>) {
-    return buildContext({
-      ...this.overrides,
-      ...this.secrets,
-      ...this.params,
-      userId: this.pairwiseId,
-      ...overrides,
-    });
-  }
-}
-
-/**
- * Creates a context builder with a fluent API for constructing test Lambda contexts.
- *
- * The builder uses a recursive pattern where:
- * - Each `withX` method (e.g., `withPairwiseId`, `withSecret`) returns a new builder
- *   instance with accumulated overrides, allowing method chaining.
- * - The `create()` method resolves the final context by merging all accumulated
- *   overrides with the base context.
- *
- * Example usage:
- * ```typescript
- * const ctx = createContext()
- *   .withPairwiseId("user-123")
- *   .withSecret("my-secret")
- *   .create();
- * ```
- */
-export function createContext(overrides?: DeepPartial<Context>) {
-  return new BuildContext(overrides);
-}
-
-export const context = buildContext();
+export type LambdaContextFactory = typeof buildLambdaContext;

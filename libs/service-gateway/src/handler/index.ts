@@ -13,6 +13,7 @@ import type {
   GatewayRouteHandler,
   RouteKeyOf,
 } from "../types";
+import { parseRequest } from "../utils/request";
 import { resolveResources } from "../utils/resources";
 import {
   toDownstreamErrorResponse,
@@ -44,6 +45,7 @@ export function buildHandler<
     try {
       const inboundPath = stripPathPrefix(event.path, gatewayPathPrefix);
 
+      // TODO: Could fire this after the route NotFound check to include the route.key?
       emitTelemetry(TelemetryEvent.service_gateway_request_received, {
         method: event.httpMethod,
         path: inboundPath,
@@ -61,17 +63,18 @@ export function buildHandler<
         throw new createHttpError.NotFound("Route handler not found");
       }
 
+      const parsedRequest = parseRequest(event, route);
+
       const resources = await resolveResources<Config["resources"]>(
         config.resources,
       );
 
       const clients = gateway.clients(resources);
 
-      const context = buildContext(event, {
+      const context = buildContext(parsedRequest, {
         clients,
         resources,
         logger,
-        route,
       });
 
       const result = await handler(context);

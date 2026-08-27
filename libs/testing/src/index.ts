@@ -1,46 +1,12 @@
 export { it } from "./extend/it";
-export type {
-  ApiResponse,
-  AuthorizerContext,
-  AuthorizerEventOverrides,
-  AuthorizerResultContext,
-  AuthorizerResultOverrides,
-  ContextOverrides,
-  EventOverrides,
-  EventWithAuthorizer,
-  EventWithAuthorizerOverrides,
-  MiddyRequest,
-  MiddyRequestOverrides,
-  ResponseOptions,
-  StructuredResponse,
-} from "./fixtures";
 export {
-  authorizerResult,
-  buildCloudFrontEvent,
-  buildCloudFrontEventWithAuthorizationHeader,
-  buildCloudFrontFunctionErrorResponse,
-  context,
-  createApi,
-  createAuthorizerEvent,
-  createAuthorizerResult,
-  createContext,
-  createEvent,
-  createEventWithAuthorizer,
-  createMiddyRequest,
-  createResponse,
-  createTokenAuthorizerEvent,
-  event,
-  eventWithAuthorizer,
   expiredJwt,
   invalidJwt,
   jwtMissingUsername,
-  middyRequest,
   publicJWKS,
-  response,
-  tokenAuthorizerEvent,
   validJwt,
   validJwtUsername,
-} from "./fixtures";
+} from "./fixtures/auth";
 export {
   createTimestamp,
   createToken,
@@ -49,5 +15,23 @@ export {
   token,
   uuid,
 } from "./fixtures/common";
+export type {
+  DynamoFixture,
+  DynamoItem,
+  DynamoQueryFixture,
+  DynamoQueryPage,
+  DynamoScanFixture,
+  DynamoScanPage,
+} from "./fixtures/dynamo";
+export type { HttpFixture } from "./fixtures/http";
+export type { ContextOverrides } from "./fixtures/lambda";
+export { buildLambdaContext } from "./fixtures/lambda";
+export type { PlatformFixture } from "./fixtures/platform";
+export type { SecretFixture } from "./fixtures/secret";
 export { createUserId, userId } from "./fixtures/user";
-export { mergeFixture } from "./utils/merge-fixture";
+export type { FixtureBuilder, FixtureVariants } from "./utils/fixtures";
+export {
+  createFixtureBuilder,
+  createFixtureVariants,
+  mergeFixture,
+} from "./utils/fixtures";

@@ -14,6 +14,7 @@ export default mergeConfig(
         udpNotificationSecret: "test-notification-secret", // pragma: allowlist secret
         sessionHashKey: "test-key",
         dvlaJwtIssuer: "https://govuk-app-external-ui.dvla.gov.uk",
+        environment: "development",
       },
     },
   }),

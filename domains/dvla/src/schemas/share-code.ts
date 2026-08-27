@@ -1,11 +1,15 @@
 import type { ShareCodeSchema } from "@flex/dvla-service-gateway";
-import { SingleShareCodeResponseSchemaWithoutIdSchema } from "@flex/dvla-service-gateway";
+import {
+  SingleShareCodeResponseSchema,
+  SingleShareCodeResponseSchemaWithoutIdSchema,
+} from "@flex/dvla-service-gateway";
 import type { z } from "zod";
 
 // TODO: Improve types
 
-export type ShareCode = z.output<typeof ShareCodeSchema>;
-
-export const SingleShareCodeSchema =
+export const ShareCodeResponseSchema = SingleShareCodeResponseSchema;
+export const ShareCodeWithoutIdSchema =
   SingleShareCodeResponseSchemaWithoutIdSchema;
-export type SingleShareCode = z.output<typeof SingleShareCodeSchema>;
+
+export type SingleShareCode = z.output<typeof ShareCodeWithoutIdSchema>;
+export type ShareCode = z.output<typeof ShareCodeSchema>;

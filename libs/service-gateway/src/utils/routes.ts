@@ -1,7 +1,15 @@
 import type { HttpMethod } from "@flex/utils";
-import { matchPathSegments, splitRouteKey, toPathSegments } from "@flex/utils";
+import {
+  isCanonicalPath,
+  matchPathSegments,
+  splitPathSegments,
+  splitRouteKey,
+} from "@flex/utils";
 
 import type { GatewayRoute, GatewayRouteMap, RouteKey } from "../types";
+
+const isDynamicRoute = (route: ParsedRoute) =>
+  route.segments.some((segment) => segment.startsWith(":"));
 
 interface ParsedRoute {
   config: GatewayRoute;
@@ -10,17 +18,36 @@ interface ParsedRoute {
   segments: string[];
 }
 
-export function buildRoutes(routes: GatewayRouteMap): ParsedRoute[] {
-  return Object.entries(routes).map(([key, config]) => {
+export interface RouteTable {
+  readonly static: ReadonlyMap<string, ParsedRoute>;
+  readonly dynamic: readonly ParsedRoute[];
+}
+
+export function buildRoutes(routes: GatewayRouteMap): RouteTable {
+  const staticRoutes = new Map<string, ParsedRoute>();
+  const dynamicRoutes: ParsedRoute[] = [];
+
+  for (const [key, config] of Object.entries(routes)) {
     const { method, path } = parseRouteKey(key);
 
-    return {
+    const route: ParsedRoute = {
       config,
       key: key as RouteKey,
       method,
-      segments: toPathSegments(path),
+      segments: splitPathSegments(path),
     };
-  });
+
+    if (isDynamicRoute(route)) {
+      dynamicRoutes.push(route);
+    } else {
+      staticRoutes.set(route.key, route);
+    }
+  }
+
+  return {
+    static: staticRoutes,
+    dynamic: dynamicRoutes,
+  };
 }
 
 export interface MatchedRoute {
@@ -30,17 +57,27 @@ export interface MatchedRoute {
 }
 
 export function lookupRoute(
-  routes: readonly ParsedRoute[],
+  routes: RouteTable,
   method: string,
   path: string,
 ): MatchedRoute | undefined {
-  for (const route of routes) {
+  if (!isCanonicalPath(path)) return;
+
+  const staticRoute = routes.static.get(`${method} ${path}`);
+
+  if (staticRoute) {
+    return { key: staticRoute.key, config: staticRoute.config, params: {} };
+  }
+
+  const segments = splitPathSegments(path);
+
+  for (const route of routes.dynamic) {
     if (route.method !== method) continue;
 
-    const params = matchPathSegments(route.segments, toPathSegments(path));
+    const params = matchPathSegments(route.segments, segments);
 
     if (params) {
-      return { config: route.config, key: route.key, params };
+      return { key: route.key, config: route.config, params };
     }
   }
 }
@@ -60,6 +97,12 @@ function parseRouteKey(key: string): RouteKeyParts {
   }
 
   const [method, path] = pathParts;
+
+  if (!isCanonicalPath(path)) {
+    throw new Error(
+      `Invalid route key. Path must not contain trailing or duplicate slashes, but got: "${key}"`,
+    );
+  }
 
   return { method: method as HttpMethod, path };
 }

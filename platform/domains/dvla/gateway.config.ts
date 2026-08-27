@@ -1,11 +1,10 @@
 import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
-// TODO: verify config against existing SG
 export const { config, createHandler } = defineGateway({
   name: "dvla",
-  environments: ["development", "staging"],
+  environments: ["development", "staging", "production"],
   access: "private",
   resources: {
     consumerConfig: {
@@ -18,50 +17,41 @@ export const { config, createHandler } = defineGateway({
         apiUrl: NonEmptyString,
         apiUsername: NonEmptyString,
         apiPassword: NonEmptyString,
-        apiPublicKey: NonEmptyString,
         wellKnownJwkUrl: NonEmptyString,
       }),
     },
     encryptionKey: {
       type: "kms",
-      path: "/flex-secret/encryption-key",
+      path: "/secret/encryption-key",
     },
   },
-  policy: {},
   routes: {
     "GET /v1/authenticate": {
       name: "getAuthenticate",
     },
-    "GET /v1/licence/:id": {
-      name: "getRetrieveDrivingLicences",
+    "GET /v1/customer/licence": {
+      name: "getCustomerLicence",
+      query: z.object({ linkingId: NonEmptyString }),
       headers: {
         auth: { name: "auth", required: true },
       },
     },
-    "GET /v1/customer/:id": {
-      name: "getRetrieveCustomer",
+    "GET /v1/customer/vehicles": {
+      name: "getCustomerVehicles",
+      query: z.object({ linkingId: NonEmptyString }),
       headers: {
         auth: { name: "auth", required: true },
       },
     },
-    "GET /v1/customer-summary/:id": {
-      name: "getCustomerSummary",
-      headers: {
-        auth: { name: "auth", required: true },
-      },
-    },
-    "GET /v1/driver-summary/:id": {
-      name: "getDriverSummary",
+    "GET /v1/customer/vehicle/:id": {
+      name: "getCustomerVehicle",
+      query: z.object({ linkingId: NonEmptyString }),
       headers: {
         auth: { name: "auth", required: true },
       },
     },
     "GET /v1/vehicle-enquiry/:id": {
       name: "getVehicleEnquiryService",
-    },
-    "GET /v1/share-codes": {
-      name: "getShareCodes",
-      query: z.object({ linkingId: NonEmptyString }),
       headers: {
         auth: { name: "auth", required: true },
       },

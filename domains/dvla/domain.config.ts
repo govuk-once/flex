@@ -1,14 +1,15 @@
-import {
-  authenticateResponseSchema,
-  customerDriversLicenceSchema,
-  customerVehicleDetailsSchema,
-  customerVehiclesResponseSchema,
-  SingleShareCodeResponseSchema,
-  SingleShareCodeResponseSchemaWithoutIdSchema,
-  vehicleEnquiryResponseSchema,
-} from "@flex/dvla-service-gateway";
 import { domain } from "@flex/sdk";
 import { GetServiceIdentityLinkResponseSchema } from "@flex/udp-domain";
+
+import {
+  CustomerVehicleSchema,
+  CustomerVehiclesSchema,
+  DriversLicenceSchema,
+  SessionSchema,
+  ShareCodeResponseSchema,
+  ShareCodeWithoutIdSchema,
+  VehicleSchema,
+} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "dvla",
@@ -40,13 +41,13 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "dvla",
       route: "GET /v1/authenticate",
-      response: authenticateResponseSchema,
+      response: SessionSchema,
     },
     dvlaVehicleEnquiry: {
       type: "gateway",
       target: "dvla",
       route: "GET /v1/vehicle-enquiry/*",
-      response: vehicleEnquiryResponseSchema,
+      response: VehicleSchema,
     },
     udpGetLinkingId: {
       type: "domain",
@@ -58,31 +59,31 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "dvla",
       route: "POST /v1/share-code",
-      response: SingleShareCodeResponseSchema,
+      response: ShareCodeResponseSchema,
     },
     dvlaCancelShareCode: {
       type: "gateway",
       target: "dvla",
       route: "POST /v1/share-code/*",
-      response: SingleShareCodeResponseSchema,
+      response: ShareCodeResponseSchema,
     },
     dvlaGetCustomerVehicle: {
       type: "gateway",
       target: "dvla",
       route: "GET /v1/customer/vehicle/*",
-      response: customerVehicleDetailsSchema,
+      response: CustomerVehicleSchema,
     },
     dvlaGetCustomerVehicles: {
       type: "gateway",
       target: "dvla",
       route: "GET /v1/customer/vehicles",
-      response: customerVehiclesResponseSchema,
+      response: CustomerVehiclesSchema,
     },
     dvlaGetCustomerLicence: {
       type: "gateway",
       target: "dvla",
       route: "GET /v1/customer/licence",
-      response: customerDriversLicenceSchema,
+      response: DriversLicenceSchema,
     },
   },
   routes: {
@@ -97,6 +98,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: DriversLicenceSchema,
           },
         },
       },
@@ -110,6 +112,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: CustomerVehicleSchema,
           },
         },
       },
@@ -123,6 +126,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: CustomerVehiclesSchema,
           },
         },
       },
@@ -145,6 +149,7 @@ export const { config, route, routeContext } = domain({
             name: "get-vehicle-enquiry",
             integrations: ["dvlaAuthenticate", "dvlaVehicleEnquiry"],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
+            response: VehicleSchema,
           },
         },
       },
@@ -158,7 +163,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: SingleShareCodeResponseSchemaWithoutIdSchema,
+            response: ShareCodeWithoutIdSchema,
           },
         },
       },
@@ -172,7 +177,7 @@ export const { config, route, routeContext } = domain({
               "udpGetLinkingId",
             ],
             resources: ["flexPrivateGatewayUrl", "encryptionKeyArn"],
-            response: SingleShareCodeResponseSchemaWithoutIdSchema,
+            response: ShareCodeWithoutIdSchema,
           },
         },
       },

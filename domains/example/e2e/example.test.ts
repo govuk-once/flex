@@ -1,5 +1,5 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
-import { it, STUB_DEFAULT_SUBJECT } from "@flex/testing/e2e";
+import { it } from "@flex/testing/e2e";
 import type {
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
@@ -25,10 +25,6 @@ const unsGetNotificationsDeployed = () =>
   isRouteDeployed(unsConfig, "GET /v1/notifications");
 
 describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
-  // These tests assert against a given user based on the contents of the dev database, so
-  // we need to ensure the stub token generator always returns the same subject for consistency.
-  it.override({ authSub: STUB_DEFAULT_SUBJECT });
-
   describe("/example/v0/todos", () => {
     const endpoint = "/example/v0/todos";
 

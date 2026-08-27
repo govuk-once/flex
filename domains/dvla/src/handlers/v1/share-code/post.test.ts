@@ -30,7 +30,7 @@ describe("POST /v1/share-code", () => {
       .reply(200, withLinkingId(singleShareCode));
 
     const result = await handler(
-      sdk.event.post(endpoint, { userId }),
+      sdk.event.post(endpoint, { auth: userId }),
       sdk.context(),
     );
 
@@ -52,7 +52,7 @@ describe("POST /v1/share-code", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -72,7 +72,7 @@ describe("POST /v1/share-code", () => {
       http.gateway("dvla").get("/authenticate").reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 
@@ -105,7 +105,7 @@ describe("POST /v1/share-code", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.post(endpoint, { userId }),
+        sdk.event.post(endpoint, { auth: userId }),
         sdk.context(),
       );
 

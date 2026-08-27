@@ -1,3 +1,1 @@
-import { config } from "@flex/config/vitest";
-
-export default config;
+export { config as default } from "@flex/config/vitest";

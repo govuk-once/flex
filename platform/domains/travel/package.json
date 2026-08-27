@@ -1,0 +1,32 @@
+{
+  "name": "@flex/travel-service-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/service-gateway": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "http-errors": "2.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@types/http-errors": "2.0.5",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

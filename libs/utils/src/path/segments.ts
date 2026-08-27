@@ -1,5 +1,9 @@
-export function toPathSegments(path: string) {
+export function splitPathSegments(path: string) {
   return path ? (path.match(/[^/]+/g) ?? []) : [];
+}
+
+export function joinPathSegments(segments: readonly string[]) {
+  return `/${segments.join("/")}`;
 }
 
 export function matchPathSegments(
@@ -24,4 +28,8 @@ export function matchPathSegments(
   });
 
   return matched ? params : null;
+}
+
+export function isCanonicalPath(path: string) {
+  return path === joinPathSegments(splitPathSegments(path));
 }

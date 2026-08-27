@@ -1,5 +1,5 @@
 import { getEnvConfig } from "@flex/utils";
-import { Tags } from "aws-cdk-lib";
+import { Duration, Tags } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
 import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
@@ -42,6 +42,7 @@ export class FlexPrivateIsolatedFunction extends Construct {
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
+      timeout: Duration.seconds(10),
       ...functionProps,
       environmentEncryption: encryptionKey,
       environment: {

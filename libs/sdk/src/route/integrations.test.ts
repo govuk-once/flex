@@ -1,6 +1,6 @@
 import { it } from "@flex/testing";
 import { assert, beforeEach, describe, expect, vi } from "vitest";
-import z from "zod";
+import { z } from "zod";
 
 import type { DomainConfig, IntegrationResult } from "../types";
 import type { IntegrationInvokerConfig, InvokerOptions } from "./integrations";

@@ -1,3 +1,5 @@
+export type { AssumedRoleCredentialsOptions } from "./aws/credentials";
+export { getAssumedRoleCredentials } from "./aws/credentials";
 export * from "./config";
 export { domain } from "./domain";
 export type {

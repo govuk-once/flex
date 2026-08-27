@@ -1,8 +1,12 @@
-import { createRestClient } from "@flex/service-gateway";
+import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
+import {
+  GroupsResponseSchema,
+  UpsertGroupsResponseSchema,
+} from "./schemas/remote/groups";
+import { notificationsResponseSchema } from "./schemas/remote/notifications";
 
-// TODO: verify route context/schemas/request-responsetransforms against existing SG
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
     api: createRestClient({
@@ -14,21 +18,101 @@ export const handler = createHandler({
         roleName: "consumer-session",
         externalId: consumerConfig.externalId,
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
     }),
   }),
   routes: {
+    "GET /v1/identities/:id": ({
+      clients: { api },
+      resources: { consumerConfig },
+      pathParams: { id },
+    }) => {
+      return api.get(`/v1/identity/app/${id}/linked-services`, {
+        headers: { "x-api-key": consumerConfig.apiKey },
+      });
+    },
+    "GET /v1/identity/:serviceName": ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { userId },
+      pathParams: { serviceName },
+    }) => {
+      return api.get("/v1/identity/exchange", {
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": userId,
+        },
+        query: { requiredService: serviceName },
+      });
+    },
+    "GET /v1/notifications": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/notifications", {
+        schema: notificationsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
+    "POST /v1/identity/:serviceName/:identifier": ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      pathParams: { serviceName, identifier },
+    }) => {
+      const SIXTY_DAYS_IN_SECONDS = 60 * 24 * 60 * 60;
+
+      return api.post(`/v1/identity/${serviceName}/${identifier}`, {
+        headers: { "x-api-key": consumerConfig.apiKey },
+        body: {
+          ...body,
+          expiresAt: Math.floor(Date.now() / 1000) + SIXTY_DAYS_IN_SECONDS,
+        },
+      });
+    },
+    "POST /v1/notifications": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.post("/v1/notifications", {
+        schema: notificationsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+        body: { data: body, requestingServiceUserId },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
+    "POST /v1/users": ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+    }) => {
+      return api.post("/v1/user", {
+        headers: { "x-api-key": consumerConfig.apiKey },
+        body: { pushId: body.pushId, appId: body.userId },
+      });
+    },
     "DELETE /v1/identity/:serviceName/:identifier": ({
       clients: { api },
       resources: { consumerConfig },
       pathParams: { serviceName, identifier },
     }) => {
       return api.delete(`/v1/identity/${serviceName}/${identifier}`, {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-        },
+        headers: { "x-api-key": consumerConfig.apiKey },
       });
     },
     "DELETE /v1/notifications": ({
@@ -44,106 +128,44 @@ export const handler = createHandler({
         },
       });
     },
-    "GET /v1/identities/:id": ({
-      clients: { api },
-      resources: { consumerConfig },
-      pathParams: { id },
-    }) => {
-      return api.get("/v1/identities", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": id,
-        },
-      });
-    },
-    "GET /v1/identity/:serviceName": ({
-      clients: { api },
-      resources: { consumerConfig },
-      headers: { userId },
-      pathParams: { serviceName },
-    }) => {
-      return api.get("/v1/identity/exchange", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
-        query: {
-          requiredService: serviceName,
-        },
-      });
-    },
-    "GET /v1/notifications": async ({
+    "GET /v1/groups": async ({
       clients: { api },
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      return api.get("/v1/notifications", {
+      const result = await api.get("/v1/groups", {
+        schema: GroupsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
+
+      return mapApiResult(result, ({ data }) => data.groups);
     },
-    "POST /v1/identities/:id": ({
-      clients: { api },
-      resources: { consumerConfig },
-      // body,
-      pathParams: { id },
-    }) => {
-      return api.post("/v1/identities", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": id,
-        },
-        // body,
-      });
-    },
-    "POST /v1/identity/:serviceName/:identifier": ({
-      clients: { api },
-      resources: { consumerConfig },
-      // body,
-      pathParams: { serviceName, identifier },
-    }) => {
-      return api.post(`/v1/identity/${serviceName}/${identifier}`, {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-        },
-        // body,
-      });
-    },
-    "POST /v1/notifications": async ({
-      clients: { api },
-      resources: { consumerConfig },
-      // body,
-      headers: { requestingServiceUserId },
-    }) => {
-      return api.post("/v1/notifications", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
-        // body,
-      });
-    },
-    "POST /v1/users": ({
+    "POST /v1/groups": async ({
       clients: { api },
       resources: { consumerConfig },
       body,
+      headers: { requestingServiceUserId },
     }) => {
-      return api.post("/v1/user", {
+      const result = await api.post("/v1/groups", {
+        schema: UpsertGroupsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
         },
         body: {
-          pushId: body.pushId,
-          appId: body.userId,
+          data: {
+            groups: body,
+          },
+          requestingServiceUserId,
         },
       });
+
+      return mapApiResult(result, ({ data }) => data.groups);
     },
   },
 });

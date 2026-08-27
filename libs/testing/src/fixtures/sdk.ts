@@ -5,7 +5,8 @@ import type {
   Context,
 } from "aws-lambda";
 
-import { createFixtureBuilder, createFixtureFactory } from "../utils/factory";
+import { createFixtureVariants } from "../utils/fixtures";
+import { buildLambdaContext } from "./lambda";
 import { createUserId } from "./user";
 
 // ----------------------------------------------------------------------------
@@ -17,10 +18,10 @@ export type SdkEvent = APIGatewayProxyWithLambdaAuthorizerEvent<{
 }>;
 
 interface SdkEventRequestOptions {
+  auth?: UserId | false;
   headers?: Record<string, string>;
   params?: Record<string, string>;
   query?: QueryParams;
-  userId?: UserId;
 }
 
 export const baseSdkEvent: SdkEvent = {
@@ -38,15 +39,9 @@ export const baseSdkEvent: SdkEvent = {
   multiValueHeaders: {},
   requestContext: {
     authorizer: {
-      /** TODO:
-       * - Existing event uses "test-pairwise-id"
-       * - Existing context uses "test-user-id" (later addition, default set by createUserId)
-       *
-       * Was this intentional or should they match moving forward?
-       */
-      principalId: "test-pairwise-id",
+      principalId: "test-user-id",
       integrationLatency: 0,
-      pairwiseId: "test-pairwise-id",
+      pairwiseId: "test-user-id",
     },
     protocol: "HTTP/1.1",
     httpMethod: "GET",
@@ -85,10 +80,16 @@ export const baseSdkEvent: SdkEvent = {
 
 type SdkEventOverrides = SdkEventRequestOptions & { body?: unknown };
 
+function toAuthorizer(auth: UserId | false) {
+  return auth === false
+    ? { integrationLatency: 0, pairwiseId: "", principalId: "" }
+    : { integrationLatency: 0, pairwiseId: auth, principalId: auth };
+}
+
 function toRequest(
   httpMethod: string,
   path: string,
-  { body, headers, params, query, userId }: SdkEventOverrides = {},
+  { auth, body, headers, params, query }: SdkEventOverrides = {},
 ): DeepPartial<SdkEvent> {
   return {
     httpMethod,
@@ -96,10 +97,8 @@ function toRequest(
     headers: { "Content-Type": "application/json", ...headers },
     queryStringParameters: extractQueryParams(query)[1],
     ...(params && { pathParameters: params }),
-    ...(userId && {
-      requestContext: {
-        authorizer: { principalId: userId, pairwiseId: userId },
-      },
+    ...(auth !== undefined && {
+      requestContext: { authorizer: toAuthorizer(auth) },
     }),
     ...(body !== undefined && { body: JSON.stringify(body) }),
   };
@@ -109,7 +108,7 @@ type SdkEventOptions<Body = never> = SdkEventRequestOptions &
   ([Body] extends [never] ? { body?: never } : { body: Body });
 
 export function createSdkEvent() {
-  return createFixtureFactory(baseSdkEvent, (build) => ({
+  return createFixtureVariants(baseSdkEvent, (build) => ({
     get: (path: string, options?: SdkEventOptions) =>
       build(toRequest("GET", path, options)),
     post: <Body = never>(path: string, options?: SdkEventOptions<Body>) =>
@@ -129,22 +128,6 @@ export type SdkEventFactory = ReturnType<typeof createSdkEvent>;
 // Context
 // ----------------------------------------------------------------------------
 
-export const baseSdkContext: Context = {
-  callbackWaitsForEmptyEventLoop: false,
-  functionName: "test-function",
-  functionVersion: "$LATEST",
-  invokedFunctionArn:
-    "arn:aws:lambda:eu-west-2:123456789012:function:test-function",
-  memoryLimitInMB: "128",
-  awsRequestId: "test-request-id",
-  logGroupName: "/aws/lambda/test-function",
-  logStreamName: "2026/01/01/[$LATEST]test-request-id",
-  getRemainingTimeInMillis: () => 30_000,
-  done: () => {},
-  fail: () => {},
-  succeed: () => {},
-};
-
 export type SdkContext = Context & { userId: UserId };
 
 interface SdkContextOptions {
@@ -161,7 +144,7 @@ export function createSdkContext() {
     secrets,
     userId = createUserId(),
   }: SdkContextOptions = {}): SdkContext => ({
-    ...createFixtureBuilder(baseSdkContext)(overrides),
+    ...buildLambdaContext(overrides),
     ...params,
     ...secrets,
     userId,

@@ -1,5 +1,5 @@
 import { NonEmptyString, WholeNumber } from "@flex/utils";
-import z from "zod";
+import { z } from "zod";
 
 export const vehicleEnquiryRequestBodySchema = z.object({
   registrationNumber: NonEmptyString,
@@ -19,9 +19,7 @@ export const vehicleSchema = z
       .optional()
       .describe("Tax status of the vehicle"),
 
-    taxedUntil: NonEmptyString.pipe(z.coerce.date())
-      .optional()
-      .describe("The date the vehicle is taxed until"),
+    taxedUntil: z.iso.date().optional(),
 
     motStatus: z
       .enum([
@@ -33,15 +31,11 @@ export const vehicleSchema = z
       .optional()
       .describe("MOT Status of the vehicle"),
 
-    motExpiryDate: NonEmptyString.pipe(z.coerce.date())
-      .optional()
-      .describe("Mot Expiry Date"),
+    motExpiryDate: z.iso.date().optional(),
 
     make: NonEmptyString.optional().describe("Vehicle make"),
 
-    dateOfFirstRegistration: NonEmptyString.pipe(z.coerce.date())
-      .optional()
-      .describe("Date Vehicle Was First Registered"),
+    dateOfFirstRegistration: z.iso.date().optional(),
 
     engineCapacity: WholeNumber.optional().describe(
       "Engine capacity in cubic centimetres",

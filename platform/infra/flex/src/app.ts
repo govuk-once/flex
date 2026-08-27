@@ -8,11 +8,16 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
-import { FlexMacieStack } from "./stacks/macie";
+// import { FlexMacieStack } from "./stacks/macie";
 import { FlexPlatformStack } from "./stacks/platform";
 import { FlexSmokeTestStack } from "./stacks/smoke-test";
-import { getDeployableDomains } from "./utils/deployment";
+import { getServiceGatewayConfigs } from "./utils/config-loader";
+import {
+  getDeployableDomains,
+  getDeployableServiceGateways,
+} from "./utils/deployment";
 import { getDomainConfigs } from "./utils/getDomainConfigs";
+import { getServiceGatewayParamKeys } from "./utils/param-keys";
 
 const { env, persistent, stage } = getEnvConfig();
 
@@ -21,7 +26,18 @@ Aspects.of(app).add(new EnforceS3Https());
 
 const region = "eu-west-2";
 
-app.addExternalExports(region, [
+const [allDomainConfigs, allServiceGatewayConfigs] = await Promise.all([
+  getDomainConfigs(),
+  getServiceGatewayConfigs(),
+]);
+
+const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);
+const deployableServiceGatewayConfigs = getDeployableServiceGateways(
+  allServiceGatewayConfigs,
+  stage,
+);
+
+const externalExports = [
   // Provided by platform team
   PLATFORM_KEYS.HostedZoneId,
   PLATFORM_KEYS.HostedZoneName,
@@ -30,20 +46,16 @@ app.addExternalExports(region, [
   ENV_KEYS.AuthClientIdStub,
   ENV_KEYS.AuthUserPoolId,
   ENV_KEYS.AuthUserPoolIdStub,
-  ENV_KEYS.UdpCmkArn,
-  ENV_KEYS.UdpConfigRoleArn,
-  ENV_KEYS.UdpConfigSecretArn,
-  ENV_KEYS.DvlaConfigSecretArn,
-  ENV_KEYS.UnsConfigSecretArn,
-  ENV_KEYS.UnsCustomerRole,
-  ENV_KEYS.UnsConfigSecret,
-  ENV_KEYS.UnsCmkArn,
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
   // Release Slack notifications only exist in the development environment
   ...(env === Environment.development ? [ENV_KEYS.ReleaseSlackChannelId] : []),
-  ENV_KEYS.FlexEncryptionKey,
-]);
+
+  // All keys should be derived from each gateway config `resources` definitions, not hardcoded
+  ...getServiceGatewayParamKeys(deployableServiceGatewayConfigs),
+];
+
+app.addExternalExports(region, [...new Set(externalExports)]);
 
 if (persistent) {
   new FlexCoreStack(app, `${env}-FlexCore`);
@@ -69,18 +81,19 @@ if (persistent) {
   ]);
 }
 
-new FlexPlatformStack(app, `${stage}-FlexPlatform`);
+const platformStack = new FlexPlatformStack(
+  app,
+  `${stage}-FlexPlatform`,
+  deployableServiceGatewayConfigs,
+);
 
-const globalStack = new FlexGlobalStack(app, `${stage}-FlexGlobal`);
+new FlexGlobalStack(app, `${stage}-FlexGlobal`);
 
-if (persistent) {
-  new FlexMacieStack(app, `${env}-FlexMacie`, {
-    accessLogBucketName: globalStack.cloudfrontAccessLogBucket.bucketName,
-  });
-}
-
-const allDomainConfigs = await getDomainConfigs();
-const deployableDomainConfigs = getDeployableDomains(allDomainConfigs, stage);
+// if (persistent) {
+//   new FlexMacieStack(app, `${env}-FlexMacie`, {
+//     accessLogBucketName: globalStack.cloudfrontAccessLogBucket.bucketName,
+//   });
+// }
 
 const targetDomain = process.env.domain;
 
@@ -101,5 +114,8 @@ for (const domain of deployableDomainConfigs) {
 new FlexApiDeploymentStack(app, `${stage}-FlexApiDeployment`, {
   deployedDomains,
   publicRouteBindings: domainStacks.flatMap((s) => s.publicRouteBindings),
-  privateRouteBindings: domainStacks.flatMap((s) => s.privateRouteBindings),
+  privateRouteBindings: [
+    ...domainStacks.flatMap((s) => s.privateRouteBindings),
+    ...platformStack.privateRouteBindings,
+  ],
 });

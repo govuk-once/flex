@@ -22,13 +22,13 @@ FLEX deploys forward only. There is no automated "undo" button; semantic-release
 
 Choose the strategy that restores service soonest with the least added risk. Use the table to decide, then confirm your choice with the incident lead before preparing anything.
 
-| Situation | Preferred strategy | Why |
-| --------- | ------------------ | --- |
-| Fault is understood and the fix is small and well scoped | **Fix forward** | Fastest correct route; avoids discarding good changes shipped alongside the fault |
-| Fault appeared immediately after a known deploy and the previous version was healthy | **Revert (a fix forward)** | Reverting the offending commit is a small, low risk forward change |
-| Fault is understood but the fix is large, risky or touches infrastructure | **Runtime mitigation first, then fix forward** | Reduce impact now (flag, config, scale), ship the real fix once prepared and reviewed |
-| Cause is unknown and impact is severe | **Mitigate to stop the bleeding, then investigate** | Do not deploy code you do not understand into a live incident |
-| Fault is data related, not code related | **Neither; treat as a data incident** | A deploy will not fix corrupted or missing data; escalate to the data owner |
+| Situation                                                                            | Preferred strategy                                  | Why                                                                                   |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Fault is understood and the fix is small and well scoped                             | **Fix forward**                                     | Fastest correct route; avoids discarding good changes shipped alongside the fault     |
+| Fault appeared immediately after a known deploy and the previous version was healthy | **Revert (a fix forward)**                          | Reverting the offending commit is a small, low risk forward change                    |
+| Fault is understood but the fix is large, risky or touches infrastructure            | **Runtime mitigation first, then fix forward**      | Reduce impact now (flag, config, scale), ship the real fix once prepared and reviewed |
+| Cause is unknown and impact is severe                                                | **Mitigate to stop the bleeding, then investigate** | Do not deploy code you do not understand into a live incident                         |
+| Fault is data related, not code related                                              | **Neither; treat as a data incident**               | A deploy will not fix corrupted or missing data; escalate to the data owner           |
 
 A fix forward is the right call when all of the following hold:
 

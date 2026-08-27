@@ -1,4 +1,5 @@
 import { it } from "@flex/testing";
+import { GroupTypeSchema } from "@schemas/group";
 import { group, pushId, secrets, userId, withSubgroup } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
@@ -25,7 +26,7 @@ describe("GET /v1/groups", () => {
       .reply(200, groups);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -33,11 +34,11 @@ describe("GET /v1/groups", () => {
     expect(JSON.parse(result.body)).toStrictEqual([
       {
         ...group,
-        Type: "NOTIFICATION",
+        Type: GroupTypeSchema.enum.NOTIFICATION,
       },
       {
         ...groupWithSubgroup,
-        Type: "NOTIFICATION",
+        Type: GroupTypeSchema.enum.NOTIFICATION,
       },
     ]);
   });
@@ -57,7 +58,7 @@ describe("GET /v1/groups", () => {
       .reply(200, []);
 
     const result = await handler(
-      sdk.event.get(endpoint, { userId }),
+      sdk.event.get(endpoint, { auth: userId }),
       sdk.context({ secrets }),
     );
 
@@ -74,7 +75,7 @@ describe("GET /v1/groups", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context({ secrets }),
       );
 
@@ -97,7 +98,7 @@ describe("GET /v1/groups", () => {
         .reply(upstream);
 
       const result = await handler(
-        sdk.event.get(endpoint, { userId }),
+        sdk.event.get(endpoint, { auth: userId }),
         sdk.context({ secrets }),
       );
 

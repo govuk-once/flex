@@ -8,7 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import z from "zod";
+import { z } from "zod";
 
 interface AwsSessionContextProps {
   identity?: string | null;
