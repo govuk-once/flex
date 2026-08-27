@@ -68,7 +68,7 @@ jobs:
           fi
 
       - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm --filter @flex/scripts exec playwright install --with-deps chromium
 
       # Renders the built page and measures what static validation cannot see:
       # text fit, edges crossing unrelated boxes, label collisions, empty inspectors.
