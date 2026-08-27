@@ -175,8 +175,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test # pragma: allowlist secret
         run: pnpm exec nx run-many --target=test --all --run --coverage --skip-nx-cache
 
-      - name: Generate report for SonarQube
-        run: pnpm run lint:report || true
+      - name: Generate ESLint report for SonarQube
+        run: pnpm run lint:report
 
       - name: Cache SonarQube scanner
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -185,8 +185,12 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Run SonarQube Scan
+      - name: Run SonarQube Scan and Quality Gate
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=120
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
