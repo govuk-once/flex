@@ -474,6 +474,60 @@
       "featureFlags": []
     },
     {
+      "name": "travel",
+      "environments": ["development", "staging"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/countries",
+          "method": "GET",
+          "gateway": "public",
+          "name": "list-countries",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/events",
+          "method": "GET",
+          "gateway": "public",
+          "name": "fetch-recent-travel-alerts",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 2, "private": 0, "total": 2 },
+      "perStage": {
+        "development": 2,
+        "staging": 2,
+        "production": 0,
+        "ephemeral": 2
+      },
+      "integrations": [
+        {
+          "key": "travelGetCountries",
+          "type": "gateway",
+          "target": "travel",
+          "route": "GET /v1/countries"
+        },
+        {
+          "key": "travelGetEvents",
+          "type": "gateway",
+          "target": "travel",
+          "route": "GET /v1/events"
+        }
+      ],
+      "resources": [
+        {
+          "key": "flexPrivateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        }
+      ],
+      "featureFlags": []
+    },
+    {
       "name": "udp",
       "environments": ["development", "staging", "production"],
       "commonAccess": "isolated",
@@ -788,6 +842,27 @@
       ]
     },
     {
+      "name": "travel",
+      "environments": ["development", "staging"],
+      "access": "private",
+      "routeCount": 2,
+      "routes": ["GET /v1/countries", "GET /v1/events"],
+      "resources": [
+        {
+          "key": "consumerConfig",
+          "type": "secret",
+          "path": "/travel/consumer-config-secret",
+          "env": "FLEX_TRAVEL_CONSUMER_CONFIG_SECRET_ARN"
+        },
+        {
+          "key": "consumerRole",
+          "type": "role",
+          "path": "/travel/consumer-role",
+          "env": null
+        }
+      ]
+    },
+    {
       "name": "udp",
       "environments": ["development", "staging", "production"],
       "access": "isolated",
@@ -856,13 +931,13 @@
     }
   ],
   "totals": {
-    "domains": 6,
-    "gateways": 3,
+    "domains": 7,
+    "gateways": 4,
     "routeFunctions": {
-      "development": 37,
-      "staging": 24,
+      "development": 39,
+      "staging": 26,
       "production": 20,
-      "ephemeral": 37
+      "ephemeral": 39
     },
     "byTier": {
       "egress": {
@@ -872,18 +947,18 @@
         "ephemeral": 8
       },
       "isolated": {
-        "development": 29,
-        "staging": 16,
+        "development": 31,
+        "staging": 18,
         "production": 12,
-        "ephemeral": 29
+        "ephemeral": 31
       }
     },
     "routeMethods": {
       "public": {
-        "development": 30,
-        "staging": 19,
+        "development": 32,
+        "staging": 21,
         "production": 17,
-        "ephemeral": 30
+        "ephemeral": 32
       },
       "private": {
         "development": 7,
@@ -893,10 +968,10 @@
       }
     },
     "domainsWithPublicRoutes": {
-      "development": 5,
-      "staging": 4,
+      "development": 6,
+      "staging": 5,
       "production": 3,
-      "ephemeral": 5
+      "ephemeral": 6
     }
   }
 }

@@ -802,6 +802,22 @@
           "<code>stacks/platform.ts</code>"
         ],
         [
+          "Public API execution log",
+          "CloudWatch \u00b7 <code>API-Gateway-Execution-Logs_{restApiId}/{stage}</code>",
+          "1 year",
+          "No <code>encryptionKey</code> set \u2014 CloudWatch default",
+          "<b>Production only.</b> <code>loggingLevel: ERROR</code>, <code>dataTraceEnabled: false</code> \u2014 no request or response bodies. Other stages set no method logging at all",
+          "<code>stacks/platform.ts</code>"
+        ],
+        [
+          "Private API execution log",
+          "CloudWatch \u00b7 <code>API-Gateway-Execution-Logs_{restApiId}/{stage}</code>",
+          "1 year",
+          "No <code>encryptionKey</code> set \u2014 CloudWatch default",
+          "<b>Log group is production only</b>, but <code>loggingLevel: INFO</code> is set in every stage, with <code>dataTraceEnabled: false</code>",
+          "<code>stacks/platform.ts</code>"
+        ],
+        [
           "VPC flow logs",
           "S3 \u00b7 flow-log bucket \u00b7 plain text \u00b7 1-minute aggregation \u00b7 <code>ALL</code> traffic",
           "365 days",
@@ -842,7 +858,7 @@
           "<code>app.ts</code> lines 11 and 93, <code>stacks/macie.ts</code>"
         ]
       ],
-      "note": "Read the encryption column against itself: the flow-log bucket names a customer-managed key, the Lambda log groups and both S3 access-log buckets leave the property unset."
+      "note": "Read the encryption column against itself: the flow-log bucket names a customer-managed key, the Lambda log groups and both S3 access-log buckets leave the property unset. The two execution log groups are created only when the stage is production, so in other stages API Gateway execution logging has no log group of its own."
     },
     {
       "name": "What the sanitiser removes before a log is written",

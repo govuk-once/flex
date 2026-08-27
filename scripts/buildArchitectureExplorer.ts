@@ -45,7 +45,7 @@ const DERIVED: {
   where: string;
   pick: (f: ArchitectureFacts) => PerStage | undefined;
 }[] = [
-  ...["dvla", "udp", "uns", "groups", "local-council", "example"].map(
+  ...["dvla", "udp", "uns", "groups", "local-council", "example", "travel"].map(
     (name) => ({
       id: `lambda-domain-${name === "local-council" ? "lc" : name}`,
       where: `domains.${name}.perStage`,

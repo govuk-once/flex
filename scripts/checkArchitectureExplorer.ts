@@ -32,7 +32,7 @@ const PAGE = path.join(ROOT, "docs/architecture/explorer.html");
  * every edge. This is a ratchet, not a target: it may fall, never rise. If a change
  * genuinely needs a higher budget, raise it deliberately and say why in the commit.
  */
-const SOFT_BUDGET = 14;
+const SOFT_BUDGET = 13;
 
 /** Type-only, so it is erased at runtime and the import below stays optional. */
 type ChromiumLauncher = typeof import("playwright").chromium;

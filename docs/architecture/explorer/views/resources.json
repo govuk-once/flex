@@ -503,6 +503,32 @@
           }
         },
         {
+          "id": "lambda-domain-travel",
+          "name": "travel domain route functions",
+          "n": {
+            "dev": 2,
+            "stg": 2,
+            "prod": 0,
+            "eph": 2
+          },
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "role": "<code>GET /v1/countries</code> and <code>GET /v1/events</code>.",
+            "facts": [
+              "<code>environments</code> is development and staging only, so nothing reaches production \u2014 but every ephemeral PR and personal stage still gets both.",
+              "Both routes reach the travel service gateway over the private API; the domain itself holds no credentials."
+            ],
+            "code": [
+              [
+                "domains/travel/domain.config.ts",
+                "the routes, environments and integrations"
+              ]
+            ]
+          }
+        },
+        {
           "id": "lambda-gw-dvla",
           "name": "DVLA gateway function",
           "n": 1,
@@ -561,6 +587,32 @@
               [
                 "platform/domains/uns/gateway.config.ts",
                 "platform/domains/uns/gateway.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-gw-travel",
+          "name": "Travel gateway function",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 0,
+            "eph": 1
+          },
+          "meta": ["egress tier", "FlexGatewayStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X \u00b7 private access",
+            "role": "Sole holder of the travel upstream credentials.",
+            "facts": [
+              "Mounted at <code>ANY /gateways/travel/{proxy+}</code> \u2014 its two routes are matched in code, not by API Gateway.",
+              "<code>environments</code> is development and staging only, so it does not exist in production."
+            ],
+            "code": [
+              [
+                "platform/domains/travel/gateway.config.ts",
+                "the routes, access tier and environments"
               ]
             ]
           }
@@ -839,10 +891,10 @@
           "id": "api-authorizer",
           "name": "Lambda token authorizers",
           "n": {
-            "dev": 5,
-            "stg": 4,
+            "dev": 6,
+            "stg": 5,
             "prod": 3,
-            "eph": 5
+            "eph": 6
           },
           "meta": ["eu-west-2", "FlexDomainStack"],
           "d": {
@@ -863,10 +915,10 @@
           "id": "api-routes-public",
           "name": "Public route methods",
           "n": {
-            "dev": 30,
-            "stg": 19,
+            "dev": 32,
+            "stg": 21,
             "prod": 17,
-            "eph": 30
+            "eph": 32
           },
           "meta": ["eu-west-2", "FlexDomainStack"],
           "d": {
@@ -909,14 +961,19 @@
         {
           "id": "api-routes-gateways",
           "name": "Service gateway proxy methods",
-          "n": 3,
+          "n": {
+            "dev": 4,
+            "stg": 4,
+            "prod": 3,
+            "eph": 4
+          },
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::Method",
             "tech": "ANY \u00b7 {proxy+} \u00b7 IAM",
             "role": "One catch-all method per service gateway.",
             "facts": [
-              "Three methods stand in for 26 upstream operations (dvla 10 \u00b7 udp 10 \u00b7 uns 6), because routing happens inside the Lambda."
+              "Four methods stand in for 28 upstream operations (dvla 10 \u00b7 udp 10 \u00b7 uns 6 \u00b7 travel 2), because routing happens inside each gateway rather than in API Gateway. Travel is development and staging only, so production has three."
             ],
             "code": [
               [

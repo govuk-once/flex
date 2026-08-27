@@ -3,7 +3,7 @@
   "name": "Containers",
   "order": 3,
   "group": "Architecture",
-  "w": 1360,
+  "w": 1520,
   "h": 1030,
   "blurb": "Every separately deployable or storable part of the runtime request path, and the traffic between them. Build, deploy and alerting machinery lives on the Delivery tab. C4 level 2.",
   "audience": "Platform engineers, and anyone reviewing a change",
@@ -53,7 +53,7 @@
       "x": 1020,
       "y": 60,
       "w": 300,
-      "h": 430,
+      "h": 495,
       "hard": true,
       "d": {
         "type": "Region boundary",
@@ -74,7 +74,7 @@
       "label": "Internal plane \u00b7 eu-west-2 (London)",
       "x": 700,
       "y": 620,
-      "w": 610,
+      "w": 800,
       "h": 232,
       "hard": true,
       "d": {
@@ -92,7 +92,7 @@
       "label": "Upstreams",
       "x": 700,
       "y": 860,
-      "w": 610,
+      "w": 800,
       "h": 130,
       "hard": false,
       "d": {
@@ -621,6 +621,84 @@
         ],
         "code": []
       }
+    },
+    {
+      "id": "dtravel",
+      "label": "travel",
+      "sub": "2 routes \u00b7 isolated",
+      "x": 1044,
+      "y": 482,
+      "w": 177,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Domain stack",
+        "tech": "FlexDomainStack \u00b7 isolated tier",
+        "role": "Countries and events for the travel feature.",
+        "facts": [
+          "<code>environments</code> is development and staging only, so it does not exist in production.",
+          "Both routes are public on <code>/app/travel/**</code> and reach the travel gateway over the private API."
+        ],
+        "code": [
+          [
+            "domains/travel/domain.config.ts",
+            "routes, environments and integrations"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "gwtravel",
+      "label": "Travel service gateway",
+      "sub": "/gateways/travel/{proxy+}",
+      "x": 1300,
+      "y": 790,
+      "w": 195,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::Lambda::Function",
+        "tech": "NODEJS_24_X \u00b7 egress tier",
+        "role": "Sole holder of the travel upstream credentials.",
+        "facts": [
+          "Runs in the egress tier because it reaches DynamoDB and STS over the public AWS endpoints through NAT, which isolated subnets cannot route to.",
+          "<code>environments</code> is development and staging only."
+        ],
+        "code": [
+          [
+            "platform/domains/travel/gateway.config.ts",
+            "access tier, environments and resources"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "xtravel",
+      "label": "Travel data store",
+      "sub": "DynamoDB \u00b7 cross-account",
+      "x": 1300,
+      "y": 900,
+      "w": 195,
+      "h": 54,
+      "kind": "third",
+      "plane": "request",
+      "d": {
+        "type": "External",
+        "tech": "Amazon DynamoDB via assumed role",
+        "role": "The shared sources table and the event store.",
+        "facts": [
+          "Reached by assuming <code>roleArn</code> from the consumer-config secret \u2014 not an HTTP API like the other three upstreams.",
+          "The sources table holds every namespace, not only travel."
+        ],
+        "code": [
+          [
+            "platform/domains/travel/gateway.config.ts",
+            "the consumer config schema"
+          ]
+        ]
+      }
     }
   ],
   "edges": [
@@ -1103,6 +1181,52 @@
         "facts": [],
         "code": [["uns/src/gateway.ts", "platform/domains/uns/src/gateway.ts"]]
       }
+    },
+    {
+      "from": "privapi",
+      "to": "gwtravel",
+      "label": "SigV4 \u00b7 /gateways/travel",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "IAM (SigV4)",
+        "carries": "Gateway proxy requests",
+        "facts": [
+          "One catch-all method; the two routes are matched inside the gateway."
+        ],
+        "code": []
+      }
+    },
+    {
+      "from": "gwtravel",
+      "to": "xtravel",
+      "label": "assumed role",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "AWS SDK over HTTPS",
+        "auth": "STS AssumeRole",
+        "carries": "DynamoDB reads",
+        "facts": [
+          "Egress through NAT \u2014 the public AWS endpoints are not reachable from isolated subnets."
+        ],
+        "code": []
+      }
+    },
+    {
+      "from": "dtravel",
+      "to": "privapi",
+      "label": "SigV4",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "IAM (SigV4)",
+        "carries": "Domain to gateway calls",
+        "facts": ["The domain holds no upstream credentials of its own."],
+        "code": []
+      }
     }
   ],
   "placement": {
@@ -1144,7 +1268,9 @@
     "duns": ["lambda-domain-uns"],
     "dgroups": ["lambda-domain-groups"],
     "dlc": ["lambda-domain-lc"],
-    "dex": ["lambda-domain-example"]
+    "dex": ["lambda-domain-example"],
+    "dtravel": ["lambda-domain-travel"],
+    "gwtravel": ["lambda-gw-travel"]
   },
   "tables": [
     {
