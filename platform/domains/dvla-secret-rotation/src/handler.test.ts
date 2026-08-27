@@ -91,18 +91,76 @@ describe("handler", () => {
   });
 
   describe("createSecret", () => {
-    it("skips if AWSPENDING already exists for this token", async () => {
-      vi.mocked(getSecretValue).mockResolvedValueOnce(currentSecret);
+    it("skips if AWSPENDING already has a rotated API key", async () => {
+      const fullyRotatedPending = JSON.stringify({
+        apiUrl: "https://dvla.example.com",
+        apiKey: "already-rotated-api-key", // pragma: allowlist secret
+        apiUsername: "testuser",
+        apiPassword: "already-rotated-password", // pragma: allowlist secret
+        wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
+      });
+
+      vi.mocked(getSecretValue)
+        .mockResolvedValueOnce(currentSecret)
+        .mockResolvedValueOnce(fullyRotatedPending);
 
       await handler(createEvent("createSecret"));
 
       expect(changePassword).not.toHaveBeenCalled();
+      expect(requestNewApiKey).not.toHaveBeenCalled();
+    });
+
+    it("resumes API key rotation when AWSPENDING has only the password rotated", async () => {
+      const passwordOnlyPending = JSON.stringify({
+        apiUrl: "https://dvla.example.com",
+        apiKey: "current-api-key", // pragma: allowlist secret
+        apiUsername: "testuser",
+        apiPassword: "previously-rotated-password", // pragma: allowlist secret
+        wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
+      });
+
+      vi.mocked(getSecretValue)
+        .mockResolvedValueOnce(currentSecret)
+        .mockResolvedValueOnce(passwordOnlyPending);
+
+      vi.mocked(authenticate).mockResolvedValue("new-jwt-token");
+      vi.mocked(requestNewApiKey).mockResolvedValue("new-api-key-value");
+
+      await handler(createEvent("createSecret"));
+
+      expect(changePassword).not.toHaveBeenCalled();
+      expect(generatePassword).not.toHaveBeenCalled();
+
+      expect(authenticate).toHaveBeenCalledWith({
+        apiUrl: "https://dvla.example.com",
+        userName: "testuser",
+        password: "previously-rotated-password", // pragma: allowlist secret
+      });
+
+      expect(requestNewApiKey).toHaveBeenCalledWith({
+        apiUrl: "https://dvla.example.com",
+        currentApiKey: "current-api-key", // pragma: allowlist secret
+        jwt: "new-jwt-token",
+      });
+
+      expect(putSecretValue).toHaveBeenCalledOnce();
+      expect(putSecretValue).toHaveBeenCalledWith(
+        secretId,
+        JSON.stringify({
+          apiUrl: "https://dvla.example.com",
+          apiKey: "new-api-key-value", // pragma: allowlist secret
+          apiUsername: "testuser",
+          apiPassword: "previously-rotated-password", // pragma: allowlist secret
+          wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
+        }),
+        token,
+      );
     });
 
     it("rotates password and API key then stores in AWSPENDING", async () => {
       vi.mocked(getSecretValue)
-        .mockRejectedValueOnce(new Error("not found"))
-        .mockResolvedValueOnce(currentSecret);
+        .mockResolvedValueOnce(currentSecret)
+        .mockRejectedValueOnce(new Error("not found"));
 
       vi.mocked(generatePassword).mockReturnValue("new-random-password1");
       vi.mocked(authenticate).mockResolvedValue("new-jwt-token");
@@ -129,7 +187,23 @@ describe("handler", () => {
         jwt: "new-jwt-token",
       });
 
-      expect(putSecretValue).toHaveBeenCalledWith(
+      expect(putSecretValue).toHaveBeenCalledTimes(2);
+
+      expect(putSecretValue).toHaveBeenNthCalledWith(
+        1,
+        secretId,
+        JSON.stringify({
+          apiUrl: "https://dvla.example.com",
+          apiKey: "current-api-key", // pragma: allowlist secret
+          apiUsername: "testuser",
+          apiPassword: "new-random-password1", // pragma: allowlist secret
+          wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
+        }),
+        token,
+      );
+
+      expect(putSecretValue).toHaveBeenNthCalledWith(
+        2,
         secretId,
         JSON.stringify({
           apiUrl: "https://dvla.example.com",
@@ -144,8 +218,8 @@ describe("handler", () => {
 
     it("throws when DVLA password change fails", async () => {
       vi.mocked(getSecretValue)
-        .mockRejectedValueOnce(new Error("not found"))
-        .mockResolvedValueOnce(currentSecret);
+        .mockResolvedValueOnce(currentSecret)
+        .mockRejectedValueOnce(new Error("not found"));
 
       vi.mocked(generatePassword).mockReturnValue("new-random-password1");
       vi.mocked(changePassword).mockRejectedValue(
