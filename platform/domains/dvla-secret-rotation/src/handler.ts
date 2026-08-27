@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { logger } from "@flex/logging";
 import type { SecretsManagerRotationEvent } from "aws-lambda";
 
@@ -62,39 +64,58 @@ async function handleCreateSecret(
   secretId: string,
   token: string,
 ): Promise<void> {
+  const CHECKPOINT_STAGE = "AWSPENDING_CHECKPOINT";
+
   const currentSecretString = await getSecretValue(secretId, "AWSCURRENT");
   const currentSecret = DvlaSecretSchema.parse(JSON.parse(currentSecretString));
 
-  let pendingSecret: typeof currentSecret | undefined;
+  // Check if the final AWSPENDING version (tagged with the rotation token) already exists
   try {
-    const pendingSecretString = await getSecretValue(
+    const finalPendingString = await getSecretValue(
       secretId,
       "AWSPENDING",
       token,
     );
-    pendingSecret = DvlaSecretSchema.parse(JSON.parse(pendingSecretString));
+    const finalPending = DvlaSecretSchema.parse(JSON.parse(finalPendingString));
+
+    if (finalPending.apiKey !== currentSecret.apiKey) {
+      logger.info(
+        "createSecret: AWSPENDING secret already fully rotated, skipping",
+      );
+      return;
+    }
   } catch {
-    // Expected - no pending secret exists yet
+    // No final version yet
   }
 
-  // If AWSPENDING already has a rotated API key, the full rotation already completed
-  if (pendingSecret && pendingSecret.apiKey !== currentSecret.apiKey) {
-    logger.info("createSecret: AWSPENDING secret already fully rotated, skipping");
-    return;
+  // Check for a checkpoint version (password rotated, API key not yet)
+  let checkpointSecret: typeof currentSecret | undefined;
+  try {
+    const checkpointString = await getSecretValue(secretId, CHECKPOINT_STAGE);
+    checkpointSecret = DvlaSecretSchema.parse(JSON.parse(checkpointString));
+  } catch {
+    // No checkpoint exists
   }
 
-  // Either no AWSPENDING exists (fresh run) or it has only the password rotated (partial retry)
-  const password = pendingSecret
-    ? pendingSecret.apiPassword
-    : await rotatePassword(currentSecret);
+  const resumePassword =
+    checkpointSecret &&
+    checkpointSecret.apiKey === currentSecret.apiKey &&
+    checkpointSecret.apiPassword !== currentSecret.apiPassword
+      ? checkpointSecret.apiPassword
+      : undefined;
 
-  if (!pendingSecret) {
+  const password = resumePassword ?? (await rotatePassword(currentSecret));
+
+  if (!resumePassword) {
+    // Persist the new password under a separate staging label and its own version ID
+    // so the token's AWSPENDING version is not touched
     await putSecretValue(
       secretId,
       JSON.stringify({ ...currentSecret, apiPassword: password }),
-      token,
+      randomUUID(),
+      [CHECKPOINT_STAGE],
     );
-    logger.info("createSecret: new password stored in AWSPENDING");
+    logger.info("createSecret: new password checkpointed");
   }
 
   const jwt = await authenticate({
