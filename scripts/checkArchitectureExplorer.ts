@@ -97,29 +97,6 @@ async function main() {
         document.fonts.check('11px "IBM Plex Mono"') &&
         document.fonts.check('13px "IBM Plex Sans"'),
     );
-    if (colorScheme === "light") {
-      const diag = await page.evaluate(() => {
-        const probe = (font: string, text: string) => {
-          const c = document.createElement("canvas").getContext("2d");
-          if (!c) return -1;
-          c.font = font;
-          return Math.round(c.measureText(text).width * 100) / 100;
-        };
-        const el = document.querySelector(".node .sub");
-        return {
-          faces: document.fonts.size,
-          mono: probe('11px "IBM Plex Mono"', "MMMMMMMMMM"),
-          sans: probe('13px "IBM Plex Sans"', "MMMMMMMMMM"),
-          fallbackMono: probe("11px monospace", "MMMMMMMMMM"),
-          resolved: el ? getComputedStyle(el).fontFamily : "none",
-        };
-      });
-      console.log(
-        `FONT DIAG faces=${String(diag.faces)} mono10M=${String(diag.mono)} ` +
-          `sans10M=${String(diag.sans)} fallbackMono10M=${String(diag.fallbackMono)} ` +
-          `resolved=${diag.resolved}`,
-      );
-    }
     if (!fontsLoaded)
       console.log(
         "IBM Plex unavailable — geometry not checked. The build's static text-fit gate still applies.",

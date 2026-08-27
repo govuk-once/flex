@@ -263,15 +263,18 @@ function checkGeometry(views: View[]) {
       if (n.sub && n.sub.trim() === n.label.trim())
         problems.push(`${v.id}/${n.id}: sub just repeats the label`);
       // Text starts at x+16 and must clear the right edge by 6.
-      // sub is IBM Plex Mono at 10.5px — a fixed 6.3px advance, so this is exact.
-      // label is proportional; 6.7 is the measured mean, so it flags only labels that
+      // Calibrated against Chromium on Linux, which renders IBM Plex ~6% wider than
+      // macOS does (mono 7.0 vs 6.6px per em-width, sans 11.0 vs 10.56). Designing to
+      // the narrower platform lets labels overflow for everyone else, so these are the
+      // wider numbers: sub is IBM Plex Mono at 10.5px, a fixed 6.7px advance.
+      // label is proportional; 7.0 is the measured mean, so it flags only labels that
       // overflow even at average glyph width. The render harness catches the rest.
       const avail = n.w - 22;
-      if (n.label && n.label.length * 6.7 > avail)
+      if (n.label && n.label.length * 7.0 > avail)
         problems.push(
           `${v.id}/${n.id}: label "${n.label}" overflows ${String(n.w)}px`,
         );
-      if (n.sub && n.sub.length * 6.3 > avail)
+      if (n.sub && n.sub.length * 6.7 > avail)
         problems.push(
           `${v.id}/${n.id}: sub "${n.sub}" overflows ${String(n.w)}px`,
         );
@@ -291,9 +294,9 @@ function checkGeometry(views: View[]) {
           problems.push(`${v.id}: boxes ${a.id} and ${b.id} overlap`);
       }
     }
-    // Zone labels are IBM Plex Mono 11px with .12em tracking — a fixed 7.92px advance.
+    // Zone labels are IBM Plex Mono 11px with .12em tracking: 7.0 + 1.32 on Linux.
     for (const z of zones)
-      if (z.label && z.label.length * 7.92 > z.w - 22)
+      if (z.label && z.label.length * 8.32 > z.w - 22)
         problems.push(
           `${v.id}/${z.id}: zone label "${z.label}" overflows ${String(z.w)}px`,
         );
