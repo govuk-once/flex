@@ -1,0 +1,29 @@
+<header>
+  <div class="hrow">
+    <div class="brand"><b>FLEX Architecture Explorer</b><span>Federated Logic and Events eXchange</span></div>
+    <div class="spacer"></div>
+    <div class="stagepick" role="group" aria-label="Deployment stage"><span class="eyebrow">Stage</span><div id="stages"></div></div>
+    <div class="ctrls">
+      <button class="btn" id="zout" title="Zoom out (-)">&minus;</button>
+      <span class="zoomval mono" id="zval">100%</span>
+      <button class="btn" id="zin" title="Zoom in (+)">+</button>
+      <button class="btn" id="zfit" title="Fit to view (0)">Fit</button>
+    </div>
+  </div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+</header>
+
+<div class="shell">
+  <div class="stage" id="stage">
+    <svg id="svg" role="img" aria-label="Interactive FLEX architecture diagram"><g id="root"></g></svg>
+    <div class="doc" id="doc" hidden></div>
+    <div id="tables" hidden></div>
+    <div class="hint mono" id="hint">
+      <span>drag to pan</span><span>scroll to zoom</span><span>click a box or a line</span><span>esc to clear</span>
+    </div>
+  </div>
+  <aside>
+    <div id="viewhdr"></div>
+    <div id="insp" aria-live="polite"></div>
+  </aside>
+</div>

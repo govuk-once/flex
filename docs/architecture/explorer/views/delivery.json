@@ -1,0 +1,1664 @@
+{
+  "id": "delivery",
+  "name": "Delivery",
+  "order": 7,
+  "group": "Cross-cutting",
+  "w": 1720,
+  "h": 900,
+  "blurb": "How code reaches production, and how production reaches a human when it goes wrong. Nothing on this tab is on a user's request path.",
+  "audience": "Platform engineers and on-call",
+  "note": "Two of the paths drawn here do not work today. The canary's alarm has no alarm action, and the cross-region relay's inline handler has a syntax error, so the smoke test and every us-east-1 edge alarm currently notify nobody. Both are one-line fixes.",
+  "zones": [
+    {
+      "id": "zauthor",
+      "label": "Author and review \u00b7 every pull request",
+      "x": 20,
+      "y": 56,
+      "w": 620,
+      "h": 600,
+      "hard": false,
+      "d": {
+        "type": "Lifecycle phase",
+        "tech": "GitHub Actions",
+        "role": "Everything that runs before a change can merge.",
+        "facts": [
+          "Four workflows fire on a pull request to main: Release Candidate (quality checks plus an ephemeral deploy), Validate OpenAPI Spec, Validate PR Title and, on close, Destroy Ephemeral Environment."
+        ]
+      }
+    },
+    {
+      "id": "zlocal",
+      "label": "Outside the pipeline \u00b7 workspace, CLI and personal stages",
+      "x": 20,
+      "y": 690,
+      "w": 620,
+      "h": 170,
+      "hard": false,
+      "d": {
+        "type": "Lifecycle phase",
+        "tech": "pnpm workspace \u00b7 local tooling",
+        "role": "What an engineer touches before a pull request exists.",
+        "facts": []
+      }
+    },
+    {
+      "id": "zpromote",
+      "label": "Promote \u00b7 every merge to main",
+      "x": 660,
+      "y": 56,
+      "w": 620,
+      "h": 804,
+      "hard": false,
+      "d": {
+        "type": "Lifecycle phase",
+        "tech": "Continuous Deployment workflow",
+        "role": "One workflow run carries a commit from release to production.",
+        "facts": [
+          "The spine down the middle is the only thing that blocks production; everything on the right rail runs beside it and gates nothing."
+        ]
+      }
+    },
+    {
+      "id": "zoperate",
+      "label": "Operate \u00b7 continuously",
+      "x": 1300,
+      "y": 56,
+      "w": 400,
+      "h": 804,
+      "hard": false,
+      "d": {
+        "type": "Lifecycle phase",
+        "tech": "CloudWatch \u00b7 SNS \u00b7 AWS Chatbot",
+        "role": "How a running stage reports on itself.",
+        "facts": [
+          "Absorbed from the Containers view: these four AWS containers are operations, not part of the runtime request path."
+        ]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "domteam",
+      "label": "Domain team",
+      "sub": "person",
+      "x": 40,
+      "y": 100,
+      "w": 177,
+      "h": 58,
+      "kind": "person",
+      "plane": "control",
+      "d": {
+        "type": "Person",
+        "tech": "\u2014",
+        "role": "Builds and deploys a domain. Writes no infrastructure.",
+        "facts": [
+          "This is the intended operating model: a domain team is meant to own only domains/{name}/*. CODEOWNERS still assigns every path to the FLEX platform developers team pending domain-team onboarding.",
+          "Deploys by merging: the shared pipeline creates the Lambdas, API resources, IAM policies and alarms from the declared config.",
+          "Adding a domain needs no platform change; only a new third-party integration does.",
+          "dvla, example, groups and uns each take a workspace dependency on <code>@flex/udp-domain</code>; three of them import a udp Zod schema into their own domain.config.ts, so a udp schema change is a compile-time break."
+        ],
+        "code": [
+          ["CODEOWNERS", ".github/CODEOWNERS"],
+          ["domain-development.md", "docs/domain-development.md"]
+        ]
+      }
+    },
+    {
+      "id": "platteam",
+      "label": "FLEX platform team",
+      "sub": "person",
+      "x": 40,
+      "y": 178,
+      "w": 177,
+      "h": 58,
+      "kind": "person",
+      "plane": "control",
+      "d": {
+        "type": "Person",
+        "tech": "\u2014",
+        "role": "Owns every piece of infrastructure a domain runs on.",
+        "facts": [
+          "Owns libs/*, platform/* and the CDK app \u2014 and, until domain teams onboard, every path in CODEOWNERS as well.",
+          "Owns the two shared API Gateways, the VPC, the service gateways and the pipeline itself.",
+          "A domain team never writes CDK; the platform team never writes domain logic."
+        ],
+        "code": [["platform-development.md", "docs/platform-development.md"]]
+      }
+    },
+    {
+      "id": "repo",
+      "label": "GitHub \u00b7 govuk-once/flex",
+      "sub": "source of truth",
+      "x": 254,
+      "y": 132,
+      "w": 183,
+      "h": 58,
+      "kind": "third",
+      "plane": "control",
+      "d": {
+        "type": "External system",
+        "tech": "GitHub",
+        "role": "Hosts the code, the pipeline and the releases.",
+        "facts": [
+          "Everything reaches production through one workflow: Continuous Deployment, on push to main.",
+          "Deployment credentials are never stored \u2014 CI federates into AWS with OIDC and a per-environment role."
+        ],
+        "code": [["main.yml", ".github/workflows/main.yml"]]
+      }
+    },
+    {
+      "id": "title",
+      "label": "PR title gate",
+      "sub": "required check \u00b7 own workflow",
+      "x": 254,
+      "y": 226,
+      "w": 205,
+      "h": 58,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "ci-pr-title-check.yml",
+        "role": "Enforces the commit header that semantic-release later parses.",
+        "facts": [
+          "Fails unless the title matches {JIRA-KEY} {type}(scope)?!?: description, with type one of feat, fix, chore, docs, style, refactor, test, perf, ci, build or revert.",
+          "The squash-merge commit is this title, and the release parser tolerates a leading Jira key \u2014 the gate is what makes that tolerance safe rather than accidental.",
+          "Dependabot pull requests are skipped; a single bot comment is created or updated with the guidance."
+        ],
+        "code": [
+          ["ci-pr-title-check.yml", ".github/workflows/ci-pr-title-check.yml"],
+          [".releaserc.json", ".releaserc.json"]
+        ]
+      }
+    },
+    {
+      "id": "ghpr",
+      "label": "on pull_request \u2192 main",
+      "sub": "three workflows run in parallel",
+      "x": 40,
+      "y": 320,
+      "w": 218,
+      "h": 32,
+      "kind": "third",
+      "plane": "control",
+      "d": {
+        "type": "Trigger",
+        "tech": "GitHub Actions",
+        "role": "The pull-request event that starts the checks below.",
+        "facts": [
+          "Release Candidate runs Quality Checks and the ephemeral deploy in parallel, then Module E2E against the stage it created.",
+          "Concurrency is grouped per head ref: the OpenAPI and title workflows cancel in-progress runs, Release Candidate deliberately does not."
+        ],
+        "code": [
+          [
+            "ci-pr-quality-checks.yml",
+            ".github/workflows/ci-pr-quality-checks.yml"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "qc",
+      "label": "Quality Checks",
+      "sub": "3 parallel jobs",
+      "x": 40,
+      "y": 382,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_quality-checks.yml",
+        "role": "Hygiene, SonarQube and Security, on pull requests and on main alike.",
+        "facts": [
+          "Hygiene: pre-commit over all files, then lint, tsc and validate:integrations.",
+          "Security: checkov over synthesised CloudFormation, plus dependency review failing at high severity.",
+          "Nx runs lint, tsc and checkov against affected projects, on PR and main runs alike; unit tests always run for every project (run-many --all) inside the SonarQube job.",
+          "Only the CDK app declares a checkov target, so that scan runs only when platform/infra is affected."
+        ],
+        "code": [
+          ["_quality-checks.yml", ".github/workflows/_quality-checks.yml"]
+        ]
+      }
+    },
+    {
+      "id": "oas",
+      "label": "OpenAPI breaking check",
+      "sub": "per PR",
+      "x": 234,
+      "y": 382,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_validate-openapi.yml",
+        "role": "Regenerates every domain's spec and diffs it against what is published.",
+        "facts": [
+          "oasdiff compares against the specs in the development spec bucket \u2014 not staging, not production.",
+          "Only ERR-level findings fail; a spec that disappears counts as breaking too.",
+          "The breaking-change-accepted label overrides the failure."
+        ],
+        "code": [
+          ["checkOpenapiBreaking.ts", "scripts/checkOpenapiBreaking.ts"],
+          ["_validate-openapi.yml", ".github/workflows/_validate-openapi.yml"]
+        ]
+      }
+    },
+    {
+      "id": "eph",
+      "label": "Ephemeral stage",
+      "sub": "pr-{number} \u00b7 full deploy",
+      "x": 428,
+      "y": 382,
+      "w": 180,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Environment",
+        "tech": "cdk deploy --all",
+        "role": "A complete, isolated copy of the platform for one pull request.",
+        "facts": [
+          "Reuses the development VPC, endpoints, security groups and alarm topics \u2014 it creates no core stack, and no canary.",
+          "Environment gating is only enforced for persistent stages, so every domain deploys here, example included.",
+          "It runs the same reusable job as the three environments, Platform E2E included, and gets its own subdomain and its own WAF bypass secret."
+        ],
+        "code": [
+          [
+            "ci-pr-quality-checks.yml",
+            ".github/workflows/ci-pr-quality-checks.yml"
+          ],
+          ["deployment.ts", "platform/infra/flex/src/utils/deployment.ts"]
+        ]
+      }
+    },
+    {
+      "id": "sonar",
+      "label": "SonarQube",
+      "sub": "quality gate",
+      "x": 40,
+      "y": 476,
+      "w": 177,
+      "h": 62,
+      "kind": "third",
+      "plane": "control",
+      "d": {
+        "type": "External system",
+        "tech": "sonarqube-scan-action",
+        "role": "Static analysis across the whole workspace; coverage across the domains, libs and service gateways only \u2014 the CDK app, CLI, testing lib, smoke-test, domain.config.ts/gateway.config.ts files, example and local-council are all excluded from coverage.",
+        "facts": [
+          "sonar.qualitygate.wait=true, so a failing gate fails the job.",
+          "It also consumes an ESLint JSON report, generated with || true so a lint crash cannot fail the scan."
+        ],
+        "code": [["sonar-project.properties", "sonar-project.properties"]]
+      }
+    },
+    {
+      "id": "me2e",
+      "label": "Module E2E",
+      "sub": "matrix per domain",
+      "x": 428,
+      "y": 476,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_moduleE2E.yml",
+        "role": "Runs each domain's own E2E suite against the ephemeral stage.",
+        "facts": [
+          "Domains are discovered at runtime by scanning for a test:e2e script \u2014 five of six qualify; local-council declares none, so it is never covered.",
+          "fail-fast is off, so one domain failing does not mask the others.",
+          "Suites read their URLs from the FlexPlatform and FlexGlobal stack outputs rather than hard-coding them."
+        ],
+        "code": [
+          ["listE2eModules.ts", "scripts/listE2eModules.ts"],
+          ["setup.global.ts", "libs/testing/src/e2e/setup.global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cleanup",
+      "label": "Destroy on PR close",
+      "sub": "cdk destroy --all --force",
+      "x": 40,
+      "y": 570,
+      "w": 180,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "ci-pr-cleanup.yml",
+        "role": "Tears the ephemeral stage down when the pull request closes.",
+        "facts": [
+          "The ephemeral OpenAPI specs bucket is created with autoDeleteObjects so the destroy completes; the two access-log buckets it depends on are object-locked (365-day GOVERNANCE) and retained."
+        ],
+        "code": [
+          ["ci-pr-cleanup.yml", ".github/workflows/ci-pr-cleanup.yml"],
+          [
+            "AccessLogBucket.ts",
+            "platform/infra/flex/src/constructs/s3/AccessLogBucket.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "cli",
+      "label": "flex CLI",
+      "sub": "Ink TUI \u00b7 pnpm dev",
+      "x": 40,
+      "y": 736,
+      "w": 177,
+      "h": 72,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Developer tool",
+        "tech": "Ink + React + Mustache",
+        "role": "Scaffolds a whole domain from templates.",
+        "facts": [
+          "Eight Mustache templates produce package.json, domain.config.ts, tsconfig, vitest and eslint config, a README and one v1/hello handler.",
+          "It then runs pnpm up --latest, pnpm install, tsc and lint inside the new package, so a scaffolded domain compiles before anything is written by hand.",
+          "This is the on-ramp that makes \"adding a domain needs no platform change\" true."
+        ],
+        "code": [
+          ["createDomain.ts", "libs/cli/src/templates/createDomain.ts"],
+          ["CreateDomainPanel.tsx", "libs/cli/src/panels/CreateDomainPanel.tsx"]
+        ]
+      }
+    },
+    {
+      "id": "personal",
+      "label": "Personal stage \u00b7 {USER}",
+      "sub": "no pipeline, no cleanup",
+      "x": 234,
+      "y": 736,
+      "w": 177,
+      "h": 72,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Environment",
+        "tech": "cdk deploy --all",
+        "role": "A full named stage an engineer deploys from a laptop.",
+        "facts": [
+          "getEnvConfig() falls back to process.env.USER, so a deploy with no STAGE set creates a stage named after the engineer \u2014 lowercased, stripped to a-z0-9- and truncated to 12 characters.",
+          "It behaves exactly like a PR stage: development account, development VPC, endpoints and topics, every domain including example.",
+          "Nothing tears it down \u2014 only pr-{number} stages have a cleanup workflow."
+        ],
+        "code": [
+          ["environments.ts", "libs/utils/src/environments.ts"],
+          ["app.ts", "platform/infra/flex/src/app.ts"]
+        ]
+      }
+    },
+    {
+      "id": "supply",
+      "label": "Supply-chain controls",
+      "sub": "workspace + pre-commit",
+      "x": 428,
+      "y": 736,
+      "w": 177,
+      "h": 72,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Policy",
+        "tech": "pnpm \u00b7 pre-commit \u00b7 Dependabot",
+        "role": "What is allowed into the dependency tree and the working tree.",
+        "facts": [
+          "pnpm minimumReleaseAge: 10080 quarantines any newly published version for seven days.",
+          "An overrides block pins six transitive dependencies out of vulnerable ranges; allowBuilds denies install scripts by default, permitting only esbuild and the Playwright Chromium browser.",
+          "pre-commit runs Yelp detect-secrets against a 129KB checked-in baseline, plus detect-private-key and the file hygiene hooks \u2014 CI runs the same hooks with --all-files.",
+          "Dependabot batches patch and minor updates weekly for npm and GitHub Actions, with a 7-day cooldown."
+        ],
+        "code": [
+          ["pnpm-workspace.yaml", "pnpm-workspace.yaml"],
+          [".pre-commit-config.yaml", ".pre-commit-config.yaml"],
+          ["dependabot.yml", ".github/dependabot.yml"]
+        ]
+      }
+    },
+    {
+      "id": "release",
+      "label": "semantic-release",
+      "sub": "tag + GitHub release",
+      "x": 880,
+      "y": 100,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow job",
+        "tech": "semantic-release on main",
+        "role": "Decides the version and publishes the release notes.",
+        "facts": [
+          "The commit parser tolerates a leading Jira key, so FLEX-250 chore: \u2026 still classifies correctly.",
+          "Tags are v{version}; when nothing is released the run falls back to the latest tag, then to the short SHA, so a deployment notice always names something.",
+          "Only major and minor releases publish a Slack notice, and that step is continue-on-error."
+        ],
+        "code": [
+          [".releaserc.json", ".releaserc.json"],
+          ["main.yml", ".github/workflows/main.yml"]
+        ]
+      }
+    },
+    {
+      "id": "oidc",
+      "label": "AWS deployment roles",
+      "sub": "OIDC federation",
+      "x": 680,
+      "y": 196,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "IAM",
+        "tech": "aws-actions/configure-aws-credentials",
+        "role": "How CI gets into the accounts.",
+        "facts": [
+          "A separate role secret per environment \u2014 DEV, STAGING and PROD; the ZAP scan and a staging performance run assume the staging one too.",
+          "Short-lived credentials only; nothing long-lived is stored in GitHub.",
+          "The session name is the workflow run ID, so CloudTrail ties every action back to a run.",
+          "The staging role's trust policy only allows main, which is why the ZAP runbook says to swap in the dev role when testing from a branch."
+        ],
+        "code": [["zap.md", "docs/zap.md"]]
+      }
+    },
+    {
+      "id": "params",
+      "label": "flex-params + DNS",
+      "sub": "SSM \u00b7 owned elsewhere",
+      "x": 680,
+      "y": 286,
+      "w": 177,
+      "h": 62,
+      "kind": "govuk",
+      "plane": "control",
+      "d": {
+        "type": "GOV.UK Once configuration source",
+        "tech": "SSM Parameter Store \u00b7 Route 53",
+        "role": "Supplies the hosted zone, auth identifiers and consumer secrets.",
+        "facts": [
+          "Declared through addExternalExports: importing a key no stack exports and that isn't declared external fails the synth. The values themselves are CloudFormation SSM references resolved at deploy time, so a parameter missing from SSM fails the deploy.",
+          "The only genuine synth-time read is ReleaseSlackChannelId, via valueFromLookup.",
+          "One import escapes the rule: the Lambda environment-encryption CMK is read with valueForStringParameter without being declared external, so a missing key there surfaces at deploy rather than synth."
+        ],
+        "code": [
+          ["ssm-keys.ts", "platform/infra/flex/src/ssm-keys.ts"],
+          ["lambda.ts", "platform/infra/flex/src/utils/lambda.ts"]
+        ]
+      }
+    },
+    {
+      "id": "ssmapp",
+      "label": "SsmApp stack graph",
+      "sub": "synth-time DAG",
+      "x": 680,
+      "y": 388,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "CDK App",
+        "tech": "graphology DirectedGraph",
+        "role": "Turns SSM imports and exports into stack dependencies.",
+        "facts": [
+          "Every import() records an edge and willCreateCycle rejects a cycle at synth; synth() then converts each edge into an addDependency call.",
+          "That ordering is what makes cdk deploy --all --concurrency 4 safe.",
+          "Stacks per stage: FlexCore and FlexSmokeTest (persistent stages only), FlexPlatform, FlexGlobal in us-east-1, one stack per deployable domain, and FlexApiDeployment last. FlexMacie is commented out in app.ts."
+        ],
+        "code": [
+          ["base/index.ts", "platform/infra/flex/src/base/index.ts"],
+          ["app.ts", "platform/infra/flex/src/app.ts"]
+        ]
+      }
+    },
+    {
+      "id": "apideploy",
+      "label": "API stage redeploy",
+      "sub": "AwsCustomResource \u00d72",
+      "x": 680,
+      "y": 476,
+      "w": 177,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Custom resource",
+        "tech": "apigateway:createDeployment",
+        "role": "Forces a new deployment of both REST APIs once the domain stacks have added their routes.",
+        "facts": [
+          "It declares every deployed domain stack as a dependency, which is how the graph places it last.",
+          "The sorted METHOD:path list is SHA-256 hashed into the deployment description, so a redeploy only happens when the route set actually changes.",
+          "A CfnPause custom resource sleeps six seconds between the public and the private call, because createDeployment is rate-limited."
+        ],
+        "code": [
+          ["stacks/deploy.ts", "platform/infra/flex/src/stacks/deploy.ts"],
+          [
+            "CfnPause.ts",
+            "platform/infra/flex/src/constructs/infra/CfnPause.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "deploydev",
+      "label": "Deploy to Development",
+      "sub": "no approval",
+      "x": 880,
+      "y": 196,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow job",
+        "tech": "_build-deploy.yml",
+        "role": "Generate OpenAPI, cdk deploy --all, then Platform E2E.",
+        "facts": [
+          "pnpm openapi:generate runs first, so the specs ship with the deploy.",
+          "cdk deploy --all --concurrency 4 --require-approval never.",
+          "Platform E2E runs inside this job, so a failure blocks promotion."
+        ],
+        "code": [["_build-deploy.yml", ".github/workflows/_build-deploy.yml"]]
+      }
+    },
+    {
+      "id": "e2edev",
+      "label": "Module E2E \u00b7 dev",
+      "sub": "non-gating",
+      "x": 1090,
+      "y": 196,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_moduleE2E.yml",
+        "role": "Domain suites against the development stage.",
+        "facts": [
+          "A separate job that needs deployDev \u2014 and so does the staging deploy, so staging can start while these are still running."
+        ]
+      }
+    },
+    {
+      "id": "gatestg",
+      "label": "Approval gate \u00b7 staging",
+      "sub": "GitHub environment",
+      "x": 880,
+      "y": 300,
+      "w": 177,
+      "h": 48,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Environment protection",
+        "tech": "GitHub environments",
+        "role": "A human must approve before staging.",
+        "facts": [
+          "Configured on the GitHub environment the reusable deploy job names, not in the workflow file.",
+          "The first of two independent approvals."
+        ]
+      }
+    },
+    {
+      "id": "deploystg",
+      "label": "Deploy to Staging",
+      "sub": "+ Platform E2E",
+      "x": 880,
+      "y": 388,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow job",
+        "tech": "_build-deploy.yml",
+        "role": "The same reusable job, with the staging stage and role.",
+        "facts": [
+          "Platform E2E runs here too, and a failure blocks production."
+        ]
+      }
+    },
+    {
+      "id": "e2estg",
+      "label": "Module E2E \u00b7 staging",
+      "sub": "non-gating",
+      "x": 1090,
+      "y": 388,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_moduleE2E.yml",
+        "role": "Domain suites against staging.",
+        "facts": [
+          "deployProd needs only deployStaging, so these suites run alongside the production gate rather than before it."
+        ]
+      }
+    },
+    {
+      "id": "notifystg",
+      "label": "Notify Slack \u00b7 staging",
+      "sub": "non-gating",
+      "x": 1090,
+      "y": 476,
+      "w": 177,
+      "h": 58,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_notify-deployment.yml",
+        "role": "Publishes the staging deployment notice.",
+        "facts": [
+          "Assumes the development role, because the release topic only exists in the development account.",
+          "Both steps are continue-on-error \u2014 a failed notification must never fail the pipeline."
+        ],
+        "code": [
+          ["_notify-deployment.yml", ".github/workflows/_notify-deployment.yml"]
+        ]
+      }
+    },
+    {
+      "id": "gateprod",
+      "label": "Approval gate \u00b7 production",
+      "sub": "second, separate approval",
+      "x": 880,
+      "y": 492,
+      "w": 197,
+      "h": 48,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Environment protection",
+        "tech": "GitHub environments",
+        "role": "A second human approval before production.",
+        "facts": [
+          "Independent of the staging approval \u2014 approving one does not approve the other."
+        ]
+      }
+    },
+    {
+      "id": "deployprod",
+      "label": "Deploy to Production",
+      "sub": "no E2E",
+      "x": 880,
+      "y": 580,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow job",
+        "tech": "_build-deploy.yml",
+        "role": "The same job once more.",
+        "facts": [
+          "Platform E2E is skipped in production, and no Module E2E runs against it.",
+          "Production correctness therefore rests on staging plus the always-on canary, whose alarm currently notifies nobody."
+        ]
+      }
+    },
+    {
+      "id": "notifyprod",
+      "label": "Notify Slack \u00b7 prod",
+      "sub": "non-gating",
+      "x": 1090,
+      "y": 580,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "_notify-deployment.yml",
+        "role": "Publishes the production deployment notice.",
+        "facts": [
+          "A separate failure notification fires if any stage's deploy job fails, naming the first stage that failed."
+        ]
+      }
+    },
+    {
+      "id": "zap",
+      "label": "ZAP API scan",
+      "sub": "DAST against staging",
+      "x": 1090,
+      "y": 668,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Workflow",
+        "tech": "zap.yml",
+        "role": "Dynamic security scan driven by an OpenAPI document.",
+        "facts": [
+          "Triggered by workflow_run when the whole Continuous Deployment workflow completes successfully on main \u2014 including the production gate. If production is rejected, DAST never runs.",
+          "Mints a real JWT first; the scan emits a SARIF report kept as a workflow-run artifact \u2014 nothing uploads it to code scanning.",
+          "The target is .zap/merged-openapi.json, a spec committed with the workflow and unchanged since: paths such as /v1/driving-licence and /v1/customer-summary no longer exist, and .zap/rules.tsv is empty."
+        ],
+        "code": [
+          ["zap.yml", ".github/workflows/zap.yml"],
+          ["dastSetup.ts", "scripts/dastSetup.ts"],
+          ["zap.md", "docs/zap.md"]
+        ]
+      }
+    },
+    {
+      "id": "artillery",
+      "label": "Artillery load tests",
+      "sub": "workflow_dispatch only",
+      "x": 1090,
+      "y": 756,
+      "w": 177,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Test suite",
+        "tech": "Artillery 2 \u00b7 CloudWatch plugin",
+        "role": "Load profiles against a deployed stage.",
+        "facts": [
+          "Six profiles live in tests/performance \u2014 smoke, load-baseline, load-growth, spike, stress (ramping to 2000 virtual users) and soak \u2014 but the workflow runs only the three default scenarios, one job each.",
+          "Thresholds are declared per scenario (p95 3000ms for the upsert, 1500ms for the two reads, error rate under 1%) and the run step is continue-on-error, so a breach never fails the workflow.",
+          "On staging every virtual user shares one real Cognito token, so those numbers measure endpoint throughput, not per-user concurrency.",
+          "The user-settings scenario PATCHes /app/udp/v1/users/notifications, but the udp route is /v1/users/me/notifications \u2014 it cannot return the 200 it asserts."
+        ],
+        "code": [
+          ["performance-tests.yml", ".github/workflows/performance-tests.yml"],
+          ["README.md", "tests/performance/README.md"],
+          ["package.json", "tests/performance/package.json"]
+        ]
+      }
+    },
+    {
+      "id": "canary",
+      "label": "Smoke-test canary",
+      "sub": "EventBridge \u00b7 every 5 min",
+      "x": 1312,
+      "y": 100,
+      "w": 180,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Scheduled Lambda",
+        "tech": "Lambda, no VPC",
+        "role": "Synthetic canary exercising the whole public path.",
+        "facts": [
+          "Calls GET /app/udp/v1/users/me through the public URL, so CloudFront, the edge function, WAF, the certificate, the authorizer and the udp domain are all covered by one signal.",
+          "Publishes Flex/SmokeTest.SmokeTestSuccess as 1 or 0 \u2014 but its alarm has no SNS action, so nothing is notified.",
+          "Credentials differ by environment: a self-signed stub token in development, a real One Login sign-in with e-mail, password and TOTP in staging and production, and a Firebase App Check header everywhere except staging.",
+          "Persistent stages only, production included \u2014 which makes it the second production caller of the public path."
+        ],
+        "code": [
+          [
+            "stacks/smoke-test.ts",
+            "platform/infra/flex/src/stacks/smoke-test.ts"
+          ],
+          ["credentials.ts", "platform/smoke-test/src/credentials.ts"]
+        ]
+      }
+    },
+    {
+      "id": "firebase",
+      "label": "Firebase / GCP",
+      "sub": "App Check attestation",
+      "x": 1508,
+      "y": 100,
+      "w": 177,
+      "h": 70,
+      "kind": "third",
+      "plane": "control",
+      "d": {
+        "type": "External system",
+        "tech": "Workload identity federation",
+        "role": "Mints the attestation token the canary attaches.",
+        "facts": [
+          "No stored key: an external account client exchanges a federated credential for a GCP token, then Firebase App Check mints the header.",
+          "Used only by the canary \u2014 it is not on any user request path."
+        ],
+        "code": [["gcp.ts", "platform/smoke-test/src/gcp.ts"]]
+      }
+    },
+    {
+      "id": "alarms",
+      "label": "CloudWatch alarms",
+      "sub": "7 families",
+      "x": 1312,
+      "y": 218,
+      "w": 177,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Observability",
+        "tech": "CloudWatch",
+        "role": "Lambda, API Gateway, CloudFront, edge functions, WAF, Shield and the canary.",
+        "facts": [
+          "Every alarm routes to exactly one of two SNS topics, critical or warning \u2014 except the canary's {stage}-smoke-test-no-success alarm, which currently has no alarm action wired.",
+          "Descriptions start with Critical: or Warning: and state the breached condition, so the Slack message alone usually picks the runbook.",
+          "The four families created in us-east-1 can only reach Slack through the relay."
+        ],
+        "code": [
+          [
+            "alarms/actions.ts",
+            "platform/infra/flex/src/constructs/alarms/actions.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "relay",
+      "label": "Alarm relay",
+      "sub": "2 topics + 2 inline fns",
+      "x": 1508,
+      "y": 218,
+      "w": 184,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Container",
+        "tech": "SNS \u2192 Lambda \u2192 SNS, one shared KMS key",
+        "role": "Republishes us-east-1 alarms onto the eu-west-2 topics \u2014 currently non-functional.",
+        "facts": [
+          "Lives in us-east-1: CloudWatch cannot target an SNS topic in another region, so edge alarms need this hop to reach the eu-west-2 topics.",
+          "TopicArn: ${targetTopicArn} is interpolated unquoted into Code.fromInline, so the handler is a JavaScript syntax error and fails on every invocation. Every CloudFront, edge-function, CLOUDFRONT-scope WAF and Shield alarm therefore reaches nobody. The REGIONAL WAF alarms publish straight to the eu-west-2 topics and are unaffected.",
+          "Passes through message and message attributes; truncates the subject to 100 characters.",
+          "#buildRelay is called twice, once per severity, so there are two topics and two functions sharing one relay key."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "topics",
+      "label": "Alarm and release topics",
+      "sub": "critical \u00b7 warning \u00b7 release",
+      "x": 1312,
+      "y": 336,
+      "w": 199,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Container \u00b7 messaging",
+        "tech": "Amazon SNS, KMS encrypted",
+        "role": "flex-alerts-critical and flex-alerts-warning, plus the release topic.",
+        "facts": [
+          "Created by the core stack, so they exist only in persistent stages; ephemeral and personal stages import the development ones.",
+          "flex-release-notifications exists only in development, which is why the staging and production notify jobs assume the development role to publish."
+        ],
+        "code": [
+          ["core/topics.ts", "platform/infra/flex/src/stacks/core/topics.ts"]
+        ]
+      }
+    },
+    {
+      "id": "chatbot",
+      "label": "AWS Chatbot",
+      "sub": "Slack channel configuration",
+      "x": 1312,
+      "y": 454,
+      "w": 193,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Container",
+        "tech": "AWS Chatbot",
+        "role": "Delivers alarms to Slack via the flex-alerts-{stage} channel configuration; the target channel comes from the MonitoringSlackChannelId parameter.",
+        "facts": [
+          "A ReadOnlyAccess guardrail policy caps what anyone can do from Slack.",
+          "Development adds one more configuration per release channel ID, and those IDs are the one value read at synth time."
+        ],
+        "code": [
+          [
+            "core/notifications.ts",
+            "platform/infra/flex/src/stacks/core/notifications.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "slack",
+      "label": "Slack",
+      "sub": "alerts + release channels",
+      "x": 1312,
+      "y": 572,
+      "w": 180,
+      "h": 70,
+      "kind": "third",
+      "plane": "control",
+      "d": {
+        "type": "External system",
+        "tech": "Slack",
+        "role": "Where alarms and deployment notices land.",
+        "facts": [
+          "flex-alerts-{stage} for alarms; separate release channels, in development only, for deployment and release notices."
+        ]
+      }
+    },
+    {
+      "id": "oncall",
+      "label": "On-call engineer",
+      "sub": "person",
+      "x": 1312,
+      "y": 690,
+      "w": 177,
+      "h": 70,
+      "kind": "person",
+      "plane": "control",
+      "d": {
+        "type": "Person",
+        "tech": "\u2014",
+        "role": "Responds to alarms.",
+        "facts": [
+          "The Slack message carries the severity and the breached condition, which is usually enough to pick a runbook without opening the console."
+        ]
+      }
+    },
+    {
+      "id": "runbooks",
+      "label": "Runbooks",
+      "sub": "docs/runbooks",
+      "x": 1508,
+      "y": 690,
+      "w": 177,
+      "h": 70,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Documentation",
+        "tech": "Markdown in the repository",
+        "role": "Written procedures for what fires.",
+        "facts": [
+          "Eight runbooks: API Gateway 5xx, Lambda errors and throttling, external service outage, leaked secret, fix-forward, pipeline promotion, deploying to staging/production, and environment health."
+        ],
+        "code": [["runbooks/README.md", "docs/runbooks/README.md"]]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "domteam",
+      "to": "repo",
+      "label": "changes a domain",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "git",
+        "auth": "GitHub",
+        "carries": "domain.config.ts and handlers under domains/{name}/",
+        "facts": [
+          "This is how a domain is deployed \u2014 there is no separate domain deployment path."
+        ]
+      }
+    },
+    {
+      "from": "platteam",
+      "to": "repo",
+      "label": "changes the platform",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "git",
+        "auth": "GitHub",
+        "carries": "libs/*, platform/* and the CDK app",
+        "facts": [
+          "A platform change can alter every domain's infrastructure at once, which is why the pipeline gates on Platform E2E."
+        ]
+      }
+    },
+    {
+      "from": "supply",
+      "to": "repo",
+      "label": "gates what can enter the tree",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "pre-commit \u00b7 pnpm \u00b7 Dependabot",
+        "auth": "\u2014",
+        "carries": "Secret scanning, dependency quarantine and pinning",
+        "facts": []
+      }
+    },
+    {
+      "from": "repo",
+      "to": "title",
+      "label": "on pull_request \u00b7 opened, edited, synchronize, reopened",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "\u2014",
+        "carries": "The pull-request title",
+        "facts": []
+      }
+    },
+    {
+      "from": "repo",
+      "to": "release",
+      "label": "merge to main",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "\u2014",
+        "carries": "The full Continuous Deployment run",
+        "facts": ["Quality Checks run again on main before the release job."]
+      }
+    },
+    {
+      "from": "ghpr",
+      "to": "qc",
+      "label": "3 jobs in parallel",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC into the development account",
+        "carries": "Hygiene, SonarQube and Security jobs",
+        "facts": []
+      }
+    },
+    {
+      "from": "ghpr",
+      "to": "oas",
+      "label": "regenerate, then oasdiff",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC into the development account",
+        "carries": "Regenerated specs for comparison",
+        "facts": []
+      }
+    },
+    {
+      "from": "ghpr",
+      "to": "eph",
+      "label": "deploys pr-{number}",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC into the development account",
+        "carries": "A full platform deploy",
+        "facts": ["Runs in parallel with Quality Checks, not after it."]
+      }
+    },
+    {
+      "from": "qc",
+      "to": "sonar",
+      "label": "coverage + ESLint report",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "SONAR_TOKEN_FLEX",
+        "carries": "Test coverage for every project and an ESLint report",
+        "facts": []
+      }
+    },
+    {
+      "from": "eph",
+      "to": "me2e",
+      "label": "target for domain suites",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "Self-signed stub JWT plus the x-flex-e2e-bypass WAF header",
+        "carries": "Real requests against real infrastructure",
+        "facts": [
+          "The bypass header value is a per-stage Secrets Manager secret; it skips the WAF's IP-reputation rule, nothing else."
+        ]
+      }
+    },
+    {
+      "from": "eph",
+      "to": "cleanup",
+      "label": "on PR close",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC into the development account",
+        "carries": "cdk destroy --all --force",
+        "facts": []
+      }
+    },
+    {
+      "from": "cli",
+      "to": "personal",
+      "label": "then deploy with no STAGE",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "cdk",
+        "auth": "Local AWS credentials",
+        "carries": "A scaffolded domain, deployed whole",
+        "facts": [
+          "A newly scaffolded domain reaches a running stage without any platform change \u2014 the claim on the left, made concrete."
+        ]
+      }
+    },
+    {
+      "from": "release",
+      "to": "deploydev",
+      "label": "then deploy",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "\u2014",
+        "carries": "The released commit",
+        "facts": []
+      }
+    },
+    {
+      "from": "oidc",
+      "to": "deploydev",
+      "label": "assumes the environment role",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "AWS STS",
+        "auth": "GitHub OIDC",
+        "carries": "Short-lived deployment credentials",
+        "facts": [
+          "Each of the three deploy jobs assumes its own role; the ephemeral and personal stages use the development one."
+        ]
+      }
+    },
+    {
+      "from": "params",
+      "to": "deploydev",
+      "label": "values resolved at deploy time",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SSM \u00b7 CloudFormation",
+        "auth": "Deployment role",
+        "carries": "Hosted zone, auth IDs, consumer secret ARNs",
+        "facts": [
+          "Each persistent stage reads its own /{environment}/\u2026 parameters; ephemeral and personal stages fall back to the development environment's values."
+        ]
+      }
+    },
+    {
+      "from": "params",
+      "to": "ssmapp",
+      "label": "declared as external exports",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "\u2014",
+        "carries": "Keys no FLEX stack owns",
+        "facts": [
+          "Imported outside the dependency graph, because another repository owns their lifecycle."
+        ]
+      }
+    },
+    {
+      "from": "ssmapp",
+      "to": "apideploy",
+      "label": "runs last in the graph",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudFormation",
+        "auth": "Deployment role",
+        "carries": "addDependency on every domain stack",
+        "facts": []
+      }
+    },
+    {
+      "from": "deploydev",
+      "to": "e2edev",
+      "label": "non-gating",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC",
+        "carries": "Domain E2E suites",
+        "facts": []
+      }
+    },
+    {
+      "from": "deploydev",
+      "to": "gatestg",
+      "label": "Platform E2E passed",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "\u2014",
+        "carries": "Promotion candidate",
+        "facts": [
+          "A Platform E2E failure in development stops the pipeline here."
+        ]
+      }
+    },
+    {
+      "from": "gatestg",
+      "to": "deploystg",
+      "label": "approved",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "Human approval",
+        "carries": "Promotion",
+        "facts": []
+      }
+    },
+    {
+      "from": "deploystg",
+      "to": "e2estg",
+      "label": "non-gating",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "GitHub Actions",
+        "auth": "OIDC",
+        "carries": "Domain E2E suites",
+        "facts": []
+      }
+    },
+    {
+      "from": "deploystg",
+      "to": "notifystg",
+      "label": "non-gating",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SNS",
+        "auth": "Development-account role",
+        "carries": "Deployment notice",
+        "facts": []
+      }
+    },
+    {
+      "from": "deploystg",
+      "to": "gateprod",
+      "label": "Platform E2E passed",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "\u2014",
+        "carries": "Promotion candidate",
+        "facts": []
+      }
+    },
+    {
+      "from": "gateprod",
+      "to": "deployprod",
+      "label": "approved",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "Human approval",
+        "carries": "Promotion",
+        "facts": []
+      }
+    },
+    {
+      "from": "deployprod",
+      "to": "notifyprod",
+      "label": "non-gating",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SNS",
+        "auth": "Development-account role",
+        "carries": "Deployment notice",
+        "facts": []
+      }
+    },
+    {
+      "from": "deployprod",
+      "to": "zap",
+      "label": "after the whole Continuous Deployment run succeeds",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "workflow_run",
+        "auth": "OIDC into staging",
+        "carries": "A dynamic scan of staging",
+        "facts": [
+          "The trigger is the workflow, not the staging deploy: the run has to clear the production gate first, so a rejected production deploy means no DAST at all."
+        ]
+      }
+    },
+    {
+      "from": "notifyprod",
+      "to": "slack",
+      "label": "release + deploy notices",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SNS \u2192 AWS Chatbot",
+        "auth": "Development-account role",
+        "carries": "Formatted release notes",
+        "facts": [
+          "Published to the development account's release topic, and delivered by a separate Chatbot configuration to the release channels \u2014 not to flex-alerts.",
+          "Only major and minor releases also produce a release notice."
+        ]
+      }
+    },
+    {
+      "from": "firebase",
+      "to": "canary",
+      "label": "attestation token",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "Workload identity credential config",
+        "carries": "X-Firebase-App-Check header",
+        "facts": []
+      }
+    },
+    {
+      "from": "canary",
+      "to": "alarms",
+      "label": "SmokeTestSuccess",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudWatch PutMetricData",
+        "auth": "Role scoped to the Flex/SmokeTest namespace",
+        "carries": "1 or 0 every five minutes",
+        "facts": [
+          "Missing data is treated as breaching, so a canary that stops running would still alarm \u2014 if the alarm had an action."
+        ]
+      }
+    },
+    {
+      "from": "alarms",
+      "to": "topics",
+      "label": "eu-west-2 alarms",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudWatch alarm action",
+        "auth": "IAM + a KMS grant",
+        "carries": "Severity, condition and alarm name",
+        "facts": []
+      }
+    },
+    {
+      "from": "alarms",
+      "to": "relay",
+      "label": "us-east-1 edge alarms",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudWatch alarm action",
+        "auth": "IAM + a KMS grant",
+        "carries": "CloudFront, edge function, CLOUDFRONT-scope WAF and Shield alarms",
+        "facts": [
+          "CloudWatch cannot target a topic in another region, which is the only reason this hop exists."
+        ]
+      }
+    },
+    {
+      "from": "relay",
+      "to": "topics",
+      "label": "cross-region republish",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SNS Publish",
+        "auth": "Lambda execution role",
+        "carries": "us-east-1 alarm notifications",
+        "facts": [
+          "Broken today: the handler fails to parse, so nothing is republished."
+        ]
+      }
+    },
+    {
+      "from": "topics",
+      "to": "chatbot",
+      "label": "notification topics",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "SNS subscription",
+        "auth": "IAM + a KMS decrypt grant",
+        "carries": "Alarm payloads",
+        "facts": []
+      }
+    },
+    {
+      "from": "chatbot",
+      "to": "slack",
+      "label": "posts",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Slack API",
+        "auth": "Chatbot channel configuration",
+        "carries": "The alarm message",
+        "facts": []
+      }
+    },
+    {
+      "from": "slack",
+      "to": "oncall",
+      "label": "notifies",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Slack",
+        "auth": "\u2014",
+        "carries": "Severity and breached condition",
+        "facts": []
+      }
+    },
+    {
+      "from": "oncall",
+      "to": "runbooks",
+      "label": "works from",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "\u2014",
+        "carries": "Diagnosis and remediation steps",
+        "facts": []
+      }
+    }
+  ],
+  "placement": {
+    "canary": ["lambda-smoke", "events-rule", "alarms-smoke"],
+    "alarms": [
+      "alarms-lambda",
+      "alarms-apigw",
+      "alarms-cf",
+      "alarms-cff",
+      "alarms-waf",
+      "alarms-shield",
+      "xray"
+    ],
+    "relay": ["sns-relay", "lambda-relay", "kms-relay"],
+    "topics": ["sns-alarms", "sns-release", "kms-alerts"],
+    "chatbot": ["chatbot"],
+    "apideploy": ["api-deploy", "lambda-cr"],
+    "ssmapp": ["ssm-written", "ssm-crossregion"],
+    "params": ["ssm-imported"]
+  },
+  "tables": [
+    {
+      "name": "Every alarm, its threshold, and which topic it reaches",
+      "cols": ["Source", "Alarm", "Metric", "Fires when", "Windows", "Topic"],
+      "rows": [
+        [
+          "API Gateway",
+          "<code>5xxErrorRate</code>",
+          "<code>5XXError</code>",
+          "above 1%",
+          "5 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "API Gateway",
+          "<code>4xxErrorRate</code>",
+          "<code>4XXError</code>",
+          "above 5%",
+          "5 \u00d7 1 min",
+          "Warning"
+        ],
+        [
+          "API Gateway",
+          "<code>EndToEndP95Latency</code>",
+          "<code>Latency</code> p95",
+          "above 3000 ms",
+          "3 \u00d7 5 min",
+          "Warning"
+        ],
+        [
+          "API Gateway",
+          "<code>IntegrationP95Latency</code>",
+          "<code>IntegrationLatency</code> p95",
+          "above 2900 ms",
+          "3 \u00d7 5 min",
+          "Warning"
+        ],
+        [
+          "Lambda",
+          "<code>ErrorRate</code>",
+          "<code>100 * errors / invocations</code>, only at 10+ invocations",
+          "above 1%",
+          "2 \u00d7 5 min, both must breach",
+          "Critical"
+        ],
+        [
+          "Lambda",
+          "<code>Throttles</code>",
+          "<code>Throttles</code> sum",
+          "above 0",
+          "1 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "Lambda",
+          "<code>Duration</code>",
+          "<code>Duration</code> p99",
+          "above 80% of the function timeout",
+          "1 \u00d7 5 min",
+          "Warning"
+        ],
+        [
+          "CloudFront",
+          "<code>5xxErrorRate</code>",
+          "<code>5xxErrorRate</code>",
+          "above 1%",
+          "5 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "CloudFront",
+          "<code>4xxErrorRate</code>",
+          "<code>4xxErrorRate</code>",
+          "above 5%",
+          "5 \u00d7 1 min",
+          "Warning"
+        ],
+        [
+          "CloudFront",
+          "<code>TotalErrorRate</code>",
+          "<code>TotalErrorRate</code>",
+          "above 5%",
+          "5 \u00d7 1 min",
+          "Warning"
+        ],
+        [
+          "CloudFront Function",
+          "<code>FunctionExecutionErrors</code>",
+          "<code>FunctionExecutionErrors</code>",
+          "above 0",
+          "5 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "CloudFront Function",
+          "<code>FunctionThrottles</code>",
+          "<code>FunctionThrottles</code>",
+          "above 0",
+          "5 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "CloudFront Function",
+          "<code>FunctionValidationErrors</code>",
+          "<code>FunctionValidationErrors</code>",
+          "above 0",
+          "2 \u00d7 1 min",
+          "Warning"
+        ],
+        [
+          "Shield",
+          "<code>DDoSDetected</code>",
+          "<code>DDoSDetected</code>",
+          "above 0",
+          "1 \u00d7 1 min",
+          "Critical"
+        ],
+        [
+          "Shield",
+          "<code>DDoSAttackRequestsPerSecond</code>",
+          "<code>DDoSAttackRequestsPerSecond</code>",
+          "above 0",
+          "1 \u00d7 1 min",
+          "Warning"
+        ],
+        [
+          "WAF",
+          "<code>ManagedRuleBlocks</code>",
+          "Blocked by a managed rule",
+          "above 0",
+          "1 \u00d7 5 min",
+          "Critical"
+        ],
+        [
+          "WAF",
+          "<code>BlockingAllRequests</code>",
+          "Share of requests blocked",
+          "above 90%",
+          "1 \u00d7 5 min",
+          "Critical"
+        ],
+        [
+          "WAF",
+          "<code>BlockedRequestsSpike</code>",
+          "Blocked requests, anomaly detection at 2 std devs",
+          "outside the band",
+          "3 \u00d7 5 min, 2 must breach",
+          "Warning"
+        ]
+      ],
+      "note": "18 alarms from six constructs in <code>constructs/alarms/</code>. Every one sets <code>treatMissingData: NOT_BREACHING</code>, so silence never fires an alarm. Critical and Warning are two separate SNS topics, wired in <code>constructs/alarms/actions.ts</code>. The CloudFront, CloudFront Function and Shield rows are measured in us-east-1, because that is the only region those metrics are emitted to \u2014 they reach the eu-west-2 topics through the cross-region relay."
+    }
+  ]
+}

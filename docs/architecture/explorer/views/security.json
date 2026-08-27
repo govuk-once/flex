@@ -1,0 +1,964 @@
+{
+  "id": "security",
+  "name": "Security",
+  "order": 6,
+  "group": "Cross-cutting",
+  "w": 1500,
+  "h": 800,
+  "blurb": "Every control a request meets, outside in: what the edge drops, what the origin lock demands, what the token is allowed to prove, and what IAM permits once the request is inside. The permissions boundary at layer 3 is the reason the private API exists at all.",
+  "audience": "Security review, assurance and threat modelling",
+  "note": "Two gaps are real and unfixed. <code>pnpm validate:integrations</code> filters to <code>type: \"domain\"</code>, so only 6 of the 36 declared integrations are checked \u2014 the 30 gateway integrations pass CI unexamined, including local-council's two, which point at <code>/v1/local-council/*</code> routes the udp gateway does not define. And the authorizer's allow policy names <code>Resource: \"*\"</code> rather than the invoked method ARN.",
+  "zones": [
+    {
+      "id": "z-edge",
+      "label": "1 \u00b7 Edge \u2014 CloudFront, us-east-1 (N. Virginia)",
+      "x": 40,
+      "y": 58,
+      "w": 1420,
+      "h": 176,
+      "hard": true,
+      "d": {
+        "type": "Region boundary",
+        "tech": "FlexGlobalStack \u00b7 us-east-1",
+        "role": "Everything a request meets before it leaves the edge network.",
+        "facts": [
+          "One distribution per stage. The Web ACL, the viewer-request function and the response-headers policies all live in this stack because CloudFront requires us-east-1."
+        ]
+      }
+    },
+    {
+      "id": "z-origin",
+      "label": "2 \u00b7 Origin lock and authentication \u2014 eu-west-2 (London)",
+      "x": 40,
+      "y": 262,
+      "w": 1420,
+      "h": 150,
+      "hard": true,
+      "d": {
+        "type": "Region boundary",
+        "tech": "FlexPlatformStack \u00b7 eu-west-2",
+        "role": "Proves the request came through CloudFront, then proves who is asking.",
+        "facts": [
+          "The origin lock and the token check are independent: passing the Web ACL says nothing about identity, and a valid token reaches nothing without the origin header."
+        ]
+      }
+    },
+    {
+      "id": "z-internal",
+      "label": "3 \u00b7 Internal authorization \u2014 the private plane",
+      "x": 40,
+      "y": 430,
+      "w": 1420,
+      "h": 200,
+      "hard": false,
+      "d": {
+        "type": "Trust model",
+        "tech": "IAM + API Gateway resource policy",
+        "role": "What a route function is allowed to reach once it is running.",
+        "facts": [
+          "Three independent constraints have to agree before one function can reach another: the VPC endpoint condition on the API, the permissions boundary, and the route's own inline policy."
+        ]
+      }
+    },
+    {
+      "id": "z-data",
+      "label": "4 \u00b7 Secrets, keys and log hygiene",
+      "x": 40,
+      "y": 650,
+      "w": 1420,
+      "h": 130,
+      "hard": false,
+      "d": {
+        "type": "Data protection",
+        "tech": "Secrets Manager \u00b7 KMS \u00b7 CDK Aspect \u00b7 Powertools logger",
+        "role": "What protects the material the controls above depend on.",
+        "facts": []
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "wafcf",
+      "label": "CloudFront Web ACL",
+      "sub": "CLOUDFRONT scope \u00b7 default allow \u00b7 5 rules",
+      "x": 70,
+      "y": 90,
+      "w": 287,
+      "h": 58,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::WAFv2::WebACL",
+        "tech": "CfnWebACL \u00b7 defaultAction allow",
+        "role": "Edge filtering for the distribution.",
+        "facts": [
+          "Priority order: <b>0</b> AWSManagedRulesCommonRuleSet \u00b7 <b>1</b> AWSManagedRulesKnownBadInputsRuleSet \u00b7 <b>2</b> BypassForE2ETests (allow) \u00b7 <b>3</b> AWSManagedRulesAmazonIpReputationList \u00b7 <b>4</b> RateLimit, block above 2000 per IP.",
+          "Rule 2 is an exact byte match on the <code>x-flex-e2e-bypass</code> header against a generated secret. Because it is an <b>allow</b> it terminates evaluation and skips rules 3 and 4 \u2014 but 0 and 1 have already run.",
+          "Data protection substitutes the <code>authorization</code> header in WAF logs, sampled requests and rate-based details."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cff",
+      "label": "Viewer-request CloudFront Function",
+      "sub": "JS 2.0 \u00b7 token shape only, no signature",
+      "x": 490,
+      "y": 90,
+      "w": 268,
+      "h": 58,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::CloudFront::Function",
+        "tech": "esbuild-bundled TypeScript, inline code",
+        "role": "Rejects malformed bearer tokens before the request leaves the edge.",
+        "facts": [
+          "Fails on: missing Authorization header, no <code>Bearer</code> prefix, extra header segments, wrong JWT segment count, header or body that is not JSON, and <code>alg: none</code>. The signature is only checked for presence \u2014 never verified.",
+          "A rejection is a 401 carrying <code>x-rejected-by: cloudfront-function</code>; success emits <code>cff_token_validated</code>.",
+          "It also sets <code>x-correlation-id</code>, keeping the inbound value only if it is a v4 UUID. The /docs* behaviour runs a different function that only rewrites URIs."
+        ],
+        "code": [
+          [
+            "viewer-request-cff-platform/handler.ts",
+            "platform/domains/viewer-request-cff-platform/src/handler.ts"
+          ],
+          [
+            "validators/jwt.ts",
+            "platform/domains/viewer-request-cff-platform/src/validators/jwt.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "shield",
+      "label": "Shield Advanced",
+      "sub": "staging and production only",
+      "x": 910,
+      "y": 90,
+      "w": 193,
+      "h": 130,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::Shield::Protection",
+        "tech": "CfnProtection on the distribution ARN",
+        "role": "DDoS protection, where it is created at all.",
+        "facts": [
+          "<code>#createCloudfrontShield</code> early-exits when the environment is development, so the development environment and every ephemeral and personal stage have no protection and no DDoS alarms.",
+          "Application-layer automatic response is ENABLED with action <b>count</b> \u2014 attacks are evaluated and reported, not mitigated automatically."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cfdist",
+      "label": "CloudFront distribution",
+      "sub": "TLS 1.2_2021 floor \u00b7 HSTS \u00b7 injects the origin secret",
+      "x": 70,
+      "y": 158,
+      "w": 356,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::CloudFront::Distribution",
+        "tech": "PRICE_CLASS_100 \u00b7 two behaviours",
+        "role": "The single public entry point, and where TLS terminates.",
+        "facts": [
+          "Viewer TLS floor is <code>SecurityPolicyProtocol.TLS_V1_2_2021</code>. The API behaviour is <code>HTTPS_ONLY</code>; /docs* is <code>REDIRECT_TO_HTTPS</code>.",
+          "Response headers on both behaviours: HSTS 365 days with includeSubdomains, <code>X-Frame-Options: DENY</code>, nosniff, <code>Referrer-Policy: no-referrer</code> and <code>X-Permitted-Cross-Domain-Policies: none</code>. The API behaviour adds <code>default-src 'self'</code> and <code>Cache-Control: no-store</code>.",
+          "It adds the <code>x-origin-verify</code> custom header to every request it forwards to the API origin \u2014 that header is the entire origin lock."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"],
+          [
+            "flex-response-headers-policy.ts",
+            "platform/infra/flex/src/constructs/cloudfront/flex-response-headers-policy.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "wafreg",
+      "label": "REGIONAL Web ACL",
+      "sub": "default BLOCK \u00b7 2 rules \u00b7 on the public stage",
+      "x": 70,
+      "y": 300,
+      "w": 306,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::WAFv2::WebACL + WebACLAssociation",
+        "tech": "CfnWebACL \u00b7 defaultAction block",
+        "role": "The origin lock on the public API stage.",
+        "facts": [
+          "The default action is <b>block</b>, which is what makes the raw <code>execute-api</code> URL unusable: rule 1 is the only thing that lets a request through.",
+          "Rule 0 is KnownBadInputs; rule 1 RequireOriginSecret is an <code>EXACTLY</code> byte match on the <code>x-origin-verify</code> single header with no text transformation.",
+          "<code>sampledRequestsEnabled</code> is false on the origin-secret rule, so the header value is never captured into sampled requests."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "pubapi",
+      "label": "Public REST API",
+      "sub": "REGIONAL \u00b7 stage prod \u00b7 TLS 1.3/1.2 policy",
+      "x": 458,
+      "y": 300,
+      "w": 287,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::ApiGateway::RestApi",
+        "tech": "EndpointType.REGIONAL \u00b7 endpointAccessMode BASIC",
+        "role": "Where the authorizer is attached and where auth failures become status codes.",
+        "facts": [
+          "<code>securityPolicy: SecurityPolicy_TLS13_1_2_2021_06</code>, set on the L1 resource rather than through the L2 props.",
+          "Two gateway responses are overridden: <b>401</b> UNAUTHORIZED and <b>403</b> ACCESS_DENIED, both rendering <code>$context.authorizer.errorMessage</code> as JSON.",
+          "Each domain stack attaches its own <code>TokenAuthorizer</code> over the shared authorizer function, and only if that domain has public routes."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "authfn",
+      "label": "Cognito token authorizer",
+      "sub": "Lambda \u00b7 egress tier \u00b7 asserts one claim",
+      "x": 786,
+      "y": 300,
+      "w": 275,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::Lambda::Function (TOKEN authorizer)",
+        "tech": "aws-jwt-verify \u00b7 FlexPrivateEgressFunction \u00b7 10s",
+        "role": "Turns a bearer token into one asserted identity, or a deny.",
+        "facts": [
+          "Verifies issuer <code>https://cognito-idp.{region}.amazonaws.com/{USERPOOL_ID}</code>, <code>token_use: access</code> and the client id. <code>audience</code> is deliberately null, because Cognito access tokens carry none.",
+          "The <b>only</b> thing it asserts downstream is <code>pairwiseId</code>, taken from the token's <code>username</code> claim and returned in the authorizer context. <code>principalId</code> is the constant string <code>anonymous</code>.",
+          "Deny is scoped to <code>event.methodArn</code>. Expired tokens carry the message <b>JWT expired</b>; every other failure denies with no message. The 401 fires only when API Gateway rejects before the authorizer runs.",
+          "<b>Gap:</b> the allow policy is returned with <code>Resource: \"*\"</code> instead of the invoked method ARN, so a single successful verification authorizes every method on the API.",
+          "The verifier is constructed inside the handler, so the three environment variables are Zod-parsed on every invocation."
+        ],
+        "code": [
+          ["auth/handler.ts", "platform/domains/auth/src/handler.ts"],
+          [
+            "auth/services/auth-service.ts",
+            "platform/domains/auth/src/services/auth-service.ts"
+          ],
+          ["auth/createPolicy.ts", "platform/domains/auth/src/createPolicy.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cognito",
+      "label": "Cognito user pool",
+      "sub": "not created here \u00b7 ids imported from flex-params",
+      "x": 1114,
+      "y": 300,
+      "w": 325,
+      "h": 72,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "Amazon Cognito user pool",
+        "tech": "Hosted UI federating to GOV.UK One Login",
+        "role": "Issues the access tokens FLEX verifies. FLEX never sees One Login itself.",
+        "facts": [
+          "<code>USERPOOL_ID</code> and <code>CLIENT_ID</code> are imported from <code>/{env}/flex-param/auth/*</code>; the development environment uses the separate stub pool and client parameters instead.",
+          "In production the JWKS URI is built as <code>https://cognito-idp.eu-west-2.amazonaws.com/{userPoolId}/.well-known/jwks.json</code>; development points it at a stub JWKS Function URL created in the platform stack."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "dlambda",
+      "label": "Route Lambda and its execution role",
+      "sub": "one generated role per route function",
+      "x": 70,
+      "y": 462,
+      "w": 257,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::IAM::Role (generated per function)",
+        "tech": "NodejsFunction execution role under the boundary",
+        "role": "The identity every internal call is made with.",
+        "facts": [
+          "Every route function gets its own generated role. The only hand-written roles in the app are the API Gateway CloudWatch role and <code>{env}-flex-smoke-test-role</code>, the one role with an explicit physical name.",
+          "Calls to the private API are SigV4-signed with the function's own execution-role credentials. Only the UDP and UNS gateways swap in assumed-role credentials, granted per gateway as <code>sts:AssumeRole</code> on one named role ARN and cached for the STS hour.",
+          "<code>ctx.auth.pairwiseId</code> exists on public routes only; a private route has no <code>ctx.auth</code> at all and takes identity as a declared header if it needs one."
+        ],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"],
+          ["sdk/route/build-context.ts", "libs/sdk/src/route/build-context.ts"],
+          [
+            "utils/create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "privapi",
+      "label": "Private REST API",
+      "sub": "PRIVATE endpoint \u00b7 IAM auth on every method",
+      "x": 700,
+      "y": 462,
+      "w": 293,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "AWS::ApiGateway::RestApi (private)",
+        "tech": "EndpointType.PRIVATE bound to the API Gateway interface endpoint",
+        "role": "The only sanctioned path from one FLEX function to another.",
+        "facts": [
+          "The resource policy holds a single statement: <b>Deny</b> <code>execute-api:Invoke</code> for AnyPrincipal whenever <code>aws:SourceVpce</code> is not that one endpoint.",
+          "There is <b>no explicit Allow</b>, so for same-account callers the caller's own IAM policy is the sole gate \u2014 which is exactly what the boundary and the per-route policy below are for.",
+          "<code>AuthorizationType.IAM</code> is the default method option, so every method requires a signed request, <code>/health</code> included."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "boundary",
+      "label": "IAM permissions boundary",
+      "sub": "6 statements \u00b7 platform + domain stacks",
+      "x": 70,
+      "y": 548,
+      "w": 268,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "AWS::IAM::ManagedPolicy",
+        "tech": "PermissionsBoundary.of(stack).apply()",
+        "role": "A hard ceiling on every role in the stack it is applied to.",
+        "facts": [
+          "<b>DenyDirectLambdaInvoke</b> \u2014 Deny <code>lambda:InvokeFunction</code> on <code>*</code>. No FLEX function can invoke another directly. This single statement is the reason the private API design exists.",
+          "<b>AllowFlexPrivateApiInvoke</b> \u2014 <code>execute-api:Invoke</code> scoped to <code>arnForExecuteApi(\"*\", \"/*\", \"*\")</code> on the private API alone, so no role can reach a different API even if its inline policy grants it.",
+          "Four baseline Allows on <code>*</code>: logs (3 actions), X-Ray (2), the five ENI actions, and service integrations \u2014 Secrets Manager read and describe, six SSM parameter actions including <code>PutParameter</code> and <code>DeleteParameter</code>, <code>kms:Decrypt</code> and <code>sts:AssumeRole</code>. CKV_AWS_107/108/111 are suppressed with recorded reasons.",
+          "One policy in the platform stack and one per deployed domain stack. Roles created in the core, global, deploy and smoke-test stacks are <b>not</b> under a boundary."
+        ],
+        "code": [
+          [
+            "utils/createPermissionsBoundary.ts",
+            "platform/infra/flex/src/utils/createPermissionsBoundary.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "routescope",
+      "label": "Per-route ARN scoping",
+      "sub": "grantRoutePermissions() \u00b7 one statement per method",
+      "x": 700,
+      "y": 548,
+      "w": 338,
+      "h": 62,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "AWS::IAM::Policy (inline)",
+        "tech": "integrations[] \u2192 PolicyStatement per HTTP method",
+        "role": "Turns each route's declared integrations into least-privilege IAM.",
+        "facts": [
+          "A route function's inline policy lists only the route ARNs that route's own <code>integrations</code> array names, grouped by method, with SIDs <code>AllowApiAccess{Domain}{Method}</code>.",
+          "Domain integrations resolve to <code>/domains/{target}/{version}{path}</code> and gateway ones to <code>/gateways/{target}/{version}{path}</code>. The stage segment is left as <code>*</code>.",
+          "<b>Gap:</b> <code>validateDomainIntegrations</code> filters to <code>type: \"domain\"</code>, so only 6 of the 36 declared integrations are validated. The 30 gateway integrations are never checked against a real gateway route \u2014 which is how local-council's two calls to <code>/v1/local-council/*</code> on the udp gateway reach CI intact and 404 at runtime."
+        ],
+        "code": [
+          [
+            "utils/integrations.ts",
+            "platform/infra/flex/src/utils/integrations.ts"
+          ],
+          [
+            "sdk/route/validate-integrations.ts",
+            "libs/sdk/src/route/validate-integrations.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "secrets",
+      "label": "Secrets Manager",
+      "sub": "2 created here \u00b7 3 consumer configs imported",
+      "x": 70,
+      "y": 682,
+      "w": 300,
+      "h": 68,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "AWS::SecretsManager::Secret",
+        "tech": "32 characters, punctuation excluded, cross-region replica",
+        "role": "Holds the two values the edge controls compare against.",
+        "facts": [
+          "<code>/{stage}/flex-secret/origin-verify-secret</code> is created in eu-west-2 and replicated to us-east-1; <code>/{stage}/flex-secret/waf/e2e-bypass</code> the other way round. Both use AWS managed keys with a recorded CKV_AWS_149 suppression so replication stays simple.",
+          "Both are resolved by CloudFormation at <b>deploy</b> time into the WAF byte-match strings and the CloudFront custom header, so rotating either one takes a redeploy of both stacks, not just a new secret version.",
+          "The three consumer-config secrets are imported, not created: each gateway reads its own at runtime through <code>getSecret</code> with a 600-second cache and Zod-parses it. DVLA's holds the API key, username and password \u2014 they are used only inside the gateway Lambda."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"],
+          [
+            "shared/createConsumerConfigLoader.ts",
+            "platform/shared/src/createConsumerConfigLoader.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "kms",
+      "label": "KMS keys",
+      "sub": "3 created \u00b7 1 imported, and it is the important one",
+      "x": 500,
+      "y": 682,
+      "w": 344,
+      "h": 68,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "AWS::KMS::Key + Alias",
+        "tech": "Rotation enabled on all three created keys",
+        "role": "Encryption for flow logs, alarm topics and every Lambda's environment.",
+        "facts": [
+          "Created: <code>alias/flex-vpc-flow-logs-key</code> and <code>alias/flex-alerts-key</code> in eu-west-2, <code>alias/{stage}-flex-alerts-relay-key</code> in us-east-1.",
+          "The fourth is imported, not created: /{env}/flex-param/secret/encryption-key encrypts the environment variables of every function built on the Flex* constructs, each of which is then granted decrypt on it.",
+          "<b>Defect:</b> that key is read with <code>StringParameter.valueForStringParameter</code> rather than <code>BaseStack.import()</code>, so it records no stack-dependency edge and gets no synth-time existence check \u2014 a missing parameter fails at deploy instead of at synth, unlike every other imported value.",
+          "The flow-log key grants only the write path to <code>delivery.logs.amazonaws.com</code>. No reader grant is written on top of CDK's default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright."
+        ],
+        "code": [
+          ["utils/lambda.ts", "platform/infra/flex/src/utils/lambda.ts"],
+          [
+            "flex-public-function.ts",
+            "platform/infra/flex/src/constructs/lambda/flex-public-function.ts"
+          ],
+          ["core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "s3tls",
+      "label": "S3 TLS enforcement",
+      "sub": "CDK Aspect applied at App level",
+      "x": 860,
+      "y": 682,
+      "w": 218,
+      "h": 68,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "AWS::S3::BucketPolicy",
+        "tech": "EnforceS3Https implements IAspect",
+        "role": "Denies non-TLS requests on every bucket in the app.",
+        "facts": [
+          "Adds a Deny on <code>s3:*</code> for AnyPrincipal when <code>aws:SecureTransport</code> is false, covering both the bucket ARN and its objects.",
+          "Applied to the <code>App</code>, so a new bucket cannot be added without it \u2014 though it matches on <code>instanceof Bucket</code>, so an imported or L1 bucket would not be visited."
+        ],
+        "code": [
+          [
+            "aspects/enforce-s3-https.ts",
+            "platform/infra/flex/src/aspects/enforce-s3-https.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "redact",
+      "label": "Log redaction",
+      "sub": "a JSON replacer on every log line",
+      "x": 1160,
+      "y": 682,
+      "w": 230,
+      "h": 68,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Powertools jsonReplacerFn",
+        "tech": "@flex/logging sanitizer",
+        "role": "Last line of defence between a handler and CloudWatch.",
+        "facts": [
+          "20 secret key patterns (token, authorization, card and CVV forms) and 17 PII key patterns (names, DOB, NINO, postcode, sort code) match on key names. Values are matched against a JWT prefix, email, UK phone, NINO, postcode and IPv4 patterns, plus a Luhn-checked card-number detector.",
+          "<code>FLEX_LOG_PII_DEBUG</code> can switch off the PII half \u2014 but never in production, where the check returns false unconditionally. <code>FlexLogger.setLogLevel</code> is a hard no-op in production for the same reason.",
+          "<code>addSecretValue</code>, <code>addSensitiveKey</code> and <code>addSensitivePattern</code> exist for runtime registration, with longest-first escaped alternation \u2014 but nothing in the repository calls them."
+        ],
+        "code": [
+          ["logging/sanitizer.ts", "libs/logging/src/sanitizer.ts"],
+          ["logging/logger.ts", "libs/logging/src/logger.ts"]
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "wafcf",
+      "to": "cfdist",
+      "label": "Web ACL on the distribution",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "WAFv2 evaluation at the edge",
+        "auth": "None \u2014 this layer does not know who is asking",
+        "carries": "Every viewer request",
+        "facts": [
+          "Attached with <code>webAclId</code>. The default action is allow, so a request stops here only if a rule blocks it."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cff",
+      "to": "cfdist",
+      "label": "viewer-request on the API behaviour",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudFront Function, VIEWER_REQUEST",
+        "auth": "Bearer token shape only, no signature check",
+        "carries": "The Authorization header and the correlation id",
+        "facts": [
+          "Associated with the default (API) behaviour. /docs* has its own function that only rewrites URIs, which is why documentation requests carry no correlation id."
+        ],
+        "code": [
+          [
+            "viewer-request-cff-platform/handler.ts",
+            "platform/domains/viewer-request-cff-platform/src/handler.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "shield",
+      "to": "cfdist",
+      "label": "protects \u00b7 staging and production only",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Shield Advanced protection on the distribution ARN",
+        "auth": "n/a",
+        "carries": "DDoS detection, plus automatic response in count mode",
+        "facts": [
+          "Not created in the development environment, so ephemeral PR stages and personal stages run without it."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfdist",
+      "to": "wafreg",
+      "label": "HTTPS to the origin, carrying x-origin-verify",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to {restApiId}.execute-api.eu-west-2.amazonaws.com, originPath /prod",
+        "auth": "The x-origin-verify custom header",
+        "carries": "Every /app request",
+        "facts": [
+          "Caching is disabled on this behaviour, so every request travels this hop.",
+          "<code>OriginProtocolPolicy.HTTPS_ONLY</code> here is CDK's <code>HttpOrigin</code> default rather than an explicit setting."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "wafreg",
+      "to": "pubapi",
+      "label": "only what rule 1 allows",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to the REGIONAL stage",
+        "auth": "Byte match on the origin secret",
+        "carries": "Requests that carry the right header value",
+        "facts": [
+          "Anything else meets the Web ACL's default block, including a request sent straight to the execute-api hostname."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "authfn",
+      "label": "TokenAuthorizer \u00b7 Authorization header",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "API Gateway TOKEN authorizer invocation",
+        "auth": "identitySource is the Authorization header",
+        "carries": "The raw bearer token",
+        "facts": [
+          "One shared authorizer function in the platform stack, imported by ARN into each domain stack that has public routes."
+        ],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "authfn",
+      "to": "cognito",
+      "label": "JWKS fetch over NAT",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to cognito-idp, or to the stub Function URL in development",
+        "auth": "None \u2014 the JWKS endpoint is public",
+        "carries": "The signing keys used to verify the token",
+        "facts": [
+          "There is no cognito-idp interface endpoint, so this call leaves the VPC through the NAT gateway from the egress tier."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "from": "authfn",
+      "to": "pubapi",
+      "label": "Allow with pairwiseId, or Deny \u2192 403",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "IAM policy document returned to API Gateway",
+        "auth": "n/a",
+        "carries": "pairwiseId in the authorizer context",
+        "facts": [
+          "The context arrives at the handler as <code>ctx.auth.pairwiseId</code>; if it is absent the SDK raises an authorization error inside the function rather than at the gateway."
+        ],
+        "code": [
+          ["auth/createPolicy.ts", "platform/domains/auth/src/createPolicy.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "dlambda",
+      "label": "AWS_PROXY",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "The authorizer's context, already verified",
+        "carries": "The request plus the one asserted claim",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "dlambda",
+      "to": "privapi",
+      "label": "SigV4 \u00b7 execute-api",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS through the API Gateway interface endpoint",
+        "auth": "SigV4 signed with the function's own execution-role credentials",
+        "carries": "Domain-to-domain and domain-to-gateway calls",
+        "facts": [
+          "Single attempt: retries are opt-in on <code>flexFetch</code> and nothing on this path opts in."
+        ],
+        "code": [["sdk/fetch/sigv4.ts", "libs/sdk/src/fetch/sigv4.ts"]]
+      }
+    },
+    {
+      "from": "boundary",
+      "to": "dlambda",
+      "label": "caps every role in the stack",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "IAM permissions boundary",
+        "auth": "n/a",
+        "carries": "The maximum permission any role in the stack may hold",
+        "facts": [
+          "Effective permission is the intersection of the role's own policies and this boundary, so a mistaken inline grant cannot widen it."
+        ],
+        "code": [
+          [
+            "utils/createPermissionsBoundary.ts",
+            "platform/infra/flex/src/utils/createPermissionsBoundary.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "routescope",
+      "to": "dlambda",
+      "label": "inline statements, per route",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "AWS::IAM::Policy attached to the function role",
+        "auth": "n/a",
+        "carries": "Only the route ARNs that route declares",
+        "facts": [
+          "Applied only when the route lists integrations, so a route with none can invoke nothing on the private API at all."
+        ],
+        "code": [
+          [
+            "utils/integrations.ts",
+            "platform/infra/flex/src/utils/integrations.ts"
+          ]
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "wafcf": ["waf-cf", "alarms-waf"],
+    "cff": ["cff-platform", "alarms-cff"],
+    "shield": ["shield", "alarms-shield"],
+    "cfdist": ["cf-dist", "cf-rhp", "acm-cert"],
+    "wafreg": ["waf-regional"],
+    "pubapi": [
+      "api-public",
+      "api-stage-public",
+      "api-authorizer",
+      "api-routes-public"
+    ],
+    "authfn": ["lambda-auth", "lambda-jwks"],
+    "cognito": ["ssm-imported"],
+    "dlambda": [
+      "iam-roles",
+      "lambda-domain-dvla",
+      "lambda-gw-dvla",
+      "lambda-gw-udp",
+      "lambda-gw-uns"
+    ],
+    "privapi": [
+      "api-private",
+      "api-stage-private",
+      "api-routes-private",
+      "api-routes-gateways"
+    ],
+    "boundary": ["iam-boundary"],
+    "routescope": ["api-routes-private", "api-routes-gateways"],
+    "secrets": ["secrets"],
+    "kms": ["kms-flowlog", "kms-alerts", "kms-relay", "kms-lambda-env"],
+    "s3tls": ["s3-tls", "s3-specs", "s3-cflogs", "s3-speclogs", "s3-flowlogs"],
+    "redact": ["loggroups", "macie"]
+  },
+  "tables": [
+    {
+      "name": "Where each log stream goes",
+      "cols": [
+        "Stream",
+        "Destination",
+        "Retention",
+        "Encryption at rest",
+        "Fields written",
+        "Set in"
+      ],
+      "rows": [
+        [
+          "Lambda \u2014 every function, all three tiers",
+          "CloudWatch Logs \u00b7 one group per function",
+          "1 year (<code>RetentionDays.ONE_YEAR</code>)",
+          "No <code>encryptionKey</code> set \u2014 CloudWatch default",
+          "Structured JSON from Powertools, passed through the <code>@flex/logging</code> sanitiser",
+          "<code>constructs/lambda/flex-public-function.ts</code> and the two private variants"
+        ],
+        [
+          "Public API access log",
+          "CloudWatch \u00b7 <code>ApiAccessLogs</code>",
+          "1 year",
+          "No <code>encryptionKey</code> set \u2014 CloudWatch default",
+          "httpMethod, ip, protocol, requestTime, resourcePath, responseLength, status, user, caller",
+          "<code>stacks/platform.ts</code>"
+        ],
+        [
+          "Private API access log",
+          "CloudWatch \u00b7 <code>AccessLogGroup</code>",
+          "1 year",
+          "No <code>encryptionKey</code> set \u2014 CloudWatch default",
+          "The same nine standard fields",
+          "<code>stacks/platform.ts</code>"
+        ],
+        [
+          "VPC flow logs",
+          "S3 \u00b7 flow-log bucket \u00b7 plain text \u00b7 1-minute aggregation \u00b7 <code>ALL</code> traffic",
+          "365 days",
+          "KMS CMK <code>alias/flex-vpc-flow-logs-key</code>, key rotation on",
+          "All default fields plus VPC id, subnet id, instance id, TCP flags, packet source and destination, flow direction",
+          "<code>stacks/core/vpc.ts</code>"
+        ],
+        [
+          "CloudFront access logs",
+          "S3 \u00b7 access-log bucket",
+          "365 days \u00b7 Object Lock <code>GOVERNANCE</code> \u00b7 versioned",
+          "No <code>encryption</code> property set \u2014 S3 default",
+          "Viewer requests to the distribution",
+          "<code>constructs/s3/AccessLogBucket.ts</code>, <code>stacks/global.ts</code>"
+        ],
+        [
+          "Spec bucket access logs",
+          "S3 \u00b7 a second access-log bucket",
+          "365 days \u00b7 Object Lock <code>GOVERNANCE</code> \u00b7 versioned",
+          "No <code>encryption</code> property set \u2014 S3 default",
+          "Requests to the OpenAPI spec bucket",
+          "<code>stacks/global.ts</code>"
+        ],
+        [
+          "X-Ray traces",
+          "X-Ray service",
+          "AWS default",
+          "AWS-managed",
+          "<code>tracing: Tracing.ACTIVE</code> on every Lambda construct",
+          "<code>constructs/lambda/*.ts</code>"
+        ],
+        [
+          "Macie scan of the CloudFront access-log bucket",
+          "Not deployed \u2014 <code>FlexMacieStack</code> is commented out",
+          "\u2014",
+          "\u2014",
+          "Would be: weekly Monday scan, 100% sampling, recommended managed identifiers",
+          "<code>app.ts</code> lines 11 and 93, <code>stacks/macie.ts</code>"
+        ]
+      ],
+      "note": "Read the encryption column against itself: the flow-log bucket names a customer-managed key, the Lambda log groups and both S3 access-log buckets leave the property unset."
+    },
+    {
+      "name": "What the sanitiser removes before a log is written",
+      "cols": ["Class", "Matched by", "Patterns", "Bypass"],
+      "rows": [
+        [
+          "Secrets \u2014 by key name",
+          "<code>secret</code>, <code>token</code>, <code>password</code>, <code>passwd</code>, <code>authorization</code>, <code>apikey</code>, <code>api_key</code>, <code>credential</code>, private / access / client keys, <code>signing</code>, card number, PAN, CVV, CVC, CSC, card security code, card verification, card expiry",
+          "20",
+          "None"
+        ],
+        [
+          "Secrets \u2014 by value",
+          "JWT shape \u2014 <code>eyJ\u2026</code>",
+          "1",
+          "None"
+        ],
+        [
+          "Registered secret values",
+          "Exact values registered at runtime via <code>addSecretValue()</code>, matched longest-first",
+          "Runtime",
+          "None"
+        ],
+        [
+          "PII \u2014 by key name",
+          "email, phone, mobile, forename, surname, first / last / full name, date of birth, DOB, NINO, national insurance, postcode, zip code, sort code, account number, IP address",
+          "17",
+          "<code>FLEX_LOG_PII_DEBUG=true</code>"
+        ],
+        [
+          "PII \u2014 by value",
+          "email address, UK phone number, National Insurance number, UK postcode, IPv4 address",
+          "5",
+          "<code>FLEX_LOG_PII_DEBUG=true</code>"
+        ]
+      ],
+      "note": "Matched values are replaced with <code>***REDACTED***</code>. <code>isPiiDebugEnabled()</code> returns false when <code>FLEX_ENVIRONMENT</code> is <code>production</code>, before it reads the flag, and the flag is checked only after the secret patterns have run. All of it is in <code>libs/logging/src/sanitizer.ts</code>."
+    },
+    {
+      "name": "Telemetry events written to the logs",
+      "cols": ["Group", "Events", "Emitted by", "Through the sanitiser"],
+      "rows": [
+        [
+          "Auth",
+          "<code>auth_success</code>, <code>auth_token_missing</code>, <code>auth_token_expired</code>, <code>auth_token_invalid</code>, <code>auth_claim_missing</code>, <code>auth_failure</code>",
+          "Lambda token authorizer",
+          "Yes"
+        ],
+        [
+          "Domain",
+          "<code>domain_request_received</code>, <code>domain_response_returned</code>, <code>domain_error_returned</code>",
+          "Domain handlers",
+          "Yes"
+        ],
+        [
+          "Service gateway",
+          "<code>service_gateway_request_sent</code>, <code>service_gateway_request_received</code>, <code>service_gateway_response_returned</code>, <code>service_gateway_error_returned</code>",
+          "Service gateways",
+          "Yes"
+        ],
+        [
+          "Third party",
+          "<code>third_party_request_sent</code>, <code>third_party_response_received</code>, <code>third_party_request_retried</code>, <code>third_party_request_timeout</code>, <code>third_party_request_error</code>",
+          "Service gateway outbound calls",
+          "Yes"
+        ],
+        [
+          "General",
+          "<code>request_validation_failed</code>, <code>response_validation_failed</code>, <code>error_thrown</code>",
+          "Anywhere in the request pipeline",
+          "Yes"
+        ],
+        [
+          "CloudFront Function",
+          "<code>cff_token_validated</code>, <code>cff_token_missing</code>, <code>cff_token_invalid</code>",
+          "Viewer-request CloudFront Function",
+          "No \u2014 <code>emitCffTelemetry()</code> calls <code>console.log</code> directly"
+        ]
+      ],
+      "note": "21 events in <code>libs/telemetry/src/events.ts</code> as a zod enum, and 3 more in <code>libs/telemetry/src/cff.ts</code> \u2014 kept separate because the zod enum cannot be bundled into a CloudFront Function under its size limit. Every event is written as <code>{ level, message: \"telemetry\", telemetry: { event, details } }</code>."
+    },
+    {
+      "name": "Detective controls: what this repository does and does not create",
+      "cols": ["Control", "Searched for", "Found in this repository"],
+      "rows": [
+        [
+          "AWS CloudTrail",
+          "<code>Trail(</code>, <code>CloudTrail</code>",
+          "None"
+        ],
+        ["Amazon GuardDuty", "<code>GuardDuty</code>", "None"],
+        ["AWS Security Hub", "<code>SecurityHub</code>", "None"],
+        ["AWS Config rules", "<code>CfnConfigRule</code>", "None"],
+        ["WAF request logging", "<code>LoggingConfiguration</code>", "None"],
+        [
+          "Amazon Macie",
+          "<code>FlexMacieStack</code>",
+          "Stack is written, but its instantiation is commented out in <code>app.ts</code>"
+        ],
+        [
+          "VPC flow logs",
+          "<code>addFlowLog</code>",
+          "Created \u2014 see the first table"
+        ],
+        [
+          "API Gateway access logs",
+          "<code>accessLogDestination</code>",
+          "Created on both APIs"
+        ],
+        [
+          "X-Ray",
+          "<code>Tracing.ACTIVE</code>",
+          "Set on every Lambda construct"
+        ]
+      ],
+      "note": "\"None\" means no construct in this repository creates it. Any of these may still be enabled at the AWS Organisation or account level, outside this codebase \u2014 this table describes the CDK app only."
+    }
+  ]
+}

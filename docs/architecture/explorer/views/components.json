@@ -1,0 +1,1156 @@
+{
+  "id": "components",
+  "name": "Components",
+  "order": 4,
+  "group": "Architecture",
+  "w": 1560,
+  "h": 820,
+  "blurb": "C4 level 3: what a domain team actually writes, and what the platform's own libraries do with it. Every box here is FLEX code \u2014 this is the product the platform ships to its domain teams.",
+  "audience": "Domain teams \u2014 this is the part you write",
+  "note": "Two files ship a route: domains/{name}/domain.config.ts and one handler file whose path toHandlerPath derives from the route key. Route counts live on Resources, log retention and redaction patterns under Resources \u25b8 Observability, and the private API's access model on Resources, API layer (api-private).",
+  "tables": [
+    {
+      "name": "Route key grammar",
+      "note": "One string drives file layout, the API path, IAM ARNs, the OpenAPI document and the handler's TypeScript type. Example: <code>GET /v1/customer/vehicle/:id [private]</code>",
+      "cols": ["Derivation", "Result", "Produced by"],
+      "rows": [
+        [
+          "Handler file",
+          "<code>src/handlers/v1/customer/vehicle/[id]/get.private.ts</code>",
+          "<code>toHandlerPath()</code>"
+        ],
+        [
+          "API Gateway resource",
+          "<code>/domains/{domain}/v1/customer/vehicle/{id}</code>",
+          "FlexDomainStack \u2014 <code>:param</code> becomes <code>{param}</code>"
+        ],
+        [
+          "Lambda function id",
+          "<code>{Domain}Private V1 {RouteName}</code>, Pascal case",
+          "<code>toPascalCase()</code>"
+        ],
+        [
+          "CloudWatch service name",
+          "<code>{domain}-private-v1-{routeName}</code>",
+          "<code>logger.setServiceName()</code>"
+        ],
+        [
+          "OpenAPI path",
+          "<code>/customer/vehicle/{id}</code>",
+          "<code>scripts/generateOpenapi.ts</code>"
+        ],
+        [
+          "Handler context type",
+          "<code>pathParams: { id: string }</code>, and no <code>auth</code> unless the route declares it",
+          "<code>ExtractPathParams</code> / <code>RouteContext</code>"
+        ]
+      ]
+    },
+    {
+      "name": "What a thrown error becomes",
+      "note": "The error contract. Everything a handler can throw resolves to a deterministic status and telemetry event.",
+      "cols": ["Thrown", "Status", "Body", "Telemetry"],
+      "rows": [
+        [
+          "<code>HeaderValidationError</code>",
+          "the error's <code>statusCode</code>",
+          "<code>{ message, headers }</code>",
+          "<code>request_validation_failed</code> (part: headers)"
+        ],
+        [
+          "<code>RequestBodyParseError</code>",
+          "the error's <code>statusCode</code>",
+          "<code>{ message }</code>",
+          "<code>request_validation_failed</code> (part: body)"
+        ],
+        [
+          "<code>QueryParametersParseError</code>",
+          "the error's <code>statusCode</code>",
+          "<code>{ message, errors }</code>",
+          "<code>request_validation_failed</code> (part: query)"
+        ],
+        [
+          "<code>AuthorizationError</code>",
+          "the error's <code>statusCode</code>",
+          "<code>{ message }</code>",
+          "<code>domain_error_returned</code>"
+        ],
+        [
+          "any <code>http-errors</code> error",
+          "the error's <code>statusCode</code>",
+          "empty",
+          "<code>domain_error_returned</code>; logged at error for 5xx, warn otherwise"
+        ],
+        [
+          "anything else",
+          "re-thrown to Middy's <code>httpErrorHandler</code> \u2014 500",
+          "\u2014",
+          "<code>error_thrown</code> + <code>domain_error_returned</code>"
+        ],
+        [
+          "response fails its schema",
+          "<b>500</b> \u2014 the handler's payload is discarded",
+          "\u2014",
+          "<code>response_validation_failed</code>"
+        ]
+      ]
+    },
+    {
+      "name": "Wildcard integrations",
+      "note": "A <code>route</code> ending in <code>/*</code> changes both the call signature and the IAM grant.",
+      "cols": [
+        "",
+        "Exact \u2014 <code>GET /v1/customer/vehicles</code>",
+        "Wildcard \u2014 <code>GET /v1/identity/*</code>"
+      ],
+      "rows": [
+        [
+          "Invoker argument",
+          "<code>{ headers?, query?, retryAttempts?, maxRetryDelay? }</code>",
+          "the same, <b>plus a required <code>path</code></b> appended to the base path"
+        ],
+        [
+          "Body typing",
+          "from the declared <code>body</code> schema",
+          "caller-supplied generic"
+        ],
+        [
+          "IAM resource",
+          "the ARN for that exact path",
+          "the ARN for the path prefix"
+        ]
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "z-author",
+      "label": "Authored by the domain team",
+      "x": 16,
+      "y": 56,
+      "w": 344,
+      "h": 424,
+      "hard": true,
+      "d": {
+        "type": "Ownership boundary",
+        "tech": "TypeScript in domains/{name}",
+        "role": "Everything a domain team writes to ship a route: one config file for the domain and one handler file per route. No CDK, no IAM, no API Gateway.",
+        "facts": [
+          "CODEOWNERS still assigns every path to the FLEX platform team, so this boundary is the intended operating model rather than today's ownership."
+        ]
+      }
+    },
+    {
+      "id": "z-build",
+      "label": "Build time \u00b7 CDK synth",
+      "x": 376,
+      "y": 56,
+      "w": 344,
+      "h": 424,
+      "hard": false,
+      "d": {
+        "type": "Synth-time transformation",
+        "tech": "aws-cdk-lib in platform/infra/flex",
+        "role": "The CDK app reads the same config objects the Lambdas will read, and turns each route into a function, a method and a set of grants.",
+        "facts": []
+      }
+    },
+    {
+      "id": "z-sdk",
+      "label": "@flex/sdk \u00b7 the route pipeline",
+      "x": 736,
+      "y": 56,
+      "w": 396,
+      "h": 552,
+      "hard": false,
+      "d": {
+        "type": "Library",
+        "tech": "TypeScript \u00b7 Middy \u00b7 Zod \u00b7 node:async_hooks",
+        "role": "What runs inside every domain route Lambda, from cold start to API Gateway response.",
+        "facts": []
+      }
+    },
+    {
+      "id": "z-gw",
+      "label": "@flex/service-gateway",
+      "x": 1148,
+      "y": 56,
+      "w": 396,
+      "h": 552,
+      "hard": false,
+      "d": {
+        "type": "Library",
+        "tech": "TypeScript \u00b7 Middy \u00b7 AWS SDK v3",
+        "role": "The second, smaller SDK: one Lambda fronts one upstream system, with a route table instead of a filesystem convention.",
+        "facts": []
+      }
+    },
+    {
+      "id": "z-decl",
+      "label": "Declared in config \u00b7 resolved per invocation",
+      "x": 16,
+      "y": 624,
+      "w": 744,
+      "h": 182,
+      "hard": false,
+      "d": {
+        "type": "Resolution mechanisms",
+        "tech": "@flex/sdk",
+        "role": "Two things a route declares by name and receives as a value: its resources and its feature flags.",
+        "facts": []
+      }
+    },
+    {
+      "id": "z-obs",
+      "label": "Shared observability libraries",
+      "x": 776,
+      "y": 624,
+      "w": 768,
+      "h": 182,
+      "hard": false,
+      "d": {
+        "type": "Libraries",
+        "tech": "@flex/telemetry \u00b7 @flex/logging",
+        "role": "The vocabulary every component emits and the logger it emits through.",
+        "facts": []
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "cfg",
+      "label": "domain.config.ts",
+      "sub": "domain({ \u2026 }) \u00b7 one per domain",
+      "x": 32,
+      "y": 100,
+      "w": 212,
+      "h": 104,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Configuration module",
+        "tech": "TypeScript \u00b7 Zod (DomainConfigSchema)",
+        "role": "The single declaration of a domain: its routes, resources, integrations, feature flags, headers, timeouts and the environments it deploys to. The CDK app reads it at synth and every route Lambda imports the same object at run time.",
+        "facts": [
+          "<code>domain(config)</code> returns <code>{ config, route, routeContext }</code>. Because the CDK app and the Lambda import the same module, there is no second description of a route to drift out of step.",
+          "Routes are keyed <code>routes[version][path][METHOD][public|private]</code>, so one path and method can expose a public and a private variant with different schemas and headers \u2014 example's <code>/v0/identity/:service</code> does exactly that.",
+          "<code>common</code> holds the defaults every route inherits (access tier, log level, timeout, memory, headers); a route-level <code>function</code> block overrides them. With neither set the timeout is 15 seconds."
+        ],
+        "code": [
+          ["domain()", "libs/sdk/src/domain.ts"],
+          ["DomainConfigSchema", "libs/sdk/src/config/schema.ts"],
+          ["a full example", "domains/example/domain.config.ts"]
+        ]
+      }
+    },
+    {
+      "id": "typed",
+      "label": "Compile-time contract",
+      "sub": "Infer*Keys \u00b7 route keys \u00b7 path params",
+      "x": 32,
+      "y": 228,
+      "w": 256,
+      "h": 104,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Type-level inference",
+        "tech": "TypeScript conditional and template-literal types",
+        "role": "Turns the literal config object into the types each handler is checked against, so a mistyped resource key or route key is a compile error rather than a runtime throw.",
+        "facts": [
+          "<code>domain()</code> is generic over its own argument: <code>InferResourceKeys</code>, <code>InferIntegrationKeys</code>, <code>InferFeatureFlagKeys</code> and <code>InferEnvironmentKeys</code> read the keys back out of the config, so a route may only list resources, integrations and flags that the same file defines.",
+          "The context type is built per route from the route key string and that route's schemas: <code>ctx.pathParams.id</code> exists because the key contains <code>:id</code>, and <code>ctx.body</code> takes its type from the route's body schema.",
+          "<b>One field is keyed off the wrong axis.</b> <code>WithAuth</code> adds <code>ctx.auth</code> unless the route's network access tier is <code>public</code> \u2014 which no domain uses \u2014 while at run time it is only populated for routes on the public gateway. Private routes therefore type-check against an <code>auth</code> object that is undefined when they run."
+        ],
+        "code": [
+          ["types.ts", "libs/sdk/src/types.ts"],
+          ["runtime side", "libs/sdk/src/route/build-context.ts"]
+        ]
+      }
+    },
+    {
+      "id": "hnd",
+      "label": "src/handlers/{version}/\u2026",
+      "sub": "one file per route \u00b7 exports handler",
+      "x": 32,
+      "y": 356,
+      "w": 249,
+      "h": 104,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Route handler module",
+        "tech": "TypeScript \u00b7 route() re-exported from @domain",
+        "role": "The only per-route code a domain team writes: an async function that receives the typed context and returns a status with an optional payload.",
+        "facts": [
+          "The file exports <code>handler = route(\"GET /v1/customer/vehicles\", fn)</code>. A private route carries the suffix <code>[private]</code> inside the route key and <code>.private</code> in its filename.",
+          "Throwing an <code>http-errors</code> error is the supported way to return a non-200: 5xx logs at error, 4xx at warn, and both emit <code>domain_error_returned</code>.",
+          "Code outside the handler reaches the same request context through <code>routeContext{RouteKeys}()</code> rather than passing it down as an argument."
+        ],
+        "code": [
+          [
+            "a public route",
+            "domains/dvla/src/handlers/v1/customer/vehicles/get.ts"
+          ],
+          [
+            "a private route",
+            "domains/example/src/handlers/v0/todos/post.private.ts"
+          ],
+          [
+            "context outside the handler",
+            "domains/example/src/services/get-identity-link.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "fnp",
+      "label": "One NodejsFunction per route",
+      "sub": "plus its API Gateway method and grants",
+      "x": 392,
+      "y": 100,
+      "w": 262,
+      "h": 104,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "CDK construct loop",
+        "tech": "aws-cdk-lib \u00b7 NodejsFunction \u00b7 LambdaIntegration",
+        "role": "The domain stack walks the flattened route list and, for each entry, creates one Lambda, one API Gateway method and the grants that route alone needs.",
+        "facts": [
+          "Public routes get a <code>TokenAuthorizer</code> pointed at the shared authorizer Lambda and are mounted at <code>/app/{domain}/{version}{path}</code>; private routes get <code>AuthorizationType.IAM</code> and are mounted at <code>/domains/{domain}/{version}{path}</code>.",
+          "Only the resources and integrations that route declares are granted to that route's role, so two routes in the same domain do not share permissions.",
+          "Every function is given <code>FLEX_ENVIRONMENT</code> set to the stage. <code>STAGE</code> is never set on a function, which is what breaks the feature-flag environment level."
+        ],
+        "code": [
+          ["domain stack", "platform/infra/flex/src/stacks/domain.ts"],
+          [
+            "function construct",
+            "platform/infra/flex/src/constructs/lambda/flex-private-isolated-function.ts"
+          ],
+          ["default timeout", "platform/infra/flex/src/utils/lambda.ts"]
+        ]
+      }
+    },
+    {
+      "id": "flat",
+      "label": "flattenRoutes \u2192 toHandlerPath",
+      "sub": "route key becomes a source path",
+      "x": 392,
+      "y": 228,
+      "w": 218,
+      "h": 104,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Naming convention",
+        "tech": "TypeScript in the CDK app",
+        "role": "The single rule that binds a config entry to a file on disk. It is the reason a domain needs no infrastructure code of its own.",
+        "facts": [
+          "<code>toHandlerPath</code> builds <code>handlers/{version}/{path}/{method}{ext}</code>: the leading slash is dropped, each <code>:param</code> becomes a <code>[param]</code> directory, the method is lowercased, and the extension is <code>.private.ts</code> for a private-gateway route and <code>.ts</code> otherwise.",
+          "<code>getDomainEntry</code> prefixes <code>domains/{name}/src/</code> and hands the result to <code>NodejsFunction</code> as its esbuild entry, so a route with no matching file fails at synth rather than at deploy.",
+          "<code>getDeployableRoutes</code> filters by the environments arrays, but <code>getDeployableDomains</code> returns every domain untouched for any non-persistent stage \u2014 which is why ephemeral and personal stages get the full route set."
+        ],
+        "code": [
+          ["toHandlerPath", "platform/infra/flex/src/utils/routes.ts"],
+          ["getDomainEntry", "platform/infra/flex/src/utils/getEntry.ts"],
+          ["stage filtering", "platform/infra/flex/src/utils/deployment.ts"]
+        ]
+      }
+    },
+    {
+      "id": "ex",
+      "label": "GET /v1/customer/vehicles",
+      "sub": "\u2192 src/handlers/v1/customer/vehicles/get.ts",
+      "x": 392,
+      "y": 356,
+      "w": 287,
+      "h": 104,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Worked example",
+        "tech": "dvla domain",
+        "role": "The convention on three real dvla routes, including the two shapes that catch people out.",
+        "facts": [
+          "<code>GET /v1/customer/vehicle/:id</code> becomes <code>src/handlers/v1/customer/vehicle/[id]/get.ts</code> \u2014 a square-bracket directory is a path parameter, and it is the only place the parameter name is declared.",
+          "<code>POST /v1/unlink [private]</code> becomes <code>src/handlers/v1/unlink/post.private.ts</code>. It has no <code>ctx.auth</code>, so it declares a required <code>User-Id</code> header instead.",
+          "The CDK construct id is the PascalCase of <code>{domain}-{gateway}-{version}-{routeName}</code>, and the same string becomes the logger's service name for that route."
+        ],
+        "code": [
+          ["dvla config", "domains/dvla/domain.config.ts"],
+          [
+            "the handler file",
+            "domains/dvla/src/handlers/v1/customer/vehicles/get.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rte",
+      "label": "route(key, handler)",
+      "sub": "cold start \u00b7 resolves the route config",
+      "x": 752,
+      "y": 100,
+      "w": 262,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Handler factory",
+        "tech": "@flex/sdk \u00b7 createRouteHandler",
+        "role": "Runs once per container: looks the route key up in the config, resolves log level, resources and headers, and builds the Middy stack around the core handler.",
+        "facts": [
+          "Two phases: at module load it resolves the route config, log level, resources and header rules once, builds the Middy stack and memoises the integration invokers. Per invocation it only assembles the context and runs the handler.",
+          "The key is parsed back into method, version, path and gateway and used to look up <code>routes[version][path][METHOD][gateway]</code>. A key with no matching config entry throws at module load, before the first request.",
+          "The logger's service name is set here to <code>{domain}-{gateway}-{version}-{routeName}</code>, so every line a route logs identifies exactly which route wrote it.",
+          "<code>logger.setLogLevel</code> is a hard no-op when <code>FLEX_ENVIRONMENT</code> is production, so a route's declared log level has no effect in the one stage where raising it matters most."
+        ],
+        "code": [
+          ["create-route.ts", "libs/sdk/src/route/create-route.ts"],
+          ["route key parsing", "libs/sdk/src/route/route-key.ts"],
+          ["FlexLogger", "libs/logging/src/logger.ts"]
+        ]
+      }
+    },
+    {
+      "id": "middy",
+      "label": "Middy stack",
+      "sub": "errors \u00b7 logger \u00b7 body \u00b7 secrets \u00b7 SSM",
+      "x": 752,
+      "y": 184,
+      "w": 262,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Middleware pipeline",
+        "tech": "@middy/core with http-error-handler, http-header-normalizer, http-json-body-parser, secrets-manager and ssm",
+        "role": "Wraps the core handler. Assembled once per container, and assembled conditionally from what the route declared.",
+        "facts": [
+          "The header normaliser and JSON body parser are attached only for POST, PUT and PATCH; the Secrets Manager and SSM middlewares only when the route declares a resource of that type.",
+          "Both resource middlewares run with <code>setToContext: true</code>, so fetched values arrive on the Lambda <code>context</code> object rather than in the event.",
+          "<code>injectLambdaContext</code> is configured with <code>correlationIdPath</code> of <code>headers.\"x-correlation-id\"</code>, which is how the correlation id set at the edge reaches every domain log line."
+        ],
+        "code": [
+          ["configureMiddleware", "libs/sdk/src/route/middleware.ts"],
+          ["logging entry point", "libs/logging/src/index.ts"]
+        ]
+      }
+    },
+    {
+      "id": "integ",
+      "label": "Integrations",
+      "sub": "one declaration \u00b7 one call \u00b7 one IAM statement",
+      "x": 752,
+      "y": 268,
+      "w": 312,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Outbound call binding",
+        "tech": "aws-sigv4-fetch \u00b7 execute-api IAM",
+        "role": "Turns each declared integration into a typed invoker on the context and, at synth, into the exact IAM statement that lets that one route make that one call.",
+        "facts": [
+          "A declaration of <code>{ type, target, route }</code> becomes the base path <code>/domains/{target}/{version}</code> or <code>/gateways/{target}/{version}</code> against the private API URL supplied by the route's <code>ssm</code> resource. The invokers and the signed fetcher are built once per container and cached.",
+          "At synth the same declaration becomes an <code>execute-api:Invoke</code> statement on that route's role, one statement per HTTP method, scoped to the method and path ARN. A route key ending <code>/*</code> is a wildcard the caller extends at call time, and the same <code>*</code> lands inside the IAM resource ARN.",
+          "Retries are opt-in and nothing opts in: <code>DomainIntegrationBaseSchema</code> has no <code>retryAttempts</code> field and no handler passes one at call time, so every domain-to-gateway call is a single attempt.",
+          "<code>pnpm validate:integrations</code> only checks <code>type: \"domain\"</code> integrations. A gateway integration naming a route the gateway does not define passes CI and 404s in production."
+        ],
+        "code": [
+          ["buildDomainIntegrations", "libs/sdk/src/route/integrations.ts"],
+          [
+            "grantRoutePermissions",
+            "platform/infra/flex/src/utils/integrations.ts"
+          ],
+          [
+            "validateDomainIntegrations",
+            "libs/sdk/src/route/validate-integrations.ts"
+          ],
+          ["retry logic", "libs/sdk/src/fetch/fetch.ts"]
+        ]
+      }
+    },
+    {
+      "id": "bctx",
+      "label": "buildHandlerContext",
+      "sub": "validate, then gather",
+      "x": 752,
+      "y": 352,
+      "w": 177,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Per-invocation assembly",
+        "tech": "Zod \u00b7 process.env \u00b7 Lambda context",
+        "role": "Validates the request and collects everything the route is allowed to see into one object.",
+        "facts": [
+          "Body and query are Zod-parsed here; declared headers are only checked for presence, never against a schema, and a missing required header is a 400. A body schema on a GET route is ignored, because the body parser is only wired for POST, PUT and PATCH.",
+          "<code>ctx.auth.pairwiseId</code> is read from the API Gateway authorizer context and only for public-gateway routes; a missing pairwise id raises an authorization error.",
+          "Resources are split by type: kms and ssm are read straight from <code>process.env</code>, while secret and ssm:runtime are read off the Lambda context and throw if the middleware did not put them there."
+        ],
+        "code": [
+          ["build-context.ts", "libs/sdk/src/route/build-context.ts"],
+          ["header presence check", "libs/sdk/src/route/headers.ts"]
+        ]
+      }
+    },
+    {
+      "id": "als",
+      "label": "AsyncLocalStorage route store",
+      "sub": "routeStorage.run \u00b7 routeContext()",
+      "x": 752,
+      "y": 436,
+      "w": 230,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Request-scoped store",
+        "tech": "node:async_hooks AsyncLocalStorage",
+        "role": "Holds the assembled context for one invocation so any function in the call tree can reach it without it being threaded through arguments.",
+        "facts": [
+          "The handler runs inside <code>routeStorage.run(store, \u2026)</code> and is passed the same object as its typed context \u2014 the store and the context are one value, not a copy.",
+          "Service code calls <code>routeContext{RouteKeys}()</code> to get that store typed for the route keys it supports; calling it outside a handler throws rather than returning undefined.",
+          "The store carries only what the route declared: logger, auth, body, path and query params, resources, feature flags, headers and integrations."
+        ],
+        "code": [
+          ["store.ts", "libs/sdk/src/route/store.ts"],
+          [
+            "used outside a handler",
+            "domains/example/src/services/get-identity-link.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "resp",
+      "label": "Response validation",
+      "sub": "a schema failure becomes a 500",
+      "x": 752,
+      "y": 520,
+      "w": 212,
+      "h": 72,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Response stage",
+        "tech": "Zod \u00b7 API Gateway proxy result",
+        "role": "Checks the handler's payload against the route's response schema and shapes the API Gateway result.",
+        "facts": [
+          "A payload that fails the route's response schema is logged, emits <code>response_validation_failed</code> and is replaced by a 500 \u2014 the handler's payload is not returned.",
+          "Validation is skipped when the route declares no response schema or the handler returned no <code>data</code>, so an unschema'd route can return anything.",
+          "<code>clearTmp()</code> runs in a finally block on every invocation, deleting the contents of <code>/tmp</code> between reuses of a warm container."
+        ],
+        "code": [
+          ["response.ts", "libs/sdk/src/route/response.ts"],
+          ["the finally block", "libs/sdk/src/route/create-route.ts"],
+          ["clearTmp", "libs/sdk/src/utils/cleanup.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gcfg",
+      "label": "gateway.config.ts \u00b7 defineGateway",
+      "sub": "routes \u00b7 resources \u00b7 schemas",
+      "x": 1164,
+      "y": 100,
+      "w": 244,
+      "h": 84,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Configuration module",
+        "tech": "TypeScript \u00b7 @flex/service-gateway \u00b7 Zod",
+        "role": "The platform team's equivalent of domain.config.ts, one per upstream system: the routes FLEX exposes for it, the schemas it enforces, and the AWS resources the gateway may use.",
+        "facts": [
+          "<code>defineGateway(config)</code> returns <code>{ config, createHandler }</code> from the same module, so the declared route table and the handlers implementing it are type-checked against each other.",
+          "Route keys are flat <code>METHOD /version/path</code> strings with <code>:param</code> segments. There is no public or private split and no per-route access tier \u2014 the whole gateway is one function in one subnet tier.",
+          "Its resource types are a different set from a domain's: kms, role, secret and ssm. <code>ssm</code> throws \"Not yet implemented\" at synth, and no gateway config uses it."
+        ],
+        "code": [
+          ["defineGateway", "libs/service-gateway/src/config/gateway.ts"],
+          ["a full example", "platform/domains/udp/gateway.config.ts"],
+          ["resource types", "libs/service-gateway/src/types/resource.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gwh",
+      "label": "createHandler \u2192 buildHandler",
+      "sub": "one Lambda behind ANY /{proxy+}",
+      "x": 1164,
+      "y": 200,
+      "w": 218,
+      "h": 84,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Gateway handler factory",
+        "tech": "@flex/service-gateway \u00b7 Middy \u00b7 aws-cdk-lib",
+        "role": "Builds the gateway Lambda: the route table, the middleware and the closure over the config and the caller's route handlers.",
+        "facts": [
+          "One <code>NodejsFunction</code> per gateway, wired to a single <code>ANY /gateways/{name}/{proxy+}</code> method on the private API with a 30-second timeout. The entire upstream surface sits behind that one method.",
+          "Its Middy stack is only <code>injectLambdaContext</code> with <code>clearState: true</code> \u2014 there is no error-handler middleware, so every error path runs through the handler's own catch.",
+          "<code>logger.setLogLevel(\"INFO\")</code> is hard-coded: unlike a domain route, a gateway has no configurable log level."
+        ],
+        "code": [
+          ["buildHandler", "libs/service-gateway/src/handler/index.ts"],
+          ["middleware", "libs/service-gateway/src/handler/middleware.ts"],
+          [
+            "CDK wiring",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "look",
+      "label": "lookupRoute",
+      "sub": "strip the prefix, static then dynamic",
+      "x": 1164,
+      "y": 300,
+      "w": 256,
+      "h": 84,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Router",
+        "tech": "In-memory route table",
+        "role": "Turns the proxied path back into one of the gateway's declared route keys before anything else runs.",
+        "facts": [
+          "<code>/gateways/{name}</code> is stripped from the path first, then a static Map is tried by <code>METHOD path</code>, and only then the dynamic routes in declaration order, segment by segment.",
+          "An unmatched path and a matched route with no handler both return a 404 \u2014 which is exactly what a domain integration aimed at a route the gateway does not define receives.",
+          "A path with a trailing or duplicate slash fails the canonical-path check and is treated as unmatched."
+        ],
+        "code": [
+          ["routes.ts", "libs/service-gateway/src/utils/routes.ts"],
+          ["request parsing", "libs/service-gateway/src/utils/request.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gres",
+      "label": "resolveResources",
+      "sub": "secrets only \u00b7 Zod-parsed",
+      "x": 1164,
+      "y": 400,
+      "w": 180,
+      "h": 84,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Resource resolution",
+        "tech": "@aws-lambda-powertools/parameters \u00b7 Zod",
+        "role": "Fetches and validates the gateway's consumer config on every invocation, before any client exists.",
+        "facts": [
+          "Only <code>secret</code> resources resolve. kms, role and ssm are filtered out \u2014 they exist to drive IAM grants at synth and their values never reach the running code.",
+          "<code>getSecret</code> is called with <code>maxAge: 600</code> and a JSON transform, so a warm container re-reads Secrets Manager at most every ten minutes and re-parses the result against the schema declared beside the resource.",
+          "A consumer config that stops matching its schema fails the request, not the deploy: the first invocation after the secret changes is the one that breaks.",
+          "The same pattern exists a second time as <code>createConsumerConfigLoader</code> in <code>platform/shared</code>, which nothing outside its own test imports."
+        ],
+        "code": [
+          ["resolveResources", "libs/service-gateway/src/utils/resources.ts"],
+          [
+            "the unused duplicate",
+            "platform/shared/src/createConsumerConfigLoader.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "cli",
+      "label": "clients(resources)",
+      "sub": "REST client built per invocation",
+      "x": 1164,
+      "y": 500,
+      "w": 224,
+      "h": 84,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Client factory",
+        "tech": "aws-sigv4-fetch \u00b7 STS temporary credentials",
+        "role": "The gateway's own module builds its upstream clients from the resolved config on every invocation; the route handler only ever sees the finished client.",
+        "facts": [
+          "<code>createRestClient</code> with <code>auth.type: \"sigv4\"</code> assumes the upstream's consumer role through STS. The credential provider is memoised in a module-level Map keyed by role ARN and external id, so warm invocations reuse credentials until five minutes before expiry instead of calling AssumeRole every time.",
+          "<code>createPublicFetch</code> is the alternative \u2014 plain fetch with <code>retryAttempts</code> defaulting to 3, the only default retry anywhere in the platform.",
+          "An upstream 5xx becomes a flat 502 naming the gateway; an upstream 4xx is passed through with its body. A response that fails the route's schema is also a 502."
+        ],
+        "code": [
+          ["REST client", "libs/service-gateway/src/client/adapter/rest.ts"],
+          [
+            "fetcher selection",
+            "libs/service-gateway/src/client/fetcher/build.ts"
+          ],
+          ["SigV4 and the credential cache", "libs/sdk/src/fetch/sigv4.ts"],
+          ["error mapping", "libs/service-gateway/src/utils/response.ts"]
+        ]
+      }
+    },
+    {
+      "id": "flags",
+      "label": "Feature flags",
+      "sub": "four levels, one of them dead",
+      "x": 32,
+      "y": 664,
+      "w": 205,
+      "h": 118,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Runtime resolution",
+        "tech": "@flex/sdk \u00b7 getRouteFeatureFlags",
+        "role": "Resolves each flag a route lists into a boolean on ctx.featureFlags, once per invocation.",
+        "facts": [
+          "Order: <code>process.env[key]</code> equal to the string \"true\" or \"false\" wins; otherwise the flag is true if its <code>environments</code> list contains the current environment; otherwise its <code>default</code>; otherwise false.",
+          "Levels two and three are an OR rather than a fallback chain, so an <code>environments</code> list can switch a flag on for one stage but can never switch it off when <code>default</code> is true.",
+          "<b>The environment level does not work in a deployed Lambda.</b> The current environment is read from <code>process.env.STAGE</code>, and no Flex function construct sets STAGE \u2014 only FLEX_ENVIRONMENT \u2014 so it falls back to development in every stage, production included.",
+          "Nothing injects a flag override variable either: an override has to be written by hand into the route's or the domain's <code>function.environment</code> block."
+        ],
+        "code": [
+          ["getRouteFeatureFlags", "libs/sdk/src/route/resolve-config.ts"],
+          [
+            "env vars a function actually gets",
+            "platform/infra/flex/src/constructs/lambda/flex-private-isolated-function.ts"
+          ],
+          ["function config merge", "platform/infra/flex/src/utils/lambda.ts"]
+        ]
+      }
+    },
+    {
+      "id": "res4",
+      "label": "Four resource types",
+      "sub": "kms \u00b7 ssm | secret \u00b7 ssm:runtime",
+      "x": 400,
+      "y": 664,
+      "w": 224,
+      "h": 118,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Resource resolution model",
+        "tech": "SSM Parameter Store \u00b7 Secrets Manager \u00b7 KMS \u00b7 Middy",
+        "role": "The declaration looks identical for all four types; when the value materialises does not, and that split is what the isolated tier's endpoint list has to satisfy.",
+        "facts": [
+          "Deploy time: <code>ssm</code> puts the parameter's value straight into the env var and <code>kms</code> puts the key ARN there. Both are readable from <code>process.env</code> the moment the function starts.",
+          "Run time: <code>secret</code> puts the secret name into the env var and <code>ssm:runtime</code> puts the parameter name, and the Middy middlewares fetch the real value onto the Lambda context. That is why an isolated-tier function needs the Secrets Manager and SSM interface endpoints at all.",
+          "The env var name is the config key itself \u2014 declare <code>udpNotificationSecret</code> and the function gets an env var of that name \u2014 and the CDK grant is attached to that one route's role for that one resource.",
+          "<code>scope: \"stage\"</code> prefixes the parameter path with the stage name instead of the environment name, which is how an ephemeral stage reads its own private API URL."
+        ],
+        "code": [
+          ["the four types", "libs/sdk/src/route/resolve-config.ts"],
+          [
+            "import and grant at synth",
+            "platform/infra/flex/src/utils/resources.ts"
+          ],
+          ["runtime middlewares", "libs/sdk/src/route/middleware.ts"]
+        ]
+      }
+    },
+    {
+      "id": "tel",
+      "label": "@flex/telemetry",
+      "sub": "21 events in five groups, plus 3 for the edge",
+      "x": 792,
+      "y": 664,
+      "w": 306,
+      "h": 118,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Event taxonomy",
+        "tech": "Zod enum over a log line",
+        "role": "The closed vocabulary every component emits, and the layer you actually query when tracing a request through the platform.",
+        "facts": [
+          "<code>TelemetryEventSchema</code> is a closed Zod enum of 21 events in five groups \u2014 auth (6), domain (3), service gateway (4), third party (5) and general (3). Adding an event means editing the enum.",
+          "CloudFront Functions get their own three-event registry (<code>cff_token_validated</code>, <code>cff_token_missing</code>, <code>cff_token_invalid</code>) behind the separate <code>@flex/telemetry/cff</code> export, deliberately outside the Zod enum because zod will not fit in a CloudFront Function bundle.",
+          "An event is not a metric: <code>emitTelemetry</code> is a single <code>logger.info(\"telemetry\", \u2026)</code> call, so everything arrives as a log line rather than EMF. The CloudFront Function version writes the identical shape with <code>console.log</code>.",
+          "The two halves of one call are emitted by different components: the domain's invoker emits <code>service_gateway_request_sent</code> and the gateway Lambda emits <code>service_gateway_request_received</code>."
+        ],
+        "code": [
+          ["the enum", "libs/telemetry/src/events.ts"],
+          ["the CFF registry", "libs/telemetry/src/cff.ts"],
+          ["emitTelemetry", "libs/telemetry/src/telemetry.ts"]
+        ]
+      }
+    },
+    {
+      "id": "log",
+      "label": "@flex/logging",
+      "sub": "the logger everything else writes through",
+      "x": 1180,
+      "y": 664,
+      "w": 281,
+      "h": 118,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Logging library",
+        "tech": "@aws-lambda-powertools/logger with a Flex formatter and sanitiser",
+        "role": "One shared logger instance: structured JSON, a per-route service name, the correlation id from the edge, and a redacting JSON replacer.",
+        "facts": [
+          "<code>FlexLogger</code> overrides <code>setLogLevel</code> to return early when <code>FLEX_ENVIRONMENT</code> is production, so the level cannot be raised there at all.",
+          "The redacting replacer is installed at construction as <code>jsonReplacerFn</code>, which is why it applies to every log line rather than only to ones written through a helper. Retention and the redaction patterns themselves are covered under Resources \u25b8 Observability."
+        ],
+        "code": [
+          ["FlexLogger", "libs/logging/src/logger.ts"],
+          ["exports", "libs/logging/src/index.ts"]
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "cfg",
+      "to": "fnp",
+      "label": "routes deployable in this stage",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "Module import at synth",
+        "auth": "None \u2014 synth time",
+        "carries": "The route table, filtered by the environments arrays",
+        "facts": [
+          "The CDK app imports the same <code>domain.config.ts</code> the Lambda will import, so no route list is written twice."
+        ],
+        "code": [["stack", "platform/infra/flex/src/stacks/domain.ts"]]
+      }
+    },
+    {
+      "from": "fnp",
+      "to": "flat",
+      "label": "every route needs an entry file",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "Function call",
+        "auth": "None \u2014 synth time",
+        "carries": "version, path, method and gateway",
+        "facts": [],
+        "code": [["flattenRoutes", "platform/infra/flex/src/utils/routes.ts"]]
+      }
+    },
+    {
+      "from": "flat",
+      "to": "ex",
+      "label": "toHandlerPath",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "String transformation",
+        "auth": "None \u2014 synth time",
+        "carries": "handlers/{version}/{path}/{method}{ext}",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "ex",
+      "to": "hnd",
+      "label": "the file the team must have written",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "Filesystem path",
+        "auth": "None \u2014 synth time",
+        "carries": "the esbuild entry point",
+        "facts": [
+          "If the file is missing, <code>NodejsFunction</code> fails at synth \u2014 the route is never deployed half-wired."
+        ],
+        "code": [
+          ["getDomainEntry", "platform/infra/flex/src/utils/getEntry.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfg",
+      "to": "typed",
+      "label": "the config's literal type",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "TypeScript generic inference",
+        "auth": "None \u2014 compile time",
+        "carries": "resource, integration, flag and environment keys",
+        "facts": [],
+        "code": [["types.ts", "libs/sdk/src/types.ts"]]
+      }
+    },
+    {
+      "from": "typed",
+      "to": "hnd",
+      "label": "typed route key and context",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "TypeScript",
+        "auth": "None \u2014 compile time",
+        "carries": "the shape of ctx for this exact route",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "fnp",
+      "to": "rte",
+      "label": "invokes the module's exported handler",
+      "dir": null,
+      "style": "dash",
+      "d": {
+        "protocol": "Lambda invocation",
+        "auth": "IAM \u2014 API Gateway service principal",
+        "carries": "the API Gateway proxy event",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "rte",
+      "to": "middy",
+      "label": "wraps the core handler",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "the assembled middleware chain",
+        "facts": [],
+        "code": [["configureMiddleware", "libs/sdk/src/route/middleware.ts"]]
+      }
+    },
+    {
+      "from": "middy",
+      "to": "integ",
+      "label": "first thing the core handler does",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "the cached invoker map",
+        "facts": [
+          "<code>buildDomainIntegrations</code> is wrapped in <code>cache()</code>, so the signed fetcher and the invokers are built once per container."
+        ],
+        "code": [["cache", "libs/sdk/src/utils/cache.ts"]]
+      }
+    },
+    {
+      "from": "integ",
+      "to": "bctx",
+      "label": "typed invokers",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "ctx.integrations",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "bctx",
+      "to": "als",
+      "label": "the assembled store",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "logger, auth, body, params, resources, flags, headers, integrations",
+        "facts": [],
+        "code": [["store.ts", "libs/sdk/src/route/store.ts"]]
+      }
+    },
+    {
+      "from": "als",
+      "to": "resp",
+      "label": "the handler returns",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "{ status, data } or { status, error }",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "integ",
+      "to": "look",
+      "label": "SigV4 \u00b7 ANY /gateways/{name}/{proxy+}",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS over the private API",
+        "auth": "SigV4 with the route Lambda's own execution role",
+        "carries": "The integration's base path plus any wildcard suffix",
+        "facts": [
+          "Signed with the calling Lambda's own credentials, not an assumed role \u2014 the assumed role appears one hop later, between the gateway and its upstream.",
+          "Single attempt: nothing on this path sets <code>retryAttempts</code>."
+        ],
+        "code": [
+          ["signed fetcher", "libs/sdk/src/fetch/sigv4.ts"],
+          ["prefix stripping", "libs/service-gateway/src/handler/index.ts"]
+        ]
+      }
+    },
+    {
+      "from": "hnd",
+      "to": "flags",
+      "label": "ctx.featureFlags.{key}",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "booleans, resolved per invocation",
+        "facts": [],
+        "code": [
+          ["getRouteFeatureFlags", "libs/sdk/src/route/resolve-config.ts"]
+        ]
+      }
+    },
+    {
+      "from": "hnd",
+      "to": "res4",
+      "label": "ctx.resources.{key}",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "strings \u2014 a value, an ARN or a fetched secret",
+        "facts": [],
+        "code": [["extractResources", "libs/sdk/src/route/build-context.ts"]]
+      }
+    },
+    {
+      "from": "gcfg",
+      "to": "gwh",
+      "label": "config plus the route handlers",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "the closure the Lambda exports",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "gwh",
+      "to": "look",
+      "label": "per invocation",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "method and the prefix-stripped path",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "look",
+      "to": "gres",
+      "label": "matched route",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "the route key, its schemas and the parsed request",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "gres",
+      "to": "cli",
+      "label": "parsed consumer config",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "apiUrl, apiKey, consumer role ARN, region, external id",
+        "facts": [
+          "The client factory receives only resolved secrets, so a gateway handler never touches an ARN or an env var."
+        ],
+        "code": [["clients factory", "platform/domains/udp/src/gateway.ts"]]
+      }
+    },
+    {
+      "from": "resp",
+      "to": "tel",
+      "label": "domain_* events",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Log line",
+        "auth": "None",
+        "carries": "event name plus a small details object",
+        "facts": [],
+        "code": []
+      }
+    },
+    {
+      "from": "cli",
+      "to": "tel",
+      "label": "third_party_* and service_gateway_* events",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Log line",
+        "auth": "None",
+        "carries": "event name plus a small details object",
+        "facts": [],
+        "code": [
+          ["rest client", "libs/service-gateway/src/client/adapter/rest.ts"]
+        ]
+      }
+    },
+    {
+      "from": "tel",
+      "to": "log",
+      "label": "one logger.info line per event",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "In-process",
+        "auth": "None",
+        "carries": "{ level, message, telemetry }",
+        "facts": [],
+        "code": [["emitTelemetry", "libs/telemetry/src/telemetry.ts"]]
+      }
+    }
+  ],
+  "placement": {
+    "fnp": [
+      "lambda-domain-dvla",
+      "lambda-domain-udp",
+      "lambda-domain-uns",
+      "lambda-domain-groups",
+      "lambda-domain-lc",
+      "lambda-domain-example",
+      "api-routes-public",
+      "api-routes-private"
+    ],
+    "gwh": [
+      "lambda-gw-dvla",
+      "lambda-gw-udp",
+      "lambda-gw-uns",
+      "api-routes-gateways"
+    ],
+    "res4": ["secrets", "ssm-imported"],
+    "integ": ["api-private"],
+    "log": ["loggroups"]
+  }
+}

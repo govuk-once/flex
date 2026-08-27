@@ -1,0 +1,1123 @@
+{
+  "id": "network",
+  "name": "Network",
+  "order": 5,
+  "group": "Cross-cutting",
+  "w": 1760,
+  "h": 900,
+  "blurb": "One VPC per persistent environment: three subnet tiers, six interface endpoints, and the two paths that actually reach the public internet.",
+  "audience": "Platform engineers, and network or security review",
+  "note": "Ephemeral PR and personal stages build no network of their own. They import the development environment's nine subnet IDs, both security groups and the API Gateway endpoint ID through <code>addExternalExports</code>, so everything drawn inside the VPC is shared with development.",
+  "zones": [
+    {
+      "id": "z-use1",
+      "label": "us-east-1 (N. Virginia) \u00b7 FlexGlobalStack",
+      "x": 30,
+      "y": 70,
+      "w": 358,
+      "h": 330,
+      "hard": true,
+      "d": {
+        "type": "Region",
+        "tech": "CloudFront, ACM, Route 53, WAF, Shield",
+        "role": "Everything CloudFront needs has to live here.",
+        "facts": [
+          "A CloudWatch alarm can only notify a topic in its own region, and CloudFront's metrics are here \u2014 which is why the alarm relay topics and their KMS key (<code>alias/{stage}-flex-alerts-relay-key</code>) are created in this stack rather than in eu-west-2."
+        ]
+      }
+    },
+    {
+      "id": "z-euw2",
+      "label": "eu-west-2 (London)",
+      "x": 400,
+      "y": 70,
+      "w": 1000,
+      "h": 790,
+      "hard": true,
+      "d": {
+        "type": "Region",
+        "tech": "API Gateway, Lambda, VPC",
+        "role": "Every FLEX compute and network resource except the edge.",
+        "facts": [
+          "Both REST APIs are AWS-managed endpoints outside the VPC; a Lambda only gets a network interface in it when its construct passes <code>vpc</code> and <code>vpcSubnets</code>."
+        ]
+      }
+    },
+    {
+      "id": "z-vpc",
+      "label": "VPC 10.0.0.0/16 \u00b7 eu-west-2a/b/c",
+      "x": 430,
+      "y": 200,
+      "w": 940,
+      "h": 630,
+      "hard": true,
+      "d": {
+        "type": "Network boundary",
+        "tech": "Amazon VPC \u00b7 65,536 addresses",
+        "role": "Nine subnets, three per tier, one per pinned availability zone.",
+        "facts": [
+          "Availability zones are pinned to eu-west-2a/b/c rather than looked up, so subnet CIDRs stay stable across deploys.",
+          "Flow logs are enabled on the VPC itself, so all three tiers are captured without any per-subnet configuration.",
+          "The VPC belongs to <code>FlexCoreStack</code>, which is only created for a persistent environment."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "z-pub",
+      "label": "Public \u00b7 /24 \u00d7 3 \u00b7 251 usable each",
+      "x": 456,
+      "y": 244,
+      "w": 600,
+      "h": 92,
+      "hard": false,
+      "d": {
+        "type": "Subnet tier",
+        "tech": "SubnetType.PUBLIC \u00b7 cidrMask 24",
+        "role": "Carries the NAT gateways. No workload is ever placed here.",
+        "facts": [
+          "Default route to the internet gateway \u2014 the only route table in the VPC that has one."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "z-egr",
+      "label": "Private with egress \u00b7 /19 \u00d7 3 \u00b7 8,187 usable each",
+      "x": 456,
+      "y": 352,
+      "w": 600,
+      "h": 216,
+      "hard": false,
+      "d": {
+        "type": "Subnet tier",
+        "tech": "SubnetType.PRIVATE_WITH_EGRESS \u00b7 cidrMask 19",
+        "role": "Home of every <code>access: private</code> function, and of the endpoint network interfaces.",
+        "facts": [
+          "The <code>PrivateEgress</code> security group is created with <code>allowAllOutbound: true</code>, so no explicit egress rule is written for anything in this tier.",
+          "The six interface endpoints put their ENIs in these subnets: CDK's default subnet selection is PRIVATE_WITH_EGRESS, so the isolated tier reaches them across the VPC CIDR.",
+          "Default route goes to the NAT gateway in the same availability zone."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "z-iso",
+      "label": "Private isolated \u00b7 /19 \u00d7 3 \u00b7 8,187 usable each",
+      "x": 456,
+      "y": 584,
+      "w": 600,
+      "h": 216,
+      "hard": false,
+      "d": {
+        "type": "Subnet tier",
+        "tech": "SubnetType.PRIVATE_ISOLATED \u00b7 cidrMask 19",
+        "role": "The default tier: every domain except dvla, plus the UDP and UNS gateways.",
+        "facts": [
+          "The <code>PrivateIsolated</code> security group sets <code>allowAllOutbound: false</code>; the only rules it ever gets are 443 to each endpoint's security group, generated one per endpoint.",
+          "Its NACL has no ephemeral-return rule and no allow-all outbound rule \u2014 outbound is allowed only to the VPC CIDR (rule 80).",
+          "Its route tables carry only the local route: no NAT, no internet gateway."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "z-once",
+      "label": "GOV.UK Once accounts",
+      "x": 1440,
+      "y": 600,
+      "w": 290,
+      "h": 170,
+      "hard": true,
+      "d": {
+        "type": "Ownership boundary",
+        "tech": "Other AWS accounts in the same organisation",
+        "role": "Sibling systems, reached privately rather than over the internet.",
+        "facts": []
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "r53",
+      "label": "Route 53",
+      "sub": "alias A record",
+      "x": 55,
+      "y": 108,
+      "w": 177,
+      "h": 52,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "DNS",
+        "tech": "ARecord \u00b7 CloudFrontTarget",
+        "role": "Resolves the service name to the distribution.",
+        "facts": [
+          "The hosted zone id and name are imported from <code>/infra/dns/*</code> \u2014 the zone belongs to the platform team, not to FLEX.",
+          "Persistent environments use the zone apex; every other stage gets <code>{stage}.{zone}</code>."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "acm",
+      "label": "ACM certificate",
+      "sub": "DNS validated",
+      "x": 55,
+      "y": 172,
+      "w": 177,
+      "h": 52,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Certificate",
+        "tech": "ACM in us-east-1",
+        "role": "TLS identity for the distribution.",
+        "facts": [
+          "Must be issued in us-east-1 \u2014 CloudFront will not accept a certificate from any other region.",
+          "Issued for whichever name applies to the stage and validated against the same hosted zone."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cf",
+      "label": "CloudFront + WAF",
+      "sub": "two behaviours \u00b7 Shield in stg/prod",
+      "x": 55,
+      "y": 236,
+      "w": 243,
+      "h": 70,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Edge",
+        "tech": "CloudFront distribution",
+        "role": "The single public entry point for the API.",
+        "facts": [
+          "<code>#createCloudfrontShield</code> early-exits when the environment is development, so development and every ephemeral stage run with no Shield protection and no DDoS alarms.",
+          "<code>publishAdditionalMetrics: true</code> is what makes the error-rate alarm possible.",
+          "Access logs go to an object-locked bucket with 90-day GOVERNANCE retention."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "specs",
+      "label": "OpenAPI spec bucket",
+      "sub": "S3 \u00b7 origin access control",
+      "x": 55,
+      "y": 318,
+      "w": 186,
+      "h": 52,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Storage",
+        "tech": "S3 + OAC",
+        "role": "The origin behind the /docs* behaviour.",
+        "facts": [
+          "Retained in persistent environments; created with <code>autoDeleteObjects</code> and destroyed with every ephemeral stage."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "pubapi",
+      "label": "Public REST API",
+      "sub": "REGIONAL \u00b7 outside the VPC",
+      "x": 430,
+      "y": 104,
+      "w": 186,
+      "h": 60,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "API",
+        "tech": "API Gateway REST \u00b7 EndpointType.REGIONAL",
+        "role": "The public surface, fronted by the regional WAF.",
+        "facts": [
+          "The regional Web ACL blocks by default and allows only requests carrying the <code>x-origin-verify</code> secret header, so the origin cannot usefully be reached except through CloudFront.",
+          "<code>SecurityPolicy_TLS13_1_2_2021_06</code> is set on the API itself, on top of the edge's TLS 1.2 minimum."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "privapi",
+      "label": "Private REST API",
+      "sub": "PRIVATE \u00b7 bound to the endpoint",
+      "x": 760,
+      "y": 104,
+      "w": 218,
+      "h": 60,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "API",
+        "tech": "API Gateway REST \u00b7 EndpointType.PRIVATE",
+        "role": "AWS-managed, not a resource inside the VPC \u2014 the interface endpoint is the door into it.",
+        "facts": [
+          "Its resource policy denies <code>execute-api:Invoke</code> for any principal whose <code>aws:SourceVpce</code> is not this endpoint, and adds no explicit Allow.",
+          "Execution logging is INFO with <code>dataTraceEnabled: false</code>; only this API has it."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "jwks",
+      "label": "Stub JWKS Function URL",
+      "sub": "development only \u00b7 no VPC",
+      "x": 1090,
+      "y": 104,
+      "w": 180,
+      "h": 60,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "NodejsFunction + Function URL \u00b7 authType NONE",
+        "role": "Stands in for the Cognito JWKS endpoint in the development environment.",
+        "facts": [
+          "Created only when the environment is development, and with no <code>vpc</code> or <code>vpcSubnets</code> \u2014 it runs outside the VPC entirely.",
+          "Its unauthenticated Function URL is handed to the authorizer as <code>JWKS_URI</code>, so the authorizer reaches it over NAT and the public internet like any other external host.",
+          "It reads one hard-coded secret, <code>/development/flex-secret/auth/e2e/private_jwk</code>, cached for 300 seconds."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"],
+          [
+            "auth/functions/jwks-endpoint.ts",
+            "platform/domains/auth/src/functions/jwks-endpoint.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "nat",
+      "label": "NAT gateways \u00d7 3",
+      "sub": "one per AZ \u00b7 one Elastic IP each",
+      "x": 486,
+      "y": 278,
+      "w": 224,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Network",
+        "tech": "AWS::EC2::NatGateway",
+        "role": "The only way out of the VPC to the internet.",
+        "facts": [
+          "<code>natGateways: 3</code> \u2014 one per availability zone, so losing an AZ does not remove egress for the other two.",
+          "The three Elastic IPs are the source addresses a third party such as DVLA sees."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
+        ]
+      }
+    },
+    {
+      "id": "authfn",
+      "label": "Authorizer Lambda",
+      "sub": "egress tier \u00b7 10s timeout",
+      "x": 486,
+      "y": 400,
+      "w": 180,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "FlexPrivateEgressFunction \u00b7 NODEJS_24_X",
+        "role": "Verifies the Cognito access token in front of every public route.",
+        "facts": [
+          "It is in this tier because it fetches the JWKS over the public internet: there is no cognito-idp interface endpoint.",
+          "The verifier is constructed inside the handler, not at module scope, so <code>JWKS_URI</code> is re-read and re-parsed on every invocation."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"],
+          [
+            "auth/services/auth-service.ts",
+            "platform/domains/auth/src/services/auth-service.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "gwdvla",
+      "label": "DVLA gateway",
+      "sub": "egress tier \u00b7 30s timeout",
+      "x": 486,
+      "y": 482,
+      "w": 180,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "FlexPrivateEgressFunction \u00b7 NODEJS_24_X",
+        "role": "The only workload that dials a non-AWS host.",
+        "facts": [
+          "<code>access: \"private\"</code> in its gateway config is the whole reason it sits here; the UDP and UNS gateways declare <code>isolated</code> and land in the other tier."
+        ],
+        "code": [
+          ["dvla/gateway.config.ts", "platform/domains/dvla/gateway.config.ts"],
+          [
+            "utils/create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ddvla",
+      "label": "dvla domain routes",
+      "sub": "8 functions \u00b7 every stage",
+      "x": 776,
+      "y": 441,
+      "w": 180,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "FlexPrivateEgressFunction \u00d7 8",
+        "role": "The only domain whose route functions are in the egress tier.",
+        "facts": [
+          "<code>common.access: \"private\"</code> in <code>domain.config.ts</code> moves all eight here; every other domain leaves the default and lands in the isolated tier.",
+          "They never use the internet route it buys them \u2014 every handler reaches DVLA through the DVLA gateway on the private API."
+        ],
+        "code": [
+          ["domains/dvla/domain.config.ts", "domains/dvla/domain.config.ts"],
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gwiso",
+      "label": "UDP + UNS gateways",
+      "sub": "isolated tier \u00b7 30s timeout",
+      "x": 486,
+      "y": 650,
+      "w": 193,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "FlexPrivateIsolatedFunction \u00d7 2",
+        "role": "Reach their upstreams through the API Gateway interface endpoint.",
+        "facts": [
+          "No NAT and no internet-gateway route, so whatever host they dial has to resolve to something reachable from inside the VPC.",
+          "UNS's consumer config declares a <code>privateApiUrl</code> and the gateway uses it as its base URL. UDP's schema has no such field at all \u2014 its gateway dials <code>consumerConfig.apiUrl</code>, which is not in this repo, so reachability depends on that URL resolving through the endpoint."
+        ],
+        "code": [
+          ["uns/gateway.config.ts", "platform/domains/uns/gateway.config.ts"],
+          ["udp/gateway.config.ts", "platform/domains/udp/gateway.config.ts"]
+        ]
+      }
+    },
+    {
+      "id": "diso",
+      "label": "Isolated domain routes",
+      "sub": "udp \u00b7 uns \u00b7 groups \u00b7 lc \u00b7 example",
+      "x": 776,
+      "y": 650,
+      "w": 272,
+      "h": 62,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Compute",
+        "tech": "FlexPrivateIsolatedFunction",
+        "role": "The default placement: a route function lands here unless its domain sets <code>access</code>.",
+        "facts": [
+          "29 route functions in development against 12 in production \u2014 the difference is which domains list which environments, not any network setting.",
+          "A route declared <code>access: \"public\"</code> would get no VPC configuration at all, but nothing in the repo declares one."
+        ],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "id": "vpce",
+      "label": "Interface endpoints \u00d7 6",
+      "sub": "API GW \u00b7 Logs \u00b7 Secrets \u00b7 SSM \u00b7 STS \u00b7 KMS",
+      "x": 1086,
+      "y": 530,
+      "w": 281,
+      "h": 100,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Network",
+        "tech": "InterfaceVpcEndpointAwsService \u00b7 privateDnsEnabled",
+        "role": "The isolated tier's only way to reach anything.",
+        "facts": [
+          "Every endpoint security group is opened to the VPC CIDR on 443 by CDK (<code>open</code> defaults to true); the KMS endpoint additionally gets one explicit ingress rule per isolated subnet CIDR.",
+          "There is no cognito-idp endpoint and no X-Ray endpoint \u2014 the authorizer's JWKS fetch goes over NAT, and X-Ray segments are emitted by the Lambda execution environment rather than through the VPC.",
+          "Secrets Manager and SSM are here because <code>secret</code> and <code>ssm:runtime</code> resources resolve at runtime; <code>ssm</code> resources are already resolved to their value at deploy time and <code>kms</code> contributes only a key ARN, with decrypt called at runtime through the KMS endpoint.",
+          "The API Gateway endpoint's ID is exported as <code>/{env}/flex/vpc-e/api-gateway</code> and pinned into the private API's <code>aws:SourceVpce</code> condition. No gateway endpoints (S3, DynamoDB) exist."
+        ],
+        "code": [
+          [
+            "stacks/core/endpoints.ts",
+            "platform/infra/flex/src/stacks/core/endpoints.ts"
+          ],
+          ["utils/resources.ts", "platform/infra/flex/src/utils/resources.ts"]
+        ]
+      }
+    },
+    {
+      "id": "flow",
+      "label": "VPC flow logs",
+      "sub": "ALL traffic \u00b7 1-minute \u00b7 S3 + CMK",
+      "x": 1086,
+      "y": 700,
+      "w": 230,
+      "h": 66,
+      "kind": "flex",
+      "plane": "control",
+      "d": {
+        "type": "Logging",
+        "tech": "FlowLogDestination.toS3 \u00b7 PLAIN_TEXT",
+        "role": "Full-fidelity records of every flow in the VPC, delivered by AWS rather than by any subnet.",
+        "facts": [
+          "Extended past <code>ALL_DEFAULT_FIELDS</code> with VPC ID, subnet ID, instance ID, TCP flags, packet source and destination addresses and flow direction.",
+          "The only statement the stack adds is the write path for <code>delivery.logs.amazonaws.com</code>; CDK's default account-root statement is also present.",
+          "No reader grant is written on top of CDK's default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright \u2014 an investigator or Athena role still has to be granted it deliberately.",
+          "The bucket is object-locked at 365 days GOVERNANCE with a matching expiry rule."
+        ],
+        "code": [
+          ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"],
+          [
+            "constructs/s3/FlowLogBucket.ts",
+            "platform/infra/flex/src/constructs/s3/FlowLogBucket.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "internet",
+      "label": "Public internet",
+      "sub": "DVLA APIs \u00b7 Cognito JWKS",
+      "x": 1440,
+      "y": 320,
+      "w": 177,
+      "h": 64,
+      "kind": "third",
+      "plane": "request",
+      "d": {
+        "type": "Third party",
+        "tech": "HTTPS over NAT",
+        "role": "Reached through NAT by the DVLA gateway and by the authorizer Lambda (Cognito JWKS, or the stub JWKS Function URL in development).",
+        "facts": [
+          "The only internet egress out of the VPC. Non-VPC Lambdas (smoke test, dev JWKS stub) reach the internet via the Lambda service network instead."
+        ]
+      }
+    },
+    {
+      "id": "partners",
+      "label": "UDP + UNS",
+      "sub": "GOV.UK Once \u00b7 private APIs",
+      "x": 1465,
+      "y": 650,
+      "w": 186,
+      "h": 64,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "GOV.UK Once systems",
+        "tech": "AWS APIs \u00b7 SigV4 as an assumed role",
+        "role": "Reached from the isolated tier through the API Gateway endpoint, never over the internet.",
+        "facts": [
+          "Sibling systems in other GOV.UK Once accounts \u2014 inside the organisational boundary, outside this account."
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "r53",
+      "to": "cf",
+      "label": "alias",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "DNS",
+        "auth": "\u2014",
+        "carries": "Name resolution",
+        "facts": []
+      }
+    },
+    {
+      "from": "acm",
+      "to": "cf",
+      "label": "TLS certificate",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "\u2014",
+        "auth": "\u2014",
+        "carries": "Certificate binding",
+        "facts": []
+      }
+    },
+    {
+      "from": "cf",
+      "to": "specs",
+      "label": "/docs*",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "Origin access control",
+        "carries": "Swagger UI and the generated specs",
+        "facts": [
+          "The only behaviour with caching enabled (<code>CACHING_OPTIMIZED</code>) and the only one that redirects HTTP to HTTPS rather than refusing it."
+        ]
+      }
+    },
+    {
+      "from": "cf",
+      "to": "pubapi",
+      "label": "origin \u00b7 us-east-1 to eu-west-2",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS, TLS 1.2+ \u00b7 OriginProtocolPolicy.HTTPS_ONLY (CDK default)",
+        "auth": "x-origin-verify secret header",
+        "carries": "Every API request",
+        "facts": [
+          "Caching is disabled on this behaviour, so every request crosses the region boundary to the origin.",
+          "<code>originPath</code> is <code>/prod</code> \u2014 the public API's only stage."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "authfn",
+      "label": "TOKEN authorizer",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda invoke",
+        "auth": "apigateway.amazonaws.com service principal",
+        "carries": "The Authorization header",
+        "facts": [
+          "API Gateway invokes the function through the Lambda service, so nothing about this hop touches the VPC \u2014 only the function's own outbound calls do."
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "ddvla",
+      "label": "AWS_PROXY",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "dvla's 7 public routes",
+        "facts": []
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "diso",
+      "label": "AWS_PROXY",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "Every other domain's public routes",
+        "facts": []
+      }
+    },
+    {
+      "from": "authfn",
+      "to": "nat",
+      "label": "JWKS fetch",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "\u2014",
+        "carries": "GET .../.well-known/jwks.json",
+        "facts": [
+          "A second internet egress path alongside the DVLA gateway's, and the reason the authorizer cannot be an isolated function."
+        ]
+      }
+    },
+    {
+      "from": "gwdvla",
+      "to": "nat",
+      "label": "DVLA calls",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "API key plus a DVLA-issued bearer token",
+        "carries": "Every DVLA API call",
+        "facts": []
+      }
+    },
+    {
+      "from": "nat",
+      "to": "internet",
+      "label": "internet gateway",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "\u2014",
+        "carries": "The only internet egress out of the VPC",
+        "facts": []
+      }
+    },
+    {
+      "from": "internet",
+      "to": "jwks",
+      "label": "development only",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "None \u2014 the Function URL is unauthenticated",
+        "carries": "The stub JWK set",
+        "facts": [
+          "The authorizer's <code>JWKS_URI</code> points at this public Function URL in development, so the request leaves through NAT and comes back in through the Lambda service."
+        ]
+      }
+    },
+    {
+      "from": "ddvla",
+      "to": "vpce",
+      "label": "443",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "SigV4 with the function's own role",
+        "carries": "Private API calls to the DVLA gateway and the udp domain",
+        "facts": []
+      }
+    },
+    {
+      "from": "diso",
+      "to": "vpce",
+      "label": "443 only",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "Execution role",
+        "carries": "Private API calls plus Secrets Manager, SSM, STS and KMS",
+        "facts": [
+          "The isolated security group has no other egress rule, so nothing beyond these six endpoints is reachable."
+        ]
+      }
+    },
+    {
+      "from": "gwiso",
+      "to": "vpce",
+      "label": "443 \u00b7 interface endpoint",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "sts:AssumeRole through the STS endpoint, then SigV4",
+        "carries": "UDP and UNS calls",
+        "facts": []
+      }
+    },
+    {
+      "from": "vpce",
+      "to": "privapi",
+      "label": "aws:SourceVpce pin",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "Endpoint condition plus the caller's IAM policy",
+        "carries": "All internal routing",
+        "facts": []
+      }
+    },
+    {
+      "from": "vpce",
+      "to": "partners",
+      "label": "private path",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS",
+        "auth": "SigV4 as the assumed consumer role",
+        "carries": "Partner API traffic",
+        "facts": []
+      }
+    }
+  ],
+  "tables": [
+    {
+      "name": "Address plan",
+      "cols": [
+        "Tier",
+        "Mask",
+        "Subnets",
+        "Usable IPs each",
+        "Route to internet",
+        "What runs there"
+      ],
+      "rows": [
+        [
+          "Public",
+          "/24",
+          "3 \u00b7 one per AZ",
+          "251",
+          "Internet gateway",
+          "NAT gateways only \u2014 no workloads"
+        ],
+        [
+          "Private with egress",
+          "/19",
+          "3 \u00b7 one per AZ",
+          "8,187",
+          "Via the NAT gateway in the same AZ",
+          "<code>access: private</code> \u2014 authorizer, DVLA gateway, all 8 dvla domain routes, and the six endpoint ENIs"
+        ],
+        [
+          "Private isolated",
+          "/19",
+          "3 \u00b7 one per AZ",
+          "8,187",
+          "None",
+          "<code>access: isolated</code> \u2014 UDP and UNS gateways plus every other domain's routes"
+        ]
+      ]
+    },
+    {
+      "name": "Network ACLs \u00b7 subnet-level, stateless, first match wins in ascending rule order",
+      "cols": [
+        "Rule",
+        "Direction",
+        "Traffic",
+        "CIDR",
+        "Action",
+        "Public",
+        "Egress",
+        "Isolated"
+      ],
+      "rows": [
+        [
+          "80",
+          "Egress",
+          "All traffic",
+          "VPC CIDR",
+          "Allow",
+          "\u2713",
+          "\u2713",
+          "\u2713"
+        ],
+        [
+          "80",
+          "Ingress",
+          "All traffic",
+          "VPC CIDR",
+          "Allow",
+          "\u2713",
+          "\u2713",
+          "\u2713"
+        ],
+        [
+          "90",
+          "Ingress",
+          "TCP 0\u20131023",
+          "0.0.0.0/0",
+          "<b>Deny</b>",
+          "\u2713",
+          "\u2713",
+          "\u2713"
+        ],
+        [
+          "91",
+          "Ingress",
+          "UDP 0\u20131023",
+          "0.0.0.0/0",
+          "<b>Deny</b>",
+          "\u2713",
+          "\u2713",
+          "\u2713"
+        ],
+        [
+          "92",
+          "Ingress",
+          "TCP 3389 (RDP)",
+          "0.0.0.0/0",
+          "<b>Deny</b>",
+          "\u2713",
+          "\u2713",
+          "\u2713"
+        ],
+        [
+          "200",
+          "Ingress",
+          "TCP 1024\u201365535",
+          "0.0.0.0/0",
+          "Allow",
+          "\u2713",
+          "\u2713",
+          "\u2014"
+        ],
+        [
+          "210",
+          "Ingress",
+          "UDP 1024\u201365535",
+          "0.0.0.0/0",
+          "Allow",
+          "\u2713",
+          "\u2713",
+          "\u2014"
+        ],
+        [
+          "32000",
+          "Egress",
+          "All traffic",
+          "0.0.0.0/0",
+          "Allow",
+          "\u2713",
+          "\u2713",
+          "\u2014"
+        ],
+        [
+          "\u2014",
+          "\u2014",
+          "<b>Net effect on the isolated tier</b>",
+          "\u2014",
+          "\u2014",
+          "\u2014",
+          "\u2014",
+          "Rule 80 is the only pair that matches, so traffic may leave to the VPC CIDR and nowhere else"
+        ]
+      ]
+    },
+    {
+      "name": "Security groups \u00b7 instance-level, stateful",
+      "cols": [
+        "Security group",
+        "allowAllOutbound",
+        "Explicit rules",
+        "Attached to"
+      ],
+      "rows": [
+        [
+          "PrivateEgress",
+          "true",
+          "None \u2014 all outbound is already permitted",
+          "Authorizer, DVLA gateway, every <code>access: private</code> domain route"
+        ],
+        [
+          "PrivateIsolated",
+          "<b>false</b>",
+          "Egress TCP 443 to each of the six endpoint security groups, generated one per <code>addVpcEndpoint</code> call",
+          "UDP and UNS gateways, every <code>access: isolated</code> domain route"
+        ],
+        [
+          "Endpoint SGs (\u00d76)",
+          "\u2014",
+          "Every endpoint SG allows 443 from the VPC CIDR (CDK default); the KMS endpoint additionally gets an explicit rule per isolated subnet CIDR",
+          "One per interface endpoint, created by CDK"
+        ]
+      ]
+    },
+    {
+      "name": "VPC interface endpoints",
+      "cols": ["Service", "Private DNS", "Why it exists"],
+      "rows": [
+        [
+          "API Gateway",
+          "\u2713",
+          "Reaching the private REST API \u2014 and, for the isolated gateways, the partner private APIs. Its endpoint ID is the pin in the private API's resource policy"
+        ],
+        ["CloudWatch Logs", "\u2713", "Log delivery from isolated functions"],
+        [
+          "Secrets Manager",
+          "\u2713",
+          "<code>secret</code> resource resolution at runtime"
+        ],
+        ["SSM", "\u2713", "<code>ssm:runtime</code> resource resolution"],
+        ["STS", "\u2713", "<code>sts:AssumeRole</code> for the SigV4 gateways"],
+        [
+          "KMS",
+          "\u2713",
+          "Environment-variable decryption and consumer CMK operations \u2014 the one endpoint also reached by subnet CIDR, not only by security group"
+        ],
+        [
+          "<b>Deliberately absent</b>",
+          "\u2014",
+          "cognito-idp (the authorizer goes over NAT instead), X-Ray (segments leave through the execution environment), and any gateway endpoint for S3 or DynamoDB"
+        ]
+      ]
+    },
+    {
+      "name": "Egress paths",
+      "cols": ["From", "Path", "Reaches", "Notes"],
+      "rows": [
+        [
+          "DVLA gateway",
+          "Egress subnet \u2192 NAT gateway \u2192 internet gateway",
+          "DVLA APIs on the public internet",
+          "One of two internet egress paths \u2014 the authorizer also reaches out over NAT to fetch the Cognito JWKS (a public Lambda Function URL in development)"
+        ],
+        [
+          "Authorizer",
+          "Egress subnet \u2192 NAT gateway \u2192 internet gateway",
+          "cognito-idp.eu-west-2.amazonaws.com, or the stub Function URL in development",
+          "There is no cognito-idp interface endpoint, so this cannot be an isolated function"
+        ],
+        [
+          "UDP / UNS gateways",
+          "Isolated subnet \u2192 API Gateway interface endpoint",
+          "Partner private APIs",
+          "No NAT, no internet route. UNS's config names a <code>privateApiUrl</code>; UDP's schema has no such field, so its <code>apiUrl</code> has to resolve through the endpoint"
+        ],
+        [
+          "Any VPC function",
+          "Interface endpoints",
+          "Secrets Manager, SSM, STS, KMS, CloudWatch Logs",
+          "443 only \u2014 enforced by SG rules for the isolated tier; the egress tier permits all outbound and simply happens to use 443"
+        ],
+        [
+          "Any domain route",
+          "Interface endpoint \u2192 private REST API",
+          "Other domains and the service gateways",
+          "SigV4 signed with the function's own role, and single-attempt \u2014 nothing on this path opts into retries"
+        ],
+        [
+          "Domain route \u2192 third party",
+          "<b>Does not exist</b>",
+          "\u2014",
+          "No third-party credentials are configured anywhere; isolated routes additionally have no network path \u2014 private-access routes such as the whole dvla domain do have one"
+        ],
+        [
+          "Non-VPC Lambdas",
+          "Lambda service network",
+          "The public internet",
+          "The smoke test and the development JWKS stub bypass the VPC entirely"
+        ]
+      ]
+    },
+    {
+      "name": "Public ingress and TLS",
+      "cols": ["Hop", "Termination", "Policy"],
+      "rows": [
+        [
+          "Viewer \u2192 CloudFront",
+          "TLS terminated at the edge",
+          "<code>SecurityPolicyProtocol.TLS_V1_2_2021</code> minimum \u00b7 <code>ViewerProtocolPolicy.HTTPS_ONLY</code> on the API behaviour"
+        ],
+        [
+          "CloudFront \u2192 API Gateway",
+          "New TLS session to the origin",
+          "<code>OriginProtocolPolicy.HTTPS_ONLY</code> \u2014 CDK's <code>HttpOrigin</code> default, not set explicitly"
+        ],
+        [
+          "Public REST API",
+          "\u2014",
+          "<code>SecurityPolicy_TLS13_1_2_2021_06</code>"
+        ],
+        ["/docs* viewer", "\u2014", "<code>REDIRECT_TO_HTTPS</code>"],
+        [
+          "Response headers",
+          "\u2014",
+          "HSTS 365 days with includeSubdomains, on both behaviours"
+        ],
+        [
+          "Every S3 bucket",
+          "\u2014",
+          "An app-wide aspect denies <code>s3:*</code> when <code>aws:SecureTransport</code> is false"
+        ],
+        [
+          "In-VPC AWS calls",
+          "\u2014",
+          "443 only, through the interface endpoints"
+        ]
+      ]
+    }
+  ],
+  "placement": {
+    "z-use1": ["kms-relay"],
+    "z-vpc": ["vpc", "routetables"],
+    "z-pub": ["subnets-public", "nacl-public", "igw"],
+    "z-egr": ["subnets-egress", "nacl-egress", "sg-egress"],
+    "z-iso": ["subnets-isolated", "nacl-isolated", "sg-isolated"],
+    "r53": ["r53-record"],
+    "acm": ["acm-cert"],
+    "cf": [
+      "cf-dist",
+      "cff-platform",
+      "cff-docs",
+      "cf-rhp",
+      "cf-oac",
+      "cf-monitor",
+      "cf-policies",
+      "waf-cf",
+      "shield",
+      "s3-cflogs"
+    ],
+    "specs": ["s3-specs", "s3-speclogs"],
+    "pubapi": [
+      "api-public",
+      "api-stage-public",
+      "waf-regional",
+      "api-authorizer",
+      "api-routes-public",
+      "api-account"
+    ],
+    "privapi": [
+      "api-private",
+      "api-stage-private",
+      "api-routes-private",
+      "api-routes-gateways"
+    ],
+    "jwks": ["lambda-jwks"],
+    "nat": ["nat", "eip"],
+    "authfn": ["lambda-auth"],
+    "gwdvla": ["lambda-gw-dvla"],
+    "ddvla": ["lambda-domain-dvla"],
+    "gwiso": ["lambda-gw-udp", "lambda-gw-uns"],
+    "diso": [
+      "lambda-domain-udp",
+      "lambda-domain-uns",
+      "lambda-domain-groups",
+      "lambda-domain-lc",
+      "lambda-domain-example"
+    ],
+    "vpce": ["vpce", "sg-endpoints"],
+    "flow": ["flowlog", "s3-flowlogs", "kms-flowlog"]
+  }
+}

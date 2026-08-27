@@ -1,0 +1,1200 @@
+{
+  "id": "containers",
+  "name": "Containers",
+  "order": 3,
+  "group": "Architecture",
+  "w": 1360,
+  "h": 1030,
+  "blurb": "Every separately deployable or storable part of the runtime request path, and the traffic between them. Build, deploy and alerting machinery lives on the Delivery tab. C4 level 2.",
+  "audience": "Platform engineers, and anyone reviewing a change",
+  "note": "Web ACLs, Shield and the VPC are not containers \u2014 they are policy and network attached to the boxes below, so each one's effect is a fact on the container it guards and an entry in that container's resource list. Note what is absent: FLEX owns no datastore, no queue and no event bus, so every user request is a synchronous fan-out that has to finish inside a 20 to 30 second Lambda timeout.",
+  "zones": [
+    {
+      "id": "edge",
+      "label": "Edge \u00b7 us-east-1 (N. Virginia)",
+      "x": 240,
+      "y": 60,
+      "w": 400,
+      "h": 400,
+      "hard": true,
+      "d": {
+        "type": "Region boundary",
+        "tech": "us-east-1 \u00b7 FlexGlobalStack",
+        "role": "Everything CloudFront insists on owning: the distribution, its two functions, the CLOUDFRONT-scope Web ACL, the certificate and the spec bucket.",
+        "facts": [
+          "The alarm actions in this region publish to us-east-1 relay topics, because a CloudWatch alarm cannot target a topic in another region. The relay itself is on the Delivery tab."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "ingress",
+      "label": "Ingress \u00b7 eu-west-2 (London)",
+      "x": 670,
+      "y": 60,
+      "w": 300,
+      "h": 330,
+      "hard": true,
+      "d": {
+        "type": "Region boundary",
+        "tech": "eu-west-2 \u00b7 FlexPlatformStack",
+        "role": "Where an origin request first meets FLEX-owned compute, and the only place a user's token is actually verified.",
+        "facts": [],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "domains",
+      "label": "Domains \u00b7 eu-west-2 (London)",
+      "x": 1020,
+      "y": 60,
+      "w": 300,
+      "h": 430,
+      "hard": true,
+      "d": {
+        "type": "Region boundary",
+        "tech": "eu-west-2 \u00b7 one CloudFormation stack per domain",
+        "role": "Business logic. One stack per domain, one Lambda per route, no shared runtime between them.",
+        "facts": [
+          "A domain team writes a domain.config.ts and handler files; the stack, the routes, the IAM and the alarms are generated from that config.",
+          "Domains are coupled at build time as well as at runtime: dvla, groups, uns and example all take a workspace dependency on @flex/udp-domain, and three of them import a udp Zod response schema straight into their own domain.config.ts \u2014 a udp schema change breaks them at compile time."
+        ],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"],
+          ["uns/domain.config.ts", "domains/uns/domain.config.ts"]
+        ]
+      }
+    },
+    {
+      "id": "internal",
+      "label": "Internal plane \u00b7 eu-west-2 (London)",
+      "x": 700,
+      "y": 620,
+      "w": 610,
+      "h": 232,
+      "hard": true,
+      "d": {
+        "type": "Soft grouping",
+        "tech": "API Gateway PRIVATE + three gateway Lambdas",
+        "role": "The only route from a domain to an upstream: a private API in front of the three functions that hold the credentials.",
+        "facts": [
+          "No domain function holds an upstream credential; the credential lives in the gateway function and the domain is only allowed to invoke the route ARNs its own config names."
+        ],
+        "code": []
+      }
+    },
+    {
+      "id": "upstreams",
+      "label": "Upstreams",
+      "x": 700,
+      "y": 860,
+      "w": 610,
+      "h": 130,
+      "hard": false,
+      "d": {
+        "type": "Soft grouping",
+        "tech": "Systems of record",
+        "role": "Every system FLEX brokers. All user state lives here.",
+        "facts": [
+          "FLEX owns no datastore: there is no database, queue or event bus in the repo \u2014 the only data store on this diagram is the spec bucket."
+        ],
+        "code": []
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "app",
+      "label": "GOV.UK App",
+      "sub": "GOV.UK Once \u00b7 mobile client",
+      "x": 30,
+      "y": 114,
+      "w": 193,
+      "h": 56,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "GOV.UK Once system",
+        "tech": "Mobile client",
+        "role": "Calls the public API through CloudFront.",
+        "facts": [
+          "The only real-user caller of the request path below; the smoke-test canary is the other production caller."
+        ],
+        "code": []
+      }
+    },
+    {
+      "id": "cfd",
+      "label": "CloudFront distribution",
+      "sub": "two behaviours",
+      "x": 264,
+      "y": 110,
+      "w": 177,
+      "h": 64,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "CloudFront \u00b7 TLS 1.2_2021 \u00b7 PriceClass 100",
+        "role": "The single public entry point for the API. (Development also exposes an unauthenticated JWKS stub Function URL.)",
+        "facts": [
+          "Default behaviour: the API origin with caching disabled and ALL_VIEWER_EXCEPT_HOST_HEADER, plus the x-origin-verify header the origin demands.",
+          "/docs* behaviour: the spec bucket through Origin Access Control, caching optimised \u2014 the only cached behaviour on the distribution.",
+          "<b>Guarded by</b> a CLOUDFRONT-scope Web ACL \u2014 two managed rule groups, IP reputation, a 2000-per-IP rate limit and an end-to-end test bypass header \u2014 and by Shield Advanced, which is only created outside development."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "cffplat",
+      "label": "Viewer-request CFF",
+      "sub": "platform \u00b7 JS 2.0",
+      "x": 264,
+      "y": 214,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "CloudFront Function",
+        "role": "Correlation ID and structural JWT validation at the edge.",
+        "facts": [
+          "Rejects a missing or structurally invalid token with a 401 before the origin is touched; the signature is checked for presence only, never verified.",
+          "Sets x-correlation-id on every request to the API behaviour, so every Lambda log line carries it. The /docs* behaviour runs a different function that does not; API Gateway access logs do not include it."
+        ],
+        "code": [
+          [
+            "viewer-request-cff-platform/src/handler.ts",
+            "platform/domains/viewer-request-cff-platform/src/handler.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "cffdocs",
+      "label": "Viewer-request CFF",
+      "sub": "docs \u00b7 JS 2.0",
+      "x": 450,
+      "y": 214,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "CloudFront Function",
+        "role": "Rewrites /docs and /docs/ to the Swagger UI index.",
+        "facts": [
+          "/docs redirects 301 to /docs/, which rewrites to /docs/index.html. It touches no headers."
+        ],
+        "code": [
+          [
+            "viewer-request-cff-docs/src/handler.ts",
+            "platform/domains/viewer-request-cff-docs/src/handler.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "specs",
+      "label": "OpenAPI spec bucket",
+      "sub": "S3 \u00b7 OAC \u00b7 versioned",
+      "x": 450,
+      "y": 396,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container \u00b7 data store",
+        "tech": "Amazon S3",
+        "role": "Swagger UI plus one generated OpenAPI 3.1 document per domain.",
+        "facts": [
+          "Deployed with prune:false, so specs for domains no longer generated are not deleted. The generator always emits all domains' specs regardless of the deploy target.",
+          "Private: BlockPublicAccess.BLOCK_ALL, reachable only through the distribution's Origin Access Control."
+        ],
+        "code": [
+          ["scripts/generateOpenapi.ts", "scripts/generateOpenapi.ts"],
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "id": "pubapi",
+      "label": "Public REST API",
+      "sub": "REGIONAL \u00b7 stage prod",
+      "x": 694,
+      "y": 110,
+      "w": 177,
+      "h": 60,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "API Gateway REST",
+        "role": "Hosts /health and the /app tree every domain attaches to.",
+        "facts": [
+          "<b>Origin-locked by</b> a REGIONAL Web ACL whose default action is block \u2014 only a request carrying the x-origin-verify secret is allowed through, which is what makes the raw execute-api URL unusable.",
+          "Custom 401 and 403 gateway responses surface the authorizer's errorMessage to the caller."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "authfn",
+      "label": "Authorizer Lambda",
+      "sub": "egress subnets",
+      "x": 694,
+      "y": 196,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "Lambda, Node 24 \u00b7 private-with-egress",
+        "role": "TOKEN authorizer verifying the Cognito access token.",
+        "facts": [
+          "Returns a policy carrying pairwiseId in the authorizer context; on an allow the policy resource is <code>*</code>, not the invoked method ARN.",
+          "Emits one of six auth telemetry events on every decision. An expired token is the only denial that carries a message."
+        ],
+        "code": [
+          [
+            "platform/domains/auth/src/handler.ts",
+            "platform/domains/auth/src/handler.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "cognito",
+      "label": "Identity",
+      "sub": "GOV.UK Once \u00b7 Cognito user pool",
+      "x": 694,
+      "y": 286,
+      "w": 218,
+      "h": 54,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "GOV.UK Once system",
+        "tech": "Amazon Cognito user pool",
+        "role": "Issues and signs the access tokens FLEX accepts.",
+        "facts": [
+          "A sibling GOV.UK Once system, not a third party. In development the authorizer is pointed at a stub user pool and at FLEX's own JWKS Function URL instead."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "ddvla",
+      "label": "dvla",
+      "sub": "7 public \u00b7 1 private \u00b7 egress tier",
+      "x": 1044,
+      "y": 110,
+      "w": 237,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "private access \u00b7 30s timeout",
+        "role": "Driving licence, vehicles, share codes, vehicle enquiry.",
+        "facts": [
+          "The only domain whose common.access is private, so its route functions sit in the egress tier and can reach NAT.",
+          "<b>Depends on udp</b>: six of its eight routes fetch the DVLA linking ID from udp's private identity route in parallel with a DVLA authenticate call (vehicle-enquiry needs only the token). Its other nine integrations all target the DVLA gateway.",
+          "development, staging and production, plus every ephemeral PR and personal stage."
+        ],
+        "code": [
+          ["domains/dvla/domain.config.ts", "domains/dvla/domain.config.ts"],
+          [
+            "dvla/src/services/authentication.ts",
+            "domains/dvla/src/services/authentication.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "dudp",
+      "label": "udp",
+      "sub": "6 public \u00b7 2 private \u00b7 isolated",
+      "x": 1044,
+      "y": 172,
+      "w": 218,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "isolated access \u00b7 20s timeout",
+        "role": "Identity links, user upsert, notification preferences.",
+        "facts": [
+          "<b>The hub of the domain graph</b>: dvla, uns, groups and example all call its private routes \u2014 GET /v1/users/push-id for three of them, GET /v1/identity/{service} for dvla.",
+          "Depends outward on the DVLA gateway for the well-known JWKS, and on the dvla domain's private unlink route \u2014 but only when the environment parameter reads production.",
+          "development, staging and production, plus every ephemeral PR and personal stage."
+        ],
+        "code": [
+          ["domains/udp/domain.config.ts", "domains/udp/domain.config.ts"],
+          [
+            "udp/src/utils/get-push-id.ts",
+            "domains/udp/src/utils/get-push-id.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "duns",
+      "label": "uns",
+      "sub": "4 public \u00b7 isolated",
+      "x": 1044,
+      "y": 234,
+      "w": 177,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "isolated access \u00b7 30s timeout",
+        "role": "Notification listing, read status and deletion.",
+        "facts": [
+          "Depends on udp only: all four routes fetch the push ID from udp's private route, then call the UNS gateway with it.",
+          "development, staging and production, plus every ephemeral PR and personal stage."
+        ],
+        "code": [
+          [
+            "uns/src/handlers/v1/notifications/get.ts",
+            "domains/uns/src/handlers/v1/notifications/get.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "dgroups",
+      "label": "groups",
+      "sub": "2 public \u00b7 isolated",
+      "x": 1044,
+      "y": 296,
+      "w": 177,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "isolated access \u00b7 30s timeout",
+        "role": "Group subscription read and update.",
+        "facts": [
+          "<b>An uncompensated dual write</b>: POST /v1/groups writes the UNS gateway, merges the result with the user's current UDP groups, then writes the UDP gateway. A UDP failure after a UNS success throws BadGateway and leaves the two systems of record divergent \u2014 no compensation, no idempotency key. It is the one place FLEX orchestrates a multi-system transaction.",
+          "Depends on udp (the private push-ID route plus two udp gateway routes) and on the uns gateway.",
+          "development and staging, plus every ephemeral PR and personal stage."
+        ],
+        "code": [
+          [
+            "groups/src/handlers/v1/groups/post.ts",
+            "domains/groups/src/handlers/v1/groups/post.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "dex",
+      "label": "example",
+      "sub": "11 public \u00b7 2 private \u00b7 isolated",
+      "x": 1044,
+      "y": 358,
+      "w": 224,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "isolated access \u00b7 20s timeout",
+        "role": "Reference domain demonstrating every SDK capability.",
+        "facts": [
+          "Exercises feature flags, all four resource types and both integration kinds, including one that calls its own private POST /v0/todos.",
+          "Depends on udp (the private push-ID route and two udp gateway routes) and on the uns gateway.",
+          "development, plus every ephemeral PR and personal stage \u2014 the environments list is only enforced for persistent stages."
+        ],
+        "code": [
+          [
+            "domains/example/domain.config.ts",
+            "domains/example/domain.config.ts"
+          ],
+          ["utils/deployment.ts", "platform/infra/flex/src/utils/deployment.ts"]
+        ]
+      }
+    },
+    {
+      "id": "dlc",
+      "label": "local-council",
+      "sub": "2 private \u00b7 isolated",
+      "x": 1044,
+      "y": 420,
+      "w": 177,
+      "h": 50,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container group \u00b7 one Lambda per route",
+        "tech": "isolated access \u00b7 30s timeout",
+        "role": "Local authority read and upsert.",
+        "facts": [
+          "Private-only, so its stack creates no authorizer and nothing reaches it from the public API \u2014 which is why it has no line from pubapi.",
+          "<b>Broken today</b>: both of its integrations name /v1/local-council routes on the udp gateway, which defines no such routes, so the gateway's own lookup returns 404. pnpm validate:integrations does not catch it \u2014 it only checks type: domain integrations.",
+          "development and staging, plus every ephemeral PR and personal stage."
+        ],
+        "code": [
+          [
+            "domains/local-council/domain.config.ts",
+            "domains/local-council/domain.config.ts"
+          ],
+          ["udp/gateway.config.ts", "platform/domains/udp/gateway.config.ts"],
+          [
+            "sdk/route/validate-integrations.ts",
+            "libs/sdk/src/route/validate-integrations.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "privapi",
+      "label": "Private REST API",
+      "sub": "PRIVATE \u00b7 IAM auth",
+      "x": 724,
+      "y": 670,
+      "w": 177,
+      "h": 60,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "API Gateway REST",
+        "role": "The internal routing plane: /health, /domains/** and /gateways/**.",
+        "facts": [
+          "Only reachable through the API Gateway interface endpoint \u2014 the resource policy denies every other source and adds no Allow, so the caller's own IAM policy is the sole gate.",
+          "AuthorizationType.IAM on every method, so every caller must SigV4-sign.",
+          "dataTraceEnabled is false, keeping internal request and response bodies out of the logs."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gwdvla",
+      "label": "DVLA service gateway",
+      "sub": "egress tier \u00b7 10 routes",
+      "x": 724,
+      "y": 790,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "Lambda in the private-with-egress tier \u00b7 30s",
+        "role": "Sole holder of DVLA credentials.",
+        "facts": [
+          "Mounted at ANY /gateways/dvla/{proxy+}: its ten routes are matched inside the handler, not by API Gateway, so an unknown path returns the gateway's own 404.",
+          "In the egress tier because DVLA is reached over the internet through NAT.",
+          "Mints a fresh X-Correlation-Id per client build rather than propagating one \u2014 the chain has already ended at the private-API turn (see Request path)."
+        ],
+        "code": [
+          ["dvla/src/gateway.ts", "platform/domains/dvla/src/gateway.ts"],
+          [
+            "service-gateway/handler/index.ts",
+            "libs/service-gateway/src/handler/index.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "gwudp",
+      "label": "UDP service gateway",
+      "sub": "isolated \u00b7 10 routes",
+      "x": 916,
+      "y": 790,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "Lambda in the private-isolated tier \u00b7 30s",
+        "role": "Sole holder of UDP credentials.",
+        "facts": [
+          "SigV4 with credentials from sts:AssumeRole, optionally carrying an ExternalId, plus an x-api-key header set per route.",
+          "No internet route \u2014 isolated subnets, no NAT. The UDP endpoint it dials comes from consumerConfig.apiUrl (not in this repo); reachability depends on that URL resolving through the API Gateway interface endpoint. Unlike UNS, the udp consumer-config schema has no privateApiUrl field at all."
+        ],
+        "code": [
+          ["udp/src/gateway.ts", "platform/domains/udp/src/gateway.ts"],
+          ["udp/gateway.config.ts", "platform/domains/udp/gateway.config.ts"]
+        ]
+      }
+    },
+    {
+      "id": "gwuns",
+      "label": "UNS service gateway",
+      "sub": "isolated \u00b7 6 routes",
+      "x": 1108,
+      "y": 790,
+      "w": 177,
+      "h": 54,
+      "kind": "flex",
+      "plane": "request",
+      "d": {
+        "type": "Container",
+        "tech": "Lambda in the private-isolated tier \u00b7 30s",
+        "role": "Sole holder of UNS credentials.",
+        "facts": [
+          "Dials consumerConfig.privateApiUrl with a SigV4-signed assumed role, with X-API-KEY set once on the client for every route."
+        ],
+        "code": [["uns/src/gateway.ts", "platform/domains/uns/src/gateway.ts"]]
+      }
+    },
+    {
+      "id": "xdvla",
+      "label": "DVLA",
+      "sub": "third party",
+      "x": 724,
+      "y": 900,
+      "w": 177,
+      "h": 54,
+      "kind": "third",
+      "plane": "request",
+      "d": {
+        "type": "Third-party system",
+        "tech": "HTTPS via NAT",
+        "role": "Licence, vehicle and share-code services.",
+        "facts": [
+          "The only upstream outside the GOV.UK Once boundary, and the only one reached over the public internet."
+        ],
+        "code": []
+      }
+    },
+    {
+      "id": "xudp",
+      "label": "UDP",
+      "sub": "GOV.UK Once \u00b7 shared API",
+      "x": 916,
+      "y": 900,
+      "w": 177,
+      "h": 54,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "GOV.UK Once system",
+        "tech": "AWS API, SigV4 + API key",
+        "role": "Identity and preference store.",
+        "facts": [
+          "The gateway dials consumerConfig.apiUrl, and the udp consumer-config schema has no privateApiUrl field, so whether this hop stays inside AWS depends on what that URL resolves to."
+        ],
+        "code": []
+      }
+    },
+    {
+      "id": "xuns",
+      "label": "UNS",
+      "sub": "GOV.UK Once \u00b7 private",
+      "x": 1108,
+      "y": 900,
+      "w": 177,
+      "h": 54,
+      "kind": "govuk",
+      "plane": "request",
+      "d": {
+        "type": "GOV.UK Once system",
+        "tech": "AWS API, SigV4 + API key",
+        "role": "Notification and group store.",
+        "facts": [
+          "Its consumer config names a privateApiUrl, and that is the URL the UNS gateway dials."
+        ],
+        "code": []
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "app",
+      "to": "cfd",
+      "label": "HTTPS + Bearer JWT",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to the CloudFront alias",
+        "auth": "Cognito access token",
+        "carries": "Every user request",
+        "facts": [
+          "The distribution's Web ACL and its viewer-request function both sit on this hop; the repo does not pin down which runs first, so neither does this diagram."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfd",
+      "to": "cffplat",
+      "label": "viewer-request",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudFront Function trigger",
+        "auth": "\u2014",
+        "carries": "Mutable request headers",
+        "facts": [
+          "Associated with the default behaviour only \u2014 a /docs* request runs the docs function instead."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfd",
+      "to": "cffdocs",
+      "label": "viewer-request /docs*",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "CloudFront Function trigger",
+        "auth": "\u2014",
+        "carries": "URI rewriting only",
+        "facts": [],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfd",
+      "to": "specs",
+      "label": "/docs* origin \u00b7 OAC",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to S3",
+        "auth": "Origin Access Control",
+        "carries": "Swagger UI and OpenAPI documents",
+        "facts": ["The only cached behaviour on the distribution."],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+        ]
+      }
+    },
+    {
+      "from": "cfd",
+      "to": "pubapi",
+      "label": "origin + x-origin-verify",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to execute-api, originPath /prod",
+        "auth": "Shared secret header",
+        "carries": "The origin request",
+        "facts": [
+          "The secret is generated in eu-west-2 and replicated to us-east-1.",
+          "Without this header the regional Web ACL's default block applies."
+        ],
+        "code": [
+          ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"],
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "authfn",
+      "label": "TOKEN authorizer",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda invoke",
+        "auth": "API Gateway service principal",
+        "carries": "The Authorization header out; an IAM policy and pairwiseId back",
+        "facts": [
+          "resultsCacheTtl is never set, so API Gateway's five-minute default cache applies \u2014 and because the allow policy's resource is <code>*</code>, one cached allow covers every route.",
+          "Each domain stack with public routes creates its own TokenAuthorizer over this one shared function."
+        ],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "authfn",
+      "to": "cognito",
+      "label": "JWKS",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS over NAT",
+        "auth": "None \u2014 the JWKS is public",
+        "carries": "Signing keys",
+        "facts": [
+          "There is no cognito-idp interface endpoint, so this call leaves the VPC through the NAT gateway. In development it points at the stub Function URL instead."
+        ],
+        "code": [
+          ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "ddvla",
+      "label": "AWS_PROXY",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "7 public routes",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "dudp",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "6 public routes",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "duns",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "4 public routes",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "dgroups",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "2 public routes",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "pubapi",
+      "to": "dex",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "Authorizer policy",
+        "carries": "11 public routes",
+        "facts": ["Development, plus every ephemeral PR and personal stage."],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "ddvla",
+      "to": "privapi",
+      "label": "SigV4 out",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4 with the route function's own role",
+        "carries": "Nine DVLA gateway calls plus the udp linking-ID domain call",
+        "facts": [
+          "Each route function gets an inline policy naming only the route ARNs listed in that route's integrations array."
+        ],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"],
+          [
+            "utils/integrations.ts",
+            "platform/infra/flex/src/utils/integrations.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "dudp",
+      "to": "privapi",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4",
+        "carries": "UDP and DVLA gateway calls plus the DVLA unlink domain call out; two private routes in",
+        "facts": [],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"]
+        ]
+      }
+    },
+    {
+      "from": "duns",
+      "to": "privapi",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4",
+        "carries": "UNS gateway calls plus the UDP push-ID domain call",
+        "facts": [],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"]
+        ]
+      }
+    },
+    {
+      "from": "dgroups",
+      "to": "privapi",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4",
+        "carries": "UNS and UDP gateway calls plus the UDP push-ID domain call",
+        "facts": [],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"]
+        ]
+      }
+    },
+    {
+      "from": "dlc",
+      "to": "privapi",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4",
+        "carries": "Two udp gateway calls out; two private routes in",
+        "facts": [
+          "Both outbound calls name routes the udp gateway does not define."
+        ],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"]
+        ]
+      }
+    },
+    {
+      "from": "dex",
+      "to": "privapi",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS via the interface endpoint",
+        "auth": "SigV4",
+        "carries": "Gateway and domain integrations out; two private routes in",
+        "facts": [
+          "Includes a self-integration: example calls its own private POST /v0/todos."
+        ],
+        "code": [
+          ["sdk/route/integrations.ts", "libs/sdk/src/route/integrations.ts"]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "ddvla",
+      "label": "private routes in",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "POST /v1/unlink, called by the udp domain",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "dudp",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "GET /v1/users/push-id and GET /v1/identity/{service}",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "dlc",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "GET and POST /v1/local-council/{id}",
+        "facts": ["Declared and deployed, but no domain integrates with them."],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "dex",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "POST /v0/todos and GET /v0/identity/{service}",
+        "facts": [],
+        "code": [
+          ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "gwdvla",
+      "label": "ANY /gateways/{name}/{proxy+}",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "All ten DVLA gateway routes",
+        "facts": [
+          "One ANY {proxy+} method per gateway; the gateway function matches the path itself."
+        ],
+        "code": [
+          [
+            "utils/create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "gwudp",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "Identity, user, notification and group routes",
+        "facts": [],
+        "code": [
+          [
+            "utils/create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "privapi",
+      "to": "gwuns",
+      "label": "",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "Lambda proxy integration",
+        "auth": "IAM",
+        "carries": "Notification and group routes",
+        "facts": [],
+        "code": [
+          [
+            "utils/create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ]
+        ]
+      }
+    },
+    {
+      "from": "gwdvla",
+      "to": "xdvla",
+      "label": "API key + bearer, via NAT",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS over the public internet",
+        "auth": "X-API-KEY plus the id-token from a preceding /v1/authenticate call",
+        "carries": "DVLA licence, vehicle and share-code operations",
+        "facts": [
+          "The only egress out of the VPC to a non-AWS destination. (The canary also reaches One Login and Firebase, but it runs outside the VPC.)"
+        ],
+        "code": [
+          ["dvla/src/gateway.ts", "platform/domains/dvla/src/gateway.ts"]
+        ]
+      }
+    },
+    {
+      "from": "gwudp",
+      "to": "xudp",
+      "label": "SigV4 assumed role",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to consumerConfig.apiUrl",
+        "auth": "sts:AssumeRole then SigV4, plus an x-api-key header",
+        "carries": "Identity, user, notification and group operations",
+        "facts": [],
+        "code": [["udp/src/gateway.ts", "platform/domains/udp/src/gateway.ts"]]
+      }
+    },
+    {
+      "from": "gwuns",
+      "to": "xuns",
+      "label": "SigV4 assumed role",
+      "dir": null,
+      "style": null,
+      "d": {
+        "protocol": "HTTPS to consumerConfig.privateApiUrl",
+        "auth": "sts:AssumeRole then SigV4, plus an X-API-KEY header",
+        "carries": "Notification and group operations",
+        "facts": [],
+        "code": [["uns/src/gateway.ts", "platform/domains/uns/src/gateway.ts"]]
+      }
+    }
+  ],
+  "placement": {
+    "cfd": [
+      "cf-dist",
+      "cf-rhp",
+      "cf-oac",
+      "cf-monitor",
+      "cf-policies",
+      "s3-cflogs",
+      "acm-cert",
+      "r53-record",
+      "waf-cf",
+      "shield"
+    ],
+    "cffplat": ["cff-platform"],
+    "cffdocs": ["cff-docs"],
+    "specs": ["s3-specs", "s3-speclogs"],
+    "pubapi": [
+      "api-public",
+      "api-stage-public",
+      "api-authorizer",
+      "api-routes-public",
+      "alarms-apigw",
+      "waf-regional"
+    ],
+    "authfn": ["lambda-auth", "lambda-jwks"],
+    "privapi": [
+      "api-private",
+      "api-stage-private",
+      "api-routes-private",
+      "api-routes-gateways"
+    ],
+    "gwdvla": ["lambda-gw-dvla"],
+    "gwudp": ["lambda-gw-udp"],
+    "gwuns": ["lambda-gw-uns"],
+    "ddvla": ["lambda-domain-dvla"],
+    "dudp": ["lambda-domain-udp"],
+    "duns": ["lambda-domain-uns"],
+    "dgroups": ["lambda-domain-groups"],
+    "dlc": ["lambda-domain-lc"],
+    "dex": ["lambda-domain-example"]
+  },
+  "tables": [
+    {
+      "name": "The three Lambda access tiers",
+      "cols": [
+        "",
+        "<code>public</code>",
+        "<code>private</code>",
+        "<code>isolated</code>"
+      ],
+      "rows": [
+        [
+          "Construct",
+          "<code>FlexPublicFunction</code>",
+          "<code>FlexPrivateEgressFunction</code>",
+          "<code>FlexPrivateIsolatedFunction</code>"
+        ],
+        ["In the VPC", "No", "Yes", "Yes"],
+        [
+          "Subnets",
+          "\u2014",
+          "<code>PRIVATE_WITH_EGRESS</code>",
+          "<code>PRIVATE_ISOLATED</code>"
+        ],
+        [
+          "Security group",
+          "\u2014",
+          "<code>privateEgressSg</code>",
+          "<code>privateIsolatedSg</code>"
+        ],
+        [
+          "Route to the internet",
+          "Direct, outside the VPC",
+          "Through the NAT gateways",
+          "None"
+        ],
+        [
+          "Default alarms",
+          "On, <code>enableDefaultAlarms</code> can turn them off",
+          "On, <code>enableDefaultAlarms</code> can turn them off",
+          "On, and there is no prop to turn them off"
+        ],
+        [
+          "Alarm construct id",
+          "<code>{id}Alarm</code>",
+          "<code>Alarm</code> \u2014 a fixed string",
+          "<code>{id}Alarm</code>"
+        ]
+      ],
+      "note": "All three share the rest: <code>NODEJS_24_X</code>, <code>Tracing.ACTIVE</code>, a 10-second default timeout, a log group at one year, <code>environmentEncryption</code> from <code>resolveEncryptionKey()</code> with <code>grantDecrypt</code> to the function, <code>FLEX_ENVIRONMENT</code> set to the stage, and a <code>ResourceOwner</code> tag at priority 200 when the function belongs to a domain. A route picks its tier with <code>access</code>; <code>isolated</code> is the default. Source: <code>constructs/lambda/flex-*-function.ts</code>."
+    }
+  ]
+}
