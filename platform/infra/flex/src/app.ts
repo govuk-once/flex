@@ -87,7 +87,7 @@ const platformStack = new FlexPlatformStack(
   deployableServiceGatewayConfigs,
 );
 
-new FlexGlobalStack(app, `${stage}-FlexGlobal`);
+const globalStack = new FlexGlobalStack(app, `${stage}-FlexGlobal`);
 
 if (persistent) {
   new FlexMacieStack(app, `${env}-FlexMacie`, {
