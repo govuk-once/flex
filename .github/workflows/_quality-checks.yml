@@ -158,15 +158,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache NX
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .nx/cache
-          key: ${{ runner.os }}-nx-sonar-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-nx-sonar-${{ hashFiles('pnpm-lock.yaml') }}-
-            ${{ runner.os }}-nx-sonar-
-
       - name: Unit Tests
         env:
           AWS_REGION: eu-west-2
@@ -174,9 +165,6 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test # pragma: allowlist secret
         run: pnpm exec nx run-many --target=test --all --run --coverage --skip-nx-cache
-
-      - name: Generate ESLint report for SonarQube
-        run: pnpm run lint:report
 
       - name: Cache SonarQube scanner
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
