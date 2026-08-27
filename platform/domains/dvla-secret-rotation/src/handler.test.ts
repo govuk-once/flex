@@ -91,7 +91,7 @@ describe("handler", () => {
   });
 
   describe("createSecret", () => {
-    it("skips if AWSPENDING already has a rotated API key", async () => {
+    it("skips if final AWSPENDING version already has a rotated API key", async () => {
       const fullyRotatedPending = JSON.stringify({
         apiUrl: "https://dvla.example.com",
         apiKey: "already-rotated-api-key", // pragma: allowlist secret
@@ -110,8 +110,8 @@ describe("handler", () => {
       expect(requestNewApiKey).not.toHaveBeenCalled();
     });
 
-    it("resumes API key rotation when AWSPENDING has only the password rotated", async () => {
-      const passwordOnlyPending = JSON.stringify({
+    it("resumes API key rotation from checkpoint when password was already rotated", async () => {
+      const checkpointSecret = JSON.stringify({
         apiUrl: "https://dvla.example.com",
         apiKey: "current-api-key", // pragma: allowlist secret
         apiUsername: "testuser",
@@ -121,7 +121,10 @@ describe("handler", () => {
 
       vi.mocked(getSecretValue)
         .mockResolvedValueOnce(currentSecret)
-        .mockResolvedValueOnce(passwordOnlyPending);
+        // Final AWSPENDING (with token) not found
+        .mockRejectedValueOnce(new Error("not found"))
+        // Checkpoint (AWSPENDING_CHECKPOINT stage) found
+        .mockResolvedValueOnce(checkpointSecret);
 
       vi.mocked(authenticate).mockResolvedValue("new-jwt-token");
       vi.mocked(requestNewApiKey).mockResolvedValue("new-api-key-value");
@@ -143,8 +146,7 @@ describe("handler", () => {
         jwt: "new-jwt-token",
       });
 
-      expect(putSecretValue).toHaveBeenCalledOnce();
-      expect(putSecretValue).toHaveBeenCalledWith(
+      expect(putSecretValue).toHaveBeenCalledExactlyOnceWith(
         secretId,
         JSON.stringify({
           apiUrl: "https://dvla.example.com",
@@ -160,6 +162,9 @@ describe("handler", () => {
     it("rotates password and API key then stores in AWSPENDING", async () => {
       vi.mocked(getSecretValue)
         .mockResolvedValueOnce(currentSecret)
+        // Final AWSPENDING (with token) not found
+        .mockRejectedValueOnce(new Error("not found"))
+        // Checkpoint (AWSPENDING_CHECKPOINT stage) not found
         .mockRejectedValueOnce(new Error("not found"));
 
       vi.mocked(generatePassword).mockReturnValue("new-random-password1");
@@ -199,7 +204,8 @@ describe("handler", () => {
           apiPassword: "new-random-password1", // pragma: allowlist secret
           wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
         }),
-        token,
+        expect.any(String),
+        ["AWSPENDING_CHECKPOINT"],
       );
 
       expect(putSecretValue).toHaveBeenNthCalledWith(
@@ -219,6 +225,7 @@ describe("handler", () => {
     it("throws when DVLA password change fails", async () => {
       vi.mocked(getSecretValue)
         .mockResolvedValueOnce(currentSecret)
+        .mockRejectedValueOnce(new Error("not found"))
         .mockRejectedValueOnce(new Error("not found"));
 
       vi.mocked(generatePassword).mockReturnValue("new-random-password1");

@@ -10,7 +10,7 @@ const client = new SecretsManagerClient({});
 
 export async function getSecretValue(
   secretId: string,
-  stage: "AWSCURRENT" | "AWSPENDING",
+  stage: string,
   versionId?: string,
 ): Promise<string> {
   const command = new GetSecretValueCommand({
@@ -32,12 +32,13 @@ export async function putSecretValue(
   secretId: string,
   secretString: string,
   clientRequestToken: string,
+  versionStages: string[] = ["AWSPENDING"],
 ): Promise<void> {
   const command = new PutSecretValueCommand({
     SecretId: secretId,
     SecretString: secretString,
     ClientRequestToken: clientRequestToken,
-    VersionStages: ["AWSPENDING"],
+    VersionStages: versionStages,
   });
 
   await client.send(command);
