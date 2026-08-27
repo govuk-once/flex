@@ -67,10 +67,11 @@ export class FlexCoreStack extends BaseStack {
         .filter(Boolean);
 
       const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
-      releaseChannelIds.forEach((slackChannelId) => {
+      // TODO: Revert to original name
+      releaseChannelIds.forEach((slackChannelId, index) => {
         createSlackNotifications(this, {
-          id: `ReleaseSlackChannel${slackChannelId}`,
-          channelConfigurationName: `flex-releases-${stage}-${slackChannelId}`,
+          id: `ReleaseSlackChannel${slackChannelId}-${String(index)}`,
+          channelConfigurationName: `flex-releases-${stage}-${slackChannelId}-${String(index)}`,
           topicKey: alarmTopicKey,
           topics: [releaseTopic],
           slackWorkspaceId,
