@@ -88,11 +88,7 @@ export function createDvlaSecretRotation(
     new PolicyStatement({
       sid: "AllowDvlaSecretRotationKms",
       effect: Effect.ALLOW,
-      actions: [
-        "kms:Decrypt",
-        "kms:Encrypt",
-        "kms:GenerateDataKey",
-      ],
+      actions: ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
       resources: [secretEncryptionKeyArn],
     }),
   );
