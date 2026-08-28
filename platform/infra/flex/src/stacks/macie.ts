@@ -1,5 +1,5 @@
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { CfnCustomDataIdentifier, CfnSession } from "aws-cdk-lib/aws-macie";
+import { CfnCustomDataIdentifier } from "aws-cdk-lib/aws-macie";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
@@ -32,10 +32,43 @@ export class FlexMacieStack extends BaseStack {
       },
     });
 
-    const session = new CfnSession(this, "MacieSession", {
-      status: "ENABLED",
-      findingPublishingFrequency: "FIFTEEN_MINUTES",
+    const sessionPhysicalId = PhysicalResourceId.of(
+      `flex-macie-session-${this.account}-${this.region}`,
+    );
+
+    const session = new AwsCustomResource(this, "MacieSession", {
+      onCreate: {
+        service: "macie2",
+        action: "enableMacie",
+        parameters: {
+          status: "ENABLED",
+          findingPublishingFrequency: "FIFTEEN_MINUTES",
+        },
+        physicalResourceId: sessionPhysicalId,
+        ignoreErrorCodesMatching: "ConflictException",
+      },
+      onUpdate: {
+        service: "macie2",
+        action: "updateMacieSession",
+        parameters: {
+          status: "ENABLED",
+          findingPublishingFrequency: "FIFTEEN_MINUTES",
+        },
+        physicalResourceId: sessionPhysicalId,
+      },
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["macie2:EnableMacie", "macie2:UpdateMacieSession"],
+          resources: ["*"],
+        }),
+      ]),
     });
+
+    applyCheckovSkip(
+      session.node.findChild("CustomResourcePolicy"),
+      "CKV_AWS_111",
+      "macie2:EnableMacie/UpdateMacieSession are account-level session actions with no resource-level scoping; they must be granted on *.",
+    );
 
     // Periodic, scoped scanning only. Turn off continuous automated
     // sensitive-data discovery so Macie does not sample the public specs,
