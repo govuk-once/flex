@@ -123,6 +123,30 @@ Security. Keep it to one line naming a role, not a description of the content.
 Zones set `hard: true` for a real boundary (a region, the VPC, an ownership edge) and
 `hard: false` for a visual grouping.
 
+### AWS service icons
+
+A node may carry `"icon": "lambda"`, which renders the matching AWS service icon on its
+top-left corner — mirroring the count badge opposite, so it never touches the label and
+turning icons on never reflows text or invalidates a box width.
+
+The icons live in one optional file, `icons.svg`, as `<symbol id="i-lambda">` defs. The
+build inlines it whole, because the page has to stay self-contained: an external sprite
+cannot be reached by `<use>` from a `file://` page, and would not survive being published
+as a standalone artifact. A raster sprite is not an option either — the page pans and
+zooms, and icons would blur exactly when someone is trying to read them.
+
+**The file is deliberately absent.** Committing AWS's icon set to a public repository is a
+licensing decision for whoever owns it, not something the build should assume. Until the
+file exists the toggle stays hidden, nodes may still declare `icon`, and nothing breaks.
+To turn it on, put the AWS Architecture Icons you need into `icons.svg` as symbols named
+`i-<service>`, and record the source and licence terms in a comment at the top.
+
+The build then enforces both directions: a node naming an icon with no symbol fails, and a
+symbol no node uses fails, so the file cannot drift or accumulate dead weight.
+
+Readers turn icons on with the **AWS icons** control in the header. It is off by default,
+so the diagrams read as they always have, and the choice is remembered per viewer.
+
 ### Placeholders, not angle brackets
 
 Write `{stage}`, `{domain}`, `{version}`, `{proxy+}` — **never** `<stage>`. Fact text is
@@ -185,6 +209,7 @@ precisely because they became second copies of these tabs and drifted.
 `pnpm architecture:build` exits non-zero on:
 
 - a view file that is not valid JSON, not prettier-formatted, or sharing an `id` with another
+- an `icon` with no matching symbol in `icons.svg`, or a symbol no node uses
 - a raw `<` or `>` in any string
 - an unknown `kind` or `plane`, or a node narrower than 176px
 - two node boxes overlapping, or a node straddling a zone edge

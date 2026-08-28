@@ -253,6 +253,17 @@ function build(){
     const t=el("text",{class:"t",x:n.x+16,y:n.y+(hasSub?n.h/2-2:n.h/2+5)}); t.textContent=n.label; g.appendChild(t);
     if(hasSub){const s=el("text",{class:"s",x:n.x+16,y:n.y+n.h/2+15}); s.textContent=n.sub; g.appendChild(s);}
 
+    /* Service icon on the top-left corner, mirroring the count badge opposite. Riding
+       the corner keeps it clear of the label, so turning icons on never reflows text
+       and the box widths stay valid either way. */
+    if(n.icon&&ICON_IDS.includes(n.icon)){
+      const ic=el("g",{class:"icon"});
+      ic.appendChild(el("rect",{class:"icon-bg",x:n.x+8,y:n.y-11,width:22,height:22,rx:5}));
+      const u=el("use",{x:n.x+11,y:n.y-8,width:16,height:16});
+      u.setAttribute("href","#i-"+n.icon);
+      ic.appendChild(u); g.appendChild(ic);
+    }
+
     /* Count badge, centred on the top-right corner so it can never collide with
        the label text no matter how wide that label is. */
     const ids=PLACEMENT[view.id]?.[n.id];
@@ -714,6 +725,25 @@ function stageTotal(){
   VIEWS.find(v=>v.id==="resources").groups.forEach(g=>(g.items||[]).forEach(it=>{const c=countOf(it);if(c)n+=c;}));
   return n;
 }
+/* Icons are off by default so the diagrams read as they always have; an architect who
+   wants them keeps them. localStorage can throw outright in some embedded contexts, so
+   every access is guarded and the page renders correctly with no stored value. */
+const iconBtn=document.getElementById("icontoggle");
+if(!ICON_IDS.length){ if(iconBtn)iconBtn.hidden=true; }
+else{
+  const read=()=>{try{return localStorage.getItem("flex-arch-icons")==="1";}catch{return false;}};
+  const paint=on=>{
+    document.body.classList.toggle("icons-on",on);
+    iconBtn.setAttribute("aria-pressed",on?"true":"false");
+    iconBtn.title=on?"Hide AWS service icons":"Show AWS service icons";
+  };
+  let on=read(); paint(on);
+  iconBtn.addEventListener("click",()=>{
+    on=!on; paint(on);
+    try{localStorage.setItem("flex-arch-icons",on?"1":"0");}catch{/* private mode */}
+  });
+}
+
 const stageBar=document.getElementById("stages");
 STAGES.forEach(st=>{
   const b=document.createElement("button");

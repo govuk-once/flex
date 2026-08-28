@@ -66,6 +66,12 @@ header{
   border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);cursor:pointer;
 }
 .btn:hover{border-color:var(--accent);color:var(--accent)}
+/* The whole icon layer is one CSS switch — no re-render, and nothing else moves. */
+.icon{display:none}
+.icons-on .icon{display:block}
+.icon-bg{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.node.absent .icon{opacity:.4}
+#icontoggle[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .zoomval{font:500 11px/1 "IBM Plex Mono",monospace;color:var(--muted);min-width:44px;text-align:center}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
