@@ -395,6 +395,7 @@ export class FlexPlatformStack extends BaseStack {
     const metricName = {
       AWSManagedRulesKnownBadInputsRuleSet:
         "AWSManagedRulesKnownBadInputsRuleSet",
+      AWSManagedRulesSQLiRuleSet: "AWSManagedRulesSQLiRuleSet",
     };
 
     const webAcl = new CfnWebACL(this, "ApiWebAcl", {
@@ -438,8 +439,24 @@ export class FlexPlatformStack extends BaseStack {
           },
         },
         {
-          name: "RequireOriginSecret",
+          name: metricName.AWSManagedRulesSQLiRuleSet,
           priority: 1,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: metricName.AWSManagedRulesSQLiRuleSet,
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: metricName.AWSManagedRulesSQLiRuleSet,
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "RequireOriginSecret",
+          priority: 2,
           visibilityConfig: {
             cloudWatchMetricsEnabled: true,
             sampledRequestsEnabled: false,

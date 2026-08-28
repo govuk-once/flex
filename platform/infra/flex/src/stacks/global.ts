@@ -209,6 +209,7 @@ export class FlexGlobalStack extends BaseStack {
         "AWSManagedRulesKnownBadInputsRuleSet",
       AWSManagedRulesAmazonIpReputationList:
         "AWSManagedRulesAmazonIpReputationList",
+      AWSManagedRulesSQLiRuleSet: "AWSManagedRulesSQLiRuleSet",
     };
 
     const webAcl = new CfnWebACL(this, "CfWebAcl", {
@@ -266,8 +267,24 @@ export class FlexGlobalStack extends BaseStack {
           },
         },
         {
-          name: "BypassForE2ETests",
+          name: metricName.AWSManagedRulesSQLiRuleSet,
           priority: 2,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: metricName.AWSManagedRulesSQLiRuleSet,
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: metricName.AWSManagedRulesSQLiRuleSet,
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: "BypassForE2ETests",
+          priority: 3,
           action: { allow: {} },
           statement: {
             byteMatchStatement: {
@@ -287,7 +304,7 @@ export class FlexGlobalStack extends BaseStack {
         },
         {
           name: metricName.AWSManagedRulesAmazonIpReputationList,
-          priority: 3,
+          priority: 4,
           overrideAction: { none: {} },
           statement: {
             managedRuleGroupStatement: {
@@ -303,7 +320,7 @@ export class FlexGlobalStack extends BaseStack {
         },
         {
           name: "RateLimit",
-          priority: 4,
+          priority: 5,
           action: { block: {} },
           statement: {
             rateBasedStatement: {
