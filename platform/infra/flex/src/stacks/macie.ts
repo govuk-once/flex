@@ -1,5 +1,5 @@
 import { PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { CfnCustomDataIdentifier, CfnSession } from "aws-cdk-lib/aws-macie";
+import { CfnCustomDataIdentifier } from "aws-cdk-lib/aws-macie";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
@@ -32,9 +32,36 @@ export class FlexMacieStack extends BaseStack {
       },
     });
 
-    const session = new CfnSession(this, "MacieSession", {
-      status: "ENABLED",
-      findingPublishingFrequency: "FIFTEEN_MINUTES",
+    const sessionPhysicalId = PhysicalResourceId.of(
+      `flex-macie-session-${this.account}-${this.region}`,
+    );
+
+    const session = new AwsCustomResource(this, "MacieSession", {
+      onCreate: {
+        service: "macie2",
+        action: "enableMacie",
+        parameters: {
+          status: "ENABLED",
+          findingPublishingFrequency: "FIFTEEN_MINUTES",
+        },
+        physicalResourceId: sessionPhysicalId,
+        ignoreErrorCodesMatching: "ConflictException",
+      },
+      onUpdate: {
+        service: "macie2",
+        action: "updateMacieSession",
+        parameters: {
+          status: "ENABLED",
+          findingPublishingFrequency: "FIFTEEN_MINUTES",
+        },
+        physicalResourceId: sessionPhysicalId,
+      },
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["macie2:EnableMacie", "macie2:UpdateMacieSession"],
+          resources: ["*"],
+        }),
+      ]),
     });
 
     // Periodic, scoped scanning only. Turn off continuous automated
