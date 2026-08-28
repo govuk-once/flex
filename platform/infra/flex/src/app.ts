@@ -8,7 +8,8 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
-import { FlexMacieStack } from "./stacks/macie";
+// Temporarily disabled pending Platform IAM guardrail fix (see commit message).
+// import { FlexMacieStack } from "./stacks/macie";
 import { FlexPlatformStack } from "./stacks/platform";
 import { FlexSmokeTestStack } from "./stacks/smoke-test";
 import { getServiceGatewayConfigs } from "./utils/config-loader";
@@ -87,13 +88,15 @@ const platformStack = new FlexPlatformStack(
   deployableServiceGatewayConfigs,
 );
 
-const globalStack = new FlexGlobalStack(app, `${stage}-FlexGlobal`);
+new FlexGlobalStack(app, `${stage}-FlexGlobal`);
 
-if (persistent) {
-  new FlexMacieStack(app, `${env}-FlexMacie`, {
-    accessLogBucketName: globalStack.cloudfrontAccessLogBucket.bucketName,
-  });
-}
+// Macie deployment temporarily disabled pending Platform IAM guardrail fix (see commit message).
+// Re-enable: restore the `const globalStack =` binding above, the import, and this block.
+// if (persistent) {
+//   new FlexMacieStack(app, `${env}-FlexMacie`, {
+//     accessLogBucketName: globalStack.cloudfrontAccessLogBucket.bucketName,
+//   });
+// }
 
 const targetDomain = process.env.domain;
 
