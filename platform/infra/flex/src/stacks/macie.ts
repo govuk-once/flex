@@ -11,6 +11,7 @@ import { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { MacieResultsBucket } from "../constructs/macie/MacieResultsBucket";
 import { macieCoverage } from "../macie-coverage";
+import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 
 export interface FlexMacieStackProps {
   readonly accessLogBucketName: string;
@@ -160,10 +161,11 @@ export class FlexMacieStack extends BaseStack {
       },
       policy: AwsCustomResourcePolicy.fromStatements([
         new PolicyStatement({
-          actions: [
-            "macie2:CreateClassificationJob",
-            "macie2:UpdateClassificationJob",
-          ],
+          actions: ["macie2:CreateClassificationJob"],
+          resources: ["*"],
+        }),
+        new PolicyStatement({
+          actions: ["macie2:UpdateClassificationJob"],
           resources: [
             `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
           ],
@@ -173,5 +175,11 @@ export class FlexMacieStack extends BaseStack {
     scanJob.node.addDependency(session);
     scanJob.node.addDependency(disableAutomatedDiscovery);
     scanJob.node.addDependency(exportConfig);
+
+    applyCheckovSkip(
+      scanJob.node.findChild("CustomResourcePolicy"),
+      "CKV_AWS_111",
+      "macie2:CreateClassificationJob does not support resource-level permissions; it must be granted on * per AWS IAM.",
+    );
   }
 }
