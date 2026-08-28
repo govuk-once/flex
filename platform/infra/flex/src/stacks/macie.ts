@@ -64,12 +64,6 @@ export class FlexMacieStack extends BaseStack {
       ]),
     });
 
-    applyCheckovSkip(
-      session.node.findChild("CustomResourcePolicy"),
-      "CKV_AWS_111",
-      "macie2:EnableMacie/UpdateMacieSession are account-level session actions with no resource-level scoping; they must be granted on *.",
-    );
-
     // Periodic, scoped scanning only. Turn off continuous automated
     // sensitive-data discovery so Macie does not sample the public specs,
     // ephemeral per-PR buckets and logs on a rolling basis (cost and noise,
