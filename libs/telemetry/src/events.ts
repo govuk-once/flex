@@ -9,6 +9,7 @@ export const TelemetryEventSchema = z.enum([
   "auth_token_expired",
   "auth_token_invalid",
   "auth_claim_missing",
+  "auth_token_revoked",
   "auth_failure",
 
   // Domain

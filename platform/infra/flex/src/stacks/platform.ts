@@ -24,12 +24,14 @@ import { FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
+import { Topic } from "aws-cdk-lib/aws-sns";
 import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
+import { SecretRotationAlarms } from "../constructs/alarms/secret-rotation";
 import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
@@ -96,12 +98,14 @@ export class FlexPlatformStack extends BaseStack {
     userPoolId,
     clientId,
     jwksUri,
+    userInfoEndpoint,
     criticalAction,
     warningAction,
   }: {
     userPoolId: string;
     clientId: string;
     jwksUri: string;
+    userInfoEndpoint: string;
   } & AlarmActionProps) {
     const vpc = this.importVpc(ENV_KEYS.Vpc);
     const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
@@ -113,6 +117,7 @@ export class FlexPlatformStack extends BaseStack {
         USERPOOL_ID: userPoolId,
         CLIENT_ID: clientId,
         JWKS_URI: jwksUri,
+        USERINFO_ENDPOINT: userInfoEndpoint,
       },
       privateEgressSg,
       vpc,
@@ -133,6 +138,7 @@ export class FlexPlatformStack extends BaseStack {
         clientId: stubClientId,
         userPoolId: stubUserPoolId,
         jwksUri,
+        userInfoEndpoint: `https://cognito-idp.eu-west-2.amazonaws.com/${stubUserPoolId}/oauth2/userInfo`,
         criticalAction,
         warningAction,
       });
@@ -145,6 +151,7 @@ export class FlexPlatformStack extends BaseStack {
       clientId,
       userPoolId,
       jwksUri: `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId}/.well-known/jwks.json`,
+      userInfoEndpoint: `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId}/oauth2/userInfo`,
       criticalAction,
       warningAction,
     });
@@ -533,6 +540,35 @@ export class FlexPlatformStack extends BaseStack {
       privateGateway,
     );
     PermissionsBoundary.of(this).apply(permissionsBoundary);
+
+    const rotationFn = new NodejsFunction(this, "SecretRotationFunction", {
+      entry: getPlatformEntry("secret-rotation", "handler.ts"),
+      runtime: Runtime.NODEJS_24_X,
+      timeout: Duration.seconds(30),
+    });
+
+    originVerifySecret.addRotationSchedule("RotationSchedule", {
+      rotationLambda: rotationFn,
+      automaticallyAfter: Duration.days(30),
+    });
+
+    const criticalTopic = Topic.fromTopicArn(
+      this,
+      "CriticalTopicRef",
+      this.import(ENV_KEYS.TopicCriticalAlarms),
+    );
+    const warningTopic = Topic.fromTopicArn(
+      this,
+      "WarningTopicRef",
+      this.import(ENV_KEYS.TopicWarningAlarms),
+    );
+
+    new SecretRotationAlarms(this, "OriginVerifyRotationAlarms", {
+      alarmNamePrefix: `${stage}-origin-verify`,
+      secret: originVerifySecret,
+      criticalTopic,
+      warningTopic,
+    });
 
     this.exports({
       [STAGE_KEYS.ApigwPublicRestId]: restApi.restApiId,

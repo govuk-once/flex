@@ -13,11 +13,18 @@ import type {
 } from "aws-lambda";
 
 import { createPolicy } from "./createPolicy";
-import { createAuthService } from "./services/auth-service";
+import {
+  createAuthService,
+  TokenRevokedException,
+} from "./services/auth-service";
 
 function toAuthTelemetryEvent(error: unknown): TelemetryEvent {
   if (error instanceof JwtExpiredError) {
     return TelemetryEvent.auth_token_expired;
+  }
+
+  if (error instanceof TokenRevokedException) {
+    return TelemetryEvent.auth_token_revoked;
   }
 
   if (error instanceof FailedAssertionError) {
@@ -74,6 +81,10 @@ const handler: MiddyfiedHandler<
           case error instanceof JwtExpiredError:
             return createPolicy("Deny", event.methodArn, {
               errorMessage: "JWT expired",
+            });
+          case error instanceof TokenRevokedException:
+            return createPolicy("Deny", event.methodArn, {
+              errorMessage: "Token revoked",
             });
           default:
             return createPolicy("Deny", event.methodArn);
