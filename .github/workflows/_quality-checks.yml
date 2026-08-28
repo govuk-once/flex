@@ -220,6 +220,7 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install checkov
+          python3 -m pip install cfn-policy-validator
           pnpm install --frozen-lockfile
 
       - name: NX - set SHAs
@@ -243,3 +244,41 @@ jobs:
           base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
           head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
           show-openssf-scorecard: false
+
+      - name: Run cdk synth
+        run: |
+          pnpm --filter @platform/flex synth
+
+      - name: IAM Access Analyzer
+        run: |
+          for template in platform/infra/flex/cdk.out/*-FlexPlatform.template.json; do
+            echo "=== Auditing Template: $template ==="
+
+            # Extract all parameter keys from the CFN template and format as "Key1=dummy Key2=dummy" (dummy values are intentional)
+            PARAMS=$(jq -r '.Parameters // {} | keys | map("\(.)=dummy-value") | join(" ")' "$template")
+
+            echo "Supplying parameters"
+
+            # Catch syntax errors, malformed JSON, and iam:PassRole wildcards
+            cfn-policy-validator validate \
+              --template-path "$template" \
+              --region eu-west-2 \
+              --parameters $PARAMS \
+              --treat-finding-type-as-blocking ERROR,SECURITY_WARNING \
+              --ignore-finding MISSING_ARN_FIELD,DATA_TYPE_MISMATCH # ignoring two best practices that are only resulting in false positives
+
+            # Catch dangerous internal actions granted
+            cfn-policy-validator check-access-not-granted \
+              --template-path "$template" \
+              --actions "kms:Decrypt" \
+              --actions "kms:*" \
+              --actions "lambda:InvokeFunction" \
+              --region eu-west-2 \
+              --parameters $PARAMS
+
+            # Catch resource policies that expose resources to the public internet
+            cfn-policy-validator check-no-public-access \
+              --template-path "$template" \
+              --region eu-west-2 \
+              --parameters $PARAMS
+          done
