@@ -51,8 +51,10 @@ That runs two steps:
 If a count in a view disagrees with `architecture-facts.json`, **the view is wrong**. If the
 generated file looks wrong, the config is the bug — not the diagram.
 
-The build enforces this for the counts it can derive; the `DERIVED` map in
-`buildArchitectureExplorer.ts` names them. Counts that come from CDK code rather than domain
+A resource row says where its own count comes from, with a `from` field beside the `n` it
+governs — `"from": "totals.routeMethods.public"`, a dotted path into the generated facts.
+The build resolves it and fails when the two disagree. Keeping the claim and its source in
+the same object means a renamed or deleted row takes its mapping with it. Counts that come from CDK code rather than domain
 config — alarms, keys, subnets, log groups — are not covered, so verify those against the
 stack that creates them.
 
@@ -68,16 +70,39 @@ gets reviewed like any other.
 
 ## Layout
 
-| Path           | What it is                                                           |
-| -------------- | -------------------------------------------------------------------- |
-| `views/*.json` | One file per tab. This is the content — everything else is machinery |
-| `styles.css`   | Presentation, including both colour themes                           |
-| `shell.html`   | Page markup: header, canvas, inspector                               |
-| `app.js`       | Renderer, edge routing, pan/zoom, inspector, stage selector          |
-| `icons.svg`    | AWS service icons as `<symbol>` defs — see below                     |
+| Path                   | What it is                                                           |
+| ---------------------- | -------------------------------------------------------------------- |
+| `explorer.config.json` | Everything specific to this project — see below                      |
+| `views/*.json`         | One file per tab. This is the content — everything else is machinery |
+| `styles.css`           | Presentation, including both colour themes                           |
+| `shell.html`           | Page markup: header, canvas, inspector                               |
+| `app.js`               | Renderer, edge routing, pan/zoom, inspector, stage selector          |
+| `icons.svg`            | AWS service icons as `<symbol>` defs — see below                     |
 
 The page has to stay single-file: it is served straight from the docs folder and published as
 a shareable artifact, and neither can fetch a sibling file.
+
+---
+
+## What belongs to this project
+
+`explorer.config.json` holds everything that is true of FLEX rather than of the explorer:
+
+| Field              | What it does                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `title`, `tagline` | The browser tab and the header brand                                                                          |
+| `docsTitle`        | Heading on the generated `docs/index.html` landing page                                                       |
+| `repo`             | Base URL that every `code` citation links against                                                             |
+| `slug`             | Prefixes exported filenames and browser-storage keys                                                          |
+| `inventoryView`    | Which view is the resource inventory — `resources` here                                                       |
+| `iconLabel`        | Names the service-icon control, for readers and screen readers                                                |
+| `filterHint`       | Placeholder in the Resources filter box                                                                       |
+| `kinds`            | The ownership kinds: `id`, `label`, and the palette `colour` each uses                                        |
+| `stages`           | The stage selector: `id`, `label`, and `facts` — the name the same stage goes by in `architecture-facts.json` |
+
+Nothing about presentation is in here — colours live in `styles.css` — and nothing that
+duplicates a view: a resource's `from` sits on the resource. The build validates the file
+and refuses to assemble a page from a broken one.
 
 ---
 
@@ -86,7 +111,8 @@ a shareable artifact, and neither can fetch a sibling file.
 Every node carries two orthogonal properties, and the build refuses to assemble a file that
 gets them wrong.
 
-**`kind`** is who owns it — the thing a reader must not get wrong:
+**`kind`** is who owns it — the thing a reader must not get wrong. The set is declared in
+`explorer.config.json`; these are this repository's:
 
 | `kind`   | Meaning                                                        |
 | -------- | -------------------------------------------------------------- |
@@ -95,8 +121,20 @@ gets them wrong.
 | `govuk`  | Inside the GOV.UK Once boundary                                |
 | `third`  | Outside it — another government organisation, or a third party |
 
-**`plane`** is whether it serves requests — `request` or `control`. Ownership is carried by
-colour, plane by border style, so the two never compete.
+**`plane`** is whether it serves live traffic — `request` or `control`. Ownership is
+carried by colour, plane by border style, so the two never compete.
+
+The legend reads _on the request path_ and _off the request path_, deliberately. `control`
+is the field name, not a claim that these things are a control plane in the AWS sense: it
+also covers source files, naming conventions, runbooks, observability and people. All
+thirty-nine boxes on Delivery are `control`, two of them human. Saying "control plane" to a
+security audience would mean something narrower than the data supports.
+
+Each kind's colour is a `--p-<id>` token in `styles.css`, beside every other theme token,
+because colour is presentation. The rules that use it are generic: the renderer sets
+`--kind` on each node, so adding a kind means adding one token in the three theme blocks
+and nothing else. The build fails if a kind has no token, if a token is missing from a
+theme block, or if a token outlives the kind it was for.
 
 ### Tab order and grouping
 
@@ -170,6 +208,17 @@ Two tabs carry no icons on purpose. **Components** describes code — `domain.co
 the Middy stack, `lookupRoute` — and not one of its boxes is an AWS service. **Context** is
 the business view for non-engineers, where a single AWS logo among seven business systems
 would read as an accident.
+
+### Light and dark
+
+Both palettes are defined in `styles.css`, and the page follows the reader's system
+setting by default. The **theme control** in the header cycles system → light → dark →
+system: three states rather than two, because someone who overrides the theme needs a way
+back to following the system. The choice is remembered per viewer.
+
+The dark palette is a real design, not an inversion — the kind colours have separate dark
+values chosen to hold their contrast on a dark ground. If you add a colour to the palette,
+give it both.
 
 ### Saving a diagram
 
@@ -299,6 +348,30 @@ open docs/architecture/explorer.html
 # as a shareable artifact
 pnpm architecture:build --body /tmp/explorer-body.html
 ```
+
+---
+
+## Porting this to another project
+
+The build, the renderer, the checks and the export know nothing about FLEX. Four things do:
+
+1. **`explorer.config.json`** — rewrite it. Name, kinds, stages, repo URL.
+2. **The `--p-<id>` tokens in `styles.css`** — one colour per kind you declared, in all
+   three theme blocks. The build tells you if you miss one.
+3. **`views/*.json`** — your content. This is the work, and it is the part that has to be
+   checked against code rather than assumed.
+4. **`architectureFacts.ts`** — this one cannot be reused. It reads
+   `domains/*/domain.config.ts` with FLEX's exact schema, which is the point: counts are
+   trustworthy because they come from the same files the CDK app reads. Write your own
+   against your own configs, or delete it, leave `from` off every resource, and maintain
+   counts by hand — the check skips when nothing declares a source.
+
+`icons.svg` carries only the icons this project uses, because the build fails on a symbol
+nothing references. A new project starts from its own subset, not this one.
+
+What you do not touch: `buildArchitectureExplorer.ts` beyond its `SERVICE_ICON` map,
+`checkArchitectureExplorer.ts`, `serveArchitectureDocs.ts`, `app.js`, or the rest of
+`styles.css`.
 
 ---
 
