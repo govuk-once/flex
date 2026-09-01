@@ -1,0 +1,54 @@
+{
+  "title": "FLEX Architecture Explorer",
+  "tagline": "Federated Logic and Events eXchange",
+  "docsTitle": "FLEX documentation",
+  "repo": "https://github.com/govuk-once/flex/blob/main/",
+  "slug": "flex",
+  "inventoryView": "resources",
+  "iconLabel": "AWS icons",
+  "filterHint": "Filter \u2014 try isolated, KMS, 365 days, alarm",
+  "kinds": [
+    {
+      "id": "person",
+      "label": "Person",
+      "colour": "purple"
+    },
+    {
+      "id": "flex",
+      "label": "FLEX",
+      "colour": "blue"
+    },
+    {
+      "id": "govuk",
+      "label": "GOV.UK Once",
+      "colour": "teal"
+    },
+    {
+      "id": "third",
+      "label": "Outside GOV.UK Once",
+      "colour": "amber"
+    }
+  ],
+  "stages": [
+    {
+      "id": "dev",
+      "label": "Development",
+      "facts": "development"
+    },
+    {
+      "id": "stg",
+      "label": "Staging",
+      "facts": "staging"
+    },
+    {
+      "id": "prod",
+      "label": "Production",
+      "facts": "production"
+    },
+    {
+      "id": "eph",
+      "label": "Ephemeral PR",
+      "facts": "ephemeral"
+    }
+  ]
+}

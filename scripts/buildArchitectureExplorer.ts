@@ -22,17 +22,14 @@ import path from "node:path";
 
 import { check } from "prettier";
 
-import type {
-  ArchitectureFacts,
-  PerStage,
-  StageKey,
-} from "./lib/architectureTypes.js";
+import type { ArchitectureFacts, PerStage } from "./lib/architectureTypes.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const SRC = path.join(ROOT, "docs/architecture/explorer");
 const OUT = path.join(ROOT, "docs/architecture/explorer.html");
 const FACTS = path.join(ROOT, "docs/architecture/architecture-facts.json");
 const ICONS = path.join(SRC, "icons.svg");
+const CONFIG = path.join(SRC, "explorer.config.json");
 
 /**
  * CloudFormation namespace to icon, so every `AWS::X::Y` in a `type` field picks up the
@@ -100,50 +97,118 @@ function loadIcons(): { markup: string; ids: Set<string> } {
 }
 
 /**
- * Resource counts that ARE derivable from the domain and gateway configs, and where each
- * one lives in architecture-facts.json. Without this the generated facts are a document
- * nobody reads, and a route added to a domain silently makes the diagram lie.
- *
- * `pick` is a typed accessor rather than a dotted path, so a change to the facts shape is
- * a compile error here instead of a silently-undefined lookup at build time.
+ * Everything about this page that belongs to one project: what it is called, the
+ * ownership kinds and their colours, the deployment stages, and which resource counts
+ * come from the generated facts. Ported to another repository, this file and the views
+ * are what change — the build, the renderer and the checks do not.
  */
-const DERIVED: {
-  id: string;
-  where: string;
-  pick: (f: ArchitectureFacts) => PerStage | undefined;
-}[] = [
-  ...["dvla", "udp", "uns", "groups", "local-council", "example", "travel"].map(
-    (name) => ({
-      id: `lambda-domain-${name === "local-council" ? "lc" : name}`,
-      where: `domains.${name}.perStage`,
-      pick: (f: ArchitectureFacts) =>
-        f.domains.find((d) => d.name === name)?.perStage,
-    }),
-  ),
-  {
-    id: "api-routes-public",
-    where: "totals.routeMethods.public",
-    pick: (f) => f.totals.routeMethods.public,
-  },
-  {
-    id: "api-routes-private",
-    where: "totals.routeMethods.private",
-    pick: (f) => f.totals.routeMethods.private,
-  },
-  {
-    id: "api-authorizer",
-    where: "totals.domainsWithPublicRoutes",
-    pick: (f) => f.totals.domainsWithPublicRoutes,
-  },
-];
+interface ExplorerConfig {
+  title: string;
+  tagline: string;
+  docsTitle: string;
+  repo: string;
+  slug: string;
+  inventoryView: string;
+  iconLabel: string;
+  filterHint: string;
+  kinds: { id: string; label: string; colour: string }[];
+  stages: { id: string; label: string; facts: string }[];
+}
 
-/** The views abbreviate stage names; the facts file spells them out. */
-const STAGE_KEY: Record<StageShort, StageKey> = {
-  dev: "development",
-  stg: "staging",
-  prod: "production",
-  eph: "ephemeral",
-};
+function loadConfig(): ExplorerConfig {
+  let cfg: ExplorerConfig;
+  try {
+    cfg = JSON.parse(readFileSync(CONFIG, "utf8")) as ExplorerConfig;
+  } catch (err) {
+    throw new Error("explorer.config.json is missing or not valid JSON", {
+      cause: err,
+    });
+  }
+  const blank = (
+    [
+      "title",
+      "tagline",
+      "docsTitle",
+      "repo",
+      "slug",
+      "inventoryView",
+      "iconLabel",
+      "filterHint",
+    ] as const
+  ).filter((k) => !cfg[k].trim());
+  if (blank.length)
+    throw new Error(`explorer.config.json has no ${blank.join(", ")}`);
+  if (!cfg.kinds.length) throw new Error("explorer.config.json has no kinds");
+  if (!cfg.stages.length) throw new Error("explorer.config.json has no stages");
+  if (!/^[a-z][a-z0-9-]*$/.test(cfg.slug))
+    throw new Error(
+      "slug must be lowercase kebab-case — it names exported files",
+    );
+  for (const k of cfg.kinds)
+    if (!/^[a-z][a-z0-9-]*$/.test(k.id))
+      throw new Error(`kind id "${k.id}" must be lowercase kebab-case`);
+  for (const k of cfg.kinds)
+    if (!k.colour.trim())
+      throw new Error(`kind "${k.id}" names no colour from the palette`);
+  return cfg;
+}
+
+/**
+ * Colour is presentation, so the kind palette lives in styles.css with every other theme
+ * token rather than in the config. What the config owns is which kinds exist — which
+ * means the two can fall out of step, and a kind with no colour would draw a box with no
+ * stroke and say nothing. So the build checks instead of generating: every configured
+ * kind needs a `--p-<id>` token in all three theme blocks, and no token may be
+ * left behind after its kind is gone. The rules that use them are generic — the
+ * renderer passes the colour down as `--kind`, so adding a kind is one token.
+ */
+function checkKindStyles(kinds: ExplorerConfig["kinds"]): string[] {
+  const css = readFileSync(path.join(SRC, "styles.css"), "utf8");
+  const problems: string[] = [];
+  const palette = new Set(
+    [...css.matchAll(/--legend-([a-z0-9-]+):/g)].map((m) => m[1] ?? ""),
+  );
+  for (const k of kinds) {
+    if (!palette.has(k.colour)) {
+      problems.push(
+        `styles.css: kind "${k.id}" wants --legend-${k.colour}, which the palette does not define`,
+      );
+      continue;
+    }
+    const defined = (css.match(new RegExp(`--legend-${k.colour}:`, "g")) ?? [])
+      .length;
+    if (defined < 3)
+      problems.push(
+        `styles.css: --legend-${k.colour} is defined in ${String(defined)} of the 3 theme blocks — light, dark media, dark attribute`,
+      );
+  }
+  // Two kinds sharing a colour makes the legend unreadable.
+  const used = new Map<string, string>();
+  for (const k of kinds) {
+    const first = used.get(k.colour);
+    if (first)
+      problems.push(
+        `explorer.config.json: kinds "${first}" and "${k.id}" both use --legend-${k.colour}`,
+      );
+    else used.set(k.colour, k.id);
+  }
+  return problems;
+}
+
+/** Walks a dotted path from explorer.config.json into the generated facts. */
+function resolvePath(
+  facts: ArchitectureFacts,
+  dotted: string,
+): PerStage | undefined {
+  let node: unknown = facts;
+  for (const key of dotted.split(".")) {
+    if (typeof node !== "object" || node === null) return undefined;
+    node = Array.isArray(node)
+      ? node.find((d) => (d as { name?: string }).name === key)
+      : (node as Record<string, unknown>)[key];
+  }
+  return node as PerStage | undefined;
+}
 
 const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
@@ -152,7 +217,6 @@ const FONTS =
 
 type Kind = "person" | "flex" | "govuk" | "third";
 type Plane = "request" | "control";
-type StageShort = "dev" | "stg" | "prod" | "eph";
 
 /** The payload behind every clickable thing: what it is, and the code that proves it. */
 interface Detail {
@@ -205,12 +269,14 @@ interface Table {
 }
 
 /** A count is either flat, or one number per stage. */
-type Count = number | Partial<Record<StageShort, number>> | null;
+type Count = number | Partial<Record<string, number>> | null;
 
 interface DocItem {
   id: string;
   name: string;
   n: Count;
+  /** Dotted path into architecture-facts.json — the count above must match it. */
+  from?: string;
   meta: string[];
   d: Detail;
 }
@@ -315,7 +381,7 @@ function checkAngleBrackets(views: View[]) {
     );
 }
 
-function checkGeometry(views: View[]) {
+function checkGeometry(views: View[], kindIds: Set<string>) {
   const problems: string[] = [];
   for (const v of views) {
     const nodes = v.nodes ?? [];
@@ -325,7 +391,7 @@ function checkGeometry(views: View[]) {
         problems.push(
           `${v.id}/${n.id}: width ${String(n.w)} is below the 176 minimum`,
         );
-      if (!["person", "flex", "govuk", "third"].includes(n.kind))
+      if (!kindIds.has(n.kind))
         problems.push(`${v.id}/${n.id}: unknown kind "${n.kind}"`);
       if (!["request", "control"].includes(n.plane))
         problems.push(`${v.id}/${n.id}: unknown plane "${n.plane}"`);
@@ -397,8 +463,16 @@ function checkGeometry(views: View[]) {
 }
 
 /** Every derivable count must equal what the configs actually say. */
-function checkDerivedCounts(views: View[]): string[] {
+function checkDerivedCounts(views: View[], cfg: ExplorerConfig): string[] {
   const problems: string[] = [];
+  const resources = views.find((v) => v.id === "resources");
+  // A resource says where its own count comes from, so a renamed or deleted row takes
+  // its mapping with it rather than leaving a dangling key somewhere else.
+  const claims = (resources?.groups ?? [])
+    .flatMap((g) => g.items)
+    .filter((it) => it.from);
+  if (!claims.length) return problems;
+
   let facts: ArchitectureFacts;
   try {
     facts = JSON.parse(readFileSync(FACTS, "utf8")) as ArchitectureFacts;
@@ -406,29 +480,21 @@ function checkDerivedCounts(views: View[]): string[] {
     return ["architecture-facts.json is missing — run pnpm architecture:facts"];
   }
 
-  const resources = views.find((v) => v.id === "resources");
-  const items = new Map<string, DocItem>();
-  for (const g of resources?.groups ?? [])
-    for (const it of g.items) items.set(it.id, it);
-
-  for (const { id, where, pick } of DERIVED) {
-    const item = items.get(id);
-    if (!item) {
-      problems.push(`resources: no item "${id}" to check against ${where}`);
-      continue;
-    }
-    const truth = pick(facts);
+  for (const item of claims) {
+    const id = item.id;
+    const where = item.from ?? "";
+    const truth = resolvePath(facts, where);
     if (!truth) {
       problems.push(`architecture-facts.json has no ${where}`);
       continue;
     }
-    for (const short of Object.keys(STAGE_KEY) as StageShort[]) {
-      const long = STAGE_KEY[short];
-      const claimed = typeof item.n === "number" ? item.n : item.n?.[short];
-      if (claimed !== truth[long])
+    for (const st of cfg.stages) {
+      const claimed = typeof item.n === "number" ? item.n : item.n?.[st.id];
+      const actual = truth[st.facts as keyof PerStage];
+      if (claimed !== actual)
         problems.push(
-          `resources/${id}: says ${String(claimed)} for ${short}, but the configs say ` +
-            `${String(truth[long])} (${where}.${long}). Update views/resources.json, or fix the config.`,
+          `resources/${id}: says ${String(claimed)} for ${st.id}, but the configs say ` +
+            `${String(actual)} (${where}.${st.facts}). Update views/resources.json, or fix the config.`,
         );
     }
   }
@@ -561,15 +627,23 @@ code{font-family:"IBM Plex Mono",monospace;font-size:12.5px}
 async function main() {
   const bodyFlag = process.argv.indexOf("--body");
   const views = loadViews();
+  const cfg = loadConfig();
+  const kindIds = new Set(cfg.kinds.map((k) => k.id));
 
   checkAngleBrackets(views);
   const icons = loadIcons();
   const problems = [
     ...(await checkFormatting()),
     ...checkIcons(views, icons.ids),
-    ...checkGeometry(views),
+    ...(views.some((v) => v.id === cfg.inventoryView)
+      ? []
+      : [
+          `explorer.config.json: inventoryView "${cfg.inventoryView}" is not one of the views`,
+        ]),
+    ...checkKindStyles(cfg.kinds),
+    ...checkGeometry(views, kindIds),
     ...checkPlacement(views),
-    ...checkDerivedCounts(views),
+    ...checkDerivedCounts(views, cfg),
   ];
   const strict = !process.argv.includes("--lenient");
   if (problems.length) {
@@ -587,12 +661,13 @@ async function main() {
     `/* Generated by scripts/buildArchitectureExplorer.ts — edit explorer/views/*.json instead. */\n` +
     `const VIEWS=${JSON.stringify(views)};\n` +
     `const PLACEMENT=${JSON.stringify(placement)};\n` +
+    `const CONFIG=${JSON.stringify(cfg)};\n` +
     `const ICON_IDS=${JSON.stringify([...icons.ids])};\n` +
     `const SERVICE_ICON=${JSON.stringify(SERVICE_ICON)};\n` +
     `const TYPE_ICON=${JSON.stringify(TYPE_ICON)};\n`;
 
   const body = [
-    "<title>FLEX Architecture Explorer</title>",
+    `<title>${cfg.title}</title>`,
     FONTS,
     `<style>\n${readFileSync(path.join(SRC, "styles.css"), "utf8")}</style>`,
     icons.markup,
