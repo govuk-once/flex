@@ -149,7 +149,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "cloudfront"
     },
     {
       "id": "cffplat",
@@ -175,7 +176,8 @@
             "platform/domains/viewer-request-cff-platform/src/handler.ts"
           ]
         ]
-      }
+      },
+      "icon": "cloudfront-functions"
     },
     {
       "id": "cffdocs",
@@ -200,7 +202,8 @@
             "platform/domains/viewer-request-cff-docs/src/handler.ts"
           ]
         ]
-      }
+      },
+      "icon": "cloudfront-functions"
     },
     {
       "id": "specs",
@@ -224,7 +227,8 @@
           ["scripts/generateOpenapi.ts", "scripts/generateOpenapi.ts"],
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "s3"
     },
     {
       "id": "pubapi",
@@ -247,7 +251,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "authfn",
@@ -273,7 +278,8 @@
             "platform/domains/auth/src/handler.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "cognito",
@@ -295,7 +301,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "cognito"
     },
     {
       "id": "ddvla",
@@ -323,7 +330,8 @@
             "domains/dvla/src/services/authentication.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "dudp",
@@ -351,7 +359,8 @@
             "domains/udp/src/utils/get-push-id.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "duns",
@@ -377,7 +386,8 @@
             "domains/uns/src/handlers/v1/notifications/get.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "dgroups",
@@ -404,7 +414,8 @@
             "domains/groups/src/handlers/v1/groups/post.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "dex",
@@ -432,7 +443,8 @@
           ],
           ["utils/deployment.ts", "platform/infra/flex/src/utils/deployment.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "dlc",
@@ -464,7 +476,8 @@
             "libs/sdk/src/route/validate-integrations.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "privapi",
@@ -488,7 +501,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "gwdvla",
@@ -516,7 +530,8 @@
             "libs/service-gateway/src/handler/index.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gwudp",
@@ -540,7 +555,8 @@
           ["udp/src/gateway.ts", "platform/domains/udp/src/gateway.ts"],
           ["udp/gateway.config.ts", "platform/domains/udp/gateway.config.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gwuns",
@@ -560,7 +576,8 @@
           "Dials consumerConfig.privateApiUrl with a SigV4-signed assumed role, with X-API-KEY set once on the client for every route."
         ],
         "code": [["uns/src/gateway.ts", "platform/domains/uns/src/gateway.ts"]]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "xdvla",
@@ -646,7 +663,8 @@
             "routes, environments and integrations"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gwtravel",
@@ -672,7 +690,8 @@
             "access tier, environments and resources"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "xtravel",
@@ -698,7 +717,8 @@
             "the consumer config schema"
           ]
         ]
-      }
+      },
+      "icon": "dynamodb"
     }
   ],
   "edges": [

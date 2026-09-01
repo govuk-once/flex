@@ -132,7 +132,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "waf"
     },
     {
       "id": "cff",
@@ -163,7 +164,8 @@
             "platform/domains/viewer-request-cff-platform/src/validators/jwt.ts"
           ]
         ]
-      }
+      },
+      "icon": "cloudfront-functions"
     },
     {
       "id": "cfd",
@@ -187,7 +189,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "cloudfront"
     },
     {
       "id": "wafapi",
@@ -210,7 +213,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "waf"
     },
     {
       "id": "pubapi",
@@ -232,7 +236,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "domain",
@@ -260,7 +265,8 @@
           ["route/response.ts", "libs/sdk/src/route/response.ts"],
           ["route/headers.ts", "libs/sdk/src/route/headers.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "authfn",
@@ -288,7 +294,8 @@
             "platform/domains/auth/src/services/auth-service.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "privapi",
@@ -311,7 +318,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "otherdom",
@@ -338,7 +346,8 @@
             "domains/local-council/domain.config.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gw",
@@ -369,7 +378,8 @@
             "libs/service-gateway/src/utils/resources.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "xdvla",

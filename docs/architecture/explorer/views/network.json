@@ -167,7 +167,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "route53"
     },
     {
       "id": "acm",
@@ -190,7 +191,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "acm"
     },
     {
       "id": "cf",
@@ -214,7 +216,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "cloudfront"
     },
     {
       "id": "specs",
@@ -236,7 +239,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "s3"
     },
     {
       "id": "pubapi",
@@ -259,7 +263,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "privapi",
@@ -282,7 +287,8 @@
         "code": [
           ["stacks/platform.ts", "platform/infra/flex/src/stacks/platform.ts"]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "jwks",
@@ -310,7 +316,8 @@
             "platform/domains/auth/src/functions/jwks-endpoint.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "nat",
@@ -333,7 +340,8 @@
         "code": [
           ["stacks/core/vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]
         ]
-      }
+      },
+      "icon": "vpc-nat"
     },
     {
       "id": "authfn",
@@ -360,7 +368,8 @@
             "platform/domains/auth/src/services/auth-service.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gwdvla",
@@ -386,7 +395,8 @@
             "platform/infra/flex/src/utils/create-service-gateway.ts"
           ]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "ddvla",
@@ -410,7 +420,8 @@
           ["domains/dvla/domain.config.ts", "domains/dvla/domain.config.ts"],
           ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "gwiso",
@@ -434,7 +445,8 @@
           ["uns/gateway.config.ts", "platform/domains/uns/gateway.config.ts"],
           ["udp/gateway.config.ts", "platform/domains/udp/gateway.config.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "diso",
@@ -457,7 +469,8 @@
         "code": [
           ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "vpce",
@@ -486,7 +499,8 @@
           ],
           ["utils/resources.ts", "platform/infra/flex/src/utils/resources.ts"]
         ]
-      }
+      },
+      "icon": "vpc-endpoint"
     },
     {
       "id": "flow",
@@ -515,7 +529,8 @@
             "platform/infra/flex/src/constructs/s3/FlowLogBucket.ts"
           ]
         ]
-      }
+      },
+      "icon": "vpc-flowlogs"
     },
     {
       "id": "internet",

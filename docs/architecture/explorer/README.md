@@ -74,6 +74,7 @@ gets reviewed like any other.
 | `styles.css`   | Presentation, including both colour themes                           |
 | `shell.html`   | Page markup: header, canvas, inspector                               |
 | `app.js`       | Renderer, edge routing, pan/zoom, inspector, stage selector          |
+| `icons.svg`    | AWS service icons as `<symbol>` defs — see below                     |
 
 The page has to stay single-file: it is served straight from the docs folder and published as
 a shareable artifact, and neither can fetch a sibling file.
@@ -125,27 +126,63 @@ Zones set `hard: true` for a real boundary (a region, the VPC, an ownership edge
 
 ### AWS service icons
 
-A node may carry `"icon": "lambda"`, which renders the matching AWS service icon on its
-top-left corner — mirroring the count badge opposite, so it never touches the label and
-turning icons on never reflows text or invalidates a box width.
+Most boxes need nothing. A node whose `d.type` is a CloudFormation type —
+`AWS::Lambda::Function`, `AWS::WAFv2::WebACL` — picks up the right icon on its own. That
+is how the Security tab got all fourteen of its icons without a single edit.
 
-The icons live in one optional file, `icons.svg`, as `<symbol id="i-lambda">` defs. The
-build inlines it whole, because the page has to stay self-contained: an external sprite
-cannot be reached by `<use>` from a `file://` page, and would not survive being published
-as a standalone artifact. A raster sprite is not an option either — the page pans and
-zooms, and icons would blur exactly when someone is trying to read them.
+Set `"icon": "lambda"` explicitly only where the type is not a CloudFormation string. The
+Containers domain boxes are the case: their type reads `Container group · one Lambda per
+route`, which no mapping can resolve, so they name the icon. An explicit `icon` always
+wins over the derived one.
 
-**The file is deliberately absent.** Committing AWS's icon set to a public repository is a
-licensing decision for whoever owns it, not something the build should assume. Until the
-file exists the toggle stays hidden, nodes may still declare `icon`, and nothing breaks.
-To turn it on, put the AWS Architecture Icons you need into `icons.svg` as symbols named
-`i-<service>`, and record the source and licence terms in a comment at the top.
+The mapping from CloudFormation namespace to icon lives in `SERVICE_ICON` in
+`buildArchitectureExplorer.ts`, with `TYPE_ICON` overriding it for full types AWS draws
+distinctly — `AWS::EC2::NatGateway` gets the NAT gateway icon rather than the generic VPC
+one. It is defined in the build, not the renderer, so the unused-symbol check below sees
+exactly what the page sees.
 
-The build then enforces both directions: a node naming an icon with no symbol fails, and a
-symbol no node uses fails, so the file cannot drift or accumulate dead weight.
+Icons appear in four places, all on the one **AWS icons** control in the header: the
+diagram boxes, the Technology line of a node's panel, the Resource line of a resource's
+panel, and the rows of the Resources tab. Off by default, remembered per viewer.
 
-Readers turn icons on with the **AWS icons** control in the header. It is off by default,
-so the diagrams read as they always have, and the choice is remembered per viewer.
+Placement is deliberate: the icon rides a box's **top-left corner**, mirroring the count
+badge opposite. Riding the corner keeps it clear of the label, so turning icons on never
+reflows text and cannot invalidate a box width.
+
+**The icons themselves.** `icons.svg` holds every icon as a `<symbol id="i-<service>">`.
+The build inlines it whole, because the page has to stay self-contained: `<use>` cannot
+reach a separate file from a `file://` page, and an external reference would not survive
+being published as a standalone artifact. A raster sprite is not an option either — the
+page pans and zooms, and icons would blur exactly when someone is trying to read them.
+
+The file's header records where the artwork came from: the source URL, the package
+filename, and the path of every icon inside it. Each symbol is the icon's own artwork with
+the XML declaration, outer `<svg>` and `<title>` dropped, and internal `id` attributes
+removed because they collide once every icon shares one document. No geometry is changed.
+**Adding to it means accepting AWS's terms for this repository — read them first.**
+
+The build enforces both directions: an `icon` naming a symbol that does not exist fails,
+and a symbol nothing uses fails. "Uses" counts explicit `icon` fields _and_ every type
+that maps to one, across nodes, zones, edges and resource items — so an icon that only the
+Resources tab needs still counts as used.
+
+Two tabs carry no icons on purpose. **Components** describes code — `domain.config.ts`,
+the Middy stack, `lookupRoute` — and not one of its boxes is an AWS service. **Context** is
+the business view for non-engineers, where a single AWS logo among seven business systems
+would read as an accident.
+
+### Saving a diagram
+
+**Save PNG** in the header writes the whole diagram at twice its natural size, named for
+the view and the selected stage — `flex-containers-prod.png`. It exports everything, not
+the current viewport, so pan and zoom do not matter. Icons, count badges, edge labels and
+zone labels all come with it. The control hides on the Resources tab, which has no canvas.
+
+Two limits worth knowing. Rasterising through a canvas cannot fetch webfonts, so on a
+machine without IBM Plex installed the text falls back to a system face — it should still
+fit, because boxes are sized for the widest metrics with slack, but it will not look
+identical. And the artifact viewer blocks any download a page starts itself, so the button
+is inert there; from Pages, `file://` and a local server it works.
 
 ### Placeholders, not angle brackets
 
@@ -209,7 +246,7 @@ precisely because they became second copies of these tabs and drifted.
 `pnpm architecture:build` exits non-zero on:
 
 - a view file that is not valid JSON, not prettier-formatted, or sharing an `id` with another
-- an `icon` with no matching symbol in `icons.svg`, or a symbol no node uses
+- an `icon` with no matching symbol in `icons.svg`, or a symbol nothing uses
 - a raw `<` or `>` in any string
 - an unknown `kind` or `plane`, or a node narrower than 176px
 - two node boxes overlapping, or a node straddling a zone edge

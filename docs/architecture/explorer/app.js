@@ -20,6 +20,80 @@ function boxTotal(ids){
   (ids||[]).forEach(id=>{const it=RES.get(id);if(!it)return;const c=countOf(it);c===null?varies=true:sum+=c;});
   return {sum,varies};
 }
+/* The icon a CloudFormation type implies. Nothing outside the diagram boxes is tagged
+   by hand — the type string already says which service it is. */
+function iconForType(t){
+  if(!t)return null;
+  if(TYPE_ICON[t])return TYPE_ICON[t];
+  const m=/^AWS::([A-Za-z0-9]+)::/.exec(t);
+  return m&&SERVICE_ICON[m[1]]?SERVICE_ICON[m[1]]:null;
+}
+/* Inline markup, so it drops straight into the strings the inspector already builds. */
+function iconTag(id,cls){
+  if(!id||!ICON_IDS.includes(id))return "";
+  return `<svg class="ic ${cls||""}" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+}
+
+/* ---- Export the canvas as an image -------------------------------------------------
+   The diagram is live SVG, so an export has to be made self-contained first: the page
+   stylesheet has to come with it, and the icon <symbol>s live in a different document
+   from the canvas, so the ones in use have to be copied in or every <use> resolves to
+   nothing. Then it is rasterised through a canvas at 2x. */
+function standaloneSvg(){
+  const src=document.getElementById("svg");
+  const svg=src.cloneNode(true);
+  const [,,w,h]=(src.getAttribute("viewBox")||"0 0 1400 900").split(/\s+/).map(Number);
+  svg.setAttribute("width",w); svg.setAttribute("height",h);
+  svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
+  svg.removeAttribute("style");
+  /* The live canvas is panned and zoomed by a transform; the export is the whole thing. */
+  const root=svg.querySelector("#root"); if(root)root.removeAttribute("transform");
+
+  /* Only the symbols this view actually references. */
+  const used=[...new Set([...svg.querySelectorAll("use")]
+    .map(u=>(u.getAttribute("href")||"").replace("#","")).filter(Boolean))];
+  if(used.length){
+    const defs=document.createElementNS("http://www.w3.org/2000/svg","defs");
+    used.forEach(id=>{const sym=document.getElementById(id); if(sym)defs.appendChild(sym.cloneNode(true));});
+    svg.insertBefore(defs,svg.firstChild);
+  }
+
+  /* Paint a ground: the page background is on <body>, which is not coming along. */
+  const bg=document.createElementNS("http://www.w3.org/2000/svg","rect");
+  bg.setAttribute("width",w); bg.setAttribute("height",h);
+  bg.setAttribute("fill",getComputedStyle(document.body).getPropertyValue("--canvas").trim()||"#fff");
+  svg.insertBefore(bg,svg.firstChild);
+
+  const style=document.createElementNS("http://www.w3.org/2000/svg","style");
+  style.textContent=[...document.querySelectorAll("style")].map(s2=>s2.textContent).join("\n");
+  svg.insertBefore(style,svg.firstChild);
+  if(document.body.classList.contains("icons-on"))svg.classList.add("icons-on");
+  return {markup:new XMLSerializer().serializeToString(svg),w,h};
+}
+
+function exportPng(){
+  const {markup,w,h}=standaloneSvg();
+  const SCALE=2;
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement("canvas");
+    c.width=w*SCALE; c.height=h*SCALE;
+    const ctx=c.getContext("2d");
+    ctx.scale(SCALE,SCALE);
+    ctx.drawImage(img,0,0);
+    c.toBlob(blob=>{
+      if(!blob)return;
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=`flex-${view.id}-${deployStage}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },"image/png");
+  };
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(markup);
+}
+
 /* Reverse index: which boxes, in which views, a resource appears in. */
 const RES_PLACES=new Map();
 function indexPlaces(){
@@ -256,11 +330,13 @@ function build(){
     /* Service icon on the top-left corner, mirroring the count badge opposite. Riding
        the corner keeps it clear of the label, so turning icons on never reflows text
        and the box widths stay valid either way. */
-    if(n.icon&&ICON_IDS.includes(n.icon)){
+    /* An explicit icon wins; otherwise the CloudFormation type says which service it is. */
+    const nicon=n.icon||iconForType(n.d.type);
+    if(nicon&&ICON_IDS.includes(nicon)){
       const ic=el("g",{class:"icon"});
       ic.appendChild(el("rect",{class:"icon-bg",x:n.x+8,y:n.y-11,width:22,height:22,rx:5}));
       const u=el("use",{x:n.x+11,y:n.y-8,width:16,height:16});
-      u.setAttribute("href","#i-"+n.icon);
+      u.setAttribute("href","#i-"+nicon);
       ic.appendChild(u); g.appendChild(ic);
     }
 
@@ -386,7 +462,7 @@ function renderNode(n){
       <h1 class="insp-title">${esc(n.label)}</h1>
       ${n.sub?`<p class="insp-sub mono">${esc(n.sub)}</p>`:""}
     </div>
-    <dl class="kv"><dt>Type</dt><dd>${esc(n.d.type)}</dd><dt>Technology</dt><dd>${esc(n.d.tech)}</dd><dt>Plane</dt><dd>${esc(PLANE_LABEL[n.plane||"request"])}</dd></dl>
+    <dl class="kv"><dt>Type</dt><dd>${esc(n.d.type)}</dd><dt>Technology</dt><dd>${iconTag(n.icon||iconForType(n.d.type))}${esc(n.d.tech)}</dd><dt>Plane</dt><dd>${esc(PLANE_LABEL[n.plane||"request"])}</dd></dl>
     <p style="margin:0;font-size:14px;color:var(--ink-2)">${esc(n.d.role)}</p>
     ${facts(n.d.facts)}
     ${resourcesHere(n.id)}
@@ -416,6 +492,7 @@ function resourcesHere(nodeId){
     const c=countOf(it);
     return `<button class="resrow" data-res="${id}" data-from="${nodeId}">
       <span class="num${c===0?" zero":""}">${c===null?"~":c}</span>
+        ${iconTag(iconForType(it.d.type),"sm")}
       <span>${esc(it.name)}</span></button>`;
   }).join("");
   return `<hr>
@@ -557,7 +634,7 @@ function buildDoc(){
     const rows=keep.map(it=>{
       const gi2=gi, ii=items.indexOf(it), c=countOf(it), note=!it.id;
       return `<button class="row${!note&&c===0?" zero":""}" data-g="${gi2}" data-i="${ii}">
-        <span><b>${esc(it.name)}</b></span>
+        <span>${iconTag(iconForType(it.d.type),"sm")}<b>${esc(it.name)}</b></span>
         <span class="rcount">${note?"design note":c===null?"varies":c===0?`none in ${esc(stageLabel().toLowerCase())}`:`${c}\u00d7`}</span>
         <span class="rmeta">${(it.meta||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join("")}</span>
       </button>`;}).join("");
@@ -615,7 +692,7 @@ function renderItem(it,groupName,ctx){
       <h1 class="insp-title">${esc(it.name)}</h1>
     </div>
     ${it.id?`<div class="total"><b>${c===null?"~":c}</b><span>${c===null?"varies — counted per stack, not summed":`in ${esc(stageLabel())}${c===0?" this resource is not created":""}`}</span></div>`:""}
-    <dl class="kv"><dt>Resource</dt><dd class="mono" style="font-size:12px">${esc(it.d.type)}</dd><dt>Config</dt><dd>${rich(it.d.tech)}</dd></dl>
+    <dl class="kv"><dt>Resource</dt><dd class="mono" style="font-size:12px">${iconTag(iconForType(it.d.type))}${esc(it.d.type)}</dd><dt>Config</dt><dd>${rich(it.d.tech)}</dd></dl>
     <p style="margin:0;font-size:14px;color:var(--ink-2)">${esc(it.d.role)}</p>
     ${facts(it.d.facts)}
     ${(it.meta||[]).length?`<div class="sect"><div class="eyebrow">Scope</div><div class="rmeta" style="justify-content:flex-start">${it.meta.map(m=>`<span class="tag">${esc(m)}</span>`).join("")}</div></div>`:""}
@@ -743,6 +820,8 @@ else{
     try{localStorage.setItem("flex-arch-icons",on?"1":"0");}catch{/* private mode */}
   });
 }
+
+document.getElementById("savepng").addEventListener("click",exportPng);
 
 const stageBar=document.getElementById("stages");
 STAGES.forEach(st=>{

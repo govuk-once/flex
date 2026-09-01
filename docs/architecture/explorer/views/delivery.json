@@ -470,7 +470,8 @@
           "The staging role's trust policy only allows main, which is why the ZAP runbook says to swap in the dev role when testing from a branch."
         ],
         "code": [["zap.md", "docs/zap.md"]]
-      }
+      },
+      "icon": "iam"
     },
     {
       "id": "params",
@@ -495,7 +496,8 @@
           ["ssm-keys.ts", "platform/infra/flex/src/ssm-keys.ts"],
           ["lambda.ts", "platform/infra/flex/src/utils/lambda.ts"]
         ]
-      }
+      },
+      "icon": "ssm"
     },
     {
       "id": "ssmapp",
@@ -548,7 +550,8 @@
             "platform/infra/flex/src/constructs/infra/CfnPause.ts"
           ]
         ]
-      }
+      },
+      "icon": "apigateway"
     },
     {
       "id": "deploydev",
@@ -810,7 +813,8 @@
           ],
           ["credentials.ts", "platform/smoke-test/src/credentials.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "firebase",
@@ -858,7 +862,8 @@
             "platform/infra/flex/src/constructs/alarms/actions.ts"
           ]
         ]
-      }
+      },
+      "icon": "cloudwatch"
     },
     {
       "id": "relay",
@@ -883,7 +888,8 @@
         "code": [
           ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
         ]
-      }
+      },
+      "icon": "lambda"
     },
     {
       "id": "topics",
@@ -906,7 +912,8 @@
         "code": [
           ["core/topics.ts", "platform/infra/flex/src/stacks/core/topics.ts"]
         ]
-      }
+      },
+      "icon": "sns"
     },
     {
       "id": "chatbot",
@@ -932,7 +939,8 @@
             "platform/infra/flex/src/stacks/core/notifications.ts"
           ]
         ]
-      }
+      },
+      "icon": "chatbot"
     },
     {
       "id": "slack",

@@ -66,6 +66,14 @@ header{
   border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);cursor:pointer;
 }
 .btn:hover{border-color:var(--accent);color:var(--accent)}
+/* Inspector and list icons ride the same switch as the diagram ones, so "AWS icons"
+   means one thing everywhere. Sized to the line they sit on, never stretched. */
+.ic{width:17px;height:17px;flex:0 0 auto;vertical-align:-3px;margin-right:7px;display:none}
+.ic.sm{width:15px;height:15px;vertical-align:-2px;margin-right:6px}
+.icons-on .ic{display:inline-block}
+.kv dd{display:flex;align-items:center}
+.row .rcount,.row .rmeta{align-items:center}
+
 /* The whole icon layer is one CSS switch — no re-render, and nothing else moves. */
 .icon{display:none}
 .icons-on .icon{display:block}
