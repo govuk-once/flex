@@ -17,15 +17,15 @@
     "@flex/sdk": "workspace:*",
     "@flex/service-gateway": "workspace:*",
     "@flex/utils": "workspace:*",
-    "uuid": "14.0.1",
+    "uuid": "14.0.2",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@vitest/coverage-v8": "4.1.10",
-    "eslint": "10.7.0",
+    "@vitest/coverage-v8": "4.1.11",
+    "eslint": "10.9.1",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   }
 }

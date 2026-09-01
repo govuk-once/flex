@@ -26,14 +26,14 @@
     "test:soak": "PERF_SCENARIO=soak PERF_POOL_SIZE=50 PERF_WARM_USERS=true artillery run --config soak.config.yml --output results/soak.json scenarios/user-get.yml"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch": "3.1091.0",
+    "@aws-sdk/client-cloudwatch": "3.1117.0",
     "@flex/testing": "workspace:*",
     "@flex/utils": "workspace:*"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/node": "26.1.1",
-    "artillery": "2.0.33",
+    "@types/node": "26.3.0",
+    "artillery": "2.0.34",
     "typescript": "6.0.3"
   }
 }
