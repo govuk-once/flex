@@ -2,8 +2,12 @@
   --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f5; --ink:#0f1720; --ink-2:#3d4b5a; --muted:#66768a;
   --line:#dbe1e8; --line-2:#c3ccd6; --line-strong:#93a1b0; --accent:#12539f; --accent-soft:#e3ecf8;
   --focus:#12539f;
-  --p-person:#5f3f9e; --p-flex:#12539f; --p-govuk:#0b6b7d; --p-third:#8a5a1a;
-  --zone-fill:#e9edf2; --zone-line:#cfd7e0; --canvas:#fbfcfd; --grid:#e6ebf0;
+  /* A palette, not a mapping. Nothing here knows what a kind is called: each kind in
+     explorer.config.json picks one of these by name, and the build checks it resolves.
+     That keeps this file the same in every project that uses the explorer. */
+  --legend-purple:#5f3f9e; --legend-blue:#12539f; --legend-teal:#0b6b7d;
+  --legend-amber:#8a5a1a; --legend-green:#2f6b3a; --legend-rose:#9c2f52;
+  --zone-fill:#e2e8ef; --zone-line:#c8d2dd; --canvas:#eff3f7; --grid:#e0e7ee;
   --shadow:0 1px 2px rgba(15,23,32,.06),0 8px 24px -12px rgba(15,23,32,.18);
 }
 @media (prefers-color-scheme:dark){
@@ -11,7 +15,8 @@
     --bg:#0b1119; --surface:#121b26; --surface-2:#182432; --ink:#e8eef5; --ink-2:#b9c6d4; --muted:#8394a6;
     --line:#25333f; --line-2:#33465a; --line-strong:#6b8199; --accent:#63a4f5; --accent-soft:#152a44;
     --focus:#63a4f5;
-    --p-person:#a98ce8; --p-flex:#63a4f5; --p-govuk:#4fc0d4; --p-third:#e0a44a;
+    --legend-purple:#a98ce8; --legend-blue:#63a4f5; --legend-teal:#4fc0d4;
+    --legend-amber:#e0a44a; --legend-green:#7fc98d; --legend-rose:#ef8fa8;
     --zone-fill:#101a25; --zone-line:#25333f; --canvas:#0d151e; --grid:#16212d;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
   }
@@ -20,7 +25,8 @@
   --bg:#0b1119; --surface:#121b26; --surface-2:#182432; --ink:#e8eef5; --ink-2:#b9c6d4; --muted:#8394a6;
   --line:#25333f; --line-2:#33465a; --line-strong:#6b8199; --accent:#63a4f5; --accent-soft:#152a44;
   --focus:#63a4f5;
-  --p-person:#a98ce8; --p-flex:#63a4f5; --p-govuk:#4fc0d4; --p-third:#e0a44a;
+  --legend-purple:#a98ce8; --legend-blue:#63a4f5; --legend-teal:#4fc0d4;
+  --legend-amber:#e0a44a; --legend-green:#7fc98d; --legend-rose:#ef8fa8;
   --zone-fill:#101a25; --zone-line:#25333f; --canvas:#0d151e; --grid:#16212d;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
 }
@@ -60,7 +66,16 @@ header{
 .tab:hover{background:var(--surface-2)}
 .tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
 .spacer{flex:1}
-.ctrls{display:flex;align-items:center;gap:6px}
+/* Groups read as units: a wider gap between them than within them, and each one
+   segmented the same way the stage picker is, so the whole header uses one idiom. */
+.ctrls{display:flex;align-items:center;gap:12px}
+.seg[hidden]{display:none}
+.seg{display:flex;align-items:stretch;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;background:var(--surface)}
+.seg .btn{border:0;border-right:1px solid var(--line-2);border-radius:0;background:transparent}
+.seg > :last-child{border-right:0}
+.seg .zoomval{display:flex;align-items:center;padding:0 4px;border-right:1px solid var(--line-2)}
+.seg .btn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.seg .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 .btn{
   font:500 12px/1 "IBM Plex Mono",monospace;min-width:32px;height:32px;padding:0 9px;
   border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);cursor:pointer;
@@ -79,15 +94,33 @@ header{
 .icons-on .icon{display:block}
 .icon-bg{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
 .node.absent .icon{opacity:.4}
-#icontoggle[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+/* Export-only bands. They never render on screen — the caption and legend live in the
+   panel there — but a downloaded PNG has no panel, so it carries its own. */
+.cap-bg{fill:var(--surface)}
+.cap-rule{stroke:var(--line);stroke-width:1}
+.cap-title{font:600 15px "IBM Plex Sans",sans-serif;fill:var(--ink)}
+.cap-sub{font:400 11.5px "IBM Plex Mono",monospace;fill:var(--muted)}
+.cap-lg{font:400 11.5px "IBM Plex Sans",sans-serif;fill:var(--ink-2)}
+.cap-pl{stroke:var(--line-strong);stroke-width:2}
+
+/* Icon-only controls. The glyph inherits the button's colour, so it tracks the theme
+   and the pressed state without a second rule. */
+.btn.ico{padding:6px 8px;line-height:0}
+.btn.ico svg{width:15px;height:15px;fill:currentColor;stroke:none;display:block}
+/* Line-drawn glyphs, as opposed to the solid grid. */
+.btn.ico.line svg,#themetoggle svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
 .zoomval{font:500 11px/1 "IBM Plex Mono",monospace;color:var(--muted);min-width:44px;text-align:center}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* ---------- layout ---------- */
 .shell{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 372px;min-height:0}
 .stage{position:relative;min-width:0;background:var(--canvas);overflow:hidden}
-.stage svg{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
-.stage.dragging svg{cursor:grabbing}
+/* The canvas only. This used to be `.stage svg`, which also caught the service icons
+   in the inventory rows — handing them width:100%, cursor:grab, and a display that
+   outranked the toggle, so they could not be turned off. */
+#svg{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.stage.dragging #svg{cursor:grabbing}
 .hint[hidden]{display:none}
 /* In the pinned header, not on the canvas: overlaying the drawing traded one problem
    for a worse one — on Security it covered a box outright. */
@@ -141,9 +174,6 @@ aside{background:var(--surface);border-left:1px solid var(--line);display:flex;f
   overflow-wrap:anywhere;
 }
 .code a:hover{text-decoration:underline}
-.legend{display:flex;flex-direction:column;gap:7px}
-.legend div{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-2)}
-.legend i{width:11px;height:11px;border-radius:3px;border:1.5px solid currentColor;flex:0 0 auto}
 .sect{display:flex;flex-direction:column;gap:9px}
 hr{border:0;border-top:1px solid var(--line);margin:2px 0}
 
@@ -157,21 +187,17 @@ hr{border:0;border-top:1px solid var(--line);margin:2px 0}
 .zone.sel > rect{stroke:var(--accent);stroke-width:2}
 .zone.sel text{fill:var(--accent)}
 .node{cursor:pointer}
-.node .box{fill:var(--surface);stroke-width:1.5;rx:8}
+/* One rule for every kind. The colour arrives as --kind, set on each node by the
+   renderer from the palette name that kind chose in explorer.config.json. */
+.node .box{fill:var(--surface);stroke:var(--kind);stroke-width:1.5;rx:8}
 .node .t{fill:var(--ink);font:600 13px/1 "IBM Plex Sans",sans-serif}
 .node .s{fill:var(--muted);font:400 10.5px/1 "IBM Plex Mono",monospace}
-.node .bar{rx:2}
+.node .bar{fill:var(--kind);rx:2}
 .node:hover .box{stroke-width:2.5}
 .node.sel .box{stroke-width:3}
 .node.sel .t{fill:var(--accent)}
-.n-person .box{stroke:var(--p-person)} .n-person .bar{fill:var(--p-person)}
-.n-flex   .box{stroke:var(--p-flex)}   .n-flex   .bar{fill:var(--p-flex)}
-.n-govuk  .box{stroke:var(--p-govuk)}  .n-govuk  .bar{fill:var(--p-govuk)}
-.n-third  .box{stroke:var(--p-third)}  .n-third  .bar{fill:var(--p-third)}
 /* Border style carries the plane, so ownership colour stays uncontested. */
 .p-control .box{stroke-dasharray:6 3}
-.legend i.pl-request{border-style:solid;border-color:var(--ink-2)}
-.legend i.pl-control{border-style:dashed;border-color:var(--ink-2)}
 .edge{cursor:pointer}
 .edge .hit{stroke:transparent;stroke-width:16;fill:none}
 .edge .line{stroke:var(--line-strong);stroke-width:1.6;fill:none}

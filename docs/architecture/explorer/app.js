@@ -1,5 +1,6 @@
-const REPO="https://github.com/govuk-once/flex/blob/main/";
-const STAGES=[{id:"dev",label:"Development"},{id:"stg",label:"Staging"},{id:"prod",label:"Production"},{id:"eph",label:"Ephemeral PR"}];
+/* Everything project-specific comes from explorer.config.json, injected as CONFIG. */
+const REPO=CONFIG.repo;
+const STAGES=CONFIG.stages;
 /* Named deployStage, not stage: `stage` is already the diagram canvas element. */
 let deployStage="dev";
 const stageLabel=()=>STAGES.find(s=>s.id===deployStage).label;
@@ -8,7 +9,7 @@ const stageLabel=()=>STAGES.find(s=>s.id===deployStage).label;
    source of truth for both the table and every badge. */
 const RES=new Map(), RES_GROUP=new Map();
 function indexResources(){
-  const rv=VIEWS.find(v=>v.id==="resources");
+  const rv=VIEWS.find(v=>v.id===CONFIG.inventoryView);
   rv.groups.forEach(g=>(g.items||[]).forEach(it=>{RES.set(it.id,it);RES_GROUP.set(it.id,g.name);}));
 }
 function countOf(item){
@@ -39,15 +40,52 @@ function iconTag(id,cls){
    stylesheet has to come with it, and the icon <symbol>s live in a different document
    from the canvas, so the ones in use have to be copied in or every <use> resolves to
    nothing. Then it is rasterised through a canvas at 2x. */
+/* The bands the export adds around the drawing. On screen these live in the panel, where
+   they cost no diagram space — an earlier version put the legend on the canvas and it
+   collided with boxes. A PNG has no panel, though, so a bare drawing leaves the reader
+   with no idea which view, which stage, or what the colours mean. */
+const CAP_TOP=64, CAP_BOT=44, CAP_PAD=26;
+
+function exportBands(w,h){
+  const kinds=KIND_ORDER.filter(k=>view.nodes.some(n=>n.kind===k));
+  const planes=PLANE_ORDER.filter(p=>view.nodes.some(n=>(n.plane||"request")===p));
+  const t=(x,y,cls,txt)=>`<text x="${x}" y="${y}" class="${cls}">${esc(txt)}</text>`;
+  let out=`<g class="cap">`
+    +`<rect x="0" y="0" width="${w}" height="${CAP_TOP}" class="cap-bg"/>`
+    +t(CAP_PAD,27,"cap-title",`${CONFIG.title} · ${view.name}`)
+    +t(CAP_PAD,46,"cap-sub",`${view.audience} — ${stageLabel()} stage`)
+    +`<line x1="0" y1="${CAP_TOP}" x2="${w}" y2="${CAP_TOP}" class="cap-rule"/>`
+    +`<rect x="0" y="${h-CAP_BOT}" width="${w}" height="${CAP_BOT}" class="cap-bg"/>`
+    +`<line x1="0" y1="${h-CAP_BOT}" x2="${w}" y2="${h-CAP_BOT}" class="cap-rule"/>`;
+  let x=CAP_PAD, y=h-CAP_BOT+27;
+  for(const k of kinds){
+    out+=`<rect x="${x}" y="${y-9}" width="11" height="11" rx="2.5" fill="${kindVar(k)}"/>`
+        +t(x+18,y,"cap-lg",KIND_LABEL[k]);
+    x+=18+KIND_LABEL[k].length*6.6+24;
+  }
+  if(planes.length>1){
+    x+=6;
+    for(const pl of planes){
+      out+=`<line x1="${x}" y1="${y-4}" x2="${x+16}" y2="${y-4}" class="cap-pl"`
+          +(pl==="control"?` stroke-dasharray="5 3"`:``)+`/>`
+          +t(x+23,y,"cap-lg",PLANE_LABEL[pl]);
+      x+=23+PLANE_LABEL[pl].length*6.6+24;
+    }
+  }
+  return out+`</g>`;
+}
+
 function standaloneSvg(){
   const src=document.getElementById("svg");
   const svg=src.cloneNode(true);
-  const [,,w,h]=(src.getAttribute("viewBox")||"0 0 1400 900").split(/\s+/).map(Number);
+  const [,,w,vh]=(src.getAttribute("viewBox")||"0 0 1400 900").split(/\s+/).map(Number);
+  const h=vh+CAP_TOP+CAP_BOT;
   svg.setAttribute("width",w); svg.setAttribute("height",h);
   svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
-  svg.removeAttribute("style");
+  svg.removeAttribute("style");   /* re-set below, with the resolved theme */
   /* The live canvas is panned and zoomed by a transform; the export is the whole thing. */
-  const root=svg.querySelector("#root"); if(root)root.removeAttribute("transform");
+  const root=svg.querySelector("#root");
+  if(root)root.setAttribute("transform",`translate(0 ${CAP_TOP})`);
 
   /* Only the symbols this view actually references. */
   const used=[...new Set([...svg.querySelectorAll("use")]
@@ -63,6 +101,23 @@ function standaloneSvg(){
   bg.setAttribute("width",w); bg.setAttribute("height",h);
   bg.setAttribute("fill",getComputedStyle(document.body).getPropertyValue("--canvas").trim()||"#fff");
   svg.insertBefore(bg,svg.firstChild);
+
+  const bands=document.createElementNS("http://www.w3.org/2000/svg","g");
+  bands.innerHTML=exportBands(w,h);
+  svg.appendChild(bands);
+
+  /* Freeze the theme. The exported SVG carries the page stylesheet, but its :root is the
+     <svg> — not <html> — so the data-theme attribute does not travel, and the
+     prefers-color-scheme query is re-evaluated by whatever renders the image. Forcing
+     light on a dark machine therefore produced a light canvas with dark boxes. Resolving
+     every custom property here and pinning it inline settles it before it leaves. */
+  const names=new Set();
+  for(const el of document.querySelectorAll("style"))
+    for(const m of el.textContent.matchAll(/(--[a-z0-9-]+)\s*:/g))names.add(m[1]);
+  const live=getComputedStyle(document.documentElement);
+  svg.setAttribute("style",[...names]
+    .map(n=>`${n}:${live.getPropertyValue(n).trim()}`)
+    .filter(d=>!d.endsWith(":")).join(";"));
 
   const style=document.createElementNS("http://www.w3.org/2000/svg","style");
   style.textContent=[...document.querySelectorAll("style")].map(s2=>s2.textContent).join("\n");
@@ -86,7 +141,7 @@ function exportPng(){
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a");
       a.href=url;
-      a.download=`flex-${view.id}-${deployStage}.png`;
+      a.download=`${CONFIG.slug}-${view.id}-${deployStage}.png`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
     },"image/png");
@@ -106,12 +161,18 @@ function indexPlaces(){
 
 /* Four ownership kinds, not nine mixed categories: who owns a box is the thing a
    reader must not get wrong. Plane (request vs control) rides on the border. */
-const KIND_LABEL={person:"Person",flex:"FLEX",govuk:"GOV.UK Once",third:"Outside GOV.UK Once"};
+const KIND_LABEL=Object.fromEntries(CONFIG.kinds.map(k=>[k.id,k.label]));
 /* Fixed order. Insertion order put the same swatch in a different slot on every tab,
    which makes a legend unscannable — you cannot learn where to look. */
-const KIND_ORDER=["person","flex","govuk","third"];
+const KIND_ORDER=CONFIG.kinds.map(k=>k.id);
+/* kind id -> palette colour, so nothing but the config knows which is which. */
+const KIND_COLOUR=Object.fromEntries(CONFIG.kinds.map(k=>[k.id,k.colour]));
+const kindVar=k=>`var(--legend-${KIND_COLOUR[k]})`;
 const PLANE_ORDER=["request","control"];
-const PLANE_LABEL={request:"on the request path",control:"control plane"};
+/* Not "control plane": that term means the management API layer, and this flag also
+   covers source files, runbooks, observability and people. What it encodes is only
+   whether a thing serves live traffic, so the labels say only that. */
+const PLANE_LABEL={request:"on the request path",control:"off the request path"};
 
 /* ============================ RENDER ============================ */
 const SVGNS="http://www.w3.org/2000/svg";
@@ -195,10 +256,13 @@ function clipCount(d,obstacles,probe){
 
 function build(){
   const isDoc=view.type==="doc";
-  svg.hidden=isDoc; doc.hidden=!isDoc; hint.hidden=isDoc; ctrls.style.visibility=isDoc?"hidden":"visible";
+  svg.hidden=isDoc; doc.hidden=!isDoc; hint.hidden=isDoc; /* Only zoom and export depend on a canvas. Icons show on the inventory rows too, and
+     the theme is page-wide — hiding those left a reader able to see icons on the
+     Resources tab with no way to turn them off. */
+  ctrls.querySelectorAll(".canvas-only").forEach(g=>{g.hidden=isDoc;});
   svg.style.display=isDoc?"none":"block";
   /* The stage selector only means something where per-stage counts are shown. */
-  const staged=isDoc?view.id==="resources":Object.keys(PLACEMENT[view.id]||{}).length>0;
+  const staged=isDoc?view.id===CONFIG.inventoryView:Object.keys(PLACEMENT[view.id]||{}).length>0;
   document.querySelector(".stagepick").hidden=!staged;
   renderTables(); renderViewHeader();
   /* Clear whichever pane is not in use. A hidden pane that keeps its DOM leaves
@@ -320,7 +384,8 @@ function build(){
   probe.remove();
 
   view.nodes.forEach(n=>{
-    const g=el("g",{class:`node n-${n.kind} p-${n.plane||"request"}`,tabindex:"0",role:"button","aria-label":n.label});
+    const g=el("g",{class:`node n-${n.kind} p-${n.plane||"request"}`,tabindex:"0",role:"button",
+      "aria-label":n.label,style:`--kind:${kindVar(n.kind)}`});
     g.appendChild(el("rect",{class:"box",x:n.x,y:n.y,width:n.w,height:n.h,rx:8}));
     g.appendChild(el("rect",{class:"bar",x:n.x,y:n.y,width:4,height:n.h,rx:2}));
     const hasSub=!!n.sub;
@@ -399,7 +464,7 @@ function select(s){
 /* ============================ INSPECTOR ============================ */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* Authored copy is full of literal angle brackets — /gateways/<name>/{proxy+},
-   /<env>/flex/…, <stage>.<zone> — so everything is escaped first and only the three
+   /<env>/<service>/…, <stage>.<zone> — so everything is escaped first and only the three
    inline tags this file actually uses are restored. Escaping alone would show the
    markup; not escaping would silently swallow <name> as an unknown element. */
 const RICH_TAGS=/&lt;(\/?)(b|code|i)&gt;/g;
@@ -458,7 +523,7 @@ function renderNode(n){
     `<button class="conn" data-edge="${e._id}"><span class="arw">${out?"→":"←"}</span><span><b>${esc(other.label)}</b> · ${esc(e.label)}</span></button>`).join("");
   insp.innerHTML=`
     <div>
-      <span class="chip" style="color:var(--p-${n.kind})"><i></i>${esc(KIND_LABEL[n.kind])}</span>
+      <span class="chip" style="color:${kindVar(n.kind)}"><i></i>${esc(KIND_LABEL[n.kind])}</span>
       <h1 class="insp-title">${esc(n.label)}</h1>
       ${n.sub?`<p class="insp-sub mono">${esc(n.sub)}</p>`:""}
     </div>
@@ -474,7 +539,7 @@ function renderNode(n){
 function renderZone(z){
   insp.innerHTML=`
     <div>
-      <span class="chip" style="color:var(--p-core)"><i></i>Boundary</span>
+      <span class="chip" style="color:var(--accent)"><i></i>Boundary</span>
       <h1 class="insp-title">${esc(z.label)}</h1>
     </div>
     <dl class="kv"><dt>Type</dt><dd>${esc(z.d?.type||"Grouping")}</dd><dt>Technology</dt><dd>${esc(z.d?.tech||"—")}</dd></dl>
@@ -512,7 +577,7 @@ function wireRes(){
     const nodeId=b.dataset.pin;
     const ids=PLACEMENT[view.id]?.[nodeId]||[];
     const label=nodeById.get(nodeId)?.label||nodeId;
-    const rv=VIEWS.find(v=>v.id==="resources");
+    const rv=VIEWS.find(v=>v.id===CONFIG.inventoryView);
     const tab=[...tabs.children].find(c=>c.textContent===rv.name);
     if(tab)tab.click();                       /* resets view, filter and pin */
     pin={ids:new Set(ids),label};
@@ -600,7 +665,7 @@ function legendHtml(){
   const kinds=KIND_ORDER.filter(k=>view.nodes.some(n=>n.kind===k));
   const planes=PLANE_ORDER.filter(p=>view.nodes.some(n=>(n.plane||"request")===p));
   return `<div class="legend">`
-    +kinds.map(k=>`<span class="lg-item" style="color:var(--p-${k})"><i class="sw"></i>${esc(KIND_LABEL[k])}</span>`).join("")
+    +kinds.map(k=>`<span class="lg-item" style="color:${kindVar(k)}"><i class="sw"></i>${esc(KIND_LABEL[k])}</span>`).join("")
     +(planes.length>1?`<span class="lg-sep"></span>`+planes.map(p=>
        `<span class="lg-item"><i class="sw pl-${p}"></i>${esc(PLANE_LABEL[p])}</span>`).join(""):"")
     +`</div>`;
@@ -652,8 +717,8 @@ function buildDoc(){
       ${view.note?`<div class="doc-note">${rich(view.note)}</div>`:""}
     </div>
     <div class="filterbar">
-      <input id="q" type="search" placeholder="Filter — try isolated, KMS, 365 days, alarm" value="${esc(filter)}" aria-label="Filter resources">
-      <span class="count">${shown} of ${total} entries${view.id==="resources"&&!pin?` · ${stageTotal()} resources in ${esc(stageLabel().toLowerCase())}`:""}</span>
+      <input id="q" type="search" placeholder="${esc(CONFIG.filterHint)}" value="${esc(filter)}" aria-label="Filter resources">
+      <span class="count">${shown} of ${total} entries${view.id===CONFIG.inventoryView&&!pin?` · ${stageTotal()} resources in ${esc(stageLabel().toLowerCase())}`:""}</span>
         ${pin?`<span class="pinchip">Showing only what is in <b>${esc(pin.label)}</b><button id="unpin" type="button" aria-label="Show all resources">Clear</button></span>`:""}
     </div>
     ${groups||`<p class="empty">Nothing matches “${esc(filter)}”.</p>`}`;
@@ -799,28 +864,65 @@ VIEWS.forEach((v,i)=>{
 
 function stageTotal(){
   let n=0;
-  VIEWS.find(v=>v.id==="resources").groups.forEach(g=>(g.items||[]).forEach(it=>{const c=countOf(it);if(c)n+=c;}));
+  VIEWS.find(v=>v.id===CONFIG.inventoryView).groups.forEach(g=>(g.items||[]).forEach(it=>{const c=countOf(it);if(c)n+=c;}));
   return n;
 }
 /* Icons are off by default so the diagrams read as they always have; an architect who
    wants them keeps them. localStorage can throw outright in some embedded contexts, so
    every access is guarded and the page renders correctly with no stored value. */
+/* Namespaced by project, so two explorers served from one origin do not fight. */
+/* Three states, not two: someone who overrides the theme needs a way back to following
+   the system. The CSS was written for this — :root[data-theme] blocks existed from the
+   start — but nothing ever set the attribute, so the override half was never reachable. */
+const THEME_KEY=`${CONFIG.slug}-arch-theme`;
+const THEMES=[
+  {id:"system",label:"Match system",
+   d:'<rect x="2" y="3" width="12" height="8" rx="1.5"/><path d="M6 14h4M8 11v3"/>'},
+  {id:"light",label:"Light",
+   d:'<circle cx="8" cy="8" r="3"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1"/>'},
+  {id:"dark",label:"Dark",
+   d:'<path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.9 5.9 0 1 0 7.1 7.1Z"/>'},
+];
+const themeBtn=document.getElementById("themetoggle");
+{
+  const read=()=>{try{return localStorage.getItem(THEME_KEY);}catch{return null;}};
+  let i=Math.max(0,THEMES.findIndex(t=>t.id===read()));
+  const paint=()=>{
+    const t=THEMES[i];
+    if(t.id==="system")document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme",t.id);
+    themeBtn.innerHTML=`<svg viewBox="0 0 16 16" aria-hidden="true">${t.d}</svg>`;
+    themeBtn.title=`Theme: ${t.label}`;
+    themeBtn.setAttribute("aria-label",`Theme: ${t.label}. Click to change.`);
+  };
+  paint();
+  themeBtn.addEventListener("click",()=>{
+    i=(i+1)%THEMES.length; paint();
+    try{localStorage.setItem(THEME_KEY,THEMES[i].id);}catch{/* private mode */}
+  });
+}
+
+const ICON_KEY=`${CONFIG.slug}-arch-icons`;
 const iconBtn=document.getElementById("icontoggle");
 if(!ICON_IDS.length){ if(iconBtn)iconBtn.hidden=true; }
 else{
-  const read=()=>{try{return localStorage.getItem("flex-arch-icons")==="1";}catch{return false;}};
+  const read=()=>{try{return localStorage.getItem(ICON_KEY)==="1";}catch{return false;}};
   const paint=on=>{
     document.body.classList.toggle("icons-on",on);
     iconBtn.setAttribute("aria-pressed",on?"true":"false");
-    iconBtn.title=on?"Hide AWS service icons":"Show AWS service icons";
+    iconBtn.title=`${on?"Hide":"Show"} ${CONFIG.iconLabel}`;
   };
   let on=read(); paint(on);
   iconBtn.addEventListener("click",()=>{
     on=!on; paint(on);
-    try{localStorage.setItem("flex-arch-icons",on?"1":"0");}catch{/* private mode */}
+    try{localStorage.setItem(ICON_KEY,on?"1":"0");}catch{/* private mode */}
   });
 }
 
+document.getElementById("brand").innerHTML=
+  `<b>${esc(CONFIG.title)}</b><span>${esc(CONFIG.tagline)}</span>`;
+iconBtn.setAttribute("aria-label",CONFIG.iconLabel);
+svg.setAttribute("aria-label",`Interactive ${CONFIG.title} diagram`);
 document.getElementById("savepng").addEventListener("click",exportPng);
 
 const stageBar=document.getElementById("stages");
