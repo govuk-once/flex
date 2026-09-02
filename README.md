@@ -1,6 +1,6 @@
 # FLEX (Federated Logic and Events eXchange System)
 
-Serverless platform for GOV.UK One services built on AWS CDK and TypeScript.
+Serverless platform for GOV.UK Once services built on AWS CDK and TypeScript.
 
 ---
 
@@ -124,18 +124,21 @@ flex/
 
 ## Guides
 
-| Guide                                                       | Description                                                           |
-| ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                             |
-| [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
-| [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
-| [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
-| [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications            |
-| [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
-| [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
+| Guide                                                       | Description                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Architecture](/docs/architecture/README.md)                | The interactive architecture explorer: how to view, build and change it |
+| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                               |
+| [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                         |
+| [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                               |
+| [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                  |
+| [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications              |
+| [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX   |
+| [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                       |
 
 ---
 
 ## Contributing
 
 See [CONTRIBUTING.md](/.github/CONTRIBUTING.md) for commit message conventions and pull request guidelines.
+
+[AGENTS.md](/AGENTS.md) is the orientation file for this repository — which guide to read before changing what, how to verify a change, and the conventions that bite. It is read automatically by most coding agents, and is a short read for people too.

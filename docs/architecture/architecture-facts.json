@@ -1,0 +1,1191 @@
+{
+  "generatedFrom": "domains/*/domain.config.ts, platform/domains/*/gateway.config.ts, platform/infra/flex/src/constructs/alarms",
+  "domains": [
+    {
+      "name": "dvla",
+      "environments": ["development", "staging", "production"],
+      "commonAccess": "private",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/customer/licence",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-customer-licence",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/customer/vehicle/:id",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-customer-vehicle",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/customer/vehicles",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-customer-vehicles",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/test-notification",
+          "method": "POST",
+          "gateway": "public",
+          "name": "post-test-notification",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/vehicle-enquiry/:reg",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-vehicle-enquiry",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/share-code",
+          "method": "POST",
+          "gateway": "public",
+          "name": "post-share-code",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/share-code/:id/cancel",
+          "method": "POST",
+          "gateway": "public",
+          "name": "cancel-share-code",
+          "access": "private"
+        },
+        {
+          "version": "v1",
+          "path": "/unlink",
+          "method": "POST",
+          "gateway": "private",
+          "name": "unlink-user",
+          "access": "private"
+        }
+      ],
+      "counts": { "public": 7, "private": 1, "total": 8 },
+      "perStage": {
+        "development": 8,
+        "staging": 8,
+        "production": 8,
+        "ephemeral": 8
+      },
+      "integrations": [
+        {
+          "key": "dvlaUnlinkUser",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "POST /v1/unlink-user/*"
+        },
+        {
+          "key": "dvlaTestNotification",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "POST /v1/test-notification/*"
+        },
+        {
+          "key": "dvlaAuthenticate",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/authenticate"
+        },
+        {
+          "key": "dvlaVehicleEnquiry",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/vehicle-enquiry/*"
+        },
+        {
+          "key": "udpGetLinkingId",
+          "type": "domain",
+          "target": "udp",
+          "route": "GET /v1/identity/*"
+        },
+        {
+          "key": "dvlaPostShareCode",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "POST /v1/share-code"
+        },
+        {
+          "key": "dvlaCancelShareCode",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "POST /v1/share-code/*"
+        },
+        {
+          "key": "dvlaGetCustomerVehicle",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/customer/vehicle/*"
+        },
+        {
+          "key": "dvlaGetCustomerVehicles",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/customer/vehicles"
+        },
+        {
+          "key": "dvlaGetCustomerLicence",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/customer/licence"
+        }
+      ],
+      "resources": [
+        {
+          "key": "flexPrivateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        },
+        {
+          "key": "encryptionKeyArn",
+          "type": "kms",
+          "path": "/flex-secret/encryption-key",
+          "scope": null
+        }
+      ],
+      "featureFlags": []
+    },
+    {
+      "name": "example",
+      "environments": ["development"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 20,
+      "routes": [
+        {
+          "version": "v0",
+          "path": "/todos",
+          "method": "GET",
+          "gateway": "public",
+          "name": "list-todos",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/todos",
+          "method": "POST",
+          "gateway": "private",
+          "name": "create-todo",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/todos/:id",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-todo",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/todos/:id",
+          "method": "DELETE",
+          "gateway": "public",
+          "name": "delete-todo",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/todos/:id/duplicate",
+          "method": "POST",
+          "gateway": "public",
+          "name": "duplicate-todo",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/headers",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-headers",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/resources",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-resources",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/resources/runtime",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-runtime-resource",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/identity/:service",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-identity-link",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/identity/:service",
+          "method": "GET",
+          "gateway": "private",
+          "name": "get-identity-link",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/notifications",
+          "method": "PATCH",
+          "gateway": "public",
+          "name": "update-notifications",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/users/notifications",
+          "method": "PATCH",
+          "gateway": "public",
+          "name": "update-user-notification-preferences",
+          "access": "isolated"
+        },
+        {
+          "version": "v0",
+          "path": "/users/notifications",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-user-notifications",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 11, "private": 2, "total": 13 },
+      "perStage": {
+        "development": 13,
+        "staging": 0,
+        "production": 0,
+        "ephemeral": 13
+      },
+      "integrations": [
+        {
+          "key": "unsGetNotifications",
+          "type": "gateway",
+          "target": "uns",
+          "route": "GET /v1/notifications"
+        },
+        {
+          "key": "createTodo",
+          "type": "domain",
+          "target": "example",
+          "route": "POST /v0/todos"
+        },
+        {
+          "key": "udpGetIdentity",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/identity/*"
+        },
+        {
+          "key": "udpCreateNotifications",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/notifications"
+        },
+        {
+          "key": "udpGetPushId",
+          "type": "domain",
+          "target": "udp",
+          "route": "GET /v1/users/push-id"
+        }
+      ],
+      "resources": [
+        {
+          "key": "privateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        },
+        {
+          "key": "encryptionKeyArn",
+          "type": "kms",
+          "path": "/flex-secret/encryption-key",
+          "scope": null
+        },
+        {
+          "key": "udpNotificationSecret",
+          "type": "secret",
+          "path": "/flex-secret/udp/notification-hash-secret",
+          "scope": null
+        },
+        {
+          "key": "privateGatewaysRoot",
+          "type": "ssm:runtime",
+          "path": "/flex/apigw/private/gateways-root",
+          "scope": "stage"
+        }
+      ],
+      "featureFlags": ["enableTodoMetadata", "newUserProfileEnabled"]
+    },
+    {
+      "name": "groups",
+      "environments": ["development", "staging"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/groups",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-groups",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/groups",
+          "method": "POST",
+          "gateway": "public",
+          "name": "post-groups",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 2, "private": 0, "total": 2 },
+      "perStage": {
+        "development": 2,
+        "staging": 2,
+        "production": 0,
+        "ephemeral": 2
+      },
+      "integrations": [
+        {
+          "key": "udpGetPushId",
+          "type": "domain",
+          "target": "udp",
+          "route": "GET /v1/users/push-id"
+        },
+        {
+          "key": "udpGetGroups",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/groups"
+        },
+        {
+          "key": "udpPostGroups",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/groups"
+        },
+        {
+          "key": "unsGetGroups",
+          "type": "gateway",
+          "target": "uns",
+          "route": "GET /v1/groups"
+        },
+        {
+          "key": "unsPostGroups",
+          "type": "gateway",
+          "target": "uns",
+          "route": "POST /v1/groups"
+        }
+      ],
+      "resources": [
+        {
+          "key": "encryptionKey",
+          "type": "kms",
+          "path": "/flex-secret/encryption-key",
+          "scope": null
+        },
+        {
+          "key": "privateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        },
+        {
+          "key": "udpNotificationSecret",
+          "type": "secret",
+          "path": "/flex-secret/udp/notification-hash-secret",
+          "scope": null
+        }
+      ],
+      "featureFlags": []
+    },
+    {
+      "name": "local-council",
+      "environments": ["development", "staging"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/local-council/:id",
+          "method": "POST",
+          "gateway": "private",
+          "name": "upsert-local-authority",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/local-council/:id",
+          "method": "GET",
+          "gateway": "private",
+          "name": "get-local-authority",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 0, "private": 2, "total": 2 },
+      "perStage": {
+        "development": 2,
+        "staging": 2,
+        "production": 0,
+        "ephemeral": 2
+      },
+      "integrations": [
+        {
+          "key": "udpSaveLocalAuthority",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/local-council/*"
+        },
+        {
+          "key": "udpGetLocalAuthority",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/local-council/*"
+        }
+      ],
+      "resources": [
+        {
+          "key": "flexPrivateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        }
+      ],
+      "featureFlags": []
+    },
+    {
+      "name": "travel",
+      "environments": ["development", "staging"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/countries",
+          "method": "GET",
+          "gateway": "public",
+          "name": "list-countries",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/events",
+          "method": "GET",
+          "gateway": "public",
+          "name": "fetch-recent-travel-alerts",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 2, "private": 0, "total": 2 },
+      "perStage": {
+        "development": 2,
+        "staging": 2,
+        "production": 0,
+        "ephemeral": 2
+      },
+      "integrations": [
+        {
+          "key": "travelGetCountries",
+          "type": "gateway",
+          "target": "travel",
+          "route": "GET /v1/countries"
+        },
+        {
+          "key": "travelGetEvents",
+          "type": "gateway",
+          "target": "travel",
+          "route": "GET /v1/events"
+        }
+      ],
+      "resources": [
+        {
+          "key": "flexPrivateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        }
+      ],
+      "featureFlags": []
+    },
+    {
+      "name": "udp",
+      "environments": ["development", "staging", "production"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 20,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/identity",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-users-service-identities",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/identity/:service",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-service-identity",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/identity/:service",
+          "method": "GET",
+          "gateway": "private",
+          "name": "get-service-identity",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/identity/:service",
+          "method": "DELETE",
+          "gateway": "public",
+          "name": "delete-service-identity",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/identity/:service",
+          "method": "POST",
+          "gateway": "public",
+          "name": "create-service-identity-link",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/users/me",
+          "method": "GET",
+          "gateway": "public",
+          "name": "upsert-user",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/users/push-id",
+          "method": "GET",
+          "gateway": "private",
+          "name": "get-user-notification-push-id",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/users/me/notifications",
+          "method": "PATCH",
+          "gateway": "public",
+          "name": "update-user-notification-preferences",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 6, "private": 2, "total": 8 },
+      "perStage": {
+        "development": 8,
+        "staging": 8,
+        "production": 8,
+        "ephemeral": 8
+      },
+      "integrations": [
+        {
+          "key": "udpGetIdentity",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/identity/*"
+        },
+        {
+          "key": "udpCreateIdentity",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/identity/*"
+        },
+        {
+          "key": "udpDeleteIdentity",
+          "type": "gateway",
+          "target": "udp",
+          "route": "DELETE /v1/identity/*"
+        },
+        {
+          "key": "udpGetNotificationPreferences",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/notifications"
+        },
+        {
+          "key": "udpCreateNotificationPreferences",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/notifications"
+        },
+        {
+          "key": "udpCreateUser",
+          "type": "gateway",
+          "target": "udp",
+          "route": "POST /v1/users"
+        },
+        {
+          "key": "udpGetIdentities",
+          "type": "gateway",
+          "target": "udp",
+          "route": "GET /v1/identities/*"
+        },
+        {
+          "key": "dvlaGetWellKnownJwk",
+          "type": "gateway",
+          "target": "dvla",
+          "route": "GET /v1/well-known-jwks"
+        },
+        {
+          "key": "dvlaUnlinkUser",
+          "type": "domain",
+          "target": "dvla",
+          "route": "POST /v1/unlink"
+        }
+      ],
+      "resources": [
+        {
+          "key": "environment",
+          "type": "ssm",
+          "path": "/flex-param/flex/environment",
+          "scope": null
+        },
+        {
+          "key": "privateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        },
+        {
+          "key": "encryptionKey",
+          "type": "kms",
+          "path": "/flex-secret/encryption-key",
+          "scope": null
+        },
+        {
+          "key": "decyrptionKey",
+          "type": "kms",
+          "path": "/third-party-encryption-key",
+          "scope": "stage"
+        },
+        {
+          "key": "udpNotificationSecret",
+          "type": "secret",
+          "path": "/flex-secret/udp/notification-hash-secret",
+          "scope": null
+        },
+        {
+          "key": "sessionHashKey",
+          "type": "secret",
+          "path": "/flex-secret/udp/dvla-session-hash-secret",
+          "scope": null
+        },
+        {
+          "key": "dvlaJwtIssuer",
+          "type": "ssm",
+          "path": "/flex-param/dvla/jwt-issuer",
+          "scope": null
+        }
+      ],
+      "featureFlags": []
+    },
+    {
+      "name": "uns",
+      "environments": ["development", "staging", "production"],
+      "commonAccess": "isolated",
+      "timeoutSeconds": 30,
+      "routes": [
+        {
+          "version": "v1",
+          "path": "/notifications",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-notifications",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/notifications/:notificationId",
+          "method": "GET",
+          "gateway": "public",
+          "name": "get-notification-by-id",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/notifications/:notificationId",
+          "method": "DELETE",
+          "gateway": "public",
+          "name": "delete-notification",
+          "access": "isolated"
+        },
+        {
+          "version": "v1",
+          "path": "/notifications/:notificationId/status",
+          "method": "PATCH",
+          "gateway": "public",
+          "name": "patch-notification-status",
+          "access": "isolated"
+        }
+      ],
+      "counts": { "public": 4, "private": 0, "total": 4 },
+      "perStage": {
+        "development": 4,
+        "staging": 4,
+        "production": 4,
+        "ephemeral": 4
+      },
+      "integrations": [
+        {
+          "key": "unsGetNotifications",
+          "type": "gateway",
+          "target": "uns",
+          "route": "GET /v1/notifications"
+        },
+        {
+          "key": "unsPatchNotification",
+          "type": "gateway",
+          "target": "uns",
+          "route": "PATCH /v1/notifications/*"
+        },
+        {
+          "key": "unsGetNotificationById",
+          "type": "gateway",
+          "target": "uns",
+          "route": "GET /v1/notifications/*"
+        },
+        {
+          "key": "unsDeleteNotification",
+          "type": "gateway",
+          "target": "uns",
+          "route": "DELETE /v1/notifications/*"
+        },
+        {
+          "key": "udpGetPushId",
+          "type": "domain",
+          "target": "udp",
+          "route": "GET /v1/users/push-id"
+        }
+      ],
+      "resources": [
+        {
+          "key": "encryptionKey",
+          "type": "kms",
+          "path": "/flex-secret/encryption-key",
+          "scope": null
+        },
+        {
+          "key": "privateGatewayUrl",
+          "type": "ssm",
+          "path": "/flex/apigw/private/gateway-url",
+          "scope": "stage"
+        },
+        {
+          "key": "udpNotificationSecret",
+          "type": "secret",
+          "path": "/flex-secret/udp/notification-hash-secret",
+          "scope": null
+        }
+      ],
+      "featureFlags": []
+    }
+  ],
+  "gateways": [
+    {
+      "name": "dvla",
+      "environments": ["development", "staging", "production"],
+      "access": "private",
+      "routeCount": 10,
+      "routes": [
+        "GET /v1/authenticate",
+        "GET /v1/customer/licence",
+        "GET /v1/customer/vehicles",
+        "GET /v1/customer/vehicle/:id",
+        "GET /v1/vehicle-enquiry/:id",
+        "GET /v1/well-known-jwks",
+        "POST /v1/share-code",
+        "POST /v1/share-code/:id/cancel",
+        "POST /v1/test-notification/:id",
+        "POST /v1/unlink-user/:id"
+      ],
+      "resources": [
+        {
+          "key": "consumerConfig",
+          "type": "secret",
+          "path": "/dvla/consumer-config-secret-arn",
+          "env": "FLEX_DVLA_CONSUMER_CONFIG_SECRET_ARN"
+        },
+        {
+          "key": "encryptionKey",
+          "type": "kms",
+          "path": "/secret/encryption-key",
+          "env": null
+        }
+      ]
+    },
+    {
+      "name": "travel",
+      "environments": ["development", "staging"],
+      "access": "private",
+      "routeCount": 2,
+      "routes": ["GET /v1/countries", "GET /v1/events"],
+      "resources": [
+        {
+          "key": "consumerConfig",
+          "type": "secret",
+          "path": "/travel/consumer-config-secret",
+          "env": "FLEX_TRAVEL_CONSUMER_CONFIG_SECRET_ARN"
+        },
+        {
+          "key": "consumerRole",
+          "type": "role",
+          "path": "/travel/consumer-role",
+          "env": null
+        }
+      ]
+    },
+    {
+      "name": "udp",
+      "environments": ["development", "staging", "production"],
+      "access": "isolated",
+      "routeCount": 10,
+      "routes": [
+        "GET /v1/identities/:id",
+        "GET /v1/identity/:serviceName",
+        "GET /v1/notifications",
+        "POST /v1/identity/:serviceName/:identifier",
+        "POST /v1/notifications",
+        "POST /v1/users",
+        "DELETE /v1/identity/:serviceName/:identifier",
+        "DELETE /v1/notifications",
+        "GET /v1/groups",
+        "POST /v1/groups"
+      ],
+      "resources": [
+        {
+          "key": "consumerConfig",
+          "type": "secret",
+          "path": "/udp/consumer-config-secret-arn",
+          "env": "FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN"
+        },
+        {
+          "key": "consumerRole",
+          "type": "role",
+          "path": "/udp/consumer-role-arn",
+          "env": null
+        },
+        { "key": "cmk", "type": "kms", "path": "/udp/cmk-arn", "env": null }
+      ]
+    },
+    {
+      "name": "uns",
+      "environments": ["development", "staging", "production"],
+      "access": "isolated",
+      "routeCount": 6,
+      "routes": [
+        "GET /v1/groups",
+        "POST /v1/groups",
+        "GET /v1/notifications",
+        "GET /v1/notifications/:id",
+        "PATCH /v1/notifications/:id/status",
+        "DELETE /v1/notifications/:id"
+      ],
+      "resources": [
+        {
+          "key": "consumerConfig",
+          "type": "secret",
+          "path": "/uns/consumer-config-secret",
+          "env": "FLEX_UNS_CONSUMER_CONFIG_SECRET_ARN"
+        },
+        {
+          "key": "consumerRole",
+          "type": "role",
+          "path": "/uns/customer-role",
+          "env": null
+        },
+        {
+          "key": "encryptionKey",
+          "type": "kms",
+          "path": "/uns/cmk-arn",
+          "env": null
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "domains": 7,
+    "gateways": 4,
+    "routeFunctions": {
+      "development": 39,
+      "staging": 26,
+      "production": 20,
+      "ephemeral": 39
+    },
+    "byTier": {
+      "egress": {
+        "development": 8,
+        "staging": 8,
+        "production": 8,
+        "ephemeral": 8
+      },
+      "isolated": {
+        "development": 31,
+        "staging": 18,
+        "production": 12,
+        "ephemeral": 31
+      }
+    },
+    "routeMethods": {
+      "public": {
+        "development": 32,
+        "staging": 21,
+        "production": 17,
+        "ephemeral": 32
+      },
+      "private": {
+        "development": 7,
+        "staging": 5,
+        "production": 3,
+        "ephemeral": 7
+      }
+    },
+    "domainsWithPublicRoutes": {
+      "development": 6,
+      "staging": 5,
+      "production": 3,
+      "ephemeral": 6
+    }
+  },
+  "alarms": [
+    {
+      "id": "5xxErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/api-gateway.ts",
+      "alarmName": "${alarmNamePrefix}-5xx-error-rate",
+      "metric": "5XXError",
+      "statistic": "average",
+      "threshold": "0.01",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "4xxErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/api-gateway.ts",
+      "alarmName": "${alarmNamePrefix}-4xx-error-rate",
+      "metric": "4XXError",
+      "statistic": "average",
+      "threshold": "0.05",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "P95Latency",
+      "source": "platform/infra/flex/src/constructs/alarms/api-gateway.ts",
+      "alarmName": "${alarmNamePrefix}-e2e-p95-latency",
+      "threshold": "3000",
+      "evaluationPeriods": "3",
+      "datapointsToAlarm": "2",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "IntegrationP95Latency",
+      "source": "platform/infra/flex/src/constructs/alarms/api-gateway.ts",
+      "alarmName": "${alarmNamePrefix}-integration-p95-latency",
+      "threshold": "2900",
+      "evaluationPeriods": "3",
+      "datapointsToAlarm": "2",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "FunctionExecutionErrors",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront-function.ts",
+      "alarmName": "${alarmNamePrefix}-function-execution-errors",
+      "metric": "FunctionExecutionErrors",
+      "statistic": "sum",
+      "threshold": "0",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "FunctionThrottles",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront-function.ts",
+      "alarmName": "${alarmNamePrefix}-function-throttles",
+      "metric": "FunctionThrottles",
+      "statistic": "sum",
+      "threshold": "0",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "FunctionValidationErrors",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront-function.ts",
+      "alarmName": "${alarmNamePrefix}-function-validation-errors",
+      "metric": "FunctionValidationErrors",
+      "statistic": "sum",
+      "threshold": "0",
+      "evaluationPeriods": "2",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "5xxErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront.ts",
+      "alarmName": "${alarmNamePrefix}-5xx-error-rate",
+      "metric": "5xxErrorRate",
+      "statistic": "average",
+      "threshold": "1",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "4xxErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront.ts",
+      "alarmName": "${alarmNamePrefix}-4xx-error-rate",
+      "metric": "4xxErrorRate",
+      "statistic": "average",
+      "threshold": "5",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "TotalErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/cloudfront.ts",
+      "alarmName": "${alarmNamePrefix}-total-error-rate",
+      "metric": "TotalErrorRate",
+      "statistic": "average",
+      "threshold": "5",
+      "evaluationPeriods": "5",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "ErrorRate",
+      "source": "platform/infra/flex/src/constructs/alarms/lambda.ts",
+      "alarmName": "${alarmNamePrefix}-error-rate",
+      "metric": "new MathExpression({ expression: \"IF(invocations >= 10, 100 * (errors / invocations), 0)\", usingMetrics: { errors: fn.metricErrors({ period: Duration.minutes(5) }), invocations: fn.metricInvocations({ period: Duration.minutes(5) }), }, period: Duration.minutes(5), label: \"Error rate (%)\", })",
+      "threshold": "1",
+      "evaluationPeriods": "2",
+      "datapointsToAlarm": "2",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "Throttles",
+      "source": "platform/infra/flex/src/constructs/alarms/lambda.ts",
+      "alarmName": "${alarmNamePrefix}-throttles",
+      "metric": "fn.metricThrottles({ period: Duration.minutes(1), statistic: Stats.SUM, })",
+      "statistic": "sum",
+      "threshold": "0",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "Duration",
+      "source": "platform/infra/flex/src/constructs/alarms/lambda.ts",
+      "alarmName": "${alarmNamePrefix}-duration",
+      "metric": "fn.metricDuration({ period: Duration.minutes(5), statistic: Stats.p(99), })",
+      "statistic": "p",
+      "threshold": "durationThreshold",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "DDoSDetected",
+      "source": "platform/infra/flex/src/constructs/alarms/shield.ts",
+      "alarmName": "${alarmNamePrefix}-ddos-detected",
+      "metric": "DDoSDetected",
+      "statistic": "maximum",
+      "threshold": "0",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "DDoSAttackRequestsPerSecond",
+      "source": "platform/infra/flex/src/constructs/alarms/shield.ts",
+      "alarmName": "${alarmNamePrefix}-ddos-attack-requests-per-second",
+      "metric": "DDoSAttackRequestsPerSecond",
+      "statistic": "maximum",
+      "threshold": "0",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    },
+    {
+      "id": "ManagedRuleBlocks",
+      "source": "platform/infra/flex/src/constructs/alarms/waf.ts",
+      "alarmName": "${alarmNamePrefix}-managed-rules-blocked-requests-v2",
+      "metric": "new MathExpression({ expression: Object.keys(managedBlocks) .map((id) => `FILL(${id}, 0)`) .join(\" + \"), usingMetrics: managedBlocks, label: \"Managed rule blocks\", })",
+      "threshold": "0",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "Blocking90PercentRequests",
+      "source": "platform/infra/flex/src/constructs/alarms/waf.ts",
+      "alarmName": "${alarmNamePrefix}-blocking-90-percent-requests-v2",
+      "metric": "new MathExpression({ expression: \"IF((blocked + allowed) > 0, 100 * (blocked / (blocked + allowed)), 0)\", usingMetrics: { blocked, allowed }, label: \"Block rate (%)\", })",
+      "threshold": "90",
+      "evaluationPeriods": "1",
+      "comparison": "GREATER_THAN_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "criticalAction"
+    },
+    {
+      "id": "BlockedRequestsSpike",
+      "source": "platform/infra/flex/src/constructs/alarms/waf.ts",
+      "alarmName": "${alarmNamePrefix}-blocked-requests-spike-anomaly-v2",
+      "metric": "blocked",
+      "stdDevs": "2",
+      "evaluationPeriods": "3",
+      "datapointsToAlarm": "2",
+      "comparison": "GREATER_THAN_UPPER_THRESHOLD",
+      "treatMissingData": "NOT_BREACHING",
+      "action": "warningAction"
+    }
+  ]
+}

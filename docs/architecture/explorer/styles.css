@@ -1,0 +1,350 @@
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f5; --ink:#0f1720; --ink-2:#3d4b5a; --muted:#66768a;
+  --line:#dbe1e8; --line-2:#c3ccd6; --line-strong:#93a1b0; --accent:#12539f; --accent-soft:#e3ecf8;
+  --focus:#12539f;
+  /* A palette, not a mapping. Nothing here knows what a kind is called: each kind in
+     explorer.config.json picks one of these by name, and the build checks it resolves.
+     That keeps this file the same in every project that uses the explorer. */
+  --legend-purple:#5f3f9e; --legend-blue:#12539f; --legend-teal:#0b6b7d;
+  --legend-amber:#8a5a1a; --legend-green:#2f6b3a; --legend-rose:#9c2f52;
+  --zone-fill:#e2e8ef; --zone-line:#c8d2dd; --canvas:#eff3f7; --grid:#e0e7ee;
+  --shadow:0 1px 2px rgba(15,23,32,.06),0 8px 24px -12px rgba(15,23,32,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1119; --surface:#121b26; --surface-2:#182432; --ink:#e8eef5; --ink-2:#b9c6d4; --muted:#8394a6;
+    --line:#25333f; --line-2:#33465a; --line-strong:#6b8199; --accent:#63a4f5; --accent-soft:#152a44;
+    --focus:#63a4f5;
+    --legend-purple:#a98ce8; --legend-blue:#63a4f5; --legend-teal:#4fc0d4;
+    --legend-amber:#e0a44a; --legend-green:#7fc98d; --legend-rose:#ef8fa8;
+    --zone-fill:#101a25; --zone-line:#25333f; --canvas:#0d151e; --grid:#16212d;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1119; --surface:#121b26; --surface-2:#182432; --ink:#e8eef5; --ink-2:#b9c6d4; --muted:#8394a6;
+  --line:#25333f; --line-2:#33465a; --line-strong:#6b8199; --accent:#63a4f5; --accent-soft:#152a44;
+  --focus:#63a4f5;
+  --legend-purple:#a98ce8; --legend-blue:#63a4f5; --legend-teal:#4fc0d4;
+  --legend-amber:#e0a44a; --legend-green:#7fc98d; --legend-rose:#ef8fa8;
+  --zone-fill:#101a25; --zone-line:#25333f; --canvas:#0d151e; --grid:#16212d;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ---------- header ---------- */
+/* Two rows on purpose. The tab bar is ~1300px once the group labels are in, so a
+   single wrapping row shunted the zoom controls onto a line of their own, mid-width.
+   Controls stay pinned to the right of row one; tabs own row two and scroll if narrow. */
+header{
+  display:flex;flex-direction:column;gap:11px;
+  padding:12px 20px 10px;background:var(--surface);border-bottom:1px solid var(--line);
+}
+.hrow{display:flex;align-items:center;gap:20px;min-width:0}
+.ctrls{margin-left:auto}
+.brand{display:flex;flex-direction:column;gap:1px;margin-right:4px}
+.brand b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.brand span{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tabs{display:flex;gap:4px;align-items:center;overflow-x:auto;scrollbar-width:thin;padding-bottom:1px}
+.tabgroup{
+  font:600 9px/1 "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  padding:0 10px 0 14px;margin-left:2px;border-left:1px solid var(--line-2);align-self:stretch;
+  display:flex;align-items:center;white-space:nowrap}
+.tabs > .tabgroup:first-child{border-left:0;padding-left:0;margin-left:0}
+.tab{
+  font:500 13px/1 "IBM Plex Sans",sans-serif;padding:8px 13px;border-radius:6px;border:1px solid transparent;
+  background:none;color:var(--ink-2);cursor:pointer;
+}
+.tab:hover{background:var(--surface-2)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+.spacer{flex:1}
+/* Groups read as units: a wider gap between them than within them, and each one
+   segmented the same way the stage picker is, so the whole header uses one idiom. */
+.ctrls{display:flex;align-items:center;gap:12px}
+.seg[hidden]{display:none}
+.seg{display:flex;align-items:stretch;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;background:var(--surface)}
+.seg .btn{border:0;border-right:1px solid var(--line-2);border-radius:0;background:transparent}
+.seg > :last-child{border-right:0}
+.seg .zoomval{display:flex;align-items:center;padding:0 4px;border-right:1px solid var(--line-2)}
+.seg .btn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.seg .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.btn{
+  font:500 12px/1 "IBM Plex Mono",monospace;min-width:32px;height:32px;padding:0 9px;
+  border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);cursor:pointer;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+/* Inspector and list icons ride the same switch as the diagram ones, so "AWS icons"
+   means one thing everywhere. Sized to the line they sit on, never stretched. */
+.ic{width:17px;height:17px;flex:0 0 auto;vertical-align:-3px;margin-right:7px;display:none}
+.ic.sm{width:15px;height:15px;vertical-align:-2px;margin-right:6px}
+.icons-on .ic{display:inline-block}
+.kv dd{display:flex;align-items:center}
+.row .rcount,.row .rmeta{align-items:center}
+
+/* The whole icon layer is one CSS switch — no re-render, and nothing else moves. */
+.icon{display:none}
+.icons-on .icon{display:block}
+.icon-bg{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.node.absent .icon{opacity:.4}
+/* Export-only bands. They never render on screen — the caption and legend live in the
+   panel there — but a downloaded PNG has no panel, so it carries its own. */
+.cap-bg{fill:var(--surface)}
+.cap-rule{stroke:var(--line);stroke-width:1}
+.cap-title{font:600 15px "IBM Plex Sans",sans-serif;fill:var(--ink)}
+.cap-sub{font:400 11.5px "IBM Plex Mono",monospace;fill:var(--muted)}
+.cap-lg{font:400 11.5px "IBM Plex Sans",sans-serif;fill:var(--ink-2)}
+.cap-pl{stroke:var(--line-strong);stroke-width:2}
+
+/* Icon-only controls. The glyph inherits the button's colour, so it tracks the theme
+   and the pressed state without a second rule. */
+.btn.ico{padding:6px 8px;line-height:0}
+.btn.ico svg{width:15px;height:15px;fill:currentColor;stroke:none;display:block}
+/* Line-drawn glyphs, as opposed to the solid grid. */
+.btn.ico.line svg,#themetoggle svg{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+.zoomval{font:500 11px/1 "IBM Plex Mono",monospace;color:var(--muted);min-width:44px;text-align:center}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* ---------- layout ---------- */
+.shell{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 372px;min-height:0}
+.stage{position:relative;min-width:0;background:var(--canvas);overflow:hidden}
+/* The canvas only. This used to be `.stage svg`, which also caught the service icons
+   in the inventory rows — handing them width:100%, cursor:grab, and a display that
+   outranked the toggle, so they could not be turned off. */
+#svg{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.stage.dragging #svg{cursor:grabbing}
+.hint[hidden]{display:none}
+/* In the pinned header, not on the canvas: overlaying the drawing traded one problem
+   for a worse one — on Security it covered a box outright. */
+.legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:11px;
+  padding-top:10px;border-top:1px solid var(--line)}
+.lg-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.lg-item i.sw{width:12px;height:12px;border-radius:3px;border:1.5px solid currentColor;flex:0 0 auto}
+.lg-item i.sw.pl-request{border-color:var(--ink-2);border-style:solid}
+.lg-item i.sw.pl-control{border-color:var(--ink-2);border-style:dashed}
+.lg-sep{width:1px;height:12px;background:var(--line-2)}
+.hint{
+  position:absolute;left:14px;bottom:12px;display:flex;gap:14px;flex-wrap:wrap;
+  font:400 11px/1.4 "IBM Plex Mono",monospace;color:var(--muted);
+  background:color-mix(in srgb,var(--canvas) 88%,transparent);padding:6px 10px;border-radius:6px;
+}
+/* The panel is a pinned header plus a scrolling body: who the tab is for must
+   survive a selection, or it is gone the first time anyone clicks a box. */
+aside{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#viewhdr{flex:0 0 auto;padding:16px 20px 14px;border-bottom:1px solid var(--line)}
+#insp{flex:1 1 auto;min-height:0;overflow-y:auto;padding:18px 20px 32px;
+  display:flex;flex-direction:column;gap:16px}
+
+/* ---------- inspector ---------- */
+.eyebrow{font:600 10px/1 "IBM Plex Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.insp-title{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:6px 0 0;text-wrap:balance}
+.insp-sub{font-size:13px;color:var(--muted);margin:2px 0 0}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font:500 10.5px/1 "IBM Plex Mono",monospace;
+  letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:5px;
+  border:1px solid currentColor;
+}
+.chip i{width:7px;height:7px;border-radius:2px;background:currentColor;display:block}
+.card{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:13px 14px}
+.kv{display:grid;grid-template-columns:78px minmax(0,1fr);gap:5px 12px;font-size:13px}
+.kv dt{font:500 10.5px/1.5 "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.kv dd{margin:0;color:var(--ink)}
+.facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13.5px;color:var(--ink-2)}
+.facts li{padding-left:15px;position:relative}
+.facts li::before{content:"";position:absolute;left:0;top:8px;width:6px;height:1.5px;background:var(--line-strong)}
+.conns{display:flex;flex-direction:column;gap:3px}
+.conn{
+  display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:1px solid transparent;border-radius:6px;padding:7px 8px;color:var(--ink-2);font-size:12.5px;
+}
+.conn:hover{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.conn .arw{font-family:"IBM Plex Mono",monospace;color:var(--muted);font-size:11px}
+.conn b{font-weight:600;color:var(--ink)}
+.code{display:flex;flex-direction:column;gap:4px}
+.code a{
+  font:400 11.5px/1.5 "IBM Plex Mono",monospace;color:var(--accent);text-decoration:none;
+  overflow-wrap:anywhere;
+}
+.code a:hover{text-decoration:underline}
+.sect{display:flex;flex-direction:column;gap:9px}
+hr{border:0;border-top:1px solid var(--line);margin:2px 0}
+
+/* ---------- svg ---------- */
+/* Hard boundaries (region, VPC, ownership) are outlines; soft groupings are fills. */
+.zone rect{fill:var(--zone-fill);stroke:none;rx:12}
+.zone.hard rect{fill:none;stroke:var(--line-2);stroke-width:1.5;stroke-dasharray:8 5}
+.zone text{fill:var(--muted);font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase}
+.zone.clickable{cursor:pointer}
+.zone.clickable:hover rect{stroke:var(--accent)}
+.zone.sel > rect{stroke:var(--accent);stroke-width:2}
+.zone.sel text{fill:var(--accent)}
+.node{cursor:pointer}
+/* One rule for every kind. The colour arrives as --kind, set on each node by the
+   renderer from the palette name that kind chose in explorer.config.json. */
+.node .box{fill:var(--surface);stroke:var(--kind);stroke-width:1.5;rx:8}
+.node .t{fill:var(--ink);font:600 13px/1 "IBM Plex Sans",sans-serif}
+.node .s{fill:var(--muted);font:400 10.5px/1 "IBM Plex Mono",monospace}
+.node .bar{fill:var(--kind);rx:2}
+.node:hover .box{stroke-width:2.5}
+.node.sel .box{stroke-width:3}
+.node.sel .t{fill:var(--accent)}
+/* Border style carries the plane, so ownership colour stays uncontested. */
+.p-control .box{stroke-dasharray:6 3}
+.edge{cursor:pointer}
+.edge .hit{stroke:transparent;stroke-width:16;fill:none}
+.edge .line{stroke:var(--line-strong);stroke-width:1.6;fill:none}
+.edgelbl{cursor:pointer}
+.edge .lbl,.edgelbl .lbl{fill:var(--muted);font:400 10.5px/1 "IBM Plex Mono",monospace}
+.edge .lblbg,.edgelbl .lblbg{fill:var(--canvas)}
+.edge.dash .line{stroke-dasharray:5 4}
+.edge:hover .line{stroke:var(--accent);stroke-width:2.6}
+.edge:hover .lbl,.edgelbl:hover .lbl{fill:var(--accent)}
+.edge.sel .line{stroke:var(--accent);stroke-width:3}
+.edge.sel .lbl,.edgelbl.sel .lbl{fill:var(--accent);font-weight:600}
+.dim{opacity:.16}
+#root .edge,#root .edgelbl,#root .node{transition:opacity .16s ease}
+@media (prefers-reduced-motion:reduce){#root .edge,#root .edgelbl,#root .node{transition:none}}
+
+/* ---------- doc views (Resources, Networking) ---------- */
+.doc[hidden]{display:none}
+.doc{position:absolute;inset:0;overflow-y:auto;padding:26px 34px 80px;background:var(--canvas)}
+.doc-head{max-width:1000px;margin:0 0 22px}
+.doc-head h1{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:0 0 7px;text-wrap:balance}
+.doc-head p{margin:0;color:var(--muted);font-size:14px;max-width:70ch}
+.doc-note{margin-top:14px;padding:11px 14px;border-left:2px solid var(--accent);background:var(--accent-soft);
+  border-radius:0 7px 7px 0;font-size:13px;color:var(--ink-2);max-width:80ch}
+.doc-note code{background:var(--surface);border:1px solid var(--line)}
+.filterbar{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  padding:10px 0 14px;margin-bottom:6px;background:linear-gradient(var(--canvas) 78%,transparent)}
+.filterbar input{
+  font:400 13px/1 "IBM Plex Sans",sans-serif;padding:9px 12px;min-width:250px;flex:0 1 340px;
+  border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
+.filterbar input::placeholder{color:var(--muted)}
+.count{font:500 11px/1 "IBM Plex Mono",monospace;color:var(--muted)}
+.pinchip{display:inline-flex;align-items:center;gap:9px;padding:5px 5px 5px 11px;border-radius:999px;
+  font:400 11.5px/1.4 "IBM Plex Sans",sans-serif;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent)}
+.pinchip b{font-weight:600}
+.pinchip button{font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 8px;border-radius:999px;cursor:pointer;color:var(--accent);
+  background:var(--surface);border:1px solid var(--accent)}
+.pinchip button:hover{background:var(--accent);color:var(--surface)}
+.btn.wide{width:100%;margin-top:9px;justify-content:center;padding:8px 10px;font-size:11.5px}
+.grp{margin:0 0 30px;max-width:1180px}
+.grp > h2{
+  font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);
+  margin:0 0 4px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.grp .gnote{margin:10px 0 0;font-size:12.5px;color:var(--muted);max-width:78ch}
+/* The inspector is a narrow column, so citations stack there. The tables panel is wide,
+   and a table cites several files, so they run along one line under the table instead. */
+.grp .sect{margin-top:12px;gap:6px}
+.grp .code{flex-direction:row;flex-wrap:wrap;gap:4px 14px}
+.rows{display:grid;gap:6px;margin-top:12px}
+.row{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:14px;align-items:center;
+  width:100%;text-align:left;cursor:pointer;padding:11px 14px;border:1px solid var(--line);border-radius:8px;
+  background:var(--surface);color:var(--ink);font-family:inherit;font-size:13.5px}
+.row:hover{border-color:var(--accent);background:var(--accent-soft)}
+.row.sel{border-color:var(--accent);border-width:2px;padding:10px 13px;background:var(--accent-soft)}
+.row b{font-weight:600}
+.row .rcount{font:500 11.5px/1.4 "IBM Plex Mono",monospace;color:var(--ink-2)}
+.row .rmeta{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tag{font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.05em;padding:4px 7px;border-radius:4px;
+  background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.tbl-wrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 10px/1.4 "IBM Plex Mono",monospace;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td code{font-size:11.5px}
+.doc .empty{color:var(--muted);font-size:13.5px;padding:20px 0}
+.insp-tbl{margin-top:10px}
+.insp-tbl table{font-size:12px}
+.insp-tbl th,.insp-tbl td{padding:6px 8px}
+
+/* ---------- stage selector, badges, resource lists ---------- */
+.stagepick{display:flex;align-items:center;gap:9px}
+.stagepick[hidden]{display:none}
+.stagepick > div{display:flex;border:1px solid var(--line-2);border-radius:7px;overflow:hidden}
+.stagepick button{
+  font:500 11.5px/1 "IBM Plex Sans",sans-serif;padding:8px 11px;border:0;border-right:1px solid var(--line-2);
+  background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.stagepick button:last-child{border-right:0}
+.stagepick button:hover{background:var(--surface-2)}
+.stagepick button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+.node .badge{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.badge.partial{stroke-dasharray:3 2}
+.node .badge-t{fill:var(--ink-2);font:600 10px/1 "IBM Plex Mono",monospace;text-anchor:middle}
+.node.sel .badge{stroke:var(--accent)} .node.sel .badge-t{fill:var(--accent)}
+.node.absent .box{stroke-dasharray:5 4;opacity:.55}
+.node.absent .t,.node.absent .s{opacity:.5}
+.reslist{display:flex;flex-direction:column;gap:3px}
+.resrow{
+  display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:1px solid transparent;border-radius:6px;padding:6px 8px;color:var(--ink-2);font-size:12.5px;font-family:inherit}
+.resrow:hover{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.resrow .num{font:600 11.5px/1.4 "IBM Plex Mono",monospace;color:var(--accent);min-width:26px;text-align:right;flex:0 0 auto}
+.resrow .num.zero{color:var(--muted)}
+.resrow span:nth-child(2){flex:1;min-width:0}
+.total{display:flex;align-items:baseline;gap:9px;padding:11px 13px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)}
+.total b{font:600 22px/1 "IBM Plex Mono",monospace;color:var(--accent);font-variant-numeric:tabular-nums}
+.total span{font-size:12.5px;color:var(--muted)}
+.row.zero{opacity:.5}
+.row.zero:hover{opacity:1}
+.backlink{
+  display:inline-flex;align-items:center;gap:7px;font:500 12px/1 "IBM Plex Sans",sans-serif;cursor:pointer;
+  background:none;border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--ink-2);font-family:inherit}
+.backlink:hover{border-color:var(--accent);color:var(--accent)}
+
+@media (max-width:1080px){
+  .stagepick .eyebrow{display:none}
+  .shell{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(340px,58vh) auto}
+  aside{border-left:0;border-top:1px solid var(--line)}
+}
+
+/* ---------- tables under a diagram ---------- */
+.stage.split svg{height:60%}
+/* Collapsed the tables are a 38px strip; expanded they take the lower 40%. */
+#tables{position:absolute;left:0;right:0;bottom:0;background:var(--canvas);border-top:1px solid var(--line);
+  display:flex;flex-direction:column}
+#tables[hidden]{display:none}
+.stage.has-tables svg{height:calc(100% - 38px)}
+.stage.has-tables.split svg{height:60%}
+.stage.split #tables{height:40%}
+.tbl-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:12px;width:100%;height:38px;padding:0 16px;
+  background:none;border:0;border-bottom:1px solid transparent;cursor:pointer;color:var(--ink-2);
+  font-family:inherit;text-align:left}
+.tbl-head:hover{background:var(--surface-2)}
+.stage.split .tbl-head{border-bottom-color:var(--line)}
+.caret{width:0;height:0;flex:0 0 auto;border-left:5px solid currentColor;border-top:4px solid transparent;
+  border-bottom:4px solid transparent;transition:transform .15s ease}
+@media (prefers-reduced-motion:reduce){.caret{transition:none}}
+.stage.split .caret{transform:rotate(90deg)}
+.tbl-title{font:600 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tbl-names{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--ink-2)}
+.tbl-hint{font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.tbl-body{flex:1;min-height:0;overflow-y:auto;padding:16px 24px 24px}
+/* Plain class, not an id selector: an id here outranks the rule that reveals it. */
+.tbl-body{display:none}
+.stage.split .tbl-body{display:block}
+/* The hint is pinned to the stage floor, which the tables now own — lift it clear. */
+.stage.has-tables .hint{bottom:48px}
+.stage.has-tables.split .hint{bottom:calc(40% + 10px)}
+#tables[hidden]{display:none}
+#tables .grp{max-width:1180px;margin:0 0 22px}
+
+/* ---------- who a tab is for ---------- */
+.audience{display:flex;align-items:baseline;gap:9px;margin:9px 0 0;font-size:13px;color:var(--ink-2)}
+.audience span{flex:0 0 auto;font:600 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:4px 6px}
+.doc-head .audience{max-width:70ch}

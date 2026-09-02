@@ -1,0 +1,1997 @@
+{
+  "id": "resources",
+  "name": "Resources",
+  "order": 8,
+  "group": "Reference",
+  "blurb": "Every AWS resource this repository creates, what configures it, and which stack owns it.",
+  "audience": "Cost, audit and incident scoping — and the detail behind every badge",
+  "note": "Counts follow the <b>stage selector</b> in the header. They differ because domains, routes and whole stacks are gated by their <code>environments</code> array — and because an ephemeral PR stage reuses the development core rather than building its own. Entries whose meta reads <b>varies</b> carry no number, so any group total that includes one is a floor rather than a total.",
+  "groups": [
+    {
+      "name": "Networking · Amazon VPC",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "vpc",
+          "name": "VPC",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::VPC",
+            "tech": "10.0.0.0/16 · 3 pinned AZs",
+            "role": "One per persistent environment.",
+            "facts": [
+              "Availability zones are pinned to eu-west-2a/b/c rather than looked up.",
+              "An ephemeral PR stage creates none — it imports the development VPC through addExternalExports."
+            ],
+            "code": [
+              [
+                "stacks/core/vpc.ts",
+                "platform/infra/flex/src/stacks/core/vpc.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "subnets-public",
+          "name": "Public subnets",
+          "n": {
+            "dev": 3,
+            "stg": 3,
+            "prod": 3,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::Subnet",
+            "tech": "cidrMask 24 · one per AZ",
+            "role": "Carry the NAT gateways. No workloads.",
+            "facts": ["251 usable addresses each."],
+            "code": []
+          }
+        },
+        {
+          "id": "subnets-egress",
+          "name": "Private-with-egress subnets",
+          "n": {
+            "dev": 3,
+            "stg": 3,
+            "prod": 3,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::Subnet",
+            "tech": "cidrMask 19 · one per AZ",
+            "role": "Home of every <code>access: private</code> Lambda.",
+            "facts": [
+              "8,187 usable addresses each.",
+              "Default route goes to the NAT gateway in the same AZ."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "subnets-isolated",
+          "name": "Private-isolated subnets",
+          "n": {
+            "dev": 3,
+            "stg": 3,
+            "prod": 3,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::Subnet",
+            "tech": "cidrMask 19 · one per AZ",
+            "role": "Home of every <code>access: isolated</code> Lambda — the default tier.",
+            "facts": ["No route to a NAT gateway or the internet gateway."],
+            "code": []
+          }
+        },
+        {
+          "id": "nat",
+          "name": "NAT gateways",
+          "n": {
+            "dev": 3,
+            "stg": 3,
+            "prod": 3,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::NatGateway",
+            "tech": "natGateways: 3",
+            "role": "One per AZ, so losing an AZ does not remove egress for the others.",
+            "facts": [
+              "The single most expensive always-on resource in the network."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "eip",
+          "name": "Elastic IPs",
+          "n": {
+            "dev": 3,
+            "stg": 3,
+            "prod": 3,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::EIP",
+            "tech": "Allocated by CDK",
+            "role": "One per NAT gateway.",
+            "facts": ["These are the source addresses DVLA sees."],
+            "code": []
+          }
+        },
+        {
+          "id": "igw",
+          "name": "Internet gateway",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::InternetGateway",
+            "tech": "Attached to the VPC",
+            "role": "The only door to the internet.",
+            "facts": ["Reachable from the public subnets only."],
+            "code": []
+          }
+        },
+        {
+          "id": "routetables",
+          "name": "Route tables",
+          "n": null,
+          "meta": ["eu-west-2", "FlexCoreStack", "varies"],
+          "d": {
+            "type": "AWS::EC2::RouteTable",
+            "tech": "CDK-generated",
+            "role": "One per subnet, plus the default association.",
+            "facts": [
+              "<code>exportVpc</code> publishes the nine route table IDs as three comma-joined SSM parameters — public, private and isolated — so another stack can reconstruct the VPC.",
+              "The isolated tier's tables carry only the local route."
+            ],
+            "code": [["base/index.ts", "platform/infra/flex/src/base/index.ts"]]
+          }
+        },
+        {
+          "id": "nacl-public",
+          "name": "Public network ACL",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::NetworkAcl",
+            "tech": "8 rules",
+            "role": "Stateless filtering on the public tier.",
+            "facts": [
+              "Rules 80 VPC loopback, 90–92 deny system ports and RDP, 200/210 ephemeral return, 32000 allow outbound.",
+              "Rule 80 is evaluated before the denies, so VPC-internal traffic is allowed first and the 90–92 denies only ever apply to traffic from outside the VPC."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "nacl-egress",
+          "name": "Egress-tier network ACL",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::NetworkAcl",
+            "tech": "8 rules",
+            "role": "Same rule set as the public tier.",
+            "facts": [
+              "Identical to the public NACL — the difference between the tiers is routing, not filtering."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "nacl-isolated",
+          "name": "Isolated-tier network ACL",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::NetworkAcl",
+            "tech": "5 rules",
+            "role": "The strictest of the three.",
+            "facts": [
+              "Has the VPC loopback pair and the 90–92 denies, but <b>no</b> ephemeral-return and <b>no</b> outbound-allow rule — outbound is permitted only to the VPC CIDR by rule 80.",
+              "That omission is what forces isolated Lambdas through the interface endpoints, which sit inside the VPC CIDR."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "sg-egress",
+          "name": "PrivateEgress security group",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::SecurityGroup",
+            "tech": "allowAllOutbound: true",
+            "role": "Attached to every <code>access: private</code> function.",
+            "facts": ["No explicit rules are needed or added."],
+            "code": []
+          }
+        },
+        {
+          "id": "sg-isolated",
+          "name": "PrivateIsolated security group",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::SecurityGroup",
+            "tech": "allowAllOutbound: <b>false</b>",
+            "role": "Attached to every <code>access: isolated</code> function.",
+            "facts": [
+              "Gains one egress rule per interface endpoint, TCP 443 to that endpoint's security group.",
+              "Adding an endpoint opens the path automatically; nothing else does."
+            ],
+            "code": [
+              [
+                "stacks/core/endpoints.ts",
+                "platform/infra/flex/src/stacks/core/endpoints.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "sg-endpoints",
+          "name": "Endpoint security groups",
+          "n": {
+            "dev": 6,
+            "stg": 6,
+            "prod": 6,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::SecurityGroup",
+            "tech": "CDK-generated, one per endpoint",
+            "role": "Receive the isolated tier's egress rules.",
+            "facts": [
+              "Every endpoint SG already allows 443 from the VPC CIDR — <code>addInterfaceEndpoint</code> defaults <code>open</code> to true.",
+              "The KMS endpoint additionally gets an explicit ingress rule per isolated subnet CIDR, the one endpoint addressed by range rather than by group."
+            ],
+            "code": [
+              [
+                "stacks/core/endpoints.ts",
+                "platform/infra/flex/src/stacks/core/endpoints.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "vpce",
+          "name": "Interface VPC endpoints",
+          "n": {
+            "dev": 6,
+            "stg": 6,
+            "prod": 6,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::VPCEndpoint",
+            "tech": "Interface · privateDnsEnabled",
+            "role": "API Gateway, CloudWatch Logs, Secrets Manager, SSM, STS, KMS.",
+            "facts": [
+              "The API Gateway endpoint ID is exported as <code>/{env}/flex/vpc-e/api-gateway</code> and pinned in the private API's resource policy.",
+              "No gateway endpoints (S3, DynamoDB) exist — nothing needs them.",
+              "There is no cognito-idp endpoint, which is why the authorizer sits in the egress tier."
+            ],
+            "code": [
+              [
+                "stacks/core/endpoints.ts",
+                "platform/infra/flex/src/stacks/core/endpoints.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "flowlog",
+          "name": "VPC flow log",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::EC2::FlowLog",
+            "tech": "ALL traffic · 1-minute aggregation · plain text",
+            "role": "Full-fidelity network records to S3.",
+            "facts": [
+              "Extended beyond ALL_DEFAULT_FIELDS with VPC ID, subnet ID, instance ID, TCP flags, packet source and destination addresses, and flow direction."
+            ],
+            "code": [
+              [
+                "stacks/core/vpc.ts",
+                "platform/infra/flex/src/stacks/core/vpc.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Compute · AWS Lambda",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "lambda-domain-dvla",
+          "name": "dvla domain route functions",
+          "n": {
+            "dev": 8,
+            "stg": 8,
+            "prod": 8,
+            "eph": 8
+          },
+          "from": "domains.dvla.perStage",
+          "meta": ["egress tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · private access",
+            "role": "7 public routes and 1 private route, one function each.",
+            "facts": [
+              "The only domain whose <code>common.access</code> is private, so its functions sit in the egress subnets and can reach NAT.",
+              "Deploys to development, staging and production — plus every ephemeral PR and personal stage."
+            ],
+            "code": [
+              ["domains/dvla/domain.config.ts", "domains/dvla/domain.config.ts"]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-udp",
+          "name": "udp domain route functions",
+          "n": {
+            "dev": 8,
+            "stg": 8,
+            "prod": 8,
+            "eph": 8
+          },
+          "from": "domains.udp.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 20s default (one route at 25s) · isolated access",
+            "role": "6 public routes and 2 private routes.",
+            "facts": [
+              "Owns the private <code>GET /v1/users/push-id</code> route that uns, groups and example all depend on."
+            ],
+            "code": [
+              ["domains/udp/domain.config.ts", "domains/udp/domain.config.ts"]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-uns",
+          "name": "uns domain route functions",
+          "n": {
+            "dev": 4,
+            "stg": 4,
+            "prod": 4,
+            "eph": 4
+          },
+          "from": "domains.uns.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "4 public notification routes.",
+            "facts": [
+              "Every route pairs a uns gateway call with a udp push-ID lookup."
+            ],
+            "code": [
+              ["domains/uns/domain.config.ts", "domains/uns/domain.config.ts"]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-groups",
+          "name": "groups domain route functions",
+          "n": {
+            "dev": 2,
+            "stg": 2,
+            "prod": 0,
+            "eph": 2
+          },
+          "from": "domains.groups.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "GET and POST <code>/v1/groups</code>.",
+            "facts": [
+              "<code>environments</code> is development and staging only — so nothing reaches production, but every ephemeral PR and personal stage still gets both."
+            ],
+            "code": [
+              [
+                "domains/groups/domain.config.ts",
+                "domains/groups/domain.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-lc",
+          "name": "local-council domain route functions",
+          "n": {
+            "dev": 2,
+            "stg": 2,
+            "prod": 0,
+            "eph": 2
+          },
+          "from": "domains.local-council.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "Two private routes only.",
+            "facts": [
+              "The one domain with no public routes, so its stack creates no TokenAuthorizer.",
+              "Development and staging, plus every ephemeral PR and personal stage."
+            ],
+            "code": [
+              [
+                "domains/local-council/domain.config.ts",
+                "domains/local-council/domain.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-example",
+          "name": "example domain route functions",
+          "n": {
+            "dev": 13,
+            "stg": 0,
+            "prod": 0,
+            "eph": 13
+          },
+          "from": "domains.example.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 20s default (one route at 30s) · isolated access",
+            "role": "11 public and 2 private reference routes.",
+            "facts": [
+              "The development environment only — which means every ephemeral PR and personal stage gets it too, and staging and production never do.",
+              "Exercises feature flags, all four resource types and both integration kinds, including one that calls its own private route."
+            ],
+            "code": [
+              [
+                "domains/example/domain.config.ts",
+                "domains/example/domain.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-domain-travel",
+          "name": "travel domain route functions",
+          "n": {
+            "dev": 2,
+            "stg": 2,
+            "prod": 0,
+            "eph": 2
+          },
+          "from": "domains.travel.perStage",
+          "meta": ["isolated tier", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "<code>GET /v1/countries</code> and <code>GET /v1/events</code>.",
+            "facts": [
+              "<code>environments</code> is development and staging only, so nothing reaches production — but every ephemeral PR and personal stage still gets both.",
+              "Both routes reach the travel service gateway over the private API; the domain itself holds no credentials."
+            ],
+            "code": [
+              [
+                "the routes, environments and integrations",
+                "domains/travel/domain.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-gw-dvla",
+          "name": "DVLA gateway function",
+          "n": 1,
+          "meta": ["egress tier", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · private access",
+            "role": "Sole holder of DVLA credentials.",
+            "facts": [
+              "Mounted at <code>ANY /gateways/dvla/{proxy+}</code> — the ten routes are matched in code, not by API Gateway.",
+              "Runs in the egress tier because DVLA is a public-internet API reached through NAT.",
+              "Caches the upstream JWKS in a module-level variable across warm invocations."
+            ],
+            "code": [
+              [
+                "platform/domains/dvla/src/gateway.ts",
+                "platform/domains/dvla/src/gateway.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-gw-udp",
+          "name": "UDP gateway function",
+          "n": 1,
+          "meta": ["isolated tier", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "Sole holder of UDP credentials.",
+            "facts": [
+              "SigV4 with credentials from <code>sts:AssumeRole</code>, optionally carrying an ExternalId, plus an <code>x-api-key</code> header.",
+              "No internet route — isolated subnets, no NAT. Reachability of the UDP endpoint depends on <code>consumerConfig.apiUrl</code> resolving through the API Gateway interface endpoint; unlike uns, the udp gateway schema has no <code>privateApiUrl</code> field at all."
+            ],
+            "code": [
+              [
+                "platform/domains/udp/gateway.config.ts",
+                "platform/domains/udp/gateway.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-gw-uns",
+          "name": "UNS gateway function",
+          "n": 1,
+          "meta": ["isolated tier", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 30s · isolated access",
+            "role": "Sole holder of UNS credentials.",
+            "facts": [
+              "Targets <code>consumerConfig.privateApiUrl</code> with a SigV4-signed assumed role, plus an <code>X-API-KEY</code> header."
+            ],
+            "code": [
+              [
+                "platform/domains/uns/gateway.config.ts",
+                "platform/domains/uns/gateway.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-gw-travel",
+          "name": "Travel gateway function",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 0,
+            "eph": 1
+          },
+          "meta": ["egress tier", "FlexGatewayStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · private access",
+            "role": "Sole holder of the travel upstream credentials.",
+            "facts": [
+              "Mounted at <code>ANY /gateways/travel/{proxy+}</code> — its two routes are matched in code, not by API Gateway.",
+              "<code>environments</code> is development and staging only, so it does not exist in production."
+            ],
+            "code": [
+              [
+                "the routes, access tier and environments",
+                "platform/domains/travel/gateway.config.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-auth",
+          "name": "Authorizer function",
+          "n": 1,
+          "meta": ["egress tier", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "NODEJS_24_X · 10s",
+            "role": "API Gateway TOKEN authorizer.",
+            "facts": [
+              "Env: USERPOOL_ID, CLIENT_ID, JWKS_URI (plus AWS_REGION) — Zod-parsed on every invocation, since the verifier is constructed inside the handler rather than at module scope.",
+              "One function shared by every domain stack via an SSM-exported ARN.",
+              "Sits in the egress tier so it can fetch the Cognito JWKS over NAT — there is no cognito-idp VPC endpoint."
+            ],
+            "code": [
+              ["auth/src/handler.ts", "platform/domains/auth/src/handler.ts"],
+              [
+                "auth/src/services/auth-service.ts",
+                "platform/domains/auth/src/services/auth-service.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-jwks",
+          "name": "Stub JWKS function + Function URL",
+          "n": {
+            "dev": 1,
+            "stg": 0,
+            "prod": 0,
+            "eph": 1
+          },
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::Lambda::Function + Url",
+            "tech": "FunctionUrlAuthType.NONE",
+            "role": "Serves a JWKS so E2E tests can self-sign tokens.",
+            "facts": [
+              "Publicly reachable by design, with a recorded CKV_AWS_258 suppression.",
+              "Exists wherever <code>env</code> resolves to development — so ephemeral PR and personal stages get one too.",
+              "A plain <code>NodejsFunction</code>: no VPC, no X-Ray, no explicit log group and no alarms."
+            ],
+            "code": [
+              [
+                "stacks/platform.ts",
+                "platform/infra/flex/src/stacks/platform.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-smoke",
+          "name": "Smoke-test function",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["no VPC", "FlexSmokeTestStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "2 minute timeout",
+            "role": "Synthetic canary against the public URL — and, in production, the second caller of the public path after the app itself.",
+            "facts": [
+              "Calls <code>https://{host}/app/udp/v1/users/me</code> with a real access token and, where configured, an <code>X-Firebase-App-Check</code> header, then publishes Flex/SmokeTest.SmokeTestSuccess as 1 or 0.",
+              "Hand-written execution role rather than a generated one; the only role in the app with an explicit physical name.",
+              "Default Lambda alarms are switched off — the canary is itself the health signal.",
+              "Persistent environments only; ephemeral and personal stages get none."
+            ],
+            "code": [
+              [
+                "smoke-test/src/handler.ts",
+                "platform/smoke-test/src/handler.ts"
+              ],
+              [
+                "stacks/smoke-test.ts",
+                "platform/infra/flex/src/stacks/smoke-test.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "lambda-relay",
+          "name": "Alarm relay functions",
+          "n": 2,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "Code.fromInline · 10s",
+            "role": "Republish a us-east-1 SNS message onto the eu-west-2 alarm topic — <b>currently non-functional</b>.",
+            "facts": [
+              "The inline handler interpolates <code>TopicArn: ${targetTopicArn},</code> without quotes, so the deployed source is a JavaScript syntax error and the function fails at module load on every invocation. Cross-region alarms do not reach Slack today.",
+              "One per severity, because CloudWatch cannot target a cross-region topic.",
+              "Passes through message and message attributes; truncates the subject to 100 characters.",
+              "No explicit log group and no alarms — these are plain Function constructs, not Flex ones."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "lambda-cr",
+          "name": "CDK custom-resource handlers",
+          "n": null,
+          "meta": ["both regions", "several stacks", "varies"],
+          "d": {
+            "type": "AWS::Lambda::Function",
+            "tech": "CDK-generated",
+            "role": "Backing functions for custom resources. Deploy machinery, not request path.",
+            "facts": [
+              "An <code>AwsCustomResource</code> singleton per stack, used for cross-region SSM reads and the two API deployments. The Macie stack would add three more, but its import and its instantiation are both commented out in <code>app.ts</code> — it is disabled in code, not merely undeployed.",
+              "<code>CfnPause</code> adds an inline timeout function plus a Provider framework function.",
+              "<code>BucketDeployment</code> adds an asset-copying handler that also invalidates CloudFront."
+            ],
+            "code": [["app.ts", "platform/infra/flex/src/app.ts"]]
+          }
+        },
+        {
+          "id": "cff-platform",
+          "name": "Viewer-request CloudFront Function · platform",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::Function",
+            "tech": "cloudfront-js-2.0",
+            "role": "Correlation ID and structural JWT validation at the edge.",
+            "facts": [
+              "Built with esbuild targeting ES5 plus an explicit JS 2.0 feature allow-list.",
+              "The construct throws at synth if the handler is an arrow function rather than a declaration."
+            ],
+            "code": [
+              [
+                "viewer-request-cff-platform/src/handler.ts",
+                "platform/domains/viewer-request-cff-platform/src/handler.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "cff-docs",
+          "name": "Viewer-request CloudFront Function · docs",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::Function",
+            "tech": "cloudfront-js-2.0",
+            "role": "Rewrites /docs and /docs/ to the Swagger UI index.",
+            "facts": [
+              "/docs redirects 301 to /docs/, which rewrites to /docs/index.html."
+            ],
+            "code": [
+              [
+                "constructs/cloudfront/flex-cloudfront-function.ts",
+                "platform/infra/flex/src/constructs/cloudfront/flex-cloudfront-function.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API layer · Amazon API Gateway",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "api-public",
+          "name": "Public REST API",
+          "n": 1,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::ApiGateway::RestApi",
+            "tech": "REST · EndpointType.REGIONAL",
+            "role": "The app-facing surface.",
+            "facts": [
+              "endpointAccessMode BASIC; securityPolicy SecurityPolicy_TLS13_1_2_2021_06.",
+              "<code>GET /health</code> as a mock integration, plus the <code>/app</code> root every domain extends.",
+              "Gateway responses UNAUTHORIZED → 401 and ACCESS_DENIED → 403 render the authorizer errorMessage.",
+              "Caching disabled with a recorded CKV_AWS_120 suppression."
+            ],
+            "code": [
+              [
+                "stacks/platform.ts",
+                "platform/infra/flex/src/stacks/platform.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "api-private",
+          "name": "Private REST API",
+          "n": 1,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::ApiGateway::RestApi",
+            "tech": "REST · EndpointType.PRIVATE",
+            "role": "The internal routing plane: /health, /domains/** and /gateways/**.",
+            "facts": [
+              "Resource policy: one Deny for AnyPrincipal when <code>aws:SourceVpce</code> is not the interface endpoint.",
+              "No explicit Allow — same-account callers are gated purely by their own IAM policy.",
+              "<code>AuthorizationType.IAM</code> on every method by default.",
+              "loggingLevel INFO with dataTraceEnabled false, so bodies stay out of execution logs. The public API sets no loggingLevel at all."
+            ],
+            "code": [
+              [
+                "stacks/platform.ts",
+                "platform/infra/flex/src/stacks/platform.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "api-stage-public",
+          "name": "Public API stage",
+          "n": 1,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Stage",
+            "tech": "prod · X-Ray · metrics",
+            "role": "The single deployed stage.",
+            "facts": [
+              "JSON access logs with method, ip, protocol, requestTime, resourcePath, responseLength, status, user and caller.",
+              "Its access log group retains for one year."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "api-stage-private",
+          "name": "Private API stage",
+          "n": 1,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Stage",
+            "tech": "prod · X-Ray · metrics · INFO logging",
+            "role": "The single deployed stage.",
+            "facts": [
+              "dataTraceEnabled is false — this is what keeps internal request and response bodies out of logs."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "api-account",
+          "name": "API Gateway account settings",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Account",
+            "tech": "CfnAccount",
+            "role": "Account-level CloudWatch role so API Gateway can write access logs.",
+            "facts": [
+              "Uses the managed AmazonAPIGatewayPushToCloudWatchLogs service role policy.",
+              "Account-scoped, so it belongs to the core stack rather than a per-stage one."
+            ],
+            "code": [
+              [
+                "stacks/core/api-gateway.ts",
+                "platform/infra/flex/src/stacks/core/api-gateway.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "api-authorizer",
+          "name": "Lambda token authorizers",
+          "n": {
+            "dev": 6,
+            "stg": 5,
+            "prod": 3,
+            "eph": 6
+          },
+          "from": "totals.domainsWithPublicRoutes",
+          "meta": ["eu-west-2", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Authorizer",
+            "tech": "TokenAuthorizer",
+            "role": "One per domain stack that has public routes.",
+            "facts": [
+              "identitySource is the Authorization header.",
+              "All of them point at the same shared authorizer function.",
+              "local-council never gets one — it has no public routes."
+            ],
+            "code": [
+              ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+            ]
+          }
+        },
+        {
+          "id": "api-routes-public",
+          "name": "Public route methods",
+          "n": {
+            "dev": 32,
+            "stg": 21,
+            "prod": 17,
+            "eph": 32
+          },
+          "from": "totals.routeMethods.public",
+          "meta": ["eu-west-2", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Method",
+            "tech": "AWS_PROXY LambdaIntegration",
+            "role": "Everything under <code>/app/{domain}/{version}/…</code>",
+            "facts": [
+              "dvla 7 · udp 6 · uns 4 · groups 2 · example 11 · local-council 0.",
+              "Counted as one method per route; the intermediate path Resources are shared and not counted here.",
+              "<code>:param</code> segments become <code>{param}</code>."
+            ],
+            "code": [
+              ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+            ]
+          }
+        },
+        {
+          "id": "api-routes-private",
+          "name": "Private route methods",
+          "n": {
+            "dev": 7,
+            "stg": 5,
+            "prod": 3,
+            "eph": 7
+          },
+          "from": "totals.routeMethods.private",
+          "meta": ["eu-west-2", "FlexDomainStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Method",
+            "tech": "AWS_PROXY · AuthorizationType.IAM",
+            "role": "Everything under <code>/domains/{domain}/{version}/…</code>",
+            "facts": [
+              "dvla 1 · udp 2 · local-council 2 · example 2.",
+              "Each carries a recorded CKV_AWS_59 suppression — access is controlled by the VPC endpoint and the resource policy."
+            ],
+            "code": [
+              ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
+            ]
+          }
+        },
+        {
+          "id": "api-routes-gateways",
+          "name": "Service gateway proxy methods",
+          "n": {
+            "dev": 4,
+            "stg": 4,
+            "prod": 3,
+            "eph": 4
+          },
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::ApiGateway::Method",
+            "tech": "ANY · {proxy+} · IAM",
+            "role": "One catch-all method per service gateway.",
+            "facts": [
+              "Four methods stand in for 28 upstream operations (dvla 10 · udp 10 · uns 6 · travel 2), because routing happens inside each gateway rather than in API Gateway. Travel is development and staging only, so production has three."
+            ],
+            "code": [
+              [
+                "utils/create-service-gateway.ts",
+                "platform/infra/flex/src/utils/create-service-gateway.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "api-deploy",
+          "name": "Stage deployment custom resources",
+          "n": 3,
+          "meta": ["eu-west-2", "FlexApiDeploymentStack"],
+          "d": {
+            "type": "Custom::AWS (apigateway:createDeployment)",
+            "tech": "AwsCustomResource ×2 + CfnPause",
+            "role": "Forces a new deployment once domain stacks have added their resources. Deploy machinery — see it in Delivery.",
+            "facts": [
+              "Depends on every deployed domain stack.",
+              "The sorted METHOD:path list is SHA-256 hashed into the deployment description, so it re-runs only when routes change.",
+              "A 6-second pause separates the two deployments because createDeployment is rate-limited."
+            ],
+            "code": [
+              ["stacks/deploy.ts", "platform/infra/flex/src/stacks/deploy.ts"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Edge · CloudFront, ACM, Route 53",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "cf-dist",
+          "name": "CloudFront distribution",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::Distribution",
+            "tech": "TLSv1.2_2021 · PRICE_CLASS_100",
+            "role": "The single public entry point for the API.",
+            "facts": [
+              "Two behaviours: the default API behaviour and /docs*.",
+              "publishAdditionalMetrics is on — required for the TotalErrorRate alarm, and billed extra.",
+              "Logical ID pinned with overrideLogicalId to preserve identity across refactors.",
+              "Alias is the zone apex for persistent environments and <code>{stage}.{zone}</code> for ephemeral and personal stages."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "cf-rhp",
+          "name": "Response headers policies",
+          "n": 2,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::ResponseHeadersPolicy",
+            "tech": "Custom",
+            "role": "Security headers for the API and for the docs site.",
+            "facts": [
+              "Both: HSTS 365 days with includeSubdomains, X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy no-referrer, X-Permitted-Cross-Domain-Policies none.",
+              "API only: Content-Security-Policy <code>default-src 'self'</code> and Cache-Control no-store."
+            ],
+            "code": [
+              [
+                "constructs/cloudfront/flex-response-headers-policy.ts",
+                "platform/infra/flex/src/constructs/cloudfront/flex-response-headers-policy.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "cf-oac",
+          "name": "Origin access control",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::OriginAccessControl",
+            "tech": "S3BucketOrigin.withOriginAccessControl",
+            "role": "Lets CloudFront read the spec bucket while it stays fully private.",
+            "facts": ["The bucket keeps BlockPublicAccess.BLOCK_ALL."],
+            "code": []
+          }
+        },
+        {
+          "id": "cf-monitor",
+          "name": "Monitoring subscription",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudFront::MonitoringSubscription",
+            "tech": "Additional metrics",
+            "role": "Enables the extra CloudFront metrics the alarms need.",
+            "facts": ["Logical ID pinned via overrideLogicalId."],
+            "code": []
+          }
+        },
+        {
+          "id": "cf-policies",
+          "name": "Cache and origin request policies",
+          "n": 0,
+          "meta": ["AWS managed", "not created"],
+          "d": {
+            "type": "AWS::CloudFront::CachePolicy (managed)",
+            "tech": "AWS managed",
+            "role": "No custom policies are defined — three managed ones are referenced.",
+            "facts": [
+              "CACHING_DISABLED on the API behaviour, so every request reaches the origin.",
+              "CACHING_OPTIMIZED on /docs*.",
+              "ALL_VIEWER_EXCEPT_HOST_HEADER as the API origin request policy."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "acm-cert",
+          "name": "ACM certificate",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CertificateManager::Certificate",
+            "tech": "DNS validation",
+            "role": "TLS for the distribution alias.",
+            "facts": [
+              "Must be in us-east-1 for CloudFront.",
+              "Validated against the imported hosted zone."
+            ],
+            "code": []
+          }
+        },
+        {
+          "id": "r53-record",
+          "name": "Route 53 alias record",
+          "n": 1,
+          "meta": ["us-east-1 stack", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::Route53::RecordSet",
+            "tech": "A record, alias target",
+            "role": "Points the service name at the distribution.",
+            "facts": [
+              "The hosted zone itself is imported, never created — it belongs to the platform team.",
+              "Logical ID pinned via overrideLogicalId."
+            ],
+            "code": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "Security · WAF, Shield, IAM, secrets, keys",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "waf-cf",
+          "name": "Web ACL · CLOUDFRONT scope",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::WAFv2::WebACL",
+            "tech": "5 rules · default allow",
+            "role": "Edge filtering.",
+            "facts": [
+              "0 CommonRuleSet · 1 KnownBadInputs · 2 BypassForE2ETests (allow) · 3 AmazonIpReputationList · 4 RateLimit block at 2000 per IP.",
+              "Data protection: SUBSTITUTION on the authorization header.",
+              "The bypass is an allow rule, so it terminates evaluation and skips rules 3 and 4 — but not 0 and 1."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "waf-regional",
+          "name": "Web ACL · REGIONAL scope + association",
+          "n": 2,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::WAFv2::WebACL + WebACLAssociation",
+            "tech": "2 rules · default <b>BLOCK</b>",
+            "role": "Origin lock on the public API stage.",
+            "facts": [
+              "0 KnownBadInputs · 1 RequireOriginSecret, an exact byte match on <code>x-origin-verify</code>.",
+              "Default block is what makes the raw execute-api URL unusable.",
+              "sampledRequestsEnabled is false on the origin-secret rule, so the value is never sampled into logs."
+            ],
+            "code": [
+              [
+                "stacks/platform.ts",
+                "platform/infra/flex/src/stacks/platform.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "shield",
+          "name": "Shield Advanced protection",
+          "n": {
+            "dev": 0,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::Shield::Protection",
+            "tech": "CfnProtection",
+            "role": "DDoS protection on the distribution.",
+            "facts": [
+              "Application-layer automatic response runs in <code>count</code> mode — evaluated and reported, not enforced.",
+              "Skipped whenever <code>env</code> is development, so neither the dev environment nor any ephemeral or personal stage gets it."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "iam-boundary",
+          "name": "Permissions boundary policies",
+          "n": {
+            "dev": 7,
+            "stg": 6,
+            "prod": 4,
+            "eph": 7
+          },
+          "meta": ["eu-west-2", "platform + domain stacks"],
+          "d": {
+            "type": "AWS::IAM::ManagedPolicy",
+            "tech": "PermissionsBoundary.of(stack).apply()",
+            "role": "A hard ceiling on every role in the stack.",
+            "facts": [
+              "One in the platform stack, plus one per deployed domain stack.",
+              "Allow: logs, X-Ray, ENI lifecycle, Secrets Manager read, SSM parameter operations, <code>kms:Decrypt</code>, <code>sts:AssumeRole</code>.",
+              "Allow: <code>execute-api:Invoke</code> restricted to the private API only.",
+              "Deny: <code>lambda:InvokeFunction</code> on everything — this is what forces traffic through the API.",
+              "Wildcards are intentional, with recorded CKV_AWS_107/108/111 suppressions."
+            ],
+            "code": [
+              [
+                "utils/createPermissionsBoundary.ts",
+                "platform/infra/flex/src/utils/createPermissionsBoundary.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "iam-roles",
+          "name": "IAM roles",
+          "n": null,
+          "meta": ["both regions", "several stacks", "varies"],
+          "d": {
+            "type": "AWS::IAM::Role",
+            "tech": "Generated and hand-written",
+            "role": "Execution identities.",
+            "facts": [
+              "One generated execution role per Lambda, all under the permissions boundary.",
+              "Hand-written roles: the API Gateway CloudWatch role (auto-named — 'ApiGatewayCloudWatchRole' is only a construct id) and the smoke-test role, the only one with an explicit physical name <code>{env}-flex-smoke-test-role</code>.",
+              "Also created by CDK: the Chatbot role, custom-resource roles and the BucketDeployment handler role.",
+              "Per-route inline policies come from grantRouteResources and grantRoutePermissions."
+            ],
+            "code": [
+              [
+                "utils/resources.ts",
+                "platform/infra/flex/src/utils/resources.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "secrets",
+          "name": "Secrets Manager secrets",
+          "n": 2,
+          "meta": ["both regions", "platform + global"],
+          "d": {
+            "type": "AWS::SecretsManager::Secret",
+            "tech": "32 characters, punctuation excluded",
+            "role": "Origin verification and the E2E WAF bypass.",
+            "facts": [
+              "<code>/{stage}/flex-secret/origin-verify-secret</code> — created in eu-west-2, replicated to us-east-1.",
+              "<code>/{stage}/flex-secret/waf/e2e-bypass</code> — created in us-east-1, replicated to eu-west-2.",
+              "Both use AWS managed keys, with a recorded CKV_AWS_149 suppression so replication stays simple.",
+              "Consumer configs and hash secrets are imported, not created here."
+            ],
+            "code": [
+              [
+                "stacks/platform.ts",
+                "platform/infra/flex/src/stacks/platform.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "kms-flowlog",
+          "name": "KMS key · VPC flow logs",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::KMS::Key + Alias",
+            "tech": "alias/flex-vpc-flow-logs-key · rotation on",
+            "role": "Encrypts the flow-log bucket.",
+            "facts": [
+              "The only statement the stack adds is the write path for <code>delivery.logs.amazonaws.com</code> — Encrypt, GenerateDataKey* and DescribeKey, conditioned on source account and source ARN. CDK's default account-root statement is also present.",
+              "No reader grant is written on top of CDK's default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright — an investigator or Athena role still has to be granted it deliberately."
+            ],
+            "code": [
+              [
+                "stacks/core/vpc.ts",
+                "platform/infra/flex/src/stacks/core/vpc.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "kms-alerts",
+          "name": "KMS key · alarm topics",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::KMS::Key + Alias",
+            "tech": "alias/flex-alerts-key · rotation on",
+            "role": "Encrypts the eu-west-2 alarm and release topics.",
+            "facts": [
+              "<code>cloudwatch.amazonaws.com</code> is granted encrypt and decrypt."
+            ],
+            "code": [
+              [
+                "stacks/core/topics.ts",
+                "platform/infra/flex/src/stacks/core/topics.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "kms-relay",
+          "name": "KMS key · relay topics",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::KMS::Key + Alias",
+            "tech": "alias/{stage}-flex-alerts-relay-key",
+            "role": "Encrypts the us-east-1 relay topics.",
+            "facts": [
+              "Per stage, so every ephemeral and personal stage creates its own.",
+              "One key shared by both relay topics — <code>#buildRelay</code> is called twice and handed the same key.",
+              "The Chatbot role is granted decrypt on the eu-west-2 key, not this one."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "kms-lambda-env",
+          "name": "KMS key · Lambda environment variables",
+          "n": 0,
+          "meta": ["eu-west-2", "imported · not created"],
+          "d": {
+            "type": "AWS::KMS::Key (imported)",
+            "tech": "environmentEncryption on every Flex* construct",
+            "role": "The fourth key in the system, and the only one FLEX does not create: it protects every Lambda's environment variables.",
+            "facts": [
+              "All three Flex Lambda constructs set <code>environmentEncryption</code> to it and call <code>grantDecrypt</code> on the function, so every route, gateway, authorizer and canary function depends on it.",
+              "Its ARN is read from <code>/{env}/flex-param/secret/encryption-key</code> with <code>StringParameter.valueForStringParameter</code>, which bypasses <code>BaseStack.import()</code> and the SsmApp export graph — so unlike every other imported key, a missing or wrong value fails at deploy rather than at synth.",
+              "The plain <code>NodejsFunction</code>s (stub JWKS, alarm relays) do not use it — their environments are encrypted with the default AWS managed key."
+            ],
+            "code": [
+              ["utils/lambda.ts", "platform/infra/flex/src/utils/lambda.ts"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Storage · Amazon S3",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "s3-specs",
+          "name": "OpenAPI spec bucket",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::S3::Bucket",
+            "tech": "flex-{stage}-openapi-specs · S3_MANAGED · versioned",
+            "role": "Swagger UI plus one OpenAPI 3.1 document per domain.",
+            "facts": [
+              "BlockPublicAccess.BLOCK_ALL; reachable only through CloudFront OAC.",
+              "Non-current versions under <code>docs/specs/</code> expire after 30 days.",
+              "RETAIN in persistent environments; DESTROY with autoDeleteObjects for ephemeral and personal stages.",
+              "Deployed with <code>prune: false</code>, so specs for domains no longer generated are not deleted. The generator always emits all domains' specs regardless of the deploy target."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"],
+              ["scripts/generateOpenapi.ts", "scripts/generateOpenapi.ts"]
+            ]
+          }
+        },
+        {
+          "id": "s3-cflogs",
+          "name": "CloudFront access log bucket",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::S3::Bucket",
+            "tech": "OBJECT_WRITER · LOG_DELIVERY_WRITE",
+            "role": "CloudFront standard access logs.",
+            "facts": [
+              "Object Lock GOVERNANCE for 90 days; objects and non-current versions expire at 90 days.",
+              "Recorded CKV_AWS_18 suppression — a log bucket does not log itself."
+            ],
+            "code": [
+              [
+                "constructs/s3/AccessLogBucket.ts",
+                "platform/infra/flex/src/constructs/s3/AccessLogBucket.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "s3-speclogs",
+          "name": "Spec bucket access log bucket",
+          "n": 1,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::S3::Bucket",
+            "tech": "Same construct, 365-day default",
+            "role": "S3 server access logs for the spec bucket.",
+            "facts": ["Object Lock GOVERNANCE for 365 days."],
+            "code": [
+              [
+                "constructs/s3/AccessLogBucket.ts",
+                "platform/infra/flex/src/constructs/s3/AccessLogBucket.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "s3-flowlogs",
+          "name": "VPC flow log bucket",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::S3::Bucket",
+            "tech": "KMS CMK · bucketKeyEnabled · versioned",
+            "role": "Destination for VPC flow logs.",
+            "facts": [
+              "Object Lock GOVERNANCE for 365 days, with lifecycle expiry to match.",
+              "Encrypted with the dedicated flow-log key rather than an AWS managed one."
+            ],
+            "code": [
+              [
+                "stacks/core/vpc.ts",
+                "platform/infra/flex/src/stacks/core/vpc.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "s3-tls",
+          "name": "Bucket TLS enforcement",
+          "n": null,
+          "meta": ["both regions", "app-wide aspect", "varies"],
+          "d": {
+            "type": "AWS::S3::BucketPolicy",
+            "tech": "CDK Aspect",
+            "role": "Denies non-TLS requests on every bucket in the app.",
+            "facts": [
+              "EnforceS3Https visits every Bucket and adds a Deny on <code>s3:*</code> for AnyPrincipal when <code>aws:SecureTransport</code> is false.",
+              "Applied at App level, so a new bucket cannot be added without it."
+            ],
+            "code": [
+              [
+                "aspects/enforce-s3-https.ts",
+                "platform/infra/flex/src/aspects/enforce-s3-https.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messaging · SNS, Chatbot, EventBridge",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "sns-alarms",
+          "name": "Alarm topics",
+          "n": {
+            "dev": 2,
+            "stg": 2,
+            "prod": 2,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::SNS::Topic",
+            "tech": "KMS encrypted",
+            "role": "flex-alerts-critical and flex-alerts-warning.",
+            "facts": [
+              "Every alarm routes to exactly one of these two — except the smoke-test alarm, which has no action attached at all.",
+              "<code>cloudwatch.amazonaws.com</code> is granted publish on both."
+            ],
+            "code": [
+              [
+                "stacks/core/topics.ts",
+                "platform/infra/flex/src/stacks/core/topics.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "sns-release",
+          "name": "Release notification topic",
+          "n": {
+            "dev": 1,
+            "stg": 0,
+            "prod": 0,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::SNS::Topic",
+            "tech": "flex-release-notifications",
+            "role": "Carries formatted release notes from the pipeline.",
+            "facts": [
+              "Only in the development environment, because a release happens once per pipeline run.",
+              "The staging and production notify jobs assume the development role to publish here."
+            ],
+            "code": [
+              [
+                "stacks/core/topics.ts",
+                "platform/infra/flex/src/stacks/core/topics.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "sns-relay",
+          "name": "Relay topics + subscriptions",
+          "n": 4,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::SNS::Topic + Subscription",
+            "tech": "2 topics, 2 Lambda subscriptions",
+            "role": "Cross-region alarm forwarding.",
+            "facts": [
+              "Encrypted with <code>alias/{stage}-flex-alerts-relay-key</code>.",
+              "The topics and subscriptions are correct; the subscribed Lambdas are not — see the relay functions above."
+            ],
+            "code": [
+              ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
+            ]
+          }
+        },
+        {
+          "id": "chatbot",
+          "name": "Slack channel configurations",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexCoreStack"],
+          "d": {
+            "type": "AWS::Chatbot::SlackChannelConfiguration",
+            "tech": "AWS Chatbot",
+            "role": "<code>flex-alerts-{stage}</code>, plus one <code>flex-releases-{stage}-{channel}</code> per release channel in development.",
+            "facts": [
+              "The count shown is the alerts channel only — development adds one more per configured release channel ID, read at synth time via valueFromLookup.",
+              "Guardrail policy ReadOnlyAccess caps what anyone can do from Slack.",
+              "Its role is granted <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> on the alarm topic key."
+            ],
+            "code": [
+              [
+                "stacks/core/stack.ts",
+                "platform/infra/flex/src/stacks/core/stack.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "events-rule",
+          "name": "Smoke-test schedule",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexSmokeTestStack"],
+          "d": {
+            "type": "AWS::Events::Rule",
+            "tech": "Schedule.rate(5 minutes)",
+            "role": "Triggers the canary.",
+            "facts": ["The only scheduled resource in the system."],
+            "code": [
+              [
+                "stacks/smoke-test.ts",
+                "platform/infra/flex/src/stacks/smoke-test.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Observability · CloudWatch, X-Ray",
+      "note": "Retention is set per destination, never globally — the table below is the whole picture for everything that writes a log. VPC flow logs are the one source covered on the Network tab instead, because where they are written is a network fact.",
+      "table": {
+        "cols": ["Source", "Destination", "Retention", "Notes"],
+        "rows": [
+          [
+            "CloudFront access logs",
+            "S3 · <code>OBJECT_WRITER</code>",
+            "90 days",
+            "Object Lock GOVERNANCE 90 days; objects and non-current versions expire to match"
+          ],
+          [
+            "Spec bucket access logs",
+            "S3",
+            "365 days",
+            "S3 server access logging, same construct with the default retention"
+          ],
+          [
+            "API Gateway access logs",
+            "CloudWatch Logs",
+            "1 year",
+            "An explicit log group per API, JSON standard fields — both the public and the private API"
+          ],
+          [
+            "API Gateway execution logs",
+            "CloudWatch Logs",
+            "<b>Never expires</b>",
+            "Auto-created group, no retention configured. Private API only — the public stage sets no <code>loggingLevel</code>"
+          ],
+          [
+            "Lambda logs",
+            "CloudWatch Logs",
+            "1 year",
+            "Every function built on the Flex* constructs; the stub JWKS, alarm-relay and BucketDeployment Lambdas use auto-created groups with no expiry"
+          ]
+        ]
+      },
+      "items": [
+        {
+          "id": "alarms-lambda",
+          "name": "Lambda alarms",
+          "n": {
+            "dev": 123,
+            "stg": 84,
+            "prod": 72,
+            "eph": 123
+          },
+          "meta": ["eu-west-2", "platform + domain stacks"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "3 per function",
+            "role": "Error rate, throttles and duration.",
+            "facts": [
+              "Error rate: IF(invocations ≥ 10, 100*(errors/invocations), 0) above 1% for two consecutive 5-minute periods → critical.",
+              "Throttles: any throttle in a 1-minute window → critical.",
+              "Duration: p99 above 80% of the function's configured timeout over 5 minutes → warning.",
+              "Covers domain routes, service gateways and the authorizer. The canary opts out; the relay and stub JWKS functions never had them.",
+              "The construct throws at synth if a function has no explicit timeout."
+            ],
+            "code": [
+              [
+                "constructs/alarms/lambda.ts",
+                "platform/infra/flex/src/constructs/alarms/lambda.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-apigw",
+          "name": "API Gateway alarms",
+          "n": 8,
+          "meta": ["eu-west-2", "FlexPlatformStack"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "4 per API",
+            "role": "Error rates and latency.",
+            "facts": [
+              "5XX average above 1% over five consecutive 1-minute periods → critical.",
+              "4XX average above 5% on the same schedule → warning.",
+              "End-to-end p95 latency above 3000 ms, 2 of 3 consecutive 5-minute periods → warning.",
+              "Integration p95 latency above 2900 ms on the same schedule → warning.",
+              "Both latency alarms are gated at 40 requests per period, so quiet stages stay silent."
+            ],
+            "code": [
+              [
+                "constructs/alarms/api-gateway.ts",
+                "platform/infra/flex/src/constructs/alarms/api-gateway.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-cf",
+          "name": "CloudFront alarms",
+          "n": 3,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "CloudFrontAlarms",
+            "role": "Distribution error rates.",
+            "facts": [
+              "5xxErrorRate above 1% over five consecutive minutes → critical.",
+              "4xxErrorRate and TotalErrorRate above 5% on the same schedule → warning.",
+              "These metrics are already percentages, so the thresholds are 1 and 5, not 0.01 and 0.05.",
+              "Must be created in us-east-1 — CloudFront emits metrics only there."
+            ],
+            "code": [
+              [
+                "constructs/alarms/cloudfront.ts",
+                "platform/infra/flex/src/constructs/alarms/cloudfront.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-cff",
+          "name": "CloudFront Function alarms",
+          "n": 6,
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "3 per function",
+            "role": "Edge function health.",
+            "facts": [
+              "Execution errors over five consecutive minutes → critical.",
+              "Throttles over five consecutive minutes → critical.",
+              "Validation errors over two consecutive minutes → warning."
+            ],
+            "code": [
+              [
+                "constructs/alarms/cloudfront-function.ts",
+                "platform/infra/flex/src/constructs/alarms/cloudfront-function.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-waf",
+          "name": "WAF alarms",
+          "n": 6,
+          "meta": ["both regions", "global + platform"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "3 per Web ACL",
+            "role": "Blocking behaviour.",
+            "facts": [
+              "Any managed-rule block in a 5-minute window → critical.",
+              "Block rate above 90% of all requests → critical.",
+              "Anomaly detection at 2 standard deviations on blocked volume, 2 of 3 periods → warning.",
+              "CLOUDFRONT-scope metrics carry no Region dimension; REGIONAL ones do."
+            ],
+            "code": [
+              [
+                "constructs/alarms/waf.ts",
+                "platform/infra/flex/src/constructs/alarms/waf.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-shield",
+          "name": "Shield alarms",
+          "n": {
+            "dev": 0,
+            "stg": 2,
+            "prod": 2,
+            "eph": 0
+          },
+          "meta": ["us-east-1", "FlexGlobalStack"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "ShieldAlarms",
+            "role": "DDoS signals.",
+            "facts": [
+              "DDoSDetected maximum above 0 in a 1-minute period → critical.",
+              "DDoSAttackRequestsPerSecond above 0 → warning.",
+              "Created only alongside the Shield protection, so development and every ephemeral stage have neither.",
+              "Both logical IDs are pinned via overrideLogicalId."
+            ],
+            "code": [
+              [
+                "constructs/alarms/shield.ts",
+                "platform/infra/flex/src/constructs/alarms/shield.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "alarms-smoke",
+          "name": "Smoke-test alarm",
+          "n": {
+            "dev": 1,
+            "stg": 1,
+            "prod": 1,
+            "eph": 0
+          },
+          "meta": ["eu-west-2", "FlexSmokeTestStack"],
+          "d": {
+            "type": "AWS::CloudWatch::Alarm",
+            "tech": "Custom metric",
+            "role": "No successful canary run in 15 minutes.",
+            "facts": [
+              "<b>It notifies nobody.</b> <code>{stage}-smoke-test-no-success</code> is the one Alarm in the app with no <code>addAlarmAction</code> — <code>actionsEnabled</code> is true, but no topic is attached.",
+              "treatMissingData is BREACHING, so a canary that stops running entirely still alarms — into the void.",
+              "Metric Flex/SmokeTest.SmokeTestSuccess, summed over a 15-minute period."
+            ],
+            "code": [
+              [
+                "stacks/smoke-test.ts",
+                "platform/infra/flex/src/stacks/smoke-test.ts"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "loggroups",
+          "name": "Log groups",
+          "n": {
+            "dev": 44,
+            "stg": 31,
+            "prod": 27,
+            "eph": 43
+          },
+          "meta": ["both regions", "several stacks"],
+          "d": {
+            "type": "AWS::Logs::LogGroup",
+            "tech": "RetentionDays.ONE_YEAR",
+            "role": "One per Flex Lambda construct, plus one per API stage.",
+            "facts": [
+              "Created explicitly rather than left to Lambda's implicit default, so retention is guaranteed. The count excludes the auto-created groups in the table above.",
+              "Content is redacted at source by the <code>@flex/logging</code> sanitizer before it is ever written.",
+              "<code>FlexLogger.setLogLevel</code> returns without doing anything when <code>FLEX_ENVIRONMENT</code> is production, so verbose logging cannot be turned on there at runtime."
+            ],
+            "code": [
+              [
+                "libs/logging/src/sanitizer.ts",
+                "libs/logging/src/sanitizer.ts"
+              ],
+              ["libs/logging/src/logger.ts", "libs/logging/src/logger.ts"]
+            ]
+          }
+        },
+        {
+          "id": "xray",
+          "name": "X-Ray tracing",
+          "n": null,
+          "meta": [
+            "eu-west-2",
+            "platform + domain + smoke-test stacks",
+            "varies"
+          ],
+          "d": {
+            "type": "Tracing.ACTIVE",
+            "tech": "AWS X-Ray",
+            "role": "Active on every Flex Lambda construct and both API stages.",
+            "facts": [
+              "<code>xray:PutTraceSegments</code> and <code>PutTelemetryRecords</code> sit in the permissions boundary baseline.",
+              "Nothing in the us-east-1 global stack is traced, and the plain NodejsFunctions (stub JWKS, alarm relays) are not either.",
+              "Segments are emitted by the Lambda execution environment, not through a VPC endpoint — there is no X-Ray interface endpoint."
+            ],
+            "code": [
+              [
+                "constructs/lambda/flex-public-function.ts",
+                "platform/infra/flex/src/constructs/lambda/flex-public-function.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration · SSM Parameter Store",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "ssm-written",
+          "name": "Parameters written by FLEX",
+          "n": {
+            "dev": 23,
+            "stg": 22,
+            "prod": 22,
+            "eph": 8
+          },
+          "meta": ["eu-west-2", "core + platform"],
+          "d": {
+            "type": "AWS::SSM::Parameter",
+            "tech": "StringParameter via BaseStack.export()",
+            "role": "Replaces CloudFormation exports for all cross-stack wiring.",
+            "facts": [
+              "Core writes 14: nine VPC parameters plus two security groups, two alarm topics and the API Gateway endpoint. Development adds the release topic (15).",
+              "<code>exportVpc</code> is the reason the VPC contributes nine: id, CIDR, AZs, and subnet-id plus route-table-id lists for each of the three tiers.",
+              "Platform writes 8: three public API keys, four private API keys and the origin-verify secret ARN.",
+              "An ephemeral or personal stage writes only the platform 8 — it imports the rest from development.",
+              "SsmApp records the owning stack per (region, key) and throws on duplicate ownership."
+            ],
+            "code": [
+              ["base/index.ts", "platform/infra/flex/src/base/index.ts"],
+              ["ssm-keys.ts", "platform/infra/flex/src/ssm-keys.ts"]
+            ]
+          }
+        },
+        {
+          "id": "ssm-imported",
+          "name": "Parameters imported from elsewhere",
+          "n": null,
+          "meta": ["eu-west-2", "external", "varies"],
+          "d": {
+            "type": "AWS::SSM::Parameter (read only)",
+            "tech": "addExternalExports",
+            "role": "Values owned by flex-params and the platform team.",
+            "facts": [
+              "<code>/infra/dns/hostedzoneid</code> and <code>hostedzonename</code>.",
+              "<code>/{env}/flex-param/auth/*</code> — user pool and client IDs, plus stub equivalents.",
+              "<code>/{env}/flex-param/monitoring/*</code> — Slack workspace and channel IDs, plus the release channel list in development.",
+              "<code>/{env}/flex-param/{gateway}/*</code> — derived from each gateway config's <code>resources</code> rather than hard-coded.",
+              "<code>/{env}/flex-param/secret/encryption-key</code> — the Lambda environment CMK ARN. It is the one exception to the rule below: <code>resolveEncryptionKey</code> reads it with <code>valueForStringParameter</code>, outside the export graph, so it is never checked at synth.",
+              "Everything else is declared as an external export, so an unknown key fails at synth rather than at deploy."
+            ],
+            "code": [
+              ["app.ts", "platform/infra/flex/src/app.ts"],
+              ["utils/lambda.ts", "platform/infra/flex/src/utils/lambda.ts"]
+            ]
+          }
+        },
+        {
+          "id": "ssm-crossregion",
+          "name": "Cross-region parameter reads",
+          "n": null,
+          "meta": ["us-east-1", "FlexGlobalStack", "varies"],
+          "d": {
+            "type": "Custom::AWS (ssm:GetParameter)",
+            "tech": "AwsCustomResource",
+            "role": "Lets the us-east-1 stack read eu-west-2 parameters.",
+            "facts": [
+              "Seven distinct keys are read this way in every stage — the hosted zone id and name, the public REST API id and its app root, the origin-verify secret ARN, and both alarm topic ARNs. Reads are cached per key, so that is seven custom resources.",
+              "The physical resource ID embeds a timestamp, so the value is re-read on every update.",
+              "Domain <code>kms</code>, <code>secret</code> and <code>ssm</code> resources do not go through this path at all — they are looked up directly and bypass the SsmApp dependency graph by design."
+            ],
+            "code": [
+              ["base/index.ts", "platform/infra/flex/src/base/index.ts"],
+              [
+                "utils/resources.ts",
+                "platform/infra/flex/src/utils/resources.ts"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Disabled in code",
+      "note": null,
+      "table": null,
+      "items": [
+        {
+          "id": "macie",
+          "name": "Amazon Macie stack",
+          "n": 0,
+          "meta": ["us-east-1", "FlexMacieStack"],
+          "d": {
+            "type": "AWS::Macie::CustomDataIdentifier, plus custom resources",
+            "tech": "AwsCustomResource · CfnCustomDataIdentifier",
+            "role": "Scheduled sensitive-data discovery over the CloudFront access-log bucket.",
+            "facts": [
+              "Fully implemented, but its import and its instantiation are <b>commented out in <code>app.ts</code></b> — it is disabled in code, not merely undeployed. Uncommenting is not a one-line change: the commented block also references a <code>globalStack</code> variable that no longer exists.",
+              "The session is enabled through a <code>macie2:enableMacie</code> call with FIFTEEN_MINUTES finding publication; automated discovery explicitly disabled to avoid rolling scans of public specs and log buckets.",
+              "A weekly SCHEDULED job every Monday at 100% sampling with RECOMMENDED managed identifiers.",
+              "Results export to a KMS-encrypted RETAIN bucket under <code>macie-results/</code>.",
+              "The CI coverage check <b>is</b> live: <code>validate:macie-coverage</code> runs in the Hygiene job on every pull request and posts a Slack notice for uncovered domains — so coverage is reported against a stack that is not deployed."
+            ],
+            "code": [
+              ["stacks/macie.ts", "platform/infra/flex/src/stacks/macie.ts"],
+              ["app.ts", "platform/infra/flex/src/app.ts"]
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

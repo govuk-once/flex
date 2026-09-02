@@ -1,0 +1,919 @@
+// FLEX architecture — Components.
+//
+// The model. Presentation that a LikeC4 view cannot hold — tab order, audience,
+// reference tables — is in views.json beside this file.
+
+model {
+
+  components_z_author = boundary 'Authored by the domain team' {
+    metadata {
+      type 'Ownership boundary'
+      tech 'TypeScript in domains/{name}'
+      role 'Everything a domain team writes to ship a route: one config file for the domain and one handler file per route. No CDK, no IAM, no API Gateway.'
+      facts [
+        'CODEOWNERS still assigns every path to the FLEX platform team, so this boundary is the intended operating model rather than today\'s ownership.'
+      ]
+      sourceId 'z-author'
+      order '0'
+      x '18'
+      y '62'
+      w '378'
+      h '466'
+      boundary 'hard'
+    }
+
+    components_cfg = platform 'domain.config.ts' {
+      #off-request-path
+      description 'domain({ … }) · one per domain'
+      technology 'TypeScript · Zod (DomainConfigSchema)'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/domain.ts 'domain()'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/config/schema.ts 'DomainConfigSchema'
+      link https://github.com/govuk-once/flex/blob/main/domains/example/domain.config.ts 'a full example'
+      metadata {
+        type 'Configuration module'
+        tech 'TypeScript · Zod (DomainConfigSchema)'
+        role 'The single declaration of a domain: its routes, resources, integrations, feature flags, headers, timeouts and the environments it deploys to. The CDK app reads it at synth and every route Lambda imports the same object at run time.'
+        facts [
+          '<code>domain(config)</code> returns <code>{ config, route, routeContext }</code>. Because the CDK app and the Lambda import the same module, there is no second description of a route to drift out of step.',
+          'Routes are keyed <code>routes[version][path][METHOD][public|private]</code>, so one path and method can expose a public and a private variant with different schemas and headers — example\'s <code>/v0/identity/:service</code> does exactly that.',
+          '<code>common</code> holds the defaults every route inherits (access tier, log level, timeout, memory, headers); a route-level <code>function</code> block overrides them. With neither set the timeout is 15 seconds.'
+        ]
+        sourceId 'cfg'
+        order '0'
+        x '35'
+        y '110'
+        w '233'
+        h '104'
+        ownership 'flex'
+      }
+    }
+
+    components_typed = platform 'Compile-time contract' {
+      #off-request-path
+      description 'Infer*Keys · route keys · path params'
+      technology 'TypeScript conditional and template-literal types'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/types.ts 'types.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/build-context.ts 'runtime side'
+      metadata {
+        type 'Type-level inference'
+        tech 'TypeScript conditional and template-literal types'
+        role 'Turns the literal config object into the types each handler is checked against, so a mistyped resource key or route key is a compile error rather than a runtime throw.'
+        facts [
+          '<code>domain()</code> is generic over its own argument: <code>InferResourceKeys</code>, <code>InferIntegrationKeys</code>, <code>InferFeatureFlagKeys</code> and <code>InferEnvironmentKeys</code> read the keys back out of the config, so a route may only list resources, integrations and flags that the same file defines.',
+          'The context type is built per route from the route key string and that route\'s schemas: <code>ctx.pathParams.id</code> exists because the key contains <code>:id</code>, and <code>ctx.body</code> takes its type from the route\'s body schema.',
+          '<b>One field is keyed off the wrong axis.</b> <code>WithAuth</code> adds <code>ctx.auth</code> unless the route\'s network access tier is <code>public</code> — which no domain uses — while at run time it is only populated for routes on the public gateway. Private routes therefore type-check against an <code>auth</code> object that is undefined when they run.'
+        ]
+        sourceId 'typed'
+        order '1'
+        x '35'
+        y '251'
+        w '280'
+        h '104'
+        ownership 'flex'
+      }
+    }
+
+    components_hnd = platform 'src/handlers/{version}/…' {
+      #request-path
+      description 'one file per route · exports handler'
+      technology 'TypeScript · route() re-exported from @domain'
+      link https://github.com/govuk-once/flex/blob/main/domains/dvla/src/handlers/v1/customer/vehicles/get.ts 'a public route'
+      link https://github.com/govuk-once/flex/blob/main/domains/example/src/handlers/v0/todos/post.private.ts 'a private route'
+      link https://github.com/govuk-once/flex/blob/main/domains/example/src/services/get-identity-link.ts 'context outside the handler'
+      metadata {
+        type 'Route handler module'
+        tech 'TypeScript · route() re-exported from @domain'
+        role 'The only per-route code a domain team writes: an async function that receives the typed context and returns a status with an optional payload.'
+        facts [
+          'The file exports <code>handler = route("GET /v1/customer/vehicles", fn)</code>. A private route carries the suffix <code>[private]</code> inside the route key and <code>.private</code> in its filename.',
+          'Throwing an <code>http-errors</code> error is the supported way to return a non-200: 5xx logs at error, 4xx at warn, and both emit <code>domain_error_returned</code>.',
+          'Code outside the handler reaches the same request context through <code>routeContext{RouteKeys}()</code> rather than passing it down as an argument.'
+        ]
+        sourceId 'hnd'
+        order '2'
+        x '35'
+        y '392'
+        w '274'
+        h '104'
+        ownership 'flex'
+      }
+    }
+  }
+
+  components_z_build = boundary 'Build time · CDK synth' {
+    metadata {
+      type 'Synth-time transformation'
+      tech 'aws-cdk-lib in platform/infra/flex'
+      role 'The CDK app reads the same config objects the Lambdas will read, and turns each route into a function, a method and a set of grants.'
+      sourceId 'z-build'
+      order '1'
+      x '414'
+      y '62'
+      w '378'
+      h '466'
+      boundary 'soft'
+    }
+
+    components_fnp = platform 'One NodejsFunction per route' {
+      #off-request-path
+      description 'plus its API Gateway method and grants'
+      technology 'aws-cdk-lib · NodejsFunction · LambdaIntegration'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'domain stack'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/lambda/flex-private-isolated-function.ts 'function construct'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/lambda.ts 'default timeout'
+      metadata {
+        type 'CDK construct loop'
+        tech 'aws-cdk-lib · NodejsFunction · LambdaIntegration'
+        role 'The domain stack walks the flattened route list and, for each entry, creates one Lambda, one API Gateway method and the grants that route alone needs.'
+        facts [
+          'Public routes get a <code>TokenAuthorizer</code> pointed at the shared authorizer Lambda and are mounted at <code>/app/{domain}/{version}{path}</code>; private routes get <code>AuthorizationType.IAM</code> and are mounted at <code>/domains/{domain}/{version}{path}</code>.',
+          'Only the resources and integrations that route declares are granted to that route\'s role, so two routes in the same domain do not share permissions.',
+          'Every function is given <code>FLEX_ENVIRONMENT</code> set to the stage. <code>STAGE</code> is never set on a function, which is what breaks the feature-flag environment level.'
+        ]
+        sourceId 'fnp'
+        order '3'
+        x '431'
+        y '110'
+        w '287'
+        h '104'
+        ownership 'flex'
+        resources [
+          'lambda-domain-dvla',
+          'lambda-domain-udp',
+          'lambda-domain-uns',
+          'lambda-domain-groups',
+          'lambda-domain-lc',
+          'lambda-domain-example',
+          'api-routes-public',
+          'api-routes-private'
+        ]
+      }
+    }
+
+    components_flat = platform 'flattenRoutes → toHandlerPath' {
+      #off-request-path
+      description 'route key becomes a source path'
+      technology 'TypeScript in the CDK app'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/routes.ts 'toHandlerPath'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/getEntry.ts 'getDomainEntry'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/deployment.ts 'stage filtering'
+      metadata {
+        type 'Naming convention'
+        tech 'TypeScript in the CDK app'
+        role 'The single rule that binds a config entry to a file on disk. It is the reason a domain needs no infrastructure code of its own.'
+        facts [
+          '<code>toHandlerPath</code> builds <code>handlers/{version}/{path}/{method}{ext}</code>: the leading slash is dropped, each <code>:param</code> becomes a <code>[param]</code> directory, the method is lowercased, and the extension is <code>.private.ts</code> for a private-gateway route and <code>.ts</code> otherwise.',
+          '<code>getDomainEntry</code> prefixes <code>domains/{name}/src/</code> and hands the result to <code>NodejsFunction</code> as its esbuild entry, so a route with no matching file fails at synth rather than at deploy.',
+          '<code>getDeployableRoutes</code> filters by the environments arrays, but <code>getDeployableDomains</code> returns every domain untouched for any non-persistent stage — which is why ephemeral and personal stages get the full route set.'
+        ]
+        sourceId 'flat'
+        order '4'
+        x '431'
+        y '251'
+        w '240'
+        h '104'
+        ownership 'flex'
+      }
+    }
+
+    components_ex = platform 'GET /v1/customer/vehicles' {
+      #off-request-path
+      description '→ src/handlers/v1/customer/vehicles/get.ts'
+      technology 'dvla domain'
+      link https://github.com/govuk-once/flex/blob/main/domains/dvla/domain.config.ts 'dvla config'
+      link https://github.com/govuk-once/flex/blob/main/domains/dvla/src/handlers/v1/customer/vehicles/get.ts 'the handler file'
+      metadata {
+        type 'Worked example'
+        tech 'dvla domain'
+        role 'The convention on three real dvla routes, including the two shapes that catch people out.'
+        facts [
+          '<code>GET /v1/customer/vehicle/:id</code> becomes <code>src/handlers/v1/customer/vehicle/[id]/get.ts</code> — a square-bracket directory is a path parameter, and it is the only place the parameter name is declared.',
+          '<code>POST /v1/unlink [private]</code> becomes <code>src/handlers/v1/unlink/post.private.ts</code>. It has no <code>ctx.auth</code>, so it declares a required <code>User-Id</code> header instead.',
+          'The CDK construct id is the PascalCase of <code>{domain}-{gateway}-{version}-{routeName}</code>, and the same string becomes the logger\'s service name for that route.'
+        ]
+        sourceId 'ex'
+        order '5'
+        x '431'
+        y '392'
+        w '314'
+        h '104'
+        ownership 'flex'
+      }
+    }
+  }
+
+  components_z_sdk = boundary '@flex/sdk · the route pipeline' {
+    metadata {
+      type 'Library'
+      tech 'TypeScript · Middy · Zod · node:async_hooks'
+      role 'What runs inside every domain route Lambda, from cold start to API Gateway response.'
+      sourceId 'z-sdk'
+      order '2'
+      x '810'
+      y '62'
+      w '436'
+      h '607'
+      boundary 'soft'
+    }
+
+    components_rte = platform 'route(key, handler)' {
+      #request-path
+      description 'cold start · resolves the route config'
+      technology '@flex/sdk · createRouteHandler'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/create-route.ts 'create-route.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/route-key.ts 'route key parsing'
+      link https://github.com/govuk-once/flex/blob/main/libs/logging/src/logger.ts 'FlexLogger'
+      metadata {
+        type 'Handler factory'
+        tech '@flex/sdk · createRouteHandler'
+        role 'Runs once per container: looks the route key up in the config, resolves log level, resources and headers, and builds the Middy stack around the core handler.'
+        facts [
+          'Two phases: at module load it resolves the route config, log level, resources and header rules once, builds the Middy stack and memoises the integration invokers. Per invocation it only assembles the context and runs the handler.',
+          'The key is parsed back into method, version, path and gateway and used to look up <code>routes[version][path][METHOD][gateway]</code>. A key with no matching config entry throws at module load, before the first request.',
+          'The logger\'s service name is set here to <code>{domain}-{gateway}-{version}-{routeName}</code>, so every line a route logs identifies exactly which route wrote it.',
+          '<code>logger.setLogLevel</code> is a hard no-op when <code>FLEX_ENVIRONMENT</code> is production, so a route\'s declared log level has no effect in the one stage where raising it matters most.'
+        ]
+        sourceId 'rte'
+        order '6'
+        x '827'
+        y '110'
+        w '287'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    components_middy = platform 'Middy stack' {
+      #request-path
+      description 'errors · logger · body · secrets · SSM'
+      technology '@middy/core with http-error-handler, http-header-normalizer, http-json-body-parser, secrets-manager and ssm'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/middleware.ts 'configureMiddleware'
+      link https://github.com/govuk-once/flex/blob/main/libs/logging/src/index.ts 'logging entry point'
+      metadata {
+        type 'Middleware pipeline'
+        tech '@middy/core with http-error-handler, http-header-normalizer, http-json-body-parser, secrets-manager and ssm'
+        role 'Wraps the core handler. Assembled once per container, and assembled conditionally from what the route declared.'
+        facts [
+          'The header normaliser and JSON body parser are attached only for POST, PUT and PATCH; the Secrets Manager and SSM middlewares only when the route declares a resource of that type.',
+          'Both resource middlewares run with <code>setToContext: true</code>, so fetched values arrive on the Lambda <code>context</code> object rather than in the event.',
+          '<code>injectLambdaContext</code> is configured with <code>correlationIdPath</code> of <code>headers."x-correlation-id"</code>, which is how the correlation id set at the edge reaches every domain log line.'
+        ]
+        sourceId 'middy'
+        order '7'
+        x '827'
+        y '202'
+        w '287'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    components_integ = platform 'Integrations' {
+      #request-path
+      description 'one declaration · one call · one IAM statement'
+      technology 'aws-sigv4-fetch · execute-api IAM'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'buildDomainIntegrations'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/integrations.ts 'grantRoutePermissions'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/validate-integrations.ts 'validateDomainIntegrations'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/fetch/fetch.ts 'retry logic'
+      metadata {
+        type 'Outbound call binding'
+        tech 'aws-sigv4-fetch · execute-api IAM'
+        role 'Turns each declared integration into a typed invoker on the context and, at synth, into the exact IAM statement that lets that one route make that one call.'
+        facts [
+          'A declaration of <code>{ type, target, route }</code> becomes the base path <code>/domains/{target}/{version}</code> or <code>/gateways/{target}/{version}</code> against the private API URL supplied by the route\'s <code>ssm</code> resource. The invokers and the signed fetcher are built once per container and cached.',
+          'At synth the same declaration becomes an <code>execute-api:Invoke</code> statement on that route\'s role, one statement per HTTP method, scoped to the method and path ARN. A route key ending <code>/*</code> is a wildcard the caller extends at call time, and the same <code>*</code> lands inside the IAM resource ARN.',
+          'Retries are opt-in and nothing opts in: <code>DomainIntegrationBaseSchema</code> has no <code>retryAttempts</code> field and no handler passes one at call time, so every domain-to-gateway call is a single attempt.',
+          '<code>pnpm validate:integrations</code> only checks <code>type: "domain"</code> integrations. A gateway integration naming a route the gateway does not define passes CI and 404s in production.'
+        ]
+        sourceId 'integ'
+        order '8'
+        x '827'
+        y '295'
+        w '341'
+        h '72'
+        ownership 'flex'
+        resources [
+          'api-private'
+        ]
+      }
+    }
+
+    components_bctx = platform 'buildHandlerContext' {
+      #request-path
+      description 'validate, then gather'
+      technology 'Zod · process.env · Lambda context'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/build-context.ts 'build-context.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/headers.ts 'header presence check'
+      metadata {
+        type 'Per-invocation assembly'
+        tech 'Zod · process.env · Lambda context'
+        role 'Validates the request and collects everything the route is allowed to see into one object.'
+        facts [
+          'Body and query are Zod-parsed here; declared headers are only checked for presence, never against a schema, and a missing required header is a 400. A body schema on a GET route is ignored, because the body parser is only wired for POST, PUT and PATCH.',
+          '<code>ctx.auth.pairwiseId</code> is read from the API Gateway authorizer context and only for public-gateway routes; a missing pairwise id raises an authorization error.',
+          'Resources are split by type: kms and ssm are read straight from <code>process.env</code>, while secret and ssm:runtime are read off the Lambda context and throw if the middleware did not put them there.'
+        ]
+        sourceId 'bctx'
+        order '9'
+        x '827'
+        y '387'
+        w '177'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    components_als = platform 'AsyncLocalStorage route store' {
+      #request-path
+      description 'routeStorage.run · routeContext()'
+      technology 'node:async_hooks AsyncLocalStorage'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/store.ts 'store.ts'
+      link https://github.com/govuk-once/flex/blob/main/domains/example/src/services/get-identity-link.ts 'used outside a handler'
+      metadata {
+        type 'Request-scoped store'
+        tech 'node:async_hooks AsyncLocalStorage'
+        role 'Holds the assembled context for one invocation so any function in the call tree can reach it without it being threaded through arguments.'
+        facts [
+          'The handler runs inside <code>routeStorage.run(store, …)</code> and is passed the same object as its typed context — the store and the context are one value, not a copy.',
+          'Service code calls <code>routeContext{RouteKeys}()</code> to get that store typed for the route keys it supports; calling it outside a handler throws rather than returning undefined.',
+          'The store carries only what the route declared: logger, auth, body, path and query params, resources, feature flags, headers and integrations.'
+        ]
+        sourceId 'als'
+        order '10'
+        x '827'
+        y '480'
+        w '254'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    components_resp = platform 'Response validation' {
+      #request-path
+      description 'a schema failure becomes a 500'
+      technology 'Zod · API Gateway proxy result'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/response.ts 'response.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/create-route.ts 'the finally block'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/utils/cleanup.ts 'clearTmp'
+      metadata {
+        type 'Response stage'
+        tech 'Zod · API Gateway proxy result'
+        role 'Checks the handler\'s payload against the route\'s response schema and shapes the API Gateway result.'
+        facts [
+          'A payload that fails the route\'s response schema is logged, emits <code>response_validation_failed</code> and is replaced by a 500 — the handler\'s payload is not returned.',
+          'Validation is skipped when the route declares no response schema or the handler returned no <code>data</code>, so an unschema\'d route can return anything.',
+          '<code>clearTmp()</code> runs in a finally block on every invocation, deleting the contents of <code>/tmp</code> between reuses of a warm container.'
+        ]
+        sourceId 'resp'
+        order '11'
+        x '827'
+        y '572'
+        w '233'
+        h '72'
+        ownership 'flex'
+      }
+    }
+  }
+
+  components_z_gw = boundary '@flex/service-gateway' {
+    metadata {
+      type 'Library'
+      tech 'TypeScript · Middy · AWS SDK v3'
+      role 'The second, smaller SDK: one Lambda fronts one upstream system, with a route table instead of a filesystem convention.'
+      sourceId 'z-gw'
+      order '3'
+      x '1263'
+      y '62'
+      w '436'
+      h '607'
+      boundary 'soft'
+    }
+
+    components_gcfg = platform 'gateway.config.ts · defineGateway' {
+      #off-request-path
+      description 'routes · resources · schemas'
+      technology 'TypeScript · @flex/service-gateway · Zod'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/config/gateway.ts 'defineGateway'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/gateway.config.ts 'a full example'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/types/resource.ts 'resource types'
+      metadata {
+        type 'Configuration module'
+        tech 'TypeScript · @flex/service-gateway · Zod'
+        role 'The platform team\'s equivalent of domain.config.ts, one per upstream system: the routes FLEX exposes for it, the schemas it enforces, and the AWS resources the gateway may use.'
+        facts [
+          '<code>defineGateway(config)</code> returns <code>{ config, createHandler }</code> from the same module, so the declared route table and the handlers implementing it are type-checked against each other.',
+          'Route keys are flat <code>METHOD /version/path</code> strings with <code>:param</code> segments. There is no public or private split and no per-route access tier — the whole gateway is one function in one subnet tier.',
+          'Its resource types are a different set from a domain\'s: kms, role, secret and ssm. <code>ssm</code> throws "Not yet implemented" at synth, and no gateway config uses it.'
+        ]
+        sourceId 'gcfg'
+        order '12'
+        x '1280'
+        y '110'
+        w '263'
+        h '84'
+        ownership 'flex'
+      }
+    }
+
+    components_gwh = platform 'createHandler → buildHandler' {
+      #request-path
+      description 'one Lambda behind ANY /{proxy+}'
+      technology '@flex/service-gateway · Middy · aws-cdk-lib'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/handler/index.ts 'buildHandler'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/handler/middleware.ts 'middleware'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/create-service-gateway.ts 'CDK wiring'
+      metadata {
+        type 'Gateway handler factory'
+        tech '@flex/service-gateway · Middy · aws-cdk-lib'
+        role 'Builds the gateway Lambda: the route table, the middleware and the closure over the config and the caller\'s route handlers.'
+        facts [
+          'One <code>NodejsFunction</code> per gateway, wired to a single <code>ANY /gateways/{name}/{proxy+}</code> method on the private API with a 30-second timeout. The entire upstream surface sits behind that one method.',
+          'Its Middy stack is only <code>injectLambdaContext</code> with <code>clearState: true</code> — there is no error-handler middleware, so every error path runs through the handler\'s own catch.',
+          '<code>logger.setLogLevel("INFO")</code> is hard-coded: unlike a domain route, a gateway has no configurable log level.'
+        ]
+        sourceId 'gwh'
+        order '13'
+        x '1280'
+        y '220'
+        w '240'
+        h '84'
+        ownership 'flex'
+        resources [
+          'lambda-gw-dvla',
+          'lambda-gw-udp',
+          'lambda-gw-uns',
+          'api-routes-gateways'
+        ]
+      }
+    }
+
+    components_look = platform 'lookupRoute' {
+      #request-path
+      description 'strip the prefix, static then dynamic'
+      technology 'In-memory route table'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/utils/routes.ts 'routes.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/utils/request.ts 'request parsing'
+      metadata {
+        type 'Router'
+        tech 'In-memory route table'
+        role 'Turns the proxied path back into one of the gateway\'s declared route keys before anything else runs.'
+        facts [
+          '<code>/gateways/{name}</code> is stripped from the path first, then a static Map is tried by <code>METHOD path</code>, and only then the dynamic routes in declaration order, segment by segment.',
+          'An unmatched path and a matched route with no handler both return a 404 — which is exactly what a domain integration aimed at a route the gateway does not define receives.',
+          'A path with a trailing or duplicate slash fails the canonical-path check and is treated as unmatched.'
+        ]
+        sourceId 'look'
+        order '14'
+        x '1280'
+        y '330'
+        w '280'
+        h '84'
+        ownership 'flex'
+      }
+    }
+
+    components_gres = platform 'resolveResources' {
+      #request-path
+      description 'secrets only · Zod-parsed'
+      technology '@aws-lambda-powertools/parameters · Zod'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/utils/resources.ts 'resolveResources'
+      link https://github.com/govuk-once/flex/blob/main/platform/shared/src/createConsumerConfigLoader.ts 'the unused duplicate'
+      metadata {
+        type 'Resource resolution'
+        tech '@aws-lambda-powertools/parameters · Zod'
+        role 'Fetches and validates the gateway\'s consumer config on every invocation, before any client exists.'
+        facts [
+          'Only <code>secret</code> resources resolve. kms, role and ssm are filtered out — they exist to drive IAM grants at synth and their values never reach the running code.',
+          '<code>getSecret</code> is called with <code>maxAge: 600</code> and a JSON transform, so a warm container re-reads Secrets Manager at most every ten minutes and re-parses the result against the schema declared beside the resource.',
+          'A consumer config that stops matching its schema fails the request, not the deploy: the first invocation after the secret changes is the one that breaks.',
+          'The same pattern exists a second time as <code>createConsumerConfigLoader</code> in <code>platform/shared</code>, which nothing outside its own test imports.'
+        ]
+        sourceId 'gres'
+        order '15'
+        x '1280'
+        y '440'
+        w '200'
+        h '84'
+        ownership 'flex'
+      }
+    }
+
+    components_cli = platform 'clients(resources)' {
+      #request-path
+      description 'REST client built per invocation'
+      technology 'aws-sigv4-fetch · STS temporary credentials'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/client/adapter/rest.ts 'REST client'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/client/fetcher/build.ts 'fetcher selection'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/fetch/sigv4.ts 'SigV4 and the credential cache'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/utils/response.ts 'error mapping'
+      metadata {
+        type 'Client factory'
+        tech 'aws-sigv4-fetch · STS temporary credentials'
+        role 'The gateway\'s own module builds its upstream clients from the resolved config on every invocation; the route handler only ever sees the finished client.'
+        facts [
+          '<code>createRestClient</code> with <code>auth.type: "sigv4"</code> assumes the upstream\'s consumer role through STS. The credential provider is memoised in a module-level Map keyed by role ARN and external id, so warm invocations reuse credentials until five minutes before expiry instead of calling AssumeRole every time.',
+          '<code>createPublicFetch</code> is the alternative — plain fetch with <code>retryAttempts</code> defaulting to 3, the only default retry anywhere in the platform.',
+          'An upstream 5xx becomes a flat 502 naming the gateway; an upstream 4xx is passed through with its body. A response that fails the route\'s schema is also a 502.'
+        ]
+        sourceId 'cli'
+        order '16'
+        x '1280'
+        y '550'
+        w '247'
+        h '84'
+        ownership 'flex'
+      }
+    }
+  }
+
+  components_z_decl = boundary 'Declared in config · resolved per invocation' {
+    metadata {
+      type 'Resolution mechanisms'
+      tech '@flex/sdk'
+      role 'Two things a route declares by name and receives as a value: its resources and its feature flags.'
+      sourceId 'z-decl'
+      order '4'
+      x '18'
+      y '686'
+      w '818'
+      h '200'
+      boundary 'soft'
+    }
+
+    components_flags = platform 'Feature flags' {
+      #request-path
+      description 'four levels, one of them dead'
+      technology '@flex/sdk · getRouteFeatureFlags'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/resolve-config.ts 'getRouteFeatureFlags'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/lambda/flex-private-isolated-function.ts 'env vars a function actually gets'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/lambda.ts 'function config merge'
+      metadata {
+        type 'Runtime resolution'
+        tech '@flex/sdk · getRouteFeatureFlags'
+        role 'Resolves each flag a route lists into a boolean on ctx.featureFlags, once per invocation.'
+        facts [
+          'Order: <code>process.env[key]</code> equal to the string "true" or "false" wins; otherwise the flag is true if its <code>environments</code> list contains the current environment; otherwise its <code>default</code>; otherwise false.',
+          'Levels two and three are an OR rather than a fallback chain, so an <code>environments</code> list can switch a flag on for one stage but can never switch it off when <code>default</code> is true.',
+          '<b>The environment level does not work in a deployed Lambda.</b> The current environment is read from <code>process.env.STAGE</code>, and no Flex function construct sets STAGE — only FLEX_ENVIRONMENT — so it falls back to development in every stage, production included.',
+          'Nothing injects a flag override variable either: an override has to be written by hand into the route\'s or the domain\'s <code>function.environment</code> block.'
+        ]
+        sourceId 'flags'
+        order '17'
+        x '35'
+        y '730'
+        w '227'
+        h '118'
+        ownership 'flex'
+      }
+    }
+
+    components_res4 = platform 'Four resource types' {
+      #request-path
+      description 'kms · ssm | secret · ssm:runtime'
+      technology 'SSM Parameter Store · Secrets Manager · KMS · Middy'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/resolve-config.ts 'the four types'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/resources.ts 'import and grant at synth'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/middleware.ts 'runtime middlewares'
+      metadata {
+        type 'Resource resolution model'
+        tech 'SSM Parameter Store · Secrets Manager · KMS · Middy'
+        role 'The declaration looks identical for all four types; when the value materialises does not, and that split is what the isolated tier\'s endpoint list has to satisfy.'
+        facts [
+          'Deploy time: <code>ssm</code> puts the parameter\'s value straight into the env var and <code>kms</code> puts the key ARN there. Both are readable from <code>process.env</code> the moment the function starts.',
+          'Run time: <code>secret</code> puts the secret name into the env var and <code>ssm:runtime</code> puts the parameter name, and the Middy middlewares fetch the real value onto the Lambda context. That is why an isolated-tier function needs the Secrets Manager and SSM interface endpoints at all.',
+          'The env var name is the config key itself — declare <code>udpNotificationSecret</code> and the function gets an env var of that name — and the CDK grant is attached to that one route\'s role for that one resource.',
+          '<code>scope: "stage"</code> prefixes the parameter path with the stage name instead of the environment name, which is how an ephemeral stage reads its own private API URL.'
+        ]
+        sourceId 'res4'
+        order '18'
+        x '440'
+        y '730'
+        w '247'
+        h '118'
+        ownership 'flex'
+        resources [
+          'secrets',
+          'ssm-imported'
+        ]
+      }
+    }
+  }
+
+  components_z_obs = boundary 'Shared observability libraries' {
+    metadata {
+      type 'Libraries'
+      tech '@flex/telemetry · @flex/logging'
+      role 'The vocabulary every component emits and the logger it emits through.'
+      sourceId 'z-obs'
+      order '5'
+      x '854'
+      y '686'
+      w '845'
+      h '200'
+      boundary 'soft'
+    }
+
+    components_tel = platform '@flex/telemetry' {
+      #request-path
+      description '21 events in five groups, plus 3 for the edge'
+      technology 'Zod enum over a log line'
+      link https://github.com/govuk-once/flex/blob/main/libs/telemetry/src/events.ts 'the enum'
+      link https://github.com/govuk-once/flex/blob/main/libs/telemetry/src/cff.ts 'the CFF registry'
+      link https://github.com/govuk-once/flex/blob/main/libs/telemetry/src/telemetry.ts 'emitTelemetry'
+      metadata {
+        type 'Event taxonomy'
+        tech 'Zod enum over a log line'
+        role 'The closed vocabulary every component emits, and the layer you actually query when tracing a request through the platform.'
+        facts [
+          '<code>TelemetryEventSchema</code> is a closed Zod enum of 21 events in five groups — auth (6), domain (3), service gateway (4), third party (5) and general (3). Adding an event means editing the enum.',
+          'CloudFront Functions get their own three-event registry (<code>cff_token_validated</code>, <code>cff_token_missing</code>, <code>cff_token_invalid</code>) behind the separate <code>@flex/telemetry/cff</code> export, deliberately outside the Zod enum because zod will not fit in a CloudFront Function bundle.',
+          'An event is not a metric: <code>emitTelemetry</code> is a single <code>logger.info("telemetry", …)</code> call, so everything arrives as a log line rather than EMF. The CloudFront Function version writes the identical shape with <code>console.log</code>.',
+          'The two halves of one call are emitted by different components: the domain\'s invoker emits <code>service_gateway_request_sent</code> and the gateway Lambda emits <code>service_gateway_request_received</code>.'
+        ]
+        sourceId 'tel'
+        order '19'
+        x '871'
+        y '730'
+        w '334'
+        h '118'
+        ownership 'flex'
+      }
+    }
+
+    components_log = platform '@flex/logging' {
+      #request-path
+      description 'the logger everything else writes through'
+      technology '@aws-lambda-powertools/logger with a Flex formatter and sanitiser'
+      link https://github.com/govuk-once/flex/blob/main/libs/logging/src/logger.ts 'FlexLogger'
+      link https://github.com/govuk-once/flex/blob/main/libs/logging/src/index.ts 'exports'
+      metadata {
+        type 'Logging library'
+        tech '@aws-lambda-powertools/logger with a Flex formatter and sanitiser'
+        role 'One shared logger instance: structured JSON, a per-route service name, the correlation id from the edge, and a redacting JSON replacer.'
+        facts [
+          '<code>FlexLogger</code> overrides <code>setLogLevel</code> to return early when <code>FLEX_ENVIRONMENT</code> is production, so the level cannot be raised there at all.',
+          'The redacting replacer is installed at construction as <code>jsonReplacerFn</code>, which is why it applies to every log line rather than only to ones written through a helper. Retention and the redaction patterns themselves are covered under Resources ▸ Observability.'
+        ]
+        sourceId 'log'
+        order '20'
+        x '1298'
+        y '730'
+        w '307'
+        h '118'
+        ownership 'flex'
+        resources [
+          'loggroups'
+        ]
+      }
+    }
+  }
+
+  components_cfg -> components_fnp 'routes deployable in this stage' {
+    technology 'Module import at synth'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stack'
+    metadata {
+      protocol 'Module import at synth'
+      auth 'None — synth time'
+      carries 'The route table, filtered by the environments arrays'
+      facts [
+        'The CDK app imports the same <code>domain.config.ts</code> the Lambda will import, so no route list is written twice.'
+      ]
+      order '0'
+      edgeStyle 'dash'
+    }
+  }
+  components_fnp -> components_flat 'every route needs an entry file' {
+    technology 'Function call'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/routes.ts 'flattenRoutes'
+    metadata {
+      protocol 'Function call'
+      auth 'None — synth time'
+      carries 'version, path, method and gateway'
+      order '1'
+      edgeStyle 'dash'
+    }
+  }
+  components_flat -> components_ex 'toHandlerPath' {
+    technology 'String transformation'
+    metadata {
+      protocol 'String transformation'
+      auth 'None — synth time'
+      carries 'handlers/{version}/{path}/{method}{ext}'
+      order '2'
+      edgeStyle 'dash'
+    }
+  }
+  components_ex -> components_hnd 'the file the team must have written' {
+    technology 'Filesystem path'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/getEntry.ts 'getDomainEntry'
+    metadata {
+      protocol 'Filesystem path'
+      auth 'None — synth time'
+      carries 'the esbuild entry point'
+      facts [
+        'If the file is missing, <code>NodejsFunction</code> fails at synth — the route is never deployed half-wired.'
+      ]
+      order '3'
+      edgeStyle 'dash'
+    }
+  }
+  components_cfg -> components_typed 'the config\'s literal type' {
+    technology 'TypeScript generic inference'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/types.ts 'types.ts'
+    metadata {
+      protocol 'TypeScript generic inference'
+      auth 'None — compile time'
+      carries 'resource, integration, flag and environment keys'
+      order '4'
+      edgeStyle 'dash'
+    }
+  }
+  components_typed -> components_hnd 'typed route key and context' {
+    technology 'TypeScript'
+    metadata {
+      protocol 'TypeScript'
+      auth 'None — compile time'
+      carries 'the shape of ctx for this exact route'
+      order '5'
+      edgeStyle 'dash'
+    }
+  }
+  components_fnp -> components_rte 'invokes the module\'s exported handler' {
+    technology 'Lambda invocation'
+    metadata {
+      protocol 'Lambda invocation'
+      auth 'IAM — API Gateway service principal'
+      carries 'the API Gateway proxy event'
+      order '6'
+      edgeStyle 'dash'
+    }
+  }
+  components_rte -> components_middy 'wraps the core handler' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/middleware.ts 'configureMiddleware'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'the assembled middleware chain'
+      order '7'
+    }
+  }
+  components_middy -> components_integ 'first thing the core handler does' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/utils/cache.ts 'cache'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'the cached invoker map'
+      facts [
+        '<code>buildDomainIntegrations</code> is wrapped in <code>cache()</code>, so the signed fetcher and the invokers are built once per container.'
+      ]
+      order '8'
+    }
+  }
+  components_integ -> components_bctx 'typed invokers' {
+    technology 'In-process'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'ctx.integrations'
+      order '9'
+    }
+  }
+  components_bctx -> components_als 'the assembled store' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/store.ts 'store.ts'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'logger, auth, body, params, resources, flags, headers, integrations'
+      order '10'
+    }
+  }
+  components_als -> components_resp 'the handler returns' {
+    technology 'In-process'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries '{ status, data } or { status, error }'
+      order '11'
+    }
+  }
+  components_integ -> components_look 'SigV4 · ANY /gateways/{name}/{proxy+}' {
+    technology 'HTTPS over the private API'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/fetch/sigv4.ts 'signed fetcher'
+    link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/handler/index.ts 'prefix stripping'
+    metadata {
+      protocol 'HTTPS over the private API'
+      auth 'SigV4 with the route Lambda\'s own execution role'
+      carries 'The integration\'s base path plus any wildcard suffix'
+      facts [
+        'Signed with the calling Lambda\'s own credentials, not an assumed role — the assumed role appears one hop later, between the gateway and its upstream.',
+        'Single attempt: nothing on this path sets <code>retryAttempts</code>.'
+      ]
+      order '12'
+    }
+  }
+  components_hnd -> components_flags 'ctx.featureFlags.{key}' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/resolve-config.ts 'getRouteFeatureFlags'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'booleans, resolved per invocation'
+      order '13'
+    }
+  }
+  components_hnd -> components_res4 'ctx.resources.{key}' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/build-context.ts 'extractResources'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'strings — a value, an ARN or a fetched secret'
+      order '14'
+    }
+  }
+  components_gcfg -> components_gwh 'config plus the route handlers' {
+    technology 'In-process'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'the closure the Lambda exports'
+      order '15'
+    }
+  }
+  components_gwh -> components_look 'per invocation' {
+    technology 'In-process'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'method and the prefix-stripped path'
+      order '16'
+    }
+  }
+  components_look -> components_gres 'matched route' {
+    technology 'In-process'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'the route key, its schemas and the parsed request'
+      order '17'
+    }
+  }
+  components_gres -> components_cli 'parsed consumer config' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/src/gateway.ts 'clients factory'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries 'apiUrl, apiKey, consumer role ARN, region, external id'
+      facts [
+        'The client factory receives only resolved secrets, so a gateway handler never touches an ARN or an env var.'
+      ]
+      order '18'
+    }
+  }
+  components_resp -> components_tel 'domain_* events' {
+    technology 'Log line'
+    metadata {
+      protocol 'Log line'
+      auth 'None'
+      carries 'event name plus a small details object'
+      order '19'
+    }
+  }
+  components_cli -> components_tel 'third_party_* and service_gateway_* events' {
+    technology 'Log line'
+    link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/client/adapter/rest.ts 'rest client'
+    metadata {
+      protocol 'Log line'
+      auth 'None'
+      carries 'event name plus a small details object'
+      order '20'
+    }
+  }
+  components_tel -> components_log 'one logger.info line per event' {
+    technology 'In-process'
+    link https://github.com/govuk-once/flex/blob/main/libs/telemetry/src/telemetry.ts 'emitTelemetry'
+    metadata {
+      protocol 'In-process'
+      auth 'None'
+      carries '{ level, message, telemetry }'
+      order '21'
+    }
+  }
+}
+
+views {
+  view components {
+    title 'Components'
+    include components_z_author, components_z_author.**
+    include components_z_build, components_z_build.**
+    include components_z_sdk, components_z_sdk.**
+    include components_z_gw, components_z_gw.**
+    include components_z_decl, components_z_decl.**
+    include components_z_obs, components_z_obs.**
+  }
+}

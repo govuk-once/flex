@@ -1,0 +1,1121 @@
+// FLEX architecture — Containers.
+//
+// The model. Presentation that a LikeC4 view cannot hold — tab order, audience,
+// reference tables — is in views.json beside this file.
+
+model {
+
+  containers_edge = boundary 'Edge · us-east-1 (N. Virginia)' {
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      type 'Region boundary'
+      tech 'us-east-1 · FlexGlobalStack'
+      role 'Everything CloudFront insists on owning: the distribution, its two functions, the CLOUDFRONT-scope Web ACL, the certificate and the spec bucket.'
+      facts [
+        'The alarm actions in this region publish to us-east-1 relay topics, because a CloudWatch alarm cannot target a topic in another region. The relay itself is on the Delivery tab.'
+      ]
+      sourceId 'edge'
+      order '0'
+      x '240'
+      y '60'
+      w '400'
+      h '400'
+      boundary 'hard'
+    }
+
+    containers_cfd = platform 'CloudFront distribution' {
+      #request-path
+      description 'two behaviours'
+      technology 'CloudFront · TLS 1.2_2021 · PriceClass 100'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Container'
+        tech 'CloudFront · TLS 1.2_2021 · PriceClass 100'
+        role 'The single public entry point for the API. (Development also exposes an unauthenticated JWKS stub Function URL.)'
+        facts [
+          'Default behaviour: the API origin with caching disabled and ALL_VIEWER_EXCEPT_HOST_HEADER, plus the x-origin-verify header the origin demands.',
+          '/docs* behaviour: the spec bucket through Origin Access Control, caching optimised — the only cached behaviour on the distribution.',
+          '<b>Guarded by</b> a CLOUDFRONT-scope Web ACL — two managed rule groups, IP reputation, a 2000-per-IP rate limit and an end-to-end test bypass header — and by Shield Advanced, which is only created outside development.'
+        ]
+        sourceId 'cfd'
+        order '1'
+        x '264'
+        y '110'
+        w '193'
+        h '64'
+        ownership 'flex'
+        awsIcon 'cloudfront'
+        resources [
+          'cf-dist',
+          'cf-rhp',
+          'cf-oac',
+          'cf-monitor',
+          'cf-policies',
+          's3-cflogs',
+          'acm-cert',
+          'r53-record',
+          'waf-cf',
+          'shield'
+        ]
+      }
+    }
+
+    containers_cffplat = platform 'Viewer-request CFF' {
+      #request-path
+      description 'platform · JS 2.0'
+      technology 'CloudFront Function'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/viewer-request-cff-platform/src/handler.ts 'viewer-request-cff-platform/src/handler.ts'
+      metadata {
+        type 'Container'
+        tech 'CloudFront Function'
+        role 'Correlation ID and structural JWT validation at the edge.'
+        facts [
+          'Rejects a missing or structurally invalid token with a 401 before the origin is touched; the signature is checked for presence only, never verified.',
+          'Sets x-correlation-id on every request to the API behaviour, so every Lambda log line carries it. The /docs* behaviour runs a different function that does not; API Gateway access logs do not include it.'
+        ]
+        sourceId 'cffplat'
+        order '2'
+        x '264'
+        y '214'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 'cloudfront-functions'
+        resources [
+          'cff-platform'
+        ]
+      }
+    }
+
+    containers_cffdocs = platform 'Viewer-request CFF' {
+      #request-path
+      description 'docs · JS 2.0'
+      technology 'CloudFront Function'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/viewer-request-cff-docs/src/handler.ts 'viewer-request-cff-docs/src/handler.ts'
+      metadata {
+        type 'Container'
+        tech 'CloudFront Function'
+        role 'Rewrites /docs and /docs/ to the Swagger UI index.'
+        facts [
+          '/docs redirects 301 to /docs/, which rewrites to /docs/index.html. It touches no headers.'
+        ]
+        sourceId 'cffdocs'
+        order '3'
+        x '450'
+        y '214'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 'cloudfront-functions'
+        resources [
+          'cff-docs'
+        ]
+      }
+    }
+
+    containers_specs = platform 'OpenAPI spec bucket' {
+      #request-path
+      description 'S3 · OAC · versioned'
+      technology 'Amazon S3'
+      link https://github.com/govuk-once/flex/blob/main/scripts/generateOpenapi.ts 'scripts/generateOpenapi.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Container · data store'
+        tech 'Amazon S3'
+        role 'Swagger UI plus one generated OpenAPI 3.1 document per domain.'
+        facts [
+          'Deployed with prune:false, so specs for domains no longer generated are not deleted. The generator always emits all domains\' specs regardless of the deploy target.',
+          'Private: BlockPublicAccess.BLOCK_ALL, reachable only through the distribution\'s Origin Access Control.'
+        ]
+        sourceId 'specs'
+        order '4'
+        x '450'
+        y '396'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 's3'
+        resources [
+          's3-specs',
+          's3-speclogs'
+        ]
+      }
+    }
+  }
+
+  containers_ingress = boundary 'Ingress · eu-west-2 (London)' {
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+    metadata {
+      type 'Region boundary'
+      tech 'eu-west-2 · FlexPlatformStack'
+      role 'Where an origin request first meets FLEX-owned compute, and the only place a user\'s token is actually verified.'
+      sourceId 'ingress'
+      order '1'
+      x '670'
+      y '60'
+      w '300'
+      h '330'
+      boundary 'hard'
+    }
+
+    containers_pubapi = platform 'Public REST API' {
+      #request-path
+      description 'REGIONAL · stage prod'
+      technology 'API Gateway REST'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      metadata {
+        type 'Container'
+        tech 'API Gateway REST'
+        role 'Hosts /health and the /app tree every domain attaches to.'
+        facts [
+          '<b>Origin-locked by</b> a REGIONAL Web ACL whose default action is block — only a request carrying the x-origin-verify secret is allowed through, which is what makes the raw execute-api URL unusable.',
+          'Custom 401 and 403 gateway responses surface the authorizer\'s errorMessage to the caller.'
+        ]
+        sourceId 'pubapi'
+        order '5'
+        x '694'
+        y '110'
+        w '177'
+        h '60'
+        ownership 'flex'
+        awsIcon 'apigateway'
+        resources [
+          'api-public',
+          'api-stage-public',
+          'api-authorizer',
+          'api-routes-public',
+          'alarms-apigw',
+          'waf-regional'
+        ]
+      }
+    }
+
+    containers_authfn = platform 'Authorizer Lambda' {
+      #request-path
+      description 'egress subnets'
+      technology 'Lambda, Node 24 · private-with-egress'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/handler.ts 'platform/domains/auth/src/handler.ts'
+      metadata {
+        type 'Container'
+        tech 'Lambda, Node 24 · private-with-egress'
+        role 'TOKEN authorizer verifying the Cognito access token.'
+        facts [
+          'Returns a policy carrying pairwiseId in the authorizer context; on an allow the policy resource is <code>*</code>, not the invoked method ARN.',
+          'Emits one of six auth telemetry events on every decision. An expired token is the only denial that carries a message.'
+        ]
+        sourceId 'authfn'
+        order '6'
+        x '694'
+        y '196'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-auth',
+          'lambda-jwks'
+        ]
+      }
+    }
+
+    containers_cognito = internal 'Identity' {
+      #request-path
+      description 'GOV.UK Once · Cognito user pool'
+      technology 'Amazon Cognito user pool'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'Amazon Cognito user pool'
+        role 'Issues and signs the access tokens FLEX accepts.'
+        facts [
+          'A sibling GOV.UK Once system, not a third party. In development the authorizer is pointed at a stub user pool and at FLEX\'s own JWKS Function URL instead.'
+        ]
+        sourceId 'cognito'
+        order '7'
+        x '694'
+        y '286'
+        w '240'
+        h '54'
+        ownership 'govuk'
+        awsIcon 'cognito'
+      }
+    }
+  }
+
+  containers_domains = boundary 'Domains · eu-west-2 (London)' {
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    link https://github.com/govuk-once/flex/blob/main/domains/uns/domain.config.ts 'uns/domain.config.ts'
+    metadata {
+      type 'Region boundary'
+      tech 'eu-west-2 · one CloudFormation stack per domain'
+      role 'Business logic. One stack per domain, one Lambda per route, no shared runtime between them.'
+      facts [
+        'A domain team writes a domain.config.ts and handler files; the stack, the routes, the IAM and the alarms are generated from that config.',
+        'Domains are coupled at build time as well as at runtime: dvla, groups, uns and example all take a workspace dependency on @flex/udp-domain, and three of them import a udp Zod response schema straight into their own domain.config.ts — a udp schema change breaks them at compile time.'
+      ]
+      sourceId 'domains'
+      order '2'
+      x '1020'
+      y '60'
+      w '300'
+      h '495'
+      boundary 'hard'
+    }
+
+    containers_ddvla = platform 'dvla' {
+      #request-path
+      description '7 public · 1 private · egress tier'
+      technology 'private access · 30s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/dvla/domain.config.ts 'domains/dvla/domain.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/domains/dvla/src/services/authentication.ts 'dvla/src/services/authentication.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'private access · 30s timeout'
+        role 'Driving licence, vehicles, share codes, vehicle enquiry.'
+        facts [
+          'The only domain whose common.access is private, so its route functions sit in the egress tier and can reach NAT.',
+          '<b>Depends on udp</b>: six of its eight routes fetch the DVLA linking ID from udp\'s private identity route in parallel with a DVLA authenticate call (vehicle-enquiry needs only the token). Its other nine integrations all target the DVLA gateway.',
+          'development, staging and production, plus every ephemeral PR and personal stage.'
+        ]
+        sourceId 'ddvla'
+        order '8'
+        x '1044'
+        y '110'
+        w '260'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-dvla'
+        ]
+      }
+    }
+
+    containers_dudp = platform 'udp' {
+      #request-path
+      description '6 public · 2 private · isolated'
+      technology 'isolated access · 20s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/udp/domain.config.ts 'domains/udp/domain.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/domains/udp/src/utils/get-push-id.ts 'udp/src/utils/get-push-id.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'isolated access · 20s timeout'
+        role 'Identity links, user upsert, notification preferences.'
+        facts [
+          '<b>The hub of the domain graph</b>: dvla, uns, groups and example all call its private routes — GET /v1/users/push-id for three of them, GET /v1/identity/{service} for dvla.',
+          'Depends outward on the DVLA gateway for the well-known JWKS, and on the dvla domain\'s private unlink route — but only when the environment parameter reads production.',
+          'development, staging and production, plus every ephemeral PR and personal stage.'
+        ]
+        sourceId 'dudp'
+        order '9'
+        x '1044'
+        y '172'
+        w '240'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-udp'
+        ]
+      }
+    }
+
+    containers_duns = platform 'uns' {
+      #request-path
+      description '4 public · isolated'
+      technology 'isolated access · 30s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/uns/src/handlers/v1/notifications/get.ts 'uns/src/handlers/v1/notifications/get.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'isolated access · 30s timeout'
+        role 'Notification listing, read status and deletion.'
+        facts [
+          'Depends on udp only: all four routes fetch the push ID from udp\'s private route, then call the UNS gateway with it.',
+          'development, staging and production, plus every ephemeral PR and personal stage.'
+        ]
+        sourceId 'duns'
+        order '10'
+        x '1044'
+        y '234'
+        w '177'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-uns'
+        ]
+      }
+    }
+
+    containers_dgroups = platform 'groups' {
+      #request-path
+      description '2 public · isolated'
+      technology 'isolated access · 30s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/groups/src/handlers/v1/groups/post.ts 'groups/src/handlers/v1/groups/post.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'isolated access · 30s timeout'
+        role 'Group subscription read and update.'
+        facts [
+          '<b>An uncompensated dual write</b>: POST /v1/groups writes the UNS gateway, merges the result with the user\'s current UDP groups, then writes the UDP gateway. A UDP failure after a UNS success throws BadGateway and leaves the two systems of record divergent — no compensation, no idempotency key. It is the one place FLEX orchestrates a multi-system transaction.',
+          'Depends on udp (the private push-ID route plus two udp gateway routes) and on the uns gateway.',
+          'development and staging, plus every ephemeral PR and personal stage.'
+        ]
+        sourceId 'dgroups'
+        order '11'
+        x '1044'
+        y '296'
+        w '177'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-groups'
+        ]
+      }
+    }
+
+    containers_dex = platform 'example' {
+      #request-path
+      description '11 public · 2 private · isolated'
+      technology 'isolated access · 20s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/example/domain.config.ts 'domains/example/domain.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/deployment.ts 'utils/deployment.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'isolated access · 20s timeout'
+        role 'Reference domain demonstrating every SDK capability.'
+        facts [
+          'Exercises feature flags, all four resource types and both integration kinds, including one that calls its own private POST /v0/todos.',
+          'Depends on udp (the private push-ID route and two udp gateway routes) and on the uns gateway.',
+          'development, plus every ephemeral PR and personal stage — the environments list is only enforced for persistent stages.'
+        ]
+        sourceId 'dex'
+        order '12'
+        x '1044'
+        y '358'
+        w '247'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-example'
+        ]
+      }
+    }
+
+    containers_dlc = platform 'local-council' {
+      #request-path
+      description '2 private · isolated'
+      technology 'isolated access · 30s timeout'
+      link https://github.com/govuk-once/flex/blob/main/domains/local-council/domain.config.ts 'domains/local-council/domain.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/gateway.config.ts 'udp/gateway.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/validate-integrations.ts 'sdk/route/validate-integrations.ts'
+      metadata {
+        type 'Container group · one Lambda per route'
+        tech 'isolated access · 30s timeout'
+        role 'Local authority read and upsert.'
+        facts [
+          'Private-only, so its stack creates no authorizer and nothing reaches it from the public API — which is why it has no line from pubapi.',
+          '<b>Broken today</b>: both of its integrations name /v1/local-council routes on the udp gateway, which defines no such routes, so the gateway\'s own lookup returns 404. pnpm validate:integrations does not catch it — it only checks type: domain integrations.',
+          'development and staging, plus every ephemeral PR and personal stage.'
+        ]
+        sourceId 'dlc'
+        order '13'
+        x '1044'
+        y '420'
+        w '177'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-lc'
+        ]
+      }
+    }
+
+    containers_dtravel = platform 'travel' {
+      #request-path
+      description '2 routes · isolated'
+      technology 'FlexDomainStack · isolated tier'
+      link https://github.com/govuk-once/flex/blob/main/domains/travel/domain.config.ts 'routes, environments and integrations'
+      metadata {
+        type 'Domain stack'
+        tech 'FlexDomainStack · isolated tier'
+        role 'Countries and events for the travel feature.'
+        facts [
+          '<code>environments</code> is development and staging only, so it does not exist in production.',
+          'Both routes are public on <code>/app/travel/**</code> and reach the travel gateway over the private API.'
+        ]
+        sourceId 'dtravel'
+        order '21'
+        x '1044'
+        y '482'
+        w '177'
+        h '50'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-domain-travel'
+        ]
+      }
+    }
+  }
+
+  containers_internal = boundary 'Internal plane · eu-west-2 (London)' {
+    metadata {
+      type 'Soft grouping'
+      tech 'API Gateway PRIVATE + three gateway Lambdas'
+      role 'The only route from a domain to an upstream: a private API in front of the three functions that hold the credentials.'
+      facts [
+        'No domain function holds an upstream credential; the credential lives in the gateway function and the domain is only allowed to invoke the route ARNs its own config names.'
+      ]
+      sourceId 'internal'
+      order '3'
+      x '700'
+      y '620'
+      w '800'
+      h '232'
+      boundary 'hard'
+    }
+
+    containers_privapi = platform 'Private REST API' {
+      #request-path
+      description 'PRIVATE · IAM auth'
+      technology 'API Gateway REST'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      metadata {
+        type 'Container'
+        tech 'API Gateway REST'
+        role 'The internal routing plane: /health, /domains/** and /gateways/**.'
+        facts [
+          'Only reachable through the API Gateway interface endpoint — the resource policy denies every other source and adds no Allow, so the caller\'s own IAM policy is the sole gate.',
+          'AuthorizationType.IAM on every method, so every caller must SigV4-sign.',
+          'dataTraceEnabled is false, keeping internal request and response bodies out of the logs.'
+        ]
+        sourceId 'privapi'
+        order '14'
+        x '724'
+        y '670'
+        w '177'
+        h '60'
+        ownership 'flex'
+        awsIcon 'apigateway'
+        resources [
+          'api-private',
+          'api-stage-private',
+          'api-routes-private',
+          'api-routes-gateways'
+        ]
+      }
+    }
+
+    containers_gwdvla = platform 'DVLA service gateway' {
+      #request-path
+      description 'egress · 10 routes'
+      technology 'Lambda in the private-with-egress tier · 30s'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/dvla/src/gateway.ts 'dvla/src/gateway.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/service-gateway/src/handler/index.ts 'service-gateway/handler/index.ts'
+      metadata {
+        type 'Container'
+        tech 'Lambda in the private-with-egress tier · 30s'
+        role 'Sole holder of DVLA credentials.'
+        facts [
+          'Mounted at ANY /gateways/dvla/{proxy+}: its ten routes are matched inside the handler, not by API Gateway, so an unknown path returns the gateway\'s own 404.',
+          'In the egress tier because DVLA is reached over the internet through NAT.',
+          'Mints a fresh X-Correlation-Id per client build rather than propagating one — the chain has already ended at the private-API turn (see Request path).'
+        ]
+        sourceId 'gwdvla'
+        order '15'
+        x '724'
+        y '790'
+        w '180'
+        h '54'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-gw-dvla'
+        ]
+      }
+    }
+
+    containers_gwudp = platform 'UDP service gateway' {
+      #request-path
+      description 'isolated · 10 routes'
+      technology 'Lambda in the private-isolated tier · 30s'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/src/gateway.ts 'udp/src/gateway.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/gateway.config.ts 'udp/gateway.config.ts'
+      metadata {
+        type 'Container'
+        tech 'Lambda in the private-isolated tier · 30s'
+        role 'Sole holder of UDP credentials.'
+        facts [
+          'SigV4 with credentials from sts:AssumeRole, optionally carrying an ExternalId, plus an x-api-key header set per route.',
+          'No internet route — isolated subnets, no NAT. The UDP endpoint it dials comes from consumerConfig.apiUrl (not in this repo); reachability depends on that URL resolving through the API Gateway interface endpoint. Unlike UNS, the udp consumer-config schema has no privateApiUrl field at all.'
+        ]
+        sourceId 'gwudp'
+        order '16'
+        x '916'
+        y '790'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-gw-udp'
+        ]
+      }
+    }
+
+    containers_gwuns = platform 'UNS service gateway' {
+      #request-path
+      description 'isolated · 6 routes'
+      technology 'Lambda in the private-isolated tier · 30s'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/uns/src/gateway.ts 'uns/src/gateway.ts'
+      metadata {
+        type 'Container'
+        tech 'Lambda in the private-isolated tier · 30s'
+        role 'Sole holder of UNS credentials.'
+        facts [
+          'Dials consumerConfig.privateApiUrl with a SigV4-signed assumed role, with X-API-KEY set once on the client for every route.'
+        ]
+        sourceId 'gwuns'
+        order '17'
+        x '1108'
+        y '790'
+        w '177'
+        h '54'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-gw-uns'
+        ]
+      }
+    }
+
+    containers_gwtravel = platform 'Travel service gateway' {
+      #request-path
+      description '/gateways/travel/*'
+      technology 'NODEJS_24_X · egress tier'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/travel/gateway.config.ts 'access tier, environments and resources'
+      metadata {
+        type 'AWS::Lambda::Function'
+        tech 'NODEJS_24_X · egress tier'
+        role 'Sole holder of the travel upstream credentials.'
+        facts [
+          'Runs in the egress tier because it reaches DynamoDB and STS over the public AWS endpoints through NAT, which isolated subnets cannot route to.',
+          '<code>environments</code> is development and staging only.'
+        ]
+        sourceId 'gwtravel'
+        order '22'
+        x '1300'
+        y '790'
+        w '195'
+        h '54'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-gw-travel'
+        ]
+      }
+    }
+  }
+
+  containers_upstreams = boundary 'Upstreams' {
+    metadata {
+      type 'Soft grouping'
+      tech 'Systems of record'
+      role 'Every system FLEX brokers. All user state lives here.'
+      facts [
+        'FLEX owns no datastore: there is no database, queue or event bus in the repo — the only data store on this diagram is the spec bucket.'
+      ]
+      sourceId 'upstreams'
+      order '4'
+      x '700'
+      y '860'
+      w '800'
+      h '130'
+      boundary 'soft'
+    }
+
+    containers_xdvla = external 'DVLA' {
+      #request-path
+      description 'third party'
+      technology 'HTTPS via NAT'
+      metadata {
+        type 'Third-party system'
+        tech 'HTTPS via NAT'
+        role 'Licence, vehicle and share-code services.'
+        facts [
+          'The only upstream outside the GOV.UK Once boundary, and the only one reached over the public internet.'
+        ]
+        sourceId 'xdvla'
+        order '18'
+        x '724'
+        y '900'
+        w '177'
+        h '54'
+        ownership 'third'
+      }
+    }
+
+    containers_xudp = internal 'UDP' {
+      #request-path
+      description 'GOV.UK Once · shared'
+      technology 'AWS API, SigV4 + API key'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'AWS API, SigV4 + API key'
+        role 'Identity and preference store.'
+        facts [
+          'The gateway dials consumerConfig.apiUrl, and the udp consumer-config schema has no privateApiUrl field, so whether this hop stays inside AWS depends on what that URL resolves to.'
+        ]
+        sourceId 'xudp'
+        order '19'
+        x '916'
+        y '900'
+        w '180'
+        h '54'
+        ownership 'govuk'
+      }
+    }
+
+    containers_xuns = internal 'UNS' {
+      #request-path
+      description 'GOV.UK Once · private'
+      technology 'AWS API, SigV4 + API key'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'AWS API, SigV4 + API key'
+        role 'Notification and group store.'
+        facts [
+          'Its consumer config names a privateApiUrl, and that is the URL the UNS gateway dials.'
+        ]
+        sourceId 'xuns'
+        order '20'
+        x '1108'
+        y '900'
+        w '177'
+        h '54'
+        ownership 'govuk'
+      }
+    }
+
+    containers_xtravel = external 'Travel data store' {
+      #request-path
+      description 'DynamoDB · cross-account'
+      technology 'Amazon DynamoDB via assumed role'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/travel/gateway.config.ts 'the consumer config schema'
+      metadata {
+        type 'External'
+        tech 'Amazon DynamoDB via assumed role'
+        role 'The shared sources table and the event store.'
+        facts [
+          'Reached by assuming <code>roleArn</code> from the consumer-config secret — not an HTTP API like the other three upstreams.',
+          'The sources table holds every namespace, not only travel.'
+        ]
+        sourceId 'xtravel'
+        order '23'
+        x '1300'
+        y '900'
+        w '195'
+        h '54'
+        ownership 'third'
+        awsIcon 'dynamodb'
+      }
+    }
+  }
+
+  containers_app = internal 'GOV.UK App' {
+    #request-path
+    description 'GOV.UK Once · mobile'
+    technology 'Mobile client'
+    metadata {
+      type 'GOV.UK Once system'
+      tech 'Mobile client'
+      role 'Calls the public API through CloudFront.'
+      facts [
+        'The only real-user caller of the request path below; the smoke-test canary is the other production caller.'
+      ]
+      sourceId 'app'
+      order '0'
+      x '30'
+      y '114'
+      w '204'
+      h '56'
+      ownership 'govuk'
+    }
+  }
+
+  containers_app -> containers_cfd 'HTTPS + Bearer JWT' {
+    technology 'HTTPS to the CloudFront alias'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      protocol 'HTTPS to the CloudFront alias'
+      auth 'Cognito access token'
+      carries 'Every user request'
+      facts [
+        'The distribution\'s Web ACL and its viewer-request function both sit on this hop; the repo does not pin down which runs first, so neither does this diagram.'
+      ]
+      order '0'
+    }
+  }
+  containers_cfd -> containers_cffplat 'viewer-request' {
+    technology 'CloudFront Function trigger'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      protocol 'CloudFront Function trigger'
+      auth '—'
+      carries 'Mutable request headers'
+      facts [
+        'Associated with the default behaviour only — a /docs* request runs the docs function instead.'
+      ]
+      order '1'
+    }
+  }
+  containers_cfd -> containers_cffdocs 'viewer-request /docs*' {
+    technology 'CloudFront Function trigger'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      protocol 'CloudFront Function trigger'
+      auth '—'
+      carries 'URI rewriting only'
+      order '2'
+    }
+  }
+  containers_cfd -> containers_specs '/docs* origin · OAC' {
+    technology 'HTTPS to S3'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      protocol 'HTTPS to S3'
+      auth 'Origin Access Control'
+      carries 'Swagger UI and OpenAPI documents'
+      facts [
+        'The only cached behaviour on the distribution.'
+      ]
+      order '3'
+    }
+  }
+  containers_cfd -> containers_pubapi 'origin + x-origin-verify' {
+    technology 'HTTPS to execute-api, originPath /prod'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+    metadata {
+      protocol 'HTTPS to execute-api, originPath /prod'
+      auth 'Shared secret header'
+      carries 'The origin request'
+      facts [
+        'The secret is generated in eu-west-2 and replicated to us-east-1.',
+        'Without this header the regional Web ACL\'s default block applies.'
+      ]
+      order '4'
+    }
+  }
+  containers_pubapi -> containers_authfn 'TOKEN authorizer' {
+    technology 'Lambda invoke'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda invoke'
+      auth 'API Gateway service principal'
+      carries 'The Authorization header out; an IAM policy and pairwiseId back'
+      facts [
+        'resultsCacheTtl is never set, so API Gateway\'s five-minute default cache applies — and because the allow policy\'s resource is <code>*</code>, one cached allow covers every route.',
+        'Each domain stack with public routes creates its own TokenAuthorizer over this one shared function.'
+      ]
+      order '5'
+    }
+  }
+  containers_authfn -> containers_cognito 'JWKS' {
+    technology 'HTTPS over NAT'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+    metadata {
+      protocol 'HTTPS over NAT'
+      auth 'None — the JWKS is public'
+      carries 'Signing keys'
+      facts [
+        'There is no cognito-idp interface endpoint, so this call leaves the VPC through the NAT gateway. In development it points at the stub Function URL instead.'
+      ]
+      order '6'
+    }
+  }
+  containers_pubapi -> containers_ddvla 'AWS_PROXY' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries '7 public routes'
+      order '7'
+    }
+  }
+  containers_pubapi -> containers_dudp '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries '6 public routes'
+      order '8'
+    }
+  }
+  containers_pubapi -> containers_duns '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries '4 public routes'
+      order '9'
+    }
+  }
+  containers_pubapi -> containers_dgroups '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries '2 public routes'
+      order '10'
+    }
+  }
+  containers_pubapi -> containers_dex '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries '11 public routes'
+      facts [
+        'Development, plus every ephemeral PR and personal stage.'
+      ]
+      order '11'
+    }
+  }
+  containers_ddvla -> containers_privapi 'SigV4 out' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/integrations.ts 'utils/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4 with the route function\'s own role'
+      carries 'Nine DVLA gateway calls plus the udp linking-ID domain call'
+      facts [
+        'Each route function gets an inline policy naming only the route ARNs listed in that route\'s integrations array.'
+      ]
+      order '12'
+    }
+  }
+  containers_dudp -> containers_privapi '' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4'
+      carries 'UDP and DVLA gateway calls plus the DVLA unlink domain call out; two private routes in'
+      order '13'
+    }
+  }
+  containers_duns -> containers_privapi '' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4'
+      carries 'UNS gateway calls plus the UDP push-ID domain call'
+      order '14'
+    }
+  }
+  containers_dgroups -> containers_privapi '' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4'
+      carries 'UNS and UDP gateway calls plus the UDP push-ID domain call'
+      order '15'
+    }
+  }
+  containers_dlc -> containers_privapi '' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4'
+      carries 'Two udp gateway calls out; two private routes in'
+      facts [
+        'Both outbound calls name routes the udp gateway does not define.'
+      ]
+      order '16'
+    }
+  }
+  containers_dex -> containers_privapi '' {
+    technology 'HTTPS via the interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/route/integrations.ts 'sdk/route/integrations.ts'
+    metadata {
+      protocol 'HTTPS via the interface endpoint'
+      auth 'SigV4'
+      carries 'Gateway and domain integrations out; two private routes in'
+      facts [
+        'Includes a self-integration: example calls its own private POST /v0/todos.'
+      ]
+      order '17'
+    }
+  }
+  containers_privapi -> containers_ddvla 'private routes in' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'POST /v1/unlink, called by the udp domain'
+      order '18'
+    }
+  }
+  containers_privapi -> containers_dudp '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'GET /v1/users/push-id and GET /v1/identity/{service}'
+      order '19'
+    }
+  }
+  containers_privapi -> containers_dlc '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'GET and POST /v1/local-council/{id}'
+      facts [
+        'Declared and deployed, but no domain integrates with them.'
+      ]
+      order '20'
+    }
+  }
+  containers_privapi -> containers_dex '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'POST /v0/todos and GET /v0/identity/{service}'
+      order '21'
+    }
+  }
+  containers_privapi -> containers_gwdvla 'ANY /gateways/{name}/{proxy+}' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/create-service-gateway.ts 'utils/create-service-gateway.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'All ten DVLA gateway routes'
+      facts [
+        'One ANY {proxy+} method per gateway; the gateway function matches the path itself.'
+      ]
+      order '22'
+    }
+  }
+  containers_privapi -> containers_gwudp '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/create-service-gateway.ts 'utils/create-service-gateway.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'Identity, user, notification and group routes'
+      order '23'
+    }
+  }
+  containers_privapi -> containers_gwuns '' {
+    technology 'Lambda proxy integration'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/create-service-gateway.ts 'utils/create-service-gateway.ts'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'IAM'
+      carries 'Notification and group routes'
+      order '24'
+    }
+  }
+  containers_gwdvla -> containers_xdvla 'API key + bearer, via NAT' {
+    technology 'HTTPS over the public internet'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/dvla/src/gateway.ts 'dvla/src/gateway.ts'
+    metadata {
+      protocol 'HTTPS over the public internet'
+      auth 'X-API-KEY plus the id-token from a preceding /v1/authenticate call'
+      carries 'DVLA licence, vehicle and share-code operations'
+      facts [
+        'The only egress out of the VPC to a non-AWS destination. (The canary also reaches One Login and Firebase, but it runs outside the VPC.)'
+      ]
+      order '25'
+    }
+  }
+  containers_gwudp -> containers_xudp 'SigV4 assumed role' {
+    technology 'HTTPS to consumerConfig.apiUrl'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/src/gateway.ts 'udp/src/gateway.ts'
+    metadata {
+      protocol 'HTTPS to consumerConfig.apiUrl'
+      auth 'sts:AssumeRole then SigV4, plus an x-api-key header'
+      carries 'Identity, user, notification and group operations'
+      order '26'
+    }
+  }
+  containers_gwuns -> containers_xuns 'SigV4 assumed role' {
+    technology 'HTTPS to consumerConfig.privateApiUrl'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/uns/src/gateway.ts 'uns/src/gateway.ts'
+    metadata {
+      protocol 'HTTPS to consumerConfig.privateApiUrl'
+      auth 'sts:AssumeRole then SigV4, plus an X-API-KEY header'
+      carries 'Notification and group operations'
+      order '27'
+    }
+  }
+  containers_privapi -> containers_gwtravel 'SigV4 · /gateways/travel' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'IAM (SigV4)'
+      carries 'Gateway proxy requests'
+      facts [
+        'One catch-all method; the two routes are matched inside the gateway.'
+      ]
+      order '28'
+    }
+  }
+  containers_gwtravel -> containers_xtravel 'assumed role' {
+    technology 'AWS SDK over HTTPS'
+    metadata {
+      protocol 'AWS SDK over HTTPS'
+      auth 'STS AssumeRole'
+      carries 'DynamoDB reads'
+      facts [
+        'Egress through NAT — the public AWS endpoints are not reachable from isolated subnets.'
+      ]
+      order '29'
+    }
+  }
+  containers_dtravel -> containers_privapi 'SigV4' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'IAM (SigV4)'
+      carries 'Domain to gateway calls'
+      facts [
+        'The domain holds no upstream credentials of its own.'
+      ]
+      order '30'
+    }
+  }
+}
+
+views {
+  view containers {
+    title 'Containers'
+    include containers_edge, containers_edge.**
+    include containers_ingress, containers_ingress.**
+    include containers_domains, containers_domains.**
+    include containers_internal, containers_internal.**
+    include containers_upstreams, containers_upstreams.**
+    include containers_app, containers_app.**
+  }
+}
