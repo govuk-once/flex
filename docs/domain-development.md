@@ -530,6 +530,20 @@ const pushId = getNotificationId(); // throws
 
 > Route context is only accessible during handler execution. Any attempt to call it outside a route's execution context will throw an error. See [AsyncLocalStorage](https://nodejs.org/docs/latest-v24.x/api/async_context.html#asynclocalstoragegetstore)
 
+#### Error Responses
+
+Every error the platform returns uses a single JSON contract (`ErrorResponse` in `@flex/utils`):
+
+```jsonc
+{
+  "message": "string",
+  "type": "auth_error | validation_error | client_error | server_error",
+  "errors": [{ "field": "query.page", "message": "Expected number" }] // optional
+}
+```
+
+Authentication failures (from the CloudFront Function or the Lambda authorizer) always return `{ "message": "Unauthorized", "type": "auth_error" }`, identical for every reason, so the response cannot reveal why auth failed. Request validation failures return `type: "validation_error"` with an `errors` array. You do not build these bodies yourself — the SDK produces them when validation throws or a handler throws an `http-errors` error. See the [SDK error response contract](/libs/sdk/README.md#error-response-contract).
+
 ---
 
 ## Testing

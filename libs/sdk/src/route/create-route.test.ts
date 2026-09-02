@@ -2,6 +2,7 @@ import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
 import type { HttpMethod, LogLevel } from "@flex/utils";
 import { HeaderValidationError, RequestBodyParseError } from "@flex/utils";
+import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
@@ -36,7 +37,8 @@ vi.mock("./resolve-config", () => ({
   getRouteIntegrations: vi.fn(),
   getRouteFeatureFlags: vi.fn(),
 }));
-vi.mock("./response", () => ({
+vi.mock("./response", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./response")>()),
   toApiGatewayResponse: vi.fn(),
   validateHandlerResponse: vi.fn(),
 }));
@@ -451,7 +453,9 @@ describe("createRouteHandler", () => {
   });
 
   describe("Error Handling", () => {
-    it("returns 400 with missing headers when header validation failed", async () => {
+    it("returns 400 with missing headers when header validation failed", async ({
+      sdk,
+    }) => {
       const error = new HeaderValidationError(["x-required"]);
 
       mockHandlerFn.mockRejectedValue(error);
@@ -462,17 +466,22 @@ describe("createRouteHandler", () => {
         "Missing required headers",
         { headers: ["x-required"] },
       );
-      expect(result).toStrictEqual({
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: error.message,
-          headers: ["x-required"],
+      expect(result).toStrictEqual(
+        sdk.result(400, {
+          body: {
+            message: error.message,
+            type: "validation_error",
+            errors: [
+              { field: "x-required", message: "Required header missing" },
+            ],
+          },
         }),
-      });
+      );
     });
 
-    it("returns 400 with error message when body validation failed", async () => {
+    it("returns 400 with error message when body validation failed", async ({
+      sdk,
+    }) => {
       const error = new RequestBodyParseError("Test error message");
 
       mockHandlerFn.mockRejectedValue(error);
@@ -483,12 +492,58 @@ describe("createRouteHandler", () => {
         "Invalid request body",
         { message: error.message },
       );
-      expect(result).toStrictEqual({
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: error.message }),
-      });
+      expect(result).toStrictEqual(
+        sdk.result(400, {
+          body: { message: error.message, type: "validation_error" },
+        }),
+      );
     });
+
+    it.for([
+      {
+        reason: "a 4xx exposes its message",
+        error: new createHttpError.NotFound("Widget missing"),
+        level: "warn" as const,
+        statusCode: 404,
+        expectedMessage: "Widget missing",
+        expectedType: "client_error",
+      },
+      {
+        reason: "a 401 is typed as an auth error",
+        error: new createHttpError.Unauthorized(),
+        level: "warn" as const,
+        statusCode: 401,
+        expectedMessage: "Unauthorized",
+        expectedType: "auth_error",
+      },
+      {
+        reason: "a 5xx hides its message",
+        error: new createHttpError.BadGateway("upstream exploded"),
+        level: "error" as const,
+        statusCode: 502,
+        expectedMessage: "Internal server error",
+        expectedType: "server_error",
+      },
+    ])(
+      "returns the error contract when $reason",
+      async (
+        { error, level, statusCode, expectedMessage, expectedType },
+        { sdk },
+      ) => {
+        mockHandlerFn.mockRejectedValue(error);
+
+        const result = await invokeRoute();
+
+        expect(logger[level]).toHaveBeenCalledExactlyOnceWith(error.message, {
+          statusCode,
+        });
+        expect(result).toStrictEqual(
+          sdk.result(statusCode, {
+            body: { message: expectedMessage, type: expectedType },
+          }),
+        );
+      },
+    );
 
     it("re-throws unhandled errors", async () => {
       mockHandlerFn.mockRejectedValue(new Error("Unexpected error"));
