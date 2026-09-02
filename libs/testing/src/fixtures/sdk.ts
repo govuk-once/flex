@@ -1,11 +1,12 @@
 import type { DeepPartial, QueryParams, UserId } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
 import type {
+  APIGatewayProxyResult,
   APIGatewayProxyWithLambdaAuthorizerEvent,
   Context,
 } from "aws-lambda";
 
-import { createFixtureVariants } from "../utils/fixtures";
+import { createFixtureBuilder, createFixtureVariants } from "../utils/fixtures";
 import { buildLambdaContext } from "./lambda";
 import { createUserId } from "./user";
 
@@ -153,7 +154,43 @@ export function createSdkContext() {
 
 export type SdkContextFactory = ReturnType<typeof createSdkContext>;
 
+// ----------------------------------------------------------------------------
+// Result
+// ----------------------------------------------------------------------------
+
+export type SdkResult = APIGatewayProxyResult;
+
+const baseSdkResult: SdkResult = {
+  statusCode: 200,
+  headers: { "Content-Type": "application/json" },
+  body: "",
+};
+
+const sdkResultBuilder = createFixtureBuilder(baseSdkResult);
+
+interface SdkResultOptions extends Omit<
+  Partial<SdkResult>,
+  "body" | "statusCode"
+> {
+  body?: unknown;
+}
+
+export function buildSdkResult(
+  statusCode: number,
+  { body, headers, ...overrides }: SdkResultOptions = {},
+) {
+  return sdkResultBuilder({
+    statusCode,
+    headers: { ...headers },
+    ...(body !== undefined && { body: JSON.stringify(body) }),
+    ...overrides,
+  });
+}
+
+export type SdkResultFactory = typeof buildSdkResult;
+
 export interface SdkFixture {
   event: SdkEventFactory;
   context: SdkContextFactory;
+  result: SdkResultFactory;
 }
