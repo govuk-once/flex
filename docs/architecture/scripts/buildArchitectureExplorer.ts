@@ -63,7 +63,8 @@ const SERVICE_ICON: Record<string, string> = {
   Chatbot: "chatbot",
   IAM: "iam",
   KMS: "kms",
-  SecretsManager: "secretsmanager",
+  // A service-name-to-icon mapping, not a credential; the keyword scanner cannot tell.
+  SecretsManager: "secretsmanager", // pragma: allowlist secret
   Shield: "shield",
   WAFv2: "waf",
   CertificateManager: "acm",
