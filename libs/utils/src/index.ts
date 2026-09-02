@@ -12,6 +12,21 @@ export {
   RequestBodyParseError,
 } from "./errors";
 export { assertNever } from "./errors/assert";
+export type {
+  ErrorDetail,
+  ErrorResponse,
+  ErrorType,
+} from "./errors/error-response";
+export {
+  buildErrorResponse,
+  ErrorDetailSchema,
+  ErrorResponseSchema,
+  errorTypeForStatus,
+  ErrorTypeSchema,
+  headersToErrorDetails,
+  toErrorResponseBody,
+  zodIssuesToErrorDetails,
+} from "./errors/error-response";
 export { isClientError, isServerError } from "./errors/status";
 export { getHeader } from "./http/getHeader";
 export type { QueryParams } from "./http/query-params";
