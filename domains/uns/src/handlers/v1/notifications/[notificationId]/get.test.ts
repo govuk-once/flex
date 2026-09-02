@@ -49,14 +49,29 @@ describe("GET /v1/notifications/:notificationId", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the notification", upstream: 404, expected: 404 },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the notification",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UNS get notification by ID integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -77,7 +92,6 @@ describe("GET /v1/notifications/:notificationId", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

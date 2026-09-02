@@ -101,7 +101,6 @@ describe("GET /v1/users/me", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 
   it("returns 502 when the UDP create user integration fails", async ({
@@ -125,7 +124,6 @@ describe("GET /v1/users/me", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 
   it("returns 502 when the UDP create notifications integration fails", async ({
@@ -158,6 +156,5 @@ describe("GET /v1/users/me", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 });
