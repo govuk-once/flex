@@ -1,12 +1,14 @@
 import { logger } from "@flex/logging";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
+  buildErrorResponse,
+  headersToErrorDetails,
   HeaderValidationError,
-  isClientError,
   isServerError,
   jsonResponse,
   QueryParametersParseError,
   RequestBodyParseError,
+  toErrorResponseBody,
 } from "@flex/utils";
 import type { APIGatewayProxyResultV2 } from "aws-lambda";
 import createHttpError from "http-errors";
@@ -29,15 +31,18 @@ export function toDownstreamErrorResponse(
       upstreamStatus: status,
     });
 
-    return jsonResponse(502, { message: errorMessage });
+    return jsonResponse(502, buildErrorResponse("server_error", errorMessage));
   }
 
   emitTelemetry(TelemetryEvent.service_gateway_error_returned, { status });
 
-  return jsonResponse(status, {
-    message,
-    ...(isClientError(status) && body !== undefined ? { error: body } : {}),
-  });
+  const extras = body && typeof body === "object" ? body : {};
+  const flat = toErrorResponseBody(status, { ...extras, message });
+
+  return jsonResponse(
+    status,
+    body !== undefined ? { ...flat, error: body } : flat,
+  );
 }
 
 export function toGatewayErrorResponse(
@@ -56,7 +61,14 @@ export function toGatewayErrorResponse(
     });
     emitGatewayError(statusCode);
 
-    return jsonResponse(statusCode, { message, headers });
+    return jsonResponse(
+      statusCode,
+      buildErrorResponse(
+        "validation_error",
+        message,
+        headersToErrorDetails(headers),
+      ),
+    );
   }
 
   if (error instanceof QueryParametersParseError) {
@@ -66,7 +78,10 @@ export function toGatewayErrorResponse(
     emitTelemetry(TelemetryEvent.request_validation_failed, { part: "query" });
     emitGatewayError(statusCode);
 
-    return jsonResponse(statusCode, { message, errors });
+    return jsonResponse(
+      statusCode,
+      buildErrorResponse("validation_error", message, errors),
+    );
   }
 
   if (error instanceof RequestBodyParseError) {
@@ -76,18 +91,24 @@ export function toGatewayErrorResponse(
     emitTelemetry(TelemetryEvent.request_validation_failed, { part: "body" });
     emitGatewayError(statusCode);
 
-    return jsonResponse(statusCode, { message });
+    return jsonResponse(
+      statusCode,
+      buildErrorResponse("validation_error", message),
+    );
   }
 
   if (createHttpError.isHttpError(error)) {
-    const { message, statusCode } = error;
+    const { expose, message, statusCode } = error;
 
     const logLevel = isServerError(statusCode) ? "error" : "warn";
 
     logger[logLevel](message, { statusCode });
     emitGatewayError(statusCode);
 
-    return jsonResponse(statusCode, { message });
+    return jsonResponse(
+      statusCode,
+      toErrorResponseBody(statusCode, expose ? { message } : undefined),
+    );
   }
 
   logger.error("Internal server error", { error });
@@ -96,5 +117,8 @@ export function toGatewayErrorResponse(
   });
   emitGatewayError(500);
 
-  return jsonResponse(500, { message: "Internal server error" });
+  return jsonResponse(
+    500,
+    buildErrorResponse("server_error", "Internal server error"),
+  );
 }

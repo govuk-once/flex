@@ -93,7 +93,9 @@ describe("Travel Service Gateway", () => {
     );
 
     expect(result).toStrictEqual(
-      platform.gatewayResult(404, { body: { message: "Route not found" } }),
+      platform.gatewayResult(404, {
+        body: { message: "Route not found", type: "client_error" },
+      }),
     );
   });
 
@@ -219,7 +221,10 @@ describe("Travel Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(502, {
-          body: { message: "TRAVEL upstream service unavailable" },
+          body: {
+            message: "TRAVEL upstream service unavailable",
+            type: "server_error",
+          },
         }),
       );
     });
@@ -327,7 +332,10 @@ describe("Travel Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(502, {
-          body: { message: "TRAVEL upstream service unavailable" },
+          body: {
+            message: "TRAVEL upstream service unavailable",
+            type: "server_error",
+          },
         }),
       );
     });
