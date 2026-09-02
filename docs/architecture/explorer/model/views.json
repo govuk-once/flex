@@ -1,0 +1,1006 @@
+{
+  "context": {
+    "name": "Context",
+    "order": 1,
+    "group": "Architecture",
+    "audience": "Anyone new to FLEX, including non-engineers",
+    "blurb": "FLEX inside GOV.UK Once: the people it serves, its sibling systems, and the one organisation outside the boundary its request handling exchanges data with. C4 level 1 — runtime only.",
+    "note": "6 domains · 3 service gateways · 2 shared APIs · 277+ AWS resources in production",
+    "w": 1400,
+    "h": 620
+  },
+  "request": {
+    "name": "Request path",
+    "order": 2,
+    "group": "Architecture",
+    "audience": "On-call, and anyone tracing a live request",
+    "blurb": "Every hop a single public request takes, numbered in reading order, and what each one checks. The turn at hop 7 is where the request leaves the public plane and re-enters FLEX through the private API.",
+    "note": "Hops 2a and 2b both act on the viewer request at the edge — nothing in this repository fixes which of them runs first, so they are drawn side by side rather than in sequence. Hops 9a and 9b are alternatives, and one request may make several of them, in sequence or in parallel. Everything from hop 6 onwards runs inside the VPC; the tiers themselves live on the Network tab.",
+    "tables": [
+      {
+        "name": "Retry and failure semantics",
+        "note": "Retries are opt-in and nothing on the internal path opts in, so every domain to private-API to gateway call is single-attempt.",
+        "code": [
+          ["flexFetch", "libs/sdk/src/fetch/fetch.ts"],
+          [
+            "createPublicFetch",
+            "libs/service-gateway/src/client/fetcher/public.ts"
+          ]
+        ],
+        "cols": ["Layer", "Default retries", "Configurable where"],
+        "rows": [
+          [
+            "<code>flexFetch</code>",
+            "0 — one attempt",
+            "<code>retryAttempts</code> per integration or per call, capped at 6"
+          ],
+          [
+            "Backoff delay",
+            "up to 1000 ms, full jitter",
+            "<code>maxRetryDelay</code> per integration or per call, clamped to 10–1000 ms"
+          ],
+          [
+            "Domain to private API",
+            "<b>none</b>",
+            "not configurable — <code>retryAttempts</code> is not in the integration schema"
+          ],
+          [
+            "Gateway to third party",
+            "3, via <code>createPublicFetch</code>",
+            "only the DVLA gateway uses the public fetcher"
+          ],
+          ["API Gateway to Lambda", "none", "—"]
+        ]
+      }
+    ],
+    "w": 1560,
+    "h": 660
+  },
+  "containers": {
+    "name": "Containers",
+    "order": 3,
+    "group": "Architecture",
+    "audience": "Platform engineers, and anyone reviewing a change",
+    "blurb": "Every separately deployable or storable part of the runtime request path, and the traffic between them. Build, deploy and alerting machinery lives on the Delivery tab. C4 level 2.",
+    "note": "Web ACLs, Shield and the VPC are not containers — they are policy and network attached to the boxes below, so each one's effect is a fact on the container it guards and an entry in that container's resource list. Note what is absent: FLEX owns no datastore, no queue and no event bus, so every user request is a synchronous fan-out that has to finish inside a 20 to 30 second Lambda timeout.",
+    "tables": [
+      {
+        "name": "The three Lambda access tiers",
+        "note": "All three share the rest: <code>NODEJS_24_X</code>, <code>Tracing.ACTIVE</code>, a 10-second default timeout, a log group at one year, <code>environmentEncryption</code> from <code>resolveEncryptionKey()</code> with <code>grantDecrypt</code> to the function, <code>FLEX_ENVIRONMENT</code> set to the stage, and a <code>ResourceOwner</code> tag at priority 200 when the function belongs to a domain. A route picks its tier with <code>access</code>; <code>isolated</code> is the default. Source: <code>constructs/lambda/flex-*-function.ts</code>.",
+        "code": [
+          [
+            "flex-public-function.ts",
+            "platform/infra/flex/src/constructs/lambda/flex-public-function.ts"
+          ],
+          [
+            "flex-private-egress-function.ts",
+            "platform/infra/flex/src/constructs/lambda/flex-private-egress-function.ts"
+          ],
+          [
+            "flex-private-isolated-function.ts",
+            "platform/infra/flex/src/constructs/lambda/flex-private-isolated-function.ts"
+          ]
+        ],
+        "cols": [
+          "",
+          "<code>public</code>",
+          "<code>private</code>",
+          "<code>isolated</code>"
+        ],
+        "rows": [
+          [
+            "Construct",
+            "<code>FlexPublicFunction</code>",
+            "<code>FlexPrivateEgressFunction</code>",
+            "<code>FlexPrivateIsolatedFunction</code>"
+          ],
+          ["In the VPC", "No", "Yes", "Yes"],
+          [
+            "Subnets",
+            "—",
+            "<code>PRIVATE_WITH_EGRESS</code>",
+            "<code>PRIVATE_ISOLATED</code>"
+          ],
+          [
+            "Security group",
+            "—",
+            "<code>privateEgressSg</code>",
+            "<code>privateIsolatedSg</code>"
+          ],
+          [
+            "Route to the internet",
+            "Direct, outside the VPC",
+            "Through the NAT gateways",
+            "None"
+          ],
+          [
+            "Default alarms",
+            "On, <code>enableDefaultAlarms</code> can turn them off",
+            "On, <code>enableDefaultAlarms</code> can turn them off",
+            "On, and there is no prop to turn them off"
+          ],
+          [
+            "Alarm construct id",
+            "<code>{id}Alarm</code>",
+            "<code>Alarm</code> — a fixed string",
+            "<code>{id}Alarm</code>"
+          ]
+        ]
+      }
+    ],
+    "w": 1520,
+    "h": 1030
+  },
+  "components": {
+    "name": "Components",
+    "order": 4,
+    "group": "Architecture",
+    "audience": "Domain teams — this is the part you write",
+    "blurb": "C4 level 3: what a domain team actually writes, and what the platform's own libraries do with it. Every box here is FLEX code — this is the product the platform ships to its domain teams.",
+    "note": "Two files ship a route: domains/{name}/domain.config.ts and one handler file whose path toHandlerPath derives from the route key. Route counts live on Resources, log retention and redaction patterns under Resources ▸ Observability, and the private API's access model on Resources, API layer (api-private).",
+    "tables": [
+      {
+        "name": "Route key grammar",
+        "note": "One string drives file layout, the API path, IAM ARNs, the OpenAPI document and the handler's TypeScript type. Example: <code>GET /v1/customer/vehicle/:id [private]</code>",
+        "code": [
+          ["routes.ts", "platform/infra/flex/src/utils/routes.ts"],
+          ["types.ts", "libs/sdk/src/types.ts"],
+          ["generateOpenapi.ts", "scripts/generateOpenapi.ts"]
+        ],
+        "cols": ["Derivation", "Result", "Produced by"],
+        "rows": [
+          [
+            "Handler file",
+            "<code>src/handlers/v1/customer/vehicle/[id]/get.private.ts</code>",
+            "<code>toHandlerPath()</code>"
+          ],
+          [
+            "API Gateway resource",
+            "<code>/domains/{domain}/v1/customer/vehicle/{id}</code>",
+            "FlexDomainStack — <code>:param</code> becomes <code>{param}</code>"
+          ],
+          [
+            "Lambda function id",
+            "<code>{Domain}Private V1 {RouteName}</code>, Pascal case",
+            "<code>toPascalCase()</code>"
+          ],
+          [
+            "CloudWatch service name",
+            "<code>{domain}-private-v1-{routeName}</code>",
+            "<code>logger.setServiceName()</code>"
+          ],
+          [
+            "OpenAPI path",
+            "<code>/customer/vehicle/{id}</code>",
+            "<code>scripts/generateOpenapi.ts</code>"
+          ],
+          [
+            "Handler context type",
+            "<code>pathParams: { id: string }</code>, and no <code>auth</code> unless the route declares it",
+            "<code>ExtractPathParams</code> / <code>RouteContext</code>"
+          ]
+        ]
+      },
+      {
+        "name": "What a thrown error becomes",
+        "note": "The error contract. Everything a handler can throw resolves to a deterministic status and telemetry event.",
+        "code": [
+          ["errors", "libs/utils/src/errors/index.ts"],
+          ["response.ts", "libs/service-gateway/src/utils/response.ts"],
+          ["create-route.ts", "libs/sdk/src/route/create-route.ts"]
+        ],
+        "cols": ["Thrown", "Status", "Body", "Telemetry"],
+        "rows": [
+          [
+            "<code>HeaderValidationError</code>",
+            "the error's <code>statusCode</code>",
+            "<code>{ message, headers }</code>",
+            "<code>request_validation_failed</code> (part: headers)"
+          ],
+          [
+            "<code>RequestBodyParseError</code>",
+            "the error's <code>statusCode</code>",
+            "<code>{ message }</code>",
+            "<code>request_validation_failed</code> (part: body)"
+          ],
+          [
+            "<code>QueryParametersParseError</code>",
+            "the error's <code>statusCode</code>",
+            "<code>{ message, errors }</code>",
+            "<code>request_validation_failed</code> (part: query)"
+          ],
+          [
+            "<code>AuthorizationError</code>",
+            "the error's <code>statusCode</code>",
+            "<code>{ message }</code>",
+            "<code>domain_error_returned</code>"
+          ],
+          [
+            "any <code>http-errors</code> error",
+            "the error's <code>statusCode</code>",
+            "empty",
+            "<code>domain_error_returned</code>; logged at error for 5xx, warn otherwise"
+          ],
+          [
+            "anything else",
+            "re-thrown to Middy's <code>httpErrorHandler</code> — 500",
+            "—",
+            "<code>error_thrown</code> + <code>domain_error_returned</code>"
+          ],
+          [
+            "response fails its schema",
+            "<b>500</b> — the handler's payload is discarded",
+            "—",
+            "<code>response_validation_failed</code>"
+          ]
+        ]
+      },
+      {
+        "name": "Wildcard integrations",
+        "note": "A <code>route</code> ending in <code>/*</code> changes both the call signature and the IAM grant.",
+        "code": [
+          ["integrations.ts", "platform/infra/flex/src/utils/integrations.ts"],
+          ["route integrations", "libs/sdk/src/route/integrations.ts"]
+        ],
+        "cols": [
+          "",
+          "Exact — <code>GET /v1/customer/vehicles</code>",
+          "Wildcard — <code>GET /v1/identity/*</code>"
+        ],
+        "rows": [
+          [
+            "Invoker argument",
+            "<code>{ headers?, query?, retryAttempts?, maxRetryDelay? }</code>",
+            "the same, <b>plus a required <code>path</code></b> appended to the base path"
+          ],
+          [
+            "Body typing",
+            "from the declared <code>body</code> schema",
+            "caller-supplied generic"
+          ],
+          [
+            "IAM resource",
+            "the ARN for that exact path",
+            "the ARN for the path prefix"
+          ]
+        ]
+      }
+    ],
+    "w": 1716,
+    "h": 902
+  },
+  "network": {
+    "name": "Network",
+    "order": 5,
+    "group": "Cross-cutting",
+    "audience": "Platform engineers, and network or security review",
+    "blurb": "One VPC per persistent environment: three subnet tiers, six interface endpoints, and the two paths that actually reach the public internet.",
+    "note": "Ephemeral PR and personal stages build no network of their own. They import the development environment's nine subnet IDs, both security groups and the API Gateway endpoint ID through <code>addExternalExports</code>, so everything drawn inside the VPC is shared with development.",
+    "tables": [
+      {
+        "name": "Address plan",
+        "code": [["vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]],
+        "cols": [
+          "Tier",
+          "Mask",
+          "Subnets",
+          "Usable IPs each",
+          "Route to internet",
+          "What runs there"
+        ],
+        "rows": [
+          [
+            "Public",
+            "/24",
+            "3 · one per AZ",
+            "251",
+            "Internet gateway",
+            "NAT gateways only — no workloads"
+          ],
+          [
+            "Private with egress",
+            "/19",
+            "3 · one per AZ",
+            "8,187",
+            "Via the NAT gateway in the same AZ",
+            "<code>access: private</code> — authorizer, DVLA gateway, all 8 dvla domain routes, and the six endpoint ENIs"
+          ],
+          [
+            "Private isolated",
+            "/19",
+            "3 · one per AZ",
+            "8,187",
+            "None",
+            "<code>access: isolated</code> — UDP and UNS gateways plus every other domain's routes"
+          ]
+        ]
+      },
+      {
+        "name": "Network ACLs · subnet-level, stateless, first match wins in ascending rule order",
+        "code": [["vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"]],
+        "cols": [
+          "Rule",
+          "Direction",
+          "Traffic",
+          "CIDR",
+          "Action",
+          "Public",
+          "Egress",
+          "Isolated"
+        ],
+        "rows": [
+          ["80", "Egress", "All traffic", "VPC CIDR", "Allow", "✓", "✓", "✓"],
+          ["80", "Ingress", "All traffic", "VPC CIDR", "Allow", "✓", "✓", "✓"],
+          [
+            "90",
+            "Ingress",
+            "TCP 0–1023",
+            "0.0.0.0/0",
+            "<b>Deny</b>",
+            "✓",
+            "✓",
+            "✓"
+          ],
+          [
+            "91",
+            "Ingress",
+            "UDP 0–1023",
+            "0.0.0.0/0",
+            "<b>Deny</b>",
+            "✓",
+            "✓",
+            "✓"
+          ],
+          [
+            "92",
+            "Ingress",
+            "TCP 3389 (RDP)",
+            "0.0.0.0/0",
+            "<b>Deny</b>",
+            "✓",
+            "✓",
+            "✓"
+          ],
+          [
+            "200",
+            "Ingress",
+            "TCP 1024–65535",
+            "0.0.0.0/0",
+            "Allow",
+            "✓",
+            "✓",
+            "—"
+          ],
+          [
+            "210",
+            "Ingress",
+            "UDP 1024–65535",
+            "0.0.0.0/0",
+            "Allow",
+            "✓",
+            "✓",
+            "—"
+          ],
+          [
+            "32000",
+            "Egress",
+            "All traffic",
+            "0.0.0.0/0",
+            "Allow",
+            "✓",
+            "✓",
+            "—"
+          ],
+          [
+            "—",
+            "—",
+            "<b>Net effect on the isolated tier</b>",
+            "—",
+            "—",
+            "—",
+            "—",
+            "Rule 80 is the only pair that matches, so traffic may leave to the VPC CIDR and nowhere else"
+          ]
+        ]
+      },
+      {
+        "name": "Security groups · instance-level, stateful",
+        "code": [
+          ["vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"],
+          ["endpoints.ts", "platform/infra/flex/src/stacks/core/endpoints.ts"]
+        ],
+        "cols": [
+          "Security group",
+          "allowAllOutbound",
+          "Explicit rules",
+          "Attached to"
+        ],
+        "rows": [
+          [
+            "PrivateEgress",
+            "true",
+            "None — all outbound is already permitted",
+            "Authorizer, DVLA gateway, every <code>access: private</code> domain route"
+          ],
+          [
+            "PrivateIsolated",
+            "<b>false</b>",
+            "Egress TCP 443 to each of the six endpoint security groups, generated one per <code>addVpcEndpoint</code> call",
+            "UDP and UNS gateways, every <code>access: isolated</code> domain route"
+          ],
+          [
+            "Endpoint SGs (×6)",
+            "—",
+            "Every endpoint SG allows 443 from the VPC CIDR (CDK default); the KMS endpoint additionally gets an explicit rule per isolated subnet CIDR",
+            "One per interface endpoint, created by CDK"
+          ]
+        ]
+      },
+      {
+        "name": "VPC interface endpoints",
+        "code": [
+          ["endpoints.ts", "platform/infra/flex/src/stacks/core/endpoints.ts"]
+        ],
+        "cols": ["Service", "Private DNS", "Why it exists"],
+        "rows": [
+          [
+            "API Gateway",
+            "✓",
+            "Reaching the private REST API — and, for the isolated gateways, the partner private APIs. Its endpoint ID is the pin in the private API's resource policy"
+          ],
+          ["CloudWatch Logs", "✓", "Log delivery from isolated functions"],
+          [
+            "Secrets Manager",
+            "✓",
+            "<code>secret</code> resource resolution at runtime"
+          ],
+          ["SSM", "✓", "<code>ssm:runtime</code> resource resolution"],
+          ["STS", "✓", "<code>sts:AssumeRole</code> for the SigV4 gateways"],
+          [
+            "KMS",
+            "✓",
+            "Environment-variable decryption and consumer CMK operations — the one endpoint also reached by subnet CIDR, not only by security group"
+          ],
+          [
+            "<b>Deliberately absent</b>",
+            "—",
+            "cognito-idp (the authorizer goes over NAT instead), X-Ray (segments leave through the execution environment), and any gateway endpoint for S3 or DynamoDB"
+          ]
+        ]
+      },
+      {
+        "name": "Egress paths",
+        "code": [
+          [
+            "create-service-gateway.ts",
+            "platform/infra/flex/src/utils/create-service-gateway.ts"
+          ],
+          [
+            "flex-private-egress-function.ts",
+            "platform/infra/flex/src/constructs/lambda/flex-private-egress-function.ts"
+          ]
+        ],
+        "cols": ["From", "Path", "Reaches", "Notes"],
+        "rows": [
+          [
+            "DVLA gateway",
+            "Egress subnet → NAT gateway → internet gateway",
+            "DVLA APIs on the public internet",
+            "One of two internet egress paths — the authorizer also reaches out over NAT to fetch the Cognito JWKS (a public Lambda Function URL in development)"
+          ],
+          [
+            "Authorizer",
+            "Egress subnet → NAT gateway → internet gateway",
+            "cognito-idp.eu-west-2.amazonaws.com, or the stub Function URL in development",
+            "There is no cognito-idp interface endpoint, so this cannot be an isolated function"
+          ],
+          [
+            "UDP / UNS gateways",
+            "Isolated subnet → API Gateway interface endpoint",
+            "Partner private APIs",
+            "No NAT, no internet route. UNS's config names a <code>privateApiUrl</code>; UDP's schema has no such field, so its <code>apiUrl</code> has to resolve through the endpoint"
+          ],
+          [
+            "Any VPC function",
+            "Interface endpoints",
+            "Secrets Manager, SSM, STS, KMS, CloudWatch Logs",
+            "443 only — enforced by SG rules for the isolated tier; the egress tier permits all outbound and simply happens to use 443"
+          ],
+          [
+            "Any domain route",
+            "Interface endpoint → private REST API",
+            "Other domains and the service gateways",
+            "SigV4 signed with the function's own role, and single-attempt — nothing on this path opts into retries"
+          ],
+          [
+            "Domain route → third party",
+            "<b>Does not exist</b>",
+            "—",
+            "No third-party credentials are configured anywhere; isolated routes additionally have no network path — private-access routes such as the whole dvla domain do have one"
+          ],
+          [
+            "Non-VPC Lambdas",
+            "Lambda service network",
+            "The public internet",
+            "The smoke test and the development JWKS stub bypass the VPC entirely"
+          ]
+        ]
+      },
+      {
+        "name": "Public ingress and TLS",
+        "code": [
+          ["global.ts", "platform/infra/flex/src/stacks/global.ts"],
+          [
+            "enforce-s3-https.ts",
+            "platform/infra/flex/src/aspects/enforce-s3-https.ts"
+          ]
+        ],
+        "cols": ["Hop", "Termination", "Policy"],
+        "rows": [
+          [
+            "Viewer → CloudFront",
+            "TLS terminated at the edge",
+            "<code>SecurityPolicyProtocol.TLS_V1_2_2021</code> minimum · <code>ViewerProtocolPolicy.HTTPS_ONLY</code> on the API behaviour"
+          ],
+          [
+            "CloudFront → API Gateway",
+            "New TLS session to the origin",
+            "<code>OriginProtocolPolicy.HTTPS_ONLY</code> — CDK's <code>HttpOrigin</code> default, not set explicitly"
+          ],
+          [
+            "Public REST API",
+            "—",
+            "<code>SecurityPolicy_TLS13_1_2_2021_06</code>"
+          ],
+          ["/docs* viewer", "—", "<code>REDIRECT_TO_HTTPS</code>"],
+          [
+            "Response headers",
+            "—",
+            "HSTS 365 days with includeSubdomains, on both behaviours"
+          ],
+          [
+            "Every S3 bucket",
+            "—",
+            "An app-wide aspect denies <code>s3:*</code> when <code>aws:SecureTransport</code> is false"
+          ],
+          ["In-VPC AWS calls", "—", "443 only, through the interface endpoints"]
+        ]
+      }
+    ],
+    "w": 1760,
+    "h": 900
+  },
+  "security": {
+    "name": "Security",
+    "order": 6,
+    "group": "Cross-cutting",
+    "audience": "Security review, assurance and threat modelling",
+    "blurb": "Every control a request meets, outside in: what the edge drops, what the origin lock demands, what the token is allowed to prove, and what IAM permits once the request is inside. The permissions boundary at layer 3 is the reason the private API exists at all.",
+    "note": "Two gaps are real and unfixed. <code>pnpm validate:integrations</code> filters to <code>type: \"domain\"</code>, so only 6 of the 36 declared integrations are checked — the 30 gateway integrations pass CI unexamined, including local-council's two, which point at <code>/v1/local-council/*</code> routes the udp gateway does not define. And the authorizer's allow policy names <code>Resource: \"*\"</code> rather than the invoked method ARN.",
+    "tables": [
+      {
+        "name": "Where each log stream goes",
+        "note": "Read the encryption column against itself: the flow-log bucket names a customer-managed key, the Lambda log groups and both S3 access-log buckets leave the property unset. The two execution log groups are created only when the stage is production, so in other stages API Gateway execution logging has no log group of its own.",
+        "code": [
+          ["platform.ts", "platform/infra/flex/src/stacks/platform.ts"],
+          ["vpc.ts", "platform/infra/flex/src/stacks/core/vpc.ts"],
+          [
+            "AccessLogBucket.ts",
+            "platform/infra/flex/src/constructs/s3/AccessLogBucket.ts"
+          ]
+        ],
+        "cols": [
+          "Stream",
+          "Destination",
+          "Retention",
+          "Encryption at rest",
+          "Fields written",
+          "Set in"
+        ],
+        "rows": [
+          [
+            "Lambda — every function, all three tiers",
+            "CloudWatch Logs · one group per function",
+            "1 year (<code>RetentionDays.ONE_YEAR</code>)",
+            "No <code>encryptionKey</code> set — CloudWatch default",
+            "Structured JSON from Powertools, passed through the <code>@flex/logging</code> sanitiser",
+            "<code>constructs/lambda/flex-public-function.ts</code> and the two private variants"
+          ],
+          [
+            "Public API access log",
+            "CloudWatch · <code>ApiAccessLogs</code>",
+            "1 year",
+            "No <code>encryptionKey</code> set — CloudWatch default",
+            "httpMethod, ip, protocol, requestTime, resourcePath, responseLength, status, user, caller",
+            "<code>stacks/platform.ts</code>"
+          ],
+          [
+            "Private API access log",
+            "CloudWatch · <code>AccessLogGroup</code>",
+            "1 year",
+            "No <code>encryptionKey</code> set — CloudWatch default",
+            "The same nine standard fields",
+            "<code>stacks/platform.ts</code>"
+          ],
+          [
+            "Public API execution log",
+            "CloudWatch · <code>API-Gateway-Execution-Logs_{restApiId}/{stage}</code>",
+            "1 year",
+            "No <code>encryptionKey</code> set — CloudWatch default",
+            "<b>Production only.</b> <code>loggingLevel: ERROR</code>, <code>dataTraceEnabled: false</code> — no request or response bodies. Other stages set no method logging at all",
+            "<code>stacks/platform.ts</code>"
+          ],
+          [
+            "Private API execution log",
+            "CloudWatch · <code>API-Gateway-Execution-Logs_{restApiId}/{stage}</code>",
+            "1 year",
+            "No <code>encryptionKey</code> set — CloudWatch default",
+            "<b>Log group is production only</b>, but <code>loggingLevel: INFO</code> is set in every stage, with <code>dataTraceEnabled: false</code>",
+            "<code>stacks/platform.ts</code>"
+          ],
+          [
+            "VPC flow logs",
+            "S3 · flow-log bucket · plain text · 1-minute aggregation · <code>ALL</code> traffic",
+            "365 days",
+            "KMS CMK <code>alias/flex-vpc-flow-logs-key</code>, key rotation on",
+            "All default fields plus VPC id, subnet id, instance id, TCP flags, packet source and destination, flow direction",
+            "<code>stacks/core/vpc.ts</code>"
+          ],
+          [
+            "CloudFront access logs",
+            "S3 · access-log bucket",
+            "365 days · Object Lock <code>GOVERNANCE</code> · versioned",
+            "No <code>encryption</code> property set — S3 default",
+            "Viewer requests to the distribution",
+            "<code>constructs/s3/AccessLogBucket.ts</code>, <code>stacks/global.ts</code>"
+          ],
+          [
+            "Spec bucket access logs",
+            "S3 · a second access-log bucket",
+            "365 days · Object Lock <code>GOVERNANCE</code> · versioned",
+            "No <code>encryption</code> property set — S3 default",
+            "Requests to the OpenAPI spec bucket",
+            "<code>stacks/global.ts</code>"
+          ],
+          [
+            "X-Ray traces",
+            "X-Ray service",
+            "AWS default",
+            "AWS-managed",
+            "<code>tracing: Tracing.ACTIVE</code> on every Lambda construct",
+            "<code>constructs/lambda/*.ts</code>"
+          ],
+          [
+            "Macie scan of the CloudFront access-log bucket",
+            "Not deployed — <code>FlexMacieStack</code> is commented out",
+            "—",
+            "—",
+            "Would be: weekly Monday scan, 100% sampling, recommended managed identifiers",
+            "<code>app.ts</code> lines 11 and 93, <code>stacks/macie.ts</code>"
+          ]
+        ]
+      },
+      {
+        "name": "What the sanitiser removes before a log is written",
+        "note": "Matched values are replaced with <code>***REDACTED***</code>. <code>isPiiDebugEnabled()</code> returns false when <code>FLEX_ENVIRONMENT</code> is <code>production</code>, before it reads the flag, and the flag is checked only after the secret patterns have run. All of it is in <code>libs/logging/src/sanitizer.ts</code>.",
+        "code": [
+          ["sanitizer.ts", "libs/logging/src/sanitizer.ts"],
+          ["@flex/logging", "libs/logging/src/index.ts"]
+        ],
+        "cols": ["Class", "Matched by", "Patterns", "Bypass"],
+        "rows": [
+          [
+            "Secrets — by key name",
+            "<code>secret</code>, <code>token</code>, <code>password</code>, <code>passwd</code>, <code>authorization</code>, <code>apikey</code>, <code>api_key</code>, <code>credential</code>, private / access / client keys, <code>signing</code>, card number, PAN, CVV, CVC, CSC, card security code, card verification, card expiry",
+            "20",
+            "None"
+          ],
+          ["Secrets — by value", "JWT shape — <code>eyJ…</code>", "1", "None"],
+          [
+            "Registered secret values",
+            "Exact values registered at runtime via <code>addSecretValue()</code>, matched longest-first",
+            "Runtime",
+            "None"
+          ],
+          [
+            "PII — by key name",
+            "email, phone, mobile, forename, surname, first / last / full name, date of birth, DOB, NINO, national insurance, postcode, zip code, sort code, account number, IP address",
+            "17",
+            "<code>FLEX_LOG_PII_DEBUG=true</code>"
+          ],
+          [
+            "PII — by value",
+            "email address, UK phone number, National Insurance number, UK postcode, IPv4 address",
+            "5",
+            "<code>FLEX_LOG_PII_DEBUG=true</code>"
+          ]
+        ]
+      },
+      {
+        "name": "Telemetry events written to the logs",
+        "note": "21 events in <code>libs/telemetry/src/events.ts</code> as a zod enum, and 3 more in <code>libs/telemetry/src/cff.ts</code> — kept separate because the zod enum cannot be bundled into a CloudFront Function under its size limit. Every event is written as <code>{ level, message: \"telemetry\", telemetry: { event, details } }</code>.",
+        "code": [
+          ["events.ts", "libs/telemetry/src/events.ts"],
+          ["cff.ts", "libs/telemetry/src/cff.ts"]
+        ],
+        "cols": ["Group", "Events", "Emitted by", "Through the sanitiser"],
+        "rows": [
+          [
+            "Auth",
+            "<code>auth_success</code>, <code>auth_token_missing</code>, <code>auth_token_expired</code>, <code>auth_token_invalid</code>, <code>auth_claim_missing</code>, <code>auth_failure</code>",
+            "Lambda token authorizer",
+            "Yes"
+          ],
+          [
+            "Domain",
+            "<code>domain_request_received</code>, <code>domain_response_returned</code>, <code>domain_error_returned</code>",
+            "Domain handlers",
+            "Yes"
+          ],
+          [
+            "Service gateway",
+            "<code>service_gateway_request_sent</code>, <code>service_gateway_request_received</code>, <code>service_gateway_response_returned</code>, <code>service_gateway_error_returned</code>",
+            "Service gateways",
+            "Yes"
+          ],
+          [
+            "Third party",
+            "<code>third_party_request_sent</code>, <code>third_party_response_received</code>, <code>third_party_request_retried</code>, <code>third_party_request_timeout</code>, <code>third_party_request_error</code>",
+            "Service gateway outbound calls",
+            "Yes"
+          ],
+          [
+            "General",
+            "<code>request_validation_failed</code>, <code>response_validation_failed</code>, <code>error_thrown</code>",
+            "Anywhere in the request pipeline",
+            "Yes"
+          ],
+          [
+            "CloudFront Function",
+            "<code>cff_token_validated</code>, <code>cff_token_missing</code>, <code>cff_token_invalid</code>",
+            "Viewer-request CloudFront Function",
+            "No — <code>emitCffTelemetry()</code> calls <code>console.log</code> directly"
+          ]
+        ]
+      },
+      {
+        "name": "Detective controls: what this repository does and does not create",
+        "note": "\"None\" means no construct in this repository creates it. Any of these may still be enabled at the AWS Organisation or account level, outside this codebase — this table describes the CDK app only.",
+        "code": [
+          ["macie.ts", "platform/infra/flex/src/stacks/macie.ts"],
+          ["app.ts", "platform/infra/flex/src/app.ts"],
+          ["_quality-checks.yml", ".github/workflows/_quality-checks.yml"]
+        ],
+        "cols": ["Control", "Searched for", "Found in this repository"],
+        "rows": [
+          [
+            "AWS CloudTrail",
+            "<code>Trail(</code>, <code>CloudTrail</code>",
+            "None"
+          ],
+          ["Amazon GuardDuty", "<code>GuardDuty</code>", "None"],
+          ["AWS Security Hub", "<code>SecurityHub</code>", "None"],
+          ["AWS Config rules", "<code>CfnConfigRule</code>", "None"],
+          ["WAF request logging", "<code>LoggingConfiguration</code>", "None"],
+          [
+            "Amazon Macie",
+            "<code>FlexMacieStack</code>",
+            "Stack is written, but its instantiation is commented out in <code>app.ts</code> — temporarily, pending a Platform IAM guardrail fix. CI still runs <code>validate:macie-coverage</code> on every pull request and posts a Slack notice for uncovered domains, so the coverage gate reports against a stack that is not deployed."
+          ],
+          [
+            "VPC flow logs",
+            "<code>addFlowLog</code>",
+            "Created — see the first table"
+          ],
+          [
+            "API Gateway access logs",
+            "<code>accessLogDestination</code>",
+            "Created on both APIs"
+          ],
+          [
+            "X-Ray",
+            "<code>Tracing.ACTIVE</code>",
+            "Set on every Lambda construct"
+          ]
+        ]
+      }
+    ],
+    "w": 1500,
+    "h": 800
+  },
+  "delivery": {
+    "name": "Delivery",
+    "order": 7,
+    "group": "Cross-cutting",
+    "audience": "Platform engineers and on-call",
+    "blurb": "How code reaches production, and how production reaches a human when it goes wrong. Nothing on this tab is on a user's request path.",
+    "note": "Two of the paths drawn here do not work today. The canary's alarm has no alarm action, and the cross-region relay's inline handler has a syntax error, so the smoke test and every us-east-1 edge alarm currently notify nobody. Both are one-line fixes.",
+    "tables": [
+      {
+        "name": "Every alarm, its threshold, and which topic it reaches",
+        "note": "18 alarms from six constructs in <code>constructs/alarms/</code>. Every one sets <code>treatMissingData: NOT_BREACHING</code>, so silence never fires an alarm. Critical and Warning are two separate SNS topics, wired in <code>constructs/alarms/actions.ts</code>. The CloudFront, CloudFront Function and Shield rows are measured in us-east-1, because that is the only region those metrics are emitted to — they reach the eu-west-2 topics through the cross-region relay.",
+        "code": [
+          [
+            "api-gateway.ts",
+            "platform/infra/flex/src/constructs/alarms/api-gateway.ts"
+          ],
+          ["lambda.ts", "platform/infra/flex/src/constructs/alarms/lambda.ts"],
+          [
+            "cloudfront.ts",
+            "platform/infra/flex/src/constructs/alarms/cloudfront.ts"
+          ],
+          [
+            "cloudfront-function.ts",
+            "platform/infra/flex/src/constructs/alarms/cloudfront-function.ts"
+          ],
+          ["shield.ts", "platform/infra/flex/src/constructs/alarms/shield.ts"],
+          ["waf.ts", "platform/infra/flex/src/constructs/alarms/waf.ts"],
+          ["actions.ts", "platform/infra/flex/src/constructs/alarms/actions.ts"]
+        ],
+        "derived": {
+          "from": "alarms",
+          "key": "id",
+          "col": "Alarm"
+        },
+        "cols": ["Source", "Alarm", "Metric", "Fires when", "Windows", "Topic"],
+        "rows": [
+          [
+            "API Gateway",
+            "<code>5xxErrorRate</code>",
+            "<code>5XXError</code>",
+            "above 1%",
+            "5 × 1 min",
+            "Critical"
+          ],
+          [
+            "API Gateway",
+            "<code>4xxErrorRate</code>",
+            "<code>4XXError</code>",
+            "above 5%",
+            "5 × 1 min",
+            "Warning"
+          ],
+          [
+            "API Gateway",
+            "<code>P95Latency</code>",
+            "<code>Latency</code> p95",
+            "above 3000 ms",
+            "3 × 5 min",
+            "Warning"
+          ],
+          [
+            "API Gateway",
+            "<code>IntegrationP95Latency</code>",
+            "<code>IntegrationLatency</code> p95",
+            "above 2900 ms",
+            "3 × 5 min",
+            "Warning"
+          ],
+          [
+            "Lambda",
+            "<code>ErrorRate</code>",
+            "<code>100 * errors / invocations</code>, only at 10+ invocations",
+            "above 1%",
+            "2 × 5 min, both must breach",
+            "Critical"
+          ],
+          [
+            "Lambda",
+            "<code>Throttles</code>",
+            "<code>Throttles</code> sum",
+            "above 0",
+            "1 × 1 min",
+            "Critical"
+          ],
+          [
+            "Lambda",
+            "<code>Duration</code>",
+            "<code>Duration</code> p99",
+            "above 80% of the function timeout",
+            "1 × 5 min",
+            "Warning"
+          ],
+          [
+            "CloudFront",
+            "<code>5xxErrorRate</code>",
+            "<code>5xxErrorRate</code>",
+            "above 1%",
+            "5 × 1 min",
+            "Critical"
+          ],
+          [
+            "CloudFront",
+            "<code>4xxErrorRate</code>",
+            "<code>4xxErrorRate</code>",
+            "above 5%",
+            "5 × 1 min",
+            "Warning"
+          ],
+          [
+            "CloudFront",
+            "<code>TotalErrorRate</code>",
+            "<code>TotalErrorRate</code>",
+            "above 5%",
+            "5 × 1 min",
+            "Warning"
+          ],
+          [
+            "CloudFront Function",
+            "<code>FunctionExecutionErrors</code>",
+            "<code>FunctionExecutionErrors</code>",
+            "above 0",
+            "5 × 1 min",
+            "Critical"
+          ],
+          [
+            "CloudFront Function",
+            "<code>FunctionThrottles</code>",
+            "<code>FunctionThrottles</code>",
+            "above 0",
+            "5 × 1 min",
+            "Critical"
+          ],
+          [
+            "CloudFront Function",
+            "<code>FunctionValidationErrors</code>",
+            "<code>FunctionValidationErrors</code>",
+            "above 0",
+            "2 × 1 min",
+            "Warning"
+          ],
+          [
+            "Shield",
+            "<code>DDoSDetected</code>",
+            "<code>DDoSDetected</code>",
+            "above 0",
+            "1 × 1 min",
+            "Critical"
+          ],
+          [
+            "Shield",
+            "<code>DDoSAttackRequestsPerSecond</code>",
+            "<code>DDoSAttackRequestsPerSecond</code>",
+            "above 0",
+            "1 × 1 min",
+            "Warning"
+          ],
+          [
+            "WAF",
+            "<code>ManagedRuleBlocks</code>",
+            "Blocked by a managed rule",
+            "above 0",
+            "1 × 5 min",
+            "Critical"
+          ],
+          [
+            "WAF",
+            "<code>Blocking90PercentRequests</code>",
+            "Share of requests blocked",
+            "above 90%",
+            "1 × 5 min",
+            "Critical"
+          ],
+          [
+            "WAF",
+            "<code>BlockedRequestsSpike</code>",
+            "Blocked requests, anomaly detection at 2 std devs",
+            "outside the band",
+            "3 × 5 min, 2 must breach",
+            "Warning"
+          ]
+        ]
+      }
+    ],
+    "w": 1961,
+    "h": 1044
+  },
+  "resources": {
+    "name": "Resources",
+    "order": 8,
+    "group": "Reference",
+    "audience": "Cost, audit and incident scoping — and the detail behind every badge",
+    "blurb": "Every AWS resource this repository creates, what configures it, and which stack owns it.",
+    "note": "Counts follow the <b>stage selector</b> in the header. They differ because domains, routes and whole stacks are gated by their <code>environments</code> array — and because an ephemeral PR stage reuses the development core rather than building its own. Entries whose meta reads <b>varies</b> carry no number, so any group total that includes one is a floor rather than a total.",
+    "inventory": "resources.json"
+  }
+}

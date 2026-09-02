@@ -1,0 +1,26 @@
+// Shared across every view in this workspace.
+//
+// Four element kinds carry ownership — who owns a box is the thing a reader must not get
+// wrong. `boundary` is visual framing (a region, a VPC, a subnet tier) and nests, so any
+// C4 renderer shows the same containment the explorer does.
+//
+// Identifiers are scoped per view (containers_pubapi, network_pubapi). They are not the
+// same element: fifteen ids appear in more than one view, and every one carries a
+// different label, description and set of facts, because each tab argues something
+// different about the same infrastructure.
+
+specification {
+  element actor    { style { shape person } }
+  element platform { style { shape rectangle } }
+  element internal { style { shape rectangle } }
+  element external { style { shape rectangle } }
+  element boundary {
+    style {
+      shape rectangle
+      opacity 10%
+    }
+  }
+
+  tag request-path
+  tag off-request-path
+}

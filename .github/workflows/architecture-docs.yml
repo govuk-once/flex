@@ -7,9 +7,10 @@ on:
       - "docs/architecture/**"
       - "domains/*/domain.config.ts"
       - "platform/domains/*/gateway.config.ts"
-      - "scripts/architectureFacts.ts"
-      - "scripts/buildArchitectureExplorer.ts"
-      - "scripts/checkArchitectureExplorer.ts"
+      # The alarm table is derived from these constructs, so a renamed alarm has to
+      # rebuild the facts here — otherwise the committed copy goes stale on main
+      # and the next unrelated docs PR fails for it.
+      - "platform/infra/flex/src/constructs/alarms/**"
       - ".github/workflows/architecture-docs.yml"
   pull_request:
     branches: [main]
@@ -17,9 +18,7 @@ on:
       - "docs/architecture/**"
       - "domains/*/domain.config.ts"
       - "platform/domains/*/gateway.config.ts"
-      - "scripts/architecture*.ts"
-      - "scripts/buildArchitectureExplorer.ts"
-      - "scripts/checkArchitectureExplorer.ts"
+      - "platform/infra/flex/src/constructs/alarms/**"
   workflow_dispatch:
 
 # Only the newest run per branch matters; a superseded docs build is wasted minutes.
@@ -68,7 +67,7 @@ jobs:
           fi
 
       - name: Install Chromium
-        run: pnpm --filter @flex/scripts exec playwright install --with-deps chromium
+        run: pnpm --filter @flex/architecture-docs exec playwright install --with-deps chromium
 
       # Renders the built page and measures what static validation cannot see:
       # text fit, edges crossing unrelated boxes, label collisions, empty inspectors.

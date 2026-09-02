@@ -1,0 +1,821 @@
+// FLEX architecture — Network.
+//
+// The model. Presentation that a LikeC4 view cannot hold — tab order, audience,
+// reference tables — is in views.json beside this file.
+
+model {
+
+  network_z_use1 = boundary 'us-east-1 (N. Virginia) · FlexGlobalStack' {
+    metadata {
+      type 'Region'
+      tech 'CloudFront, ACM, Route 53, WAF, Shield'
+      role 'Everything CloudFront needs has to live here.'
+      facts [
+        'A CloudWatch alarm can only notify a topic in its own region, and CloudFront\'s metrics are here — which is why the alarm relay topics and their KMS key (<code>alias/{stage}-flex-alerts-relay-key</code>) are created in this stack rather than in eu-west-2.'
+      ]
+      sourceId 'z-use1'
+      order '0'
+      x '30'
+      y '70'
+      w '370'
+      h '330'
+      boundary 'hard'
+      resources [
+        'kms-relay'
+      ]
+    }
+
+    network_r53 = platform 'Route 53' {
+      #request-path
+      description 'alias A record'
+      technology 'ARecord · CloudFrontTarget'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'DNS'
+        tech 'ARecord · CloudFrontTarget'
+        role 'Resolves the service name to the distribution.'
+        facts [
+          'The hosted zone id and name are imported from <code>/infra/dns/*</code> — the zone belongs to the platform team, not to FLEX.',
+          'Persistent environments use the zone apex; every other stage gets <code>{stage}.{zone}</code>.'
+        ]
+        sourceId 'r53'
+        order '0'
+        x '55'
+        y '108'
+        w '177'
+        h '52'
+        ownership 'flex'
+        awsIcon 'route53'
+        resources [
+          'r53-record'
+        ]
+      }
+    }
+
+    network_acm = platform 'ACM certificate' {
+      #off-request-path
+      description 'DNS validated'
+      technology 'ACM in us-east-1'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Certificate'
+        tech 'ACM in us-east-1'
+        role 'TLS identity for the distribution.'
+        facts [
+          'Must be issued in us-east-1 — CloudFront will not accept a certificate from any other region.',
+          'Issued for whichever name applies to the stage and validated against the same hosted zone.'
+        ]
+        sourceId 'acm'
+        order '1'
+        x '55'
+        y '172'
+        w '177'
+        h '52'
+        ownership 'flex'
+        awsIcon 'acm'
+        resources [
+          'acm-cert'
+        ]
+      }
+    }
+
+    network_cf = platform 'CloudFront + WAF' {
+      #request-path
+      description 'two behaviours · Shield in stg/prod'
+      technology 'CloudFront distribution'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Edge'
+        tech 'CloudFront distribution'
+        role 'The single public entry point for the API.'
+        facts [
+          '<code>#createCloudfrontShield</code> early-exits when the environment is development, so development and every ephemeral stage run with no Shield protection and no DDoS alarms.',
+          '<code>publishAdditionalMetrics: true</code> is what makes the error-rate alarm possible.',
+          'Access logs go to an object-locked bucket with 90-day GOVERNANCE retention.'
+        ]
+        sourceId 'cf'
+        order '2'
+        x '55'
+        y '236'
+        w '267'
+        h '70'
+        ownership 'flex'
+        awsIcon 'cloudfront'
+        resources [
+          'cf-dist',
+          'cff-platform',
+          'cff-docs',
+          'cf-rhp',
+          'cf-oac',
+          'cf-monitor',
+          'cf-policies',
+          'waf-cf',
+          'shield',
+          's3-cflogs'
+        ]
+      }
+    }
+
+    network_specs = platform 'OpenAPI spec bucket' {
+      #request-path
+      description 'S3 · origin access control'
+      technology 'S3 + OAC'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Storage'
+        tech 'S3 + OAC'
+        role 'The origin behind the /docs* behaviour.'
+        facts [
+          'Retained in persistent environments; created with <code>autoDeleteObjects</code> and destroyed with every ephemeral stage.'
+        ]
+        sourceId 'specs'
+        order '3'
+        x '55'
+        y '318'
+        w '207'
+        h '52'
+        ownership 'flex'
+        awsIcon 's3'
+        resources [
+          's3-specs',
+          's3-speclogs'
+        ]
+      }
+    }
+  }
+
+  network_z_euw2 = boundary 'eu-west-2 (London)' {
+    metadata {
+      type 'Region'
+      tech 'API Gateway, Lambda, VPC'
+      role 'Every FLEX compute and network resource except the edge.'
+      facts [
+        'Both REST APIs are AWS-managed endpoints outside the VPC; a Lambda only gets a network interface in it when its construct passes <code>vpc</code> and <code>vpcSubnets</code>.'
+      ]
+      sourceId 'z-euw2'
+      order '1'
+      x '400'
+      y '70'
+      w '1000'
+      h '790'
+      boundary 'hard'
+    }
+
+    network_z_vpc = boundary 'VPC 10.0.0.0/16 · eu-west-2a/b/c' {
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+      metadata {
+        type 'Network boundary'
+        tech 'Amazon VPC · 65,536 addresses'
+        role 'Nine subnets, three per tier, one per pinned availability zone.'
+        facts [
+          'Availability zones are pinned to eu-west-2a/b/c rather than looked up, so subnet CIDRs stay stable across deploys.',
+          'Flow logs are enabled on the VPC itself, so all three tiers are captured without any per-subnet configuration.',
+          'The VPC belongs to <code>FlexCoreStack</code>, which is only created for a persistent environment.'
+        ]
+        sourceId 'z-vpc'
+        order '2'
+        x '430'
+        y '200'
+        w '940'
+        h '630'
+        boundary 'hard'
+        resources [
+          'vpc',
+          'routetables'
+        ]
+      }
+
+      network_z_pub = boundary 'Public · /24 × 3 · 251 usable each' {
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+        metadata {
+          type 'Subnet tier'
+          tech 'SubnetType.PUBLIC · cidrMask 24'
+          role 'Carries the NAT gateways. No workload is ever placed here.'
+          facts [
+            'Default route to the internet gateway — the only route table in the VPC that has one.'
+          ]
+          sourceId 'z-pub'
+          order '3'
+          x '456'
+          y '244'
+          w '600'
+          h '92'
+          boundary 'soft'
+          resources [
+            'subnets-public',
+            'nacl-public',
+            'igw'
+          ]
+        }
+
+        network_nat = platform 'NAT gateways × 3' {
+          #request-path
+          description 'one per AZ · one Elastic IP each'
+          technology 'AWS::EC2::NatGateway'
+          link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+          metadata {
+            type 'Network'
+            tech 'AWS::EC2::NatGateway'
+            role 'The only way out of the VPC to the internet.'
+            facts [
+              '<code>natGateways: 3</code> — one per availability zone, so losing an AZ does not remove egress for the other two.',
+              'The three Elastic IPs are the source addresses a third party such as DVLA sees.'
+            ]
+            sourceId 'nat'
+            order '7'
+            x '486'
+            y '278'
+            w '247'
+            h '54'
+            ownership 'flex'
+            awsIcon 'vpc-nat'
+            resources [
+              'nat',
+              'eip'
+            ]
+          }
+        }
+      }
+
+      network_z_egr = boundary 'Private with egress · /19 × 3 · 8,187 usable each' {
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+        metadata {
+          type 'Subnet tier'
+          tech 'SubnetType.PRIVATE_WITH_EGRESS · cidrMask 19'
+          role 'Home of every <code>access: private</code> function, and of the endpoint network interfaces.'
+          facts [
+            'The <code>PrivateEgress</code> security group is created with <code>allowAllOutbound: true</code>, so no explicit egress rule is written for anything in this tier.',
+            'The six interface endpoints put their ENIs in these subnets: CDK\'s default subnet selection is PRIVATE_WITH_EGRESS, so the isolated tier reaches them across the VPC CIDR.',
+            'Default route goes to the NAT gateway in the same availability zone.'
+          ]
+          sourceId 'z-egr'
+          order '4'
+          x '456'
+          y '352'
+          w '600'
+          h '216'
+          boundary 'soft'
+          resources [
+            'subnets-egress',
+            'nacl-egress',
+            'sg-egress'
+          ]
+        }
+
+        network_authfn = platform 'Authorizer Lambda' {
+          #request-path
+          description 'egress tier · 10s timeout'
+          technology 'FlexPrivateEgressFunction · NODEJS_24_X'
+          link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+          link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/services/auth-service.ts 'auth/services/auth-service.ts'
+          metadata {
+            type 'Compute'
+            tech 'FlexPrivateEgressFunction · NODEJS_24_X'
+            role 'Verifies the Cognito access token in front of every public route.'
+            facts [
+              'It is in this tier because it fetches the JWKS over the public internet: there is no cognito-idp interface endpoint.',
+              'The verifier is constructed inside the handler, not at module scope, so <code>JWKS_URI</code> is re-read and re-parsed on every invocation.'
+            ]
+            sourceId 'authfn'
+            order '8'
+            x '486'
+            y '400'
+            w '200'
+            h '62'
+            ownership 'flex'
+            awsIcon 'lambda'
+            resources [
+              'lambda-auth'
+            ]
+          }
+        }
+
+        network_gwdvla = platform 'DVLA gateway' {
+          #request-path
+          description 'egress tier · 30s timeout'
+          technology 'FlexPrivateEgressFunction · NODEJS_24_X'
+          link https://github.com/govuk-once/flex/blob/main/platform/domains/dvla/gateway.config.ts 'dvla/gateway.config.ts'
+          link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/create-service-gateway.ts 'utils/create-service-gateway.ts'
+          metadata {
+            type 'Compute'
+            tech 'FlexPrivateEgressFunction · NODEJS_24_X'
+            role 'The only workload that dials a non-AWS host.'
+            facts [
+              '<code>access: "private"</code> in its gateway config is the whole reason it sits here; the UDP and UNS gateways declare <code>isolated</code> and land in the other tier.'
+            ]
+            sourceId 'gwdvla'
+            order '9'
+            x '486'
+            y '482'
+            w '200'
+            h '62'
+            ownership 'flex'
+            awsIcon 'lambda'
+            resources [
+              'lambda-gw-dvla'
+            ]
+          }
+        }
+
+        network_ddvla = platform 'dvla domain routes' {
+          #request-path
+          description '8 functions · every stage'
+          technology 'FlexPrivateEgressFunction × 8'
+          link https://github.com/govuk-once/flex/blob/main/domains/dvla/domain.config.ts 'domains/dvla/domain.config.ts'
+          link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+          metadata {
+            type 'Compute'
+            tech 'FlexPrivateEgressFunction × 8'
+            role 'The only domain whose route functions are in the egress tier.'
+            facts [
+              '<code>common.access: "private"</code> in <code>domain.config.ts</code> moves all eight here; every other domain leaves the default and lands in the isolated tier.',
+              'They never use the internet route it buys them — every handler reaches DVLA through the DVLA gateway on the private API.'
+            ]
+            sourceId 'ddvla'
+            order '10'
+            x '776'
+            y '441'
+            w '200'
+            h '62'
+            ownership 'flex'
+            awsIcon 'lambda'
+            resources [
+              'lambda-domain-dvla'
+            ]
+          }
+        }
+      }
+
+      network_z_iso = boundary 'Private isolated · /19 × 3 · 8,187 usable each' {
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+        metadata {
+          type 'Subnet tier'
+          tech 'SubnetType.PRIVATE_ISOLATED · cidrMask 19'
+          role 'The default tier: every domain except dvla, plus the UDP and UNS gateways.'
+          facts [
+            'The <code>PrivateIsolated</code> security group sets <code>allowAllOutbound: false</code>; the only rules it ever gets are 443 to each endpoint\'s security group, generated one per endpoint.',
+            'Its NACL has no ephemeral-return rule and no allow-all outbound rule — outbound is allowed only to the VPC CIDR (rule 80).',
+            'Its route tables carry only the local route: no NAT, no internet gateway.'
+          ]
+          sourceId 'z-iso'
+          order '5'
+          x '456'
+          y '584'
+          w '600'
+          h '216'
+          boundary 'soft'
+          resources [
+            'subnets-isolated',
+            'nacl-isolated',
+            'sg-isolated'
+          ]
+        }
+
+        network_gwiso = platform 'UDP + UNS gateways' {
+          #request-path
+          description 'isolated tier · 30s timeout'
+          technology 'FlexPrivateIsolatedFunction × 2'
+          link https://github.com/govuk-once/flex/blob/main/platform/domains/uns/gateway.config.ts 'uns/gateway.config.ts'
+          link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/gateway.config.ts 'udp/gateway.config.ts'
+          metadata {
+            type 'Compute'
+            tech 'FlexPrivateIsolatedFunction × 2'
+            role 'Reach their upstreams through the API Gateway interface endpoint.'
+            facts [
+              'No NAT and no internet-gateway route, so whatever host they dial has to resolve to something reachable from inside the VPC.',
+              'UNS\'s consumer config declares a <code>privateApiUrl</code> and the gateway uses it as its base URL. UDP\'s schema has no such field at all — its gateway dials <code>consumerConfig.apiUrl</code>, which is not in this repo, so reachability depends on that URL resolving through the endpoint.'
+            ]
+            sourceId 'gwiso'
+            order '11'
+            x '486'
+            y '650'
+            w '213'
+            h '62'
+            ownership 'flex'
+            awsIcon 'lambda'
+            resources [
+              'lambda-gw-udp',
+              'lambda-gw-uns'
+            ]
+          }
+        }
+
+        network_diso = platform 'Isolated domain routes' {
+          #request-path
+          description 'udp · uns · groups · lc · example'
+          technology 'FlexPrivateIsolatedFunction'
+          link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/domain.ts 'stacks/domain.ts'
+          metadata {
+            type 'Compute'
+            tech 'FlexPrivateIsolatedFunction'
+            role 'The default placement: a route function lands here unless its domain sets <code>access</code>.'
+            facts [
+              '29 route functions in development against 12 in production — the difference is which domains list which environments, not any network setting.',
+              'A route declared <code>access: "public"</code> would get no VPC configuration at all, but nothing in the repo declares one.'
+            ]
+            sourceId 'diso'
+            order '12'
+            x '776'
+            y '650'
+            w '272'
+            h '62'
+            ownership 'flex'
+            awsIcon 'lambda'
+            resources [
+              'lambda-domain-udp',
+              'lambda-domain-uns',
+              'lambda-domain-groups',
+              'lambda-domain-lc',
+              'lambda-domain-example'
+            ]
+          }
+        }
+      }
+
+      network_vpce = platform 'Interface endpoints × 6' {
+        #request-path
+        description 'API GW · Logs · Secrets · SSM · STS'
+        technology 'InterfaceVpcEndpointAwsService · privateDnsEnabled'
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/endpoints.ts 'stacks/core/endpoints.ts'
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/resources.ts 'utils/resources.ts'
+        metadata {
+          type 'Network'
+          tech 'InterfaceVpcEndpointAwsService · privateDnsEnabled'
+          role 'The isolated tier\'s only way to reach anything.'
+          facts [
+            'Every endpoint security group is opened to the VPC CIDR on 443 by CDK (<code>open</code> defaults to true); the KMS endpoint additionally gets one explicit ingress rule per isolated subnet CIDR.',
+            'There is no cognito-idp endpoint and no X-Ray endpoint — the authorizer\'s JWKS fetch goes over NAT, and X-Ray segments are emitted by the Lambda execution environment rather than through the VPC.',
+            'Secrets Manager and SSM are here because <code>secret</code> and <code>ssm:runtime</code> resources resolve at runtime; <code>ssm</code> resources are already resolved to their value at deploy time and <code>kms</code> contributes only a key ARN, with decrypt called at runtime through the KMS endpoint.',
+            'The API Gateway endpoint\'s ID is exported as <code>/{env}/flex/vpc-e/api-gateway</code> and pinned into the private API\'s <code>aws:SourceVpce</code> condition. No gateway endpoints (S3, DynamoDB) exist.'
+          ]
+          sourceId 'vpce'
+          order '13'
+          x '1086'
+          y '530'
+          w '281'
+          h '100'
+          ownership 'flex'
+          awsIcon 'vpc-endpoint'
+          resources [
+            'vpce',
+            'sg-endpoints'
+          ]
+        }
+      }
+
+      network_flow = platform 'VPC flow logs' {
+        #off-request-path
+        description 'ALL traffic · 1-minute · S3 + CMK'
+        technology 'FlowLogDestination.toS3 · PLAIN_TEXT'
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/vpc.ts 'stacks/core/vpc.ts'
+        link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/s3/FlowLogBucket.ts 'constructs/s3/FlowLogBucket.ts'
+        metadata {
+          type 'Logging'
+          tech 'FlowLogDestination.toS3 · PLAIN_TEXT'
+          role 'Full-fidelity records of every flow in the VPC, delivered by AWS rather than by any subnet.'
+          facts [
+            'Extended past <code>ALL_DEFAULT_FIELDS</code> with VPC ID, subnet ID, instance ID, TCP flags, packet source and destination addresses and flow direction.',
+            'The only statement the stack adds is the write path for <code>delivery.logs.amazonaws.com</code>; CDK\'s default account-root statement is also present.',
+            'No reader grant is written on top of CDK\'s default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright — an investigator or Athena role still has to be granted it deliberately.',
+            'The bucket is object-locked at 365 days GOVERNANCE with a matching expiry rule.'
+          ]
+          sourceId 'flow'
+          order '14'
+          x '1086'
+          y '700'
+          w '254'
+          h '66'
+          ownership 'flex'
+          awsIcon 'vpc-flowlogs'
+          resources [
+            'flowlog',
+            's3-flowlogs',
+            'kms-flowlog'
+          ]
+        }
+      }
+    }
+
+    network_pubapi = platform 'Public REST API' {
+      #request-path
+      description 'REGIONAL · outside the VPC'
+      technology 'API Gateway REST · EndpointType.REGIONAL'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      metadata {
+        type 'API'
+        tech 'API Gateway REST · EndpointType.REGIONAL'
+        role 'The public surface, fronted by the regional WAF.'
+        facts [
+          'The regional Web ACL blocks by default and allows only requests carrying the <code>x-origin-verify</code> secret header, so the origin cannot usefully be reached except through CloudFront.',
+          '<code>SecurityPolicy_TLS13_1_2_2021_06</code> is set on the API itself, on top of the edge\'s TLS 1.2 minimum.'
+        ]
+        sourceId 'pubapi'
+        order '4'
+        x '430'
+        y '104'
+        w '207'
+        h '60'
+        ownership 'flex'
+        awsIcon 'apigateway'
+        resources [
+          'api-public',
+          'api-stage-public',
+          'waf-regional',
+          'api-authorizer',
+          'api-routes-public',
+          'api-account'
+        ]
+      }
+    }
+
+    network_privapi = platform 'Private REST API' {
+      #request-path
+      description 'PRIVATE · bound to the endpoint'
+      technology 'API Gateway REST · EndpointType.PRIVATE'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      metadata {
+        type 'API'
+        tech 'API Gateway REST · EndpointType.PRIVATE'
+        role 'AWS-managed, not a resource inside the VPC — the interface endpoint is the door into it.'
+        facts [
+          'Its resource policy denies <code>execute-api:Invoke</code> for any principal whose <code>aws:SourceVpce</code> is not this endpoint, and adds no explicit Allow.',
+          'Execution logging is INFO with <code>dataTraceEnabled: false</code>; only this API has it.'
+        ]
+        sourceId 'privapi'
+        order '5'
+        x '760'
+        y '104'
+        w '240'
+        h '60'
+        ownership 'flex'
+        awsIcon 'apigateway'
+        resources [
+          'api-private',
+          'api-stage-private',
+          'api-routes-private',
+          'api-routes-gateways'
+        ]
+      }
+    }
+
+    network_jwks = platform 'Stub JWKS Function URL' {
+      #request-path
+      description 'development only · no VPC'
+      technology 'NodejsFunction + Function URL · authType NONE'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'stacks/platform.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/functions/jwks-endpoint.ts 'auth/functions/jwks-endpoint.ts'
+      metadata {
+        type 'Compute'
+        tech 'NodejsFunction + Function URL · authType NONE'
+        role 'Stands in for the Cognito JWKS endpoint in the development environment.'
+        facts [
+          'Created only when the environment is development, and with no <code>vpc</code> or <code>vpcSubnets</code> — it runs outside the VPC entirely.',
+          'Its unauthenticated Function URL is handed to the authorizer as <code>JWKS_URI</code>, so the authorizer reaches it over NAT and the public internet like any other external host.',
+          'It reads one hard-coded secret, <code>/development/flex-secret/auth/e2e/private_jwk</code>, cached for 300 seconds.'
+        ]
+        sourceId 'jwks'
+        order '6'
+        x '1090'
+        y '104'
+        w '200'
+        h '60'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-jwks'
+        ]
+      }
+    }
+  }
+
+  network_z_once = boundary 'GOV.UK Once accounts' {
+    metadata {
+      type 'Ownership boundary'
+      tech 'Other AWS accounts in the same organisation'
+      role 'Sibling systems, reached privately rather than over the internet.'
+      sourceId 'z-once'
+      order '6'
+      x '1440'
+      y '600'
+      w '290'
+      h '170'
+      boundary 'hard'
+    }
+
+    network_partners = internal 'UDP + UNS' {
+      #request-path
+      description 'GOV.UK Once · private APIs'
+      technology 'AWS APIs · SigV4 as an assumed role'
+      metadata {
+        type 'GOV.UK Once systems'
+        tech 'AWS APIs · SigV4 as an assumed role'
+        role 'Reached from the isolated tier through the API Gateway endpoint, never over the internet.'
+        facts [
+          'Sibling systems in other GOV.UK Once accounts — inside the organisational boundary, outside this account.'
+        ]
+        sourceId 'partners'
+        order '16'
+        x '1465'
+        y '650'
+        w '207'
+        h '64'
+        ownership 'govuk'
+      }
+    }
+  }
+
+  network_internet = external 'Public internet' {
+    #request-path
+    description 'DVLA APIs · Cognito JWKS'
+    technology 'HTTPS over NAT'
+    metadata {
+      type 'Third party'
+      tech 'HTTPS over NAT'
+      role 'Reached through NAT by the DVLA gateway and by the authorizer Lambda (Cognito JWKS, or the stub JWKS Function URL in development).'
+      facts [
+        'The only internet egress out of the VPC. Non-VPC Lambdas (smoke test, dev JWKS stub) reach the internet via the Lambda service network instead.'
+      ]
+      sourceId 'internet'
+      order '15'
+      x '1440'
+      y '320'
+      w '193'
+      h '64'
+      ownership 'third'
+    }
+  }
+
+  network_r53 -> network_cf 'alias' {
+    technology 'DNS'
+    metadata {
+      protocol 'DNS'
+      auth '—'
+      carries 'Name resolution'
+      order '0'
+    }
+  }
+  network_acm -> network_cf 'TLS certificate' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Certificate binding'
+      order '1'
+    }
+  }
+  network_cf -> network_specs '/docs*' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'Origin access control'
+      carries 'Swagger UI and the generated specs'
+      facts [
+        'The only behaviour with caching enabled (<code>CACHING_OPTIMIZED</code>) and the only one that redirects HTTP to HTTPS rather than refusing it.'
+      ]
+      order '2'
+    }
+  }
+  network_cf -> network_pubapi 'origin · us-east-1 to eu-west-2' {
+    technology 'HTTPS, TLS 1.2+ · OriginProtocolPolicy.HTTPS_ONLY (CDK default)'
+    link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+    metadata {
+      protocol 'HTTPS, TLS 1.2+ · OriginProtocolPolicy.HTTPS_ONLY (CDK default)'
+      auth 'x-origin-verify secret header'
+      carries 'Every API request'
+      facts [
+        'Caching is disabled on this behaviour, so every request crosses the region boundary to the origin.',
+        '<code>originPath</code> is <code>/prod</code> — the public API\'s only stage.'
+      ]
+      order '3'
+    }
+  }
+  network_pubapi -> network_authfn 'TOKEN authorizer' {
+    technology 'Lambda invoke'
+    metadata {
+      protocol 'Lambda invoke'
+      auth 'apigateway.amazonaws.com service principal'
+      carries 'The Authorization header'
+      facts [
+        'API Gateway invokes the function through the Lambda service, so nothing about this hop touches the VPC — only the function\'s own outbound calls do.'
+      ]
+      order '4'
+    }
+  }
+  network_pubapi -> network_ddvla 'AWS_PROXY' {
+    technology 'Lambda proxy integration'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries 'dvla\'s 7 public routes'
+      order '5'
+    }
+  }
+  network_pubapi -> network_diso 'AWS_PROXY' {
+    technology 'Lambda proxy integration'
+    metadata {
+      protocol 'Lambda proxy integration'
+      auth 'Authorizer policy'
+      carries 'Every other domain\'s public routes'
+      order '6'
+    }
+  }
+  network_authfn -> network_nat 'JWKS fetch' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth '—'
+      carries 'GET .../.well-known/jwks.json'
+      facts [
+        'A second internet egress path alongside the DVLA gateway\'s, and the reason the authorizer cannot be an isolated function.'
+      ]
+      order '7'
+    }
+  }
+  network_gwdvla -> network_nat 'DVLA calls' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'API key plus a DVLA-issued bearer token'
+      carries 'Every DVLA API call'
+      order '8'
+    }
+  }
+  network_nat -> network_internet 'internet gateway' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth '—'
+      carries 'The only internet egress out of the VPC'
+      order '9'
+    }
+  }
+  network_internet -> network_jwks 'development only' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'None — the Function URL is unauthenticated'
+      carries 'The stub JWK set'
+      facts [
+        'The authorizer\'s <code>JWKS_URI</code> points at this public Function URL in development, so the request leaves through NAT and comes back in through the Lambda service.'
+      ]
+      order '10'
+    }
+  }
+  network_ddvla -> network_vpce '443' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'SigV4 with the function\'s own role'
+      carries 'Private API calls to the DVLA gateway and the udp domain'
+      order '11'
+    }
+  }
+  network_diso -> network_vpce '443 only' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'Execution role'
+      carries 'Private API calls plus Secrets Manager, SSM, STS and KMS'
+      facts [
+        'The isolated security group has no other egress rule, so nothing beyond these six endpoints is reachable.'
+      ]
+      order '12'
+    }
+  }
+  network_gwiso -> network_vpce '443 · interface endpoint' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'sts:AssumeRole through the STS endpoint, then SigV4'
+      carries 'UDP and UNS calls'
+      order '13'
+    }
+  }
+  network_vpce -> network_privapi 'aws:SourceVpce pin' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'Endpoint condition plus the caller\'s IAM policy'
+      carries 'All internal routing'
+      order '14'
+    }
+  }
+  network_vpce -> network_partners 'private path' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'SigV4 as the assumed consumer role'
+      carries 'Partner API traffic'
+      order '15'
+    }
+  }
+}
+
+views {
+  view network {
+    title 'Network'
+    include network_z_use1, network_z_use1.**
+    include network_z_euw2, network_z_euw2.**
+    include network_z_once, network_z_once.**
+    include network_internet, network_internet.**
+  }
+}

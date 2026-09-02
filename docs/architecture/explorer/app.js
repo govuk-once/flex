@@ -653,7 +653,7 @@ function renderTables(){
       <span class="tbl-hint">${tablesOpen?"hide":"show"}</span>
     </button>
     <div class="tbl-body" id="tbl-body">${
-      t.map(x=>`<section class="grp"><h2>${esc(x.name)}</h2>${x.note?`<p class="gnote">${rich(x.note)}</p>`:""}${tableHtml(x)}</section>`).join("")
+      t.map(x=>`<section class="grp"><h2>${esc(x.name)}</h2>${x.note?`<p class="gnote">${rich(x.note)}</p>`:""}${tableHtml(x)}${codes(x.code)}</section>`).join("")
     }</div>`;
   box.querySelector("#tbl-toggle").addEventListener("click",()=>setTablesOpen(!tablesOpen));
 }

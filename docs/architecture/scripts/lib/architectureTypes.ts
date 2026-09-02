@@ -53,8 +53,24 @@ export interface GatewayFact {
   resources: { key: string; type: string; path: string; env: string | null }[];
 }
 
+/** One CloudWatch alarm, read out of the CDK construct that creates it. */
+export interface AlarmFact {
+  id: string;
+  source: string;
+  alarmName?: string;
+  metric?: string;
+  statistic?: string;
+  threshold?: string;
+  comparison?: string;
+  evaluationPeriods?: string;
+  datapointsToAlarm?: string;
+  treatMissingData?: string;
+  stdDevs?: string;
+  action?: string;
+}
+
 export interface ArchitectureFacts {
-  /** The config globs the facts were derived from. */
+  /** The config globs and source directories the facts were derived from. */
   generatedFrom: string;
   domains: DomainFact[];
   gateways: GatewayFact[];
@@ -66,6 +82,7 @@ export interface ArchitectureFacts {
     routeMethods: { public: PerStage; private: PerStage };
     domainsWithPublicRoutes: PerStage;
   };
+  alarms?: AlarmFact[];
 }
 
 /* ------------------------------------------------------------------------------------ *

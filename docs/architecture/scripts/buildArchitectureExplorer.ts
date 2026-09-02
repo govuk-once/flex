@@ -1,7 +1,9 @@
 /**
  * Builds the interactive architecture explorer from its parts.
  *
- *   docs/architecture/explorer/views/*.json   one file per tab (the content)
+ *   docs/architecture/explorer/model/*.c4      the diagrams, as a LikeC4 model
+ *   docs/architecture/explorer/model/views.json tab order, audience, tables
+ *   docs/architecture/explorer/model/resources.json  the AWS inventory
  *   docs/architecture/explorer/styles.css     presentation
  *   docs/architecture/explorer/shell.html     page markup
  *   docs/architecture/explorer/app.js         renderer and interactions
@@ -23,13 +25,21 @@ import path from "node:path";
 import { check } from "prettier";
 
 import type { ArchitectureFacts, PerStage } from "./lib/architectureTypes.js";
+import { loadLikeC4Views } from "./lib/loadLikeC4Views.js";
+import {
+  DOCS_ROOT,
+  inDocs,
+  inSource,
+  SITE_ROOT,
+  type SourceContract,
+} from "./lib/paths.js";
 
-const ROOT = path.resolve(import.meta.dirname, "..");
-const SRC = path.join(ROOT, "docs/architecture/explorer");
-const OUT = path.join(ROOT, "docs/architecture/explorer.html");
-const FACTS = path.join(ROOT, "docs/architecture/architecture-facts.json");
+const SRC = inDocs("explorer");
+const OUT = inDocs("explorer.html");
+const FACTS = inDocs("architecture-facts.json");
 const ICONS = path.join(SRC, "icons.svg");
 const CONFIG = path.join(SRC, "explorer.config.json");
+const MODEL = path.join(SRC, "model");
 
 /**
  * CloudFormation namespace to icon, so every `AWS::X::Y` in a `type` field picks up the
@@ -113,6 +123,8 @@ interface ExplorerConfig {
   filterHint: string;
   kinds: { id: string; label: string; colour: string }[];
   stages: { id: string; label: string; facts: string }[];
+  /** Where the FLEX checkout is and what is read from it — see lib/paths.ts. */
+  source: SourceContract;
 }
 
 function loadConfig(): ExplorerConfig {
@@ -138,6 +150,10 @@ function loadConfig(): ExplorerConfig {
   ).filter((k) => !cfg[k].trim());
   if (blank.length)
     throw new Error(`explorer.config.json has no ${blank.join(", ")}`);
+  // paths.ts reads `source` before this runs and fails loudly if it is malformed, so this
+  // only guards against it being dropped from the type's point of view.
+  if (!cfg.source.root)
+    throw new Error("explorer.config.json has no source.root");
   if (!cfg.kinds.length) throw new Error("explorer.config.json has no kinds");
   if (!cfg.stages.length) throw new Error("explorer.config.json has no stages");
   if (!/^[a-z][a-z0-9-]*$/.test(cfg.slug))
@@ -266,6 +282,13 @@ interface Table {
   cols: string[];
   rows: string[][];
   note?: string;
+  /** Where in the repo the table was read from, shown under it as links. */
+  code?: [string, string][];
+  /**
+   * Binds one column to a derived fact array, so a row that no longer matches the
+   * code fails the build instead of quietly going stale.
+   */
+  derived?: { from: string; key: string; col: string };
 }
 
 /** A count is either flat, or one number per stage. */
@@ -310,51 +333,15 @@ interface View {
   groups?: DocGroup[];
 }
 
-function loadViews(): View[] {
-  const dir = path.join(SRC, "views");
-  const views = readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => {
-      const raw = readFileSync(path.join(dir, f), "utf8");
-      try {
-        return JSON.parse(raw) as View;
-      } catch (err) {
-        throw new Error(`views/${f} is not valid JSON`, { cause: err });
-      }
-    })
-    .sort((a, b) => a.order - b.order);
+/**
+ * The LikeC4 model is the source. Nothing is generated to disk between it and the page: a
+ * derived JSON would either be committed and drift, or gitignored and so never reviewed.
+ */
+async function loadViews(): Promise<View[]> {
+  const views = (await loadLikeC4Views(MODEL)) as unknown as View[];
 
   // A view with groups and no nodes is a reference tab; the renderer keys off this.
   for (const v of views) if (!v.nodes && v.groups) v.type = "doc";
-
-  for (const v of views)
-    if (!v.audience?.trim())
-      throw new Error(
-        `views/${v.id}.json has no "audience" — every tab must say who it is for`,
-      );
-
-  for (const v of views)
-    if (!v.group?.trim())
-      throw new Error(
-        `views/${v.id}.json has no "group" — every tab belongs to a section of the tab bar`,
-      );
-  // Groups must form contiguous runs, or the tab bar draws the same label twice.
-  const seen = new Set<string>();
-  let run: string | null = null;
-  for (const v of views) {
-    const g = v.group ?? "";
-    if (g === run) continue;
-    if (seen.has(g))
-      throw new Error(
-        `group "${g}" is split across non-adjacent tabs — check the order fields`,
-      );
-    seen.add(g);
-    run = g;
-  }
-
-  const ids = views.map((v) => v.id);
-  const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
-  if (dupes.length) throw new Error(`duplicate view ids: ${dupes.join(", ")}`);
   return views;
 }
 
@@ -494,9 +481,92 @@ function checkDerivedCounts(views: View[], cfg: ExplorerConfig): string[] {
       if (claimed !== actual)
         problems.push(
           `resources/${id}: says ${String(claimed)} for ${st.id}, but the configs say ` +
-            `${String(actual)} (${where}.${st.facts}). Update views/resources.json, or fix the config.`,
+            `${String(actual)} (${where}.${st.facts}). Update model/resources.json, or fix the config.`,
         );
     }
+  }
+  return problems;
+}
+
+/**
+ * A reference table cites the files it was transcribed from. Those citations are the only
+ * thing tying a hand-written table back to the code, so a moved or deleted file has to fail
+ * here — a dead link is worse than no link, because it still looks like provenance.
+ */
+function checkTableCitations(views: View[]): string[] {
+  const problems: string[] = [];
+  for (const v of views)
+    for (const t of v.tables ?? []) {
+      if (!t.code?.length) {
+        problems.push(`${v.id}/"${t.name}": no code citation`);
+        continue;
+      }
+      for (const [label, rel] of t.code)
+        if (!existsSync(inSource(rel)))
+          problems.push(
+            `${v.id}/"${t.name}": cites ${rel} (${label}), which does not exist`,
+          );
+    }
+  return problems;
+}
+
+/**
+ * A table can bind one of its columns to a derived fact array. The build then holds the
+ * table to the code: an alarm added, removed or renamed in the CDK constructs breaks the
+ * build here rather than leaving a table that reads as current and is not.
+ */
+function checkDerivedTables(views: View[]): string[] {
+  const problems: string[] = [];
+  const bound = views.flatMap((v) =>
+    (v.tables ?? []).flatMap((t) =>
+      t.derived ? [{ v, t, d: t.derived }] : [],
+    ),
+  );
+  if (!bound.length) return problems;
+
+  let facts: ArchitectureFacts;
+  try {
+    facts = JSON.parse(readFileSync(FACTS, "utf8")) as ArchitectureFacts;
+  } catch {
+    return ["architecture-facts.json is missing — run pnpm architecture:facts"];
+  }
+
+  for (const { v, t, d } of bound) {
+    const { from, key, col } = d;
+    const truth = (facts as unknown as Record<string, unknown>)[from];
+    if (!Array.isArray(truth)) {
+      problems.push(
+        `${v.id}/"${t.name}": architecture-facts.json has no ${from}`,
+      );
+      continue;
+    }
+    const at = t.cols.indexOf(col);
+    if (at < 0) {
+      problems.push(
+        `${v.id}/"${t.name}": no "${col}" column to bind to ${from}`,
+      );
+      continue;
+    }
+    const strip = (x: string) => x.replace(/<[^>]+>/g, "").trim();
+    const claimed = t.rows.map((r) => strip(r[at] ?? ""));
+    const actual = (truth as Record<string, unknown>[]).map((x) =>
+      String(x[key]),
+    );
+    const missing = actual.filter((x) => !claimed.includes(x));
+    const extra = claimed.filter((x) => !actual.includes(x));
+    if (missing.length)
+      problems.push(
+        `${v.id}/"${t.name}": the code has ${from} not in the table: ${missing.join(", ")}`,
+      );
+    if (extra.length)
+      problems.push(
+        `${v.id}/"${t.name}": the table lists ${from} not in the code: ${extra.join(", ")}`,
+      );
+    if (claimed.length !== actual.length)
+      problems.push(
+        `${v.id}/"${t.name}": ${String(claimed.length)} rows but the code has ` +
+          `${String(actual.length)} ${from}. Run pnpm architecture:facts, then update the table.`,
+      );
   }
   return problems;
 }
@@ -507,13 +577,13 @@ function checkDerivedCounts(views: View[], cfg: ExplorerConfig): string[] {
  * passing locally and failing lint in CI.
  */
 async function checkFormatting(): Promise<string[]> {
-  const dir = path.join(SRC, "views");
   const problems: string[] = [];
-  for (const f of readdirSync(dir).filter((n) => n.endsWith(".json"))) {
-    const file = path.join(dir, f);
+  // The .c4 files are checked by LikeC4 itself; these are the committed JSON beside them.
+  for (const f of readdirSync(MODEL).filter((n) => n.endsWith(".json"))) {
+    const file = path.join(MODEL, f);
     if (!(await check(readFileSync(file, "utf8"), { filepath: file })))
       problems.push(
-        `views/${f}: not prettier-formatted — run pnpm exec eslint --fix ${path.relative(ROOT, file)}`,
+        `model/${f}: not prettier-formatted — run pnpm exec eslint --fix ${path.relative(DOCS_ROOT, file)}`,
       );
   }
   return problems;
@@ -574,7 +644,7 @@ function checkPlacement(views: View[]) {
 
 /** The Pages landing page and the local server's landing page are the same file. */
 function writeIndex(views: View[]) {
-  const docs = path.join(ROOT, "docs");
+  const docs = SITE_ROOT;
   const md = (dir: string) =>
     readdirSync(path.join(docs, dir), { withFileTypes: true })
       .filter((e) => e.isFile() && e.name.endsWith(".md"))
@@ -621,12 +691,14 @@ code{font-family:"IBM Plex Mono",monospace;font-size:12.5px}
 <h2>Runbooks</h2><ul class="docs">${list("runbooks/", md("runbooks"))}</ul>
 </main></body></html>`;
   writeFileSync(path.join(docs, "index.html"), page);
-  console.log("Wrote docs/index.html (landing page)");
+  console.log(
+    `Wrote ${path.relative(SITE_ROOT, path.join(docs, "index.html"))} (landing page, in the published site root)`,
+  );
 }
 
 async function main() {
   const bodyFlag = process.argv.indexOf("--body");
-  const views = loadViews();
+  const views = await loadViews();
   const cfg = loadConfig();
   const kindIds = new Set(cfg.kinds.map((k) => k.id));
 
@@ -644,6 +716,8 @@ async function main() {
     ...checkGeometry(views, kindIds),
     ...checkPlacement(views),
     ...checkDerivedCounts(views, cfg),
+    ...checkTableCitations(views),
+    ...checkDerivedTables(views),
   ];
   const strict = !process.argv.includes("--lenient");
   if (problems.length) {
@@ -657,11 +731,14 @@ async function main() {
   const placement = Object.fromEntries(
     views.map((v) => [v.id, v.placement ?? {}]),
   );
+  const { source: _source, ...pageConfig } = cfg;
   const data =
-    `/* Generated by scripts/buildArchitectureExplorer.ts — edit explorer/views/*.json instead. */\n` +
+    `/* Generated by @flex/architecture-docs — edit explorer/model/*.c4 instead. */\n` +
     `const VIEWS=${JSON.stringify(views)};\n` +
     `const PLACEMENT=${JSON.stringify(placement)};\n` +
-    `const CONFIG=${JSON.stringify(cfg)};\n` +
+    // `source` says where the FLEX checkout is. That is a build concern, and the page
+    // is published, so it is dropped rather than shipped as a filesystem path.
+    `const CONFIG=${JSON.stringify(pageConfig)};\n` +
     `const ICON_IDS=${JSON.stringify([...icons.ids])};\n` +
     `const SERVICE_ICON=${JSON.stringify(SERVICE_ICON)};\n` +
     `const TYPE_ICON=${JSON.stringify(TYPE_ICON)};\n`;
@@ -685,7 +762,7 @@ async function main() {
   const page = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n${body.split("\n").slice(0, 4).join("\n")}\n</head>\n<body>\n${body.split("\n").slice(4).join("\n")}\n</body>\n</html>\n`;
   writeFileSync(OUT, page);
   console.log(
-    `Wrote ${path.relative(ROOT, OUT)} (${(page.length / 1024).toFixed(0)} KB, ${String(views.length)} tabs)`,
+    `Wrote ${path.relative(DOCS_ROOT, OUT)} (${(page.length / 1024).toFixed(0)} KB, ${String(views.length)} tabs)`,
   );
   writeIndex(views);
 }

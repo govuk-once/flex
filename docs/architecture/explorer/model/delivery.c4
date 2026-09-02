@@ -1,0 +1,1420 @@
+// FLEX architecture — Delivery.
+//
+// The model. Presentation that a LikeC4 view cannot hold — tab order, audience,
+// reference tables — is in views.json beside this file.
+
+model {
+
+  delivery_zauthor = boundary 'Author and review · every pull request' {
+    metadata {
+      type 'Lifecycle phase'
+      tech 'GitHub Actions'
+      role 'Everything that runs before a change can merge.'
+      facts [
+        'Four workflows fire on a pull request to main: Release Candidate (quality checks plus an ephemeral deploy), Validate OpenAPI Spec, Validate PR Title and, on close, Destroy Ephemeral Environment.'
+      ]
+      sourceId 'zauthor'
+      order '0'
+      x '23'
+      y '65'
+      w '707'
+      h '696'
+      boundary 'soft'
+    }
+
+    delivery_domteam = actor 'Domain team' {
+      #off-request-path
+      description 'person'
+      link https://github.com/govuk-once/flex/blob/main/.github/CODEOWNERS 'CODEOWNERS'
+      link https://github.com/govuk-once/flex/blob/main/docs/domain-development.md 'domain-development.md'
+      metadata {
+        type 'Person'
+        tech '—'
+        role 'Builds and deploys a domain. Writes no infrastructure.'
+        facts [
+          'This is the intended operating model: a domain team is meant to own only domains/{name}/*. CODEOWNERS still assigns every path to the FLEX platform developers team pending domain-team onboarding.',
+          'Deploys by merging: the shared pipeline creates the Lambdas, API resources, IAM policies and alarms from the declared config.',
+          'Adding a domain needs no platform change; only a new third-party integration does.',
+          'dvla, example, groups and uns each take a workspace dependency on <code>@flex/udp-domain</code>; three of them import a udp Zod schema into their own domain.config.ts, so a udp schema change is a compile-time break.'
+        ]
+        sourceId 'domteam'
+        order '0'
+        x '46'
+        y '116'
+        w '177'
+        h '58'
+        ownership 'person'
+      }
+    }
+
+    delivery_platteam = actor 'FLEX platform team' {
+      #off-request-path
+      description 'person'
+      link https://github.com/govuk-once/flex/blob/main/docs/platform-development.md 'platform-development.md'
+      metadata {
+        type 'Person'
+        tech '—'
+        role 'Owns every piece of infrastructure a domain runs on.'
+        facts [
+          'Owns libs/*, platform/* and the CDK app — and, until domain teams onboard, every path in CODEOWNERS as well.',
+          'Owns the two shared API Gateways, the VPC, the service gateways and the pipeline itself.',
+          'A domain team never writes CDK; the platform team never writes domain logic.'
+        ]
+        sourceId 'platteam'
+        order '1'
+        x '46'
+        y '206'
+        w '177'
+        h '58'
+        ownership 'person'
+      }
+    }
+
+    delivery_repo = external 'GitHub · govuk-once/flex' {
+      #off-request-path
+      description 'source of truth'
+      technology 'GitHub'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/main.yml 'main.yml'
+      metadata {
+        type 'External system'
+        tech 'GitHub'
+        role 'Hosts the code, the pipeline and the releases.'
+        facts [
+          'Everything reaches production through one workflow: Continuous Deployment, on push to main.',
+          'Deployment credentials are never stored — CI federates into AWS with OIDC and a per-environment role.'
+        ]
+        sourceId 'repo'
+        order '2'
+        x '290'
+        y '153'
+        w '200'
+        h '58'
+        ownership 'third'
+      }
+    }
+
+    delivery_title = platform 'PR title gate' {
+      #off-request-path
+      description 'required check · own workflow'
+      technology 'ci-pr-title-check.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/ci-pr-title-check.yml 'ci-pr-title-check.yml'
+      link https://github.com/govuk-once/flex/blob/main/.releaserc.json '.releaserc.json'
+      metadata {
+        type 'Workflow'
+        tech 'ci-pr-title-check.yml'
+        role 'Enforces the commit header that semantic-release later parses.'
+        facts [
+          'Fails unless the title matches {JIRA-KEY} {type}(scope)?!?: description, with type one of feat, fix, chore, docs, style, refactor, test, perf, ci, build or revert.',
+          'The squash-merge commit is this title, and the release parser tolerates a leading Jira key — the gate is what makes that tolerance safe rather than accidental.',
+          'Dependabot pull requests are skipped; a single bot comment is created or updated with the guidance.'
+        ]
+        sourceId 'title'
+        order '3'
+        x '290'
+        y '262'
+        w '227'
+        h '58'
+        ownership 'flex'
+      }
+    }
+
+    delivery_ghpr = external 'on pull_request → main' {
+      #off-request-path
+      description 'three workflows run in parallel'
+      technology 'GitHub Actions'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/ci-pr-quality-checks.yml 'ci-pr-quality-checks.yml'
+      metadata {
+        type 'Trigger'
+        tech 'GitHub Actions'
+        role 'The pull-request event that starts the checks below.'
+        facts [
+          'Release Candidate runs Quality Checks and the ephemeral deploy in parallel, then Module E2E against the stage it created.',
+          'Concurrency is grouped per head ref: the OpenAPI and title workflows cancel in-progress runs, Release Candidate deliberately does not.'
+        ]
+        sourceId 'ghpr'
+        order '4'
+        x '46'
+        y '371'
+        w '240'
+        h '32'
+        ownership 'third'
+      }
+    }
+
+    delivery_qc = platform 'Quality Checks' {
+      #off-request-path
+      description '3 parallel jobs'
+      technology '_quality-checks.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/_quality-checks.yml '_quality-checks.yml'
+      metadata {
+        type 'Workflow'
+        tech '_quality-checks.yml'
+        role 'Hygiene, SonarQube and Security, on pull requests and on main alike.'
+        facts [
+          'Hygiene: pre-commit over all files, then lint, tsc, validate:integrations and validate:macie-coverage. An uncovered domain does not fail the job — it posts a Slack notice, and both that step and its credential step are <code>continue-on-error</code>.',
+          'Security: checkov over synthesised CloudFormation, plus dependency review failing at high severity.',
+          'Nx runs lint, tsc and checkov against affected projects, on PR and main runs alike; unit tests always run for every project (run-many --all) inside the SonarQube job.',
+          'Only the CDK app declares a checkov target, so that scan runs only when platform/infra is affected.'
+        ]
+        sourceId 'qc'
+        order '5'
+        x '46'
+        y '443'
+        w '177'
+        h '62'
+        ownership 'flex'
+      }
+    }
+
+    delivery_oas = platform 'OpenAPI breaking check' {
+      #off-request-path
+      description 'per PR'
+      technology '_validate-openapi.yml'
+      link https://github.com/govuk-once/flex/blob/main/scripts/checkOpenapiBreaking.ts 'checkOpenapiBreaking.ts'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/_validate-openapi.yml '_validate-openapi.yml'
+      metadata {
+        type 'Workflow'
+        tech '_validate-openapi.yml'
+        role 'Regenerates every domain\'s spec and diffs it against what is published.'
+        facts [
+          'oasdiff compares against the specs in the development spec bucket — not staging, not production.',
+          'Only ERR-level findings fail; a spec that disappears counts as breaking too.',
+          'The breaking-change-accepted label overrides the failure.'
+        ]
+        sourceId 'oas'
+        order '6'
+        x '267'
+        y '443'
+        w '186'
+        h '62'
+        ownership 'flex'
+      }
+    }
+
+    delivery_eph = platform 'Ephemeral stage' {
+      #off-request-path
+      description 'pr-{number} · full deploy'
+      technology 'cdk deploy --all'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/ci-pr-quality-checks.yml 'ci-pr-quality-checks.yml'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/deployment.ts 'deployment.ts'
+      metadata {
+        type 'Environment'
+        tech 'cdk deploy --all'
+        role 'A complete, isolated copy of the platform for one pull request.'
+        facts [
+          'Reuses the development VPC, endpoints, security groups and alarm topics — it creates no core stack, and no canary.',
+          'Environment gating is only enforced for persistent stages, so every domain deploys here, example included.',
+          'It runs the same reusable job as the three environments, Platform E2E included, and gets its own subdomain and its own WAF bypass secret.'
+        ]
+        sourceId 'eph'
+        order '7'
+        x '488'
+        y '443'
+        w '200'
+        h '62'
+        ownership 'flex'
+      }
+    }
+
+    delivery_sonar = external 'SonarQube' {
+      #off-request-path
+      description 'quality gate'
+      technology 'sonarqube-scan-action'
+      link https://github.com/govuk-once/flex/blob/main/sonar-project.properties 'sonar-project.properties'
+      metadata {
+        type 'External system'
+        tech 'sonarqube-scan-action'
+        role 'Static analysis across the whole workspace; coverage across the domains, libs and service gateways only — the CDK app, CLI, testing lib, smoke-test, domain.config.ts/gateway.config.ts files, example and local-council are all excluded from coverage.'
+        facts [
+          'sonar.qualitygate.wait=true, so a failing gate fails the job.',
+          'It also consumes an ESLint JSON report, generated with || true so a lint crash cannot fail the scan.'
+        ]
+        sourceId 'sonar'
+        order '8'
+        x '46'
+        y '552'
+        w '177'
+        h '62'
+        ownership 'third'
+      }
+    }
+
+    delivery_me2e = platform 'Module E2E' {
+      #off-request-path
+      description 'matrix per domain'
+      technology '_moduleE2E.yml'
+      link https://github.com/govuk-once/flex/blob/main/scripts/listE2eModules.ts 'listE2eModules.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/testing/src/e2e/setup.global.ts 'setup.global.ts'
+      metadata {
+        type 'Workflow'
+        tech '_moduleE2E.yml'
+        role 'Runs each domain\'s own E2E suite against the ephemeral stage.'
+        facts [
+          'Domains are discovered at runtime by scanning for a test:e2e script — five of six qualify; local-council declares none, so it is never covered.',
+          'fail-fast is off, so one domain failing does not mask the others.',
+          'Suites read their URLs from the FlexPlatform and FlexGlobal stack outputs rather than hard-coding them.'
+        ]
+        sourceId 'me2e'
+        order '9'
+        x '488'
+        y '552'
+        w '177'
+        h '62'
+        ownership 'flex'
+      }
+    }
+
+    delivery_cleanup = platform 'Destroy on PR close' {
+      #off-request-path
+      description 'cdk destroy --all --force'
+      technology 'ci-pr-cleanup.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/ci-pr-cleanup.yml 'ci-pr-cleanup.yml'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/s3/AccessLogBucket.ts 'AccessLogBucket.ts'
+      metadata {
+        type 'Workflow'
+        tech 'ci-pr-cleanup.yml'
+        role 'Tears the ephemeral stage down when the pull request closes.'
+        facts [
+          'The ephemeral OpenAPI specs bucket is created with autoDeleteObjects so the destroy completes; the two access-log buckets it depends on are object-locked (365-day GOVERNANCE) and retained.'
+        ]
+        sourceId 'cleanup'
+        order '10'
+        x '46'
+        y '661'
+        w '200'
+        h '62'
+        ownership 'flex'
+      }
+    }
+  }
+
+  delivery_zlocal = boundary 'Outside the pipeline · workspace, CLI and personal stages' {
+    metadata {
+      type 'Lifecycle phase'
+      tech 'pnpm workspace · local tooling'
+      role 'What an engineer touches before a pull request exists.'
+      sourceId 'zlocal'
+      order '1'
+      x '23'
+      y '800'
+      w '707'
+      h '197'
+      boundary 'soft'
+    }
+
+    delivery_cli = platform 'flex CLI' {
+      #off-request-path
+      description 'Ink TUI · pnpm dev'
+      technology 'Ink + React + Mustache'
+      link https://github.com/govuk-once/flex/blob/main/libs/cli/src/templates/createDomain.ts 'createDomain.ts'
+      link https://github.com/govuk-once/flex/blob/main/libs/cli/src/panels/CreateDomainPanel.tsx 'CreateDomainPanel.tsx'
+      metadata {
+        type 'Developer tool'
+        tech 'Ink + React + Mustache'
+        role 'Scaffolds a whole domain from templates.'
+        facts [
+          'Eight Mustache templates produce package.json, domain.config.ts, tsconfig, vitest and eslint config, a README and one v1/hello handler.',
+          'It then runs pnpm up --latest, pnpm install, tsc and lint inside the new package, so a scaffolded domain compiles before anything is written by hand.',
+          'This is the on-ramp that makes "adding a domain needs no platform change" true.'
+        ]
+        sourceId 'cli'
+        order '11'
+        x '46'
+        y '854'
+        w '177'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    delivery_personal = platform 'Personal · {USER}' {
+      #off-request-path
+      description 'no pipeline or cleanup'
+      technology 'cdk deploy --all'
+      link https://github.com/govuk-once/flex/blob/main/libs/utils/src/environments.ts 'environments.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/app.ts 'app.ts'
+      metadata {
+        type 'Environment'
+        tech 'cdk deploy --all'
+        role 'A full named stage an engineer deploys from a laptop.'
+        facts [
+          'getEnvConfig() falls back to process.env.USER, so a deploy with no STAGE set creates a stage named after the engineer — lowercased, stripped to a-z0-9- and truncated to 12 characters.',
+          'It behaves exactly like a PR stage: development account, development VPC, endpoints and topics, every domain including example.',
+          'Nothing tears it down — only pr-{number} stages have a cleanup workflow.'
+        ]
+        sourceId 'personal'
+        order '12'
+        x '267'
+        y '854'
+        w '182'
+        h '72'
+        ownership 'flex'
+      }
+    }
+
+    delivery_supply = platform 'Supply-chain controls' {
+      #off-request-path
+      description 'workspace + pre-commit'
+      technology 'pnpm · pre-commit · Dependabot'
+      link https://github.com/govuk-once/flex/blob/main/pnpm-workspace.yaml 'pnpm-workspace.yaml'
+      link https://github.com/govuk-once/flex/blob/main/.pre-commit-config.yaml '.pre-commit-config.yaml'
+      link https://github.com/govuk-once/flex/blob/main/.github/dependabot.yml 'dependabot.yml'
+      metadata {
+        type 'Policy'
+        tech 'pnpm · pre-commit · Dependabot'
+        role 'What is allowed into the dependency tree and the working tree.'
+        facts [
+          'pnpm minimumReleaseAge: 10080 quarantines any newly published version for seven days.',
+          'An overrides block pins six transitive dependencies out of vulnerable ranges; allowBuilds denies install scripts by default, permitting only esbuild and the Playwright Chromium browser.',
+          'pre-commit runs Yelp detect-secrets against a 129KB checked-in baseline, plus detect-private-key and the file hygiene hooks — CI runs the same hooks with --all-files.',
+          'Dependabot batches patch and minor updates weekly for npm and GitHub Actions, with a 7-day cooldown.'
+        ]
+        sourceId 'supply'
+        order '13'
+        x '488'
+        y '854'
+        w '180'
+        h '72'
+        ownership 'flex'
+      }
+    }
+  }
+
+  delivery_zpromote = boundary 'Promote · every merge to main' {
+    metadata {
+      type 'Lifecycle phase'
+      tech 'Continuous Deployment workflow'
+      role 'One workflow run carries a commit from release to production.'
+      facts [
+        'The spine down the middle is the only thing that blocks production; everything on the right rail runs beside it and gates nothing.'
+      ]
+      sourceId 'zpromote'
+      order '2'
+      x '752'
+      y '65'
+      w '707'
+      h '933'
+      boundary 'soft'
+    }
+
+    delivery_release = platform 'semantic-release' {
+      #off-request-path
+      description 'tag + GitHub release'
+      technology 'semantic-release on main'
+      link https://github.com/govuk-once/flex/blob/main/.releaserc.json '.releaserc.json'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/main.yml 'main.yml'
+      metadata {
+        type 'Workflow job'
+        tech 'semantic-release on main'
+        role 'Decides the version and publishes the release notes.'
+        facts [
+          'The commit parser tolerates a leading Jira key, so FLEX-250 chore: … still classifies correctly.',
+          'Tags are v{version}; when nothing is released the run falls back to the latest tag, then to the short SHA, so a deployment notice always names something.',
+          'Only major and minor releases publish a Slack notice, and that step is continue-on-error.'
+        ]
+        sourceId 'release'
+        order '14'
+        x '1003'
+        y '116'
+        w '177'
+        h '54'
+        ownership 'flex'
+      }
+    }
+
+    delivery_oidc = platform 'AWS deployment roles' {
+      #off-request-path
+      description 'OIDC federation'
+      technology 'aws-actions/configure-aws-credentials'
+      link https://github.com/govuk-once/flex/blob/main/docs/zap.md 'zap.md'
+      metadata {
+        type 'IAM'
+        tech 'aws-actions/configure-aws-credentials'
+        role 'How CI gets into the accounts.'
+        facts [
+          'A separate role secret per environment — DEV, STAGING and PROD; the ZAP scan and a staging performance run assume the staging one too.',
+          'Short-lived credentials only; nothing long-lived is stored in GitHub.',
+          'The session name is the workflow run ID, so CloudTrail ties every action back to a run.',
+          'The staging role\'s trust policy only allows main, which is why the ZAP runbook says to swap in the dev role when testing from a branch.'
+        ]
+        sourceId 'oidc'
+        order '15'
+        x '775'
+        y '227'
+        w '177'
+        h '62'
+        ownership 'flex'
+        awsIcon 'iam'
+      }
+    }
+
+    delivery_params = internal 'flex-params + DNS' {
+      #off-request-path
+      description 'SSM · owned elsewhere'
+      technology 'SSM Parameter Store · Route 53'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/ssm-keys.ts 'ssm-keys.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/utils/lambda.ts 'lambda.ts'
+      metadata {
+        type 'GOV.UK Once configuration source'
+        tech 'SSM Parameter Store · Route 53'
+        role 'Supplies the hosted zone, auth identifiers and consumer secrets.'
+        facts [
+          'Declared through addExternalExports: importing a key no stack exports and that isn\'t declared external fails the synth. The values themselves are CloudFormation SSM references resolved at deploy time, so a parameter missing from SSM fails the deploy.',
+          'The only genuine synth-time read is ReleaseSlackChannelId, via valueFromLookup.',
+          'One import escapes the rule: the Lambda environment-encryption CMK is read with valueForStringParameter without being declared external, so a missing key there surfaces at deploy rather than synth.'
+        ]
+        sourceId 'params'
+        order '16'
+        x '775'
+        y '332'
+        w '177'
+        h '62'
+        ownership 'govuk'
+        awsIcon 'ssm'
+        resources [
+          'ssm-imported'
+        ]
+      }
+    }
+
+    delivery_ssmapp = platform 'SsmApp stack graph' {
+      #off-request-path
+      description 'synth-time DAG'
+      technology 'graphology DirectedGraph'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/base/index.ts 'base/index.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/app.ts 'app.ts'
+      metadata {
+        type 'CDK App'
+        tech 'graphology DirectedGraph'
+        role 'Turns SSM imports and exports into stack dependencies.'
+        facts [
+          'Every import() records an edge and willCreateCycle rejects a cycle at synth; synth() then converts each edge into an addDependency call.',
+          'That ordering is what makes cdk deploy --all --concurrency 4 safe.',
+          'Stacks per stage: FlexCore and FlexSmokeTest (persistent stages only), FlexPlatform, FlexGlobal in us-east-1, one stack per deployable domain, and FlexApiDeployment last. FlexMacie is commented out in app.ts.'
+        ]
+        sourceId 'ssmapp'
+        order '17'
+        x '775'
+        y '450'
+        w '177'
+        h '62'
+        ownership 'flex'
+        resources [
+          'ssm-written',
+          'ssm-crossregion'
+        ]
+      }
+    }
+
+    delivery_apideploy = platform 'API stage redeploy' {
+      #off-request-path
+      description 'AwsCustomResource ×2'
+      technology 'apigateway:createDeployment'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/deploy.ts 'stacks/deploy.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/infra/CfnPause.ts 'CfnPause.ts'
+      metadata {
+        type 'Custom resource'
+        tech 'apigateway:createDeployment'
+        role 'Forces a new deployment of both REST APIs once the domain stacks have added their routes.'
+        facts [
+          'It declares every deployed domain stack as a dependency, which is how the graph places it last.',
+          'The sorted METHOD:path list is SHA-256 hashed into the deployment description, so a redeploy only happens when the route set actually changes.',
+          'A CfnPause custom resource sleeps six seconds between the public and the private call, because createDeployment is rate-limited.'
+        ]
+        sourceId 'apideploy'
+        order '18'
+        x '775'
+        y '552'
+        w '177'
+        h '62'
+        ownership 'flex'
+        awsIcon 'apigateway'
+        resources [
+          'api-deploy',
+          'lambda-cr'
+        ]
+      }
+    }
+
+    delivery_deploydev = platform 'Deploy to Development' {
+      #off-request-path
+      description 'no approval'
+      technology '_build-deploy.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/_build-deploy.yml '_build-deploy.yml'
+      metadata {
+        type 'Workflow job'
+        tech '_build-deploy.yml'
+        role 'Generate OpenAPI, cdk deploy --all, then Platform E2E.'
+        facts [
+          'pnpm openapi:generate runs first, so the specs ship with the deploy.',
+          'cdk deploy --all --concurrency 4 --require-approval never.',
+          'Platform E2E runs inside this job, so a failure blocks promotion.'
+        ]
+        sourceId 'deploydev'
+        order '19'
+        x '1003'
+        y '227'
+        w '179'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_e2edev = platform 'Module E2E · dev' {
+      #off-request-path
+      description 'non-gating'
+      technology '_moduleE2E.yml'
+      metadata {
+        type 'Workflow'
+        tech '_moduleE2E.yml'
+        role 'Domain suites against the development stage.'
+        facts [
+          'A separate job that needs deployDev — and so does the staging deploy, so staging can start while these are still running.'
+        ]
+        sourceId 'e2edev'
+        order '20'
+        x '1243'
+        y '227'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_gatestg = platform 'Approval gate · staging' {
+      #off-request-path
+      description 'GitHub environment'
+      technology 'GitHub environments'
+      metadata {
+        type 'Environment protection'
+        tech 'GitHub environments'
+        role 'A human must approve before staging.'
+        facts [
+          'Configured on the GitHub environment the reusable deploy job names, not in the workflow file.',
+          'The first of two independent approvals.'
+        ]
+        sourceId 'gatestg'
+        order '21'
+        x '1003'
+        y '348'
+        w '193'
+        h '48'
+        ownership 'flex'
+      }
+    }
+
+    delivery_deploystg = platform 'Deploy to Staging' {
+      #off-request-path
+      description '+ Platform E2E'
+      technology '_build-deploy.yml'
+      metadata {
+        type 'Workflow job'
+        tech '_build-deploy.yml'
+        role 'The same reusable job, with the staging stage and role.'
+        facts [
+          'Platform E2E runs here too, and a failure blocks production.'
+        ]
+        sourceId 'deploystg'
+        order '22'
+        x '1003'
+        y '450'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_e2estg = platform 'Module E2E · staging' {
+      #off-request-path
+      description 'non-gating'
+      technology '_moduleE2E.yml'
+      metadata {
+        type 'Workflow'
+        tech '_moduleE2E.yml'
+        role 'Domain suites against staging.'
+        facts [
+          'deployProd needs only deployStaging, so these suites run alongside the production gate rather than before it.'
+        ]
+        sourceId 'e2estg'
+        order '23'
+        x '1243'
+        y '450'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_notifystg = platform 'Notify Slack · staging' {
+      #off-request-path
+      description 'non-gating'
+      technology '_notify-deployment.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/_notify-deployment.yml '_notify-deployment.yml'
+      metadata {
+        type 'Workflow'
+        tech '_notify-deployment.yml'
+        role 'Publishes the staging deployment notice.'
+        facts [
+          'Assumes the development role, because the release topic only exists in the development account.',
+          'Both steps are continue-on-error — a failed notification must never fail the pipeline.'
+        ]
+        sourceId 'notifystg'
+        order '24'
+        x '1243'
+        y '552'
+        w '186'
+        h '58'
+        ownership 'flex'
+      }
+    }
+
+    delivery_gateprod = platform 'Approval gate · prod' {
+      #off-request-path
+      description 'second separate approval'
+      technology 'GitHub environments'
+      metadata {
+        type 'Environment protection'
+        tech 'GitHub environments'
+        role 'A second human approval before production.'
+        facts [
+          'Independent of the staging approval — approving one does not approve the other.'
+        ]
+        sourceId 'gateprod'
+        order '25'
+        x '1003'
+        y '571'
+        w '198'
+        h '48'
+        ownership 'flex'
+      }
+    }
+
+    delivery_deployprod = platform 'Deploy to Production' {
+      #off-request-path
+      description 'no E2E'
+      technology '_build-deploy.yml'
+      metadata {
+        type 'Workflow job'
+        tech '_build-deploy.yml'
+        role 'The same job once more.'
+        facts [
+          'Platform E2E is skipped in production, and no Module E2E runs against it.',
+          'Production correctness therefore rests on staging plus the always-on canary, whose alarm currently notifies nobody.'
+        ]
+        sourceId 'deployprod'
+        order '26'
+        x '1003'
+        y '673'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_notifyprod = platform 'Notify Slack · prod' {
+      #off-request-path
+      description 'non-gating'
+      technology '_notify-deployment.yml'
+      metadata {
+        type 'Workflow'
+        tech '_notify-deployment.yml'
+        role 'Publishes the production deployment notice.'
+        facts [
+          'A separate failure notification fires if any stage\'s deploy job fails, naming the first stage that failed.'
+        ]
+        sourceId 'notifyprod'
+        order '27'
+        x '1243'
+        y '673'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_zap = platform 'ZAP API scan' {
+      #off-request-path
+      description 'DAST against staging'
+      technology 'zap.yml'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/zap.yml 'zap.yml'
+      link https://github.com/govuk-once/flex/blob/main/scripts/dastSetup.ts 'dastSetup.ts'
+      link https://github.com/govuk-once/flex/blob/main/docs/zap.md 'zap.md'
+      metadata {
+        type 'Workflow'
+        tech 'zap.yml'
+        role 'Dynamic security scan driven by an OpenAPI document.'
+        facts [
+          'Triggered by workflow_run when the whole Continuous Deployment workflow completes successfully on main — including the production gate. If production is rejected, DAST never runs.',
+          'Mints a real JWT first; the scan emits a SARIF report kept as a workflow-run artifact — nothing uploads it to code scanning.',
+          'The target is .zap/merged-openapi.json, a spec committed with the workflow and unchanged since: paths such as /v1/driving-licence and /v1/customer-summary no longer exist, and .zap/rules.tsv is empty.'
+        ]
+        sourceId 'zap'
+        order '28'
+        x '1243'
+        y '775'
+        w '177'
+        h '66'
+        ownership 'flex'
+      }
+    }
+
+    delivery_artillery = platform 'Artillery load tests' {
+      #off-request-path
+      description 'workflow_dispatch only'
+      technology 'Artillery 2 · CloudWatch plugin'
+      link https://github.com/govuk-once/flex/blob/main/.github/workflows/performance-tests.yml 'performance-tests.yml'
+      link https://github.com/govuk-once/flex/blob/main/tests/performance/README.md 'README.md'
+      link https://github.com/govuk-once/flex/blob/main/tests/performance/package.json 'package.json'
+      metadata {
+        type 'Test suite'
+        tech 'Artillery 2 · CloudWatch plugin'
+        role 'Load profiles against a deployed stage.'
+        facts [
+          'Six profiles live in tests/performance — smoke, load-baseline, load-growth, spike, stress (ramping to 2000 virtual users) and soak — but the workflow runs only the three default scenarios, one job each.',
+          'Thresholds are declared per scenario (p95 3000ms for the upsert, 1500ms for the two reads, error rate under 1%) and the run step is continue-on-error, so a breach never fails the workflow.',
+          'On staging every virtual user shares one real Cognito token, so those numbers measure endpoint throughput, not per-user concurrency.',
+          'The user-settings scenario PATCHes /app/udp/v1/users/notifications, but the udp route is /v1/users/me/notifications — it cannot return the 200 it asserts.'
+        ]
+        sourceId 'artillery'
+        order '29'
+        x '1243'
+        y '877'
+        w '180'
+        h '66'
+        ownership 'flex'
+      }
+    }
+  }
+
+  delivery_zoperate = boundary 'Operate · continuously' {
+    metadata {
+      type 'Lifecycle phase'
+      tech 'CloudWatch · SNS · AWS Chatbot'
+      role 'How a running stage reports on itself.'
+      facts [
+        'Absorbed from the Containers view: these four AWS containers are operations, not part of the runtime request path.'
+      ]
+      sourceId 'zoperate'
+      order '3'
+      x '1482'
+      y '65'
+      w '456'
+      h '933'
+      boundary 'soft'
+    }
+
+    delivery_canary = platform 'Smoke-test canary' {
+      #off-request-path
+      description 'EventBridge · every 5m'
+      technology 'Lambda, no VPC'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/smoke-test.ts 'stacks/smoke-test.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/smoke-test/src/credentials.ts 'credentials.ts'
+      metadata {
+        type 'Scheduled Lambda'
+        tech 'Lambda, no VPC'
+        role 'Synthetic canary exercising the whole public path.'
+        facts [
+          'Calls GET /app/udp/v1/users/me through the public URL, so CloudFront, the edge function, WAF, the certificate, the authorizer and the udp domain are all covered by one signal.',
+          'Publishes Flex/SmokeTest.SmokeTestSuccess as 1 or 0 — but its alarm has no SNS action, so nothing is notified.',
+          'Credentials differ by environment: a self-signed stub token in development, a real One Login sign-in with e-mail, password and TOTP in staging and production, and a Firebase App Check header everywhere except staging.',
+          'Persistent stages only, production included — which makes it the second production caller of the public path.'
+        ]
+        sourceId 'canary'
+        order '30'
+        x '1496'
+        y '116'
+        w '184'
+        h '70'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'lambda-smoke',
+          'events-rule',
+          'alarms-smoke'
+        ]
+      }
+    }
+
+    delivery_firebase = external 'Firebase / GCP' {
+      #off-request-path
+      description 'App Check attestation'
+      technology 'Workload identity federation'
+      link https://github.com/govuk-once/flex/blob/main/platform/smoke-test/src/gcp.ts 'gcp.ts'
+      metadata {
+        type 'External system'
+        tech 'Workload identity federation'
+        role 'Mints the attestation token the canary attaches.'
+        facts [
+          'No stored key: an external account client exchanges a federated credential for a GCP token, then Firebase App Check mints the header.',
+          'Used only by the canary — it is not on any user request path.'
+        ]
+        sourceId 'firebase'
+        order '31'
+        x '1719'
+        y '116'
+        w '177'
+        h '70'
+        ownership 'third'
+      }
+    }
+
+    delivery_alarms = platform 'CloudWatch alarms' {
+      #off-request-path
+      description '7 families'
+      technology 'CloudWatch'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/constructs/alarms/actions.ts 'alarms/actions.ts'
+      metadata {
+        type 'Observability'
+        tech 'CloudWatch'
+        role 'Lambda, API Gateway, CloudFront, edge functions, WAF, Shield and the canary.'
+        facts [
+          'Every alarm routes to exactly one of two SNS topics, critical or warning — except the canary\'s {stage}-smoke-test-no-success alarm, which currently has no alarm action wired.',
+          'Descriptions start with Critical: or Warning: and state the breached condition, so the Slack message alone usually picks the runbook.',
+          'The four families created in us-east-1 can only reach Slack through the relay.'
+        ]
+        sourceId 'alarms'
+        order '32'
+        x '1496'
+        y '253'
+        w '177'
+        h '70'
+        ownership 'flex'
+        awsIcon 'cloudwatch'
+        resources [
+          'alarms-lambda',
+          'alarms-apigw',
+          'alarms-cf',
+          'alarms-cff',
+          'alarms-waf',
+          'alarms-shield',
+          'xray'
+        ]
+      }
+    }
+
+    delivery_relay = platform 'Alarm relay' {
+      #off-request-path
+      description '2 topics + 2 inline fns'
+      technology 'SNS → Lambda → SNS, one shared KMS key'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts 'stacks/global.ts'
+      metadata {
+        type 'Container'
+        tech 'SNS → Lambda → SNS, one shared KMS key'
+        role 'Republishes us-east-1 alarms onto the eu-west-2 topics — currently non-functional.'
+        facts [
+          'Lives in us-east-1: CloudWatch cannot target an SNS topic in another region, so edge alarms need this hop to reach the eu-west-2 topics.',
+          'TopicArn: ${targetTopicArn} is interpolated unquoted into Code.fromInline, so the handler is a JavaScript syntax error and fails on every invocation. Every CloudFront, edge-function, CLOUDFRONT-scope WAF and Shield alarm therefore reaches nobody. The REGIONAL WAF alarms publish straight to the eu-west-2 topics and are unaffected.',
+          'Passes through message and message attributes; truncates the subject to 100 characters.',
+          '#buildRelay is called twice, once per severity, so there are two topics and two functions sharing one relay key.'
+        ]
+        sourceId 'relay'
+        order '33'
+        x '1719'
+        y '253'
+        w '187'
+        h '70'
+        ownership 'flex'
+        awsIcon 'lambda'
+        resources [
+          'sns-relay',
+          'lambda-relay',
+          'kms-relay'
+        ]
+      }
+    }
+
+    delivery_topics = platform 'Alarm and release topics' {
+      #off-request-path
+      description 'critical · warning · release'
+      technology 'Amazon SNS, KMS encrypted'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/topics.ts 'core/topics.ts'
+      metadata {
+        type 'Container · messaging'
+        tech 'Amazon SNS, KMS encrypted'
+        role 'flex-alerts-critical and flex-alerts-warning, plus the release topic.'
+        facts [
+          'Created by the core stack, so they exist only in persistent stages; ephemeral and personal stages import the development ones.',
+          'flex-release-notifications exists only in development, which is why the staging and production notify jobs assume the development role to publish.'
+        ]
+        sourceId 'topics'
+        order '34'
+        x '1496'
+        y '390'
+        w '220'
+        h '70'
+        ownership 'flex'
+        awsIcon 'sns'
+        resources [
+          'sns-alarms',
+          'sns-release',
+          'kms-alerts'
+        ]
+      }
+    }
+
+    delivery_chatbot = platform 'AWS Chatbot' {
+      #off-request-path
+      description 'Slack channel configuration'
+      technology 'AWS Chatbot'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/core/notifications.ts 'core/notifications.ts'
+      metadata {
+        type 'Container'
+        tech 'AWS Chatbot'
+        role 'Delivers alarms to Slack via the flex-alerts-{stage} channel configuration; the target channel comes from the MonitoringSlackChannelId parameter.'
+        facts [
+          'A ReadOnlyAccess guardrail policy caps what anyone can do from Slack.',
+          'Development adds one more configuration per release channel ID, and those IDs are the one value read at synth time.'
+        ]
+        sourceId 'chatbot'
+        order '35'
+        x '1496'
+        y '527'
+        w '213'
+        h '70'
+        ownership 'flex'
+        awsIcon 'chatbot'
+        resources [
+          'chatbot'
+        ]
+      }
+    }
+
+    delivery_slack = external 'Slack' {
+      #off-request-path
+      description 'alerts + release channels'
+      technology 'Slack'
+      metadata {
+        type 'External system'
+        tech 'Slack'
+        role 'Where alarms and deployment notices land.'
+        facts [
+          'flex-alerts-{stage} for alarms; separate release channels, in development only, for deployment and release notices.'
+        ]
+        sourceId 'slack'
+        order '36'
+        x '1496'
+        y '664'
+        w '200'
+        h '70'
+        ownership 'third'
+      }
+    }
+
+    delivery_oncall = actor 'On-call engineer' {
+      #off-request-path
+      description 'person'
+      metadata {
+        type 'Person'
+        tech '—'
+        role 'Responds to alarms.'
+        facts [
+          'The Slack message carries the severity and the breached condition, which is usually enough to pick a runbook without opening the console.'
+        ]
+        sourceId 'oncall'
+        order '37'
+        x '1496'
+        y '800'
+        w '177'
+        h '70'
+        ownership 'person'
+      }
+    }
+
+    delivery_runbooks = platform 'Runbooks' {
+      #off-request-path
+      description 'docs/runbooks'
+      technology 'Markdown in the repository'
+      link https://github.com/govuk-once/flex/blob/main/docs/runbooks/README.md 'runbooks/README.md'
+      metadata {
+        type 'Documentation'
+        tech 'Markdown in the repository'
+        role 'Written procedures for what fires.'
+        facts [
+          'Eight runbooks: API Gateway 5xx, Lambda errors and throttling, external service outage, leaked secret, fix-forward, pipeline promotion, deploying to staging/production, and environment health.'
+        ]
+        sourceId 'runbooks'
+        order '38'
+        x '1719'
+        y '800'
+        w '177'
+        h '70'
+        ownership 'flex'
+      }
+    }
+  }
+
+  delivery_domteam -> delivery_repo 'changes a domain' {
+    technology 'git'
+    metadata {
+      protocol 'git'
+      auth 'GitHub'
+      carries 'domain.config.ts and handlers under domains/{name}/'
+      facts [
+        'This is how a domain is deployed — there is no separate domain deployment path.'
+      ]
+      order '0'
+    }
+  }
+  delivery_platteam -> delivery_repo 'changes the platform' {
+    technology 'git'
+    metadata {
+      protocol 'git'
+      auth 'GitHub'
+      carries 'libs/*, platform/* and the CDK app'
+      facts [
+        'A platform change can alter every domain\'s infrastructure at once, which is why the pipeline gates on Platform E2E.'
+      ]
+      order '1'
+    }
+  }
+  delivery_supply -> delivery_repo 'gates what can enter the tree' {
+    technology 'pre-commit · pnpm · Dependabot'
+    metadata {
+      protocol 'pre-commit · pnpm · Dependabot'
+      auth '—'
+      carries 'Secret scanning, dependency quarantine and pinning'
+      order '2'
+    }
+  }
+  delivery_repo -> delivery_title 'on pull_request · opened, edited, synchronize, reopened' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth '—'
+      carries 'The pull-request title'
+      order '3'
+    }
+  }
+  delivery_repo -> delivery_release 'merge to main' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth '—'
+      carries 'The full Continuous Deployment run'
+      facts [
+        'Quality Checks run again on main before the release job.'
+      ]
+      order '4'
+    }
+  }
+  delivery_ghpr -> delivery_qc '3 jobs in parallel' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC into the development account'
+      carries 'Hygiene, SonarQube and Security jobs'
+      order '5'
+    }
+  }
+  delivery_ghpr -> delivery_oas 'regenerate, then oasdiff' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC into the development account'
+      carries 'Regenerated specs for comparison'
+      order '6'
+    }
+  }
+  delivery_ghpr -> delivery_eph 'deploys pr-{number}' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC into the development account'
+      carries 'A full platform deploy'
+      facts [
+        'Runs in parallel with Quality Checks, not after it.'
+      ]
+      order '7'
+    }
+  }
+  delivery_qc -> delivery_sonar 'coverage + ESLint report' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'SONAR_TOKEN_FLEX'
+      carries 'Test coverage for every project and an ESLint report'
+      order '8'
+    }
+  }
+  delivery_eph -> delivery_me2e 'target for domain suites' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'Self-signed stub JWT plus the x-flex-e2e-bypass WAF header'
+      carries 'Real requests against real infrastructure'
+      facts [
+        'The bypass header value is a per-stage Secrets Manager secret; it skips the WAF\'s IP-reputation rule, nothing else.'
+      ]
+      order '9'
+    }
+  }
+  delivery_eph -> delivery_cleanup 'on PR close' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC into the development account'
+      carries 'cdk destroy --all --force'
+      order '10'
+    }
+  }
+  delivery_cli -> delivery_personal 'then deploy with no STAGE' {
+    technology 'cdk'
+    metadata {
+      protocol 'cdk'
+      auth 'Local AWS credentials'
+      carries 'A scaffolded domain, deployed whole'
+      facts [
+        'A newly scaffolded domain reaches a running stage without any platform change — the claim on the left, made concrete.'
+      ]
+      order '11'
+    }
+  }
+  delivery_release -> delivery_deploydev 'then deploy' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth '—'
+      carries 'The released commit'
+      order '12'
+    }
+  }
+  delivery_oidc -> delivery_deploydev 'assumes the environment role' {
+    technology 'AWS STS'
+    metadata {
+      protocol 'AWS STS'
+      auth 'GitHub OIDC'
+      carries 'Short-lived deployment credentials'
+      facts [
+        'Each of the three deploy jobs assumes its own role; the ephemeral and personal stages use the development one.'
+      ]
+      order '13'
+    }
+  }
+  delivery_params -> delivery_deploydev 'values resolved at deploy time' {
+    technology 'SSM · CloudFormation'
+    metadata {
+      protocol 'SSM · CloudFormation'
+      auth 'Deployment role'
+      carries 'Hosted zone, auth IDs, consumer secret ARNs'
+      facts [
+        'Each persistent stage reads its own /{environment}/… parameters; ephemeral and personal stages fall back to the development environment\'s values.'
+      ]
+      order '14'
+    }
+  }
+  delivery_params -> delivery_ssmapp 'declared as external exports' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Keys no FLEX stack owns'
+      facts [
+        'Imported outside the dependency graph, because another repository owns their lifecycle.'
+      ]
+      order '15'
+    }
+  }
+  delivery_ssmapp -> delivery_apideploy 'runs last in the graph' {
+    technology 'CloudFormation'
+    metadata {
+      protocol 'CloudFormation'
+      auth 'Deployment role'
+      carries 'addDependency on every domain stack'
+      order '16'
+    }
+  }
+  delivery_deploydev -> delivery_e2edev 'non-gating' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC'
+      carries 'Domain E2E suites'
+      order '17'
+    }
+  }
+  delivery_deploydev -> delivery_gatestg 'Platform E2E passed' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Promotion candidate'
+      facts [
+        'A Platform E2E failure in development stops the pipeline here.'
+      ]
+      order '18'
+    }
+  }
+  delivery_gatestg -> delivery_deploystg 'approved' {
+    metadata {
+      protocol '—'
+      auth 'Human approval'
+      carries 'Promotion'
+      order '19'
+    }
+  }
+  delivery_deploystg -> delivery_e2estg 'non-gating' {
+    technology 'GitHub Actions'
+    metadata {
+      protocol 'GitHub Actions'
+      auth 'OIDC'
+      carries 'Domain E2E suites'
+      order '20'
+    }
+  }
+  delivery_deploystg -> delivery_notifystg 'non-gating' {
+    technology 'SNS'
+    metadata {
+      protocol 'SNS'
+      auth 'Development-account role'
+      carries 'Deployment notice'
+      order '21'
+    }
+  }
+  delivery_deploystg -> delivery_gateprod 'Platform E2E passed' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Promotion candidate'
+      order '22'
+    }
+  }
+  delivery_gateprod -> delivery_deployprod 'approved' {
+    metadata {
+      protocol '—'
+      auth 'Human approval'
+      carries 'Promotion'
+      order '23'
+    }
+  }
+  delivery_deployprod -> delivery_notifyprod 'non-gating' {
+    technology 'SNS'
+    metadata {
+      protocol 'SNS'
+      auth 'Development-account role'
+      carries 'Deployment notice'
+      order '24'
+    }
+  }
+  delivery_deployprod -> delivery_zap 'after the whole Continuous Deployment run succeeds' {
+    technology 'workflow_run'
+    metadata {
+      protocol 'workflow_run'
+      auth 'OIDC into staging'
+      carries 'A dynamic scan of staging'
+      facts [
+        'The trigger is the workflow, not the staging deploy: the run has to clear the production gate first, so a rejected production deploy means no DAST at all.'
+      ]
+      order '25'
+    }
+  }
+  delivery_notifyprod -> delivery_slack 'release + deploy notices' {
+    technology 'SNS → AWS Chatbot'
+    metadata {
+      protocol 'SNS → AWS Chatbot'
+      auth 'Development-account role'
+      carries 'Formatted release notes'
+      facts [
+        'Published to the development account\'s release topic, and delivered by a separate Chatbot configuration to the release channels — not to flex-alerts.',
+        'Only major and minor releases also produce a release notice.'
+      ]
+      order '26'
+    }
+  }
+  delivery_firebase -> delivery_canary 'attestation token' {
+    technology 'HTTPS'
+    metadata {
+      protocol 'HTTPS'
+      auth 'Workload identity credential config'
+      carries 'X-Firebase-App-Check header'
+      order '27'
+    }
+  }
+  delivery_canary -> delivery_alarms 'SmokeTestSuccess' {
+    technology 'CloudWatch PutMetricData'
+    metadata {
+      protocol 'CloudWatch PutMetricData'
+      auth 'Role scoped to the Flex/SmokeTest namespace'
+      carries '1 or 0 every five minutes'
+      facts [
+        'Missing data is treated as breaching, so a canary that stops running would still alarm — if the alarm had an action.'
+      ]
+      order '28'
+    }
+  }
+  delivery_alarms -> delivery_topics 'eu-west-2 alarms' {
+    technology 'CloudWatch alarm action'
+    metadata {
+      protocol 'CloudWatch alarm action'
+      auth 'IAM + a KMS grant'
+      carries 'Severity, condition and alarm name'
+      order '29'
+    }
+  }
+  delivery_alarms -> delivery_relay 'us-east-1 edge alarms' {
+    technology 'CloudWatch alarm action'
+    metadata {
+      protocol 'CloudWatch alarm action'
+      auth 'IAM + a KMS grant'
+      carries 'CloudFront, edge function, CLOUDFRONT-scope WAF and Shield alarms'
+      facts [
+        'CloudWatch cannot target a topic in another region, which is the only reason this hop exists.'
+      ]
+      order '30'
+    }
+  }
+  delivery_relay -> delivery_topics 'cross-region republish' {
+    technology 'SNS Publish'
+    metadata {
+      protocol 'SNS Publish'
+      auth 'Lambda execution role'
+      carries 'us-east-1 alarm notifications'
+      facts [
+        'Broken today: the handler fails to parse, so nothing is republished.'
+      ]
+      order '31'
+    }
+  }
+  delivery_topics -> delivery_chatbot 'notification topics' {
+    technology 'SNS subscription'
+    metadata {
+      protocol 'SNS subscription'
+      auth 'IAM + a KMS decrypt grant'
+      carries 'Alarm payloads'
+      order '32'
+    }
+  }
+  delivery_chatbot -> delivery_slack 'posts' {
+    technology 'Slack API'
+    metadata {
+      protocol 'Slack API'
+      auth 'Chatbot channel configuration'
+      carries 'The alarm message'
+      order '33'
+    }
+  }
+  delivery_slack -> delivery_oncall 'notifies' {
+    technology 'Slack'
+    metadata {
+      protocol 'Slack'
+      auth '—'
+      carries 'Severity and breached condition'
+      order '34'
+    }
+  }
+  delivery_oncall -> delivery_runbooks 'works from' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Diagnosis and remediation steps'
+      order '35'
+    }
+  }
+}
+
+views {
+  view delivery {
+    title 'Delivery'
+    include delivery_zauthor, delivery_zauthor.**
+    include delivery_zlocal, delivery_zlocal.**
+    include delivery_zpromote, delivery_zpromote.**
+    include delivery_zoperate, delivery_zoperate.**
+  }
+}

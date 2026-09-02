@@ -25,8 +25,15 @@ import {
   type Stage,
   STAGES,
 } from "./lib/architectureTypes.js";
+import { extractAlarms } from "./lib/extractAlarms.js";
+import {
+  assertSourceRoot,
+  DOCS_ROOT,
+  inDocs,
+  SOURCE,
+  SOURCE_ROOT,
+} from "./lib/paths.js";
 
-const ROOT = path.resolve(import.meta.dirname, "..");
 async function loadConfigs<T>(pattern: string, root: string): Promise<T[]> {
   const out: T[] = [];
   for await (const entry of glob(pattern, { cwd: root })) {
@@ -66,13 +73,16 @@ const allowed = (envs: string[] | undefined | null, stage: Stage) =>
   !envs || envs.includes(stage);
 
 async function main() {
+  assertSourceRoot();
+  // The globs come from explorer.config.json, so what this reads out of FLEX is declared
+  // in one place rather than spelled out again here.
   const domainConfigs = await loadConfigs<DomainConfigShape>(
-    "*/domain.config.ts",
-    path.join(ROOT, "domains"),
+    SOURCE.domainConfigs,
+    SOURCE_ROOT,
   );
   const gatewayConfigs = await loadConfigs<GatewayConfigShape>(
-    "*/gateway.config.ts",
-    path.join(ROOT, "platform/domains"),
+    SOURCE.gatewayConfigs,
+    SOURCE_ROOT,
   );
 
   const domains: DomainFact[] = domainConfigs
@@ -202,20 +212,29 @@ async function main() {
     ]) as PerStage,
   };
 
+  // Alarms come from the CDK constructs rather than a config, so they are read from
+  // the source itself — see extractAlarms.
+  const alarms = extractAlarms(SOURCE_ROOT, SOURCE.alarmConstructs);
+
   const out = {
-    generatedFrom:
-      "domains/*/domain.config.ts and platform/domains/*/gateway.config.ts",
+    generatedFrom: [
+      SOURCE.domainConfigs,
+      SOURCE.gatewayConfigs,
+      SOURCE.alarmConstructs,
+    ].join(", "),
     domains,
     gateways,
     totals,
+    alarms,
   };
-  const dest = path.join(ROOT, "docs/architecture/architecture-facts.json");
+  const dest = inDocs("architecture-facts.json");
   mkdirSync(path.dirname(dest), { recursive: true });
   // Formatted with prettier so the committed file is lint-clean by construction —
   // eslint checks it like any other JSON, and nobody should have to remember --fix.
   writeFileSync(dest, await format(JSON.stringify(out), { parser: "json" }));
-  console.log(`Wrote ${path.relative(ROOT, dest)}`);
+  console.log(`Wrote ${path.relative(DOCS_ROOT, dest)}`);
   console.log(JSON.stringify(totals, null, 1));
+  console.log(`${alarms.length.toString()} alarms`);
 }
 
 await main();

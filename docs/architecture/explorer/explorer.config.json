@@ -6,7 +6,7 @@
   "slug": "flex",
   "inventoryView": "resources",
   "iconLabel": "AWS icons",
-  "filterHint": "Filter \u2014 try isolated, KMS, 365 days, alarm",
+  "filterHint": "Filter — try isolated, KMS, 365 days, alarm",
   "kinds": [
     {
       "id": "person",
@@ -50,5 +50,11 @@
       "label": "Ephemeral PR",
       "facts": "ephemeral"
     }
-  ]
+  ],
+  "source": {
+    "root": "../..",
+    "domainConfigs": "domains/*/domain.config.ts",
+    "gatewayConfigs": "platform/domains/*/gateway.config.ts",
+    "alarmConstructs": "platform/infra/flex/src/constructs/alarms"
+  }
 }

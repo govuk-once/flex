@@ -243,6 +243,10 @@ hr{border:0;border-top:1px solid var(--line);margin:2px 0}
   font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);
   margin:0 0 4px;padding-bottom:9px;border-bottom:1px solid var(--line)}
 .grp .gnote{margin:10px 0 0;font-size:12.5px;color:var(--muted);max-width:78ch}
+/* The inspector is a narrow column, so citations stack there. The tables panel is wide,
+   and a table cites several files, so they run along one line under the table instead. */
+.grp .sect{margin-top:12px;gap:6px}
+.grp .code{flex-direction:row;flex-wrap:wrap;gap:4px 14px}
 .rows{display:grid;gap:6px;margin-top:12px}
 .row{
   display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) auto;gap:14px;align-items:center;

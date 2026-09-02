@@ -1,0 +1,340 @@
+// FLEX architecture — Context.
+//
+// The model. Presentation that a LikeC4 view cannot hold — tab order, audience,
+// reference tables — is in views.json beside this file.
+
+model {
+
+  context_govukonce = boundary 'GOV.UK Once' {
+    metadata {
+      type 'Ownership boundary'
+      tech '—'
+      role 'The GOV.UK Once programme. FLEX, the GOV.UK App, the Cognito user pool, UDP and UNS all sit inside it; DVLA and GOV.UK One Login do not.'
+      facts [
+        'A sibling system here is one FLEX reaches by assuming a role named in its consumer-config secret and dialling a private endpoint — not one it shares infrastructure with.',
+        'Only one line leaves this box carrying FLEX traffic: FLEX to DVLA. The Cognito to One Login federation also crosses it, but FLEX is not on that hop.'
+      ]
+      sourceId 'govukonce'
+      order '0'
+      x '270'
+      y '90'
+      w '820'
+      h '340'
+      boundary 'hard'
+    }
+
+    context_app = internal 'GOV.UK App' {
+      #request-path
+      description 'GOV.UK Once · mobile client'
+      technology 'Mobile client'
+      link https://github.com/govuk-once/flex/blob/main/platform/smoke-test/src/handler.ts 'smoke-test handler.ts'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'Mobile client'
+        role 'The only external production caller of the public API; FLEX\'s own smoke-test Lambda also calls /app/udp/v1/users/me every five minutes.'
+        facts [
+          'Calls /app/{domain}/{version}/… over HTTPS with a Bearer token.',
+          'Signs the user in through Cognito\'s hosted UI, which federates to GOV.UK One Login; FLEX is not in the loop and only ever sees the resulting Cognito access token.'
+        ]
+        sourceId 'app'
+        order '1'
+        x '290'
+        y '330'
+        w '213'
+        h '62'
+        ownership 'govuk'
+      }
+    }
+
+    context_flex = platform 'FLEX' {
+      #request-path
+      description 'software system in scope'
+      technology 'AWS · TypeScript · serverless'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/app.ts 'platform/infra/flex/src/app.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/app.ts 'app.ts'
+      link https://github.com/govuk-once/flex/blob/main/.github/CODEOWNERS 'CODEOWNERS'
+      metadata {
+        type 'Software system · in scope'
+        tech 'AWS · TypeScript · serverless'
+        role 'Exposes GOV.UK Once domain APIs to the app, and brokers every call those domains make to a sibling system or a third party.'
+        facts [
+          'One shared public API for the app, one shared private API for everything internal.',
+          'Six domains and three service gateways, all generated from declarative config; three of the six domains list production in their <code>environments</code>.',
+          'A domain never holds a credential for anything upstream — only the service gateways do.',
+          'The FLEX team owns all of this infrastructure, and today owns the domain code too — CODEOWNERS carries a TODO to hand /domains/{name} to each domain team as it onboards.',
+          'Stores no user state and has no asynchronous path: no database, no queue, no event bus. UDP, UNS and DVLA are the systems of record, so every request is a synchronous fan-out.'
+        ]
+        sourceId 'flex'
+        order '2'
+        x '580'
+        y '300'
+        w '193'
+        h '124'
+        ownership 'flex'
+      }
+    }
+
+    context_cognito = internal 'Identity' {
+      #request-path
+      description 'GOV.UK Once · Cognito'
+      technology 'Amazon Cognito user pool'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/services/auth-service.ts 'auth-service.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/platform.ts 'platform.ts'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'Amazon Cognito user pool'
+        role 'Issues the access tokens FLEX verifies on every public request, and runs the hosted sign-in UI the app uses.'
+        facts [
+          'Provisioned outside FLEX; the pool and client IDs arrive as configuration through flex-params.',
+          'FLEX asserts issuer, <code>token_use=access</code> and client ID, then takes the <code>username</code> claim as the pairwise ID.',
+          'In development a stub JWKS Function URL stands in, so tests can self-sign tokens.'
+        ]
+        sourceId 'cognito'
+        order '3'
+        x '880'
+        y '120'
+        w '177'
+        h '62'
+        ownership 'govuk'
+      }
+    }
+
+    context_udp = internal 'UDP' {
+      #request-path
+      description 'GOV.UK Once · user data'
+      technology 'AWS API behind a private endpoint · SigV4'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/gateway.config.ts 'udp gateway.config.ts'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/udp/src/gateway.ts 'udp gateway.ts'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'AWS API behind a private endpoint · SigV4'
+        role 'System of record for identity links, user records, notification preferences and group subscriptions.'
+        facts [
+          'The hub of the domain graph: dvla (via the udp domain), groups and example all reach it. uns only calls FLEX\'s own udp domain for a locally-derived push ID.',
+          'Notification, group and identity-exchange requests carry a <code>requesting-service: app</code> header; the remaining routes authenticate with the API key alone.',
+          'local-council also declares udp-gateway integrations, to /v1/local-council/*, but the udp gateway defines no such routes — those calls fail at runtime today.'
+        ]
+        sourceId 'udp'
+        order '5'
+        x '880'
+        y '250'
+        w '187'
+        h '62'
+        ownership 'govuk'
+      }
+    }
+
+    context_uns = internal 'UNS' {
+      #request-path
+      description 'GOV.UK Once · notify'
+      technology 'AWS API behind a private endpoint · SigV4'
+      link https://github.com/govuk-once/flex/blob/main/platform/domains/uns/src/gateway.ts 'uns gateway.ts'
+      link https://github.com/govuk-once/flex/blob/main/domains/udp/src/utils/get-push-id.ts 'get-push-id.ts'
+      metadata {
+        type 'GOV.UK Once system'
+        tech 'AWS API behind a private endpoint · SigV4'
+        role 'System of record for notification records and group subscriptions.'
+        facts [
+          'Its consumer config carries both an apiUrl and a privateApiUrl; the gateway client is built on privateApiUrl, so FLEX never uses a public route to reach it.',
+          'Every uns domain route first derives the user\'s push ID from the pairwise ID via FLEX\'s udp domain, then calls UNS with it — the derivation is an in-FLEX HMAC, not a UDP call.'
+        ]
+        sourceId 'uns'
+        order '6'
+        x '880'
+        y '340'
+        w '198'
+        h '62'
+        ownership 'govuk'
+      }
+    }
+  }
+
+  context_user = actor 'GOV.UK Once user' {
+    #request-path
+    description 'person'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/handler.ts 'auth handler.ts'
+    link https://github.com/govuk-once/flex/blob/main/domains/udp/src/services/linkingId.ts 'linkingId.ts'
+    metadata {
+      type 'Person'
+      tech '—'
+      role 'Uses the GOV.UK App. Never contacts FLEX directly.'
+      facts [
+        'Reaches FLEX only through the app, carrying a Cognito access token.',
+        'Identified downstream by a single pairwise ID — the token\'s <code>username</code> claim.',
+        'The authorizer passes only the pairwise ID; the one exception is udp\'s POST /v1/identity/:service, which is handed the raw Authorization header and reads the token\'s <code>sub</code> claim to verify the DVLA session hash.'
+      ]
+      sourceId 'user'
+      order '0'
+      x '40'
+      y '330'
+      w '177'
+      h '62'
+      ownership 'person'
+    }
+  }
+
+  context_onelogin = external 'GOV.UK One Login' {
+    #request-path
+    description 'GDS · sign-in and identity'
+    technology 'OIDC identity provider federated into the Cognito user pool'
+    link https://github.com/govuk-once/flex/blob/main/libs/testing/src/fixtures/TokenGenerator.ts 'TokenGenerator.ts'
+    metadata {
+      type 'Government system · outside GOV.UK Once'
+      tech 'OIDC identity provider federated into the Cognito user pool'
+      role 'Authenticates the user. Cognito federates to it; FLEX never calls it and never sees a One Login token.'
+      facts [
+        'Run by GDS, so it sits outside the GOV.UK Once programme but inside government — DVLA is still the only separate organisation on this diagram.',
+        'The hosted-UI authorize call carries <code>idpidentifier=onelogin</code>; the sign-in host comes from the <code>auth/one-login-environment</code> parameter — signin.account.gov.uk in production, signin.{env}.account.gov.uk elsewhere.',
+        'No FLEX runtime code drives this flow. The only copy of it in this repo is the token generator the E2E tests and the smoke-test canary use.'
+      ]
+      sourceId 'onelogin'
+      order '4'
+      x '1130'
+      y '120'
+      w '207'
+      h '62'
+      ownership 'third'
+    }
+  }
+
+  context_dvla = external 'DVLA' {
+    #request-path
+    description 'third party · outside GOV.UK Once'
+    technology 'HTTPS on the public internet'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/dvla/src/gateway.ts 'dvla gateway.ts'
+    metadata {
+      type 'Third-party system'
+      tech 'HTTPS on the public internet'
+      role 'Driving licence, customer vehicle, share code and vehicle enquiry services, run by a separate agency.'
+      facts [
+        'DVLA models GOV.UK as an external consumer: the authenticate call is literally /thirdparty-access/v1/authenticate.',
+        'Reached over the internet through a NAT gateway rather than a private endpoint — the same egress path the authorizer uses to fetch the Cognito JWKS, since there is no cognito-idp VPC endpoint.',
+        'Fronted inside FLEX by the dvla domain and the dvla service gateway — those are FLEX components, not this system.'
+      ]
+      sourceId 'dvla'
+      order '7'
+      x '880'
+      y '470'
+      w '254'
+      h '62'
+      ownership 'third'
+    }
+  }
+
+  context_user -> context_app 'uses' {
+    metadata {
+      protocol '—'
+      auth '—'
+      carries 'Everything the user does'
+      facts [
+        'The user is never a direct FLEX client.'
+      ]
+      order '0'
+    }
+  }
+  context_app -> context_cognito 'signs in, obtains token' {
+    technology 'HTTPS · OAuth 2.0 authorization code with PKCE against the hosted UI'
+    link https://github.com/govuk-once/flex/blob/main/libs/testing/src/fixtures/TokenGenerator.ts 'TokenGenerator.ts'
+    metadata {
+      protocol 'HTTPS · OAuth 2.0 authorization code with PKCE against the hosted UI'
+      auth 'The user\'s own credentials, checked by One Login'
+      carries 'An authorization code, exchanged for a Cognito access token'
+      facts [
+        'The one edge here that legitimately bypasses FLEX — FLEX sees none of it, only the token that comes out.'
+      ]
+      order '1'
+    }
+  }
+  context_cognito -> context_onelogin 'federates' {
+    technology 'HTTPS · OIDC redirect from the Cognito hosted UI'
+    link https://github.com/govuk-once/flex/blob/main/libs/testing/src/fixtures/TokenGenerator.ts 'TokenGenerator.ts'
+    metadata {
+      protocol 'HTTPS · OIDC redirect from the Cognito hosted UI'
+      auth 'Selected by <code>idpidentifier=onelogin</code> on the /oauth2/authorize call'
+      carries 'The sign-in itself — email, password and the authenticator code'
+      facts [
+        'The code comes back to the app\'s <code>govuk://govuk/login-auth-callback</code> redirect URI and is exchanged at Cognito\'s /oauth2/token, so what the app ends up holding is a Cognito token, not a One Login one.'
+      ]
+      order '2'
+    }
+  }
+  context_app -> context_flex 'HTTPS + JWT' {
+    technology 'HTTPS to the CloudFront alias'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/viewer-request-cff-platform/src/validators/jwt.ts 'cff jwt.ts'
+    metadata {
+      protocol 'HTTPS to the CloudFront alias'
+      auth 'Cognito access token in the Authorization header'
+      carries '/app/{domain}/{version}/… requests'
+      facts [
+        'Structurally checked by a CloudFront Function at the edge — segment count, JSON, no <code>alg:none</code>, signature present — then cryptographically verified by the Lambda authorizer.'
+      ]
+      order '3'
+    }
+  }
+  context_flex -> context_cognito 'verifies the token' {
+    technology 'HTTPS GET /.well-known/jwks.json'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/auth/src/services/auth-service.ts 'auth-service.ts'
+    metadata {
+      protocol 'HTTPS GET /.well-known/jwks.json'
+      auth 'None — the JWKS document is public'
+      carries 'Signing keys'
+      facts [
+        'Issuer, <code>token_use</code> and client ID are all asserted, not just the signature.',
+        'The verifier is built inside the handler, so the environment is re-parsed on every invocation.'
+      ]
+      order '4'
+    }
+  }
+  context_flex -> context_udp 'SigV4 + API key' {
+    technology 'HTTPS via the API Gateway interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/libs/sdk/src/fetch/sigv4.ts 'sigv4.ts'
+    metadata {
+      protocol 'HTTPS via the API Gateway interface endpoint'
+      auth 'sts:AssumeRole then SigV4, plus an x-api-key header'
+      carries 'Identity links, users, notification preferences, groups'
+      facts [
+        'The assumed-role credential provider is held in a module-level map, so warm containers reuse the one-hour STS credential and only refresh it in its last five minutes.',
+        'Never leaves the VPC.'
+      ]
+      order '5'
+    }
+  }
+  context_flex -> context_uns 'SigV4 + API key' {
+    technology 'HTTPS via the API Gateway interface endpoint'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/uns/src/gateway.ts 'uns gateway.ts'
+    metadata {
+      protocol 'HTTPS via the API Gateway interface endpoint'
+      auth 'sts:AssumeRole then SigV4, plus an X-API-KEY header'
+      carries 'Notifications and group subscriptions'
+      facts [
+        'The API key is set once on the client, so it rides on every UNS call rather than being chosen per route.',
+        'Never leaves the VPC.'
+      ]
+      order '6'
+    }
+  }
+  context_flex -> context_dvla 'API key, over the internet' {
+    technology 'HTTPS through a NAT gateway, on an unsigned client'
+    link https://github.com/govuk-once/flex/blob/main/platform/domains/dvla/src/gateway.ts 'dvla gateway.ts'
+    metadata {
+      protocol 'HTTPS through a NAT gateway, on an unsigned client'
+      auth 'X-API-KEY plus a DVLA-issued bearer token from a username and password authenticate call'
+      carries 'Licence, vehicle, share-code and vehicle-enquiry operations'
+      facts [
+        'The one line in this diagram that crosses the GOV.UK Once boundary.',
+        'Only the DVLA service gateway holds the username, password and API key; the calling domain handles nothing but the session token they produce.'
+      ]
+      order '7'
+    }
+  }
+}
+
+views {
+  view context {
+    title 'Context'
+    include context_govukonce, context_govukonce.**
+    include context_user, context_user.**
+    include context_onelogin, context_onelogin.**
+    include context_dvla, context_dvla.**
+  }
+}

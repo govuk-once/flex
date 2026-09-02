@@ -13,8 +13,9 @@ import {
 } from "node:http";
 import path from "node:path";
 
-const ROOT = path.resolve(import.meta.dirname, "..");
-const DOCS = path.join(ROOT, "docs");
+import { SITE_ROOT } from "./lib/paths.js";
+
+const DOCS = SITE_ROOT;
 const PORT = Number(process.argv[2] ?? process.env.PORT ?? 4321);
 
 const TYPES: Record<string, string> = {

@@ -17,8 +17,9 @@ import path from "node:path";
 
 import type { ConsoleMessage } from "playwright";
 
-const ROOT = path.resolve(import.meta.dirname, "..");
-const PAGE = path.join(ROOT, "docs/architecture/explorer.html");
+import { DOCS_ROOT, inDocs } from "./lib/paths.js";
+
+const PAGE = inDocs("explorer.html");
 
 /**
  * Two classes of problem.
@@ -32,7 +33,7 @@ const PAGE = path.join(ROOT, "docs/architecture/explorer.html");
  * every edge. This is a ratchet, not a target: it may fall, never rise. If a change
  * genuinely needs a higher budget, raise it deliberately and say why in the commit.
  */
-const SOFT_BUDGET = 13;
+const SOFT_BUDGET = 12;
 
 /** Type-only, so it is erased at runtime and the import below stays optional. */
 type ChromiumLauncher = typeof import("playwright").chromium;
@@ -48,7 +49,7 @@ async function loadChromium(): Promise<ChromiumLauncher | null> {
 async function main() {
   if (!existsSync(PAGE)) {
     console.error(
-      `No ${path.relative(ROOT, PAGE)} — run pnpm architecture:build first.`,
+      `No ${path.relative(DOCS_ROOT, PAGE)} — run pnpm architecture:build first.`,
     );
     process.exit(1);
   }

@@ -4,11 +4,11 @@
   "order": 8,
   "group": "Reference",
   "blurb": "Every AWS resource this repository creates, what configures it, and which stack owns it.",
-  "audience": "Cost, audit and incident scoping \u2014 and the detail behind every badge",
-  "note": "Counts follow the <b>stage selector</b> in the header. They differ because domains, routes and whole stacks are gated by their <code>environments</code> array \u2014 and because an ephemeral PR stage reuses the development core rather than building its own. Entries whose meta reads <b>varies</b> carry no number, so any group total that includes one is a floor rather than a total.",
+  "audience": "Cost, audit and incident scoping — and the detail behind every badge",
+  "note": "Counts follow the <b>stage selector</b> in the header. They differ because domains, routes and whole stacks are gated by their <code>environments</code> array — and because an ephemeral PR stage reuses the development core rather than building its own. Entries whose meta reads <b>varies</b> carry no number, so any group total that includes one is a floor rather than a total.",
   "groups": [
     {
-      "name": "Networking \u00b7 Amazon VPC",
+      "name": "Networking · Amazon VPC",
       "note": null,
       "table": null,
       "items": [
@@ -24,11 +24,11 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::VPC",
-            "tech": "10.0.0.0/16 \u00b7 3 pinned AZs",
+            "tech": "10.0.0.0/16 · 3 pinned AZs",
             "role": "One per persistent environment.",
             "facts": [
               "Availability zones are pinned to eu-west-2a/b/c rather than looked up.",
-              "An ephemeral PR stage creates none \u2014 it imports the development VPC through addExternalExports."
+              "An ephemeral PR stage creates none — it imports the development VPC through addExternalExports."
             ],
             "code": [
               [
@@ -50,7 +50,7 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::Subnet",
-            "tech": "cidrMask 24 \u00b7 one per AZ",
+            "tech": "cidrMask 24 · one per AZ",
             "role": "Carry the NAT gateways. No workloads.",
             "facts": ["251 usable addresses each."],
             "code": []
@@ -68,7 +68,7 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::Subnet",
-            "tech": "cidrMask 19 \u00b7 one per AZ",
+            "tech": "cidrMask 19 · one per AZ",
             "role": "Home of every <code>access: private</code> Lambda.",
             "facts": [
               "8,187 usable addresses each.",
@@ -89,8 +89,8 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::Subnet",
-            "tech": "cidrMask 19 \u00b7 one per AZ",
-            "role": "Home of every <code>access: isolated</code> Lambda \u2014 the default tier.",
+            "tech": "cidrMask 19 · one per AZ",
+            "role": "Home of every <code>access: isolated</code> Lambda — the default tier.",
             "facts": ["No route to a NAT gateway or the internet gateway."],
             "code": []
           }
@@ -161,7 +161,7 @@
             "tech": "CDK-generated",
             "role": "One per subnet, plus the default association.",
             "facts": [
-              "<code>exportVpc</code> publishes the nine route table IDs as three comma-joined SSM parameters \u2014 public, private and isolated \u2014 so another stack can reconstruct the VPC.",
+              "<code>exportVpc</code> publishes the nine route table IDs as three comma-joined SSM parameters — public, private and isolated — so another stack can reconstruct the VPC.",
               "The isolated tier's tables carry only the local route."
             ],
             "code": [["base/index.ts", "platform/infra/flex/src/base/index.ts"]]
@@ -182,8 +182,8 @@
             "tech": "8 rules",
             "role": "Stateless filtering on the public tier.",
             "facts": [
-              "Rules 80 VPC loopback, 90\u201392 deny system ports and RDP, 200/210 ephemeral return, 32000 allow outbound.",
-              "Rule 80 is evaluated before the denies, so VPC-internal traffic is allowed first and the 90\u201392 denies only ever apply to traffic from outside the VPC."
+              "Rules 80 VPC loopback, 90–92 deny system ports and RDP, 200/210 ephemeral return, 32000 allow outbound.",
+              "Rule 80 is evaluated before the denies, so VPC-internal traffic is allowed first and the 90–92 denies only ever apply to traffic from outside the VPC."
             ],
             "code": []
           }
@@ -203,7 +203,7 @@
             "tech": "8 rules",
             "role": "Same rule set as the public tier.",
             "facts": [
-              "Identical to the public NACL \u2014 the difference between the tiers is routing, not filtering."
+              "Identical to the public NACL — the difference between the tiers is routing, not filtering."
             ],
             "code": []
           }
@@ -223,7 +223,7 @@
             "tech": "5 rules",
             "role": "The strictest of the three.",
             "facts": [
-              "Has the VPC loopback pair and the 90\u201392 denies, but <b>no</b> ephemeral-return and <b>no</b> outbound-allow rule \u2014 outbound is permitted only to the VPC CIDR by rule 80.",
+              "Has the VPC loopback pair and the 90–92 denies, but <b>no</b> ephemeral-return and <b>no</b> outbound-allow rule — outbound is permitted only to the VPC CIDR by rule 80.",
               "That omission is what forces isolated Lambdas through the interface endpoints, which sit inside the VPC CIDR."
             ],
             "code": []
@@ -288,7 +288,7 @@
             "tech": "CDK-generated, one per endpoint",
             "role": "Receive the isolated tier's egress rules.",
             "facts": [
-              "Every endpoint SG already allows 443 from the VPC CIDR \u2014 <code>addInterfaceEndpoint</code> defaults <code>open</code> to true.",
+              "Every endpoint SG already allows 443 from the VPC CIDR — <code>addInterfaceEndpoint</code> defaults <code>open</code> to true.",
               "The KMS endpoint additionally gets an explicit ingress rule per isolated subnet CIDR, the one endpoint addressed by range rather than by group."
             ],
             "code": [
@@ -311,11 +311,11 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::VPCEndpoint",
-            "tech": "Interface \u00b7 privateDnsEnabled",
+            "tech": "Interface · privateDnsEnabled",
             "role": "API Gateway, CloudWatch Logs, Secrets Manager, SSM, STS, KMS.",
             "facts": [
               "The API Gateway endpoint ID is exported as <code>/{env}/flex/vpc-e/api-gateway</code> and pinned in the private API's resource policy.",
-              "No gateway endpoints (S3, DynamoDB) exist \u2014 nothing needs them.",
+              "No gateway endpoints (S3, DynamoDB) exist — nothing needs them.",
               "There is no cognito-idp endpoint, which is why the authorizer sits in the egress tier."
             ],
             "code": [
@@ -338,7 +338,7 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::EC2::FlowLog",
-            "tech": "ALL traffic \u00b7 1-minute aggregation \u00b7 plain text",
+            "tech": "ALL traffic · 1-minute aggregation · plain text",
             "role": "Full-fidelity network records to S3.",
             "facts": [
               "Extended beyond ALL_DEFAULT_FIELDS with VPC ID, subnet ID, instance ID, TCP flags, packet source and destination addresses, and flow direction."
@@ -354,7 +354,7 @@
       ]
     },
     {
-      "name": "Compute \u00b7 AWS Lambda",
+      "name": "Compute · AWS Lambda",
       "note": null,
       "table": null,
       "items": [
@@ -371,11 +371,11 @@
           "meta": ["egress tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 private access",
+            "tech": "NODEJS_24_X · 30s · private access",
             "role": "7 public routes and 1 private route, one function each.",
             "facts": [
               "The only domain whose <code>common.access</code> is private, so its functions sit in the egress subnets and can reach NAT.",
-              "Deploys to development, staging and production \u2014 plus every ephemeral PR and personal stage."
+              "Deploys to development, staging and production — plus every ephemeral PR and personal stage."
             ],
             "code": [
               ["domains/dvla/domain.config.ts", "domains/dvla/domain.config.ts"]
@@ -395,7 +395,7 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 20s default (one route at 25s) \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 20s default (one route at 25s) · isolated access",
             "role": "6 public routes and 2 private routes.",
             "facts": [
               "Owns the private <code>GET /v1/users/push-id</code> route that uns, groups and example all depend on."
@@ -418,7 +418,7 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "4 public notification routes.",
             "facts": [
               "Every route pairs a uns gateway call with a udp push-ID lookup."
@@ -441,10 +441,10 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "GET and POST <code>/v1/groups</code>.",
             "facts": [
-              "<code>environments</code> is development and staging only \u2014 so nothing reaches production, but every ephemeral PR and personal stage still gets both."
+              "<code>environments</code> is development and staging only — so nothing reaches production, but every ephemeral PR and personal stage still gets both."
             ],
             "code": [
               [
@@ -467,7 +467,7 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "Two private routes only.",
             "facts": [
               "The one domain with no public routes, so its stack creates no TokenAuthorizer.",
@@ -494,10 +494,10 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 20s default (one route at 30s) \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 20s default (one route at 30s) · isolated access",
             "role": "11 public and 2 private reference routes.",
             "facts": [
-              "The development environment only \u2014 which means every ephemeral PR and personal stage gets it too, and staging and production never do.",
+              "The development environment only — which means every ephemeral PR and personal stage gets it too, and staging and production never do.",
               "Exercises feature flags, all four resource types and both integration kinds, including one that calls its own private route."
             ],
             "code": [
@@ -521,16 +521,16 @@
           "meta": ["isolated tier", "FlexDomainStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "<code>GET /v1/countries</code> and <code>GET /v1/events</code>.",
             "facts": [
-              "<code>environments</code> is development and staging only, so nothing reaches production \u2014 but every ephemeral PR and personal stage still gets both.",
+              "<code>environments</code> is development and staging only, so nothing reaches production — but every ephemeral PR and personal stage still gets both.",
               "Both routes reach the travel service gateway over the private API; the domain itself holds no credentials."
             ],
             "code": [
               [
-                "domains/travel/domain.config.ts",
-                "the routes, environments and integrations"
+                "the routes, environments and integrations",
+                "domains/travel/domain.config.ts"
               ]
             ]
           }
@@ -542,10 +542,10 @@
           "meta": ["egress tier", "FlexPlatformStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 private access",
+            "tech": "NODEJS_24_X · 30s · private access",
             "role": "Sole holder of DVLA credentials.",
             "facts": [
-              "Mounted at <code>ANY /gateways/dvla/{proxy+}</code> \u2014 the ten routes are matched in code, not by API Gateway.",
+              "Mounted at <code>ANY /gateways/dvla/{proxy+}</code> — the ten routes are matched in code, not by API Gateway.",
               "Runs in the egress tier because DVLA is a public-internet API reached through NAT.",
               "Caches the upstream JWKS in a module-level variable across warm invocations."
             ],
@@ -564,11 +564,11 @@
           "meta": ["isolated tier", "FlexPlatformStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "Sole holder of UDP credentials.",
             "facts": [
               "SigV4 with credentials from <code>sts:AssumeRole</code>, optionally carrying an ExternalId, plus an <code>x-api-key</code> header.",
-              "No internet route \u2014 isolated subnets, no NAT. Reachability of the UDP endpoint depends on <code>consumerConfig.apiUrl</code> resolving through the API Gateway interface endpoint; unlike uns, the udp gateway schema has no <code>privateApiUrl</code> field at all."
+              "No internet route — isolated subnets, no NAT. Reachability of the UDP endpoint depends on <code>consumerConfig.apiUrl</code> resolving through the API Gateway interface endpoint; unlike uns, the udp gateway schema has no <code>privateApiUrl</code> field at all."
             ],
             "code": [
               [
@@ -585,7 +585,7 @@
           "meta": ["isolated tier", "FlexPlatformStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 30s \u00b7 isolated access",
+            "tech": "NODEJS_24_X · 30s · isolated access",
             "role": "Sole holder of UNS credentials.",
             "facts": [
               "Targets <code>consumerConfig.privateApiUrl</code> with a SigV4-signed assumed role, plus an <code>X-API-KEY</code> header."
@@ -610,16 +610,16 @@
           "meta": ["egress tier", "FlexGatewayStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 private access",
+            "tech": "NODEJS_24_X · private access",
             "role": "Sole holder of the travel upstream credentials.",
             "facts": [
-              "Mounted at <code>ANY /gateways/travel/{proxy+}</code> \u2014 its two routes are matched in code, not by API Gateway.",
+              "Mounted at <code>ANY /gateways/travel/{proxy+}</code> — its two routes are matched in code, not by API Gateway.",
               "<code>environments</code> is development and staging only, so it does not exist in production."
             ],
             "code": [
               [
-                "platform/domains/travel/gateway.config.ts",
-                "the routes, access tier and environments"
+                "the routes, access tier and environments",
+                "platform/domains/travel/gateway.config.ts"
               ]
             ]
           }
@@ -631,12 +631,12 @@
           "meta": ["egress tier", "FlexPlatformStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "NODEJS_24_X \u00b7 10s",
+            "tech": "NODEJS_24_X · 10s",
             "role": "API Gateway TOKEN authorizer.",
             "facts": [
-              "Env: USERPOOL_ID, CLIENT_ID, JWKS_URI (plus AWS_REGION) \u2014 Zod-parsed on every invocation, since the verifier is constructed inside the handler rather than at module scope.",
+              "Env: USERPOOL_ID, CLIENT_ID, JWKS_URI (plus AWS_REGION) — Zod-parsed on every invocation, since the verifier is constructed inside the handler rather than at module scope.",
               "One function shared by every domain stack via an SSM-exported ARN.",
-              "Sits in the egress tier so it can fetch the Cognito JWKS over NAT \u2014 there is no cognito-idp VPC endpoint."
+              "Sits in the egress tier so it can fetch the Cognito JWKS over NAT — there is no cognito-idp VPC endpoint."
             ],
             "code": [
               ["auth/src/handler.ts", "platform/domains/auth/src/handler.ts"],
@@ -663,7 +663,7 @@
             "role": "Serves a JWKS so E2E tests can self-sign tokens.",
             "facts": [
               "Publicly reachable by design, with a recorded CKV_AWS_258 suppression.",
-              "Exists wherever <code>env</code> resolves to development \u2014 so ephemeral PR and personal stages get one too.",
+              "Exists wherever <code>env</code> resolves to development — so ephemeral PR and personal stages get one too.",
               "A plain <code>NodejsFunction</code>: no VPC, no X-Ray, no explicit log group and no alarms."
             ],
             "code": [
@@ -687,11 +687,11 @@
           "d": {
             "type": "AWS::Lambda::Function",
             "tech": "2 minute timeout",
-            "role": "Synthetic canary against the public URL \u2014 and, in production, the second caller of the public path after the app itself.",
+            "role": "Synthetic canary against the public URL — and, in production, the second caller of the public path after the app itself.",
             "facts": [
               "Calls <code>https://{host}/app/udp/v1/users/me</code> with a real access token and, where configured, an <code>X-Firebase-App-Check</code> header, then publishes Flex/SmokeTest.SmokeTestSuccess as 1 or 0.",
               "Hand-written execution role rather than a generated one; the only role in the app with an explicit physical name.",
-              "Default Lambda alarms are switched off \u2014 the canary is itself the health signal.",
+              "Default Lambda alarms are switched off — the canary is itself the health signal.",
               "Persistent environments only; ephemeral and personal stages get none."
             ],
             "code": [
@@ -713,13 +713,13 @@
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
             "type": "AWS::Lambda::Function",
-            "tech": "Code.fromInline \u00b7 10s",
-            "role": "Republish a us-east-1 SNS message onto the eu-west-2 alarm topic \u2014 <b>currently non-functional</b>.",
+            "tech": "Code.fromInline · 10s",
+            "role": "Republish a us-east-1 SNS message onto the eu-west-2 alarm topic — <b>currently non-functional</b>.",
             "facts": [
               "The inline handler interpolates <code>TopicArn: ${targetTopicArn},</code> without quotes, so the deployed source is a JavaScript syntax error and the function fails at module load on every invocation. Cross-region alarms do not reach Slack today.",
               "One per severity, because CloudWatch cannot target a cross-region topic.",
               "Passes through message and message attributes; truncates the subject to 100 characters.",
-              "No explicit log group and no alarms \u2014 these are plain Function constructs, not Flex ones."
+              "No explicit log group and no alarms — these are plain Function constructs, not Flex ones."
             ],
             "code": [
               ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
@@ -736,7 +736,7 @@
             "tech": "CDK-generated",
             "role": "Backing functions for custom resources. Deploy machinery, not request path.",
             "facts": [
-              "An <code>AwsCustomResource</code> singleton per stack, used for cross-region SSM reads and the two API deployments. The Macie stack would add three more, but its import and its instantiation are both commented out in <code>app.ts</code> \u2014 it is disabled in code, not merely undeployed.",
+              "An <code>AwsCustomResource</code> singleton per stack, used for cross-region SSM reads and the two API deployments. The Macie stack would add three more, but its import and its instantiation are both commented out in <code>app.ts</code> — it is disabled in code, not merely undeployed.",
               "<code>CfnPause</code> adds an inline timeout function plus a Provider framework function.",
               "<code>BucketDeployment</code> adds an asset-copying handler that also invalidates CloudFront."
             ],
@@ -745,7 +745,7 @@
         },
         {
           "id": "cff-platform",
-          "name": "Viewer-request CloudFront Function \u00b7 platform",
+          "name": "Viewer-request CloudFront Function · platform",
           "n": 1,
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
@@ -766,7 +766,7 @@
         },
         {
           "id": "cff-docs",
-          "name": "Viewer-request CloudFront Function \u00b7 docs",
+          "name": "Viewer-request CloudFront Function · docs",
           "n": 1,
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
@@ -787,7 +787,7 @@
       ]
     },
     {
-      "name": "API layer \u00b7 Amazon API Gateway",
+      "name": "API layer · Amazon API Gateway",
       "note": null,
       "table": null,
       "items": [
@@ -798,12 +798,12 @@
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::RestApi",
-            "tech": "REST \u00b7 EndpointType.REGIONAL",
+            "tech": "REST · EndpointType.REGIONAL",
             "role": "The app-facing surface.",
             "facts": [
               "endpointAccessMode BASIC; securityPolicy SecurityPolicy_TLS13_1_2_2021_06.",
               "<code>GET /health</code> as a mock integration, plus the <code>/app</code> root every domain extends.",
-              "Gateway responses UNAUTHORIZED \u2192 401 and ACCESS_DENIED \u2192 403 render the authorizer errorMessage.",
+              "Gateway responses UNAUTHORIZED → 401 and ACCESS_DENIED → 403 render the authorizer errorMessage.",
               "Caching disabled with a recorded CKV_AWS_120 suppression."
             ],
             "code": [
@@ -821,11 +821,11 @@
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::RestApi",
-            "tech": "REST \u00b7 EndpointType.PRIVATE",
+            "tech": "REST · EndpointType.PRIVATE",
             "role": "The internal routing plane: /health, /domains/** and /gateways/**.",
             "facts": [
               "Resource policy: one Deny for AnyPrincipal when <code>aws:SourceVpce</code> is not the interface endpoint.",
-              "No explicit Allow \u2014 same-account callers are gated purely by their own IAM policy.",
+              "No explicit Allow — same-account callers are gated purely by their own IAM policy.",
               "<code>AuthorizationType.IAM</code> on every method by default.",
               "loggingLevel INFO with dataTraceEnabled false, so bodies stay out of execution logs. The public API sets no loggingLevel at all."
             ],
@@ -844,7 +844,7 @@
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::Stage",
-            "tech": "prod \u00b7 X-Ray \u00b7 metrics",
+            "tech": "prod · X-Ray · metrics",
             "role": "The single deployed stage.",
             "facts": [
               "JSON access logs with method, ip, protocol, requestTime, resourcePath, responseLength, status, user and caller.",
@@ -860,10 +860,10 @@
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::Stage",
-            "tech": "prod \u00b7 X-Ray \u00b7 metrics \u00b7 INFO logging",
+            "tech": "prod · X-Ray · metrics · INFO logging",
             "role": "The single deployed stage.",
             "facts": [
-              "dataTraceEnabled is false \u2014 this is what keeps internal request and response bodies out of logs."
+              "dataTraceEnabled is false — this is what keeps internal request and response bodies out of logs."
             ],
             "code": []
           }
@@ -912,7 +912,7 @@
             "facts": [
               "identitySource is the Authorization header.",
               "All of them point at the same shared authorizer function.",
-              "local-council never gets one \u2014 it has no public routes."
+              "local-council never gets one — it has no public routes."
             ],
             "code": [
               ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
@@ -933,9 +933,9 @@
           "d": {
             "type": "AWS::ApiGateway::Method",
             "tech": "AWS_PROXY LambdaIntegration",
-            "role": "Everything under <code>/app/{domain}/{version}/\u2026</code>",
+            "role": "Everything under <code>/app/{domain}/{version}/…</code>",
             "facts": [
-              "dvla 7 \u00b7 udp 6 \u00b7 uns 4 \u00b7 groups 2 \u00b7 example 11 \u00b7 local-council 0.",
+              "dvla 7 · udp 6 · uns 4 · groups 2 · example 11 · local-council 0.",
               "Counted as one method per route; the intermediate path Resources are shared and not counted here.",
               "<code>:param</code> segments become <code>{param}</code>."
             ],
@@ -957,11 +957,11 @@
           "meta": ["eu-west-2", "FlexDomainStack"],
           "d": {
             "type": "AWS::ApiGateway::Method",
-            "tech": "AWS_PROXY \u00b7 AuthorizationType.IAM",
-            "role": "Everything under <code>/domains/{domain}/{version}/\u2026</code>",
+            "tech": "AWS_PROXY · AuthorizationType.IAM",
+            "role": "Everything under <code>/domains/{domain}/{version}/…</code>",
             "facts": [
-              "dvla 1 \u00b7 udp 2 \u00b7 local-council 2 \u00b7 example 2.",
-              "Each carries a recorded CKV_AWS_59 suppression \u2014 access is controlled by the VPC endpoint and the resource policy."
+              "dvla 1 · udp 2 · local-council 2 · example 2.",
+              "Each carries a recorded CKV_AWS_59 suppression — access is controlled by the VPC endpoint and the resource policy."
             ],
             "code": [
               ["stacks/domain.ts", "platform/infra/flex/src/stacks/domain.ts"]
@@ -980,10 +980,10 @@
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::ApiGateway::Method",
-            "tech": "ANY \u00b7 {proxy+} \u00b7 IAM",
+            "tech": "ANY · {proxy+} · IAM",
             "role": "One catch-all method per service gateway.",
             "facts": [
-              "Four methods stand in for 28 upstream operations (dvla 10 \u00b7 udp 10 \u00b7 uns 6 \u00b7 travel 2), because routing happens inside each gateway rather than in API Gateway. Travel is development and staging only, so production has three."
+              "Four methods stand in for 28 upstream operations (dvla 10 · udp 10 · uns 6 · travel 2), because routing happens inside each gateway rather than in API Gateway. Travel is development and staging only, so production has three."
             ],
             "code": [
               [
@@ -1000,8 +1000,8 @@
           "meta": ["eu-west-2", "FlexApiDeploymentStack"],
           "d": {
             "type": "Custom::AWS (apigateway:createDeployment)",
-            "tech": "AwsCustomResource \u00d72 + CfnPause",
-            "role": "Forces a new deployment once domain stacks have added their resources. Deploy machinery \u2014 see it in Delivery.",
+            "tech": "AwsCustomResource ×2 + CfnPause",
+            "role": "Forces a new deployment once domain stacks have added their resources. Deploy machinery — see it in Delivery.",
             "facts": [
               "Depends on every deployed domain stack.",
               "The sorted METHOD:path list is SHA-256 hashed into the deployment description, so it re-runs only when routes change.",
@@ -1015,7 +1015,7 @@
       ]
     },
     {
-      "name": "Edge \u00b7 CloudFront, ACM, Route 53",
+      "name": "Edge · CloudFront, ACM, Route 53",
       "note": null,
       "table": null,
       "items": [
@@ -1026,11 +1026,11 @@
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
             "type": "AWS::CloudFront::Distribution",
-            "tech": "TLSv1.2_2021 \u00b7 PRICE_CLASS_100",
+            "tech": "TLSv1.2_2021 · PRICE_CLASS_100",
             "role": "The single public entry point for the API.",
             "facts": [
               "Two behaviours: the default API behaviour and /docs*.",
-              "publishAdditionalMetrics is on \u2014 required for the TotalErrorRate alarm, and billed extra.",
+              "publishAdditionalMetrics is on — required for the TotalErrorRate alarm, and billed extra.",
               "Logical ID pinned with overrideLogicalId to preserve identity across refactors.",
               "Alias is the zone apex for persistent environments and <code>{stage}.{zone}</code> for ephemeral and personal stages."
             ],
@@ -1094,7 +1094,7 @@
           "d": {
             "type": "AWS::CloudFront::CachePolicy (managed)",
             "tech": "AWS managed",
-            "role": "No custom policies are defined \u2014 three managed ones are referenced.",
+            "role": "No custom policies are defined — three managed ones are referenced.",
             "facts": [
               "CACHING_DISABLED on the API behaviour, so every request reaches the origin.",
               "CACHING_OPTIMIZED on /docs*.",
@@ -1129,7 +1129,7 @@
             "tech": "A record, alias target",
             "role": "Points the service name at the distribution.",
             "facts": [
-              "The hosted zone itself is imported, never created \u2014 it belongs to the platform team.",
+              "The hosted zone itself is imported, never created — it belongs to the platform team.",
               "Logical ID pinned via overrideLogicalId."
             ],
             "code": []
@@ -1138,23 +1138,23 @@
       ]
     },
     {
-      "name": "Security \u00b7 WAF, Shield, IAM, secrets, keys",
+      "name": "Security · WAF, Shield, IAM, secrets, keys",
       "note": null,
       "table": null,
       "items": [
         {
           "id": "waf-cf",
-          "name": "Web ACL \u00b7 CLOUDFRONT scope",
+          "name": "Web ACL · CLOUDFRONT scope",
           "n": 1,
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
             "type": "AWS::WAFv2::WebACL",
-            "tech": "5 rules \u00b7 default allow",
+            "tech": "5 rules · default allow",
             "role": "Edge filtering.",
             "facts": [
-              "0 CommonRuleSet \u00b7 1 KnownBadInputs \u00b7 2 BypassForE2ETests (allow) \u00b7 3 AmazonIpReputationList \u00b7 4 RateLimit block at 2000 per IP.",
+              "0 CommonRuleSet · 1 KnownBadInputs · 2 BypassForE2ETests (allow) · 3 AmazonIpReputationList · 4 RateLimit block at 2000 per IP.",
               "Data protection: SUBSTITUTION on the authorization header.",
-              "The bypass is an allow rule, so it terminates evaluation and skips rules 3 and 4 \u2014 but not 0 and 1."
+              "The bypass is an allow rule, so it terminates evaluation and skips rules 3 and 4 — but not 0 and 1."
             ],
             "code": [
               ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
@@ -1163,15 +1163,15 @@
         },
         {
           "id": "waf-regional",
-          "name": "Web ACL \u00b7 REGIONAL scope + association",
+          "name": "Web ACL · REGIONAL scope + association",
           "n": 2,
           "meta": ["eu-west-2", "FlexPlatformStack"],
           "d": {
             "type": "AWS::WAFv2::WebACL + WebACLAssociation",
-            "tech": "2 rules \u00b7 default <b>BLOCK</b>",
+            "tech": "2 rules · default <b>BLOCK</b>",
             "role": "Origin lock on the public API stage.",
             "facts": [
-              "0 KnownBadInputs \u00b7 1 RequireOriginSecret, an exact byte match on <code>x-origin-verify</code>.",
+              "0 KnownBadInputs · 1 RequireOriginSecret, an exact byte match on <code>x-origin-verify</code>.",
               "Default block is what makes the raw execute-api URL unusable.",
               "sampledRequestsEnabled is false on the origin-secret rule, so the value is never sampled into logs."
             ],
@@ -1198,7 +1198,7 @@
             "tech": "CfnProtection",
             "role": "DDoS protection on the distribution.",
             "facts": [
-              "Application-layer automatic response runs in <code>count</code> mode \u2014 evaluated and reported, not enforced.",
+              "Application-layer automatic response runs in <code>count</code> mode — evaluated and reported, not enforced.",
               "Skipped whenever <code>env</code> is development, so neither the dev environment nor any ephemeral or personal stage gets it."
             ],
             "code": [
@@ -1224,7 +1224,7 @@
               "One in the platform stack, plus one per deployed domain stack.",
               "Allow: logs, X-Ray, ENI lifecycle, Secrets Manager read, SSM parameter operations, <code>kms:Decrypt</code>, <code>sts:AssumeRole</code>.",
               "Allow: <code>execute-api:Invoke</code> restricted to the private API only.",
-              "Deny: <code>lambda:InvokeFunction</code> on everything \u2014 this is what forces traffic through the API.",
+              "Deny: <code>lambda:InvokeFunction</code> on everything — this is what forces traffic through the API.",
               "Wildcards are intentional, with recorded CKV_AWS_107/108/111 suppressions."
             ],
             "code": [
@@ -1246,7 +1246,7 @@
             "role": "Execution identities.",
             "facts": [
               "One generated execution role per Lambda, all under the permissions boundary.",
-              "Hand-written roles: the API Gateway CloudWatch role (auto-named \u2014 'ApiGatewayCloudWatchRole' is only a construct id) and the smoke-test role, the only one with an explicit physical name <code>{env}-flex-smoke-test-role</code>.",
+              "Hand-written roles: the API Gateway CloudWatch role (auto-named — 'ApiGatewayCloudWatchRole' is only a construct id) and the smoke-test role, the only one with an explicit physical name <code>{env}-flex-smoke-test-role</code>.",
               "Also created by CDK: the Chatbot role, custom-resource roles and the BucketDeployment handler role.",
               "Per-route inline policies come from grantRouteResources and grantRoutePermissions."
             ],
@@ -1268,8 +1268,8 @@
             "tech": "32 characters, punctuation excluded",
             "role": "Origin verification and the E2E WAF bypass.",
             "facts": [
-              "<code>/{stage}/flex-secret/origin-verify-secret</code> \u2014 created in eu-west-2, replicated to us-east-1.",
-              "<code>/{stage}/flex-secret/waf/e2e-bypass</code> \u2014 created in us-east-1, replicated to eu-west-2.",
+              "<code>/{stage}/flex-secret/origin-verify-secret</code> — created in eu-west-2, replicated to us-east-1.",
+              "<code>/{stage}/flex-secret/waf/e2e-bypass</code> — created in us-east-1, replicated to eu-west-2.",
               "Both use AWS managed keys, with a recorded CKV_AWS_149 suppression so replication stays simple.",
               "Consumer configs and hash secrets are imported, not created here."
             ],
@@ -1283,7 +1283,7 @@
         },
         {
           "id": "kms-flowlog",
-          "name": "KMS key \u00b7 VPC flow logs",
+          "name": "KMS key · VPC flow logs",
           "n": {
             "dev": 1,
             "stg": 1,
@@ -1293,11 +1293,11 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::KMS::Key + Alias",
-            "tech": "alias/flex-vpc-flow-logs-key \u00b7 rotation on",
+            "tech": "alias/flex-vpc-flow-logs-key · rotation on",
             "role": "Encrypts the flow-log bucket.",
             "facts": [
-              "The only statement the stack adds is the write path for <code>delivery.logs.amazonaws.com</code> \u2014 Encrypt, GenerateDataKey* and DescribeKey, conditioned on source account and source ARN. CDK's default account-root statement is also present.",
-              "No reader grant is written on top of CDK's default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright \u2014 an investigator or Athena role still has to be granted it deliberately."
+              "The only statement the stack adds is the write path for <code>delivery.logs.amazonaws.com</code> — Encrypt, GenerateDataKey* and DescribeKey, conditioned on source account and source ARN. CDK's default account-root statement is also present.",
+              "No reader grant is written on top of CDK's default account-root <code>kms:*</code> statement, so decrypt is delegated to IAM rather than blocked outright — an investigator or Athena role still has to be granted it deliberately."
             ],
             "code": [
               [
@@ -1309,7 +1309,7 @@
         },
         {
           "id": "kms-alerts",
-          "name": "KMS key \u00b7 alarm topics",
+          "name": "KMS key · alarm topics",
           "n": {
             "dev": 1,
             "stg": 1,
@@ -1319,7 +1319,7 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::KMS::Key + Alias",
-            "tech": "alias/flex-alerts-key \u00b7 rotation on",
+            "tech": "alias/flex-alerts-key · rotation on",
             "role": "Encrypts the eu-west-2 alarm and release topics.",
             "facts": [
               "<code>cloudwatch.amazonaws.com</code> is granted encrypt and decrypt."
@@ -1334,7 +1334,7 @@
         },
         {
           "id": "kms-relay",
-          "name": "KMS key \u00b7 relay topics",
+          "name": "KMS key · relay topics",
           "n": 1,
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
@@ -1343,7 +1343,7 @@
             "role": "Encrypts the us-east-1 relay topics.",
             "facts": [
               "Per stage, so every ephemeral and personal stage creates its own.",
-              "One key shared by both relay topics \u2014 <code>#buildRelay</code> is called twice and handed the same key.",
+              "One key shared by both relay topics — <code>#buildRelay</code> is called twice and handed the same key.",
               "The Chatbot role is granted decrypt on the eu-west-2 key, not this one."
             ],
             "code": [
@@ -1353,17 +1353,17 @@
         },
         {
           "id": "kms-lambda-env",
-          "name": "KMS key \u00b7 Lambda environment variables",
+          "name": "KMS key · Lambda environment variables",
           "n": 0,
-          "meta": ["eu-west-2", "imported \u00b7 not created"],
+          "meta": ["eu-west-2", "imported · not created"],
           "d": {
             "type": "AWS::KMS::Key (imported)",
             "tech": "environmentEncryption on every Flex* construct",
             "role": "The fourth key in the system, and the only one FLEX does not create: it protects every Lambda's environment variables.",
             "facts": [
               "All three Flex Lambda constructs set <code>environmentEncryption</code> to it and call <code>grantDecrypt</code> on the function, so every route, gateway, authorizer and canary function depends on it.",
-              "Its ARN is read from <code>/{env}/flex-param/secret/encryption-key</code> with <code>StringParameter.valueForStringParameter</code>, which bypasses <code>BaseStack.import()</code> and the SsmApp export graph \u2014 so unlike every other imported key, a missing or wrong value fails at deploy rather than at synth.",
-              "The plain <code>NodejsFunction</code>s (stub JWKS, alarm relays) do not use it \u2014 their environments are encrypted with the default AWS managed key."
+              "Its ARN is read from <code>/{env}/flex-param/secret/encryption-key</code> with <code>StringParameter.valueForStringParameter</code>, which bypasses <code>BaseStack.import()</code> and the SsmApp export graph — so unlike every other imported key, a missing or wrong value fails at deploy rather than at synth.",
+              "The plain <code>NodejsFunction</code>s (stub JWKS, alarm relays) do not use it — their environments are encrypted with the default AWS managed key."
             ],
             "code": [
               ["utils/lambda.ts", "platform/infra/flex/src/utils/lambda.ts"]
@@ -1373,7 +1373,7 @@
       ]
     },
     {
-      "name": "Storage \u00b7 Amazon S3",
+      "name": "Storage · Amazon S3",
       "note": null,
       "table": null,
       "items": [
@@ -1384,7 +1384,7 @@
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
             "type": "AWS::S3::Bucket",
-            "tech": "flex-{stage}-openapi-specs \u00b7 S3_MANAGED \u00b7 versioned",
+            "tech": "flex-{stage}-openapi-specs · S3_MANAGED · versioned",
             "role": "Swagger UI plus one OpenAPI 3.1 document per domain.",
             "facts": [
               "BlockPublicAccess.BLOCK_ALL; reachable only through CloudFront OAC.",
@@ -1405,11 +1405,11 @@
           "meta": ["us-east-1", "FlexGlobalStack"],
           "d": {
             "type": "AWS::S3::Bucket",
-            "tech": "OBJECT_WRITER \u00b7 LOG_DELIVERY_WRITE",
+            "tech": "OBJECT_WRITER · LOG_DELIVERY_WRITE",
             "role": "CloudFront standard access logs.",
             "facts": [
               "Object Lock GOVERNANCE for 90 days; objects and non-current versions expire at 90 days.",
-              "Recorded CKV_AWS_18 suppression \u2014 a log bucket does not log itself."
+              "Recorded CKV_AWS_18 suppression — a log bucket does not log itself."
             ],
             "code": [
               [
@@ -1449,7 +1449,7 @@
           "meta": ["eu-west-2", "FlexCoreStack"],
           "d": {
             "type": "AWS::S3::Bucket",
-            "tech": "KMS CMK \u00b7 bucketKeyEnabled \u00b7 versioned",
+            "tech": "KMS CMK · bucketKeyEnabled · versioned",
             "role": "Destination for VPC flow logs.",
             "facts": [
               "Object Lock GOVERNANCE for 365 days, with lifecycle expiry to match.",
@@ -1487,7 +1487,7 @@
       ]
     },
     {
-      "name": "Messaging \u00b7 SNS, Chatbot, EventBridge",
+      "name": "Messaging · SNS, Chatbot, EventBridge",
       "note": null,
       "table": null,
       "items": [
@@ -1506,7 +1506,7 @@
             "tech": "KMS encrypted",
             "role": "flex-alerts-critical and flex-alerts-warning.",
             "facts": [
-              "Every alarm routes to exactly one of these two \u2014 except the smoke-test alarm, which has no action attached at all.",
+              "Every alarm routes to exactly one of these two — except the smoke-test alarm, which has no action attached at all.",
               "<code>cloudwatch.amazonaws.com</code> is granted publish on both."
             ],
             "code": [
@@ -1554,7 +1554,7 @@
             "role": "Cross-region alarm forwarding.",
             "facts": [
               "Encrypted with <code>alias/{stage}-flex-alerts-relay-key</code>.",
-              "The topics and subscriptions are correct; the subscribed Lambdas are not \u2014 see the relay functions above."
+              "The topics and subscriptions are correct; the subscribed Lambdas are not — see the relay functions above."
             ],
             "code": [
               ["stacks/global.ts", "platform/infra/flex/src/stacks/global.ts"]
@@ -1576,7 +1576,7 @@
             "tech": "AWS Chatbot",
             "role": "<code>flex-alerts-{stage}</code>, plus one <code>flex-releases-{stage}-{channel}</code> per release channel in development.",
             "facts": [
-              "The count shown is the alerts channel only \u2014 development adds one more per configured release channel ID, read at synth time via valueFromLookup.",
+              "The count shown is the alerts channel only — development adds one more per configured release channel ID, read at synth time via valueFromLookup.",
               "Guardrail policy ReadOnlyAccess caps what anyone can do from Slack.",
               "Its role is granted <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> on the alarm topic key."
             ],
@@ -1614,14 +1614,14 @@
       ]
     },
     {
-      "name": "Observability \u00b7 CloudWatch, X-Ray",
-      "note": "Retention is set per destination, never globally \u2014 the table below is the whole picture for everything that writes a log. VPC flow logs are the one source covered on the Network tab instead, because where they are written is a network fact.",
+      "name": "Observability · CloudWatch, X-Ray",
+      "note": "Retention is set per destination, never globally — the table below is the whole picture for everything that writes a log. VPC flow logs are the one source covered on the Network tab instead, because where they are written is a network fact.",
       "table": {
         "cols": ["Source", "Destination", "Retention", "Notes"],
         "rows": [
           [
             "CloudFront access logs",
-            "S3 \u00b7 <code>OBJECT_WRITER</code>",
+            "S3 · <code>OBJECT_WRITER</code>",
             "90 days",
             "Object Lock GOVERNANCE 90 days; objects and non-current versions expire to match"
           ],
@@ -1635,13 +1635,13 @@
             "API Gateway access logs",
             "CloudWatch Logs",
             "1 year",
-            "An explicit log group per API, JSON standard fields \u2014 both the public and the private API"
+            "An explicit log group per API, JSON standard fields — both the public and the private API"
           ],
           [
             "API Gateway execution logs",
             "CloudWatch Logs",
             "<b>Never expires</b>",
-            "Auto-created group, no retention configured. Private API only \u2014 the public stage sets no <code>loggingLevel</code>"
+            "Auto-created group, no retention configured. Private API only — the public stage sets no <code>loggingLevel</code>"
           ],
           [
             "Lambda logs",
@@ -1667,9 +1667,9 @@
             "tech": "3 per function",
             "role": "Error rate, throttles and duration.",
             "facts": [
-              "Error rate: IF(invocations \u2265 10, 100*(errors/invocations), 0) above 1% for two consecutive 5-minute periods \u2192 critical.",
-              "Throttles: any throttle in a 1-minute window \u2192 critical.",
-              "Duration: p99 above 80% of the function's configured timeout over 5 minutes \u2192 warning.",
+              "Error rate: IF(invocations ≥ 10, 100*(errors/invocations), 0) above 1% for two consecutive 5-minute periods → critical.",
+              "Throttles: any throttle in a 1-minute window → critical.",
+              "Duration: p99 above 80% of the function's configured timeout over 5 minutes → warning.",
               "Covers domain routes, service gateways and the authorizer. The canary opts out; the relay and stub JWKS functions never had them.",
               "The construct throws at synth if a function has no explicit timeout."
             ],
@@ -1691,10 +1691,10 @@
             "tech": "4 per API",
             "role": "Error rates and latency.",
             "facts": [
-              "5XX average above 1% over five consecutive 1-minute periods \u2192 critical.",
-              "4XX average above 5% on the same schedule \u2192 warning.",
-              "End-to-end p95 latency above 3000 ms, 2 of 3 consecutive 5-minute periods \u2192 warning.",
-              "Integration p95 latency above 2900 ms on the same schedule \u2192 warning.",
+              "5XX average above 1% over five consecutive 1-minute periods → critical.",
+              "4XX average above 5% on the same schedule → warning.",
+              "End-to-end p95 latency above 3000 ms, 2 of 3 consecutive 5-minute periods → warning.",
+              "Integration p95 latency above 2900 ms on the same schedule → warning.",
               "Both latency alarms are gated at 40 requests per period, so quiet stages stay silent."
             ],
             "code": [
@@ -1715,10 +1715,10 @@
             "tech": "CloudFrontAlarms",
             "role": "Distribution error rates.",
             "facts": [
-              "5xxErrorRate above 1% over five consecutive minutes \u2192 critical.",
-              "4xxErrorRate and TotalErrorRate above 5% on the same schedule \u2192 warning.",
+              "5xxErrorRate above 1% over five consecutive minutes → critical.",
+              "4xxErrorRate and TotalErrorRate above 5% on the same schedule → warning.",
               "These metrics are already percentages, so the thresholds are 1 and 5, not 0.01 and 0.05.",
-              "Must be created in us-east-1 \u2014 CloudFront emits metrics only there."
+              "Must be created in us-east-1 — CloudFront emits metrics only there."
             ],
             "code": [
               [
@@ -1738,9 +1738,9 @@
             "tech": "3 per function",
             "role": "Edge function health.",
             "facts": [
-              "Execution errors over five consecutive minutes \u2192 critical.",
-              "Throttles over five consecutive minutes \u2192 critical.",
-              "Validation errors over two consecutive minutes \u2192 warning."
+              "Execution errors over five consecutive minutes → critical.",
+              "Throttles over five consecutive minutes → critical.",
+              "Validation errors over two consecutive minutes → warning."
             ],
             "code": [
               [
@@ -1760,9 +1760,9 @@
             "tech": "3 per Web ACL",
             "role": "Blocking behaviour.",
             "facts": [
-              "Any managed-rule block in a 5-minute window \u2192 critical.",
-              "Block rate above 90% of all requests \u2192 critical.",
-              "Anomaly detection at 2 standard deviations on blocked volume, 2 of 3 periods \u2192 warning.",
+              "Any managed-rule block in a 5-minute window → critical.",
+              "Block rate above 90% of all requests → critical.",
+              "Anomaly detection at 2 standard deviations on blocked volume, 2 of 3 periods → warning.",
               "CLOUDFRONT-scope metrics carry no Region dimension; REGIONAL ones do."
             ],
             "code": [
@@ -1788,8 +1788,8 @@
             "tech": "ShieldAlarms",
             "role": "DDoS signals.",
             "facts": [
-              "DDoSDetected maximum above 0 in a 1-minute period \u2192 critical.",
-              "DDoSAttackRequestsPerSecond above 0 \u2192 warning.",
+              "DDoSDetected maximum above 0 in a 1-minute period → critical.",
+              "DDoSAttackRequestsPerSecond above 0 → warning.",
               "Created only alongside the Shield protection, so development and every ephemeral stage have neither.",
               "Both logical IDs are pinned via overrideLogicalId."
             ],
@@ -1816,8 +1816,8 @@
             "tech": "Custom metric",
             "role": "No successful canary run in 15 minutes.",
             "facts": [
-              "<b>It notifies nobody.</b> <code>{stage}-smoke-test-no-success</code> is the one Alarm in the app with no <code>addAlarmAction</code> \u2014 <code>actionsEnabled</code> is true, but no topic is attached.",
-              "treatMissingData is BREACHING, so a canary that stops running entirely still alarms \u2014 into the void.",
+              "<b>It notifies nobody.</b> <code>{stage}-smoke-test-no-success</code> is the one Alarm in the app with no <code>addAlarmAction</code> — <code>actionsEnabled</code> is true, but no topic is attached.",
+              "treatMissingData is BREACHING, so a canary that stops running entirely still alarms — into the void.",
               "Metric Flex/SmokeTest.SmokeTestSuccess, summed over a 15-minute period."
             ],
             "code": [
@@ -1872,7 +1872,7 @@
             "facts": [
               "<code>xray:PutTraceSegments</code> and <code>PutTelemetryRecords</code> sit in the permissions boundary baseline.",
               "Nothing in the us-east-1 global stack is traced, and the plain NodejsFunctions (stub JWKS, alarm relays) are not either.",
-              "Segments are emitted by the Lambda execution environment, not through a VPC endpoint \u2014 there is no X-Ray interface endpoint."
+              "Segments are emitted by the Lambda execution environment, not through a VPC endpoint — there is no X-Ray interface endpoint."
             ],
             "code": [
               [
@@ -1885,7 +1885,7 @@
       ]
     },
     {
-      "name": "Configuration \u00b7 SSM Parameter Store",
+      "name": "Configuration · SSM Parameter Store",
       "note": null,
       "table": null,
       "items": [
@@ -1907,7 +1907,7 @@
               "Core writes 14: nine VPC parameters plus two security groups, two alarm topics and the API Gateway endpoint. Development adds the release topic (15).",
               "<code>exportVpc</code> is the reason the VPC contributes nine: id, CIDR, AZs, and subnet-id plus route-table-id lists for each of the three tiers.",
               "Platform writes 8: three public API keys, four private API keys and the origin-verify secret ARN.",
-              "An ephemeral or personal stage writes only the platform 8 \u2014 it imports the rest from development.",
+              "An ephemeral or personal stage writes only the platform 8 — it imports the rest from development.",
               "SsmApp records the owning stack per (region, key) and throws on duplicate ownership."
             ],
             "code": [
@@ -1927,10 +1927,10 @@
             "role": "Values owned by flex-params and the platform team.",
             "facts": [
               "<code>/infra/dns/hostedzoneid</code> and <code>hostedzonename</code>.",
-              "<code>/{env}/flex-param/auth/*</code> \u2014 user pool and client IDs, plus stub equivalents.",
-              "<code>/{env}/flex-param/monitoring/*</code> \u2014 Slack workspace and channel IDs, plus the release channel list in development.",
-              "<code>/{env}/flex-param/{gateway}/*</code> \u2014 derived from each gateway config's <code>resources</code> rather than hard-coded.",
-              "<code>/{env}/flex-param/secret/encryption-key</code> \u2014 the Lambda environment CMK ARN. It is the one exception to the rule below: <code>resolveEncryptionKey</code> reads it with <code>valueForStringParameter</code>, outside the export graph, so it is never checked at synth.",
+              "<code>/{env}/flex-param/auth/*</code> — user pool and client IDs, plus stub equivalents.",
+              "<code>/{env}/flex-param/monitoring/*</code> — Slack workspace and channel IDs, plus the release channel list in development.",
+              "<code>/{env}/flex-param/{gateway}/*</code> — derived from each gateway config's <code>resources</code> rather than hard-coded.",
+              "<code>/{env}/flex-param/secret/encryption-key</code> — the Lambda environment CMK ARN. It is the one exception to the rule below: <code>resolveEncryptionKey</code> reads it with <code>valueForStringParameter</code>, outside the export graph, so it is never checked at synth.",
               "Everything else is declared as an external export, so an unknown key fails at synth rather than at deploy."
             ],
             "code": [
@@ -1949,9 +1949,9 @@
             "tech": "AwsCustomResource",
             "role": "Lets the us-east-1 stack read eu-west-2 parameters.",
             "facts": [
-              "Seven distinct keys are read this way in every stage \u2014 the hosted zone id and name, the public REST API id and its app root, the origin-verify secret ARN, and both alarm topic ARNs. Reads are cached per key, so that is seven custom resources.",
+              "Seven distinct keys are read this way in every stage — the hosted zone id and name, the public REST API id and its app root, the origin-verify secret ARN, and both alarm topic ARNs. Reads are cached per key, so that is seven custom resources.",
               "The physical resource ID embeds a timestamp, so the value is re-read on every update.",
-              "Domain <code>kms</code>, <code>secret</code> and <code>ssm</code> resources do not go through this path at all \u2014 they are looked up directly and bypass the SsmApp dependency graph by design."
+              "Domain <code>kms</code>, <code>secret</code> and <code>ssm</code> resources do not go through this path at all — they are looked up directly and bypass the SsmApp dependency graph by design."
             ],
             "code": [
               ["base/index.ts", "platform/infra/flex/src/base/index.ts"],
@@ -1975,15 +1975,15 @@
           "n": 0,
           "meta": ["us-east-1", "FlexMacieStack"],
           "d": {
-            "type": "AWS::Macie::Session and related",
-            "tech": "CfnSession \u00b7 CfnCustomDataIdentifier \u00b7 AwsCustomResource",
+            "type": "AWS::Macie::CustomDataIdentifier, plus custom resources",
+            "tech": "AwsCustomResource · CfnCustomDataIdentifier",
             "role": "Scheduled sensitive-data discovery over the CloudFront access-log bucket.",
             "facts": [
-              "Fully implemented, but its import and its instantiation are <b>commented out in <code>app.ts</code></b> \u2014 it is disabled in code, not merely undeployed. Uncommenting is not a one-line change: the commented block also references a <code>globalStack</code> variable that no longer exists.",
-              "Session with FIFTEEN_MINUTES finding publication; automated discovery explicitly disabled to avoid rolling scans of public specs and log buckets.",
+              "Fully implemented, but its import and its instantiation are <b>commented out in <code>app.ts</code></b> — it is disabled in code, not merely undeployed. Uncommenting is not a one-line change: the commented block also references a <code>globalStack</code> variable that no longer exists.",
+              "The session is enabled through a <code>macie2:enableMacie</code> call with FIFTEEN_MINUTES finding publication; automated discovery explicitly disabled to avoid rolling scans of public specs and log buckets.",
               "A weekly SCHEDULED job every Monday at 100% sampling with RECOMMENDED managed identifiers.",
               "Results export to a KMS-encrypted RETAIN bucket under <code>macie-results/</code>.",
-              "The matching CI coverage check is commented out in <code>_quality-checks.yml</code> too."
+              "The CI coverage check <b>is</b> live: <code>validate:macie-coverage</code> runs in the Hygiene job on every pull request and posts a Slack notice for uncovered domains — so coverage is reported against a stack that is not deployed."
             ],
             "code": [
               ["stacks/macie.ts", "platform/infra/flex/src/stacks/macie.ts"],
