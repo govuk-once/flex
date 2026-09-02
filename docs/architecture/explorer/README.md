@@ -4,7 +4,7 @@ The source for `docs/architecture/explorer.html`: eight tabs, built to a single
 self-contained page. This file is the contract. **Read it before changing a view** —
 whether you are a person or an agent working on someone's behalf.
 
-The built page is gitignored, because a 292KB generated blob makes for meaningless diffs.
+The built page is gitignored, because a 410KB generated blob makes for meaningless diffs.
 CI builds it and publishes `docs/` to GitHub Pages on every merge to `main`; locally,
 `pnpm architecture:serve` builds it for you.
 
@@ -38,11 +38,16 @@ pnpm architecture:build
 
 That runs two steps:
 
-1. **`pnpm architecture:facts`** loads every `domains/*/domain.config.ts` and
-   `platform/domains/*/gateway.config.ts` — the same files the CDK app reads — and writes
+1. **`pnpm architecture:facts`** loads the domain and gateway configs — the same files the
+   CDK app reads — and writes
    [`../architecture-facts.json`](../architecture-facts.json): route counts per domain, per
    stage, per access tier, service gateway routes and resources, and the domain dependency
-   graph.
+   graph. It also parses the alarm constructs for every CloudWatch
+   alarm, its threshold, its evaluation windows and the topic it reaches. Alarms have no
+   config to import, so they are read from the TypeScript AST — see
+   [`scripts/lib/extractAlarms.ts`](../scripts/lib/extractAlarms.ts). Which files it reads,
+   and which checkout it reads them from, are declared in the `source` block of
+   `explorer.config.json` — not spelled out in the scripts.
 2. **`scripts/buildArchitectureExplorer.ts`** validates the view files and assembles them
    with the styles, markup and renderer into `explorer.html`.
 
@@ -54,30 +59,39 @@ generated file looks wrong, the config is the bug — not the diagram.
 A resource row says where its own count comes from, with a `from` field beside the `n` it
 governs — `"from": "totals.routeMethods.public"`, a dotted path into the generated facts.
 The build resolves it and fails when the two disagree. Keeping the claim and its source in
-the same object means a renamed or deleted row takes its mapping with it. Counts that come from CDK code rather than domain
-config — alarms, keys, subnets, log groups — are not covered, so verify those against the
-stack that creates them.
+the same object means a renamed or deleted row takes its mapping with it.
+
+The same applies to the alarm table, which binds a column to the alarms parsed out of the CDK
+constructs — see [_A table can be bound to the code_](#a-table-can-be-bound-to-the-code-not-just-cited).
+Counts still read from CDK code by hand — keys, subnets, log groups — are not gated, so verify
+those against the stack that creates them.
 
 ### The pipeline is deterministic
 
-Authoring the view JSON is a judgement step: it means reading the CDK stacks and configs to
-work out what is true. Everything downstream — deriving facts, validating, assembling,
-rendering, publishing — is ordinary TypeScript that runs the same way on any machine and in
-CI. Keep it that way. Whatever helps you author the JSON, its output is a committed diff that
-gets reviewed like any other.
+Authoring the model is a judgement step: it means reading the CDK stacks and configs to work
+out what is true. Everything downstream — deriving facts, validating, assembling, rendering,
+publishing — is ordinary TypeScript that runs the same way on any machine and in CI. Keep it
+that way. Whatever helps you author the model, its output is a committed diff that gets
+reviewed like any other.
 
 ---
 
 ## Layout
 
-| Path                   | What it is                                                           |
-| ---------------------- | -------------------------------------------------------------------- |
-| `explorer.config.json` | Everything specific to this project — see below                      |
-| `views/*.json`         | One file per tab. This is the content — everything else is machinery |
-| `styles.css`           | Presentation, including both colour themes                           |
-| `shell.html`           | Page markup: header, canvas, inspector                               |
-| `app.js`               | Renderer, edge routing, pan/zoom, inspector, stage selector          |
-| `icons.svg`            | AWS service icons as `<symbol>` defs — see below                     |
+| Path                   | What it is                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `model/*.c4`           | The diagrams, as a LikeC4 model. **This is the source** — see below                    |
+| `model/views.json`     | Per-view presentation a LikeC4 view cannot hold: tab order, audience, reference tables |
+| `model/resources.json` | The AWS inventory: 84 rows with per-stage counts. Not a diagram                        |
+| `explorer.config.json` | Everything specific to this project — see below                                        |
+| `styles.css`           | Presentation, including both colour themes                                             |
+| `shell.html`           | Page markup: header, canvas, inspector                                                 |
+| `app.js`               | Renderer, edge routing, pan/zoom, inspector, stage selector                            |
+| `icons.svg`            | AWS service icons as `<symbol>` defs — see below                                       |
+
+One level up, `docs/architecture/` is the workspace package `@flex/architecture-docs` that
+builds all this: `scripts/` holds the build, and `scripts/lib/paths.ts` is the only place that
+knows where the FLEX checkout is.
 
 The page has to stay single-file: it is served straight from the docs folder and published as
 a shareable artifact, and neither can fetch a sibling file.
@@ -106,35 +120,117 @@ and refuses to assemble a page from a broken one.
 
 ---
 
-## The view contract
+## The model is LikeC4
 
-Every node carries two orthogonal properties, and the build refuses to assemble a file that
-gets them wrong.
+The diagrams are a [LikeC4](https://likec4.dev) model — a text DSL for C4-style
+architecture. That was chosen so the source is a standard someone else's tools can read,
+rather than a schema invented here.
 
-**`kind`** is who owns it — the thing a reader must not get wrong. The set is declared in
-`explorer.config.json`; these are this repository's:
+```
+network_authfn = platform 'Authorizer Lambda' {
+  #request-path
+  description 'egress tier · 10s timeout'
+  technology 'FlexPrivateEgressFunction · NODEJS_24_X'
+  link https://github.com/govuk-once/flex/blob/main/…/platform.ts 'stacks/platform.ts'
+  metadata {
+    role  'Verifies the Cognito access token in front of every public route.'
+    facts [ 'It is in this tier because it fetches the JWKS over the public internet…' ]
+    x '486'  y '400'  w '200'  h '62'
+    ownership 'flex'
+    awsIcon 'lambda'
+  }
+}
+```
 
-| `kind`   | Meaning                                                        |
-| -------- | -------------------------------------------------------------- |
-| `person` | A human role                                                   |
-| `flex`   | Owned by the FLEX platform                                     |
-| `govuk`  | Inside the GOV.UK Once boundary                                |
-| `third`  | Outside it — another government organisation, or a third party |
+Everything above `metadata` is standard LikeC4 and any renderer understands it. Everything
+inside `metadata` is ours, and every other renderer ignores it. That gives three levels of
+fidelity from one file:
 
-**`plane`** is whether it serves live traffic — `request` or `control`. Ownership is
-carried by colour, plane by border style, so the two never compete.
+| Where it is read                                  | What comes out                                                           |
+| ------------------------------------------------- | ------------------------------------------------------------------------ |
+| `likec4 codegen mermaid \| plantuml \| dot \| d2` | boxes, arrows, labels — flattened, no boundaries                         |
+| `likec4 start`                                    | the full model with nesting, links and its own auto-layout               |
+| This explorer                                     | all of that, plus facts, citations, hand-placed layout, counts and icons |
 
-The legend reads _on the request path_ and _off the request path_, deliberately. `control`
-is the field name, not a claim that these things are a control plane in the AWS sense: it
-also covers source files, naming conventions, runbooks, observability and people. All
-thirty-nine boxes on Delivery are `control`, two of them human. Saying "control plane" to a
-security audience would mean something narrower than the data supports.
+The build reads the model **in process** with `LikeC4.fromWorkspace`. Nothing is generated
+to disk in between: a derived JSON would either be committed and drift, or be gitignored
+and so never reviewed.
 
-Each kind's colour is a `--p-<id>` token in `styles.css`, beside every other theme token,
-because colour is presentation. The rules that use it are generic: the renderer sets
-`--kind` on each node, so adding a kind means adding one token in the three theme blocks
-and nothing else. The build fails if a kind has no token, if a token is missing from a
-theme block, or if a token outlives the kind it was for.
+### What the metadata holds
+
+Nineteen keys, and nothing else. Anything not in this table is a mistake.
+
+| Key                         | On                   | What it does                                                                                                                           |
+| --------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `x` `y` `w` `h`             | elements, boundaries | Hand-placed position and size. The layout is composed, not derived — LikeC4 auto-layouts and ignores these                             |
+| `sourceId`                  | elements, boundaries | The id the explorer uses. LikeC4 identifiers are workspace-global and scoped per view, so `network_authfn` carries `sourceId 'authfn'` |
+| `order`                     | everything           | The authored sequence. The model returns elements in its own order; this restores ours                                                 |
+| `ownership`                 | elements             | Which `kind` from `explorer.config.json` — the colour and legend entry                                                                 |
+| `boundary`                  | boundaries           | `hard` for a real edge (a region, the VPC), `soft` for visual grouping                                                                 |
+| `awsIcon`                   | elements             | Overrides the icon derived from `type`. Named `awsIcon` because `icon` is reserved in the DSL                                          |
+| `resources`                 | elements, boundaries | Ids from `resources.json` that this box contains — the count badge and the drill-down                                                  |
+| `type` `tech` `role`        | elements, boundaries | The inspector's Type, Technology and description lines                                                                                 |
+| `protocol` `auth` `carries` | relationships        | What a line carries and how it is authenticated                                                                                        |
+| `edgeStyle` `edgeDir`       | relationships        | Dashed lines and double-headed arrows                                                                                                  |
+| `facts`                     | everything           | The verified claims. An array, and the substance of the whole thing                                                                    |
+
+### Five things the DSL will not let you do
+
+Each of these was learned by the parser rejecting it:
+
+- **Tags go inside the element body**, not on the declaration line.
+- **`link` is a bare statement**, never wrapped in a `links { }` block.
+- **Array literals reject a trailing comma.**
+- **`icon` is reserved** — hence `awsIcon`.
+- **`specification` is workspace-wide**, so it lives once in `specification.c4`.
+
+And one that bites silently: **a one-element array is read back as a plain string**.
+`facts [ 'only one' ]` returns `"only one"`, not `["only one"]`. The reader widens it back;
+anything else consuming the model must do the same.
+
+### Why identifiers are scoped per view
+
+LikeC4 element identifiers are global to the workspace, so `containers_pubapi` and
+`network_pubapi` are deliberately different elements. Fifteen ids appear in more than one
+view and **every one carries a different label, description and set of facts** — the
+authorizer is "Authorizer Lambda" on Containers, "6. Authorizer" on Request path and
+"Cognito token authorizer" on Security, because each tab argues something different. One
+pair is not even the same thing: `cli` is the Ink TUI on Delivery and a REST client factory
+on Components.
+
+These are not seven views of one model. They are seven models, and pretending otherwise
+would either flatten the per-tab framing or silently merge two unrelated boxes.
+
+## The element contract
+
+Every element carries two orthogonal properties, and the build refuses a file that gets
+them wrong.
+
+**`ownership`** is who owns it — the thing a reader must not get wrong. The set is declared
+in `explorer.config.json`; these are this repository's:
+
+| `ownership` | Meaning                                                        |
+| ----------- | -------------------------------------------------------------- |
+| `person`    | A human role                                                   |
+| `flex`      | Owned by the FLEX platform                                     |
+| `govuk`     | Inside the GOV.UK Once boundary                                |
+| `third`     | Outside it — another government organisation, or a third party |
+
+**Plane** is whether it serves live traffic, carried by the `#request-path` and
+`#off-request-path` tags. Ownership is carried by colour, plane by border style, so the two
+never compete.
+
+The legend reads _on the request path_ and _off the request path_, deliberately. The tag is
+not a claim that these things are a control plane in the AWS sense: it also covers source
+files, naming conventions, runbooks, observability and people. All thirty-nine boxes on
+Delivery are off the request path, two of them human.
+
+Each ownership colour is a `--legend-<colour>` token in `styles.css`, beside every other
+theme token, because colour is presentation. The rules that use it are generic: the
+renderer sets `--kind` on each node, so adding a kind means adding one token in the three
+theme blocks and nothing else. The build fails if a kind has no colour, if a colour is
+missing from a theme block, if a token outlives the kind it was for, or if two kinds share
+one colour.
 
 ### Tab order and grouping
 
@@ -241,7 +337,7 @@ as an unknown element and silently disappears. The build fails on any other angl
 
 ### The JSON is linted like any other file
 
-`views/*.json` are committed files, and eslint checks JSON repo-wide with
+`model/views.json` and `model/resources.json` are committed files, and eslint checks JSON repo-wide with
 `prettier/prettier` and `json/no-duplicate-keys`. A view that is valid JSON but badly
 formatted still fails.
 
@@ -249,7 +345,7 @@ formatted still fails.
 than in CI. When it complains:
 
 ```bash
-pnpm exec eslint --fix docs/architecture/explorer/views/<file>.json
+pnpm exec eslint --fix docs/architecture/explorer/model/<file>.json
 ```
 
 Two rules that follow from this, and matter if you are generating JSON rather than typing it:
@@ -288,6 +384,43 @@ retention periods, derivations, an error contract. Do not start a parallel markd
 for it — the C4 levels, AWS inventory, request sequences and deployment topology were retired
 precisely because they became second copies of these tabs and drifted.
 
+#### Every table cites the code it came from
+
+A table is transcribed from the repository by hand, so on its own it is a claim with nothing
+behind it. `code` is therefore **required**: an array of `[label, path]` pairs naming the files
+the rows were read from, rendered as links under the table and checked to exist. A table with no
+`code`, or one citing a file that has moved, fails the build — a dead citation is worse than
+none, because it still looks like provenance.
+
+```json
+{
+  "name": "What the sanitiser removes before a log is written",
+  "code": [
+    ["sanitizer.ts", "libs/logging/src/sanitizer.ts"],
+    ["@flex/logging", "libs/logging/src/index.ts"]
+  ],
+  "cols": ["Field", "Rule", "Where"],
+  "rows": [["…", "…", "…"]]
+}
+```
+
+#### A table can be bound to the code, not just cited
+
+Citing proves where a row came from; it does not notice when that source changes. A table whose
+rows correspond one-to-one with something derivable adds `derived`, which ties one column to an
+array in `architecture-facts.json`:
+
+```json
+"derived": { "from": "alarms", "key": "id", "col": "Alarm" }
+```
+
+The build then compares the values in that column against `facts[from].map(x => x[key])` and
+fails when they disagree, naming what was added or removed. The alarm table uses this: the 18
+rows are held against the 18 alarms parsed out of the CDK constructs, so renaming an alarm in
+`constructs/alarms/` breaks the docs build until the table is updated. Bind a table this way
+whenever the underlying list is machine-readable — prose columns stay hand-written and readable,
+while the identities stay honest.
+
 ---
 
 ## What the build checks
@@ -301,9 +434,11 @@ precisely because they became second copies of these tabs and drifted.
 - two node boxes overlapping, or a node straddling a zone edge
 - text that will not fit its box
 - an edge referencing a node that does not exist
-- a `placement` entry naming a resource id that is not in `views/resources.json`
+- a `placement` entry naming a resource id that is not in `model/resources.json`
 - a resource that no diagram places, so nothing links to it
 - a derived count that disagrees with `architecture-facts.json`
+- a reference table with no `code` citation, or one citing a file that does not exist
+- a `derived` table whose bound column disagrees with the facts it is bound to
 
 Pass `--lenient` to report problems without failing, while iterating.
 
@@ -333,23 +468,28 @@ pnpm exec playwright install chromium
 
 ## Changing a diagram
 
-1. Edit the relevant `views/*.json`. That is the content; everything else is machinery.
-2. `pnpm exec eslint --fix docs/architecture/explorer/views/<file>.json` — format it.
+1. Edit the relevant `model/*.c4`. That is the source; everything else is machinery.
+2. `pnpm --filter @flex/scripts exec likec4 validate docs/architecture/explorer/model` —
+   the parser is specific about what it rejects, and faster than a full build.
 3. `pnpm architecture:build` — fix whatever it reports. It fails, it does not warn.
 4. `pnpm architecture:check` for what static validation cannot see.
 5. Open the page and check it reads well.
-6. Cite the code for any claim you added or changed, in that item's `code` array.
+6. Cite the code for any claim you added or changed, as a `link` on that element.
 
 ```bash
+# see the same model through LikeC4's own renderer
+pnpm --filter @flex/scripts exec likec4 start docs/architecture/explorer/model
+
 # open the built page
 open docs/architecture/explorer.html
 
-# emit the same page without the html/head/body wrapper, for publishing
-# as a shareable artifact
+# emit the same page without the html/head/body wrapper, for publishing as an artifact
 pnpm architecture:build --body /tmp/explorer-body.html
 ```
 
----
+Tab order, audience and reference tables are in `model/views.json`, not the `.c4` — a
+LikeC4 `view` has no metadata block. The inventory is `model/resources.json`, because 84
+rows with per-stage counts is a table, not a view of a model.
 
 ## Porting this to another project
 
@@ -358,8 +498,8 @@ The build, the renderer, the checks and the export know nothing about FLEX. Four
 1. **`explorer.config.json`** — rewrite it. Name, kinds, stages, repo URL.
 2. **The `--p-<id>` tokens in `styles.css`** — one colour per kind you declared, in all
    three theme blocks. The build tells you if you miss one.
-3. **`views/*.json`** — your content. This is the work, and it is the part that has to be
-   checked against code rather than assumed.
+3. **`model/*.c4`** — your content, as a LikeC4 model. This is the work, and it is the
+   part that has to be checked against code rather than assumed.
 4. **`architectureFacts.ts`** — this one cannot be reused. It reads
    `domains/*/domain.config.ts` with FLEX's exact schema, which is the point: counts are
    trustworthy because they come from the same files the CDK app reads. Write your own

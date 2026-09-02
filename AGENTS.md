@@ -27,11 +27,18 @@ manual: it says where the real instructions live.
 
 ## The architecture docs have a hard rule
 
-`docs/architecture/` is a single generated page built from JSON in
-`docs/architecture/explorer/views/`. Edit the JSON, never `explorer.html` — it is overwritten.
+`docs/architecture/` is its own workspace package, `@flex/architecture-docs`. It owns its
+build scripts, its dependencies and its own `lint`/`tsc`/`test` targets, and it reads the FLEX
+source through one declared contract — the `source` block in `explorer/explorer.config.json`
+— so it can be lifted into a separate repository without untangling anything.
+
+It builds a single generated page from a [LikeC4](https://likec4.dev)
+model in `docs/architecture/explorer/model/` — the `.c4` files are the diagrams, with
+`views.json` for presentation and `resources.json` for the AWS inventory. Edit those, never
+`explorer.html` — it is overwritten.
 
 The JSON is linted like any other file — eslint checks it with `prettier/prettier`, so run
-`pnpm exec eslint --fix` on a view you edit before building.
+`pnpm exec eslint --fix` on a file you edit before building.
 
 The contract is [`docs/architecture/explorer/README.md`](docs/architecture/explorer/README.md).
 **Read it before touching a view.** It leads with the rule that matters most there:
@@ -39,9 +46,10 @@ The contract is [`docs/architecture/explorer/README.md`](docs/architecture/explo
 > Never carry a claim forward on trust. Read the code that proves it, every time.
 
 A verification pass over an earlier draft found 80 of 1,091 claims wrong or misleading. Every
-one looked plausible. So every fact carries a `code` array naming the files that prove it, and
-`pnpm architecture:build` fails — it does not warn — on counts that disagree with the configs,
-text that will not fit, or a claim about a resource that does not exist.
+one looked plausible. So every claim names the files that prove it, and `pnpm architecture:build`
+fails — it does not warn — on counts that disagree with the configs, an alarm table that no
+longer matches the CDK constructs, a citation pointing at a file that has moved, text that will
+not fit, or a claim about a resource that does not exist.
 
 ## Verify your work
 
@@ -51,8 +59,16 @@ pnpm tsc             # nx affected --target=tsc
 pnpm test            # nx affected --target=test
 ```
 
-Run all three before proposing a change. If you touched `docs/architecture/`, also run
-`pnpm architecture:build`.
+Run all three before proposing a change — `docs/architecture/` is a workspace package, so it
+is covered by them like any other. If you touched it, also run `pnpm architecture:build` and
+`pnpm architecture:check`, which renders the page in headless Chromium and measures what static
+validation cannot see. Both delegate to the package, so they can equally be run as
+`pnpm --filter @flex/architecture-docs run build`.
+
+**The architecture docs are also derived from code outside `docs/`.** Adding, removing or
+renaming a CloudWatch alarm in `platform/infra/flex/src/constructs/alarms/` changes
+`architecture-facts.json` and the Delivery table with it, so run `pnpm architecture:build` after
+that too. CI watches that directory for the same reason.
 
 ## Conventions that bite
 
@@ -63,6 +79,7 @@ Run all three before proposing a change. If you touched `docs/architecture/`, al
   `pnpm-workspace.yaml` blocks any version published more recently. If an install fails for a
   fresh release, that is why — pick an older version rather than lowering the setting.
 - **Do not commit generated files.** `docs/architecture/explorer.html` and `docs/index.html`
-  are gitignored and built in CI. `docs/architecture/architecture-facts.json` is the exception:
+  are gitignored — in `docs/architecture/.gitignore` and `docs/.gitignore`, next to what writes
+  them rather than in the root — and built in CI. `docs/architecture/architecture-facts.json` is the exception:
   it is generated _and_ committed, so a config change that moves the route counts shows up as
   a reviewable diff.
