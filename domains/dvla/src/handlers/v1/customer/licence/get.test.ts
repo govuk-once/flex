@@ -59,8 +59,16 @@ describe("GET /v1/customer/licence", () => {
   });
 
   it.for([
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UDP get identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -77,11 +85,16 @@ describe("GET /v1/customer/licence", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
-  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+  it.for([
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
+  ])(
     "returns $expected when the DVLA authenticate integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http
@@ -97,13 +110,58 @@ describe("GET /v1/customer/licence", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
   it.for([
-    { reason: "returns a bad request", upstream: 400, expected: 400 },
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
+    {
+      reason: "returns a bad request",
+      upstream: 400,
+      expected: 400,
+    },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "is rate limited",
+      upstream: 429,
+      expected: 429,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
+  ])(
+    "returns $expected when the DVLA get customer licence integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/identity/dvla", { headers: { "User-Id": userId } })
+        .reply(200, serviceIdentityLink);
+
+      http.gateway("dvla").get("/authenticate").reply(200, session);
+
+      http
+        .gateway("dvla")
+        .get("/customer/licence", {
+          headers: { auth: token },
+          query: { linkingId },
+        })
+        .reply(upstream);
+
+      const result = await handler(
+        sdk.event.get(endpoint, { auth: userId }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(expected);
+    },
+  );
+
+  it.for([
     {
       reason: "cannot find the link (GUK-404-04)",
       upstream: 404,
@@ -128,10 +186,8 @@ describe("GET /v1/customer/licence", () => {
       expectedProviderCode: "GUK-404-05",
       expectedMessage: "Resource not found",
     },
-    { reason: "is rate limited", upstream: 429, expected: 429 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
   ])(
-    "returns $expected when the DVLA get customer licence integration $reason",
+    "returns $expected with the DVLA provider code when the get customer licence integration $reason",
     async (
       {
         upstream,
@@ -164,23 +220,10 @@ describe("GET /v1/customer/licence", () => {
 
       expect(result.statusCode).toBe(expected);
 
-      const body = JSON.parse(result.body || "{}") as Record<
-        string,
-        Record<string, string>
-      >;
+      const body = JSON.parse(result.body) as Record<string, string>;
 
-      const actualCode = body.error?.code;
-      const actualMessage = body.error?.message;
-
-      expect(actualCode).toBe(expectedProviderCode);
-      expect(actualMessage).toBe(expectedMessage);
-
-      /**
-       * If expectedProviderCode exists, result.body should NOT be empty.
-       * If expectedProviderCode is undefined, result.body SHOULD be empty.
-       */
-      const expectedToBeEmpty = expectedProviderCode ? false : true;
-      expect(result.body === "").toBe(expectedToBeEmpty);
+      expect(body.code).toBe(expectedProviderCode);
+      expect(body.message).toBe(expectedMessage);
     },
   );
 });

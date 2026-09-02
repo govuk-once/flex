@@ -30,7 +30,11 @@ describe("toApiGatewayResponse", () => {
       expected: {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: { message: "Bad request" } }),
+        body: JSON.stringify({
+          message: "Bad request",
+          type: "client_error",
+          error: { message: "Bad request" },
+        }),
       },
     },
     {
@@ -115,7 +119,7 @@ describe("validateHandlerResponse", () => {
       status: 500,
       error: {
         message: "Failed handler response validation",
-        errors: [expect.objectContaining({ path: ["key"], values: ["test"] })],
+        errors: [expect.objectContaining({ field: "key" })],
       },
     });
   });

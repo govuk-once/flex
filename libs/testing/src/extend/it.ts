@@ -17,7 +17,11 @@ import {
   createPlatformGatewayEvent,
 } from "../fixtures/platform";
 import type { SdkFixture } from "../fixtures/sdk";
-import { createSdkContext, createSdkEvent } from "../fixtures/sdk";
+import {
+  buildSdkResult,
+  createSdkContext,
+  createSdkEvent,
+} from "../fixtures/sdk";
 import { createSecretFixture } from "../fixtures/secret";
 
 interface Fixtures {
@@ -56,5 +60,9 @@ export const it = vitestIt.extend<Fixtures>({
     });
   },
   sdk: async ({}, use) =>
-    use({ event: createSdkEvent(), context: createSdkContext() }),
+    use({
+      event: createSdkEvent(),
+      context: createSdkContext(),
+      result: buildSdkResult,
+    }),
 });
