@@ -11,7 +11,7 @@ A domain is a folder under `domains/<name>` containing a single `domain.config.t
 - Routes: version, path, method, with `public` (app facing, Cognito authorised) and/or `private` (domain to domain, IAM authorised) exposure per method.
 - Zod schemas for request body (POST/PUT/PATCH only), query parameters and response. Validation failures return 400 automatically; a response schema mismatch returns 500.
 - Required headers, with automatic 400 when missing.
-- Lambda tuning: memory (128 to 10240 MB), timeout (default 15s, max 900s), plain environment variables, log level.
+- Lambda tuning: memory (128 to 10240 MB), timeout (default 10s, max 900s), plain environment variables, log level.
 - Network access per route: `public` (no VPC), `private` (VPC with internet egress) or `isolated` (VPC, no internet, the default). Note this is Lambda network placement, not API exposure, despite sharing the `public`/`private` names with it: an `isolated` route can still serve the app, and can still call integrations, which are reached through a VPC endpoint rather than the internet. Choose `isolated` unless the handler itself must call out to the wider internet, in which case choose `private`; no domain uses `public` today.
 - Resources: SSM parameters, Secrets Manager secrets and KMS keys, resolved at deploy or runtime with least privilege IAM granted automatically.
 - Integrations: typed outbound calls to other domains' private routes or to platform service gateways (see below), with optional retry with backoff (off by default) and response validation.

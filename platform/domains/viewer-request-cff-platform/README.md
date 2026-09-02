@@ -1,9 +1,6 @@
-# @platform/viewer-request-cff
+# @platform/viewer-request-cff-platform
 
-CloudFront Function that performs several functions:
-
-- Structural validation on incoming requests before they reach the origin
-- Applies a secret header that can be verified at the API Gateway
+CloudFront Function that validates incoming requests before they reach the origin and ensures every request carries a correlation id. Implemented in [`src/handler.ts`](/platform/domains/viewer-request-cff-platform/src/handler.ts), tested in [`src/handler.test.ts`](/platform/domains/viewer-request-cff-platform/src/handler.test.ts).
 
 ---
 
@@ -17,7 +14,7 @@ Run these from the repository root:
 | `pnpm --filter @platform/viewer-request-cff test` | Run tests      |
 | `pnpm --filter @platform/viewer-request-cff tsc`  | Run type check |
 
-Alternatively, run `pnpm <command>` from within `platform/domains/viewer-request-cff/`.
+Alternatively, run `pnpm <command>` from within `platform/domains/viewer-request-cff-platform/`.
 
 ---
 
@@ -30,27 +27,32 @@ Alternatively, run `pnpm <command>` from within `platform/domains/viewer-request
 
 ### Behaviour
 
-The function performs the following before forwarding to the origin:
+1. Reads `x-correlation-id` from the incoming request. If it's missing or not a valid UUIDv4, a new one is derived from `event.context.requestId` and written back onto the request headers.
+2. Verifies the `Authorization` header is present and is a valid Bearer token.
+3. Validates the extracted token's structure: three base64 segments, header and body must decode as JSON, and `alg: "none"` is explicitly rejected.
+4. Forwards the request to the origin if all checks pass.
 
-1. Checks for `Authorization` header presence
-2. Extracts Bearer token from the header and validates the structure
-3. Applies the secret header for the gateway to verify
-4. Passes request through to origin if all checks pass.
+Structural only: the function does not verify a signature, that is the authorizer's responsibility (see [@platform/auth](/platform/domains/auth/README.md)).
 
-**Reject (401 Unauthorized):**
+### Rejection
 
-- Missing `Authorization` header: `"Unauthorized: no authorization header provided"`
-- Missing Bearer token: `"Unauthorized: structural check failed"`
+Any validation failure returns, from [`src/responses/unathorized.ts`](/platform/domains/viewer-request-cff-platform/src/responses/unathorized.ts):
 
-Rejected responses include the `X-Rejected-By: cloudfront-function` header.
+| Property | Value                                |
+| -------- | ------------------------------------ |
+| Status   | `401`                                |
+| Body     | `{ "message": "Unauthorized" }`      |
+| Header   | `X-Rejected-By: cloudfront-function` |
 
 ### Telemetry
 
-The handler emits telemetry events via `@flex/telemetry/cff`:
-`cff_token_validated` on pass-through, `cff_token_missing` when no
-authorization value or token is present, and `cff_token_invalid` for any
-other structural failure. Each event carries the correlation id and, for
-failures, the rejection reason.
+Emits `CffTelemetryEvent` events based on the outcome, via `@flex/telemetry/cff`:
+
+- `cff_token_validated`: on pass-through
+- `cff_token_missing`: when the `Authorization` header or token is absent
+- `cff_token_invalid`: Any other structural failure
+
+Every event includes the correlation ID while failures also carry the rejection reason.
 
 ---
 
@@ -58,5 +60,7 @@ failures, the rejection reason.
 
 **FLEX:**
 
+- [@flex/telemetry](/libs/telemetry/README.md)
 - [@flex/testing](/libs/testing/README.md)
+- [@platform/auth](/platform/domains/auth/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

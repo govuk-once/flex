@@ -9,6 +9,7 @@ Guide for developers maintaining FLEX platform infrastructure and shared librari
 | Area                     | Description                                                         |
 | ------------------------ | ------------------------------------------------------------------- |
 | Packages                 | Shared utilities consumed by developers working on FLEX             |
+| Service Gateways         | Lambdas proxying to remote third-party APIs                         |
 | Platform Domain Handlers | Platform domain functions (Authentication, viewer-request-cff, etc) |
 | Platform Infrastructure  | CDK stacks, constructs and deployment configuration                 |
 | Developer Experience     | Tooling, utilities and documentation                                |
@@ -72,9 +73,7 @@ libs/<package>/
    `eslint.config.mjs`
 
 ```javascript
-import { config } from "@flex/config/eslint";
-
-export default config;
+export { config as default } from "@flex/config/eslint";
 ```
 
 `tsconfig.json`
@@ -89,9 +88,7 @@ export default config;
 `vitest.config.ts`
 
 ```typescript
-import { config } from "@flex/config/vitest";
-
-export default config;
+export { config as default } from "@flex/config/vitest";
 ```
 
 3. Create entry point at `src/index.ts`
@@ -180,6 +177,204 @@ platform/domains/<domain>/
 4. Create `README.md` using the [FLEX Platform Domain template](/docs/documentation-guide.md#flex-platform-domain)
 5. Add the resources to `@platform/flex` (see [Adding a Platform Handler to Infrastructure](#adding-a-platform-handler-to-infrastructure))
 
+> If the handler needs to act as an ACL in front of a remote third-party API then follow the [Service Gateway Development](#service-gateway-development) steps instead.
+
+---
+
+## Service Gateway Development
+
+Service gateways in `platform/domains/*` are Lambdas that sit between FLEX and a remote third-party API.
+
+They're built with [`@flex/service-gateway`](/libs/service-gateway/README.md) and live alongside platform domain handlers in `platform/domains/*`, with all gateway configuration defined in the `gateway.config.ts` file.
+
+### Directory Structure
+
+```text
+platform/domains/<name>/
+├── src/
+│   ├── gateway.ts
+│   ├── gateway.test.ts
+│   └── schemas/
+│       ├── domain/
+│       └── remote/
+├── eslint.config.mjs
+├── gateway.config.ts
+├── package.json
+├── README.md
+├── tsconfig.json
+└── vitest.config.ts
+```
+
+### Creating a Service Gateway
+
+1. Update `package.json`:
+
+```json
+{
+  "name": "@flex/<name>-service-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "@flex/service-gateway": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "zod": "<version>"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "eslint": "<version>",
+    "typescript": "<version>",
+    "vitest": "<version>"
+  }
+}
+```
+
+1. Define `gateway.config.ts` at the workspace root and create a `defineGateway` instance. See [`defineGateway`](/libs/service-gateway/README.md#definegateway) for the full configuration reference:
+
+```ts
+import { defineGateway } from "@flex/service-gateway";
+import { NonEmptyString } from "@flex/utils";
+import { z } from "zod";
+
+export const { config, createHandler } = defineGateway({
+  name: "example",
+  environments: ["development", "staging", "production"],
+  access: "private",
+  resources: {
+    consumerConfig: {
+      type: "secret",
+      path: "/example/consumer-config-secret-arn",
+      env: "FLEX_EXAMPLE_CONSUMER_CONFIG_SECRET_ARN",
+      scope: "environment",
+      config: z.object({
+        apiKey: NonEmptyString,
+        apiUrl: NonEmptyString,
+        // ...
+      }),
+    },
+  },
+  routes: {
+    "GET /v1/example/path": {
+      name: "getExample",
+      headers: {
+        auth: { name: "x-custom-auth", required: true },
+      },
+      // ...
+    },
+  },
+});
+```
+
+3. Define `src/gateway.ts` and create a `createHandler` instance, exported from `gateway.config.ts`. See [Handler Context](/libs/service-gateway/README.md#handler-context) and [Handler Result](/libs/service-gateway/README.md#handler-result) for what each route handler receives and must return:
+
+```ts
+import { createRestClient } from "@flex/service-gateway";
+
+import { createHandler } from "../gateway.config";
+
+export const handler = createHandler({
+  clients: ({ consumerConfig }) => ({
+    api: createRestClient({
+      baseUrl: consumerConfig.apiUrl,
+      auth: { type: "public" },
+    }),
+  }),
+  routes: {
+    "GET /v1/example/path": ({ clients: { api }, headers: { auth } }) => {
+      return api.get("/some/third-party/path", {
+        headers: { Authorization: auth },
+      });
+    },
+  },
+});
+```
+
+4. Add tests for the gateway handlers using `@flex/testing` (see [Testing Service Gateways](#testing-service-gateways))
+5. Create `README.md` using the [FLEX Platform Domain template](/docs/documentation-guide.md#flex-platform-domain)
+6. Infrastructure automatically discovers all service gateways, see [Service Gateway Infrastructure](#service-gateway-infrastructure)
+
+### Calling Remote APIs
+
+Use `createRestClient` from `@flex/service-gateway` to build an HTTP client for the remote third-party API. Each client is built once per invocation and is accessible via the handler context:
+
+```ts
+import { createRestClient } from "@flex/service-gateway";
+
+import { createHandler } from "../gateway.config";
+
+export const handler = createHandler({
+  clients: ({ consumerConfig }) => {
+    const correlationId = "example-uuid";
+
+    return {
+      api: createRestClient({
+        baseUrl: consumerConfig.apiUrl,
+        auth: { type: "public" },
+        headers: { "X-Correlation-Id": correlationId },
+      }),
+      otherApi: createRestClient({
+        baseUrl: consumerConfig.otherApiUrl,
+        auth: { type: "sigv4" },
+        headers: { "X-Correlation-Id": correlationId },
+      }),
+    };
+  },
+  routes: {
+    "POST /v1/example/path": ({
+      clients: { api, otherApi },
+      headers: { auth },
+    }) => {
+      // Any client can be called if needed
+      otherApi.post("/some/path", { body: { key: "value" } });
+
+      return api.post("/remote/path", {
+        headers: { Authorization: auth },
+        body: { linkingId: "example" },
+      });
+    },
+  },
+});
+```
+
+Each client can then be accessed via `clients` and can be invoked within any route handler. See [Clients](/libs/service-gateway/README.md#clients) for all supported clients.
+
+### Service Gateway Infrastructure
+
+Every gateway configuration file (`platform/domains/*/gateway.config.ts`) is discovered and deployed automatically, no manual registration is needed in `@platform/flex`. Each gateway is provisioned as a single proxy route (`ANY /gateways/<name>/{proxy+}`) on the private API Gateway, determined by the access set in its configuration.
+
+From a domain handler's perspective, calling a service gateway works the same way as calling any other domain. The only difference is in the integration definition by specifying the type:
+
+```ts
+integrations: {
+  gatewayIntegration: {
+    type: "gateway",
+    target: "example",
+    route: "GET /v1/example/path",
+    response: GetExamplePathResponseSchema,
+  },
+  domainIntegration: {
+    type: "domain",
+    target: "example",
+    route: "GET /v1/example/path",
+    response: GetExamplePathResponseSchema,
+  },
+},
+```
+
+For more in-depth integration patterns, see [Integrations](/libs/sdk/README.md#integrations) and also [With Integrations](/docs/domain-development.md#with-integrations) for a working example.
+
 ---
 
 ## Platform Infrastructure Development
@@ -215,7 +410,7 @@ const { stage } = getEnvConfig();
 
 const app = new cdk.App();
 
-new ExampleStack(app, `${stage}-ExampleStack`));
+new ExampleStack(app, `${stage}-ExampleStack`);
 ```
 
 ### Stack Definition
@@ -238,7 +433,7 @@ export class ExampleStack extends BaseStack {
       },
       env: {
         region: "eu-west-2",
-      }
+      },
     });
 
     // Define resources, call methods, etc
@@ -397,35 +592,180 @@ const exampleHandler = new FlexPublicFunction(this, "ExampleFunction", {
 3. Attach to the appropriate trigger (API Gateway, CloudFront, etc.)
 4. Instantiate the construct in `stack.ts`
 
+> Service gateways do not need this step as they're automatically provisioned via [`createServiceGateway`](/platform/infra/flex/src/utils/create-service-gateway.ts), see [Service Gateway Infrastructure](#service-gateway-infrastructure)
+
 ---
 
 ## Testing
 
 See [@flex/testing](/libs/testing/README.md) for the complete list of available fixtures.
 
-### Unit Tests
+Platform domain handlers and service gateways share the same `platform` fixture. Each workspace needs to configure the required setup files in `vitest.config.ts`: ["@flex/testing/setup/platform"] configured in their `vitest.config.ts`. This registers the necessary mocks and overrides for the `platform` fixture.
 
-Create a test file at `platform/domains/<handler>/src/handler.test.ts`:
+For Service gateway test suites you must set `FLEX_GATEWAY_NAME` with the gateway's name in `vitest.config.ts` as the `platform.gatewayEvent` fixture uses it to build the correct request path `/gateways/<name>/...`:
 
-```typescript
-import { context, it } from "@flex/testing";
+```ts
+import { config } from "@flex/config/vitest";
+import { configDefaults, defineConfig, mergeConfig } from "vitest/config";
+
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      exclude: [...configDefaults.exclude, "e2e/**"],
+      setupFiles: ["@flex/testing/setup/platform"],
+      env: {
+        AWS_REGION: "eu-west-2",
+        FLEX_GATEWAY_NAME: "example",
+        // ...
+      },
+    },
+  }),
+);
+```
+
+### Testing Platform Domain Handlers
+
+Create a test file at `platform/domains/<handler>/src/handler.test.ts`.
+
+You must use the correct platform fixtures for each handler type.
+
+#### Lambda Authorizer
+
+Platform fixtures to use:
+
+- `platform.authorizerEvent`
+- `platform.authorizerResult`
+- `platform.context`
+
+```ts
+import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { handler } from "./handler";
 
 describe("handler", () => {
-  it("returns 200 with expected response", async ({ event, response }) => {
-    const result = await handler(event.get("/path"), context);
+  it("allow request with a valid token", async ({ platform }) => {
+    const result = await handler(
+      platform.authorizerEvent(),
+      platform.context(),
+    );
 
-    expect(result).toEqual(response.ok({ message: "Success" }));
+    expect(result).toStrictEqual(platform.authorizerResult("Allow", "*"));
   });
 
-  it("returns 400 for invalid request", async ({ event, response }) => {
-    const result = await handler(event.post("/path", { body: {} }), context);
-
-    expect(result).toEqual(
-      response.badRequest({ error: "Invalid request body" }),
+  it("deny request with an invalid token", async ({ platform }) => {
+    const result = await handler(
+      platform.authorizerEvent({ authorizationToken: "Bearer invalid" }),
+      platform.context(),
     );
+
+    expect(result).toStrictEqual(platform.authorizerResult("Deny", "*"));
+  });
+});
+```
+
+#### CloudFront Function
+
+Platform fixtures to use:
+
+- `platform.cloudFrontEvent`
+- `platform.cloudFrontResult`
+- `platform.context`
+
+```ts
+import { it } from "@flex/testing";
+import { describe, expect } from "vitest";
+
+import { handler } from "./handler";
+
+describe("handler", () => {
+  const uri = "/example";
+
+  it("passes through a request with the expected headers", ({ platform }) => {
+    const event = platform.cloudFrontEvent.get(uri, {
+      headers: { authorization: "Bearer test.valid.token" },
+    });
+
+    const result = handler(event);
+
+    expect(result).toStrictEqual(event.request);
+  });
+
+  it("rejects a request missing a required header", ({ platform }) => {
+    const event = platform.cloudFrontEvent.get(uri);
+
+    const result = handler(event);
+
+    expect(result).toStrictEqual(
+      platform.cloudFrontResult(401, { body: { message: "Unauthorized" } }),
+    );
+  });
+});
+```
+
+### Testing Service Gateways
+
+Create a test file at `platform/domains/<name>/src/gateway.test.ts`.
+
+Platform fixtures to use:
+
+- `platform.gatewayEvent`
+- `platform.gatewayResult`
+- `platform.context`
+
+```ts
+import type { HttpFixture } from "@flex/testing";
+import { it } from "@flex/testing";
+import { describe, expect } from "vitest";
+
+import { handler } from "./gateway";
+
+const mockSecretArn =
+  "arn:aws:secretsmanager:eu-west-2:123456789012:secret:example-consumer";
+
+const mockConsumerConfig = {
+  apiKey: "test-api-key", // pragma: allowlist secret
+  apiUrl: "https://example-api.test",
+};
+
+const stubConsumerConfig = (http: HttpFixture) =>
+  http
+    .url("https://secretsmanager.eu-west-2.amazonaws.com")
+    .post("/")
+    .reply(200, {
+      ARN: mockSecretArn,
+      Name: "example-consumer",
+      SecretString: JSON.stringify(mockConsumerConfig),
+    });
+
+describe("Example Service Gateway", () => {
+  it.beforeEach(({ env }) => {
+    env.set({ FLEX_EXAMPLE_CONSUMER_CONFIG_SECRET_ARN: mockSecretArn });
+  });
+
+  describe("GET /v1/example/path", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+
+    it("returns the remote response", async ({ http, platform }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/some/third-party/path")
+        .reply(200, { message: "ok" });
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/example/path", {
+          headers: { "x-custom-auth": "test-token" },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: { message: "ok" } }),
+      );
+    });
   });
 });
 ```
@@ -453,6 +793,8 @@ it("example", async ({ cloudfront }) => {
   });
 });
 ```
+
+> Service gateways are only accessible via the private API, so E2E coverage is handled by the `tests/e2e/src/platform/private-gateway.test.ts` suite.
 
 ### Running Tests
 
@@ -504,11 +846,20 @@ pnpm --filter @platform/<name> diff
 
 ### Adding a New Platform Domain Handler
 
-1. Create handler structure (see [Platform Domain Development](#platform-domain-development))
+1. Create handler structure (see [Platform Domain Handler Development](#platform-domain-handler-development))
 2. Implement handler with tests
 3. Run tests locally with `pnpm --filter @platform/<domain> test`
 4. Deploy and run E2E tests with `pnpm --filter @flex/e2e test:e2e:platform`
 5. Add resources to `@platform/flex` infrastructure
+6. Create `README.md` using the [FLEX Platform Domain template](/docs/documentation-guide.md#flex-platform-domain)
+
+### Adding a New Service Gateway
+
+1. Create service gateway structure (see [Service Gateway Development](#service-gateway-development))
+2. Define `gateway.config.ts` and implement `src/gateway.ts` with tests
+3. Run tests locally with `pnpm --filter @flex/<name>-service-gateway test`
+4. Deploy new gateway. No infrastructure changes required for this step as the gateway is automatically discovered and provisioned
+5. Add a "gateway" integration in a domain's `domain.config.ts` and consume it to verify the gateway works as intended
 6. Create `README.md` using the [FLEX Platform Domain template](/docs/documentation-guide.md#flex-platform-domain)
 
 ### Adding a New Domain
@@ -543,6 +894,8 @@ Changes to `@flex/config` affect all packages:
 
 - [@flex/config](/libs/config/README.md)
 - [@flex/logging](/libs/logging/README.md)
+- [@flex/sdk](/libs/sdk/README.md)
+- [@flex/service-gateway](/libs/service-gateway/README.md)
 - [@flex/testing](/libs/testing/README.md)
 - [@flex/utils](/libs/utils/README.md)
 - [@platform/flex](/platform/infra/flex/README.md)

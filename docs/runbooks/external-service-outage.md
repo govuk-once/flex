@@ -10,7 +10,7 @@ This runbook is for the on-call engineer. It assumes a live incident where a dow
 
 ## The External Dependencies
 
-FLEX calls three external services. They fail differently and escalate to different owners, so identifying which one is involved is the first useful thing you can do.
+FLEX calls three external services, each fronted by its own [service gateway](/libs/service-gateway/README.md). They fail differently and escalate to different owners, so identifying which one is involved is the first useful thing you can do.
 
 | Dependency | What it provides                 | Ownership                          | Auth to reach it          | Escalation route                                                |
 | ---------- | -------------------------------- | ---------------------------------- | ------------------------- | --------------------------------------------------------------- |
@@ -48,9 +48,9 @@ Do not assume; confirm. Establish that there is a real, current, dependency-rela
 
 Narrow the fault to one dependency so you escalate to the right owner and mitigate the right journey.
 
-1. **Map the failing journey to its integration.** The affected endpoint's domain config lists the integrations it uses and their `target`. The `target` (`dvla`, `uns`, `udp`) is the dependency in question.
+1. **Map the failing journey to its gateway.** The affected endpoint's domain config lists the gateway integrations it uses and their `target`. The `target` (`dvla`, `uns`, `udp`) is the dependency in question, and its gateway config lives at `platform/domains/<target>/gateway.config.ts`.
 2. **Confirm the pattern is dependency-specific, not platform-wide.** If only journeys that call one target are failing and everything else is healthy, the fault is that dependency. If every journey is failing regardless of target, suspect the platform (VPC, gateway auth, core stack) instead and treat it as a platform incident.
-3. **Check the auth type for the target.** UDP and UNS are both reached with a cross-account SigV4 role. A wave of `403`s from either can be a role or trust-policy problem, not an outage; that is a FLEX-side fix, not an escalation.
+3. **Check the auth type for the target.** UDP and UNS are both reached with a cross-account SigV4 role, configured as a `sigv4` client on the gateway (see [Clients: Authentication](/libs/service-gateway/README.md#authentication)). A wave of `403`s from either can be a role or trust-policy problem, not an outage; that is a FLEX-side fix, not an escalation.
 
 ---
 
@@ -58,13 +58,14 @@ Narrow the fault to one dependency so you escalate to the right owner and mitiga
 
 Gather the evidence that confirms the pattern and gives the owning team something to act on.
 
-**Logs.** FLEX emits structured logs (with redaction) through `@flex/logging` to CloudWatch. In CloudWatch Logs Insights over the affected domain's log group, search for:
+**Logs.** FLEX emits structured logs (with redaction) through `@flex/logging` to CloudWatch. In CloudWatch Logs Insights over the affected gateway's log group, search for:
 
-| Search term                   | Meaning                                                                                                |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `flex-fetch retrying request` | Transient failures are being retried; a rising volume is early warning of a struggling dependency      |
-| `flex-fetch failed`           | Retries were exhausted and the call ultimately failed; correlate the `url` field to the target         |
-| `Response validation failed`  | The provider responded but the body did not match the schema; suspect a contract change, not an outage |
+| Search term                                 | Meaning                                                                                                                     |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `flex-fetch retrying request`               | Transient failures are being retried; a rising volume is early warning of a struggling dependency                           |
+| `flex-fetch failed`                         | Retries were exhausted and the call ultimately failed; correlate the `url` field to the target                              |
+| `Response validation failed`                | The provider responded but the body did not match the schema; suspect a contract change, not an outage                      |
+| `Gateway response schema validation failed` | The provider responded but the body did not match the gateway's `response` schema; suspect a contract change, not an outage |
 
 The `url` and `error` fields on these entries confirm which dependency and which failure mode.
 
@@ -78,14 +79,14 @@ The `url` and `error` fields on these entries confirm which dependency and which
 
 Match what you are seeing to one of these, because the pattern determines the mitigation.
 
-| Pattern                            | How it presents                                                                                                         | Likely meaning                                                                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Timeouts / connection failures** | `flex-fetch retrying request` then `flex-fetch failed`; Lambda errors and raised p99 duration; integration latency high | Dependency is down or unreachable; retries are absorbing some load but exhausting                                       |
-| **5xx responses**                  | 5xx forwarded from the dependency; API Gateway 5XX alarm                                                                | Dependency is up but erroring; usually a provider-side incident                                                         |
-| **4xx responses**                  | Forwarded 4xx statuses (e.g. licence `404`); 4XX rate alarm (warning)                                                   | Often expected (not found) rather than an outage; confirm before escalating                                             |
-| **Degraded performance**           | Latency and duration alarms fire before any hard errors                                                                 | Dependency is slow, not down; retries and backoff are inflating FLEX latency                                            |
-| **Contract drift**                 | Reaches callers as a `502` at the edge; `Response validation failed` in the logged error body                           | Provider changed its response shape and the handler rejects the mismatched body; a FLEX-side schema fix, not escalation |
-| **Auth failure**                   | Consistent `403` from a SigV4 target (UDP or UNS)                                                                       | Cross-account role or trust issue on the FLEX side, not a dependency outage                                             |
+| Pattern                            | How it presents                                                                                                         | Likely meaning                                                                                                                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Timeouts / connection failures** | `flex-fetch retrying request` then `flex-fetch failed`; Lambda errors and raised p99 duration; integration latency high | Dependency is down or unreachable; retries are absorbing some load but exhausting                                                           |
+| **5xx responses**                  | 5xx forwarded from the dependency; API Gateway 5XX alarm                                                                | Dependency is up but erroring; usually a provider-side incident                                                                             |
+| **4xx responses**                  | Forwarded 4xx statuses (e.g. licence `404`); 4XX rate alarm (warning)                                                   | Often expected (not found) rather than an outage; confirm before escalating                                                                 |
+| **Degraded performance**           | Latency and duration alarms fire before any hard errors                                                                 | Dependency is slow, not down; automatic retries are inflating FLEX latency                                                                  |
+| **Contract drift**                 | Reaches callers as a `502` at the edge; `Gateway response schema validation failed` in the logged error body            | Provider changed its response shape and the gateway's `response` schema rejects the mismatched body; a FLEX-side schema fix, not escalation |
+| **Auth failure**                   | Consistent `403` from a SigV4 target (UDP or UNS)                                                                       | Cross-account role or trust issue on the FLEX side, not a dependency outage                                                                 |
 
 ---
 
@@ -105,7 +106,7 @@ Pick the smallest action that protects the user journey. Anything shipped as cod
 2. The impact is severe or prolonged and only the owner can resolve it.
 3. The dependency is **UDP** or **UNS** and its team can fix forward on their side; contact them early, since that is often the fastest full resolution.
 
-For **DVLA**, escalation means notifying the provider through the agreed support route and relaying their status to stakeholders; mitigation on the FLEX side continues in parallel. For a contract drift (`Response validation failed`) or an auth `403`, do not escalate outward: that is a FLEX-side fix forward.
+For **DVLA**, escalation means notifying the provider through the agreed support route and relaying their status to stakeholders; mitigation on the FLEX side continues in parallel. For a contract drift (`Gateway response schema validation failed`) or an auth `403`, do not escalate outward: that is a FLEX-side fix forward.
 
 Communicate throughout as set out in the Fix Forward Runbook: state which dependency is implicated, which mitigation you have applied, and confirm in the incident channel when the journey recovers.
 
@@ -114,7 +115,7 @@ Communicate throughout as set out in the Fix Forward Runbook: state which depend
 ## After Recovery
 
 1. **Reconcile any out-of-band changes.** A flag flipped directly on a Lambda, or any manual mitigation, must be landed through `main` so the deployed state matches what is running.
-2. **Raise follow-up work.** If the platform absorbed the outage poorly (no fallback, retries that made it worse, an alarm that fired late), raise tickets to improve resilience for next time.
+2. **Raise follow-up work.** If the platform absorbed the outage poorly (no fallback, retries that made it worse, an alarm that fired late), raise tickets to improve resilience for next time. If the incident exposed that gateway retry behaviour genuinely needs to be tunable at incident time, raise that as platform work rather than treating it as a gap in this runbook.
 3. **Feed back into this runbook.** If you had to work something out under pressure, add it here so the next engineer does not.
 
 ---
@@ -130,5 +131,6 @@ Communicate throughout as set out in the Fix Forward Runbook: state which depend
 
 **Code:**
 
+- [@flex/sdk](/libs/sdk/README.md)
 - [@flex/service-gateway](/libs/service-gateway/README.md)
 - Alarm definitions: [`platform/infra/flex/src/constructs/alarms`](/platform/infra/flex/src/constructs/alarms)

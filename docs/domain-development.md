@@ -79,6 +79,7 @@ import {
 
 export const { config, route, routeContext } = domain({
   name: "my-domain",
+  environments: ["development", "staging", "production"],
   common: {
     function: { timeoutSeconds: 30 },
     // add common route options...
@@ -122,6 +123,8 @@ export const createUserContext = routeContext<"POST /v1/user [private]">;
 ```
 
 The Flex platform will read the contents of `config` to provision the domain stack and its resources.
+
+> `environments` declares which environments can be deployed to and which should be gated. All domains must define this explicitly, given there is no fallback value to default to.
 
 See [@flex/sdk](/libs/sdk/README.md) for full API documentation on how to configure your domain.
 
@@ -356,7 +359,7 @@ See [SDK Resources](/libs/sdk/README.md#resources) for all resource types and op
 
 #### With Integrations
 
-Any route that references domain integrations will include `integrations` on the context. Integrations are typed HTTP clients for calling other domains through the FLEX private gateway:
+Any route that references domain integrations will include `integrations` on the context. Integrations are typed HTTP clients for calling other domains and service gateways through the FLEX private gateway.
 
 Domain config (`domain.config.ts`):
 
@@ -540,7 +543,16 @@ Handler tests run the full SDK workflow that includes:
 - Transforming responses
 - Error handling
 
-All integration HTTP calls are intercepted using [nock](https://github.com/nock/nock).
+Every test file imports the extended `it` from [`@flex/testing`](/libs/testing/README.md), which supplies four fixtures:
+
+| Fixture    | Purpose                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------- |
+| `env`      | Stubs environment variables for a single test                                                           |
+| `http`     | Intercepts outbound calls to domains and gateways                                                       |
+| `sdk`      | Builds domain handler events and Lambda context                                                         |
+| `platform` | Builds platform handler events and Lambda context (authorizers, CloudFront Functions, service gateways) |
+
+Domain handler tests use `http` and `sdk`. Platform domain handlers and service gateways use `http` and `platform` instead, see [Platform Development Guide: Testing](/docs/platform-development.md#testing).
 
 ### Setup
 
@@ -553,17 +565,19 @@ Each domain needs to register its own test configuration, which needs to be merg
 This allows each domain to do all of the following:
 
 - Inject the SDK setup file
-- (Optional) Provide its own domain setup file
+- Provide its own domain setup file, if needed
 - Inject environment variables for use across each test suite
+- Exclude E2E tests
 
 ```typescript
 import { config } from "@flex/config/vitest";
-import { defineConfig, mergeConfig } from "vitest/config";
+import { configDefaults, defineConfig, mergeConfig } from "vitest/config";
 
 export default mergeConfig(
   config,
   defineConfig({
     test: {
+      exclude: [...configDefaults.exclude, "e2e/**"],
       setupFiles: [
         "@flex/testing/setup/sdk",
         // If you need to provide your own domain setup file
@@ -580,103 +594,73 @@ export default mergeConfig(
 );
 ```
 
-Deploy-time resources (e.g. `"kms", "ssm"`, etc) must be defined here so they're available when the handler module loads.
+Deploy-time resources (e.g. `"kms"`, `"ssm"`, etc) must be defined here so they're available when the handler module loads.
 
 ### Mocking Resources
 
-| Resource        | Location                   | Fixture                                |
-| --------------- | -------------------------- | -------------------------------------- |
-| `"kms"`         | `env` (`vitest.config.ts`) | —                                      |
-| `"ssm"`         | `env` (`vitest.config.ts`) | —                                      |
-| `"secret"`      | Lambda context             | `context.withSecret({ key: "value" })` |
-| `"ssm:runtime"` | Lambda context             | `context.withParams({ key: "value" })` |
+| Resource        | Location                   | Fixture                                      |
+| --------------- | -------------------------- | -------------------------------------------- |
+| `"kms"`         | `env` (`vitest.config.ts`) | —                                            |
+| `"ssm"`         | `env` (`vitest.config.ts`) | —                                            |
+| `"secret"`      | `sdk` fixture              | `sdk.context({ secrets: { key: "value" } })` |
+| `"ssm:runtime"` | `sdk` fixture              | `sdk.context({ params: { key: "value" } })`  |
 
-By default resources are baked into `process.env`. Any resources that you know need to be resolved via middleware (Secrets, optionally SSM if you need these parameters to be resolved via middleware) should instead use the context fixture methods to set those values to the lambda context.
+By default resources are baked into `process.env`. Any resources that you know need to be resolved via middleware (secrets, or SSM parameters resolved at runtime) are instead supplied to `sdk.context()` via `secrets` and `params`.
 
 ### Writing your First Handler Test
 
-Create the test file based on the route gateway type:
+Create the test file based on the route access:
 
-- Public handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.test.ts`:
-- Private handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.private.test.ts`:
+- Public handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.test.ts`
+- Private handlers: `domains/<domain>/src/handlers/v1/<...path>/<method>.private.test.ts`
+
+Outbound calls are intercepted with the `http` fixture, where the prefix is determined by whether you target a `domain(<target>)` or `gateway(<target>)`:
 
 ```typescript
 import { it } from "@flex/testing";
-import nock from "nock";
 import { describe, expect } from "vitest";
 
-import { handler } from "./post.private";
+import { handler } from "./get";
 
-describe("POST /v1/user [private]", () => {
-  const gateway = nock("https://execute-api.eu-west-2.amazonaws.com");
-  const endpoint = "/v1/user";
+describe("GET /v0/users/notifications", () => {
+  const endpoint = "/users/notifications";
+  const userId = "test-user-id";
 
-  it("returns 204 when user is created successfully", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    gateway
-      .post("/gateways/udp/v1/users", {
-        appId: "test-app-id",
-        pushId: "test-notification-id",
-      })
-      .reply(200, {});
-
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { appId: "test-app-id", pushId: "test-notification-id" },
-      }),
-      context.create(),
-    );
-
-    expect(result.statusCode).toBe(204);
-  });
-
-  it("returns 500 when upstream fails", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    gateway.post("/gateways/udp/v1/users").reply(500, { message: "Failed" });
+  it("returns 200 with notifications", async ({ http, sdk }) => {
+    http
+      .domain("udp")
+      .get("/users/push-id", { headers: { "User-Id": userId } })
+      .reply(200, { pushId: "test-push-id" });
+    http
+      .gateway("uns")
+      .get("/notifications", { query: { externalUserID: "test-push-id" } })
+      .reply(200, []);
 
     const result = await handler(
-      privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { appId: "test-app-id", pushId: "test-notification-id" },
-      }),
-      context.create(),
+      sdk.event.get(endpoint, { auth: userId }),
+      sdk.context(),
     );
 
-    expect(result.statusCode).toBe(500);
-  });
-
-  it("returns 400 for invalid payload", async ({
-    privateGatewayEventWithAuthorizer,
-    context,
-  }) => {
-    const result = await handler(
-      privateGatewayEventWithAuthorizer.post(endpoint, {
-        body: { appId: "test-app-id" },
-      }),
-      context.create(),
-    );
-
-    expect(result.statusCode).toBe(400);
+    expect(result.statusCode).toBe(200);
   });
 });
 ```
 
-> The URL passed to `nock()` must match the value of the gateway URL set in `vitest.config.ts` env.
+> `http.gateway("udp")` and `http.domain("udp")` both stub requests to the private gateway's `/gateways/udp` and `/domains/udp` prefixes, matching whichever integration type the handler calls through. The `http` fixture must match the URL the domain declares for its private gateway resource (E.g., `gatewayUrl`, `flexPrivateGatewayUrl`, etc). See the [`http` fixture](/libs/testing/README.md) for the full API reference.
+
+Build the request with `sdk.event`, which exposes common HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a path and options (`auth`, `headers`, `params`, `query`, `body`). Pass `auth` with a user ID to simulate an authenticated caller which populates the `auth.pairwiseId` on the handler context. Alternative authentication methods exist, such as a route reading a `User-Id` header; in this case, provide the mocked value via `headers` instead.
 
 #### Handlers with runtime resources
 
-Routes that reference `type: "secret"` or `type: "ssm:runtime"` resources will be resolved internally by the handler middleware and injected onto the Lambda context:
+Routes that reference `type: "secret"` or `type: "ssm:runtime"` resources are resolved internally by the handler middleware and injected onto the Lambda context. You can provide values for these fields via `sdk.context()`:
 
 ```typescript
 const result = await handler(
-  privateGatewayEventWithAuthorizer.get(endpoint),
-  context
-    .withSecret({ mySecret: "resolved-secret-value" }) // pragma: allowlist secret
-    .withParams({ myParam: "resolved-param-value" })
-    .create(),
+  sdk.event.get(endpoint, { auth: "test-user-id" }),
+  sdk.context({
+    secrets: { mySecret: "test-secret-value" }, // pragma: allowlist secret
+    params: { myParam: "test-param-value" },
+  }),
 );
 ```
 
@@ -764,7 +748,7 @@ STAGE=development pnpm --filter @flex/<domain>-domain test:e2e
 2. Define domain configuration in `domain.config.ts`
 3. Update `vitest.config.ts`
    1. Add SDK setup file
-   2. (Optional) Add domain setup file (`src/tests/setup.ts`) if you need to define your own setup/teardown steps
+   2. (Optional) Add a local setup file (`src/tests/setup.ts`) if you need to define your own setup/teardown steps specific to the workspace
    3. Add environment variables
    4. Exclude E2E tests from the unit run (`exclude: [...configDefaults.exclude, "e2e/**"]`)
 4. (Optional) Add E2E tests in `e2e/`, a `vitest.e2e.config.ts`, and a `test:e2e` script so the domain is picked up by the CI module E2E matrix
@@ -772,7 +756,7 @@ STAGE=development pnpm --filter @flex/<domain>-domain test:e2e
 6. Create `README.md`
 7. Deploy (`pnpm run deploy`) and verify (`pnpm --filter @flex/<domain>-domain test:e2e`)
 
-> The platform will [automatically include the new domain](platform/infra/flex/src/utils/getDomainConfigs.ts) for deployment, no manual wiring is necessary.
+> The platform will [automatically include the new domain](/platform/infra/flex/src/utils/getDomainConfigs.ts) for deployment, no manual wiring is necessary.
 
 ### Adding a Handler to an Existing Domain
 

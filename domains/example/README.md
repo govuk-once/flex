@@ -6,7 +6,7 @@ This domain demonstrates each of the available SDK features. Each endpoint showc
 - Path parameters
 - Request/response schemas
 - Domain resource management
-- Domain integration management
+- Domain and service gateway integration management
 - Feature flags
 - Public/private access patterns
 - Route context usage examples
@@ -33,18 +33,21 @@ Alternatively, run `pnpm <command>` from within `domains/example/`.
 
 ### Handlers
 
-| Name                                                          | Access  | Description                                             | Code                                                        |
-| ------------------------------------------------------------- | ------- | ------------------------------------------------------- | ----------------------------------------------------------- |
-| [`GET /v0/todos`](#get-v0todos)                               | Public  | List todos with query parameters and feature flags      | [View](./src/handlers/v0/todos/get.ts)                      |
-| [`POST /v0/todos`](#post-v0todos-private)                     | Private | Create a todo with request body validation              | [View](./src/handlers/v0/todos/post.private.ts)             |
-| [`GET /v0/todos/:id`](#get-v0todosid)                         | Public  | Get a todo by ID with path parameters and feature flags | [View](./src/handlers/v0/todos/[id]/get.ts)                 |
-| [`DELETE /v0/todos/:id`](#delete-v0todosid)                   | Public  | Delete a todo                                           | [View](./src/handlers/v0/todos/[id]/delete.ts)              |
-| [`POST /v0/todos/:id/duplicate`](#post-v0todosidduplicate)    | Public  | Duplicate a todo via same-domain integration            | [View](./src/handlers/v0/todos/[id]/duplicate/post.ts)      |
-| [`GET /v0/headers`](#get-v0headers)                           | Public  | Return resolved common and route-level headers          | [View](./src/handlers/v0/headers/get.ts)                    |
-| [`GET /v0/resources`](#get-v0resources)                       | Public  | Return resolved resources (SSM, KMS, Secrets Manager)   | [View](./src/handlers/v0/resources/get.ts)                  |
-| [`GET /v0/identity/:service`](#get-v0identityservice)         | Public  | Get identity link using route context pattern           | [View](./src/handlers/v0/identity/[service]/get.ts)         |
-| [`GET /v0/identity/:service`](#get-v0identityservice-private) | Private | Get identity link via private route                     | [View](./src/handlers/v0/identity/[service]/get.private.ts) |
-| [`PATCH /v0/notifications`](#patch-v0notifications)           | Public  | Update notifications via cross-domain integration       | [View](./src/handlers/v0/notifications/patch.ts)            |
+| Name                                                           | Access  | Description                                                  | Code                                                        |
+| -------------------------------------------------------------- | ------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| [`GET /v0/todos`](#get-v0todos)                                | Public  | List todos with query parameters and feature flags           | [View](./src/handlers/v0/todos/get.ts)                      |
+| [`POST /v0/todos`](#post-v0todos-private)                      | Private | Create a todo with request body validation                   | [View](./src/handlers/v0/todos/post.private.ts)             |
+| [`GET /v0/todos/:id`](#get-v0todosid)                          | Public  | Get a todo by ID with path parameters and feature flags      | [View](./src/handlers/v0/todos/[id]/get.ts)                 |
+| [`DELETE /v0/todos/:id`](#delete-v0todosid)                    | Public  | Delete a todo                                                | [View](./src/handlers/v0/todos/[id]/delete.ts)              |
+| [`POST /v0/todos/:id/duplicate`](#post-v0todosidduplicate)     | Public  | Duplicate a todo via same-domain integration                 | [View](./src/handlers/v0/todos/[id]/duplicate/post.ts)      |
+| [`GET /v0/headers`](#get-v0headers)                            | Public  | Return resolved common and route-level headers               | [View](./src/handlers/v0/headers/get.ts)                    |
+| [`GET /v0/resources`](#get-v0resources)                        | Public  | Accessing resolved deploy-time resources (SSM, KMS, Secrets) | [View](./src/handlers/v0/resources/get.ts)                  |
+| [`GET /v0/resources/runtime`](#get-v0resourcesruntime)         | Public  | Accessing resolved runtime resources                         | [View](./src/handlers/v0/resources/runtime/get.ts)          |
+| [`GET /v0/identity/:service`](#get-v0identityservice)          | Public  | Get identity link using route context pattern                | [View](./src/handlers/v0/identity/[service]/get.ts)         |
+| [`GET /v0/identity/:service`](#get-v0identityservice-private)  | Private | Get identity link via private route                          | [View](./src/handlers/v0/identity/[service]/get.private.ts) |
+| [`PATCH /v0/notifications`](#patch-v0notifications)            | Public  | Update notifications via cross-domain integration            | [View](./src/handlers/v0/notifications/patch.ts)            |
+| [`GET /v0/users/notifications`](#get-v0usersnotifications)     | Public  | Get notifications via UDP push ID lookup and UNS gateway     | [View](./src/handlers/v0/users/notifications/get.ts)        |
+| [`PATCH /v0/users/notifications`](#patch-v0usersnotifications) | Public  | Update notification preferences with feature flag gating     | [View](./src/handlers/v0/users/notifications/patch.ts)      |
 
 ### Services
 
@@ -228,30 +231,41 @@ Return resolved request headers. Demonstrates common headers (defined at domain 
 
 ## GET `/v0/resources`
 
-Return resolved resource parameters. Demonstrates all four resource types: SSM (deploy time and runtime), KMS and Secrets Manager.
+Return resolved deploy-time resource values. Demonstrates SSM, KMS and Secrets Manager resources resolved directly into the Lambda environment at deploy time.
 
 ### SDK Features
 
-- `resources`: Access to all available resource types
+- `resources`: Access to all resolved resources
 
 ### Response
 
 ```json
 {
-  "ssm": {
-    "deployTimeParam": 50,
-    "runtimeParam": 50
-  },
-  "secret": {
-    "secret": 32
-  },
-  "kms": {
-    "key": "arn:aws:kms:"
-  }
+  "ssm": { "param": 50 },
+  "secret": { "secret": 32 },
+  "kms": { "key": 74 }
 }
 ```
 
-> Response contains string lengths and prefixes rather than raw values to verify they exist.
+> Response contains string lengths rather than raw values, to verify they exist without exposing them.
+
+---
+
+## GET `/v0/resources/runtime`
+
+Return a resolved runtime resource value. Demonstrates a `"ssm:runtime"` resource, resolved via handler middleware in comparison to deploy time resolution.
+
+### SDK Features
+
+- `resources`: Access to all resolved resources
+
+### Response
+
+```json
+{
+  "ssm": { "param": 42 }
+}
+```
 
 ---
 
@@ -333,6 +347,61 @@ Update user notifications in UDP. Demonstrates a service that uses `routeContext
 ```
 
 > Returns `502` when the upstream integration fails.
+
+---
+
+## GET `/v0/users/notifications`
+
+Get the authenticated user's notification preferences. Demonstrates chaining two integrations: a `"domain"` call to UDP for the user's push ID, then a `"gateway"` call to UNS using that push ID.
+
+### SDK Features
+
+- `auth`: Access to pairwise ID
+- `response`: Response schema validation
+- `integrations`: Access to domain and gateway integrations, chained sequentially
+
+### Response
+
+Passes through the UNS notifications response shape unchanged.
+
+> Returns `502` when either the UDP push ID lookup or the UNS call fails.
+
+---
+
+## PATCH `/v0/users/notifications`
+
+Update the authenticated user's notification preferences. Demonstrates reading a feature flag directly from the handler context (`featureFlags`) rather than only gating a field in the response schema.
+
+### SDK Features
+
+- `auth`: Access to pairwise ID
+- `body`: Request schema validation
+- `response`: Response schema validation
+- `resources`: Access to domain resources
+- `integrations`: Access to domain and gateway integrations, chained sequentially
+- `featureFlags`: Read directly from the handler context and echoed in the response
+
+### Request
+
+```json
+{
+  "consentStatus": "accepted"
+}
+```
+
+### Response
+
+```json
+{
+  "consentStatus": "accepted",
+  "pushId": "uuid",
+  "featureFlags": {
+    "newUserProfileEnabled": false
+  }
+}
+```
+
+> Returns `502` when either the UDP push ID lookup or the UDP notifications update fails. The `newUserProfileEnabled` flag is scoped to `development` and `staging`.
 
 ---
 

@@ -93,6 +93,7 @@ The context object passed to the handler is scoped to the route definition. Only
 | `headers`      | Included when the route declares a header          |
 | `resources`    | Included when the route declares a resource        |
 | `integrations` | Included when the route declares an integration    |
+| `featureFlags` | Included when the route declares a feature flag    |
 
 See [Handler Patterns](/docs/domain-development.md#handler-patterns) for examples of each context property.
 
@@ -121,7 +122,7 @@ Handlers can also throw from `http-errors` for standard error responses. See [Ha
 
 ### Response Validation
 
-When a route defines a `response` schema, the SDK validates the handler's response `data` against it. Validation errors are logged and return a 500 response. Set the log level to `DEBUG` or `TRACE` to include validation errors in the response body.
+When a route defines a `response` schema, the SDK validates the handler's response `data` against it. Validation errors are logged, emit a `response_validation_failed` telemetry event and return a 500 response. Set the log level to `DEBUG` or `TRACE` to include validation errors in the response body.
 
 ### Naming Schemas for the OpenAPI Generator
 
@@ -285,7 +286,7 @@ const result = await integrations.udpPatchUser({
 | `retryAttempts` | Number of retry attempts on failed requests |
 | `maxRetryDelay` | Maximum delay between each retry            |
 
-> Any route using integrations must explicitly include the private gateway URL resource (e.g. `flexPrivateGatewayUrl`) in its route config `resources`.
+> Any route using integrations must define a resource whose `path` is `/flex/apigw/private/gateway-url` — the resource key in the config can be named anything (e.g. `privateGatewayUrl`, `flexPrivateGatewayUrl`), but the correct path must be declared as the private gateway URL.
 
 See [With Integrations](/docs/domain-development.md#with-integrations) for an example.
 

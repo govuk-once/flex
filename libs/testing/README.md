@@ -4,8 +4,8 @@ Test utilities, fixtures and extended test functions for FLEX.
 
 This package provides two entry points:
 
-- `@flex/testing` - Unit testing with Vitest fixtures
-- `@flex/testing/e2e` - End-to-end testing with Vitest fixtures against deployed infrastructure
+- `@flex/testing`: Vitest fixtures for unit/integration testing
+- `@flex/testing/e2e`: Vitest fixtures for E2E testing against deployed infrastructure
 
 ---
 
@@ -22,33 +22,23 @@ Alternatively, run `pnpm <command>` from within `libs/testing/`.
 
 ## API
 
-### @flex/testing
+### `it`
 
-| Name                                                      | Description                                 | Code                                 |
-| --------------------------------------------------------- | ------------------------------------------- | ------------------------------------ |
-| [`it`](#it)                                               | Extended Vitest test function with fixtures | [View](./src/extend/it.ts)           |
-| [`event`](#event)                                         | Base API Gateway V2 event                   | [View](./src/fixtures/apigateway.ts) |
-| [`createEvent`](#createevent)                             | Factory for API Gateway V2 events           | [View](./src/fixtures/apigateway.ts) |
-| [`eventWithAuthorizer`](#eventwithauthorizer)             | Base event with Lambda authorizer           | [View](./src/fixtures/apigateway.ts) |
-| [`createEventWithAuthorizer`](#createeventwithauthorizer) | Factory for events with authorizer          | [View](./src/fixtures/apigateway.ts) |
-| [`authorizerEvent`](#authorizerevent)                     | Base Lambda authorizer event                | [View](./src/fixtures/apigateway.ts) |
-| [`createAuthorizerEvent`](#createauthorizerevent)         | Factory for Lambda authorizer events        | [View](./src/fixtures/apigateway.ts) |
-| [`authorizerResult`](#authorizerresult)                   | Base Lambda authorizer results              | [View](./src/fixtures/apigateway.ts) |
-| [`createAuthorizerResult`](#createauthorizerresult)       | Factory for Lambda authorizer results       | [View](./src/fixtures/apigateway.ts) |
-| [`context`](#context)                                     | Base Lambda context                         | [View](./src/fixtures/lambda.ts)     |
-| [`createContext`](#createcontext)                         | Factory for Lambda contexts                 | [View](./src/fixtures/lambda.ts)     |
-| [`response`](#response)                                   | Base HTTP responses                         | [View](./src/fixtures/response.ts)   |
-| [`createResponse`](#createresponse)                       | Factory for HTTP responses                  | [View](./src/fixtures/response.ts)   |
-| [`config`](#config)                                       | Test configuration defaults                 | [View](./src/config/index.ts)        |
+| Name | Description                                 | Code                       |
+| ---- | ------------------------------------------- | -------------------------- |
+| `it` | Extended Vitest test function with fixtures | [View](./src/extend/it.ts) |
 
-### @flex/testing/e2e
+### Fixtures
 
-| Name                                                | Description                              | Code                         |
-| --------------------------------------------------- | ---------------------------------------- | ---------------------------- |
-| [`it`](#it-e2e)                                     | Extended test function with E2E fixtures | [View](./src/e2e/it.ts)      |
-| [`createApi`](#createapi)                           | HTTP client factory for E2E tests        | [View](./src/e2e/api.ts)     |
-| [`e2eEnvSchema`](#e2eenvschema)                     | Zod schema for E2E environment variables | [View](./src/e2e/schemas.ts) |
-| [`flexStackOutputsSchema`](#flexstackoutputsschema) | Zod schema for CDK stack outputs         | [View](./src/e2e/schemas.ts) |
+| Name                                                                                           | Description                                              | Code                             |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------- |
+| [`createFixtureBuilder`](#createfixturebuilder)                                                | Factory for a fixture builder function                   | [View](./src/utils/fixtures.ts)  |
+| [`createFixtureVariants`](#createfixturevariants)                                              | Factory for a fixture builder with named variant methods | [View](./src/utils/fixtures.ts)  |
+| [`mergeFixture`](#mergefixture)                                                                | Deep-merges a base fixture value with overrides          | [View](./src/utils/fixtures.ts)  |
+| `buildLambdaContext`                                                                           | Lambda context builder                                   | [View](./src/fixtures/lambda.ts) |
+| `createUserId`                                                                                 | Branded `UserId` fixture factory                         | [View](./src/fixtures/user.ts)   |
+| `createTimestamp`, `createUuid`, `createToken`                                                 | Primitive fixture factories                              | [View](./src/fixtures/common.ts) |
+| `validJwt`, `invalidJwt`, `expiredJwt`, `jwtMissingUsername`, `validJwtUsername`, `publicJWKS` | Static JWT test data and JWKS                            | [View](./src/fixtures/auth.ts)   |
 
 ---
 
@@ -58,27 +48,6 @@ Extended Vitest test function that provides fixtures for unit testing Lambda han
 
 ### Usage
 
-Import base mocks directly from `@flex/testing`:
-
-```typescript
-import { context, event, it, response } from "@flex/testing";
-import { describe, expect } from "vitest";
-
-import { handler } from "./handler";
-
-describe("GET /example", () => {
-  it("returns 200", async () => {
-    const result = await handler(event, context);
-
-    expect(result).toEqual(response.ok);
-  });
-});
-```
-
-#### With Fixtures
-
-Access fixtures via the test context for customisation and access to helper methods.
-
 ```typescript
 import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
@@ -86,89 +55,87 @@ import { describe, expect } from "vitest";
 import { handler } from "./handler";
 
 describe("GET /example", () => {
-  it("returns 200", async ({ context, event, response }) => {
-    const result = await handler(
-      event.get("/example"),
-      context.create({
-        // add overrides
-      }),
-    );
+  it("returns 200", async ({ sdk }) => {
+    const result = await handler(sdk.event.get("/example"), sdk.context());
 
-    expect(result).toEqual(response.ok({ message: "Custom success message" }));
+    expect(result.statusCode).toBe(200);
   });
 });
 ```
 
 ### Fixtures
 
-| Fixture               | Description                      | Auto |
-| --------------------- | -------------------------------- | ---- |
-| `authorizerEvent`     | Lambda authorizer event builder  | -    |
-| `authorizerResult`    | Lambda authorizer result builder | -    |
-| `context`             | Lambda context builder           | -    |
-| `env`                 | Environment variable helpers     | Yes  |
-| `event`               | API Gateway event builder        | -    |
-| `eventWithAuthorizer` | Event with authorizer builder    | -    |
-| `middy`               | Middy request builder            | -    |
-| `platform`            | Platform gateway fixtures        | -    |
-| `response`            | HTTP response builder            | -    |
+| Fixture    | Description                                                                                                                                    | Auto |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `env`      | Stubs environment variables with automatic unstubbing during teardown                                                                          | Yes  |
+| `http`     | Intercepts outbound HTTP calls and throws errors during teardown for any unused interceptors registered for a test run. Built on top of `nock` | Yes  |
+| `sdk`      | Builds domain handler events and Lambda context                                                                                                | -    |
+| `platform` | Builds platform handler events (service gateways, token authorizer and CloudFront Functions) and Lambda context                                | -    |
 
-See [Vitest Automatic Fixtures](https://vitest.dev/guide/test-context.html#automatic-fixture) for more information on automatic fixtures
+`http` and `env` are automatic fixtures (see [Vitest Automatic Fixtures](https://vitest.dev/guide/test-context.html#automatic-fixture)) and are active for all tests. Use `sdk` for domain handler tests and `platform` for platform domain handlers and service gateways, see [Platform Development Guide: Testing](/docs/platform-development.md#testing).
+
+---
+
+## `sdk`
+
+Builds requests and context for testing domain handlers built with [`@flex/sdk`](/libs/sdk/README.md).
+
+### `sdk.event`
+
+Exposes HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a path and options:
+
+| Option    | Description                                                                                                                                                                                        |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`    | A `UserId` to simulate an authenticated request, assigned to `auth.pairwiseId` on the handler context. Pass `false` to explicitly omit the authorizer context to simulate unauthenticated requests |
+| `headers` | Request headers                                                                                                                                                                                    |
+| `params`  | Path parameters                                                                                                                                                                                    |
+| `query`   | Query string parameters                                                                                                                                                                            |
+| `body`    | Request body (Only included for write operations)                                                                                                                                                  |
+
+```typescript
+import { it } from "@flex/testing";
+
+it("example", async ({ sdk }) => {
+  const event = sdk.event.get("/users", {
+    auth: "test-user-id",
+    query: { page: 1 },
+  });
+});
+```
+
+### `sdk.context`
+
+Builds the Lambda context and provides fields for declaring `secrets`/`params` resources to be resolved by middleware. Also includes `userId` for providing a custom ID in the Lambda context:
+
+```typescript
+sdk.context({
+  secrets: { mySecret: "test-secret-value" }, // pragma: allowlist secret
+  params: { myParam: "test-param-value" },
+  userId: createUserId("custom-user-id"),
+});
+```
+
+See [Domain Development Guide: Testing](/docs/domain-development.md#testing) for usage examples.
 
 ---
 
 ## `platform`
 
-Fixtures for platform service gateway handlers. Requires the
-`@flex/testing/setup/platform` setup file and `FLEX_GATEWAY_NAME` in the
-package's Vitest config — the event builder prefixes paths with
-`/gateways/<name>`.
+Builds events, results and context for testing platform domain handlers and service gateways. See [Platform Development Guide: Testing](/docs/platform-development.md#testing) for usage examples of each fixture.
 
-| Helper             | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| `gatewayEvent`     | REST API event builder, one variant per HTTP method        |
-| `gatewayResult`    | Expected handler result, `body` is serialised for you      |
-| `authorizerEvent`  | Lambda authorizer event builder                            |
-| `authorizerResult` | Lambda authorizer policy builder                           |
-| `cloudFrontEvent`  | CloudFront Function event builder                          |
-| `cloudFrontResult` | CloudFront Function result builder                         |
-| `context`          | Lambda context builder                                     |
-| `dynamo`           | Stubs the DynamoDB reads a gateway's clients make          |
-| `secret`           | Stubs the Secrets Manager reads a gateway's resources make |
+| Fixture            | Use                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `gatewayEvent`     | `get`/`post`/`put`/`patch`/`delete` builders for a service gateway route event       |
+| `gatewayResult`    | `(statusCode, options?)` builder for a gateway proxy result                          |
+| `authorizerEvent`  | Builder for a Lambda token authorizer event                                          |
+| `authorizerResult` | `(effect, resource, options?)` builder for an IAM authorizer policy result           |
+| `cloudFrontEvent`  | `get`/`post`/`put`/`patch`/`delete` builders for a CloudFront Function Request event |
+| `cloudFrontResult` | `(statusCode, options?)` builder for a CloudFront Function response                  |
+| `context`          | Base Lambda context builder                                                          |
+| `dynamo`           | Stubs the DynamoDB reads a gateway's clients make                                    |
+| `secret`           | Stubs the Secrets Manager reads a gateway's resources make                           |
 
-### Usage
-
-```typescript
-import { it } from "@flex/testing";
-import { describe, expect } from "vitest";
-
-import { handler } from "./gateway";
-
-describe("Example Service Gateway", () => {
-  it.beforeEach(({ env, platform }) => {
-    // Stubs the secret and hands back the ARN the resource resolves from
-    env.set({
-      FLEX_EXAMPLE_CONSUMER_CONFIG_SECRET_ARN: platform.secret.resolves(
-        "example-consumer",
-        { tableName: "development-example", region: "eu-west-2" },
-      ),
-    });
-  });
-
-  it("returns the rows the table holds", async ({ platform }) => {
-    platform.dynamo.scan.resolves([{ id: "1" }]);
-
-    const result = await handler(
-      platform.gatewayEvent.get("/v1/example"),
-      platform.context(),
-    );
-
-    expect(result).toStrictEqual(
-      platform.gatewayResult(200, { body: [{ id: "1" }] }),
-    );
-  });
-});
-```
+> `gatewayEvent` reads `FLEX_GATEWAY_NAME` from the environment to build the correct gateway path prefix `/gateways/<name>` and will throw if its not provided. This must be set in the workspace's `vitest.config.ts` under `env`.
 
 ### `dynamo`
 
@@ -214,271 +181,98 @@ stubbed, which is the value the resource's environment variable holds.
 
 ---
 
-## `event`
+## `http`
 
-Base API Gateway V2 event with sensible defaults.
+Intercepts outbound HTTP calls made during a test, built on top of [`nock`](https://github.com/nock/nock).
 
-### Usage
+| Method                                 | Prefix                              |
+| -------------------------------------- | ----------------------------------- |
+| `http.gateway(target, version = "v1")` | `/gateways/<target>/<version>`      |
+| `http.domain(target, version = "v1")`  | `/domains/<target>/<version>`       |
+| `http.url(baseUrl)`                    | Matches the given base URL directly |
+
+All three return the same interceptor API of common HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each accepting a path and options (`headers`/`query`/`body`), chained using nock's `reply` pattern: `.reply(status, body?)`:
 
 ```typescript
-import { context, event } from "@flex/testing";
+http
+  .gateway("udp")
+  .get("/identity/dvla", { headers: { "User-Id": userId } })
+  .reply(200, serviceIdentityLink);
 
-const result = await handler(event, context);
+http
+  .url("https://secretsmanager.eu-west-2.amazonaws.com")
+  .post("/")
+  .reply(200, secretValue);
 ```
+
+The default base URL (used by `gateway`/`domain`) is the private API Gateway's execute-api URL. `http` is an automatic fixture so any interceptor that is registered but never called will fail a test during teardown.
 
 ---
 
-## `createEvent`
+## `env`
 
-Factory for building API Gateway V2 events with HTTP method helpers.
+Stubs environment variables for a test and automatically unstubs afterwards. This is also an automatic fixture so it's enabled for all tests.
 
-### Usage
+---
+
+## `createFixtureBuilder`
+
+Wraps a base fixture shape and deep merges overrides on top if it to create a new instance:
 
 ```typescript
-import { it } from "@flex/testing";
+import { createFixtureBuilder } from "@flex/testing";
 
-it("example", async ({ event }) => {
-  const mockEvent = event.create({
-    // Pass overrides
-  });
-  const mockGetEvent = event.get("/users");
-  const mockPostEvent = event.post("/users", { body: { name: "John" } });
-  const mockPutEvent = event.put("/users/123", { body: { name: "Jane" } });
-  const mockPatchEvent = event.patch("/users/123", { body: { name: "Joe" } });
-  const mockDeleteEvent = event.delete("/users/123");
+export const createSession = createFixtureBuilder({
+  "id-token": "test-token",
+  // ...defaults
 });
-```
+export const session = createSession();
 
-#### With Query Parameters
-
-```typescript
-it("with params", async ({ event }) => {
-  const mockEvent = event.get("/users", {
-    params: { page: 1, filter: ["active", "admin"] },
-  });
-
-  // rawQueryString: "page=1&filter=active&filter=admin"
-  // queryStringParameters: { page: "1", filter: "admin" }
-});
-```
-
-#### With Headers
-
-```typescript
-it("with headers", async ({ event }) => {
-  const mockEvent = event.get("/users", {
-    headers: { "X-Custom-Header": "value" },
-  });
-});
+createSession({ "id-token": "custom-id-token" });
 ```
 
 ---
 
-## `eventWithAuthorizer`
+## `createFixtureVariants`
 
-Base API Gateway V2 event with Lambda authorizer context.
-
-### Usage
+Extends `createFixtureBuilder` capabilities by attaching named variants with access to the base builder for more complex test data needs:
 
 ```typescript
-import { context, eventWithAuthorizer } from "@flex/testing";
+import { createFixtureVariants } from "@flex/testing";
 
-const result = await handler(eventWithAuthorizer, context);
+export const createEvent = () =>
+  createFixtureVariants(baseEvent, (build) => ({
+    get: (path: string) => build({ httpMethod: "GET", path }),
+    post: (path: string, body: unknown) =>
+      build({ httpMethod: "POST", path, body: JSON.stringify(body) }),
+  }));
+
+const event = createEvent();
+event.get("/users");
+event.post("/users", { name: "Jane" });
+event({ httpMethod: "PUT" }); // the base builder is still callable directly
 ```
+
+This is the pattern behind `sdk.event`, `platform.gatewayEvent` and `platform.cloudFrontEvent`.
 
 ---
 
-## `createEventWithAuthorizer`
+## `mergeFixture`
 
-Factory for building events with Lambda authorizer context.
-
-### Usage
-
-```typescript
-it("event with authorizor events", async ({ eventWithAuthorizer }) => {
-  const authenticatedEvent =
-    eventWithAuthorizer.authenticated("user-pairwise-id");
-  const unauthenticatedEvent = eventWithAuthorizer.unauthenticated();
-});
-```
+Deep-merges overrides into a base fixture shape and is used internally by `createFixtureBuilder`. Only reach for this utility directly when neither of the fixture utility functions give you what you need, but the preference is to opt for either `createFixture*` function to create test data and mocks.
 
 ---
 
-## `authorizerEvent`
+## `@flex/testing/e2e`
 
-Base Lambda authorizer event for testing authorizer handlers.
-
-### Usage
-
-```typescript
-import { authorizerEvent, context } from "@flex/testing";
-
-const result = await handler(authorizerEvent, context);
-```
-
----
-
-## `createAuthorizerEvent`
-
-Factory for building Lambda authorizer request events.
-
-### Usage
-
-```typescript
-it("authorizer events", async ({ authorizerEvent }) => {
-  const forRoute = authorizerEvent.forRoute("GET", "/example");
-  const withToken = authorizerEvent.withToken("my-jwt-token");
-  const missingToken = authorizerEvent.missingToken();
-});
-```
-
----
-
-## `authorizerResult`
-
-Base Lambda authorizer results for allow and deny policies.
-
-### Usage
-
-```typescript
-import { authorizerResult } from "@flex/testing";
-
-expect(result).toEqual(authorizerResult.allow);
-expect(result).toEqual(authorizerResult.deny);
-```
-
----
-
-## `createAuthorizerResult`
-
-Factory for building Lambda authorizer results.
-
-### Usage
-
-```typescript
-it("authorizer results", async ({ authorizerResult }) => {
-  const allow = authorizerResult.allow();
-  const allowWithId = authorizerResult.allowWithPairwiseId("user-123");
-  const deny = authorizerResult.deny();
-});
-```
-
----
-
-## `context`
-
-Base Lambda context with sensible defaults.
-
-### Usage
-
-```typescript
-import { context, event } from "@flex/testing";
-
-const result = await handler(event, context);
-```
-
----
-
-## `createContext`
-
-Factory for building Lambda contexts.
-
-### Usage
-
-```typescript
-import { event } from "@flex/testing";
-
-it("with custom context", async ({ context }) => {
-  const result = await handler(
-    event,
-    context.create({
-      functionName: "custom-function",
-      awsRequestId: "custom-request-id",
-    }),
-  );
-});
-```
-
----
-
-## `middyRequest`
-
-Base Middy request object for testing middleware.
-
-### Usage
-
-```typescript
-import { middyRequest } from "@flex/testing";
-
-await myMiddleware.before(middyRequest);
-```
-
----
-
-## `response`
-
-Base HTTP responses for common status codes.
-
-### Usage
-
-```typescript
-import { context, event, response } from "@flex/testing";
-
-const result = await handler(event, context);
-
-expect(result).toEqual(response.ok);
-expect(result).toEqual(response.notFound);
-expect(result).toEqual(response.internalServerError);
-```
-
-### Available Responses
-
-| Property              | Status |
-| --------------------- | ------ |
-| `ok`                  | 200    |
-| `created`             | 201    |
-| `accepted`            | 202    |
-| `noContent`           | 204    |
-| `badRequest`          | 400    |
-| `unauthorized`        | 401    |
-| `forbidden`           | 403    |
-| `notFound`            | 404    |
-| `conflict`            | 409    |
-| `tooManyRequests`     | 429    |
-| `internalServerError` | 500    |
-| `badGateway`          | 502    |
-| `serviceUnavailable`  | 503    |
-| `gatewayTimeout`      | 504    |
-
----
-
-## `createResponse`
-
-Factory for building HTTP responses with custom bodies.
-
-### Usage
-
-```typescript
-import { context, it } from "@flex/testing";
-
-it("custom response", async ({ event, response }) => {
-  const result = await handler(event.get("/users"), context);
-
-  expect(result).toEqual(response.ok({ users: [] }));
-});
-
-it("error response", async ({ event, response }) => {
-  const result = await handler(event.post("/users", { body: {} }), context);
-
-  expect(result).toEqual(response.badRequest({ error: "Invalid" }));
-});
-```
-
----
-
-## `config`
-
-Test configuration object containing default values for environment variables and SSM parameters.
+| Name                                                    | Description                                                                | Code                                         |
+| ------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------- |
+| [`it`](#it-e2e)                                         | Extended test function with E2E fixtures                                   | [View](./src/e2e/it.ts)                      |
+| [`extendIt`](#extendit)                                 | Base extend function the shared E2E fixtures build on                      | [View](./src/extend/it.e2e.ts)               |
+| [`createApi`](#createapi)                               | HTTP client factory for E2E tests                                          | [View](./src/fixtures/api.ts)                |
+| [`e2eEnvSchema`](#e2eenvschema)                         | Zod schema for E2E environment variables                                   | [View](./src/config/env.ts)                  |
+| `getStubTokenGenerator`, `getStubTokenGeneratorFromJWK` | Stub JWT generators for local/dev E2E runs, signing tokens from a stub key | [View](./src/fixtures/StubTokenGenerator.ts) |
+| `getTokenGenerator`, `createTokenGeneratorFromConfig`   | Real Cognito token generator for staging/production                        | [View](./src/fixtures/TokenGenerator.ts)     |
 
 ---
 
@@ -490,25 +284,50 @@ Extended Vitest test function for end-to-end tests against deployed infrastructu
 
 ```typescript
 import { it } from "@flex/testing/e2e";
-import { describe, expect } from "vitest";
+import { describe, expect, inject } from "vitest";
 
 describe("GET /hello", () => {
-  it("via API Gateway", async ({ api }) => {
-    const result = await api.client.get("/hello");
+  const { JWT } = inject("e2eEnv");
+
+  it("rejects unauthenticated requests", async ({ cloudfront }) => {
+    const result = await cloudfront.client.get("/hello");
+
+    expect(result.status).toBe(401);
   });
 
-  it("via CloudFront", async ({ cloudfront }) => {
-    const result = await cloudfront.client.get("/hello");
+  it("returns 200 for an authenticated request", async ({
+    cloudfront,
+    authHeader,
+  }) => {
+    const result = await cloudfront.client.get("/hello", {
+      headers: authHeader,
+    });
+
+    expect(result.status).toBe(200);
   });
 });
 ```
 
 ### Fixtures
 
-| Fixture      | Description                            |
-| ------------ | -------------------------------------- |
-| `api`        | HTTP client configured for API Gateway |
-| `cloudfront` | HTTP client configured for CloudFront  |
+| Fixture          | Description                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `cloudfront`     | HTTP client scoped to `<FLEX_API_URL>/app`                                                                                    |
+| `privateGateway` | HTTP client scoped to `FLEX_PRIVATE_GATEWAY_URL`                                                                              |
+| `docs`           | HTTP client scoped to the raw `FLEX_API_URL`                                                                                  |
+| `authHeader`     | `{ Authorization: "Bearer <JWT.VALID>", "x-flex-e2e-bypass": <E2E_BYPASS_TOKEN> }` header object for an authenticated request |
+
+`extendIt()` builds these; domains can layer their own fixtures on top, as `@flex/testing/e2e`'s `it` does for UDP (`udpUser`, `withCleanIdentity`, `withIdentityLink`), see [`e2e/it.ts`](./src/e2e/it.ts).
+
+Tokens and URLs are injected once per run via `inject("e2eEnv")`:
+
+| Value                       | Description                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| `FLEX_API_URL`              | Base URL of the deployed API                                                          |
+| `FLEX_PRIVATE_GATEWAY_URL`  | Base URL of the deployed private gateway                                              |
+| `JWT.VALID` / `JWT.INVALID` | Authentication token variants (valid, invalid)                                        |
+| `E2E_BYPASS_TOKEN`          | Secret token for the `x-flex-e2e-bypass` header, bypassing WAF IP reputation blocking |
+| `STAGE`                     | Resolved stage name                                                                   |
 
 ---
 
@@ -523,7 +342,7 @@ import { createApi } from "@flex/testing/e2e";
 
 const api = createApi("https://api.example.com");
 
-const users = await api.client.get("/app/{version}/users");
+const users = await api.client.get("/users");
 ```
 
 ---
@@ -534,18 +353,20 @@ Zod schema for validating E2E environment variables.
 
 ---
 
-## `flexStackOutputsSchema`
-
-Zod schema for validating CDK stack outputs.
-
----
-
 ## Related
 
 **FLEX:**
 
 - [@flex/utils](/libs/utils/README.md)
+- [@flex/sdk](/libs/sdk/README.md)
+- [@flex/service-gateway](/libs/service-gateway/README.md)
+
+**Guides:**
+
+- [Domain Development Guide: Testing](/docs/domain-development.md#testing)
+- [Platform Development Guide: Testing](/docs/platform-development.md#testing)
 
 **External:**
 
 - [Vitest Test Context](https://vitest.dev/guide/test-context)
+- [nock](https://github.com/nock/nock)
