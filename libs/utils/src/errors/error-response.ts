@@ -1,4 +1,5 @@
-import { z, type ZodError } from "zod";
+import type { ZodError } from "zod";
+import { z } from "zod";
 
 export const ErrorTypeSchema = z.enum([
   "auth_error",

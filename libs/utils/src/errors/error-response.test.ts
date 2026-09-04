@@ -106,32 +106,16 @@ describe("zodIssuesToErrorDetails", () => {
 });
 
 describe("errorTypeForStatus", () => {
-  it("returns auth_error for 401", () => {
-    expect(errorTypeForStatus(401)).toBe("auth_error");
-  });
-
-  it("returns auth_error for 403", () => {
-    expect(errorTypeForStatus(403)).toBe("auth_error");
-  });
-
-  it("returns server_error for 500", () => {
-    expect(errorTypeForStatus(500)).toBe("server_error");
-  });
-
-  it("returns server_error for 502", () => {
-    expect(errorTypeForStatus(502)).toBe("server_error");
-  });
-
-  it("returns client_error for 400", () => {
-    expect(errorTypeForStatus(400)).toBe("client_error");
-  });
-
-  it("returns client_error for 404", () => {
-    expect(errorTypeForStatus(404)).toBe("client_error");
-  });
-
-  it("returns client_error for 422", () => {
-    expect(errorTypeForStatus(422)).toBe("client_error");
+  it.for([
+    { status: 401, expected: "auth_error" },
+    { status: 403, expected: "auth_error" },
+    { status: 500, expected: "server_error" },
+    { status: 502, expected: "server_error" },
+    { status: 400, expected: "client_error" },
+    { status: 404, expected: "client_error" },
+    { status: 422, expected: "client_error" },
+  ])("returns $expected for $status", ({ status, expected }) => {
+    expect(errorTypeForStatus(status)).toBe(expected);
   });
 });
 
