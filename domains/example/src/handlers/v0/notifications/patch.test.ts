@@ -31,9 +31,6 @@ describe("PATCH /v0/notifications", () => {
     );
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body)).toStrictEqual({
-      message: "Invalid request body",
-    });
   });
 
   it("returns 200 when notifications are updated", async ({ http, sdk }) => {

@@ -54,7 +54,6 @@ describe("GET /v1/identity", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 });

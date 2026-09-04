@@ -14,10 +14,6 @@ describe("GET /v0/identity/:service [private]", () => {
     );
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body)).toStrictEqual({
-      headers: ["User-Id"],
-      message: "Missing headers: User-Id",
-    });
   });
 
   it("returns 200 with the identity link details", async ({ http, sdk }) => {

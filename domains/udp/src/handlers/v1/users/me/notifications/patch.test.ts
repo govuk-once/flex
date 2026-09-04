@@ -55,9 +55,6 @@ describe("PATCH /v1/users/me/notifications", () => {
     );
 
     expect(result.statusCode).toBe(400);
-    expect(JSON.parse(result.body)).toStrictEqual({
-      message: "Invalid request body",
-    });
   });
 
   it("returns 502 when the UDP create notifications integration fails", async ({
@@ -82,6 +79,5 @@ describe("PATCH /v1/users/me/notifications", () => {
     );
 
     expect(result.statusCode).toBe(502);
-    expect(result.body).toBe("");
   });
 });

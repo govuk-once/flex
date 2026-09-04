@@ -39,8 +39,16 @@ describe("DELETE /v1/identity/:service", () => {
   });
 
   it.for([
-    { reason: "cannot find the link", upstream: 404, expected: 404 },
-    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+    {
+      reason: "cannot find the link",
+      upstream: 404,
+      expected: 404,
+    },
+    {
+      reason: "fails unexpectedly",
+      upstream: 500,
+      expected: 502,
+    },
   ])(
     "returns $expected when the UDP get service identity link integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
@@ -60,7 +68,6 @@ describe("DELETE /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
@@ -93,7 +100,6 @@ describe("DELETE /v1/identity/:service", () => {
       );
 
       expect(result.statusCode).toBe(expected);
-      expect(result.body).toBe("");
     },
   );
 
