@@ -126,6 +126,8 @@ import { createApi } from "@flex/testing/e2e";
 
 Platform domain handlers in `platform/domains/*` provide cross-cutting functionality.
 
+> **Error responses.** Platform auth and rejection errors follow the shared `ErrorResponse` contract (`{ message, type, errors? }`). The CloudFront Function and the Lambda authorizer both return `{ "message": "Unauthorized", "type": "auth_error" }` for every failure reason, so the response cannot fingerprint why auth failed. See the [SDK error response contract](/libs/sdk/README.md#error-response-contract).
+
 ### Directory Structure
 
 ```text

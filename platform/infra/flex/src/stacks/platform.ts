@@ -218,8 +218,7 @@ export class FlexPlatformStack extends BaseStack {
       type: ResponseType.UNAUTHORIZED,
       statusCode: "401",
       templates: {
-        "application/json":
-          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+        "application/json": '{"message": "Unauthorized", "type": "auth_error"}',
       },
     });
 
@@ -227,8 +226,7 @@ export class FlexPlatformStack extends BaseStack {
       type: ResponseType.ACCESS_DENIED,
       statusCode: "403",
       templates: {
-        "application/json":
-          '{"message": "$context.authorizer.errorMessage", "type": "auth_error"}',
+        "application/json": '{"message": "Unauthorized", "type": "auth_error"}',
       },
     });
 
