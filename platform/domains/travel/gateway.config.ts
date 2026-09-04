@@ -33,6 +33,10 @@ export const { config, createHandler } = defineGateway({
       type: "role",
       path: "/travel/consumer-role",
     },
+    cmk: {
+      type: "kms",
+      path: "/travel/cmk-arn",
+    },
   },
   routes: {
     "GET /v1/countries": {
