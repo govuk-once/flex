@@ -1,8 +1,8 @@
 import { domain } from "@flex/sdk";
 import {
-  CountriesResponseSchema,
-  EventsQuerySchema,
-  EventsResponseSchema,
+  GetCountriesResponseSchema,
+  GetEventsQuerySchema,
+  GetEventsResponseSchema,
 } from "@flex/travel-service-gateway";
 
 export const { config, route, routeContext } = domain({
@@ -24,14 +24,14 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "travel",
       route: "GET /v1/countries",
-      response: CountriesResponseSchema,
+      response: GetCountriesResponseSchema,
     },
     travelGetEvents: {
       type: "gateway",
       target: "travel",
       route: "GET /v1/events",
-      query: EventsQuerySchema,
-      response: EventsResponseSchema,
+      query: GetEventsQuerySchema,
+      response: GetEventsResponseSchema,
     },
   },
   routes: {
@@ -42,7 +42,7 @@ export const { config, route, routeContext } = domain({
             name: "list-countries",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["travelGetCountries"],
-            response: CountriesResponseSchema,
+            response: GetCountriesResponseSchema,
           },
         },
       },
@@ -52,8 +52,8 @@ export const { config, route, routeContext } = domain({
             name: "fetch-recent-travel-alerts",
             resources: ["flexPrivateGatewayUrl"],
             integrations: ["travelGetEvents"],
-            query: EventsQuerySchema,
-            response: EventsResponseSchema,
+            query: GetEventsQuerySchema,
+            response: GetEventsResponseSchema,
           },
         },
       },

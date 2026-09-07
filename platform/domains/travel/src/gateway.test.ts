@@ -1,4 +1,4 @@
-import { it } from "@flex/testing";
+import { it, uuid } from "@flex/testing";
 import { describe, expect } from "vitest";
 
 import { handler } from "./gateway";
@@ -10,6 +10,11 @@ const consumerConfig = {
   roleArn: "arn:aws:iam::123456789012:role/travel-consumer-role",
 };
 
+const sourceIds: Record<string, string> = {
+  france: "5f0c4c9a-3f2b-4a1d-9c7e-1b2d3e4f5a6b",
+  germany: "7c1d2e3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
+};
+
 /** A row shaped the way the seed script writes it. */
 const sourceRow = (
   slug: string,
@@ -17,7 +22,7 @@ const sourceRow = (
   synonyms: string[] = [],
   overrides: Record<string, unknown> = {},
 ) => ({
-  sourceID: `uuid-${slug}`,
+  sourceID: sourceIds[slug] ?? uuid,
   compositeKey: `travel/${slug}`,
   sourceNamespace: "travel",
   sourceGroup: slug,
@@ -103,7 +108,7 @@ describe("Travel Service Gateway", () => {
     it("returns every travel source mapped onto the country shape", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([franceRow, germanyRow]);
+      platform.dynamodb.scan.resolves([franceRow, germanyRow]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
@@ -115,26 +120,29 @@ describe("Travel Service Gateway", () => {
       );
     });
 
-    it("scans the sources table filtered to the travel namespace", async ({
+    it("scans the sources table for enabled travel namespaces", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([franceRow]);
+      platform.dynamodb.scan.resolves([franceRow]);
 
       await handler(platform.gatewayEvent.get(endpoint), platform.context());
 
-      expect(platform.dynamo.scan.calls()).toHaveLength(1);
-      expect(platform.dynamo.scan.input()).toMatchObject({
+      expect(platform.dynamodb.scan.calls()).toHaveLength(1);
+      expect(platform.dynamodb.scan.input()).toMatchObject({
         TableName: consumerConfig.sourcesTableName,
-        FilterExpression: "#attribute = :value",
-        ExpressionAttributeNames: { "#attribute": "sourceNamespace" },
-        ExpressionAttributeValues: { ":value": "travel" },
+        FilterExpression: "#0 = :0 AND #1 = :1",
+        ExpressionAttributeNames: {
+          "#0": "sourceNamespace",
+          "#1": "sourceEnabled",
+        },
+        ExpressionAttributeValues: { ":0": "travel", ":1": true },
       });
     });
 
     it("drops the table's key and internal attributes from the response", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([franceRow]);
+      platform.dynamodb.scan.resolves([franceRow]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
@@ -149,7 +157,7 @@ describe("Travel Service Gateway", () => {
     it("sorts by country name so the list is repeatable", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([germanyRow, franceRow]);
+      platform.dynamodb.scan.resolves([germanyRow, franceRow]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
@@ -161,17 +169,19 @@ describe("Travel Service Gateway", () => {
       );
     });
 
-    it("omits sources the operator has disabled", async ({ platform }) => {
-      platform.dynamo.scan.resolves([
-        franceRow,
-        sourceRow("germany", "Germany", [], { sourceEnabled: false }),
-      ]);
+    it("scans the sources table and filters disabled sources", async ({
+      platform,
+    }) => {
+      platform.dynamodb.scan.resolves([franceRow]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
         platform.context(),
       );
 
+      expect(platform.dynamodb.scan.input()).toMatchObject({
+        ExpressionAttributeValues: { ":1": true },
+      });
       expect(result).toStrictEqual(
         platform.gatewayResult(200, { body: [france] }),
       );
@@ -180,7 +190,7 @@ describe("Travel Service Gateway", () => {
     it("returns an empty list when the namespace holds no sources", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([]);
+      platform.dynamodb.scan.resolves([]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
@@ -193,16 +203,16 @@ describe("Travel Service Gateway", () => {
     it("follows pagination until the table is exhausted", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([franceRow], [germanyRow]);
+      platform.dynamodb.scan.resolves([franceRow], [germanyRow]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
         platform.context(),
       );
 
-      expect(platform.dynamo.scan.calls()).toHaveLength(2);
-      expect(platform.dynamo.scan.input(1)).toMatchObject({
-        ExclusiveStartKey: platform.dynamo.scan.cursor(),
+      expect(platform.dynamodb.scan.calls()).toHaveLength(2);
+      expect(platform.dynamodb.scan.input(1)).toMatchObject({
+        ExclusiveStartKey: platform.dynamodb.scan.cursor(),
       });
       expect(result).toStrictEqual(
         platform.gatewayResult(200, { body: [france, germany] }),
@@ -210,7 +220,7 @@ describe("Travel Service Gateway", () => {
     });
 
     it("returns 502 when the table scan fails", async ({ platform }) => {
-      platform.dynamo.scan.rejects(new Error("ResourceNotFoundException"));
+      platform.dynamodb.scan.rejects(new Error("ResourceNotFoundException"));
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint),
@@ -227,7 +237,7 @@ describe("Travel Service Gateway", () => {
     it("returns 502 when a row does not match the source schema", async ({
       platform,
     }) => {
-      platform.dynamo.scan.resolves([
+      platform.dynamodb.scan.resolves([
         sourceRow("france", "France", [], { lastUpdated: "nope" }),
       ]);
 
@@ -247,7 +257,7 @@ describe("Travel Service Gateway", () => {
     it("returns the events for the requested namespace and group", async ({
       platform,
     }) => {
-      platform.dynamo.query.resolves([franceEvent1, franceEvent2]);
+      platform.dynamodb.query.resolves([franceEvent1, franceEvent2]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint, { query }),
@@ -264,20 +274,20 @@ describe("Travel Service Gateway", () => {
     it("queries the events table by compositeKey on the timestamp index in descending order", async ({
       platform,
     }) => {
-      platform.dynamo.query.resolves([franceEvent1]);
+      platform.dynamodb.query.resolves([franceEvent1]);
 
       await handler(
         platform.gatewayEvent.get(endpoint, { query }),
         platform.context(),
       );
 
-      expect(platform.dynamo.query.calls()).toHaveLength(1);
-      expect(platform.dynamo.query.input()).toMatchObject({
+      expect(platform.dynamodb.query.calls()).toHaveLength(1);
+      expect(platform.dynamodb.query.input()).toMatchObject({
         TableName: consumerConfig.eventStoreTableName,
         IndexName: "timestamp-query",
-        KeyConditionExpression: "#pk = :pkValue",
-        ExpressionAttributeNames: { "#pk": "compositeKey" },
-        ExpressionAttributeValues: { ":pkValue": "travel/france" },
+        KeyConditionExpression: "#0 = :0",
+        ExpressionAttributeNames: { "#0": "compositeKey" },
+        ExpressionAttributeValues: { ":0": "travel/france" },
         ScanIndexForward: false,
       });
     });
@@ -285,7 +295,7 @@ describe("Travel Service Gateway", () => {
     it("returns an empty list when no events exist for the group", async ({
       platform,
     }) => {
-      platform.dynamo.query.resolves([]);
+      platform.dynamodb.query.resolves([]);
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint, { query }),
@@ -318,7 +328,7 @@ describe("Travel Service Gateway", () => {
     });
 
     it("returns 502 when the query throws", async ({ platform }) => {
-      platform.dynamo.query.rejects(new Error("ResourceNotFoundException"));
+      platform.dynamodb.query.rejects(new Error("ResourceNotFoundException"));
 
       const result = await handler(
         platform.gatewayEvent.get(endpoint, { query }),
@@ -335,7 +345,7 @@ describe("Travel Service Gateway", () => {
     it("returns 502 when a row does not match the event schema", async ({
       platform,
     }) => {
-      platform.dynamo.query.resolves([
+      platform.dynamodb.query.resolves([
         eventRow("france", "A update", "not-a-date"),
       ]);
 

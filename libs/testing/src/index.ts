@@ -15,14 +15,19 @@ export {
   token,
   uuid,
 } from "./fixtures/common";
+export type { DocumentClientMock } from "./fixtures/document-client";
 export type {
-  DynamoFixture,
-  DynamoItem,
-  DynamoQueryFixture,
-  DynamoQueryPage,
-  DynamoScanFixture,
-  DynamoScanPage,
-} from "./fixtures/dynamo";
+  DynamoDBDeleteFixture,
+  DynamoDBFixture,
+  DynamoDBGetFixture,
+  DynamoDBItem,
+  DynamoDBPage,
+  DynamoDBPutFixture,
+  DynamoDBQueryFixture,
+  DynamoDBScanFixture,
+  DynamoDBUpdateFixture,
+} from "./fixtures/dynamodb";
+export { createDynamoDBFixture } from "./fixtures/dynamodb";
 export type { HttpFixture } from "./fixtures/http";
 export type { ContextOverrides } from "./fixtures/lambda";
 export { buildLambdaContext } from "./fixtures/lambda";

@@ -1,20 +1,27 @@
 export {
   SOURCE_NAMESPACE_ATTRIBUTE,
+  TRAVEL_DATA_SESSION,
   TRAVEL_SOURCE_NAMESPACE,
 } from "./contract/table";
 export type {
-  CountriesResponse,
   Country,
-  TravelSource,
+  GetCountriesResponse,
+  TravelSourceItem,
 } from "./schemas/domain/country";
 export {
-  CountriesResponseSchema,
   CountrySchema,
-  TravelSourceSchema,
+  GetCountriesResponseSchema,
+  TravelSourceItemSchema,
 } from "./schemas/domain/country";
-export type { Event } from "./schemas/domain/event";
+export type {
+  GetEventsQuery,
+  GetEventsResponse,
+  TravelEvent,
+  TravelEventItem,
+} from "./schemas/domain/event";
 export {
-  EventSchema,
-  EventsQuerySchema,
-  EventsResponseSchema,
+  GetEventsQuerySchema,
+  GetEventsResponseSchema,
+  TravelEventItemSchema,
+  TravelEventSchema,
 } from "./schemas/domain/event";

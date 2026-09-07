@@ -14,7 +14,7 @@ import type {
 
 import { createFixtureBuilder, createFixtureVariants } from "../utils/fixtures";
 import { validJwt } from "./auth";
-import type { DynamoFixture } from "./dynamo";
+import type { DynamoDBFixture } from "./dynamodb";
 import type { LambdaContextFactory } from "./lambda";
 import type { SecretFixture } from "./secret";
 
@@ -354,8 +354,6 @@ export interface PlatformFixture {
   cloudFrontEvent: PlatformCloudFrontEventFactory;
   cloudFrontResult: PlatformCloudFrontResultFactory;
   context: LambdaContextFactory;
-  /** Stubs the DynamoDB reads a gateway's clients make. */
-  dynamo: DynamoFixture;
-  /** Stubs the Secrets Manager reads a gateway's resources make. */
+  dynamodb: DynamoDBFixture;
   secret: SecretFixture;
 }
