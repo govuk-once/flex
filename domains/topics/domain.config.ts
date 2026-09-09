@@ -17,6 +17,7 @@ export const { config, route, routeContext } = domain({
     },
   },
   integrations: {
+    // TODO: confirm UDP gateway verb — may need to change to PATCH
     udpPostTopics: {
       type: "gateway",
       target: "udp",
@@ -28,9 +29,9 @@ export const { config, route, routeContext } = domain({
   routes: {
     v1: {
       "/topics": {
-        POST: {
+        PATCH: {
           public: {
-            name: "post-topics",
+            name: "patch-topics",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostTopics"],
             body: TopicsRequestSchema,

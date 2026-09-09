@@ -2,9 +2,9 @@ import { route, routeContext } from "@domain";
 import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
-const context = routeContext<"POST /v1/topics">;
+const context = routeContext<"PATCH /v1/topics">;
 
-export const handler = route("POST /v1/topics", async ({ auth }) => {
+export const handler = route("PATCH /v1/topics", async ({ auth }) => {
   const userId = auth.pairwiseId as UserId;
 
   await updateTopics(userId);
