@@ -412,6 +412,79 @@ describe("UDP Service Gateway", () => {
     });
   });
 
+  describe("POST /v1/topics", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+
+    const mockTopics = {
+      topics: {
+        selectedTopics: [
+          { id: "topic-1", title: "Topic One" },
+          { id: "topic-2", title: "Topic Two" },
+        ],
+      },
+    };
+    const mockUpstreamTopics = { data: mockTopics };
+
+    it("returns the updated topics for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/topics", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          body: { data: mockTopics },
+        })
+        .reply(200, mockUpstreamTopics);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/topics", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockTopics,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockTopics }),
+      );
+    });
+
+    it("returns empty selections when clearing all topics", async ({
+      http,
+      platform,
+    }) => {
+      const emptyTopics = { topics: { selectedTopics: [] } };
+      const mockUpstreamEmpty = { data: emptyTopics };
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/topics", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          body: { data: emptyTopics },
+        })
+        .reply(200, mockUpstreamEmpty);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/topics", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: emptyTopics,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: emptyTopics }),
+      );
+    });
+  });
+
   describe("GET /v1/groups", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
