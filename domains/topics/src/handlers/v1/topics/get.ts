@@ -24,6 +24,8 @@ export const handler = route(
           },
         };
 
+        logger.info("Returning empty topics", { data: emptyTopics });
+
         return {
           status: 200,
           data: emptyTopics,
