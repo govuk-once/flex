@@ -22,3 +22,8 @@ export const topicsRequest = createTopicsRequest();
 export const clearSelectionsRequest = createTopicsRequest({
   topics: { selectedTopics: [] },
 });
+
+// Update variables in here
+export const singleTopicResponse = createTopicsRequest({
+  topics: { selectedTopics: [{ id: "topic-1", title: "Topic One" }] },
+});

@@ -129,24 +129,6 @@ export const handler = createHandler({
         },
       });
     },
-    "POST /v1/topics": async ({
-      clients: { api },
-      resources: { consumerConfig },
-      body,
-      headers: { requestingServiceUserId },
-    }) => {
-      const result = await api.post("/v1/topics", {
-        schema: upsertTopicsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
-        body: { data: body },
-      });
-
-      return mapApiResult(result, ({ data }) => data);
-    },
     "GET /v1/groups": async ({
       clients: { api },
       resources: { consumerConfig },
@@ -185,6 +167,41 @@ export const handler = createHandler({
       });
 
       return mapApiResult(result, ({ data }) => data.groups);
+    },
+    "GET /v1/topics": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/topics", {
+        // TODO: Create new var
+        schema: upsertTopicsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
+    "POST /v1/topics": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.post("/v1/topics", {
+        schema: upsertTopicsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+        body: { data: body },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
     },
   },
 });
