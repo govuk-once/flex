@@ -22,9 +22,10 @@ Alternatively, run `pnpm <command>` from within `domains/topics/`.
 
 ### Handlers
 
-| Name                                  | Access | Description                  | Code                                      |
-| ------------------------------------- | ------ | ---------------------------- | ----------------------------------------- |
-| [`PATCH /v1/topics`](#patch-v1topics) | Public | Upsert user topic selections | [View](./src/handlers/v1/topics/patch.ts) |
+| Name                                  | Access | Description                    | Code                                      |
+| ------------------------------------- | ------ | ------------------------------ | ----------------------------------------- |
+| [`PATCH /v1/topics`](#patch-v1topics) | Public | Upsert user topic selections   | [View](./src/handlers/v1/topics/patch.ts) |
+| [`GET /v1/topics`](#get-v1topics)     | Public | Retrieve user topic selections | [View](./src/handlers/v1/topics/get.ts)   |
 
 ---
 
@@ -48,6 +49,27 @@ Replaces the authenticated user's selected topics. An empty `selectedTopics` arr
 ### Response
 
 `204 No Content`
+
+---
+
+## GET `/v1/topics`
+
+Returns the authenticated user's selected topics.
+
+### Response
+
+```json
+{
+  "topics": {
+    "selectedTopics": [
+      { "id": "topic-1", "title": "Topic One" },
+      { "id": "topic-2", "title": "Topic Two" }
+    ]
+  }
+}
+```
+
+> Returns empty `selectedTopics` array if the user does not exist.
 
 ---
 

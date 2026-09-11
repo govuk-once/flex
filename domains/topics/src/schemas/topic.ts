@@ -11,6 +11,7 @@ const SelectedTopicsSchema = z.object({
   }),
 });
 
+// TODO: Rename to UpdateTopicsRequest - use notifications as a guide
 export const TopicsRequestSchema = SelectedTopicsSchema;
 export type TopicsRequest = z.infer<typeof TopicsRequestSchema>;
 

@@ -103,6 +103,17 @@ export const { config, createHandler } = defineGateway({
       },
       response: DomainGroupsSchema,
     },
+    "POST /v1/groups": {
+      name: "updateGroupSubscriptions",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      body: DomainGroupsSchema,
+      response: DomainGroupsSchema,
+    },
     "POST /v1/topics": {
       name: "upsertTopics",
       headers: {
@@ -114,16 +125,15 @@ export const { config, createHandler } = defineGateway({
       body: inboundUpsertTopicsRequestSchema,
       response: domainTopicsResponseSchema,
     },
-    "POST /v1/groups": {
-      name: "updateGroupSubscriptions",
+    "GET /v1/topics": {
+      name: "getTopics",
       headers: {
         requestingServiceUserId: {
           name: "requesting-service-user-id",
           required: true,
         },
       },
-      body: DomainGroupsSchema,
-      response: DomainGroupsSchema,
+      response: domainTopicsResponseSchema,
     },
   },
 });

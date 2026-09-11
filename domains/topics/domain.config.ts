@@ -24,6 +24,12 @@ export const { config, route, routeContext } = domain({
       body: TopicsRequestSchema,
       response: TopicsResponseSchema,
     },
+    udpGetTopics: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/topics",
+      response: TopicsResponseSchema,
+    },
   },
   routes: {
     v1: {
@@ -34,6 +40,14 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostTopics"],
             body: TopicsRequestSchema,
+          },
+        },
+        GET: {
+          public: {
+            name: "retrieve-topics",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetTopics"],
+            response: TopicsResponseSchema,
           },
         },
       },
