@@ -3,6 +3,7 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
+import { createLogGroupKey } from "../../constructs/kms/log-group-key";
 import { ENV_KEYS } from "../../ssm-keys";
 import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { addVpcEndpoints } from "./endpoints";
@@ -42,6 +43,8 @@ export class FlexCoreStack extends BaseStack {
 
     const { criticalTopic, warningTopic, alarmTopicKey } =
       createAlarmTopics(this);
+
+    const { logGroupKey } = createLogGroupKey(this, "alias/flex-log-group-key");
 
     createSlackNotifications(this, {
       id: "SlackChannel",
@@ -90,6 +93,7 @@ export class FlexCoreStack extends BaseStack {
       [ENV_KEYS.TopicCriticalAlarms]: criticalTopic.topicArn,
       [ENV_KEYS.TopicWarningAlarms]: warningTopic.topicArn,
       [ENV_KEYS.VpcEApiGateway]: apiGatewayEndpoint.vpcEndpointId,
+      [ENV_KEYS.LogGroupKeyArn]: logGroupKey.keyArn,
     });
   }
 }
