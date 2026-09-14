@@ -21,7 +21,7 @@ The one store holding user records is the Cognito user pool, which does not supp
 | Store                              | Control                                                                          |
 | ---------------------------------- | -------------------------------------------------------------------------------- |
 | CloudWatch log groups              | Customer managed KMS key with rotation (`alias/flex-log-group-key`)              |
-| CloudWatch log groups in us-east-1 | Per-stage customer managed key in the global stack (log groups are regional)     |
+| CloudWatch log groups in us-east-1 | Local customer managed keys in the global and Macie stacks (log groups are regional) |
 | VPC flow log bucket                | Customer managed KMS key (`alias/flex-vpc-flow-logs-key`)                        |
 | Macie results bucket               | Customer managed KMS key                                                         |
 | S3 access log buckets              | SSE-S3, as S3 server access log delivery does not support KMS customer keys      |
