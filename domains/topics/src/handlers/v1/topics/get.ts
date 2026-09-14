@@ -16,7 +16,7 @@ export const handler = route(
       const { status } = result.error;
 
       if (status === 404) {
-        logger.error("User not found", { status, userId });
+        logger.info("User not found", { status, userId });
 
         const emptyTopics: TopicsResponse = {
           topics: {
