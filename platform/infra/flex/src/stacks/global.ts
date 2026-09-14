@@ -59,6 +59,7 @@ import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront-function";
 import { FlexResponseHeadersPolicy } from "../constructs/cloudfront/flex-response-headers-policy";
+import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -618,6 +619,10 @@ export class FlexGlobalStack extends BaseStack {
         region: "us-east-1",
       },
     });
+
+    // Log groups are regional, so this us-east-1 stack needs its own key
+    // rather than the core stack's eu-west-2 one
+    createLogGroupKey(this, `alias/${stage}-flex-global-log-group-key`);
 
     const { domainName, subdomainName } = this.#getDomainName();
 

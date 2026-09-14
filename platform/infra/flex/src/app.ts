@@ -1,6 +1,7 @@
 import { Environment, getEnvConfig } from "@flex/utils";
 import { Aspects } from "aws-cdk-lib";
 
+import { EncryptLogGroups } from "./aspects/encrypt-log-groups";
 import { EnforceS3Https } from "./aspects/enforce-s3-https";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
@@ -24,6 +25,7 @@ const { env, persistent, stage } = getEnvConfig();
 
 const app = new SsmApp();
 Aspects.of(app).add(new EnforceS3Https());
+Aspects.of(app).add(new EncryptLogGroups());
 
 const region = "eu-west-2";
 
