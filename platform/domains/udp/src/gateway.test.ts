@@ -72,6 +72,8 @@ const mockTopics = {
   },
 };
 const mockUpstreamTopics = { data: mockTopics };
+const mockTopicsEmpty = { topics: { selectedTopics: [] } };
+const mockUpstreamTopicsEmpty = { data: mockTopicsEmpty };
 
 const stubConsumerConfig = (http: HttpFixture) =>
   http
@@ -532,15 +534,12 @@ describe("UDP Service Gateway", () => {
       http,
       platform,
     }) => {
-      const emptyTopics = { topics: { selectedTopics: [] } };
-      const mockUpstreamEmpty = { data: emptyTopics };
-
       http
         .url(mockConsumerConfig.apiUrl)
         .get("/v1/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
-        .reply(200, mockUpstreamEmpty);
+        .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
         platform.gatewayEvent.get("/v1/topics", {
@@ -552,7 +551,7 @@ describe("UDP Service Gateway", () => {
       );
 
       expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: emptyTopics }),
+        platform.gatewayResult(200, { body: mockTopicsEmpty }),
       );
     });
   });
@@ -593,29 +592,26 @@ describe("UDP Service Gateway", () => {
       http,
       platform,
     }) => {
-      const emptyTopics = { topics: { selectedTopics: [] } };
-      const mockUpstreamEmpty = { data: emptyTopics };
-
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-          body: { data: emptyTopics },
+          body: { data: mockTopicsEmpty },
         })
-        .reply(200, mockUpstreamEmpty);
+        .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
-          body: emptyTopics,
+          body: mockTopicsEmpty,
         }),
         platform.context(),
       );
 
       expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: emptyTopics }),
+        platform.gatewayResult(200, { body: mockTopicsEmpty }),
       );
     });
   });
