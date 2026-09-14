@@ -1,6 +1,6 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { TopicsResponse } from "@schemas/topic";
+import { GetSelectedTopicsResponse } from "@schemas/topic";
 import createHttpError from "http-errors";
 
 export const handler = route(
@@ -18,7 +18,7 @@ export const handler = route(
       if (status === 404) {
         logger.info("User not found", { status, userId });
 
-        const emptyTopics: TopicsResponse = {
+        const emptyTopics: GetSelectedTopicsResponse = {
           topics: {
             selectedTopics: [],
           },

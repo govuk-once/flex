@@ -1,12 +1,12 @@
 import { createUserId, mergeFixture } from "@flex/testing";
 import type { DeepPartial } from "@flex/utils";
-import type { TopicsRequest } from "@schemas/topic";
+import type { SelectedTopics } from "@schemas/topic";
 
 export { createUserId };
 export const userId = createUserId("test-topics-user");
 
-export const createSelectedTopics = (overrides?: DeepPartial<TopicsRequest>) =>
-  mergeFixture<TopicsRequest>(
+export const createSelectedTopics = (overrides?: DeepPartial<SelectedTopics>) =>
+  mergeFixture<SelectedTopics>(
     {
       topics: {
         selectedTopics: [
