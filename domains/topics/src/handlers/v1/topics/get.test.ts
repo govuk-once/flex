@@ -1,8 +1,8 @@
 import { it } from "@flex/testing";
 import {
-  clearSelectionsRequest,
-  singleTopicResponse,
-  topicsRequest,
+  selectedTopicsEmpty,
+  selectedTopicsMultiple,
+  selectedTopicsSingle,
   userId,
 } from "@tests/fixtures";
 import { describe, expect } from "vitest";
@@ -18,8 +18,7 @@ describe("GET /v1/topics", () => {
       .get("/topics", {
         headers: { "requesting-service-user-id": userId },
       })
-      // TODO: Rename var
-      .reply(200, singleTopicResponse);
+      .reply(200, selectedTopicsSingle);
 
     const result = await handler(
       sdk.event.get(endpoint, { auth: userId }),
@@ -27,8 +26,7 @@ describe("GET /v1/topics", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    // TODO: Rename var
-    expect(JSON.parse(result.body)).toStrictEqual(singleTopicResponse);
+    expect(JSON.parse(result.body)).toStrictEqual(selectedTopicsSingle);
   });
 
   it("returns 200 with multiple selectedTopics", async ({ http, sdk }) => {
@@ -37,8 +35,7 @@ describe("GET /v1/topics", () => {
       .get("/topics", {
         headers: { "requesting-service-user-id": userId },
       })
-      // TODO: Rename var
-      .reply(200, topicsRequest);
+      .reply(200, selectedTopicsMultiple);
 
     const result = await handler(
       sdk.event.get(endpoint, { auth: userId }),
@@ -46,8 +43,7 @@ describe("GET /v1/topics", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    // TODO: Rename var
-    expect(JSON.parse(result.body)).toStrictEqual(topicsRequest);
+    expect(JSON.parse(result.body)).toStrictEqual(selectedTopicsMultiple);
   });
 
   it("returns 200 with empty selectedTopics", async ({ http, sdk }) => {
@@ -56,8 +52,7 @@ describe("GET /v1/topics", () => {
       .get("/topics", {
         headers: { "requesting-service-user-id": userId },
       })
-      // TODO: Rename var
-      .reply(200, clearSelectionsRequest);
+      .reply(200, selectedTopicsEmpty);
 
     const result = await handler(
       sdk.event.get(endpoint, { auth: userId }),
@@ -65,8 +60,7 @@ describe("GET /v1/topics", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    // TODO: Rename var
-    expect(JSON.parse(result.body)).toStrictEqual(clearSelectionsRequest);
+    expect(JSON.parse(result.body)).toStrictEqual(selectedTopicsEmpty);
   });
 
   it("returns 200 with empty selectedTopics when UDP user not found", async ({
@@ -86,8 +80,7 @@ describe("GET /v1/topics", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    // TODO: Rename var
-    expect(JSON.parse(result.body)).toStrictEqual(clearSelectionsRequest);
+    expect(JSON.parse(result.body)).toStrictEqual(selectedTopicsEmpty);
   });
 
   it("returns 502 when the UDP post topics integration fails", async ({

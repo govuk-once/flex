@@ -5,7 +5,7 @@ import type { TopicsRequest } from "@schemas/topic";
 export { createUserId };
 export const userId = createUserId("test-topics-user");
 
-export const createTopicsRequest = (overrides?: DeepPartial<TopicsRequest>) =>
+export const createSelectedTopics = (overrides?: DeepPartial<TopicsRequest>) =>
   mergeFixture<TopicsRequest>(
     {
       topics: {
@@ -17,13 +17,11 @@ export const createTopicsRequest = (overrides?: DeepPartial<TopicsRequest>) =>
     },
     overrides,
   );
-export const topicsRequest = createTopicsRequest();
 
-export const clearSelectionsRequest = createTopicsRequest({
+export const selectedTopicsEmpty = createSelectedTopics({
   topics: { selectedTopics: [] },
 });
-
-// Update variables in here
-export const singleTopicResponse = createTopicsRequest({
-  topics: { selectedTopics: [{ id: "topic-1", title: "Topic One" }] },
+export const selectedTopicsMultiple = createSelectedTopics();
+export const selectedTopicsSingle = createSelectedTopics({
+  topics: { selectedTopics: [{ id: "topic-1", title: "Single Topic" }] },
 });
