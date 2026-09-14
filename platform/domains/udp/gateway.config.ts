@@ -9,8 +9,8 @@ import {
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
 import {
-  domainTopicsResponseSchema,
-  inboundUpsertTopicsRequestSchema,
+  domainTopicsSchema,
+  inboundUpdateSelectedTopicsRequestSchema,
 } from "./src/schemas/domain/topics";
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
 
@@ -122,8 +122,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpsertTopicsRequestSchema,
-      response: domainTopicsResponseSchema,
+      body: inboundUpdateSelectedTopicsRequestSchema,
+      response: domainTopicsSchema,
     },
     "GET /v1/topics": {
       name: "getTopics",
@@ -133,7 +133,7 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      response: domainTopicsResponseSchema,
+      response: domainTopicsSchema,
     },
   },
 });
