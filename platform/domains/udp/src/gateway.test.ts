@@ -413,8 +413,17 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/topics", () => {
+    const now = new Date("2026-09-14T12:00:00.000Z");
+    const mockRequestedAt = now.toISOString();
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+
+      return () => {
+        vi.useRealTimers();
+      };
     });
 
     const mockTopics = {
@@ -434,7 +443,10 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
           body: { data: mockTopics },
         })
         .reply(200, mockUpstreamTopics);
@@ -443,6 +455,7 @@ describe("UDP Service Gateway", () => {
         platform.gatewayEvent.post("/v1/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
+            "requested-at": mockRequestedAt,
           },
           body: mockTopics,
         }),
@@ -464,7 +477,10 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
           body: { data: emptyTopics },
         })
         .reply(200, mockUpstreamEmpty);
@@ -473,6 +489,7 @@ describe("UDP Service Gateway", () => {
         platform.gatewayEvent.post("/v1/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
+            "requested-at": mockRequestedAt,
           },
           body: emptyTopics,
         }),

@@ -1,17 +1,31 @@
 import { it } from "@flex/testing";
 import { clearSelectionsRequest, topicsRequest, userId } from "@tests/fixtures";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /v1/topics", () => {
   const endpoint = "/topics";
+  const now = new Date("2026-09-14T12:00:00.000Z");
+  const requestedAt = now.toISOString();
+
+  it.beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    return () => {
+      vi.useRealTimers();
+    };
+  });
 
   it("returns 204 when topics are updated", async ({ http, sdk }) => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: { "requesting-service-user-id": userId },
+        headers: {
+          "requesting-service-user-id": userId,
+          "requested-at": requestedAt,
+        },
         body: topicsRequest,
       })
       .reply(200, topicsRequest);
@@ -32,7 +46,10 @@ describe("PATCH /v1/topics", () => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: { "requesting-service-user-id": userId },
+        headers: {
+          "requesting-service-user-id": userId,
+          "requested-at": requestedAt,
+        },
         body: clearSelectionsRequest,
       })
       .reply(200, clearSelectionsRequest);
@@ -65,7 +82,10 @@ describe("PATCH /v1/topics", () => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: { "requesting-service-user-id": userId },
+        headers: {
+          "requesting-service-user-id": userId,
+          "requested-at": requestedAt,
+        },
         body: topicsRequest,
       })
       .reply(500);
