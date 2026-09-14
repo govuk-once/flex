@@ -537,14 +537,12 @@ describe("UDP Service Gateway", () => {
 
       http
         .url(mockConsumerConfig.apiUrl)
-        // TODO replace method
         .get("/v1/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
         .reply(200, mockUpstreamEmpty);
 
       const result = await handler(
-        // TODO replace method
         platform.gatewayEvent.get("/v1/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
