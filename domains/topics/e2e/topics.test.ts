@@ -1,10 +1,10 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
-  TopicsRequest,
-  TopicsRequestSchema,
-  TopicsResponse,
-  TopicsResponseSchema,
+  UpdateSelectedTopicsRequest,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponse,
+  UpdateSelectedTopicsResponseSchema,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
 
@@ -31,22 +31,22 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
           });
 
           expect(result.status).toBe(204);
-          expect(TopicsResponseSchema.safeParse(result.body).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsResponseSchema.safeParse(result.body).success,
+          ).toBe(true);
 
           expect(result.body).toStrictEqual({
             topics: {
@@ -69,22 +69,22 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
           });
 
           expect(result.status).toBe(204);
-          expect(TopicsResponseSchema.safeParse(result.body).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsResponseSchema.safeParse(result.body).success,
+          ).toBe(true);
 
           expect(result.body).toStrictEqual({
             topics: {
@@ -101,8 +101,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           };
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             body: requestTopics,
           });
