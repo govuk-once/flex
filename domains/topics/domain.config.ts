@@ -1,6 +1,10 @@
 import { domain } from "@flex/sdk";
 
-import { TopicsRequestSchema, TopicsResponseSchema } from "./src/schemas";
+import {
+  GetSelectedTopicsResponseSchema,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponseSchema,
+} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "topics",
@@ -21,14 +25,14 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       target: "udp",
       route: "POST /v1/topics",
-      body: TopicsRequestSchema,
-      response: TopicsResponseSchema,
+      body: UpdateSelectedTopicsRequestSchema,
+      response: UpdateSelectedTopicsResponseSchema,
     },
     udpGetTopics: {
       type: "gateway",
       target: "udp",
       route: "GET /v1/topics",
-      response: TopicsResponseSchema,
+      response: GetSelectedTopicsResponseSchema,
     },
   },
   routes: {
@@ -39,7 +43,7 @@ export const { config, route, routeContext } = domain({
             name: "upsert-topics",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostTopics"],
-            body: TopicsRequestSchema,
+            body: UpdateSelectedTopicsRequestSchema,
           },
         },
         GET: {
@@ -47,7 +51,7 @@ export const { config, route, routeContext } = domain({
             name: "retrieve-topics",
             resources: ["privateGatewayUrl"],
             integrations: ["udpGetTopics"],
-            response: TopicsResponseSchema,
+            response: GetSelectedTopicsResponseSchema,
           },
         },
       },
