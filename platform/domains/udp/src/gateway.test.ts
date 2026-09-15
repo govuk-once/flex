@@ -63,6 +63,16 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
+const mockTopics = {
+  topics: {
+    selectedTopics: [
+      { id: "topic-1", title: "Topic One" },
+      { id: "topic-2", title: "Topic Two" },
+    ],
+  },
+};
+const mockUpstreamTopics = { data: mockTopics };
+
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -162,6 +172,44 @@ describe("UDP Service Gateway", () => {
             message: "Missing headers: requesting-service-user-id",
             headers: ["requesting-service-user-id"],
           },
+        }),
+      );
+    });
+
+    it("returns 409 when required-at header is out of sync", async ({
+      http,
+      platform,
+    }) => {
+      stubConsumerConfig(http);
+
+      const now = new Date("2026-09-14T12:00:00.000Z");
+      const mockRequestedAt = now.toISOString();
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/topics", {
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
+          body: { data: mockTopics },
+        })
+        .reply(409);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/topics", {
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
+          body: mockTopics,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
         }),
       );
     });
@@ -425,16 +473,6 @@ describe("UDP Service Gateway", () => {
         vi.useRealTimers();
       };
     });
-
-    const mockTopics = {
-      topics: {
-        selectedTopics: [
-          { id: "topic-1", title: "Topic One" },
-          { id: "topic-2", title: "Topic Two" },
-        ],
-      },
-    };
-    const mockUpstreamTopics = { data: mockTopics };
 
     it("returns the updated topics for the requesting user", async ({
       http,
