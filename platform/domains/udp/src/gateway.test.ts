@@ -466,12 +466,6 @@ describe("UDP Service Gateway", () => {
 
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
-
-      return () => {
-        vi.useRealTimers();
-      };
     });
 
     it("returns the updated topics for the requesting user", async ({
