@@ -19,18 +19,18 @@
     "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "devDependencies": {
-    "@aws-lambda-powertools/parameters": "2.34.0",
+    "@aws-lambda-powertools/parameters": "2.35.0",
     "@flex/config": "workspace:*",
     "@flex/dvla-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",
     "@flex/udp-domain": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
+    "@types/aws-lambda": "8.10.163",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.7.0",
-    "nock": "14.0.16",
+    "eslint": "10.10.0",
+    "nock": "14.0.17",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
