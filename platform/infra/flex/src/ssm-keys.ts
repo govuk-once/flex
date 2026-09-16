@@ -29,6 +29,7 @@ export const ENV_KEYS = {
   ReleaseSlackChannelId: `/${env}/flex-param/monitoring/releaseSlackChannelId`,
   TopicReleaseNotifications: `/${env}/flex/topic/release-notifications`,
   FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
+  LogGroupKeyArn: `/${env}/flex/kms/log-group-key-arn`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
