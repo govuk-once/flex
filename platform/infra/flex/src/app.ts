@@ -4,11 +4,11 @@ import { Aspects } from "aws-cdk-lib";
 import { EnforceS3Https } from "./aspects/enforce-s3-https";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
+import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
-import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
 // Temporarily disabled pending investigation with Platform team (FLEX-491).
 // import { FlexMacieStack } from "./stacks/macie";
 import { FlexPlatformStack } from "./stacks/platform";

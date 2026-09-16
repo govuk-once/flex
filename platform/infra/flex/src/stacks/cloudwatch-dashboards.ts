@@ -24,7 +24,7 @@ export class FlexCloudWatchDashboardsStack extends BaseStack {
 
     const dashboardsDir = path.join(import.meta.dirname, "../dashboards");
 
-    const drivingDashboard = JSON.parse(
+    const drivingDashboard: unknown = JSON.parse(
       fs.readFileSync(
         path.join(dashboardsDir, "drivingDashboard.json"),
         "utf-8",

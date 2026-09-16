@@ -1,528 +1,1014 @@
 {
-    "widgets": [
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 1,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicles", "Stage", "prod", "Method", "GET", { "color": "#b2df8d", "region": "eu-west-2" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a", "region": "eu-west-2" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73", "region": "eu-west-2" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 300,
-                "title": "GET /app/dvla/v1/customer/vehicles"
-            }
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicles",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "GET /app/dvla/v1/customer/vehicles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 11,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/licence",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 60,
+        "title": "GET /app/dvla/v1/customer/licence"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# DVLA endpoints"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 21,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Identity endpoints"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicle/{id}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "GET /app/dvla/v1/customer/vehicle/{id}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 16,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/vehicle-enquiry/{reg}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 16,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/vehicle-enquiry/{reg}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "region": "eu-west-2", "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "stat": "Average", "region": "eu-west-2", "color": "#98dcf5" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73", "region": "eu-west-2" }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 16,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/vehicle-enquiry/{reg}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#98dcf5", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 11,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/licence", "Stage", "prod", "Method", "GET", { "color": "#b2df8d" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 60,
-                "title": "GET /app/dvla/v1/customer/licence"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "text",
-            "x": 0,
-            "y": 0,
-            "width": 24,
-            "height": 1,
-            "properties": {
-                "markdown": "# DVLA endpoints"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "text",
-            "x": 0,
-            "y": 21,
-            "width": 24,
-            "height": 1,
-            "properties": {
-                "markdown": "# Identity endpoints"
-            }
+        "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 1,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicles",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "region": "eu-west-2", "color": "#98dcf5" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 6,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicle/{id}", "Stage", "prod", "Method", "GET", { "color": "#b2df8d", "region": "eu-west-2" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a", "region": "eu-west-2" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73", "region": "eu-west-2" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 300,
-                "title": "GET /app/dvla/v1/customer/vehicle/{id}"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 16,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/vehicle-enquiry/{reg}", "Stage", "prod", "Method", "GET", { "color": "#b2df8d", "region": "eu-west-2" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a", "region": "eu-west-2" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73", "region": "eu-west-2" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 300,
-                "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 16,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/vehicle-enquiry/{reg}", "Stage", "prod", "Method", "GET", { "region": "eu-west-2", "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "stat": "Average", "region": "eu-west-2", "color": "#98dcf5" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a", "region": "eu-west-2" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73", "region": "eu-west-2" } ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
-            }
+        "title": "GET /app/dvla/v1/customer/vehicles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 1,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicles",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "stat": "Average", "color": "#98dcf5" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/dvla/v1/vehicle-enquiry/vehicles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 6,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicle/{id}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "region": "eu-west-2", "yAxis": "left", "color": "#98dcf5" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 16,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/dvla/v1/vehicle-enquiry/{reg}", "Stage", "prod", "Method", "GET", { "color": "#98dcf5", "region": "eu-west-2" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 1,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicles", "Stage", "prod", "Method", "GET", { "region": "eu-west-2", "color": "#98dcf5" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "GET /app/dvla/v1/customer/vehicles"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 1,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicles", "Stage", "prod", "Method", "GET", { "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "stat": "Average", "color": "#98dcf5" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "." ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "GET /app/dvla/v1/vehicle-enquiry/vehicles"
-            }
+        "title": "GET /app/dvla/v1/customer/vehicle/{id}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 6,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/vehicle/{id}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#98dcf5", "stat": "Average" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/dvla/v1/vehicle-enquiry/vehicle/{id}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 11,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/licence",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "region": "eu-west-2", "color": "#98dcf5" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 6,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicle/{id}", "Stage", "prod", "Method", "GET", { "region": "eu-west-2", "yAxis": "left", "color": "#98dcf5" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "GET /app/dvla/v1/customer/vehicle/{id}"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 6,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/vehicle/{id}", "Stage", "prod", "Method", "GET", { "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#98dcf5", "stat": "Average" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "." ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "GET /app/dvla/v1/vehicle-enquiry/vehicle/{id}"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 11,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/licence", "Stage", "prod", "Method", "GET", { "region": "eu-west-2", "color": "#98dcf5" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "GET /app/dvla/v1/customer/licence"
-            }
+        "title": "GET /app/dvla/v1/customer/licence"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 11,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/customer/licence",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "stat": "Average", "color": "#98dcf5" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/dvla/v1/customer/licence"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 22,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "POST /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 22,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            { "color": "#98dcf5" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 11,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/dvla/v1/customer/licence", "Stage", "prod", "Method", "GET", { "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "stat": "Average", "color": "#98dcf5" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "." ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "GET /app/dvla/v1/customer/licence"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 22,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "POST", { "color": "#b2df8d" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 300,
-                "title": "POST /app/udp/v1/identity/{service}"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 22,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "POST", { "color": "#98dcf5" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "POST /app/udp/v1/identity/{service}"
-            }
+        "title": "POST /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 22,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#98dcf5" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "POST /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 27,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#fe6e73" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "DELETE /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 27,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            { "color": "#98dcf5" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
         },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 22,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "POST", { "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#98dcf5" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "." ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "POST /app/udp/v1/identity/{service}"
-            }
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
         },
-        {
-            "type": "metric",
-            "x": 0,
-            "y": 27,
-            "width": 9,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "DELETE", { "color": "#b2df8d" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#fe6e73" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": false,
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 300,
-                "title": "DELETE /app/udp/v1/identity/{service}"
-            }
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
         },
-        {
-            "type": "metric",
-            "x": 9,
-            "y": 27,
-            "width": 8,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Latency", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "DELETE", { "color": "#98dcf5" } ]
-                ],
-                "view": "timeSeries",
-                "stacked": true,
-                "region": "eu-west-2",
-                "stat": "Average",
-                "period": 300,
-                "setPeriodToTimeRange": true,
-                "table": {
-                    "summaryColumns": [
-                        "MIN",
-                        "SUM",
-                        "MAX",
-                        "AVG"
-                    ],
-                    "stickySummary": false,
-                    "showTimeSeriesData": false,
-                    "layout": "horizontal"
-                },
-                "yAxis": {
-                    "left": {
-                        "showUnits": true
-                    },
-                    "right": {
-                        "showUnits": false
-                    }
-                },
-                "liveData": false,
-                "singleValueFullPrecision": false,
-                "legend": {
-                    "position": "bottom"
-                },
-                "title": "DELETE /app/udp/v1/identity/{service}"
-            }
-        },
-        {
-            "type": "metric",
-            "x": 17,
-            "y": 27,
-            "width": 7,
-            "height": 5,
-            "properties": {
-                "metrics": [
-                    [ "AWS/ApiGateway", "Count", "ApiName", "Api", "Resource", "/app/udp/v1/identity/{service}", "Stage", "prod", "Method", "DELETE", { "color": "#b2df8d" } ],
-                    [ ".", "Latency", ".", ".", ".", ".", ".", ".", ".", ".", { "stat": "Average", "color": "#98dcf5" } ],
-                    [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { "color": "#f7db8a" } ],
-                    [ ".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "." ]
-                ],
-                "sparkline": true,
-                "view": "singleValue",
-                "region": "eu-west-2",
-                "stat": "Sum",
-                "period": 2592000,
-                "title": "DELETE /app/udp/v1/identity/{service}"
-            }
-        }
-    ]
+        "title": "DELETE /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 27,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            { "color": "#b2df8d" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "stat": "Average", "color": "#98dcf5" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a" }
+          ],
+          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "DELETE /app/udp/v1/identity/{service}"
+      }
+    }
+  ]
 }
