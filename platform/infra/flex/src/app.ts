@@ -8,6 +8,7 @@ import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
+import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
 // Temporarily disabled pending investigation with Platform team (FLEX-491).
 // import { FlexMacieStack } from "./stacks/macie";
 import { FlexPlatformStack } from "./stacks/platform";
@@ -61,6 +62,7 @@ app.addExternalExports(region, [...new Set(externalExports)]);
 if (persistent) {
   new FlexCoreStack(app, `${env}-FlexCore`);
   new FlexSmokeTestStack(app, `${env}-FlexSmokeTest`);
+  new FlexCloudWatchDashboardsStack(app, `${env}-FlexCloudWatchDashboards`);
 } else if (env === Environment.development) {
   // Add these as external deps as we reuse the development env vpc
   app.addExternalExports(region, [
