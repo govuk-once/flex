@@ -1,9 +1,9 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
-import type { TopicsRequest } from "@schemas/topic";
+import type { SelectedTopics } from "@schemas/topic";
 
 export const userId = createUserId("test-topics-user");
 
-const baseTopics: TopicsRequest = {
+const baseTopics: SelectedTopics = {
   topics: {
     selectedTopics: [
       { id: "topic-1", title: "Topic One" },
@@ -12,4 +12,9 @@ const baseTopics: TopicsRequest = {
   },
 };
 
-export const createTopics = createFixtureBuilder<TopicsRequest>(baseTopics);
+export const createTopics = createFixtureBuilder<SelectedTopics>(baseTopics);
+
+export const emptyTopics = { topics: { selectedTopics: [] } };
+export const singleTopic = {
+  topics: { selectedTopics: [{ id: "topic-1", title: "Topic One" }] },
+};

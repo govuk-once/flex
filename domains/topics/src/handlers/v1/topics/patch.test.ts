@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import { createTopics, userId } from "@tests/fixtures";
+import { createTopics, emptyTopics, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
@@ -29,8 +29,6 @@ describe("PATCH /v1/topics", () => {
     http,
     sdk,
   }) => {
-    const emptyTopics = { topics: { selectedTopics: [] } };
-
     http
       .gateway("udp")
       .post("/topics", {
