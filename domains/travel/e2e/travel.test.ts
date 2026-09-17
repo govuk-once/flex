@@ -1,8 +1,8 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
-  CountriesResponseSchema,
-  EventsResponseSchema,
+  GetCountriesResponseSchema,
+  GetEventsResponseSchema,
 } from "@flex/travel-service-gateway";
 import { describe, expect } from "vitest";
 
@@ -25,7 +25,7 @@ describe.runIf(isDomainDeployed(travelConfig))("Travel domain", () => {
 
           expect(result.status).toBe(200);
 
-          const countries = CountriesResponseSchema.safeParse(result.body);
+          const countries = GetCountriesResponseSchema.safeParse(result.body);
 
           expect(countries.success).toBe(true);
 
@@ -64,7 +64,7 @@ describe.runIf(isDomainDeployed(travelConfig))("Travel domain", () => {
 
           expect(result.status).toBe(200);
 
-          const events = EventsResponseSchema.safeParse(result.body);
+          const events = GetEventsResponseSchema.safeParse(result.body);
 
           expect(events.success).toBe(true);
         });

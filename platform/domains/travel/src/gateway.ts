@@ -1,4 +1,8 @@
-import { createDynamoClient, mapApiResult } from "@flex/service-gateway";
+import {
+  createDynamoClient,
+  createDynamoDBClient,
+  mapApiResult,
+} from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
 import {
@@ -6,8 +10,8 @@ import {
   TRAVEL_DATA_SESSION,
   TRAVEL_SOURCE_NAMESPACE,
 } from "./contract/table";
-import { toCountry, TravelSourceSchema } from "./schemas/domain/country";
-import { EventSchema } from "./schemas/domain/event";
+import { toCountry, TravelSourceItemSchema } from "./schemas/domain/country";
+import { toTravelEvent, TravelEventItemSchema } from "./schemas/domain/event";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -33,35 +37,92 @@ export const handler = createHandler({
         externalId: consumerConfig.externalId,
       },
     }),
+
+    sourcesTable: createDynamoDBClient({
+      table: consumerConfig.sourcesTableName,
+      region: consumerConfig.region,
+      schema: TravelSourceItemSchema,
+      auth: {
+        type: "role",
+        roleArn: consumerConfig.roleArn,
+        roleName: TRAVEL_DATA_SESSION,
+        externalId: consumerConfig.externalId,
+      },
+    }),
+    eventsTable: createDynamoDBClient({
+      table: consumerConfig.eventStoreTableName,
+      region: consumerConfig.region,
+      schema: TravelEventItemSchema,
+      auth: {
+        type: "role",
+        roleArn: consumerConfig.roleArn,
+        roleName: TRAVEL_DATA_SESSION,
+        externalId: consumerConfig.externalId,
+      },
+    }),
   }),
   routes: {
-    "GET /v1/countries": async ({ clients: { sources } }) => {
-      const result = await sources.scan({
+    "GET /v1/countries": async ({
+      logger,
+      clients: { sources, sourcesTable },
+    }) => {
+      const before = await sources.scan({
         attribute: SOURCE_NAMESPACE_ATTRIBUTE,
         value: TRAVEL_SOURCE_NAMESPACE,
-        schema: TravelSourceSchema,
+        schema: TravelSourceItemSchema,
+      });
+      const after = await sourcesTable.scan({
+        filter: {
+          sourceNamespace: TRAVEL_SOURCE_NAMESPACE,
+          sourceEnabled: true,
+        },
       });
 
-      return mapApiResult(result, (rows) =>
+      const result = mapApiResult(before, (rows) =>
         rows
-          // sourceEnabled is operator-owned; a source turned off is not served.
           .filter(({ sourceEnabled }) => sourceEnabled)
           .map(toCountry)
-          // Scan order is not stable, so sort for a repeatable list.
           .sort((a, b) => a.country.localeCompare(b.country)),
       );
+
+      logger.info("Scan result: ", {
+        before,
+        beforeMapped: result,
+        after,
+        afterMapped: after
+          .map(toCountry)
+          .sort((a, b) => a.country.localeCompare(b.country)),
+      });
+
+      return result;
     },
     "GET /v1/events": async ({
-      clients: { events },
+      logger,
+      clients: { events, eventsTable },
       queryParams: { namespace, group },
     }) => {
-      const result = await events.query({
+      const before = await events.query({
         indexName: "timestamp-query",
         partitionKey: "compositeKey",
         partitionValue: `${namespace}/${group}`,
         scanIndexForward: false,
-        schema: EventSchema,
+        schema: TravelEventItemSchema,
       });
+      const after = await eventsTable.query({
+        indexName: "timestamp-query",
+        key: { compositeKey: `${namespace}/${group}` },
+        sort: "desc",
+      });
+
+      const result = mapApiResult(before, (items) => items.map(toTravelEvent));
+
+      logger.info("Query result: ", {
+        before,
+        beforeMapped: result,
+        after,
+        afterMapped: after.map(toTravelEvent),
+      });
+
       return result;
     },
   },
