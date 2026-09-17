@@ -4,6 +4,7 @@ import { Aspects } from "aws-cdk-lib";
 import { EnforceS3Https } from "./aspects/enforce-s3-https";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
+import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
 import { FlexCoreStack } from "./stacks/core/stack";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
@@ -61,6 +62,7 @@ app.addExternalExports(region, [...new Set(externalExports)]);
 if (persistent) {
   new FlexCoreStack(app, `${env}-FlexCore`);
   new FlexSmokeTestStack(app, `${env}-FlexSmokeTest`);
+  new FlexCloudWatchDashboardsStack(app, `${env}-FlexCloudWatchDashboards`);
 } else if (env === Environment.development) {
   // Add these as external deps as we reuse the development env vpc
   app.addExternalExports(region, [
