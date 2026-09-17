@@ -1,9 +1,12 @@
 import { logger } from "@flex/logging";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import {
+  buildErrorResponse,
+  headersToErrorDetails,
   HeaderValidationError,
   QueryParametersParseError,
   RequestBodyParseError,
+  toErrorResponseBody,
 } from "@flex/utils";
 import createHttpError from "http-errors";
 
@@ -30,7 +33,11 @@ import {
   getRouteLogLevel,
   getRouteResources,
 } from "./resolve-config";
-import { toApiGatewayResponse, validateHandlerResponse } from "./response";
+import {
+  errorResult,
+  toApiGatewayResponse,
+  validateHandlerResponse,
+} from "./response";
 import { extractRouteKeySegments } from "./route-key";
 import { getRouteStore, routeStorage } from "./store";
 
@@ -153,11 +160,14 @@ export function createRouteHandler<const Config extends DomainConfig>(
           });
           emitDomainError(statusCode);
 
-          return {
+          return errorResult(
             statusCode,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, headers }),
-          };
+            buildErrorResponse(
+              "validation_error",
+              message,
+              headersToErrorDetails(headers),
+            ),
+          );
         }
 
         if (error instanceof RequestBodyParseError) {
@@ -170,11 +180,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
           });
           emitDomainError(statusCode);
 
-          return {
+          return errorResult(
             statusCode,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
-          };
+            buildErrorResponse("validation_error", message),
+          );
         }
 
         if (error instanceof QueryParametersParseError) {
@@ -187,11 +196,10 @@ export function createRouteHandler<const Config extends DomainConfig>(
           });
           emitDomainError(statusCode);
 
-          return {
+          return errorResult(
             statusCode,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, errors }),
-          };
+            buildErrorResponse("validation_error", message, errors),
+          );
         }
 
         if (error instanceof AuthorizationError) {
@@ -200,21 +208,23 @@ export function createRouteHandler<const Config extends DomainConfig>(
           logger.error("Authorization failed", { detail: message });
           emitDomainError(statusCode);
 
-          return {
+          return errorResult(
             statusCode,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
-          };
+            buildErrorResponse("auth_error", message),
+          );
         }
 
         if (createHttpError.isHttpError(error)) {
-          const { message, statusCode } = error;
+          const { expose, message, statusCode } = error;
           const level = statusCode >= 500 ? "error" : "warn";
 
           logger[level](message, { statusCode });
           emitDomainError(statusCode);
 
-          return { statusCode, body: "" };
+          return errorResult(
+            statusCode,
+            toErrorResponseBody(statusCode, expose ? { message } : undefined),
+          );
         }
 
         emitTelemetry(TelemetryEvent.error_thrown, {
