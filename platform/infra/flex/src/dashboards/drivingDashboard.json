@@ -3,7 +3,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 1,
+      "y": 7,
       "width": 9,
       "height": 5,
       "properties": {
@@ -45,7 +45,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73", "region": "eu-west-2" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -59,7 +59,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 11,
+      "y": 17,
       "width": 9,
       "height": 5,
       "properties": {
@@ -75,7 +75,7 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -88,7 +88,7 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -101,21 +101,21 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
         "stacked": false,
         "region": "eu-west-2",
         "stat": "Sum",
-        "period": 60,
+        "period": 300,
         "title": "GET /app/dvla/v1/customer/licence"
       }
     },
     {
       "type": "text",
       "x": 0,
-      "y": 0,
+      "y": 6,
       "width": 24,
       "height": 1,
       "properties": {
@@ -125,7 +125,7 @@
     {
       "type": "text",
       "x": 0,
-      "y": 21,
+      "y": 27,
       "width": 24,
       "height": 1,
       "properties": {
@@ -135,7 +135,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 6,
+      "y": 12,
       "width": 9,
       "height": 5,
       "properties": {
@@ -177,7 +177,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73", "region": "eu-west-2" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -191,7 +191,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 16,
+      "y": 22,
       "width": 9,
       "height": 5,
       "properties": {
@@ -233,7 +233,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73", "region": "eu-west-2" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -247,7 +247,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 16,
+      "y": 22,
       "width": 7,
       "height": 5,
       "properties": {
@@ -263,7 +263,7 @@
             "prod",
             "Method",
             "GET",
-            { "region": "eu-west-2", "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -276,7 +276,7 @@
             ".",
             ".",
             ".",
-            { "stat": "Average", "region": "eu-west-2", "color": "#98dcf5" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -302,7 +302,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73", "region": "eu-west-2" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "sparkline": true,
@@ -316,7 +316,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 16,
+      "y": 22,
       "width": 8,
       "height": 5,
       "properties": {
@@ -366,7 +366,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 1,
+      "y": 7,
       "width": 8,
       "height": 5,
       "properties": {
@@ -382,7 +382,7 @@
             "prod",
             "Method",
             "GET",
-            { "region": "eu-west-2", "color": "#98dcf5" }
+            { "color": "#98dcf5", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -416,7 +416,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 1,
+      "y": 7,
       "width": 7,
       "height": 5,
       "properties": {
@@ -432,7 +432,7 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -445,7 +445,7 @@
             ".",
             ".",
             ".",
-            { "stat": "Average", "color": "#98dcf5" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -458,22 +458,34 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
-          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
         ],
         "sparkline": true,
         "view": "singleValue",
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 2592000,
-        "title": "GET /app/dvla/v1/vehicle-enquiry/vehicles"
+        "title": "GET /app/dvla/v1/customer/vehicles"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 6,
+      "y": 12,
       "width": 8,
       "height": 5,
       "properties": {
@@ -489,7 +501,7 @@
             "prod",
             "Method",
             "GET",
-            { "region": "eu-west-2", "yAxis": "left", "color": "#98dcf5" }
+            { "color": "#98dcf5", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -523,7 +535,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 6,
+      "y": 12,
       "width": 7,
       "height": 5,
       "properties": {
@@ -539,7 +551,7 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -552,7 +564,7 @@
             ".",
             ".",
             ".",
-            { "color": "#98dcf5", "stat": "Average" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -565,22 +577,34 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
-          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
         ],
         "sparkline": true,
         "view": "singleValue",
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 2592000,
-        "title": "GET /app/dvla/v1/vehicle-enquiry/vehicle/{id}"
+        "title": "GET /app/dvla/v1/customer/vehicle/{id}"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 11,
+      "y": 17,
       "width": 8,
       "height": 5,
       "properties": {
@@ -596,7 +620,7 @@
             "prod",
             "Method",
             "GET",
-            { "region": "eu-west-2", "color": "#98dcf5" }
+            { "color": "#98dcf5", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -630,7 +654,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 11,
+      "y": 17,
       "width": 7,
       "height": 5,
       "properties": {
@@ -646,7 +670,7 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -659,7 +683,7 @@
             ".",
             ".",
             ".",
-            { "stat": "Average", "color": "#98dcf5" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -672,9 +696,21 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
-          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
         ],
         "sparkline": true,
         "view": "singleValue",
@@ -687,7 +723,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 22,
+      "y": 28,
       "width": 9,
       "height": 5,
       "properties": {
@@ -703,7 +739,7 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -716,7 +752,7 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -729,7 +765,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -743,7 +779,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 22,
+      "y": 28,
       "width": 8,
       "height": 5,
       "properties": {
@@ -759,7 +795,7 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#98dcf5" }
+            { "color": "#98dcf5", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -793,7 +829,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 22,
+      "y": 28,
       "width": 7,
       "height": 5,
       "properties": {
@@ -809,7 +845,7 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -822,7 +858,7 @@
             ".",
             ".",
             ".",
-            { "color": "#98dcf5" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -835,9 +871,21 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
-          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
         ],
         "sparkline": true,
         "view": "singleValue",
@@ -850,7 +898,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 27,
+      "y": 33,
       "width": 9,
       "height": 5,
       "properties": {
@@ -866,7 +914,7 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -879,7 +927,7 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -892,7 +940,7 @@
             ".",
             ".",
             ".",
-            { "color": "#fe6e73" }
+            { "color": "#ff9896", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -906,7 +954,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 27,
+      "y": 33,
       "width": 8,
       "height": 5,
       "properties": {
@@ -922,7 +970,7 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#98dcf5" }
+            { "color": "#98dcf5", "region": "eu-west-2" }
           ]
         ],
         "view": "timeSeries",
@@ -956,7 +1004,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 27,
+      "y": 33,
       "width": 7,
       "height": 5,
       "properties": {
@@ -972,7 +1020,7 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#b2df8d" }
+            { "color": "#b2df8d", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -985,7 +1033,7 @@
             ".",
             ".",
             ".",
-            { "stat": "Average", "color": "#98dcf5" }
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
           ],
           [
             ".",
@@ -998,9 +1046,21 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a" }
+            { "color": "#f7db8a", "region": "eu-west-2" }
           ],
-          [".", "5XXError", ".", ".", ".", ".", ".", ".", ".", "."]
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
         ],
         "sparkline": true,
         "view": "singleValue",
@@ -1008,6 +1068,192 @@
         "stat": "Sum",
         "period": 2592000,
         "title": "DELETE /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# DVLA Service GW",
+        "background": "solid"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "DVLA Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 1,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#98dcf5", "region": "eu-west-2" }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": true,
+        "region": "eu-west-2",
+        "stat": "Average",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
+        },
+        "title": "DVLA Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 1,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            { "color": "#b2df8d", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#f7db8a", "region": "eu-west-2" }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            { "color": "#ff9896", "region": "eu-west-2" }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "DVLA Service GW"
       }
     }
   ]
