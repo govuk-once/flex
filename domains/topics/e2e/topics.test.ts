@@ -44,18 +44,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           });
 
           expect(result.status).toBe(204);
-          expect(TopicsResponseSchema.safeParse(result.body).success).toBe(
-            true,
-          );
-
-          expect(result.body).toStrictEqual({
-            topics: {
-              selectedTopics: [
-                { id: "topic-1", title: "Topic One" },
-                { id: "topic-2", title: "Topic Two" },
-              ],
-            },
-          });
         });
 
         it("returns 204 with cleared selectedTopics", async ({
@@ -82,15 +70,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           });
 
           expect(result.status).toBe(204);
-          expect(TopicsResponseSchema.safeParse(result.body).success).toBe(
-            true,
-          );
-
-          expect(result.body).toStrictEqual({
-            topics: {
-              selectedTopics: [],
-            },
-          });
         });
 
         it("returns 401 when no auth is provided", async ({ cloudfront }) => {
@@ -119,6 +98,7 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             headers: authHeader,
             body: {},
           });
+
           expect(result.status).toBe(400);
         });
       },
