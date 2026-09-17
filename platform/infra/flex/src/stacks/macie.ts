@@ -1,12 +1,8 @@
-import {
-  ManagedPolicy,
-  PolicyStatement,
-  Role,
-  ServicePrincipal,
-} from "aws-cdk-lib/aws-iam";
+import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { CfnCustomDataIdentifier } from "aws-cdk-lib/aws-macie";
 import {
   AwsCustomResource,
+  AwsCustomResourcePolicy,
   PhysicalResourceId,
   PhysicalResourceIdReference,
 } from "aws-cdk-lib/custom-resources";
@@ -39,43 +35,6 @@ export class FlexMacieStack extends BaseStack {
 
     createLogGroupKey(this, "alias/flex-macie-log-group-key");
 
-    const macieCustomResourceRole = new Role(this, "MacieCustomResourceRole", {
-      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName(
-          "service-role/AWSLambdaBasicExecutionRole",
-        ),
-      ],
-    });
-
-    macieCustomResourceRole.addToPolicy(
-      new PolicyStatement({
-        actions: [
-          "macie2:EnableMacie",
-          "macie2:UpdateMacieSession",
-          "macie2:UpdateAutomatedDiscoveryConfiguration",
-          "macie2:PutClassificationExportConfiguration",
-          "macie2:CreateClassificationJob",
-        ],
-        resources: ["*"],
-      }),
-    );
-
-    macieCustomResourceRole.addToPolicy(
-      new PolicyStatement({
-        actions: ["macie2:UpdateClassificationJob"],
-        resources: [
-          `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
-        ],
-      }),
-    );
-
-    applyCheckovSkip(
-      macieCustomResourceRole.node.findChild("DefaultPolicy"),
-      "CKV_AWS_111",
-      "Macie API actions (EnableMacie, CreateClassificationJob, etc.) do not support resource-level permissions; must be granted on * per AWS IAM.",
-    );
-
     const sessionPhysicalId = PhysicalResourceId.of(
       `flex-macie-session-${this.account}-${this.region}`,
     );
@@ -100,7 +59,12 @@ export class FlexMacieStack extends BaseStack {
         },
         physicalResourceId: sessionPhysicalId,
       },
-      role: macieCustomResourceRole,
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["macie2:EnableMacie", "macie2:UpdateMacieSession"],
+          resources: ["*"],
+        }),
+      ]),
     });
 
     // Periodic, scoped scanning only. Turn off continuous automated
@@ -123,7 +87,12 @@ export class FlexMacieStack extends BaseStack {
       {
         onCreate: disableAutomatedDiscoveryCall,
         onUpdate: disableAutomatedDiscoveryCall,
-        role: macieCustomResourceRole,
+        policy: AwsCustomResourcePolicy.fromStatements([
+          new PolicyStatement({
+            actions: ["macie2:UpdateAutomatedDiscoveryConfiguration"],
+            resources: ["*"],
+          }),
+        ]),
       },
     );
     disableAutomatedDiscovery.node.addDependency(session);
@@ -166,7 +135,12 @@ export class FlexMacieStack extends BaseStack {
     const exportConfig = new AwsCustomResource(this, "ExportConfig", {
       onCreate: exportCall,
       onUpdate: exportCall,
-      role: macieCustomResourceRole,
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["macie2:PutClassificationExportConfiguration"],
+          resources: ["*"],
+        }),
+      ]),
     });
     exportConfig.node.addDependency(session);
     exportConfig.node.addDependency(results.bucket);
@@ -215,10 +189,27 @@ export class FlexMacieStack extends BaseStack {
         ignoreErrorCodesMatching:
           "ValidationException|ResourceNotFoundException|ConflictException",
       },
-      role: macieCustomResourceRole,
+      policy: AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ["macie2:CreateClassificationJob"],
+          resources: ["*"],
+        }),
+        new PolicyStatement({
+          actions: ["macie2:UpdateClassificationJob"],
+          resources: [
+            `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
+          ],
+        }),
+      ]),
     });
     scanJob.node.addDependency(session);
     scanJob.node.addDependency(disableAutomatedDiscovery);
     scanJob.node.addDependency(exportConfig);
+
+    applyCheckovSkip(
+      scanJob.node.findChild("CustomResourcePolicy"),
+      "CKV_AWS_111",
+      "macie2:CreateClassificationJob does not support resource-level permissions; it must be granted on * per AWS IAM.",
+    );
   }
 }

@@ -620,8 +620,6 @@ export class FlexGlobalStack extends BaseStack {
       },
     });
 
-    // Log groups are regional, so this us-east-1 stack needs its own key
-    // rather than the core stack's eu-west-2 one
     createLogGroupKey(this, `alias/${stage}-flex-global-log-group-key`);
 
     const { domainName, subdomainName } = this.#getDomainName();
