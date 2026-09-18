@@ -94,6 +94,7 @@ flex/
 | ---------------------------------------------------- | ----------------------------------------------------------------- |
 | [`@flex/example-domain`](/domains/example/README.md) | Example domain demonstrating route handler patterns using the SDK |
 | [`@flex/udp-domain`](/domains/udp/README.md)         | User Data Platform for user settings management                   |
+| [`@flex/topics-domain`](/domains/topics/README.md)   | Manage user topic selections via integration with UDP             |
 
 ---
 
