@@ -9,6 +9,7 @@ import {
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { MacieResultsBucket } from "../constructs/macie/MacieResultsBucket";
 import { macieCoverage } from "../macie-coverage";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
@@ -31,6 +32,8 @@ export class FlexMacieStack extends BaseStack {
         region: "us-east-1",
       },
     });
+
+    createLogGroupKey(this, "alias/flex-macie-log-group-key");
 
     const sessionPhysicalId = PhysicalResourceId.of(
       `flex-macie-session-${this.account}-${this.region}`,
