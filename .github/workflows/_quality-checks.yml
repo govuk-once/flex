@@ -268,6 +268,15 @@ jobs:
               --ignore-finding MISSING_ARN_FIELD,DATA_TYPE_MISMATCH # ignoring two best practices that are only resulting in false positives
 
             # Catch dangerous internal actions granted
+            # Unresolved Fn::ImportValue refs produce unparseable policies (false positives)
+            EXCLUSIONS="policy-analysis-CheckAccessNotGrantedValidationException"
+            # API Gateway Lambda integrations require lambda:InvokeFunction on the resource policy
+            EXCLUSIONS+=",JwksEndpointStubFunctionE64FCBB8.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",UnsServiceGatewayFunction8EEBB91B.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",UdpServiceGatewayFunctionAC8DA85C.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",TravelServiceGatewayFunction6F065CFF.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",DvlaServiceGatewaytempFunction61195EEE.policy-analysis-CheckAccessNotGranted"
+
             cfn-policy-validator check-access-not-granted \
               --template-path "$template" \
               --actions "kms:Decrypt" \
@@ -275,13 +284,7 @@ jobs:
               --actions "lambda:InvokeFunction" \
               --region eu-west-2 \
               --parameters $PARAMS \
-              --ignore-finding \
-                policy-analysis-CheckAccessNotGrantedValidationException,\
-                JwksEndpointStubFunctionE64FCBB8.policy-analysis-CheckAccessNotGranted,\
-                UnsServiceGatewayFunction8EEBB91B.policy-analysis-CheckAccessNotGranted,\
-                UdpServiceGatewayFunctionAC8DA85C.policy-analysis-CheckAccessNotGranted,\
-                TravelServiceGatewayFunction6F065CFF.policy-analysis-CheckAccessNotGranted,\
-                DvlaServiceGatewaytempFunction61195EEE.policy-analysis-CheckAccessNotGranted
+              --ignore-finding "$EXCLUSIONS"
 
             # Catch resource policies that expose resources to the public internet
             cfn-policy-validator check-no-public-access \
