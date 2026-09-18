@@ -550,5 +550,22 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     new CfnOutput(this, "PrivateGatewayUrl", { value: privateGatewayUrl });
+
+    this.#skipLogRetentionProviderPolicyCheck();
+  }
+
+  // CDK grants Put/DeleteRetentionPolicy on * unconditionally that I can't seem too override
+  // src: https://github.com/aws/aws-cdk/blob/v2.261.0/packages/aws-cdk-lib/aws-logs/lib/log-retention.ts#L165-L171
+  #skipLogRetentionProviderPolicyCheck() {
+    const provider = this.node.children.find((child) =>
+      child.node.id.startsWith("LogRetention"),
+    );
+    if (!provider) throw new Error("LogRetention provider not found");
+
+    applyCheckovSkip(
+      provider.node.findChild("ServiceRole").node.findChild("DefaultPolicy"),
+      "CKV_AWS_111",
+      "CDK LogRetention provider requires Put/DeleteRetentionPolicy on *",
+    );
   }
 }
