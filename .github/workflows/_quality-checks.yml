@@ -287,8 +287,14 @@ jobs:
               --ignore-finding "$EXCLUSIONS"
 
             # Catch resource policies that expose resources to the public internet
+            # Unresolved Fn::ImportValue in the PrivateGateway VPC endpoint condition
+            PUBLIC_EXCLUSIONS="policy-analysis-CheckNoPublicAccessValidationException"
+            # JWKS endpoint is intentionally public for JWT signature verification
+            PUBLIC_EXCLUSIONS+=",JwksEndpointStubFunctionE64FCBB8.policy-analysis-CheckNoPublicAccess"
+
             cfn-policy-validator check-no-public-access \
               --template-path "$template" \
               --region eu-west-2 \
-              --parameters $PARAMS
+              --parameters $PARAMS \
+              --ignore-finding "$PUBLIC_EXCLUSIONS"
           done
