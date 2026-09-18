@@ -133,6 +133,7 @@ flex/
 | [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications            |
 | [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
 | [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
+| [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline |
 
 ---
 
