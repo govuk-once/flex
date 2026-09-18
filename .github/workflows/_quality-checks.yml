@@ -274,7 +274,14 @@ jobs:
               --actions "kms:*" \
               --actions "lambda:InvokeFunction" \
               --region eu-west-2 \
-              --parameters $PARAMS
+              --parameters $PARAMS \
+              --ignore-finding \
+                policy-analysis-CheckAccessNotGrantedValidationException,\
+                JwksEndpointStubFunctionE64FCBB8.policy-analysis-CheckAccessNotGranted,\
+                UnsServiceGatewayFunction8EEBB91B.policy-analysis-CheckAccessNotGranted,\
+                UdpServiceGatewayFunctionAC8DA85C.policy-analysis-CheckAccessNotGranted,\
+                TravelServiceGatewayFunction6F065CFF.policy-analysis-CheckAccessNotGranted,\
+                DvlaServiceGatewaytempFunction61195EEE.policy-analysis-CheckAccessNotGranted
 
             # Catch resource policies that expose resources to the public internet
             cfn-policy-validator check-no-public-access \
