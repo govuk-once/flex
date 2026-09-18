@@ -4,7 +4,6 @@ import {
   TopicsRequest,
   TopicsRequestSchema,
   TopicsResponse,
-  TopicsResponseSchema,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
 
