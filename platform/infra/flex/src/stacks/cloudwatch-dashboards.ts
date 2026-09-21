@@ -43,7 +43,7 @@ export class FlexCloudWatchDashboardsStack extends BaseStack {
       dashboardBody: JSON.stringify(drivingDashboard),
     });
 
-    new CfnDashboard(this, "DrivingDashboard", {
+    new CfnDashboard(this, "UdpDashboard", {
       dashboardName: `${env}-flex-udp-dashboard`,
       dashboardBody: JSON.stringify(udpDashboard),
     });
