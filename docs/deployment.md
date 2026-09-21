@@ -134,6 +134,7 @@ Core infrastructure includes:
 6. Run security scan using checkov
 7. Run sonarqube static analysis
 8. Run dependency review gates
+9. Run IAM Access Analyzer
 
 ### Build and Deploy
 
