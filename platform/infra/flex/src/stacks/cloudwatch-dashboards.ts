@@ -32,10 +32,7 @@ export class FlexCloudWatchDashboardsStack extends BaseStack {
     );
 
     const udpDashboard: unknown = JSON.parse(
-      fs.readFileSync(
-        path.join(dashboardsDir, "udpDashboard.json"),
-        "utf-8",
-      ),
+      fs.readFileSync(path.join(dashboardsDir, "udpDashboard.json"), "utf-8"),
     );
 
     new CfnDashboard(this, "DrivingDashboard", {
