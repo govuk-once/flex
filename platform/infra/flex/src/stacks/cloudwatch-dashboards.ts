@@ -31,9 +31,21 @@ export class FlexCloudWatchDashboardsStack extends BaseStack {
       ),
     );
 
+    const udpDashboard: unknown = JSON.parse(
+      fs.readFileSync(
+        path.join(dashboardsDir, "udpDashboard.json"),
+        "utf-8",
+      ),
+    );
+
     new CfnDashboard(this, "DrivingDashboard", {
       dashboardName: `${env}-flex-driving-dashboard`,
       dashboardBody: JSON.stringify(drivingDashboard),
+    });
+
+    new CfnDashboard(this, "DrivingDashboard", {
+      dashboardName: `${env}-flex-udp-dashboard`,
+      dashboardBody: JSON.stringify(udpDashboard),
     });
   }
 }
