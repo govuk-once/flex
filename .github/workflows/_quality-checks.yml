@@ -279,6 +279,7 @@ jobs:
 
             cfn-policy-validator check-access-not-granted \
               --template-path "$template" \
+              --actions "iam:PassRole" \
               --actions "kms:Decrypt" \
               --actions "kms:*" \
               --actions "lambda:InvokeFunction" \
