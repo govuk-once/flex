@@ -86,19 +86,11 @@ export function createPermissionsBoundary(
         resources: ["*"],
       }),
       new PolicyStatement({
-        sid: "TestPassRoleWildcard",
+        sid: "TestLambdaInvokeWildcard",
         effect: Effect.ALLOW,
-        actions: ["iam:PassRole"],
+        actions: ["lambda:InvokeFunction"],
         resources: ["*"],
       }),
-      
-      // new PolicyStatement({
-      //   sid: "TestLambdaInvokeWildcard",
-      //   effect: Effect.ALLOW,
-      //   actions: ["lambda:InvokeFunction"],
-      //   resources: ["*"],
-      // }),
-
       // new PolicyStatement({
       //   sid: "TestKmsWildcard",
       //   effect: Effect.ALLOW,
