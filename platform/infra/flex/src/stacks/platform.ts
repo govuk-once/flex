@@ -160,9 +160,9 @@ export class FlexPlatformStack extends BaseStack {
         stageName: "prod",
         ...(env === Environment.production
           ? {
-              loggingLevel: MethodLoggingLevel.ERROR,
-              dataTraceEnabled: false,
-            }
+            loggingLevel: MethodLoggingLevel.ERROR,
+            dataTraceEnabled: false,
+          }
           : {}),
         accessLogDestination: new LogGroupLogDestination(
           new LogGroup(this, "ApiAccessLogs", {
@@ -549,19 +549,6 @@ export class FlexPlatformStack extends BaseStack {
       privateGateway,
     );
     PermissionsBoundary.of(this).apply(permissionsBoundary);
-
-    const vpc = this.importVpc(ENV_KEYS.Vpc);
-    const privateEgressSg = this.importSecurityGroup(ENV_KEYS.SgPrivateEgress);
-    const dvlaSecretArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
-
-    createDvlaSecretRotation(this, {
-      vpc,
-      privateEgressSg,
-      dvlaSecretArn,
-      criticalAction,
-      warningAction,
-      permissionsBoundary,
-    });
 
     this.exports({
       [STAGE_KEYS.ApigwPublicRestId]: restApi.restApiId,
