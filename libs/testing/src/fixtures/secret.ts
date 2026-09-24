@@ -1,12 +1,9 @@
-import type {
-  GetSecretValueCommandInput,
-  GetSecretValueCommandOutput,
-} from "@aws-sdk/client-secrets-manager";
+import type { GetSecretValueCommandInput } from "@aws-sdk/client-secrets-manager";
 import {
   GetSecretValueCommand,
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
-import type { AwsStub } from "aws-sdk-client-mock";
+import type { AwsClientStub } from "aws-sdk-client-mock";
 import { mockClient } from "aws-sdk-client-mock";
 
 import { useClientMock } from "../utils/awsMock";
@@ -14,14 +11,9 @@ import { useClientMock } from "../utils/awsMock";
 const SECRET_ACCOUNT_ID = "123456789012";
 const DEFAULT_REGION = "eu-west-2";
 
-type SecretsMock = AwsStub<
-  GetSecretValueCommandInput,
-  GetSecretValueCommandOutput,
-  unknown
->;
+type SecretsMock = AwsClientStub<SecretsManagerClient>;
 
-const createSecretsMock = (): SecretsMock =>
-  mockClient(SecretsManagerClient) as unknown as SecretsMock;
+const createSecretsMock = (): SecretsMock => mockClient(SecretsManagerClient);
 
 const secretsMock = () => useClientMock(createSecretsMock);
 
@@ -67,12 +59,9 @@ export function createSecretFixture(): SecretFixture {
       return arn;
     },
     arn: buildSecretArn,
-    calls: (): GetSecretValueCommandInput[] =>
+    calls: () =>
       secretsMock()
         .commandCalls(GetSecretValueCommand)
-        .map(
-          ({ args }: { args: [{ input: GetSecretValueCommandInput }] }) =>
-            args[0].input,
-        ),
+        .map(({ args }) => args[0].input),
   };
 }

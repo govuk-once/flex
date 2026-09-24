@@ -1,6 +1,5 @@
 import type {
   QueryCommandInput,
-  QueryCommandOutput,
   ScanCommandInput,
   ScanCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
@@ -9,7 +8,7 @@ import {
   QueryCommand,
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { AwsStub } from "aws-sdk-client-mock";
+import type { AwsClientStub } from "aws-sdk-client-mock";
 import { mockClient } from "aws-sdk-client-mock";
 
 import { useClientMock } from "../utils/awsMock";
@@ -22,14 +21,9 @@ export type DynamoScanPage = DynamoItem[];
 /** One page of a Query, as the index would return it. */
 export type DynamoQueryPage = DynamoItem[];
 
-type DynamoMock = AwsStub<
-  ScanCommandInput | QueryCommandInput,
-  ScanCommandOutput | QueryCommandOutput,
-  unknown
->;
+type DynamoMock = AwsClientStub<DynamoDBDocumentClient>;
 
-const createDynamoMock = (): DynamoMock =>
-  mockClient(DynamoDBDocumentClient) as unknown as DynamoMock;
+const createDynamoMock = (): DynamoMock => mockClient(DynamoDBDocumentClient);
 
 const dynamoMock = () => useClientMock(createDynamoMock);
 
@@ -96,19 +90,15 @@ function buildPagedStub(
 }
 
 export function createDynamoFixture(): DynamoFixture {
-  const scanCalls = (): ScanCommandInput[] =>
+  const scanCalls = () =>
     dynamoMock()
       .commandCalls(ScanCommand)
-      .map(
-        ({ args }: { args: [{ input: ScanCommandInput }] }) => args[0].input,
-      );
+      .map(({ args }) => args[0].input);
 
-  const queryCalls = (): QueryCommandInput[] =>
+  const queryCalls = () =>
     dynamoMock()
       .commandCalls(QueryCommand)
-      .map(
-        ({ args }: { args: [{ input: QueryCommandInput }] }) => args[0].input,
-      );
+      .map(({ args }) => args[0].input);
 
   const scan: DynamoScanFixture = {
     resolves: (...pages) => {
