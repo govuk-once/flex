@@ -38,7 +38,6 @@ import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
-import { createDvlaSecretRotation } from "./core/dvla-secret-rotation";
 
 const { env, stage } = getEnvConfig();
 
