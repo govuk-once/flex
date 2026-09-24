@@ -15,6 +15,7 @@ import {
   describeSecret,
   getSecretValue,
   putSecretValue,
+  removeSecretVersionStage,
   updateSecretVersionStage,
 } from "./secrets-manager-client";
 
@@ -289,13 +290,47 @@ describe("handler", () => {
   });
 
   describe("finishSecret", () => {
-    it("moves AWSPENDING to AWSCURRENT", async () => {
+    it("moves AWSPENDING to AWSCURRENT and removes AWSPENDING label", async () => {
       await handler(createEvent("finishSecret"));
 
       expect(updateSecretVersionStage).toHaveBeenCalledWith(
         secretId,
         token,
         "old-version-id",
+      );
+
+      expect(removeSecretVersionStage).toHaveBeenCalledWith(
+        secretId,
+        "AWSPENDING",
+        token,
+      );
+    });
+
+    it("removes AWSPENDING_CHECKPOINT label when present", async () => {
+      vi.mocked(describeSecret).mockResolvedValue({
+        versionIdsToStages: {
+          [token]: ["AWSPENDING"],
+          "old-version-id": ["AWSCURRENT"],
+          "checkpoint-version-id": ["AWSPENDING_CHECKPOINT"],
+        },
+      });
+
+      await handler(createEvent("finishSecret"));
+
+      expect(removeSecretVersionStage).toHaveBeenCalledWith(
+        secretId,
+        "AWSPENDING_CHECKPOINT",
+        "checkpoint-version-id",
+      );
+    });
+
+    it("skips AWSPENDING_CHECKPOINT removal when no checkpoint exists", async () => {
+      await handler(createEvent("finishSecret"));
+
+      expect(removeSecretVersionStage).not.toHaveBeenCalledWith(
+        secretId,
+        "AWSPENDING_CHECKPOINT",
+        expect.any(String),
       );
     });
 

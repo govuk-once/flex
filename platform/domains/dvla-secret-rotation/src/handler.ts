@@ -10,6 +10,7 @@ import {
   describeSecret,
   getSecretValue,
   putSecretValue,
+  removeSecretVersionStage,
   updateSecretVersionStage,
 } from "./secrets-manager-client";
 
@@ -198,6 +199,20 @@ async function handleFinishSecret(
   }
 
   await updateSecretVersionStage(secretId, token, currentVersionId);
+  await removeSecretVersionStage(secretId, "AWSPENDING", token);
+
+  const checkpointVersionId = Object.entries(metadata.versionIdsToStages).find(
+    ([, stages]) => stages.includes("AWSPENDING_CHECKPOINT"),
+  )?.[0];
+
+  if (checkpointVersionId) {
+    await removeSecretVersionStage(
+      secretId,
+      "AWSPENDING_CHECKPOINT",
+      checkpointVersionId,
+    );
+  }
+
   logger.info(
     "finishSecret: rotation complete, AWSPENDING promoted to AWSCURRENT",
   );

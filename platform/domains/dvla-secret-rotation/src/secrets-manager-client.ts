@@ -67,3 +67,17 @@ export async function updateSecretVersionStage(
 
   await client.send(command);
 }
+
+export async function removeSecretVersionStage(
+  secretId: string,
+  versionStage: string,
+  removeFromVersionId: string,
+): Promise<void> {
+  const command = new UpdateSecretVersionStageCommand({
+    SecretId: secretId,
+    VersionStage: versionStage,
+    RemoveFromVersionId: removeFromVersionId,
+  });
+
+  await client.send(command);
+}
