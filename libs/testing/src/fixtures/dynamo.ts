@@ -99,12 +99,16 @@ export function createDynamoFixture(): DynamoFixture {
   const scanCalls = (): ScanCommandInput[] =>
     dynamoMock()
       .commandCalls(ScanCommand)
-      .map(({ args }) => args[0].input as ScanCommandInput);
+      .map(
+        ({ args }: { args: [{ input: ScanCommandInput }] }) => args[0].input,
+      );
 
   const queryCalls = (): QueryCommandInput[] =>
     dynamoMock()
       .commandCalls(QueryCommand)
-      .map(({ args }) => args[0].input as QueryCommandInput);
+      .map(
+        ({ args }: { args: [{ input: QueryCommandInput }] }) => args[0].input,
+      );
 
   const scan: DynamoScanFixture = {
     resolves: (...pages) => {
