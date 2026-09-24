@@ -20,6 +20,8 @@ overrides:
   "minimatch": "^10.0.1"
   "engine.io-client": "6.6.6"
   "axios@>=1.15.2 <1.18.0": ">=1.18.0"
+  "@smithy/types": "4.17.2"
+  "@smithy/core": "3.33.2"
 
 allowBuilds:
   "@firebase/util": false
