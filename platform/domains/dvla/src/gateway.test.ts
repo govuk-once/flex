@@ -504,4 +504,109 @@ describe("DVLA Service Gateway", () => {
       );
     });
   });
+
+  describe("Secret cache retry on auth failure", () => {
+    it("clears cache and retries when DVLA returns 401", async ({
+      http,
+      platform,
+    }) => {
+      stubConsumerConfig(http);
+      stubConsumerConfig(http);
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/thirdparty-access/v1/authenticate", {
+          body: {
+            userName: mockConsumerConfig.apiUsername,
+            password: mockConsumerConfig.apiPassword, // pragma: allowlist secret
+          },
+        })
+        .reply(401)
+        .reply(200, mockToken);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockToken }),
+      );
+    });
+
+    it("clears cache and retries when DVLA returns 403", async ({
+      http,
+      platform,
+    }) => {
+      stubConsumerConfig(http);
+      stubConsumerConfig(http);
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/thirdparty-access/v1/authenticate", {
+          body: {
+            userName: mockConsumerConfig.apiUsername,
+            password: mockConsumerConfig.apiPassword, // pragma: allowlist secret
+          },
+        })
+        .reply(403)
+        .reply(200, mockToken);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockToken }),
+      );
+    });
+
+    it("returns the error when retry also fails", async ({
+      http,
+      platform,
+    }) => {
+      stubConsumerConfig(http);
+      stubConsumerConfig(http);
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/thirdparty-access/v1/authenticate", {
+          body: {
+            userName: mockConsumerConfig.apiUsername,
+            password: mockConsumerConfig.apiPassword, // pragma: allowlist secret
+          },
+        })
+        .reply(401)
+        .reply(401);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 401 });
+    });
+
+    it("does not retry on non-auth errors", async ({ http, platform }) => {
+      stubConsumerConfig(http);
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/thirdparty-access/v1/authenticate", {
+          body: {
+            userName: mockConsumerConfig.apiUsername,
+            password: mockConsumerConfig.apiPassword, // pragma: allowlist secret
+          },
+        })
+        .reply(404);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/authenticate"),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 404 });
+    });
+  });
 });

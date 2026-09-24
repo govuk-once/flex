@@ -101,7 +101,7 @@ export function createDvlaSecretRotation(
 
   dvlaSecret.addRotationSchedule("DvlaRotationSchedule", {
     rotationLambda: rotationFunction.function,
-    automaticallyAfter: Duration.days(30),
+    automaticallyAfter: Duration.days(60),
   });
 
   rotationFunction.function.addPermission("SecretsManagerInvoke", {
