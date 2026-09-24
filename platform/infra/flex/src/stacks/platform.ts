@@ -159,9 +159,9 @@ export class FlexPlatformStack extends BaseStack {
         stageName: "prod",
         ...(env === Environment.production
           ? {
-            loggingLevel: MethodLoggingLevel.ERROR,
-            dataTraceEnabled: false,
-          }
+              loggingLevel: MethodLoggingLevel.ERROR,
+              dataTraceEnabled: false,
+            }
           : {}),
         accessLogDestination: new LogGroupLogDestination(
           new LogGroup(this, "ApiAccessLogs", {
