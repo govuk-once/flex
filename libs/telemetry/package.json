@@ -14,11 +14,11 @@
   },
   "dependencies": {
     "@flex/logging": "workspace:*",
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "eslint": "10.5.0",
+    "eslint": "10.10.0",
     "typescript": "6.0.3",
     "vitest": "4.1.9"
   }
