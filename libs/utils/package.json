@@ -17,20 +17,20 @@
   "dependencies": {
     "@flex/logging": "workspace:*",
     "http-errors": "2.0.1",
-    "zod": "4.4.3",
-    "zod-openapi": "6.0.0"
+    "zod": "4.6.5",
+    "zod-openapi": "6.0.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "3.1091.0",
+    "@aws-sdk/client-cloudformation": "3.1135.0",
     "@flex/config": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
+    "@types/aws-lambda": "8.10.163",
     "@types/http-errors": "2.0.5",
-    "@types/node": "26.1.1",
-    "eslint": "10.7.0",
+    "@types/node": "26.6.1",
+    "eslint": "10.10.0",
     "http-server": "14.1.1",
-    "tsx": "4.23.1",
+    "tsx": "4.23.13",
     "typescript": "6.0.3",
-    "undici-types": "8.8.0",
+    "undici-types": "8.10.2",
     "vitest": "4.1.10"
   }
 }

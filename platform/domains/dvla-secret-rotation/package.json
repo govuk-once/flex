@@ -9,17 +9,17 @@
     "test": "NODE_OPTIONS=--import=nock vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "3.1091.0",
+    "@aws-sdk/client-secrets-manager": "3.1135.0",
     "@flex/logging": "workspace:*",
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
-    "@types/node": "26.1.1",
-    "eslint": "10.7.0",
-    "nock": "14.0.16",
+    "@types/aws-lambda": "8.10.163",
+    "@types/node": "26.6.1",
+    "eslint": "10.10.0",
+    "nock": "14.0.17",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
