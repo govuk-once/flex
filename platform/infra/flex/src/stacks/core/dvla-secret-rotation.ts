@@ -77,9 +77,27 @@ export function createDvlaSecretRotation(
 
   permissionsBoundary.addStatements(
     new PolicyStatement({
-      sid: "AllowDvlaSecretRotationWrite",
+      sid: "AllowLambdaBasicExecution",
       effect: Effect.ALLOW,
       actions: [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+      ],
+      resources: ["*"],
+    }),
+    new PolicyStatement({
+      sid: "AllowXRayTracing",
+      effect: Effect.ALLOW,
+      actions: ["xray:PutTraceSegments", "xray:PutTelemetryRecords"],
+      resources: ["*"],
+    }),
+    new PolicyStatement({
+      sid: "AllowDvlaSecretRotation",
+      effect: Effect.ALLOW,
+      actions: [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret",
         "secretsmanager:PutSecretValue",
         "secretsmanager:UpdateSecretVersionStage",
       ],
