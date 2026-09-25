@@ -91,6 +91,16 @@ export function createDvlaSecretRotation(
       actions: ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
       resources: [secretEncryptionKeyArn],
     }),
+    new PolicyStatement({
+      sid: "AllowVpcNetworkInterface",
+      effect: Effect.ALLOW,
+      actions: [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+      ],
+      resources: ["*"],
+    }),
   );
 
   const dvlaSecret = Secret.fromSecretCompleteArn(
