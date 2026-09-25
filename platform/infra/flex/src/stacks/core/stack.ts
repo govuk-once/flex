@@ -22,7 +22,7 @@ export class FlexCoreStack extends BaseStack {
       tags: {
         Product: "GOV.UK",
         System: "FLEX",
-        Owner: "",
+        Owner: "flex-platform",
         ResourceOwner: "flex-platform",
         Source: "https://github.com/govuk-once/flex",
       },
