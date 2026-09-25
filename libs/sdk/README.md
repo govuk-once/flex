@@ -124,6 +124,29 @@ Handlers can also throw from `http-errors` for standard error responses. See [Ha
 
 When a route defines a `response` schema, the SDK validates the handler's response `data` against it. Validation errors are logged, emit a `response_validation_failed` telemetry event and return a 500 response. Set the log level to `DEBUG` or `TRACE` to include validation errors in the response body.
 
+### Error Response Contract
+
+Every error the platform emits — from the CloudFront Function, the Lambda authorizer, and the SDK/service-gateway request pipeline — uses one JSON shape (`ErrorResponse` in `@flex/utils`):
+
+```jsonc
+{
+  "message": "string", // always present; a human-readable summary
+  "type": "auth_error | validation_error | client_error | server_error",
+  "errors": [
+    // optional; only for field-level validation failures
+    { "field": "query.page", "message": "Expected number" },
+  ],
+}
+```
+
+- **Auth failures** (401/403), from either the CloudFront Function or the authorizer, always return `{ "message": "Unauthorized", "type": "auth_error" }` — the same body regardless of the reason (missing token, invalid signature, expired token), so the response cannot be used to fingerprint why authentication failed.
+- **Request validation** (400) returns `type: "validation_error"`, with an `errors` array for missing headers and invalid query parameters.
+- **Other client errors** (e.g. 404) return `type: "client_error"`; **server errors** (5xx) return `type: "server_error"` with a generic message (internal 5xx detail is logged, not exposed).
+
+`ErrorResponse` is registered as a reusable OpenAPI component and referenced by the documented error responses.
+
+> **Migration note (deprecated):** where an error previously nested its payload under a top-level `error` key (e.g. DVLA `error.code`, UNS `error.detail`), that `error` field is still emitted alongside the new flat fields during the transition. It is **deprecated** and will be removed in a follow-up. Read the flat fields (`body.code`, `body.detail`, `body.message`), not `body.error.*`.
+
 ### Naming Schemas for the OpenAPI Generator
 
 `pnpm openapi:generate` walks every domain's `domain.config.ts` and emits one OpenAPI 3.1 document per domain to `docs/specs/`. By default, every Zod schema is inlined wherever it's used — including duplicated copies of the same schema across multiple operations. To produce a clean spec with reusable components, tag your shared schemas with Zod's native `.meta({ id })`:
