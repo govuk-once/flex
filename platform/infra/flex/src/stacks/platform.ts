@@ -22,7 +22,7 @@ import {
 } from "aws-cdk-lib/aws-iam";
 import { FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { LogGroup, LogRetention, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import type { Construct } from "constructs";
@@ -40,6 +40,8 @@ import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
 const { env, stage } = getEnvConfig();
+
+const STAGE_NAME = "prod";
 
 interface RouteBinding {
   readonly method: string;
@@ -156,13 +158,9 @@ export class FlexPlatformStack extends BaseStack {
       deployOptions: {
         tracingEnabled: true,
         metricsEnabled: true,
-        stageName: "prod",
-        ...(env === Environment.production
-          ? {
-              loggingLevel: MethodLoggingLevel.ERROR,
-              dataTraceEnabled: false,
-            }
-          : {}),
+        stageName: STAGE_NAME,
+        loggingLevel: MethodLoggingLevel.ERROR,
+        dataTraceEnabled: false,
         accessLogDestination: new LogGroupLogDestination(
           new LogGroup(this, "ApiAccessLogs", {
             retention: RetentionDays.ONE_YEAR,
@@ -190,13 +188,10 @@ export class FlexPlatformStack extends BaseStack {
       "Disabled for now and will renable when caching strategy is defined",
     );
 
-    if (env === Environment.production) {
-      const executionLogGroup = new LogGroup(this, "ApiExecutionLogs", {
-        logGroupName: `API-Gateway-Execution-Logs_${restApi.restApiId}/${restApi.deploymentStage.stageName}`,
-        retention: RetentionDays.ONE_YEAR,
-      });
-      restApi.deploymentStage.node.addDependency(executionLogGroup);
-    }
+    new LogRetention(this, "ApiExecutionLogsRetention", {
+      logGroupName: `API-Gateway-Execution-Logs_${restApi.restApiId}/${STAGE_NAME}`,
+      retention: RetentionDays.ONE_YEAR,
+    });
 
     const cfnApi = restApi.node.defaultChild as CfnRestApi;
     cfnApi.endpointAccessMode = "BASIC";
@@ -297,6 +292,7 @@ export class FlexPlatformStack extends BaseStack {
         ],
       }),
       deployOptions: {
+        stageName: STAGE_NAME,
         accessLogDestination: new LogGroupLogDestination(
           new LogGroup(this, "AccessLogGroup", {
             retention: RetentionDays.ONE_YEAR,
@@ -338,17 +334,10 @@ export class FlexPlatformStack extends BaseStack {
       "Disabled for now and will renable when caching strategy is defined",
     );
 
-    if (env === Environment.production) {
-      const executionLogGroup = new LogGroup(
-        this,
-        "PrivateGatewayExecutionLogs",
-        {
-          logGroupName: `API-Gateway-Execution-Logs_${privateGateway.restApiId}/${privateGateway.deploymentStage.stageName}`,
-          retention: RetentionDays.ONE_YEAR,
-        },
-      );
-      privateGateway.deploymentStage.node.addDependency(executionLogGroup);
-    }
+    new LogRetention(this, "PrivateGatewayExecutionLogsRetention", {
+      logGroupName: `API-Gateway-Execution-Logs_${privateGateway.restApiId}/${STAGE_NAME}`,
+      retention: RetentionDays.ONE_YEAR,
+    });
 
     const domainsRoot = privateGateway.root.addResource("domains");
     const gatewaysRoot = privateGateway.root.addResource("gateways");
@@ -561,5 +550,22 @@ export class FlexPlatformStack extends BaseStack {
     });
 
     new CfnOutput(this, "PrivateGatewayUrl", { value: privateGatewayUrl });
+
+    this.#skipLogRetentionProviderPolicyCheck();
+  }
+
+  // CDK grants Put/DeleteRetentionPolicy on * unconditionally that I can't seem too override
+  // src: https://github.com/aws/aws-cdk/blob/v2.261.0/packages/aws-cdk-lib/aws-logs/lib/log-retention.ts#L165-L171
+  #skipLogRetentionProviderPolicyCheck() {
+    const provider = this.node.children.find((child) =>
+      child.node.id.startsWith("LogRetention"),
+    );
+    if (!provider) throw new Error("LogRetention provider not found");
+
+    applyCheckovSkip(
+      provider.node.findChild("ServiceRole").node.findChild("DefaultPolicy"),
+      "CKV_AWS_111",
+      "CDK LogRetention provider requires Put/DeleteRetentionPolicy on *",
+    );
   }
 }
