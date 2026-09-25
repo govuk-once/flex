@@ -7,6 +7,7 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../../base";
 import { createLogGroupKey } from "../../constructs/kms/log-group-key";
 import { ENV_KEYS } from "../../ssm-keys";
+import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
 import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createDvlaSecretRotation } from "./dvla-secret-rotation";
 import { addVpcEndpoints } from "./endpoints";
@@ -57,6 +58,11 @@ export class FlexCoreStack extends BaseStack {
     const permissionsBoundary = new ManagedPolicy(
       this,
       "DvlaRotationPermissionsBoundary",
+    );
+    applyCheckovSkip(
+      permissionsBoundary,
+      "CKV_AWS_111",
+      "EC2 ENI actions (CreateNetworkInterface, DescribeNetworkInterfaces, DeleteNetworkInterface) do not support resource-level permissions in IAM",
     );
     PermissionsBoundary.of(this).apply(permissionsBoundary);
 
