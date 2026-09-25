@@ -51,4 +51,6 @@ export const STAGE_KEYS = {
   ApigwPrivateDomainRoot: `/${stage}/flex/apigw/private/domains-root`,
   //
   WafCfSecretHeaderArn: `/${stage}/flex-secret/origin-verify-secret`,
+  //
+  CloudfrontAccessLogBucketName: `/${stage}/flex/s3/cloudfront-access-log-bucket-name`,
 };
