@@ -62,7 +62,7 @@ export class FlexCoreStack extends BaseStack {
     applyCheckovSkip(
       permissionsBoundary,
       "CKV_AWS_111",
-      "EC2 ENI actions (CreateNetworkInterface, DescribeNetworkInterfaces, DeleteNetworkInterface) do not support resource-level permissions in IAM",
+      "Permissions boundary: write actions on * are required for Lambda execution baseline (logs, X-Ray, EC2 ENI); identity-based policies constrain the actual scope",
     );
     PermissionsBoundary.of(this).apply(permissionsBoundary);
 
