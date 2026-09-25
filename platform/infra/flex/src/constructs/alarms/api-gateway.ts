@@ -3,17 +3,20 @@ import { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import {
   Alarm,
   ComparisonOperator,
+  IMetric,
   MathExpression,
   Metric,
   Stats,
   TreatMissingData,
 } from "aws-cdk-lib/aws-cloudwatch";
+import { FilterPattern, ILogGroup, MetricFilter } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 import { BaseAlarmsProps } from "./types";
 
 export interface ApiGatewayAlarmsProps extends BaseAlarmsProps {
   readonly api: IRestApi;
+  readonly authFailureAccessLogGroup?: ILogGroup;
 }
 
 export class ApiGatewayAlarms extends Construct {
@@ -25,7 +28,13 @@ export class ApiGatewayAlarms extends Construct {
   constructor(scope: Construct, id: string, props: ApiGatewayAlarmsProps) {
     super(scope, id);
 
-    const { api, criticalAction, warningAction, alarmNamePrefix } = props;
+    const {
+      api,
+      authFailureAccessLogGroup,
+      criticalAction,
+      warningAction,
+      alarmNamePrefix,
+    } = props;
 
     const dimensions = {
       ApiName: api.restApiName,
@@ -59,19 +68,31 @@ export class ApiGatewayAlarms extends Construct {
     });
     this.fiveXxAlarm.addAlarmAction(criticalAction);
 
+    const fourXxErrorRate: IMetric = authFailureAccessLogGroup
+      ? this.#authFailureRate(
+          authFailureAccessLogGroup,
+          dimensions,
+          errorRatePeriod,
+          alarmNamePrefix,
+        )
+      : new Metric({
+          namespace: "AWS/ApiGateway",
+          metricName: "4XXError",
+          dimensionsMap: dimensions,
+          statistic: Stats.AVERAGE,
+          period: errorRatePeriod,
+        });
+    const fourXxErrorLabel = authFailureAccessLogGroup
+      ? "401/403 error rate"
+      : "4XX error rate";
+
     this.fourXxAlarm = new Alarm(this, "4xxErrorRate", {
       alarmName: `${alarmNamePrefix}-4xx-error-rate`,
       alarmDescription:
-        `Warning: 4XX error rate above ${fourXxErrorRatePercent.toString()}% ` +
+        `Warning: ${fourXxErrorLabel} above ${fourXxErrorRatePercent.toString()}% ` +
         `over ${errorRateEvaluationPeriods.toString()} consecutive ` +
         `${errorRatePeriod.toMinutes().toString()} minute periods`,
-      metric: new Metric({
-        namespace: "AWS/ApiGateway",
-        metricName: "4XXError",
-        dimensionsMap: dimensions,
-        statistic: Stats.AVERAGE,
-        period: errorRatePeriod,
-      }),
+      metric: fourXxErrorRate,
       threshold: fourXxErrorRatePercent / 100,
       evaluationPeriods: errorRateEvaluationPeriods,
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
@@ -163,5 +184,40 @@ export class ApiGatewayAlarms extends Construct {
       },
     );
     this.integrationP95LatencyAlarm.addAlarmAction(warningAction);
+  }
+
+  #authFailureRate(
+    accessLogGroup: ILogGroup,
+    dimensions: Record<string, string>,
+    period: Duration,
+    alarmNamePrefix: string,
+  ): IMetric {
+    const authFailures = new MetricFilter(this, "AuthFailures", {
+      logGroup: accessLogGroup,
+      metricNamespace: "Flex/ApiGateway",
+      metricName: `${alarmNamePrefix}-auth-failures`,
+      filterPattern: FilterPattern.any(
+        FilterPattern.stringValue("$.status", "=", "401"),
+        FilterPattern.stringValue("$.status", "=", "403"),
+      ),
+      metricValue: "1",
+      defaultValue: 0,
+    });
+
+    return new MathExpression({
+      expression: "IF(requests > 0, authFailures / requests, 0)",
+      usingMetrics: {
+        authFailures: authFailures.metric({ statistic: Stats.SUM, period }),
+        requests: new Metric({
+          namespace: "AWS/ApiGateway",
+          metricName: "Count",
+          dimensionsMap: dimensions,
+          statistic: Stats.SUM,
+          period,
+        }),
+      },
+      period,
+      label: "401/403 error rate",
+    });
   }
 }
