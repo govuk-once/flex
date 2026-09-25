@@ -56,15 +56,20 @@ export class FlexMacieStack extends BaseStack {
           "macie2:UpdateMacieSession",
           "macie2:UpdateAutomatedDiscoveryConfiguration",
           "macie2:PutClassificationExportConfiguration",
-          "macie2:CreateClassificationJob",
         ],
         resources: ["*"],
+        conditions: {
+          StringEquals: { "aws:RequestedRegion": this.region },
+        },
       }),
     );
 
     macieCustomResourceRole.addToPolicy(
       new PolicyStatement({
-        actions: ["macie2:UpdateClassificationJob"],
+        actions: [
+          "macie2:CreateClassificationJob",
+          "macie2:UpdateClassificationJob",
+        ],
         resources: [
           `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
         ],
@@ -86,7 +91,7 @@ export class FlexMacieStack extends BaseStack {
     applyCheckovSkip(
       macieCustomResourceRole.node.findChild("DefaultPolicy"),
       "CKV_AWS_111",
-      "Macie session, discovery, export and CreateClassificationJob actions do not support resource-level permissions; they must be granted on * per AWS IAM.",
+      "macie2 EnableMacie, UpdateMacieSession, UpdateAutomatedDiscoveryConfiguration and PutClassificationExportConfiguration have no resource type in the AWS authorization reference and must be granted on *; the statement is confined to this region by aws:RequestedRegion.",
     );
 
     const sessionPhysicalId = PhysicalResourceId.of(
