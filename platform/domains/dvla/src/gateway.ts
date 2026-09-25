@@ -1,6 +1,7 @@
+import { clearCaches } from "@aws-lambda-powertools/parameters";
 import { logger } from "@flex/logging";
 import type { ApiResult } from "@flex/sdk";
-import { createRestClient } from "@flex/service-gateway";
+import { createRestClient, type GatewayLambda } from "@flex/service-gateway";
 import { v4 as uuidV4 } from "uuid";
 
 import { createHandler } from "../gateway.config";
@@ -9,7 +10,7 @@ import type { JwkSet } from "./schemas/remote/wellKnownJwk";
 
 let jwksCache: ApiResult<JwkSet> | undefined;
 
-export const handler = createHandler({
+const baseHandler = createHandler({
   clients: ({ consumerConfig }) => {
     // TODO: Conditionally include the correlation ID header alongside the base headers in the REST client instead?
     const correlationId = uuidV4();
@@ -156,3 +157,20 @@ export const handler = createHandler({
     },
   },
 });
+
+export const handler: GatewayLambda = async (event, context) => {
+  const result = await baseHandler(event, context);
+
+  if (
+    typeof result === "object" &&
+    (result.statusCode === 401 || result.statusCode === 403)
+  ) {
+    logger.info("Auth failure from DVLA, clearing secret cache and retrying", {
+      statusCode: result.statusCode,
+    });
+    clearCaches();
+    return baseHandler(event, context);
+  }
+
+  return result;
+};
