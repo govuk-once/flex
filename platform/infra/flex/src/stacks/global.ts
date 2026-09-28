@@ -73,8 +73,6 @@ interface DomainNames {
 const { env, persistent, stage } = getEnvConfig();
 
 export class FlexGlobalStack extends BaseStack {
-  public cloudfrontAccessLogBucket!: Bucket;
-
   #buildRelay(
     severity: "Critical" | "Warning",
     targetTopicArn: string,
@@ -393,7 +391,10 @@ export class FlexGlobalStack extends BaseStack {
       "CloudfrontAccessLogBucket",
       90,
     );
-    this.cloudfrontAccessLogBucket = accessLogBucket.bucket;
+    this.export(
+      STAGE_KEYS.CloudfrontAccessLogBucketName,
+      accessLogBucket.bucket.bucketName,
+    );
 
     const originVerifySecret = Secret.fromSecretCompleteArn(
       this,
