@@ -31,7 +31,7 @@ export const { config, route, routeContext } = domain({
       "/topics": {
         PATCH: {
           public: {
-            name: "patch-topics",
+            name: "upsert-topics",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostTopics"],
             body: TopicsRequestSchema,
