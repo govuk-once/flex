@@ -2,9 +2,9 @@ import { it } from "@flex/testing";
 import { clearSelectionsRequest, topicsRequest, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import { handler } from "./post";
+import { handler } from "./patch";
 
-describe("POST /v1/topics", () => {
+describe("PATCH /v1/topics", () => {
   const endpoint = "/topics";
 
   it("returns 204 when topics are updated", async ({ http, sdk }) => {
@@ -17,7 +17,7 @@ describe("POST /v1/topics", () => {
       .reply(200, topicsRequest);
 
     const result = await handler(
-      sdk.event.post(endpoint, { auth: userId, body: topicsRequest }),
+      sdk.event.patch(endpoint, { auth: userId, body: topicsRequest }),
       sdk.context(),
     );
 
@@ -38,7 +38,7 @@ describe("POST /v1/topics", () => {
       .reply(200, clearSelectionsRequest);
 
     const result = await handler(
-      sdk.event.post(endpoint, {
+      sdk.event.patch(endpoint, {
         auth: userId,
         body: clearSelectionsRequest,
       }),
@@ -51,7 +51,7 @@ describe("POST /v1/topics", () => {
 
   it("returns 400 when the request body is invalid", async ({ sdk }) => {
     const result = await handler(
-      sdk.event.post(endpoint, { auth: userId, body: {} }),
+      sdk.event.patch(endpoint, { auth: userId, body: {} }),
       sdk.context(),
     );
 
@@ -71,7 +71,7 @@ describe("POST /v1/topics", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.post(endpoint, { auth: userId, body: topicsRequest }),
+      sdk.event.patch(endpoint, { auth: userId, body: topicsRequest }),
       sdk.context(),
     );
 
