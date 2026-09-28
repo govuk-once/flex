@@ -1,7 +1,7 @@
 /* eslint-disable no-empty-pattern */
 import { it as vitestIt, vi } from "vitest";
 
-import { createDynamoFixture } from "../fixtures/dynamo";
+import { createDynamoDBFixture } from "../fixtures/dynamodb";
 import type { EnvFixture } from "../fixtures/env";
 import { createEnv } from "../fixtures/env";
 import type { HttpFixture } from "../fixtures/http";
@@ -55,7 +55,7 @@ export const it = vitestIt.extend<Fixtures>({
       cloudFrontEvent: createPlatformCloudFrontEvent(),
       cloudFrontResult: buildPlatformCloudFrontResult,
       context: buildLambdaContext,
-      dynamo: createDynamoFixture(),
+      dynamodb: createDynamoDBFixture(),
       secret: createSecretFixture(),
     });
   },

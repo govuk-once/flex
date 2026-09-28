@@ -19,11 +19,12 @@ Alternatively, run `pnpm <command>` from within `libs/service-gateway/`.
 
 ## API
 
-| Name                               | Description                                             | Code                                                     |
-| ---------------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
-| [`defineGateway`](#definegateway)  | Gateway configuration and route handler factory         | [View](/libs/service-gateway/src/config/gateway.ts)      |
-| [`createRestClient`](#rest-client) | REST client factory for outbound calls to a remote API  | [View](/libs/service-gateway/src/client/adapter/rest.ts) |
-| [`mapApiResult`](#mapapiresult)    | Transforms a remote payload into the gateway's contract | [View](/libs/service-gateway/src/utils/result.ts)        |
+| Name                                       | Description                                             | Code                                                                |
+| ------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------- |
+| [`defineGateway`](#definegateway)          | Gateway configuration and route handler factory         | [View](/libs/service-gateway/src/config/gateway.ts)                 |
+| [`createRestClient`](#rest-client)         | REST client factory for outbound calls to a remote API  | [View](/libs/service-gateway/src/client/adapter/rest.ts)            |
+| [`createDynamoDBClient`](#dynamodb-client) | DynamoDB client factory, bound to one table and schema  | [View](/libs/service-gateway/src/client/adapter/dynamodb/client.ts) |
+| [`mapApiResult`](#mapapiresult)            | Transforms a remote payload into the gateway's contract | [View](/libs/service-gateway/src/utils/result.ts)                   |
 
 ---
 
@@ -268,9 +269,10 @@ Use this when a route's response shape should differ from the remote API's shape
 
 ### Supported Clients
 
-| Client               | Code               | Use Case                   |
-| -------------------- | ------------------ | -------------------------- |
-| [REST](#rest-client) | `createRestClient` | HTTP/JSON third-party APIs |
+| Client                       | Code                   | Use Case                   |
+| ---------------------------- | ---------------------- | -------------------------- |
+| [REST](#rest-client)         | `createRestClient`     | HTTP/JSON third-party APIs |
+| [DynamoDB](#dynamodb-client) | `createDynamoDBClient` | DynamoDB tables            |
 
 > Additional client types will be documented here as they're implemented.
 
@@ -326,6 +328,100 @@ const result = await api.post("/v1/example/path", {
 | ---------- | ------------------------------------------------------------- |
 | `"public"` | Used for unauthenticated requests                             |
 | `"sigv4"`  | Used for SigV4-signed requests using assumed-role credentials |
+
+---
+
+### DynamoDB Client
+
+Built with [`createDynamoDBClient`](/libs/service-gateway/src/client/adapter/dynamodb/client.ts), which binds one client to one table and one item schema. Every read is validated against that schema and every write is validated before it is sent, so a route works in the item type rather than in attribute maps.
+
+```typescript
+clients: ({ consumerConfig }) => ({
+  tableName: createDynamoDBClient({
+    table: consumerConfig.domainTableName,
+    region: consumerConfig.region,
+    schema: DomainSchema,
+    auth: {
+      type: "role",
+      roleArn: consumerConfig.roleArn,
+      roleName: "domain-session",
+      externalId: consumerConfig.externalId,
+    },
+  }),
+});
+```
+
+| Auth        | Description                                                    |
+| ----------- | -------------------------------------------------------------- |
+| `"default"` | Reads with the invocation's own credentials                    |
+| `"role"`    | Reads with assumed-role credentials, for a cross-account table |
+
+#### Operations
+
+| Operation | DynamoDB action | Returns             | Notes                                                        |
+| --------- | --------------- | ------------------- | ------------------------------------------------------------ |
+| `scan`    | Scan            | `Item[]`            | Reads the whole table or index, following pagination         |
+| `query`   | Query           | `Item[]`            | Reads one item collection, following pagination              |
+| `get`     | GetItem         | `Item \| undefined` | A miss is `undefined`, not an error                          |
+| `put`     | PutItem         | `Item`              | Replaces any item already under that key, whole              |
+| `update`  | UpdateItem      | `Item`              | Alters named attributes only; creates the item if it is gone |
+| `delete`  | DeleteItem      | `void`              | Succeeds whether or not the item was there                   |
+
+```typescript
+// Every item in one collection, newest first, read from an index
+const events = await eventsTable.query({
+  indexName: "timestamp-query",
+  key: { compositeKey: `${namespace}/${group}` },
+  sort: "desc",
+});
+
+// One item, by its primary key
+const source = await sourcesTable.get({ key: { sourceID } });
+
+// The whole item, replacing whatever is there
+const written = await sourcesTable.put({ item: source });
+
+// Only the attributes named, leaving the rest of the item alone
+const updated = await sourcesTable.update({
+  key: { sourceID },
+  set: { sourceEnabled: false },
+  remove: ["deprecatedAttribute"],
+});
+
+await sourcesTable.delete({ key: { sourceID } });
+```
+
+#### Keys, filters and conditions
+
+`key` addresses items through the primary key: one partition key attribute, plus a sort key attribute where the table has one. `get`, `put`, `update` and `delete` are item-based actions, so they always run against the table itself and never an index, and a key that names nothing (or more than a primary key can hold) is rejected before the request is sent rather than coming back as a `ValidationException`.
+
+`filter` matches any attribute, keyed by attribute name, with the entries ANDed together. An attribute set to `undefined` is left out of the expression rather than matched against null.
+
+```typescript
+await sourcesTable.scan({
+  filter: { sourceNamespace: "travel", sourceEnabled: true },
+});
+```
+
+> A filter runs **after** DynamoDB has read the items and before it returns them, and the 1MB read limit applies before it. It trims the response; it does not save capacity, and it is not a substitute for a key or an index that selects the right items in the first place.
+
+#### Failures
+
+Every operation returns an `ApiResult`, so nothing throws:
+
+| Failure                                 | Status | Reaches the caller as                     |
+| --------------------------------------- | ------ | ----------------------------------------- |
+| Item read does not match the schema     | 502    | Flattened upstream error; issues logged   |
+| Item written does not match the schema  | 400    | The failing attributes, as the error body |
+| Key or update the client will not build | 500    | Flattened upstream error; cause logged    |
+| Table throttled the request             | 429    | `Too many requests to the table`          |
+| Anything else from AWS                  | 502    | Flattened upstream error; cause logged    |
+
+An AWS message never reaches the caller: the gateway flattens 5xx to "upstream service unavailable", and the error's name and message are logged so a denied `AssumeRole` and a missing table can still be told apart.
+
+#### Adding an operation
+
+Operations live one per file under [`operations/`](/libs/service-gateway/src/client/adapter/dynamodb/operations) as a factory over a shared context (the table, the document client, `execute` and the schema parsers). Adding a batch, a transaction or a conditional write means a new factory and one line in `createDynamoDBClient`: telemetry, error mapping, validation and the `ApiResult` contract come from `execute` and stay the same across every operation.
 
 ---
 

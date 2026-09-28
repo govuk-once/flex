@@ -2,10 +2,10 @@ import { defineGateway } from "@flex/service-gateway";
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-import { CountriesResponseSchema } from "./src/schemas/domain/country";
+import { GetCountriesResponseSchema } from "./src/schemas/domain/country";
 import {
-  EventsQuerySchema,
-  EventsResponseSchema,
+  GetEventsQuerySchema,
+  GetEventsResponseSchema,
 } from "./src/schemas/domain/event";
 
 export const { config, createHandler } = defineGateway({
@@ -41,12 +41,12 @@ export const { config, createHandler } = defineGateway({
   routes: {
     "GET /v1/countries": {
       name: "getCountries",
-      response: CountriesResponseSchema,
+      response: GetCountriesResponseSchema,
     },
     "GET /v1/events": {
-      name: "events",
-      query: EventsQuerySchema,
-      response: EventsResponseSchema,
+      name: "getEvents",
+      query: GetEventsQuerySchema,
+      response: GetEventsResponseSchema,
     },
   },
 });

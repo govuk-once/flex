@@ -132,39 +132,62 @@ Builds events, results and context for testing platform domain handlers and serv
 | `cloudFrontEvent`  | `get`/`post`/`put`/`patch`/`delete` builders for a CloudFront Function Request event |
 | `cloudFrontResult` | `(statusCode, options?)` builder for a CloudFront Function response                  |
 | `context`          | Base Lambda context builder                                                          |
-| `dynamo`           | Stubs the DynamoDB reads a gateway's clients make                                    |
+| `dynamodb`         | Stubs the commands a gateway's `createDynamoDBClient` clients send                   |
 | `secret`           | Stubs the Secrets Manager reads a gateway's resources make                           |
 
 > `gatewayEvent` reads `FLEX_GATEWAY_NAME` from the environment to build the correct gateway path prefix `/gateways/<name>` and will throw if its not provided. This must be set in the workspace's `vitest.config.ts` under `env`.
 
-### `dynamo`
+### `dynamodb`
 
-Backed by [`aws-sdk-client-mock`](https://github.com/m-radzikowski/aws-sdk-client-mock)
-over the `@aws-sdk/lib-dynamodb` document client. The mock is installed the
-first time a test uses it, reset between tests and restored when the file
-finishes, so a suite that stubs DynamoDB over HTTP is left alone.
+Mirrors the [DynamoDB client](/libs/service-gateway/README.md#dynamodb-client),
+one helper per operation, and is backed by the same installed document client
+mock as `dynamo`. Reach for this one for a gateway built with
+`createDynamoDBClient`.
 
-| Helper          | Description                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------- |
-| `scan.resolves` | One argument per page; later pages are only reached if the handler follows `LastEvaluatedKey` |
-| `scan.rejects`  | Fails the read, as an unreachable table or denied role does                                   |
-| `scan.calls`    | Every Scan the handler sent, in order                                                         |
-| `scan.input`    | The nth Scan the handler sent, defaulting to the first                                        |
-| `scan.cursor`   | The key `resolves` hands back at the end of the given page                                    |
-| `client`        | The underlying client mock, for commands the helpers do not cover                             |
+Every helper shares `rejects`, `calls` and `input`; `resolves` differs per
+command, and the two paged reads add `cursor`:
+
+| Helper              | Description                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| `scan.resolves`     | One argument per page; later pages are only reached if the client follows `LastEvaluatedKey` |
+| `query.resolves`    | The same, for a Query                                                                        |
+| `get.resolves`      | The item read. Called with nothing, the item is not in the table                             |
+| `put.resolves`      | Succeeds the write                                                                           |
+| `update.resolves`   | The item as it stands after the update, which is what `ReturnValues: "ALL_NEW"` returns      |
+| `delete.resolves`   | Succeeds the delete                                                                          |
+| `<command>.rejects` | Fails that command, as an unreachable table or denied role does                              |
+| `<command>.calls`   | Every command of that type the handler sent, in order                                        |
+| `<command>.input`   | The nth command of that type, defaulting to the first                                        |
+| `scan.cursor`       | The key `resolves` hands back at the end of the given page                                   |
+| `query.cursor`      | The same, for a Query                                                                        |
+| `client`            | The underlying client mock, for commands the helpers do not cover                            |
 
 ```typescript
-it("follows pagination", async ({ platform }) => {
-  platform.dynamo.scan.resolves([firstRow], [secondRow]);
+it("stores the source the caller sent", async ({ platform }) => {
+  platform.dynamodb.put.resolves();
 
-  await handler(platform.gatewayEvent.get("/v1/example"), platform.context());
+  await handler(
+    platform.gatewayEvent.post("/v1/sources", { body: source }),
+    platform.context(),
+  );
 
-  expect(platform.dynamo.scan.calls()).toHaveLength(2);
-  expect(platform.dynamo.scan.input(1)).toMatchObject({
-    ExclusiveStartKey: platform.dynamo.scan.cursor(),
-  });
+  expect(platform.dynamodb.put.input()).toMatchObject({ Item: source });
+});
+
+it("returns 404 when the source is not in the table", async ({ platform }) => {
+  platform.dynamodb.get.resolves();
+
+  const result = await handler(
+    platform.gatewayEvent.get("/v1/sources/france"),
+    platform.context(),
+  );
+
+  expect(result).toStrictEqual(platform.gatewayResult(404));
 });
 ```
+
+`createDynamoDBFixture` is also exported directly, for a test that needs the
+helpers without the rest of the `platform` fixture.
 
 ### `secret`
 

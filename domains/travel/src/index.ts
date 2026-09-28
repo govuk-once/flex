@@ -1,5 +1,8 @@
-export type { CountriesResponse, Country } from "@flex/travel-service-gateway";
+export type {
+  Country,
+  GetCountriesResponse,
+} from "@flex/travel-service-gateway";
 export {
-  CountriesResponseSchema,
   CountrySchema,
+  GetCountriesResponseSchema,
 } from "@flex/travel-service-gateway";
