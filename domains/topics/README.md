@@ -6,7 +6,7 @@ Manages user topic selections. Users can update their selected topics via the PA
 
 ## Commands
 
-Run these from the repository root:
+Run from the repository root:
 
 | Command                                  | Description    |
 | ---------------------------------------- | -------------- |
