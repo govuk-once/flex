@@ -6,6 +6,7 @@ import {
   UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
+import { upsertTopicsResponseSchema } from "./schemas/remote/topics";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -127,6 +128,24 @@ export const handler = createHandler({
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
+    },
+    "POST /v1/topics": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.post("/v1/topics", {
+        schema: upsertTopicsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+        body: { data: body },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
     },
     "GET /v1/groups": async ({
       clients: { api },
