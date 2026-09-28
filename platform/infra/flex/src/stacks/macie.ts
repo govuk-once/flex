@@ -1,3 +1,4 @@
+import { getEnvConfig } from "@flex/utils";
 import {
   ManagedPolicy,
   PolicyStatement,
@@ -18,6 +19,8 @@ import { MacieResultsBucket } from "../constructs/macie/MacieResultsBucket";
 import { macieCoverage } from "../macie-coverage";
 import { STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+
+const { stage } = getEnvConfig();
 
 export class FlexMacieStack extends BaseStack {
   constructor(scope: Construct, id: string) {
@@ -198,14 +201,14 @@ export class FlexMacieStack extends BaseStack {
         service: "macie2",
         action: "createClassificationJob",
         parameters: {
-          name: `flex-access-log-scan-${this.region}`,
+          name: `${stage}-access-log-scan-${this.region}`,
           description:
             "Weekly scoped scan of the CloudFront access-log bucket for sensitive data",
           jobType: "SCHEDULED",
           initialRun: true,
           samplingPercentage: 100,
           managedDataIdentifierSelector: "RECOMMENDED",
-          clientToken: `flex-access-log-scan-${this.account}-${this.region}`,
+          clientToken: `${stage}-access-log-scan-${this.account}-${this.region}`,
           scheduleFrequency: {
             weeklySchedule: { dayOfWeek: "MONDAY" },
           },
