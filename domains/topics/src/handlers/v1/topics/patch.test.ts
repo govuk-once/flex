@@ -1,5 +1,5 @@
 import { it } from "@flex/testing";
-import { clearSelectionsRequest, topicsRequest, userId } from "@tests/fixtures";
+import { createTopics, userId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
@@ -12,12 +12,12 @@ describe("PATCH /v1/topics", () => {
       .gateway("udp")
       .post("/topics", {
         headers: { "requesting-service-user-id": userId },
-        body: topicsRequest,
+        body: createTopics(),
       })
-      .reply(200, topicsRequest);
+      .reply(200, createTopics());
 
     const result = await handler(
-      sdk.event.patch(endpoint, { auth: userId, body: topicsRequest }),
+      sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
       sdk.context(),
     );
 
@@ -29,18 +29,20 @@ describe("PATCH /v1/topics", () => {
     http,
     sdk,
   }) => {
+    const emptyTopics = { topics: { selectedTopics: [] } };
+
     http
       .gateway("udp")
       .post("/topics", {
         headers: { "requesting-service-user-id": userId },
-        body: clearSelectionsRequest,
+        body: createTopics(emptyTopics),
       })
-      .reply(200, clearSelectionsRequest);
+      .reply(200, createTopics(emptyTopics));
 
     const result = await handler(
       sdk.event.patch(endpoint, {
         auth: userId,
-        body: clearSelectionsRequest,
+        body: createTopics(emptyTopics),
       }),
       sdk.context(),
     );
@@ -66,12 +68,12 @@ describe("PATCH /v1/topics", () => {
       .gateway("udp")
       .post("/topics", {
         headers: { "requesting-service-user-id": userId },
-        body: topicsRequest,
+        body: createTopics(),
       })
       .reply(500);
 
     const result = await handler(
-      sdk.event.patch(endpoint, { auth: userId, body: topicsRequest }),
+      sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
       sdk.context(),
     );
 
