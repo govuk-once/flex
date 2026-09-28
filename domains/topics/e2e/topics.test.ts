@@ -6,9 +6,6 @@ import {
   TopicsResponse,
   TopicsResponseSchema,
 } from "@schemas/topic";
-// TODO: Might need udpGetUsersDeployed and therefore UDP domain config
-// Though we don't call it directly, taking from the udp notifications example...
-// import { config as udpConfig } from "@flex/udp-domain/config";
 import { describe, expect } from "vitest";
 
 import { config as topicsConfig } from "../domain.config";
