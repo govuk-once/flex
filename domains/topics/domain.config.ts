@@ -4,7 +4,7 @@ import { TopicsRequestSchema, TopicsResponseSchema } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "topics",
-  environments: ["development", "staging"],
+  environments: ["development"],
   common: {
     access: "isolated",
     function: { timeoutSeconds: 20 },
