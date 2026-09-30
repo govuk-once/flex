@@ -1,22 +1,9 @@
-import { z } from "zod";
+import { topicsSchema } from "../common";
 
-const topicSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-});
-
-const selectedTopicsSchema = z.object({
-  topics: z.object({
-    selectedTopics: z.array(topicSchema),
-  }),
-});
-
-export const inboundUpsertTopicsRequestSchema = selectedTopicsSchema;
-
-export type InboundUpsertTopicsRequest = z.infer<
-  typeof inboundUpsertTopicsRequestSchema
+export const inboundUpdateSelectedTopicsRequestSchema = topicsSchema;
+export type InboundUpdateSelectedTopicsRequest = z.infer<
+  typeof inboundUpdateSelectedTopicsRequestSchema
 >;
 
-export const domainTopicsResponseSchema = selectedTopicsSchema;
-
-export type DomainTopicsResponse = z.infer<typeof domainTopicsResponseSchema>;
+export const domainTopicsSchema = topicsSchema;
+export type DomainTopics = z.infer<typeof domainTopicsSchema>;
