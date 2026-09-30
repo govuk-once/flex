@@ -3,7 +3,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 7,
+      "y": 4,
       "width": 9,
       "height": 5,
       "properties": {
@@ -19,7 +19,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -32,7 +37,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -45,7 +54,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -59,7 +81,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 17,
+      "y": 14,
       "width": 9,
       "height": 5,
       "properties": {
@@ -75,7 +97,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -88,7 +115,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -101,7 +132,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -115,7 +159,7 @@
     {
       "type": "text",
       "x": 0,
-      "y": 6,
+      "y": 3,
       "width": 24,
       "height": 1,
       "properties": {
@@ -125,7 +169,7 @@
     {
       "type": "text",
       "x": 0,
-      "y": 27,
+      "y": 45,
       "width": 24,
       "height": 1,
       "properties": {
@@ -135,7 +179,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 12,
+      "y": 9,
       "width": 9,
       "height": 5,
       "properties": {
@@ -151,7 +195,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -164,7 +213,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -177,7 +230,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -191,7 +257,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 22,
+      "y": 19,
       "width": 9,
       "height": 5,
       "properties": {
@@ -207,7 +273,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -220,7 +291,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -233,7 +308,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -247,7 +335,7 @@
     {
       "type": "metric",
       "x": 17,
-      "y": 22,
+      "y": 19,
       "width": 7,
       "height": 5,
       "properties": {
@@ -263,20 +351,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -289,7 +370,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -302,7 +388,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -316,7 +434,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 22,
+      "y": 19,
       "width": 8,
       "height": 5,
       "properties": {
@@ -332,17 +450,53 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -360,13 +514,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "GET /app/dvla/v1/vehicle-enquiry/{reg}"
+        "title": "GET /app/dvla/v1/vehicle-enquiry/{reg} Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 7,
+      "y": 4,
       "width": 8,
       "height": 5,
       "properties": {
@@ -382,17 +536,53 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -410,13 +600,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "GET /app/dvla/v1/customer/vehicles"
+        "title": "GET /app/dvla/v1/customer/vehicles Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 7,
+      "y": 4,
       "width": 7,
       "height": 5,
       "properties": {
@@ -432,20 +622,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -458,7 +641,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -471,7 +659,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -485,7 +705,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 12,
+      "y": 9,
       "width": 8,
       "height": 5,
       "properties": {
@@ -501,17 +721,53 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -529,13 +785,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "GET /app/dvla/v1/customer/vehicle/{id}"
+        "title": "GET /app/dvla/v1/customer/vehicle/{id} Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 12,
+      "y": 9,
       "width": 7,
       "height": 5,
       "properties": {
@@ -551,20 +807,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -577,7 +826,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -590,7 +844,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -604,7 +890,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 17,
+      "y": 14,
       "width": 8,
       "height": 5,
       "properties": {
@@ -620,17 +906,53 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -648,13 +970,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "GET /app/dvla/v1/customer/licence"
+        "title": "GET /app/dvla/v1/customer/licence Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 17,
+      "y": 14,
       "width": 7,
       "height": 5,
       "properties": {
@@ -670,20 +992,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -696,7 +1011,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -709,7 +1029,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -723,7 +1075,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 28,
+      "y": 24,
       "width": 9,
       "height": 5,
       "properties": {
@@ -734,12 +1086,17 @@
             "ApiName",
             "Api",
             "Resource",
-            "/app/udp/v1/identity/{service}",
+            "/app/dvla/v1/share-code",
             "Stage",
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -752,7 +1109,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -765,7 +1126,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -773,13 +1147,13 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 300,
-        "title": "POST /app/udp/v1/identity/{service}"
+        "title": "POST /app/dvla/v1/share-code"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 28,
+      "y": 24,
       "width": 8,
       "height": 5,
       "properties": {
@@ -790,22 +1164,58 @@
             "ApiName",
             "Api",
             "Resource",
-            "/app/udp/v1/identity/{service}",
+            "/app/dvla/v1/share-code",
             "Stage",
             "prod",
             "Method",
             "POST",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -823,13 +1233,539 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "POST /app/udp/v1/identity/{service}"
+        "title": "POST /app/dvla/v1/share-code Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 28,
+      "y": 24,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/share-code",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "POST /app/dvla/v1/share-code"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 29,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/share-code/{id}/cancel",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "POST /app/dvla/v1/share-code/{id}/cancel"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 29,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/share-code/{id}/cancel",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
+        },
+        "title": "POST /app/dvla/v1/share-code/{id}/cancel Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 29,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/dvla/v1/share-code/{id}/cancel",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "POST /app/dvla/v1/share-code/{id}/cancel"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 46,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "POST /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 46,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
+        },
+        "title": "POST /app/udp/v1/identity/{service} Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 46,
       "width": 7,
       "height": 5,
       "properties": {
@@ -845,20 +1781,13 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -871,7 +1800,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -884,7 +1818,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -898,7 +1864,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 33,
+      "y": 51,
       "width": 9,
       "height": 5,
       "properties": {
@@ -914,7 +1880,12 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -927,7 +1898,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -940,7 +1915,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -954,7 +1942,7 @@
     {
       "type": "metric",
       "x": 9,
-      "y": 33,
+      "y": 51,
       "width": 8,
       "height": 5,
       "properties": {
@@ -970,17 +1958,53 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -998,13 +2022,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "DELETE /app/udp/v1/identity/{service}"
+        "title": "DELETE /app/udp/v1/identity/{service} Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 33,
+      "y": 51,
       "width": 7,
       "height": 5,
       "properties": {
@@ -1020,20 +2044,13 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -1046,7 +2063,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1059,7 +2081,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1068,12 +2122,164 @@
         "stat": "Sum",
         "period": 2592000,
         "title": "DELETE /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 3,
+      "properties": {
+        "metrics": [
+          [
+            {
+              "expression": "(m1 - m2 - m3) - (m4 - m5 - m6)",
+              "label": "Net Linked",
+              "id": "e1",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "m1 - m2 - m3",
+              "label": "Successful Links",
+              "id": "e2",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "m4 - m5 - m6",
+              "label": "Successful Unlinks",
+              "id": "e3",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "id": "m1",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#1f77b4"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "m2",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "m3",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            {
+              "id": "m4",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#1f77b4"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "m5",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "m6",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "Linked Users"
       }
     },
     {
       "type": "text",
       "x": 0,
-      "y": 0,
+      "y": 34,
       "width": 24,
       "height": 1,
       "properties": {
@@ -1084,7 +2290,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 1,
+      "y": 35,
       "width": 9,
       "height": 5,
       "properties": {
@@ -1100,7 +2306,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -1113,7 +2324,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -1126,7 +2341,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -1134,13 +2362,13 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 300,
-        "title": "DVLA Service GW"
+        "title": "GET DVLA Service GW"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 1,
+      "y": 35,
       "width": 8,
       "height": 5,
       "properties": {
@@ -1156,17 +2384,53 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -1184,13 +2448,13 @@
         "legend": {
           "position": "bottom"
         },
-        "title": "DVLA Service GW"
+        "title": "GET DVLA Service GW Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 1,
+      "y": 35,
       "width": 7,
       "height": 5,
       "properties": {
@@ -1206,20 +2470,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -1232,7 +2489,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1245,7 +2507,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1253,7 +2547,384 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 2592000,
-        "title": "DVLA Service GW"
+        "title": "GET DVLA Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 40,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "POST DVLA Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 40,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": [
+            "MIN",
+            "SUM",
+            "MAX",
+            "AVG"
+          ],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": {
+            "showUnits": true
+          },
+          "right": {
+            "showUnits": false
+          }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": {
+          "position": "bottom"
+        },
+        "title": "POST DVLA Service GW Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 40,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "POST DVLA Service GW"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 56,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Integration Latency"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 57,
+      "width": 12,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "IntegrationLatency",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "DVLA Service GW Integration Latency Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 57,
+      "width": 12,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "IntegrationLatency",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/dvla/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            ".",
+            "Latency",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "stat": "Average",
+              "label": "Total Latency (Avg)",
+              "color": "#9467bd",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "title": "Integration vs Total Latency"
       }
     }
   ]
