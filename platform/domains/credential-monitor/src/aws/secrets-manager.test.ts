@@ -45,12 +45,12 @@ describe("secrets manager client", () => {
     it("collects versions of the secret across every page", async () => {
       secretsManager
         .on(ListSecretVersionIdsCommand, {
-          SecretId: "udp",
+          SecretId: "udp", // pragma: allowlist secret
           NextToken: undefined,
         })
         .resolves({ Versions: [{ VersionId: "1" }], NextToken: "page-2" })
         .on(ListSecretVersionIdsCommand, {
-          SecretId: "udp",
+          SecretId: "udp", // pragma: allowlist secret
           NextToken: "page-2",
         })
         .resolves({ Versions: [{ VersionId: "2" }] });

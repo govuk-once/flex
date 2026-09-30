@@ -35,7 +35,8 @@ export function createSecretRotationFailureAlert(
     scope,
     "SecretRotationAlertDeadLetterQueue",
     {
-      encryption: QueueEncryption.SQS_MANAGED,
+      encryption: QueueEncryption.KMS,
+      encryptionMasterKey: alarmTopicKey,
       enforceSSL: true,
       retentionPeriod: Duration.days(14),
     },

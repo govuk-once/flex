@@ -36,7 +36,7 @@ describe("getMaximumAgeStatuses", () => {
     ]);
 
     await expect(
-      getMaximumAgeStatuses([{ secretId: "udp-secret-arn", maxAgeDays: 90 }]),
+      getMaximumAgeStatuses([{ secretId: "udp-secret-arn", maxAgeDays: 90 }]), // pragma: allowlist secret
     ).resolves.toEqual([
       { resourceName: "udp-secret-arn", dueDate: addDays(currentCreated, 90) },
     ]);
@@ -92,8 +92,8 @@ describe("getMaximumAgeStatuses", () => {
 
     await expect(
       getMaximumAgeStatuses([
-        { secretId: "missing", maxAgeDays: 90 },
-        { secretId: "present", maxAgeDays: 90 },
+        { secretId: "missing", maxAgeDays: 90 }, // pragma: allowlist secret
+        { secretId: "present", maxAgeDays: 90 }, // pragma: allowlist secret
       ]),
     ).resolves.toEqual([
       { resourceName: "missing", reason: "ResourceNotFoundException" },

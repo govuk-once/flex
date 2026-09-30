@@ -1,8 +1,8 @@
 export const METRIC_NAMESPACE = "Flex/Credentials";
 
 export const MetricName = {
-  SecretRotationOverdue: "SecretRotationOverdue",
-  SecretRotationUnverifiable: "SecretRotationUnverifiable",
+  SecretRotationOverdue: "SecretRotationOverdue", // pragma: allowlist secret
+  SecretRotationUnverifiable: "SecretRotationUnverifiable", // pragma: allowlist secret
   CognitoConfigDrift: "CognitoConfigDrift",
   CredentialMonitorSuccess: "CredentialMonitorSuccess",
 } as const;

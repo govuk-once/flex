@@ -14,7 +14,7 @@ vi.mock("./checks/secret-rotation");
 
 const authorizerFunctionArn =
   "arn:aws:lambda:eu-west-2:123456789012:function:authorizer";
-const maximumAgeSecrets = [{ secretId: "udp", maxAgeDays: 90 }];
+const maximumAgeSecrets = [{ secretId: "udp", maxAgeDays: 90 }]; // pragma: allowlist secret
 const cognitoParameters = [
   {
     parameterName: "/staging/flex-param/auth/client-id",
