@@ -1,9 +1,9 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
-  TopicsRequest,
-  TopicsRequestSchema,
-  TopicsResponse,
+  UpdateSelectedTopicsRequest,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
 
@@ -30,13 +30,13 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
@@ -56,13 +56,13 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
@@ -79,8 +79,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           };
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             body: requestTopics,
           });
