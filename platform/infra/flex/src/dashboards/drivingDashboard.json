@@ -491,12 +491,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -577,12 +572,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -762,12 +752,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -947,12 +932,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -1210,12 +1190,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -1473,12 +1448,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -1736,12 +1706,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -1999,12 +1964,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -2425,12 +2385,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
@@ -2688,12 +2643,7 @@
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
-          "summaryColumns": [
-            "MIN",
-            "SUM",
-            "MAX",
-            "AVG"
-          ],
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
           "stickySummary": false,
           "showTimeSeriesData": false,
           "layout": "horizontal"
