@@ -12,8 +12,8 @@ describe("collectPages", () => {
 
   it("follows next tokens and keeps the page order", async () => {
     const pages: Record<string, Page<string>> = {
-      start: { items: ["a"], nextToken: "second" },
-      second: { items: ["b", "c"], nextToken: "third" },
+      start: { items: ["a"], nextToken: "second" }, // pragma: allowlist secret
+      second: { items: ["b", "c"], nextToken: "third" }, // pragma: allowlist secret
       third: { items: ["d"] },
     };
     const fetchPage = vi.fn((token?: string) =>
@@ -32,7 +32,7 @@ describe("collectPages", () => {
   it("keeps paging through an empty intermediate page", async () => {
     const fetchPage = vi
       .fn()
-      .mockResolvedValueOnce({ items: [], nextToken: "next" })
+      .mockResolvedValueOnce({ items: [], nextToken: "next" }) // pragma: allowlist secret
       .mockResolvedValueOnce({ items: ["a"] });
 
     await expect(collectPages(fetchPage)).resolves.toEqual(["a"]);
@@ -48,7 +48,7 @@ describe("collectPages", () => {
   it("rejects when a page fails", async () => {
     const fetchPage = vi
       .fn()
-      .mockResolvedValueOnce({ items: ["a"], nextToken: "next" })
+      .mockResolvedValueOnce({ items: ["a"], nextToken: "next" }) // pragma: allowlist secret
       .mockRejectedValueOnce(new Error("ThrottlingException"));
 
     await expect(collectPages(fetchPage)).rejects.toThrow(

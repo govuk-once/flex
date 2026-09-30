@@ -7,7 +7,10 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import { describe, expect, it } from "vitest";
 
-import { createAlarmActions, createTestStack } from "../../test/alarm-actions";
+import {
+  createAlarmActions,
+  createTestStack,
+} from "../../__tests__/alarm-actions";
 import { CredentialMonitorAlarms } from "./credential-monitor";
 
 function synthesise() {

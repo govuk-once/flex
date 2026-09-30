@@ -23,8 +23,8 @@ describe("secrets manager client", () => {
     it("collects secrets across every page", async () => {
       secretsManager
         .on(ListSecretsCommand, { NextToken: undefined })
-        .resolves({ SecretList: [{ Name: "a" }], NextToken: "page-2" })
-        .on(ListSecretsCommand, { NextToken: "page-2" })
+        .resolves({ SecretList: [{ Name: "a" }], NextToken: "page-2" }) // pragma: allowlist secret
+        .on(ListSecretsCommand, { NextToken: "page-2" }) // pragma: allowlist secret
         .resolves({ SecretList: [{ Name: "b" }] });
 
       await expect(listSecrets()).resolves.toEqual([
@@ -48,10 +48,10 @@ describe("secrets manager client", () => {
           SecretId: "udp", // pragma: allowlist secret
           NextToken: undefined,
         })
-        .resolves({ Versions: [{ VersionId: "1" }], NextToken: "page-2" })
+        .resolves({ Versions: [{ VersionId: "1" }], NextToken: "page-2" }) // pragma: allowlist secret
         .on(ListSecretVersionIdsCommand, {
           SecretId: "udp", // pragma: allowlist secret
-          NextToken: "page-2",
+          NextToken: "page-2", // pragma: allowlist secret
         })
         .resolves({ Versions: [{ VersionId: "2" }] });
 

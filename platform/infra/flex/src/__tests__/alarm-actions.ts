@@ -1,5 +1,6 @@
 import { Stack } from "aws-cdk-lib";
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
+import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
 
 export function createTestStack() {
@@ -9,8 +10,11 @@ export function createTestStack() {
 }
 
 export function createAlarmActions(stack: Stack) {
-  const criticalTopic = new Topic(stack, "CriticalTestTopic");
-  const warningTopic = new Topic(stack, "WarningTestTopic");
+  const masterKey = new Key(stack, "AlarmTestTopicKey", {
+    enableKeyRotation: true,
+  });
+  const criticalTopic = new Topic(stack, "CriticalTestTopic", { masterKey });
+  const warningTopic = new Topic(stack, "WarningTestTopic", { masterKey });
 
   return {
     criticalAction: new SnsAction(criticalTopic),

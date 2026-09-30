@@ -2,7 +2,10 @@ import { Template } from "aws-cdk-lib/assertions";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 import { describe, expect, it } from "vitest";
 
-import { createAlarmActions, createTestStack } from "../../test/alarm-actions";
+import {
+  createAlarmActions,
+  createTestStack,
+} from "../../__tests__/alarm-actions";
 import { CertificateAlarms } from "./certificate";
 
 function synthesise() {
