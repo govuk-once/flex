@@ -9,8 +9,8 @@ import {
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
 import {
-  domainTopicsResponseSchema,
-  inboundUpsertTopicsRequestSchema,
+  domainTopicsSchema,
+  inboundUpdateSelectedTopicsRequestSchema,
 } from "./src/schemas/domain/topics";
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
 
@@ -103,6 +103,16 @@ export const { config, createHandler } = defineGateway({
       },
       response: DomainGroupsSchema,
     },
+    "GET /v1/topics": {
+      name: "getTopics",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      response: domainTopicsSchema,
+    },
     "POST /v1/topics": {
       name: "upsertTopics",
       headers: {
@@ -111,8 +121,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpsertTopicsRequestSchema,
-      response: domainTopicsResponseSchema,
+      body: inboundUpdateSelectedTopicsRequestSchema,
+      response: domainTopicsSchema,
     },
     "POST /v1/groups": {
       name: "updateGroupSubscriptions",
