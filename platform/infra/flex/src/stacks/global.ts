@@ -76,6 +76,7 @@ export class FlexGlobalStack extends BaseStack {
   #buildRelay(
     severity: "Critical" | "Warning",
     targetTopicArn: string,
+    targetTopicKeyArn: string,
     alarmTopicKey: Key,
   ) {
     const relayTopic = new Topic(this, `${severity}RelayTopic`, {
@@ -86,18 +87,22 @@ export class FlexGlobalStack extends BaseStack {
       runtime: Runtime.NODEJS_24_X,
       handler: "index.handler",
       timeout: Duration.seconds(10),
+      environment: {
+        TARGET_TOPIC_ARN: targetTopicArn,
+      },
       code: Code.fromInline(`
           const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
           const client = new SNSClient({ region: "eu-west-2" });
           exports.handler = async (event) => {
-            for (const record of event.Records ?? []) {
-              await client.send(new PublishCommand({
-                TopicArn: ${targetTopicArn},
-                Subject: record.Sns.Subject?.slice(0, 100),
-                Message: record.Sns.Message,
-                MessageAttributes: record.Sns.MessageAttributes,
-              }));
-            }
+            await Promise.all(
+              (event.Records ?? []).map((record) =>
+                client.send(new PublishCommand({
+                  TopicArn: process.env.TARGET_TOPIC_ARN,
+                  Subject: record.Sns.Subject?.slice(0, 100),
+                  Message: record.Sns.Message,
+                })),
+              ),
+            );
           };
         `),
     });
@@ -106,6 +111,13 @@ export class FlexGlobalStack extends BaseStack {
       new PolicyStatement({
         actions: ["sns:Publish"],
         resources: [targetTopicArn],
+      }),
+    );
+
+    relayFn.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["kms:GenerateDataKey*", "kms:Decrypt"],
+        resources: [targetTopicKeyArn],
       }),
     );
 
@@ -123,6 +135,10 @@ export class FlexGlobalStack extends BaseStack {
       ENV_KEYS.TopicWarningAlarms,
       "eu-west-2",
     );
+    const targetTopicKeyArn = this.import(
+      ENV_KEYS.AlarmTopicKeyArn,
+      "eu-west-2",
+    );
 
     const alarmTopicKey = new Key(this, "AlarmTopicRelayKey", {
       alias: `alias/${stage}-flex-alerts-relay-key`,
@@ -136,11 +152,13 @@ export class FlexGlobalStack extends BaseStack {
     const criticalRelay = this.#buildRelay(
       "Critical",
       criticalTargetArn,
+      targetTopicKeyArn,
       alarmTopicKey,
     );
     const warningRelay = this.#buildRelay(
       "Warning",
       warningTargetArn,
+      targetTopicKeyArn,
       alarmTopicKey,
     );
 
