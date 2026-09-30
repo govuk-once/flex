@@ -7,6 +7,7 @@ import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
 import { FlexCoreStack } from "./stacks/core/stack";
+import { FlexCredentialMonitorStack } from "./stacks/credential-monitor";
 import { FlexApiDeploymentStack } from "./stacks/deploy";
 import { FlexDomainStack } from "./stacks/domain";
 import { FlexGlobalStack } from "./stacks/global";
@@ -96,6 +97,7 @@ new FlexGlobalStack(app, `${stage}-FlexGlobal`);
 
 if (persistent) {
   new FlexMacieStack(app, `${env}-FlexMacie`);
+  new FlexCredentialMonitorStack(app, `${env}-FlexCredentialMonitor`);
 }
 
 const targetDomain = process.env.domain;
