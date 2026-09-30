@@ -1,6 +1,12 @@
-export type { Topic, TopicsRequest, TopicsResponse } from "./topic";
+export type {
+  GetSelectedTopicsResponse,
+  Topic,
+  UpdateSelectedTopicsRequest,
+  UpdateSelectedTopicsResponse,
+} from "./topic";
 export {
+  GetSelectedTopicsResponseSchema,
   TopicSchema,
-  TopicsRequestSchema,
-  TopicsResponseSchema,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponseSchema,
 } from "./topic";

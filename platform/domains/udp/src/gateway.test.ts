@@ -63,6 +63,18 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
+const mockTopics = {
+  topics: {
+    selectedTopics: [
+      { id: "topic-1", title: "Topic One" },
+      { id: "topic-2", title: "Topic Two" },
+    ],
+  },
+};
+const mockUpstreamTopics = { data: mockTopics };
+const mockTopicsEmpty = { topics: { selectedTopics: [] } };
+const mockUpstreamTopicsEmpty = { data: mockTopicsEmpty };
+
 const stubConsumerConfig = (http: HttpFixture) =>
   http
     .url("https://secretsmanager.eu-west-2.amazonaws.com")
@@ -412,22 +424,68 @@ describe("UDP Service Gateway", () => {
     });
   });
 
+  describe("GET /v1/topics", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+
+    it("returns selectedTopics for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/topics", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamTopics);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/topics", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockTopics }),
+      );
+    });
+
+    it("returns empty selectedTopics for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/topics", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamTopicsEmpty);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/topics", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockTopicsEmpty }),
+      );
+    });
+  });
+
   describe("POST /v1/topics", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
 
-    const mockTopics = {
-      topics: {
-        selectedTopics: [
-          { id: "topic-1", title: "Topic One" },
-          { id: "topic-2", title: "Topic Two" },
-        ],
-      },
-    };
-    const mockUpstreamTopics = { data: mockTopics };
-
-    it("returns the updated topics for the requesting user", async ({
+    it("returns updated selectedTopics for the requesting user", async ({
       http,
       platform,
     }) => {
@@ -454,33 +512,30 @@ describe("UDP Service Gateway", () => {
       );
     });
 
-    it("returns empty selections when clearing all topics", async ({
+    it("returns empty selectedTopics when clearing all topics", async ({
       http,
       platform,
     }) => {
-      const emptyTopics = { topics: { selectedTopics: [] } };
-      const mockUpstreamEmpty = { data: emptyTopics };
-
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-          body: { data: emptyTopics },
+          body: { data: mockTopicsEmpty },
         })
-        .reply(200, mockUpstreamEmpty);
+        .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
-          body: emptyTopics,
+          body: mockTopicsEmpty,
         }),
         platform.context(),
       );
 
       expect(result).toStrictEqual(
-        platform.gatewayResult(200, { body: emptyTopics }),
+        platform.gatewayResult(200, { body: mockTopicsEmpty }),
       );
     });
   });

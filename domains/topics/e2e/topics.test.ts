@@ -1,9 +1,10 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
-  TopicsRequest,
-  TopicsRequestSchema,
-  TopicsResponse,
+  GetSelectedTopicsResponse,
+  UpdateSelectedTopicsRequest,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
 
@@ -13,10 +14,10 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
   describe("/topics/v1/topics", () => {
     const endpoint = "/topics/v1/topics";
 
-    describe.runIf(isRouteDeployed(topicsConfig, "PATCH /v1/topics"))(
-      "PATCH",
+    describe.runIf(isRouteDeployed(topicsConfig, "GET /v1/topics"))(
+      "GET",
       () => {
-        it("returns 204 with updated selectedTopics", async ({
+        it("returns 200 with selected topics", async ({
           cloudfront,
           udpUser: _,
           authHeader,
@@ -30,13 +31,52 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
+          await cloudfront.client.patch(endpoint, {
+            headers: authHeader,
+            body: requestTopics,
+          });
+
+          const result = await cloudfront.client.get<GetSelectedTopicsResponse>(
+            endpoint,
+            { headers: authHeader },
           );
 
+          expect(result.status).toBe(200);
+          expect(result.body).toStrictEqual(requestTopics);
+        });
+
+        it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint);
+
+          expect(result.status).toBe(401);
+        });
+      },
+    );
+
+    describe.runIf(isRouteDeployed(topicsConfig, "PATCH /v1/topics"))(
+      "PATCH",
+      () => {
+        it("returns 204 with updated selected topics", async ({
+          cloudfront,
+          udpUser: _,
+          authHeader,
+        }) => {
+          const requestTopics = {
+            topics: {
+              selectedTopics: [
+                { id: "topic-1", title: "Topic One" },
+                { id: "topic-2", title: "Topic Two" },
+              ],
+            },
+          };
+
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
+
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
@@ -45,7 +85,7 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           expect(result.status).toBe(204);
         });
 
-        it("returns 204 with cleared selectedTopics", async ({
+        it("returns 204 with cleared selected topics", async ({
           cloudfront,
           udpUser: _,
           authHeader,
@@ -56,13 +96,13 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(TopicsRequestSchema.safeParse(requestTopics).success).toBe(
-            true,
-          );
+          expect(
+            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
+          ).toBe(true);
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             headers: authHeader,
             body: requestTopics,
@@ -79,8 +119,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           };
 
           const result = await cloudfront.client.patch<
-            TopicsRequest,
-            TopicsResponse
+            UpdateSelectedTopicsRequest,
+            UpdateSelectedTopicsResponse
           >(endpoint, {
             body: requestTopics,
           });
