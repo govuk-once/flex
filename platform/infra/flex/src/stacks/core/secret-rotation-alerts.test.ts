@@ -3,7 +3,10 @@ import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { describe, expect, it, vi } from "vitest";
 
-import { createAlarmActions, createTestStack } from "../../test/alarm-actions";
+import {
+  createAlarmActions,
+  createTestStack,
+} from "../../__tests__/alarm-actions";
 import { createSecretRotationFailureAlert } from "./secret-rotation-alerts";
 
 vi.hoisted(() => {

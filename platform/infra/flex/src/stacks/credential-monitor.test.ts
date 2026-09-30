@@ -1,7 +1,7 @@
 import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-const ACCOUNT = "123456789012";
+import { loadInfra, TEST_ACCOUNT as ACCOUNT } from "../__tests__/load-infra";
 
 interface PolicyStatementJson {
   Action: string | string[];
@@ -10,12 +10,7 @@ interface PolicyStatementJson {
 }
 
 async function synthesiseFor(stage: string) {
-  vi.resetModules();
-  vi.stubEnv("STAGE", stage);
-  vi.stubEnv("CDK_DEFAULT_ACCOUNT", ACCOUNT);
-
-  const { SsmApp } = await import("../base");
-  const { ENV_KEYS, STAGE_KEYS } = await import("../ssm-keys");
+  const { SsmApp, ENV_KEYS, STAGE_KEYS } = await loadInfra(stage);
   const { FlexCredentialMonitorStack } = await import("./credential-monitor");
 
   const app = new SsmApp();

@@ -6,7 +6,10 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import { describe, it } from "vitest";
 
-import { createAlarmActions, createTestStack } from "../../test/alarm-actions";
+import {
+  createAlarmActions,
+  createTestStack,
+} from "../../__tests__/alarm-actions";
 import { SecretRotationAlarms } from "./secret-rotation";
 
 function synthesise() {
