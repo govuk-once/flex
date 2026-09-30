@@ -1,42 +1,49 @@
-import { logger } from "@flex/logging";
-
-import { publishMetric } from "../aws/cloudwatch";
-import type { ManualRotationSecret } from "../config";
+import type { MaximumAgeSecret } from "../config";
 import { MetricName } from "../metrics";
-import { getAutomaticRotationDeadlines } from "../rotation/automatic";
-import { selectOverdue } from "../rotation/deadline";
-import { getManualRotationDeadlines } from "../rotation/manual";
+import { reportCount } from "../report";
+import { getAutomaticRotationStatuses } from "../rotation/automatic";
+import { selectOverdue, selectUnverifiable } from "../rotation/deadline";
+import { getMaximumAgeStatuses } from "../rotation/maximum-age";
 
 interface SecretRotationCheckProps {
   environment: string;
-  manualRotationSecrets: ManualRotationSecret[];
+  region: string;
+  maximumIntervalDays: number;
+  maximumAgeSecrets: MaximumAgeSecret[];
   now: Date;
 }
 
 export async function checkSecretRotation({
   environment,
-  manualRotationSecrets,
+  region,
+  maximumIntervalDays,
+  maximumAgeSecrets,
   now,
 }: SecretRotationCheckProps): Promise<void> {
-  const [automatic, manual] = await Promise.all([
-    getAutomaticRotationDeadlines(),
-    getManualRotationDeadlines(manualRotationSecrets),
+  const [automatic, maximumAge] = await Promise.all([
+    getAutomaticRotationStatuses({ region, maximumIntervalDays }),
+    getMaximumAgeStatuses(maximumAgeSecrets),
   ]);
 
-  const overdue = selectOverdue([...automatic, ...manual], now);
+  const statuses = [...automatic, ...maximumAge];
 
-  if (overdue.length > 0) {
-    logger.warn("Secrets overdue for rotation", {
-      secrets: overdue.map(({ secret, dueDate }) => ({
-        secret,
-        dueDate: dueDate?.toISOString() ?? "unknown",
+  await Promise.all([
+    reportCount({
+      environment,
+      metricName: MetricName.SecretRotationOverdue,
+      message: "Credentials are more than 7 days past their rotation date",
+      detailKey: "overdue",
+      items: selectOverdue(statuses, now).map(({ resourceName, dueDate }) => ({
+        resourceName,
+        dueDate: dueDate.toISOString(),
       })),
-    });
-  }
-
-  await publishMetric(
-    environment,
-    MetricName.SecretRotationOverdue,
-    overdue.length,
-  );
+    }),
+    reportCount({
+      environment,
+      metricName: MetricName.SecretRotationUnverifiable,
+      message: "Rotation status could not be determined for some credentials",
+      detailKey: "unverifiable",
+      items: selectUnverifiable(statuses),
+    }),
+  ]);
 }

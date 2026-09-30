@@ -13,39 +13,56 @@ import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
 import { getPlatformEntry } from "../utils/getEntry";
+import { resolveEncryptionKey } from "../utils/lambda";
+import { putMetricDataStatement } from "../utils/put-metric-data-statement";
 
 const { env } = getEnvConfig();
 
-const MANUAL_ROTATION_CADENCE_DAYS = 90;
+const POLICY_MAXIMUM_AGE_DAYS = 90;
 
-interface ManualRotationSecret {
+interface MaximumAgeSecret {
   secretId: string;
   resourceArn: string;
+  maxAgeDays: number;
 }
 
 export class FlexCredentialMonitorStack extends BaseStack {
-  #secretByArn(secretArn: string): ManualRotationSecret {
-    return { secretId: secretArn, resourceArn: secretArn };
+  #secretByArn(secretArn: string, maxAgeDays: number): MaximumAgeSecret {
+    return { secretId: secretArn, resourceArn: secretArn, maxAgeDays };
   }
 
-  #secretByName(secretName: string): ManualRotationSecret {
+  #secretByName(secretName: string, maxAgeDays: number): MaximumAgeSecret {
     return {
       secretId: secretName,
       resourceArn: `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${secretName}-??????`,
+      maxAgeDays,
     };
   }
 
-  #getManualRotationSecrets(): ManualRotationSecret[] {
-    const testUserSecret =
+  #getMaximumAgeSecrets(): MaximumAgeSecret[] {
+    const testUserSecretName =
       env === Environment.development
-        ? this.#secretByName(`/${env}/flex-secret/auth/e2e/private_jwk`)
-        : this.#secretByName(`/${env}/flex-secret/e2e/test_user`);
+        ? `/${env}/flex-secret/auth/e2e/private_jwk`
+        : `/${env}/flex-secret/e2e/test_user`;
 
     return [
-      this.#secretByArn(this.import(ENV_KEYS.UdpConfigSecretArn)),
-      this.#secretByArn(this.import(ENV_KEYS.UnsConfigSecret)),
-      this.#secretByName(`/${env}/flex-secret/smoke-test/user`),
-      testUserSecret,
+      this.#secretByArn(
+        this.import(ENV_KEYS.DvlaConfigSecretArn),
+        POLICY_MAXIMUM_AGE_DAYS,
+      ),
+      this.#secretByArn(
+        this.import(ENV_KEYS.UdpConfigSecretArn),
+        POLICY_MAXIMUM_AGE_DAYS,
+      ),
+      this.#secretByArn(
+        this.import(ENV_KEYS.UnsConfigSecret),
+        POLICY_MAXIMUM_AGE_DAYS,
+      ),
+      this.#secretByName(
+        `/${env}/flex-secret/smoke-test/user`,
+        POLICY_MAXIMUM_AGE_DAYS,
+      ),
+      this.#secretByName(testUserSecretName, POLICY_MAXIMUM_AGE_DAYS),
     ];
   }
 
@@ -78,7 +95,7 @@ export class FlexCredentialMonitorStack extends BaseStack {
     const authorizerFunctionArn = this.import(
       STAGE_KEYS.ApigwPublicAuthorizerFn,
     );
-    const manualRotationSecrets = this.#getManualRotationSecrets();
+    const maximumAgeSecrets = this.#getMaximumAgeSecrets();
     const cognitoParameters = this.#getCognitoParameters();
 
     const monitor = new FlexPublicFunction(this, "CredentialMonitorFunction", {
@@ -86,10 +103,11 @@ export class FlexCredentialMonitorStack extends BaseStack {
       timeout: Duration.minutes(1),
       environment: {
         AUTHORIZER_FUNCTION_ARN: authorizerFunctionArn,
-        MANUAL_ROTATION_SECRETS: this.toJsonString(
-          manualRotationSecrets.map(({ secretId }) => ({
+        MAXIMUM_ROTATION_INTERVAL_DAYS: String(POLICY_MAXIMUM_AGE_DAYS),
+        MAXIMUM_AGE_SECRETS: this.toJsonString(
+          maximumAgeSecrets.map(({ secretId, maxAgeDays }) => ({
             secretId,
-            cadenceDays: MANUAL_ROTATION_CADENCE_DAYS,
+            maxAgeDays,
           })),
         ),
         COGNITO_PARAMETERS: this.toJsonString(cognitoParameters),
@@ -108,7 +126,7 @@ export class FlexCredentialMonitorStack extends BaseStack {
       new PolicyStatement({
         effect: Effect.ALLOW,
         actions: ["secretsmanager:ListSecretVersionIds"],
-        resources: manualRotationSecrets.map(({ resourceArn }) => resourceArn),
+        resources: maximumAgeSecrets.map(({ resourceArn }) => resourceArn),
       }),
       new PolicyStatement({
         effect: Effect.ALLOW,
@@ -123,17 +141,12 @@ export class FlexCredentialMonitorStack extends BaseStack {
         actions: ["lambda:GetFunctionConfiguration"],
         resources: [authorizerFunctionArn],
       }),
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ["cloudwatch:PutMetricData"],
-        resources: ["*"],
-        conditions: {
-          StringEquals: { "cloudwatch:namespace": METRIC_NAMESPACE },
-        },
-      }),
+      putMetricDataStatement(METRIC_NAMESPACE),
     ].forEach((statement) => {
       monitor.function.addToRolePolicy(statement);
     });
+
+    resolveEncryptionKey(this).grantDecrypt(monitor.function);
 
     new Rule(this, "CredentialMonitorSchedule", {
       schedule: Schedule.rate(Duration.hours(1)),

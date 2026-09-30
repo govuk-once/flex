@@ -76,7 +76,11 @@ export class FlexCoreStack extends BaseStack {
       permissionsBoundary,
     });
 
-    createSecretRotationFailureAlert(this, { criticalTopic });
+    createSecretRotationFailureAlert(this, {
+      criticalTopic,
+      alarmTopicKey,
+      warningAction,
+    });
 
     createSlackNotifications(this, {
       id: "SlackChannel",

@@ -6,9 +6,9 @@ const jsonArray = <T extends z.ZodType>(item: T) =>
     .transform((value): unknown => JSON.parse(value))
     .pipe(z.array(item));
 
-const ManualRotationSecretSchema = z.object({
+const MaximumAgeSecretSchema = z.object({
   secretId: z.string().min(1),
-  cadenceDays: z.number().int().positive(),
+  maxAgeDays: z.number().int().positive(),
 });
 
 const CognitoParameterSchema = z.object({
@@ -17,13 +17,15 @@ const CognitoParameterSchema = z.object({
 });
 
 const ConfigSchema = z.object({
+  AWS_REGION: z.string().min(1),
   FLEX_ENVIRONMENT: z.string().min(1),
   AUTHORIZER_FUNCTION_ARN: z.string().min(1),
-  MANUAL_ROTATION_SECRETS: jsonArray(ManualRotationSecretSchema),
+  MAXIMUM_ROTATION_INTERVAL_DAYS: z.coerce.number().int().positive(),
+  MAXIMUM_AGE_SECRETS: jsonArray(MaximumAgeSecretSchema),
   COGNITO_PARAMETERS: jsonArray(CognitoParameterSchema),
 });
 
-export type ManualRotationSecret = z.infer<typeof ManualRotationSecretSchema>;
+export type MaximumAgeSecret = z.infer<typeof MaximumAgeSecretSchema>;
 export type CognitoParameter = z.infer<typeof CognitoParameterSchema>;
 export type Config = z.infer<typeof ConfigSchema>;
 

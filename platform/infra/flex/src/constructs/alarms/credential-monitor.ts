@@ -31,6 +31,7 @@ interface CredentialAlarmDefinition {
   readonly threshold: number;
   readonly comparisonOperator: ComparisonOperator;
   readonly evaluationPeriods: number;
+  readonly datapointsToAlarm: number;
   readonly treatMissingData: TreatMissingData;
   readonly action: IAlarmAction;
 }
@@ -62,12 +63,20 @@ export class CredentialMonitorAlarms extends Construct {
         period: HOUR,
       });
 
+    const filledWithZero = (metric: IMetric, label: string) =>
+      new MathExpression({
+        expression: "FILL(value, 0)",
+        usingMetrics: { value: metric },
+        period: HOUR,
+        label,
+      });
+
     const definitions: CredentialAlarmDefinition[] = [
       {
         id: "SecretRotationOverdue",
         nameSuffix: "secret-rotation-overdue",
         description:
-          "Warning: one or more secrets are more than 7 days past their rotation date, see the credential monitor logs for which",
+          "Warning: one or more credentials are more than 7 days past their rotation date or maximum age, the credential monitor logs list them under overdue",
         metric: credentialMetric(
           MetricName.SecretRotationOverdue,
           Stats.MAXIMUM,
@@ -75,6 +84,23 @@ export class CredentialMonitorAlarms extends Construct {
         threshold: 0,
         comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
         evaluationPeriods: 1,
+        datapointsToAlarm: 1,
+        treatMissingData: TreatMissingData.IGNORE,
+        action: warningAction,
+      },
+      {
+        id: "SecretRotationUnverifiable",
+        nameSuffix: "secret-rotation-unverifiable",
+        description:
+          "Warning: the rotation status of one or more credentials could not be determined, the credential monitor logs list them under unverifiable with a reason",
+        metric: credentialMetric(
+          MetricName.SecretRotationUnverifiable,
+          Stats.MAXIMUM,
+        ),
+        threshold: 0,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
+        evaluationPeriods: 1,
+        datapointsToAlarm: 1,
         treatMissingData: TreatMissingData.IGNORE,
         action: warningAction,
       },
@@ -87,6 +113,7 @@ export class CredentialMonitorAlarms extends Construct {
         threshold: 0,
         comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
         evaluationPeriods: 1,
+        datapointsToAlarm: 1,
         treatMissingData: TreatMissingData.IGNORE,
         action: criticalAction,
       },
@@ -94,21 +121,15 @@ export class CredentialMonitorAlarms extends Construct {
         id: "NotReporting",
         nameSuffix: "not-reporting",
         description:
-          "Warning: the credential monitor has not completed a run in 3 hours, so rotation and drift are unmonitored",
-        metric: new MathExpression({
-          expression: "FILL(success, 0)",
-          usingMetrics: {
-            success: credentialMetric(
-              MetricName.CredentialMonitorSuccess,
-              Stats.SUM,
-            ),
-          },
-          period: HOUR,
-          label: "Successful runs",
-        }),
+          "Warning: the credential monitor has not completed a run in at least 3 of the last 4 hours, so rotation and drift are unmonitored",
+        metric: filledWithZero(
+          credentialMetric(MetricName.CredentialMonitorSuccess, Stats.SUM),
+          "Successful runs",
+        ),
         threshold: 1,
         comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
-        evaluationPeriods: 3,
+        evaluationPeriods: 4,
+        datapointsToAlarm: 3,
         treatMissingData: TreatMissingData.NOT_BREACHING,
         action: warningAction,
       },
@@ -117,13 +138,14 @@ export class CredentialMonitorAlarms extends Construct {
         nameSuffix: "failing",
         description:
           "Warning: the credential monitor has failed in each of the last 3 hours, see its logs",
-        metric: monitorFunction.metricErrors({
-          statistic: Stats.SUM,
-          period: HOUR,
-        }),
+        metric: filledWithZero(
+          monitorFunction.metricErrors({ statistic: Stats.SUM, period: HOUR }),
+          "Failed runs",
+        ),
         threshold: 0,
         comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
         evaluationPeriods: 3,
+        datapointsToAlarm: 3,
         treatMissingData: TreatMissingData.NOT_BREACHING,
         action: warningAction,
       },
@@ -136,7 +158,7 @@ export class CredentialMonitorAlarms extends Construct {
         metric: definition.metric,
         threshold: definition.threshold,
         evaluationPeriods: definition.evaluationPeriods,
-        datapointsToAlarm: definition.evaluationPeriods,
+        datapointsToAlarm: definition.datapointsToAlarm,
         comparisonOperator: definition.comparisonOperator,
         treatMissingData: definition.treatMissingData,
       });
