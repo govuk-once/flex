@@ -18,7 +18,7 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
     describe.runIf(isRouteDeployed(topicsConfig, "GET /v1/topics"))(
       "GET",
       () => {
-        it("returns 200 with selectedTopics", async ({
+        it("returns 200 with selected topics", async ({
           cloudfront,
           udpUser: _,
           authHeader,
@@ -45,7 +45,7 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
     describe.runIf(isRouteDeployed(topicsConfig, "PATCH /v1/topics"))(
       "PATCH",
       () => {
-        it("returns 204 with updated selectedTopics", async ({
+        it("returns 204 with updated selected topics", async ({
           cloudfront,
           udpUser: _,
           authHeader,
@@ -74,7 +74,7 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           expect(result.status).toBe(204);
         });
 
-        it("returns 204 with cleared selectedTopics", async ({
+        it("returns 204 with cleared selected topics", async ({
           cloudfront,
           udpUser: _,
           authHeader,
