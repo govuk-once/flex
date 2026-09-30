@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { topicsSchema } from "../common";
 
 export const inboundUpdateSelectedTopicsRequestSchema = topicsSchema;
