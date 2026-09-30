@@ -1,551 +1,6 @@
 {
   "widgets": [
     {
-      "type": "metric",
-      "x": 0,
-      "y": 17,
-      "width": 9,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/users/me",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 300,
-        "title": "GET /app/udp/v1/users/me"
-      }
-    },
-    {
-      "type": "text",
-      "x": 0,
-      "y": 16,
-      "width": 24,
-      "height": 1,
-      "properties": {
-        "markdown": "# UDP endpoints"
-      }
-    },
-    {
-      "type": "text",
-      "x": 0,
-      "y": 27,
-      "width": 24,
-      "height": 1,
-      "properties": {
-        "markdown": "# Identity endpoints"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 9,
-      "y": 17,
-      "width": 8,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Latency",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/users/me",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": true,
-        "region": "eu-west-2",
-        "stat": "Average",
-        "period": 300,
-        "setPeriodToTimeRange": true,
-        "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
-          "stickySummary": false,
-          "showTimeSeriesData": false,
-          "layout": "horizontal"
-        },
-        "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
-        },
-        "liveData": false,
-        "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "GET /app/udp/v1/users/me"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 17,
-      "y": 17,
-      "width": 7,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/users/me",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "sparkline": true,
-        "view": "singleValue",
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 2592000,
-        "title": "GET /app/udp/v1/users/me"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 0,
-      "y": 28,
-      "width": 9,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 300,
-        "title": "GET /app/udp/v1/identity"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 9,
-      "y": 28,
-      "width": 8,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Latency",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": true,
-        "region": "eu-west-2",
-        "stat": "Average",
-        "period": 300,
-        "setPeriodToTimeRange": true,
-        "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
-          "stickySummary": false,
-          "showTimeSeriesData": false,
-          "layout": "horizontal"
-        },
-        "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
-        },
-        "liveData": false,
-        "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "GET /app/udp/v1/identity"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 17,
-      "y": 28,
-      "width": 7,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity",
-            "Stage",
-            "prod",
-            "Method",
-            "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "sparkline": true,
-        "view": "singleValue",
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 2592000,
-        "title": "GET /app/udp/v1/identity"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 0,
-      "y": 38,
-      "width": 9,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity/{service}",
-            "Stage",
-            "prod",
-            "Method",
-            "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 300,
-        "title": "DELETE /app/udp/v1/identity/{service}"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 9,
-      "y": 38,
-      "width": 8,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Latency",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity/{service}",
-            "Stage",
-            "prod",
-            "Method",
-            "DELETE",
-            { "color": "#98dcf5", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": true,
-        "region": "eu-west-2",
-        "stat": "Average",
-        "period": 300,
-        "setPeriodToTimeRange": true,
-        "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
-          "stickySummary": false,
-          "showTimeSeriesData": false,
-          "layout": "horizontal"
-        },
-        "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
-        },
-        "liveData": false,
-        "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "DELETE /app/udp/v1/identity/{service}"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 17,
-      "y": 38,
-      "width": 7,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "Api",
-            "Resource",
-            "/app/udp/v1/identity/{service}",
-            "Stage",
-            "prod",
-            "Method",
-            "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "sparkline": true,
-        "view": "singleValue",
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 2592000,
-        "title": "DELETE /app/udp/v1/identity/{service}"
-      }
-    },
-    {
       "type": "text",
       "x": 0,
       "y": 0,
@@ -575,7 +30,12 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -588,7 +48,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -601,7 +65,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -631,13 +108,44 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
@@ -647,19 +155,13 @@
           "layout": "horizontal"
         },
         "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
         },
         "liveData": false,
         "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "GET UDP Service GW"
+        "legend": { "position": "bottom" },
+        "title": "GET UDP Service GW Percentiles"
       }
     },
     {
@@ -681,20 +183,13 @@
             "prod",
             "Method",
             "GET",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -707,7 +202,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -720,7 +220,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -750,7 +282,12 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -763,7 +300,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -776,7 +317,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -785,62 +339,6 @@
         "stat": "Sum",
         "period": 300,
         "title": "POST UDP Service GW"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 0,
-      "y": 11,
-      "width": 9,
-      "height": 5,
-      "properties": {
-        "metrics": [
-          [
-            "AWS/ApiGateway",
-            "Count",
-            "ApiName",
-            "PrivateGateway",
-            "Resource",
-            "/gateways/udp/{proxy+}",
-            "Stage",
-            "prod",
-            "Method",
-            "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "4XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "5XXError",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "eu-west-2",
-        "stat": "Sum",
-        "period": 300,
-        "title": "DELETE UDP Service GW"
       }
     },
     {
@@ -862,63 +360,44 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#98dcf5", "region": "eu-west-2" }
-          ]
-        ],
-        "view": "timeSeries",
-        "stacked": true,
-        "region": "eu-west-2",
-        "stat": "Average",
-        "period": 300,
-        "setPeriodToTimeRange": true,
-        "table": {
-          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
-          "stickySummary": false,
-          "showTimeSeriesData": false,
-          "layout": "horizontal"
-        },
-        "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
-        },
-        "liveData": false,
-        "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "POST UDP Service GW"
-      }
-    },
-    {
-      "type": "metric",
-      "x": 9,
-      "y": 11,
-      "width": 8,
-      "height": 5,
-      "properties": {
-        "metrics": [
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
           [
-            "AWS/ApiGateway",
-            "Latency",
-            "ApiName",
-            "PrivateGateway",
-            "Resource",
-            "/gateways/udp/{proxy+}",
-            "Stage",
-            "prod",
-            "Method",
-            "DELETE",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
@@ -928,19 +407,13 @@
           "layout": "horizontal"
         },
         "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
         },
         "liveData": false,
         "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "DELETE UDP Service GW"
+        "legend": { "position": "bottom" },
+        "title": "POST UDP Service GW Percentiles"
       }
     },
     {
@@ -962,20 +435,13 @@
             "prod",
             "Method",
             "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -988,7 +454,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1001,7 +472,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1010,6 +513,159 @@
         "stat": "Sum",
         "period": 2592000,
         "title": "POST UDP Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 11,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/udp/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "DELETE UDP Service GW"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 11,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "PrivateGateway",
+            "Resource",
+            "/gateways/udp/{proxy+}",
+            "Stage",
+            "prod",
+            "Method",
+            "DELETE",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": { "position": "bottom" },
+        "title": "DELETE UDP Service GW Percentiles"
       }
     },
     {
@@ -1031,20 +687,13 @@
             "prod",
             "Method",
             "DELETE",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -1057,7 +706,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1070,7 +724,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1082,6 +768,782 @@
       }
     },
     {
+      "type": "text",
+      "x": 0,
+      "y": 16,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# UDP endpoints"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 17,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "GET /app/udp/v1/users/me"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 17,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": { "position": "bottom" },
+        "title": "GET /app/udp/v1/users/me Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 17,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/udp/v1/users/me"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 22,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me/notifications",
+            "Stage",
+            "prod",
+            "Method",
+            "PATCH",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "PATCH /app/udp/v1/users/me/notifications"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 22,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me/notifications",
+            "Stage",
+            "prod",
+            "Method",
+            "PATCH",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": { "position": "bottom" },
+        "title": "PATCH /app/udp/v1/users/me/notifications Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 22,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/users/me/notifications",
+            "Stage",
+            "prod",
+            "Method",
+            "PATCH",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "PATCH /app/udp/v1/users/me/notifications"
+      }
+    },
+    {
+      "type": "text",
+      "x": 0,
+      "y": 27,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Identity endpoints"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 28,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "GET /app/udp/v1/identity"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 28,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": { "position": "bottom" },
+        "title": "GET /app/udp/v1/identity Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 28,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity",
+            "Stage",
+            "prod",
+            "Method",
+            "GET",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/udp/v1/identity"
+      }
+    },
+    {
       "type": "metric",
       "x": 0,
       "y": 33,
@@ -1099,8 +1561,13 @@
             "Stage",
             "prod",
             "Method",
-            "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            "GET",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -1113,7 +1580,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -1126,7 +1597,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -1134,7 +1618,7 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 300,
-        "title": "POST /app/udp/v1/identity/{service}"
+        "title": "GET /app/udp/v1/identity/{service}"
       }
     },
     {
@@ -1155,14 +1639,45 @@
             "Stage",
             "prod",
             "Method",
-            "POST",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            "GET",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
@@ -1172,19 +1687,13 @@
           "layout": "horizontal"
         },
         "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
         },
         "liveData": false,
         "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "POST /app/udp/v1/identity/{service}"
+        "legend": { "position": "bottom" },
+        "title": "GET /app/udp/v1/identity/{service} Percentiles"
       }
     },
     {
@@ -1205,21 +1714,14 @@
             "Stage",
             "prod",
             "Method",
-            "POST",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            "GET",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -1232,7 +1734,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1245,7 +1752,291 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 2592000,
+        "title": "GET /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 38,
+      "width": 9,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "eu-west-2",
+        "stat": "Sum",
+        "period": 300,
+        "title": "POST /app/udp/v1/identity/{service}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 38,
+      "width": 8,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Latency",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
+          ]
+        ],
+        "view": "singleValue",
+        "stacked": false,
+        "region": "eu-west-2",
+        "period": 300,
+        "setPeriodToTimeRange": true,
+        "table": {
+          "summaryColumns": ["MIN", "SUM", "MAX", "AVG"],
+          "stickySummary": false,
+          "showTimeSeriesData": false,
+          "layout": "horizontal"
+        },
+        "yAxis": {
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
+        },
+        "liveData": false,
+        "singleValueFullPrecision": false,
+        "legend": { "position": "bottom" },
+        "title": "POST /app/udp/v1/identity/{service} Percentiles"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 17,
+      "y": 38,
+      "width": 7,
+      "height": 5,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ApiGateway",
+            "Count",
+            "ApiName",
+            "Api",
+            "Resource",
+            "/app/udp/v1/identity/{service}",
+            "Stage",
+            "prod",
+            "Method",
+            "POST",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
+          ],
+          [
+            ".",
+            "4XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
+          ],
+          [
+            ".",
+            "5XXError",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            ".",
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1259,7 +2050,7 @@
     {
       "type": "metric",
       "x": 0,
-      "y": 22,
+      "y": 43,
       "width": 9,
       "height": 5,
       "properties": {
@@ -1270,12 +2061,17 @@
             "ApiName",
             "Api",
             "Resource",
-            "/app/udp/v1/users/me/notifications",
+            "/app/udp/v1/identity/{service}",
             "Stage",
             "prod",
             "Method",
-            "PATCH",
-            { "color": "#b2df8d", "region": "eu-west-2" }
+            "DELETE",
+            {
+              "color": "#2ca02c",
+              "region": "eu-west-2",
+              "id": "total",
+              "visible": false
+            }
           ],
           [
             ".",
@@ -1288,7 +2084,11 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "color": "#ff7f0e",
+              "region": "eu-west-2",
+              "id": "e4xx"
+            }
           ],
           [
             ".",
@@ -1301,7 +2101,20 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "color": "#d62728",
+              "region": "eu-west-2",
+              "id": "e5xx"
+            }
+          ],
+          [
+            {
+              "expression": "total - e4xx - e5xx",
+              "label": "Successful Requests",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "view": "timeSeries",
@@ -1309,13 +2122,13 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 300,
-        "title": "PATCH /app/udp/v1/users/me/notifications"
+        "title": "DELETE /app/udp/v1/identity/{service}"
       }
     },
     {
       "type": "metric",
       "x": 9,
-      "y": 22,
+      "y": 43,
       "width": 8,
       "height": 5,
       "properties": {
@@ -1326,18 +2139,49 @@
             "ApiName",
             "Api",
             "Resource",
-            "/app/udp/v1/users/me/notifications",
+            "/app/udp/v1/identity/{service}",
             "Stage",
             "prod",
             "Method",
-            "PATCH",
-            { "color": "#98dcf5", "region": "eu-west-2" }
+            "DELETE",
+            {
+              "stat": "p50",
+              "label": "p50",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p90",
+              "label": "p90",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "p99",
+              "label": "p99",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            "...",
+            {
+              "stat": "Average",
+              "label": "Average",
+              "color": "#1f77b4",
+              "region": "eu-west-2"
+            }
           ]
         ],
-        "view": "timeSeries",
-        "stacked": true,
+        "view": "singleValue",
+        "stacked": false,
         "region": "eu-west-2",
-        "stat": "Average",
         "period": 300,
         "setPeriodToTimeRange": true,
         "table": {
@@ -1347,25 +2191,19 @@
           "layout": "horizontal"
         },
         "yAxis": {
-          "left": {
-            "showUnits": true
-          },
-          "right": {
-            "showUnits": false
-          }
+          "left": { "showUnits": true },
+          "right": { "showUnits": false }
         },
         "liveData": false,
         "singleValueFullPrecision": false,
-        "legend": {
-          "position": "bottom"
-        },
-        "title": "PATCH /app/udp/v1/users/me/notifications"
+        "legend": { "position": "bottom" },
+        "title": "DELETE /app/udp/v1/identity/{service} Percentiles"
       }
     },
     {
       "type": "metric",
       "x": 17,
-      "y": 22,
+      "y": 43,
       "width": 7,
       "height": 5,
       "properties": {
@@ -1376,25 +2214,18 @@
             "ApiName",
             "Api",
             "Resource",
-            "/app/udp/v1/users/me/notifications",
+            "/app/udp/v1/identity/{service}",
             "Stage",
             "prod",
             "Method",
-            "PATCH",
-            { "color": "#b2df8d", "region": "eu-west-2" }
-          ],
-          [
-            ".",
-            "Latency",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            ".",
-            { "color": "#98dcf5", "stat": "Average", "region": "eu-west-2" }
+            "DELETE",
+            {
+              "id": "total",
+              "color": "#1f77b4",
+              "region": "eu-west-2",
+              "visible": true,
+              "label": "Total Requests"
+            }
           ],
           [
             ".",
@@ -1407,7 +2238,12 @@
             ".",
             ".",
             ".",
-            { "color": "#f7db8a", "region": "eu-west-2" }
+            {
+              "id": "e4xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#ff7f0e"
+            }
           ],
           [
             ".",
@@ -1420,7 +2256,39 @@
             ".",
             ".",
             ".",
-            { "color": "#ff9896", "region": "eu-west-2" }
+            {
+              "id": "e5xx",
+              "visible": false,
+              "region": "eu-west-2",
+              "color": "#d62728"
+            }
+          ],
+          [
+            {
+              "expression": "((total - e4xx - e5xx) / total) * 100",
+              "label": "Success Rate %",
+              "id": "success",
+              "color": "#2ca02c",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e4xx / total) * 100",
+              "label": "4XX Rate %",
+              "id": "r4xx",
+              "color": "#ff7f0e",
+              "region": "eu-west-2"
+            }
+          ],
+          [
+            {
+              "expression": "(e5xx / total) * 100",
+              "label": "5XX Rate %",
+              "id": "r5xx",
+              "color": "#d62728",
+              "region": "eu-west-2"
+            }
           ]
         ],
         "sparkline": true,
@@ -1428,7 +2296,7 @@
         "region": "eu-west-2",
         "stat": "Sum",
         "period": 2592000,
-        "title": "PATCH /app/udp/v1/users/me/notifications"
+        "title": "DELETE /app/udp/v1/identity/{service}"
       }
     }
   ]
