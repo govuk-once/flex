@@ -10,16 +10,20 @@ export async function handler(): Promise<void> {
   logger.setServiceName("credential-monitor");
 
   const {
+    AWS_REGION: region,
     FLEX_ENVIRONMENT: environment,
     AUTHORIZER_FUNCTION_ARN: authorizerFunctionArn,
-    MANUAL_ROTATION_SECRETS: manualRotationSecrets,
+    MAXIMUM_ROTATION_INTERVAL_DAYS: maximumIntervalDays,
+    MAXIMUM_AGE_SECRETS: maximumAgeSecrets,
     COGNITO_PARAMETERS: cognitoParameters,
   } = loadConfig();
 
   const results = await Promise.allSettled([
     checkSecretRotation({
       environment,
-      manualRotationSecrets,
+      region,
+      maximumIntervalDays,
+      maximumAgeSecrets,
       now: new Date(),
     }),
     checkCognitoDrift({

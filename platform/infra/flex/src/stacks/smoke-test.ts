@@ -22,6 +22,7 @@ import { importAlarmActions } from "../constructs/alarms/actions";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, PLATFORM_KEYS } from "../ssm-keys";
 import { getPlatformSmokeTestEntry } from "../utils/getEntry";
+import { putMetricDataStatement } from "../utils/put-metric-data-statement";
 
 const { env, stage } = getEnvConfig();
 
@@ -83,16 +84,7 @@ export class FlexSmokeTestStack extends BaseStack {
       }),
     );
 
-    role.addToPolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ["cloudwatch:PutMetricData"],
-        resources: ["*"],
-        conditions: {
-          StringEquals: { "cloudwatch:namespace": "Flex/SmokeTest" },
-        },
-      }),
-    );
+    role.addToPolicy(putMetricDataStatement("Flex/SmokeTest"));
 
     if (env === Environment.development) {
       // getStubTokenGenerator reads the e2e private JWK to self-sign tokens

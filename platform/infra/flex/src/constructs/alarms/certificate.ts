@@ -10,6 +10,8 @@ import { Construct } from "constructs";
 
 import { BaseAlarmsProps } from "./types";
 
+const DAYS_TO_EXPIRY_THRESHOLD = 30;
+
 export interface CertificateAlarmsProps extends BaseAlarmsProps {
   readonly certificate: ICertificate;
 }
@@ -24,13 +26,12 @@ export class CertificateAlarms extends Construct {
 
     this.daysToExpiryAlarm = new Alarm(this, "DaysToExpiry", {
       alarmName: `${alarmNamePrefix}-days-to-expiry`,
-      alarmDescription:
-        "Critical: certificate expires in under 45 days, check its ACM renewal status and DNS validation records",
+      alarmDescription: `Critical: certificate expires in under ${String(DAYS_TO_EXPIRY_THRESHOLD)} days, past ACM's 45-day renewal point, check its renewal status and DNS validation records`,
       metric: certificate.metricDaysToExpiry({
         statistic: Stats.MINIMUM,
         period: Duration.days(1),
       }),
-      threshold: 45,
+      threshold: DAYS_TO_EXPIRY_THRESHOLD,
       evaluationPeriods: 1,
       comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.IGNORE,

@@ -1,10 +1,8 @@
-import { logger } from "@flex/logging";
-
-import { publishMetric } from "../aws/cloudwatch";
 import { getFunctionEnvironment } from "../aws/lambda";
 import { getParameterValue } from "../aws/ssm";
 import type { CognitoParameter } from "../config";
 import { MetricName } from "../metrics";
+import { reportCount } from "../report";
 
 interface CognitoDriftCheckProps {
   environment: string;
@@ -26,21 +24,15 @@ export async function checkCognitoDrift({
     ),
   ]);
 
-  const drifted = cognitoParameters.filter(
-    ({ environmentVariable }, index) =>
-      deployedEnvironment[environmentVariable] !== parameterValues[index],
-  );
-
-  if (drifted.length > 0) {
-    logger.warn(
-      "Cognito configuration in SSM differs from the deployed authorizer, a deployment is required",
-      { drifted },
-    );
-  }
-
-  await publishMetric(
+  await reportCount({
     environment,
-    MetricName.CognitoConfigDrift,
-    drifted.length,
-  );
+    metricName: MetricName.CognitoConfigDrift,
+    message:
+      "Cognito configuration in SSM differs from the deployed authorizer, a deployment is required",
+    detailKey: "drifted",
+    items: cognitoParameters.filter(
+      ({ environmentVariable }, index) =>
+        deployedEnvironment[environmentVariable] !== parameterValues[index],
+    ),
+  });
 }

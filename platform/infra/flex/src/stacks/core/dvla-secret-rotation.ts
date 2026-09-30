@@ -1,3 +1,4 @@
+import { getEnvConfig } from "@flex/utils";
 import { Duration, Stack } from "aws-cdk-lib";
 import type { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import {
@@ -12,10 +13,13 @@ import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
+import { SecretRotationAlarms } from "../../constructs/alarms/secret-rotation";
 import type { AlarmActionProps } from "../../constructs/alarms/types";
 import { FlexPrivateEgressFunction } from "../../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS } from "../../ssm-keys";
 import { getPlatformEntry } from "../../utils/getEntry";
+
+const { env } = getEnvConfig();
 
 interface DvlaSecretRotationProps extends AlarmActionProps {
   vpc: IVpc;
@@ -148,6 +152,13 @@ export function createDvlaSecretRotation(
       Stack.of(scope).account,
     );
   }
+
+  new SecretRotationAlarms(scope, "DvlaSecretRotationAlarms", {
+    alarmNamePrefix: `${env}-dvla-secret-rotation`,
+    fn: rotationFunction.function,
+    criticalAction,
+    warningAction,
+  });
 
   return { rotationFunction };
 }
