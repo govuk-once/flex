@@ -52,6 +52,7 @@ import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
+import { CertificateAlarms } from "../constructs/alarms/certificate";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
 import { RELAY_HANDLER_CODE } from "../constructs/alarms/relay-handler";
@@ -636,6 +637,13 @@ export class FlexGlobalStack extends BaseStack {
     });
 
     const { criticalAction, warningAction } = this.#createAlarmActions();
+
+    new CertificateAlarms(this, "CertificateAlarms", {
+      alarmNamePrefix: `${stage}-certificate`,
+      certificate: cert,
+      criticalAction,
+      warningAction,
+    });
 
     const { restApi } = this.#getPublicRestApi();
 

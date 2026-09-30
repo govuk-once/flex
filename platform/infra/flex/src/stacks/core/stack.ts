@@ -12,6 +12,7 @@ import { addApiGatewayCloudWatchRole } from "./api-gateway";
 import { createDvlaSecretRotation } from "./dvla-secret-rotation";
 import { addVpcEndpoints } from "./endpoints";
 import { createSlackNotifications } from "./notifications";
+import { createSecretRotationFailureAlert } from "./secret-rotation-alerts";
 import { createAlarmTopics, createReleaseTopic } from "./topics";
 import { createVpc } from "./vpc";
 
@@ -74,6 +75,8 @@ export class FlexCoreStack extends BaseStack {
       warningAction,
       permissionsBoundary,
     });
+
+    createSecretRotationFailureAlert(this, { criticalTopic });
 
     createSlackNotifications(this, {
       id: "SlackChannel",

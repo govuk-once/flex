@@ -35,6 +35,7 @@ import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
 import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
@@ -124,29 +125,20 @@ export class FlexPlatformStack extends BaseStack {
   }
 
   #getAuthorizerFunction({ criticalAction, warningAction }: AlarmActionProps) {
+    const parameterKeys = getAuthorizerParameterKeys();
+    const clientId = this.import(parameterKeys.clientId);
+    const userPoolId = this.import(parameterKeys.userPoolId);
+
     // Only in the development env we stub the JWKS service
-    if (env === Environment.development) {
-      const stubUserPoolId = this.import(ENV_KEYS.AuthUserPoolIdStub);
-      const stubClientId = this.import(ENV_KEYS.AuthClientIdStub);
-
-      const jwksUri = this.#createStubJwksService();
-
-      return this.#createAuthorizerFunction({
-        clientId: stubClientId,
-        userPoolId: stubUserPoolId,
-        jwksUri,
-        criticalAction,
-        warningAction,
-      });
-    }
-
-    const clientId = this.import(ENV_KEYS.AuthClientId);
-    const userPoolId = this.import(ENV_KEYS.AuthUserPoolId);
+    const jwksUri =
+      env === Environment.development
+        ? this.#createStubJwksService()
+        : `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
 
     return this.#createAuthorizerFunction({
       clientId,
       userPoolId,
-      jwksUri: `https://cognito-idp.eu-west-2.amazonaws.com/${userPoolId}/.well-known/jwks.json`,
+      jwksUri,
       criticalAction,
       warningAction,
     });

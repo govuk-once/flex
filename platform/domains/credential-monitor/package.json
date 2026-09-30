@@ -1,0 +1,29 @@
+{
+  "name": "@platform/credential-monitor",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./metrics": "./src/metrics.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "3.1091.0",
+    "@aws-sdk/client-lambda": "3.1091.0",
+    "@aws-sdk/client-secrets-manager": "3.1091.0",
+    "@aws-sdk/client-ssm": "3.1091.0",
+    "@flex/logging": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@types/node": "26.1.1",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}
