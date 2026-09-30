@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { loadConfig } from "./config";
 
-const maximumAgeSecrets = [{ secretId: "udp", maxAgeDays: 90 }];
+const maximumAgeSecrets = [{ secretId: "udp", maxAgeDays: 90 }]; // pragma: allowlist secret
 const cognitoParameters = [
   {
     parameterName: "/staging/flex-param/auth/user-pool-id",
@@ -74,7 +74,7 @@ describe("loadConfig", () => {
   it("rejects a maximum-age entry without a positive whole number of days", () => {
     vi.stubEnv(
       "MAXIMUM_AGE_SECRETS",
-      JSON.stringify([{ secretId: "udp", maxAgeDays: 0 }]),
+      JSON.stringify([{ secretId: "udp", maxAgeDays: 0 }]), // pragma: allowlist secret
     );
 
     expect(() => loadConfig()).toThrow();

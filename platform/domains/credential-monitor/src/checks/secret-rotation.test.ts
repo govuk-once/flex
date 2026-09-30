@@ -20,7 +20,9 @@ class NamedError extends Error {
   }
 }
 
-function runCheck(maximumAgeSecrets = [{ secretId: "udp", maxAgeDays: 90 }]) {
+const udpMaximumAge = [{ secretId: "udp", maxAgeDays: 90 }]; // pragma: allowlist secret
+
+function runCheck(maximumAgeSecrets = udpMaximumAge) {
   return checkSecretRotation({
     environment: "staging",
     region: "eu-west-2",
@@ -97,8 +99,8 @@ describe("checkSecretRotation", () => {
       ]);
 
     await runCheck([
-      { secretId: "uns", maxAgeDays: 90 },
-      { secretId: "udp", maxAgeDays: 90 },
+      { secretId: "uns", maxAgeDays: 90 }, // pragma: allowlist secret
+      { secretId: "udp", maxAgeDays: 90 }, // pragma: allowlist secret
     ]);
 
     expect(publishMetric).toHaveBeenCalledWith(

@@ -34,6 +34,7 @@ function synthesise() {
     queueArn: { "Fn::GetAtt": [queueId, "Arn"] },
     queueName: { "Fn::GetAtt": [queueId, "QueueName"] },
     topicRef: stack.resolve(criticalTopic.topicArn) as unknown,
+    keyArn: stack.resolve(alarmTopicKey.keyArn) as unknown,
     ...actions,
   };
 }
@@ -158,9 +159,11 @@ describe("createSecretRotationFailureAlert", () => {
     });
   });
 
-  it("keeps undelivered alerts for 14 days in an encrypted queue", () => {
-    synthesise().template.hasResourceProperties("AWS::SQS::Queue", {
-      SqsManagedSseEnabled: true,
+  it("keeps undelivered alerts for 14 days, encrypted with the alarm topic key", () => {
+    const { template, keyArn } = synthesise();
+
+    template.hasResourceProperties("AWS::SQS::Queue", {
+      KmsMasterKeyId: keyArn,
       MessageRetentionPeriod: 1209600,
     });
   });
