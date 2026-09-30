@@ -54,6 +54,7 @@ import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
+import { RELAY_HANDLER_CODE } from "../constructs/alarms/relay-handler";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
@@ -90,21 +91,7 @@ export class FlexGlobalStack extends BaseStack {
       environment: {
         TARGET_TOPIC_ARN: targetTopicArn,
       },
-      code: Code.fromInline(`
-          const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
-          const client = new SNSClient({ region: "eu-west-2" });
-          exports.handler = async (event) => {
-            await Promise.all(
-              (event.Records ?? []).map((record) =>
-                client.send(new PublishCommand({
-                  TopicArn: process.env.TARGET_TOPIC_ARN,
-                  Subject: record.Sns.Subject?.slice(0, 100),
-                  Message: record.Sns.Message,
-                })),
-              ),
-            );
-          };
-        `),
+      code: Code.fromInline(RELAY_HANDLER_CODE),
     });
 
     relayFn.addToRolePolicy(
