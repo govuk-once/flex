@@ -1,6 +1,8 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
+  GetSelectedTopicsResponse,
+  GetSelectedTopicsResponseSchema,
   UpdateSelectedTopicsRequest,
   UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponse,
@@ -12,6 +14,33 @@ import { config as topicsConfig } from "../domain.config";
 describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
   describe("/topics/v1/topics", () => {
     const endpoint = "/topics/v1/topics";
+
+    describe.runIf(isRouteDeployed(topicsConfig, "GET /v1/topics"))(
+      "GET",
+      () => {
+        it("returns 200 with selectedTopics", async ({
+          cloudfront,
+          udpUser: _,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get<GetSelectedTopicsResponse>(
+            endpoint,
+            { headers: authHeader },
+          );
+
+          expect(result.status).toBe(200);
+          expect(
+            GetSelectedTopicsResponseSchema.safeParse(result.body).success,
+          ).toBe(true);
+        });
+
+        it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint);
+
+          expect(result.status).toBe(401);
+        });
+      },
+    );
 
     describe.runIf(isRouteDeployed(topicsConfig, "PATCH /v1/topics"))(
       "PATCH",
