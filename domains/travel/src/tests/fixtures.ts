@@ -1,5 +1,5 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
-import type { Country, Event } from "@flex/travel-service-gateway";
+import type { Country, TravelEvent } from "@flex/travel-service-gateway";
 
 export { createUserId };
 export const userId = createUserId("test-travel-user");
@@ -17,14 +17,14 @@ export const countries = [
   createCountry({ country: "Germany", slug: "germany", synonyms: [] }),
 ];
 
-const baseEvent: Event = {
+const baseEvent: TravelEvent = {
   namespace: "travel",
   group: "france",
   eventNote: "A update for france",
   eventTimestamp: "2026-08-14T09:00:00.000Z",
 };
 
-export const createEvent = createFixtureBuilder<Event>(baseEvent);
+export const createEvent = createFixtureBuilder<TravelEvent>(baseEvent);
 export const event = createEvent();
 export const events = [
   event,

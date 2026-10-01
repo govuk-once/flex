@@ -123,6 +123,7 @@ export class FlexCoreStack extends BaseStack {
       [ENV_KEYS.TopicWarningAlarms]: warningTopic.topicArn,
       [ENV_KEYS.VpcEApiGateway]: apiGatewayEndpoint.vpcEndpointId,
       [ENV_KEYS.LogGroupKeyArn]: logGroupKey.keyArn,
+      [ENV_KEYS.AlarmTopicKeyArn]: alarmTopicKey.keyArn,
     });
   }
 }

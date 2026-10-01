@@ -1,8 +1,13 @@
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { getEnvConfig } from "@flex/utils";
+import {
+  ManagedPolicy,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from "aws-cdk-lib/aws-iam";
 import { CfnCustomDataIdentifier } from "aws-cdk-lib/aws-macie";
 import {
   AwsCustomResource,
-  AwsCustomResourcePolicy,
   PhysicalResourceId,
   PhysicalResourceIdReference,
 } from "aws-cdk-lib/custom-resources";
@@ -12,14 +17,13 @@ import { BaseStack } from "../base";
 import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { MacieResultsBucket } from "../constructs/macie/MacieResultsBucket";
 import { macieCoverage } from "../macie-coverage";
+import { STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 
-export interface FlexMacieStackProps {
-  readonly accessLogBucketName: string;
-}
+const { stage } = getEnvConfig();
 
 export class FlexMacieStack extends BaseStack {
-  constructor(scope: Construct, id: string, props: FlexMacieStackProps) {
+  constructor(scope: Construct, id: string) {
     super(scope, id, {
       tags: {
         Product: "GOV.UK",
@@ -34,6 +38,64 @@ export class FlexMacieStack extends BaseStack {
     });
 
     createLogGroupKey(this, "alias/flex-macie-log-group-key");
+
+    const accessLogBucketName = this.import(
+      STAGE_KEYS.CloudfrontAccessLogBucketName,
+    );
+
+    const macieCustomResourceRole = new Role(this, "MacieCustomResourceRole", {
+      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AWSLambdaBasicExecutionRole",
+        ),
+      ],
+    });
+
+    macieCustomResourceRole.addToPolicy(
+      new PolicyStatement({
+        actions: [
+          "macie2:EnableMacie",
+          "macie2:UpdateMacieSession",
+          "macie2:UpdateAutomatedDiscoveryConfiguration",
+          "macie2:PutClassificationExportConfiguration",
+        ],
+        resources: ["*"],
+        conditions: {
+          StringEquals: { "aws:RequestedRegion": this.region },
+        },
+      }),
+    );
+
+    macieCustomResourceRole.addToPolicy(
+      new PolicyStatement({
+        actions: [
+          "macie2:CreateClassificationJob",
+          "macie2:UpdateClassificationJob",
+        ],
+        resources: [
+          `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
+        ],
+      }),
+    );
+
+    macieCustomResourceRole.addToPolicy(
+      new PolicyStatement({
+        actions: ["iam:CreateServiceLinkedRole"],
+        resources: [
+          `arn:${this.partition}:iam::${this.account}:role/aws-service-role/macie.amazonaws.com/AWSServiceRoleForAmazonMacie`,
+        ],
+        conditions: {
+          StringEquals: { "iam:AWSServiceName": "macie.amazonaws.com" },
+        },
+      }),
+    );
+
+    applyCheckovSkip(
+      macieCustomResourceRole.node.findChild("DefaultPolicy"),
+      "CKV_AWS_111",
+      "macie2 EnableMacie, UpdateMacieSession, UpdateAutomatedDiscoveryConfiguration and PutClassificationExportConfiguration have no resource type in the AWS authorization reference and must be granted on *; the statement is confined to this region by aws:RequestedRegion.",
+    );
 
     const sessionPhysicalId = PhysicalResourceId.of(
       `flex-macie-session-${this.account}-${this.region}`,
@@ -59,12 +121,7 @@ export class FlexMacieStack extends BaseStack {
         },
         physicalResourceId: sessionPhysicalId,
       },
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ["macie2:EnableMacie", "macie2:UpdateMacieSession"],
-          resources: ["*"],
-        }),
-      ]),
+      role: macieCustomResourceRole,
     });
 
     // Periodic, scoped scanning only. Turn off continuous automated
@@ -87,12 +144,7 @@ export class FlexMacieStack extends BaseStack {
       {
         onCreate: disableAutomatedDiscoveryCall,
         onUpdate: disableAutomatedDiscoveryCall,
-        policy: AwsCustomResourcePolicy.fromStatements([
-          new PolicyStatement({
-            actions: ["macie2:UpdateAutomatedDiscoveryConfiguration"],
-            resources: ["*"],
-          }),
-        ]),
+        role: macieCustomResourceRole,
       },
     );
     disableAutomatedDiscovery.node.addDependency(session);
@@ -135,12 +187,7 @@ export class FlexMacieStack extends BaseStack {
     const exportConfig = new AwsCustomResource(this, "ExportConfig", {
       onCreate: exportCall,
       onUpdate: exportCall,
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ["macie2:PutClassificationExportConfiguration"],
-          resources: ["*"],
-        }),
-      ]),
+      role: macieCustomResourceRole,
     });
     exportConfig.node.addDependency(session);
     exportConfig.node.addDependency(results.bucket);
@@ -154,14 +201,14 @@ export class FlexMacieStack extends BaseStack {
         service: "macie2",
         action: "createClassificationJob",
         parameters: {
-          name: `flex-access-log-scan-${this.region}`,
+          name: `${stage}-access-log-scan-${this.region}`,
           description:
             "Weekly scoped scan of the CloudFront access-log bucket for sensitive data",
           jobType: "SCHEDULED",
           initialRun: true,
           samplingPercentage: 100,
           managedDataIdentifierSelector: "RECOMMENDED",
-          clientToken: `flex-access-log-scan-${this.account}-${this.region}`,
+          clientToken: `${stage}-access-log-scan-${this.account}-${this.region}`,
           scheduleFrequency: {
             weeklySchedule: { dayOfWeek: "MONDAY" },
           },
@@ -169,7 +216,7 @@ export class FlexMacieStack extends BaseStack {
             bucketDefinitions: [
               {
                 accountId: this.account,
-                buckets: [props.accessLogBucketName],
+                buckets: [accessLogBucketName],
               },
             ],
           },
@@ -189,27 +236,10 @@ export class FlexMacieStack extends BaseStack {
         ignoreErrorCodesMatching:
           "ValidationException|ResourceNotFoundException|ConflictException",
       },
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ["macie2:CreateClassificationJob"],
-          resources: ["*"],
-        }),
-        new PolicyStatement({
-          actions: ["macie2:UpdateClassificationJob"],
-          resources: [
-            `arn:${this.partition}:macie2:${this.region}:${this.account}:classification-job/*`,
-          ],
-        }),
-      ]),
+      role: macieCustomResourceRole,
     });
     scanJob.node.addDependency(session);
     scanJob.node.addDependency(disableAutomatedDiscovery);
     scanJob.node.addDependency(exportConfig);
-
-    applyCheckovSkip(
-      scanJob.node.findChild("CustomResourcePolicy"),
-      "CKV_AWS_111",
-      "macie2:CreateClassificationJob does not support resource-level permissions; it must be granted on * per AWS IAM.",
-    );
   }
 }

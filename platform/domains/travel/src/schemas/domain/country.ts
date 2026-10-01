@@ -1,51 +1,44 @@
-import { IsoDateTime, NonEmptyString, Slug } from "@flex/utils";
+import { IsoDateTime, NonEmptyString, Slug, Url, Uuid } from "@flex/utils";
 import { z } from "zod";
 
-/**
- * A travel row as stored in the shared `sources` table.
- *
- * The table holds sources for every namespace, so this describes only the
- * attributes a travel row is seeded with. Anything else on the item — the keys,
- * `URL`, `accessMethod`, operator-owned fields — is stripped on parse.
- */
-export const TravelSourceSchema = z.object({
+export const TravelSourceItemSchema = z.object({
+  sourceID: Uuid,
+  compositeKey: NonEmptyString,
+  sourceNamespace: NonEmptyString,
+  sourceGroup: NonEmptyString,
+  accessMethod: NonEmptyString,
+  URL: Url,
   sourceEnabled: z.boolean(),
   lastUpdated: IsoDateTime,
   sourceDetail: z.object({
-    slug: Slug,
     country: NonEmptyString,
+    slug: Slug,
     synonyms: z.array(z.string()),
   }),
 });
-
-export type TravelSource = z.output<typeof TravelSourceSchema>;
+export type TravelSourceItem = z.output<typeof TravelSourceItemSchema>;
 
 export const CountrySchema = z
   .object({
     country: NonEmptyString,
-    slug: Slug,
     lastUpdate: IsoDateTime,
+    slug: Slug,
     synonyms: z.array(z.string()),
   })
   .meta({ id: "Country" });
-
 export type Country = z.output<typeof CountrySchema>;
 
-export const CountriesResponseSchema = z
+export const GetCountriesResponseSchema = z
   .array(CountrySchema)
-  .meta({ id: "CountriesResponse" });
-
-export type CountriesResponse = z.output<typeof CountriesResponseSchema>;
+  .meta({ id: "GetCountriesResponse" });
+export type GetCountriesResponse = z.output<typeof GetCountriesResponseSchema>;
 
 /** Maps a stored row onto the shape callers see. */
-export function toCountry({
-  lastUpdated,
-  sourceDetail,
-}: TravelSource): Country {
-  return {
-    country: sourceDetail.country,
-    slug: sourceDetail.slug,
-    lastUpdate: lastUpdated,
-    synonyms: sourceDetail.synonyms,
-  };
+export function toCountry(item: TravelSourceItem): Country {
+  const {
+    lastUpdated,
+    sourceDetail: { country, slug, synonyms },
+  } = item;
+
+  return { country, slug, lastUpdate: lastUpdated, synonyms };
 }

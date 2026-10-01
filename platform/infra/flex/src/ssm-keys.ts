@@ -30,6 +30,7 @@ export const ENV_KEYS = {
   TopicReleaseNotifications: `/${env}/flex/topic/release-notifications`,
   FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
   LogGroupKeyArn: `/${env}/flex/kms/log-group-key-arn`,
+  AlarmTopicKeyArn: `/${env}/flex/kms/alarm-topic-key-arn`,
   Vpc: `/${env}/flex/vpc`,
   VpcEApiGateway: `/${env}/flex/vpc-e/api-gateway`,
 };
@@ -51,4 +52,6 @@ export const STAGE_KEYS = {
   ApigwPrivateDomainRoot: `/${stage}/flex/apigw/private/domains-root`,
   //
   WafCfSecretHeaderArn: `/${stage}/flex-secret/origin-verify-secret`,
+  //
+  CloudfrontAccessLogBucketName: `/${stage}/flex/s3/cloudfront-access-log-bucket-name`,
 };
