@@ -15,16 +15,28 @@ export const handler = route("PATCH /v1/topics", async ({ auth }) => {
 async function updateTopics(userId: UserId): Promise<void> {
   const { body, integrations, logger } = context();
 
+  const requestedAt = new Date().toISOString();
+
   const result = await integrations.udpPostTopics({
     headers: {
       "requesting-service-user-id": userId,
-      "requested-at": new Date().toISOString(),
+      "requested-at": requestedAt,
     },
     body,
   });
 
   if (!result.ok) {
     const { status } = result.error;
+
+    if (status === 409) {
+      logger.error("requested-at timestamp older than in record", {
+        status,
+        userId,
+        "requested-at": requestedAt,
+      });
+
+      throw new createHttpError.Conflict("Oh no");
+    }
 
     logger.error("Failed to update user topics", { status });
     throw new createHttpError.BadGateway();
