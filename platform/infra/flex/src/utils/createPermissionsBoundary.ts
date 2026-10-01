@@ -31,6 +31,8 @@ export function createPermissionsBoundary(
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
         ],
         resources: ["*"],
       }),
