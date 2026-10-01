@@ -268,6 +268,9 @@ export class FlexPlatformStack extends BaseStack {
     const apiGatewayEndpoint = this.importInterfaceVpcEndpoint(
       ENV_KEYS.VpcEApiGateway,
     );
+    const accessLogGroup = new LogGroup(this, "AccessLogGroup", {
+      retention: RetentionDays.ONE_YEAR,
+    });
 
     const privateGateway = new RestApi(this, "PrivateGateway", {
       description:
@@ -293,11 +296,7 @@ export class FlexPlatformStack extends BaseStack {
       }),
       deployOptions: {
         stageName: STAGE_NAME,
-        accessLogDestination: new LogGroupLogDestination(
-          new LogGroup(this, "AccessLogGroup", {
-            retention: RetentionDays.ONE_YEAR,
-          }),
-        ),
+        accessLogDestination: new LogGroupLogDestination(accessLogGroup),
         accessLogFormat: AccessLogFormat.jsonWithStandardFields({
           caller: true,
           httpMethod: true,
@@ -349,6 +348,7 @@ export class FlexPlatformStack extends BaseStack {
       criticalAction,
       warningAction,
       api: privateGateway,
+      authFailureAccessLogGroup: accessLogGroup,
     });
 
     return {
