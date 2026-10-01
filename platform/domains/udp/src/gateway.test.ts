@@ -494,6 +494,39 @@ describe("UDP Service Gateway", () => {
       };
     });
 
+    it("returns 409 when required-at header is out of sync", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/topics", {
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
+          body: { data: mockTopics },
+        })
+        .reply(409);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/topics", {
+          headers: {
+            ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+            "requested-at": mockRequestedAt,
+          },
+          body: mockTopics,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
+        }),
+      );
+    });
+
     it("returns updated selectedTopics for the requesting user", async ({
       http,
       platform,
