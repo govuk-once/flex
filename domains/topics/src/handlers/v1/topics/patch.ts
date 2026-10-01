@@ -16,7 +16,10 @@ async function updateTopics(userId: UserId): Promise<void> {
   const { body, integrations, logger } = context();
 
   const result = await integrations.udpPostTopics({
-    headers: { "requesting-service-user-id": userId },
+    headers: {
+      "requesting-service-user-id": userId,
+      "requested-at": new Date().toISOString(),
+    },
     body,
   });
 

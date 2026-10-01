@@ -120,6 +120,10 @@ export const { config, createHandler } = defineGateway({
           name: "requesting-service-user-id",
           required: true,
         },
+        requestedAt: {
+          name: "requested-at",
+          required: true,
+        },
       },
       body: inboundUpdateSelectedTopicsRequestSchema,
       response: domainTopicsSchema,
