@@ -1,15 +1,15 @@
 import { it } from "@flex/testing";
 import { createTopics, userId } from "@tests/fixtures";
-import { beforeEach, describe, expect, vi } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /v1/topics", () => {
   const endpoint = "/topics";
   const lambdaRequestTime = new Date("2026-09-14T12:00:00.000Z");
-  const requestedAt = lambdaRequestTime.toISOString();
 
-  it.beforeEach(() => {
+  it.beforeEach(({ env }) => {
+    env.set({ sendRequestedAtHeader: "false" });
     vi.useFakeTimers();
     vi.setSystemTime(lambdaRequestTime);
 
@@ -22,10 +22,7 @@ describe("PATCH /v1/topics", () => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: {
-          "requesting-service-user-id": userId,
-          "requested-at": requestedAt,
-        },
+        headers: { "requesting-service-user-id": userId },
         body: createTopics(),
       })
       .reply(200, createTopics());
@@ -48,10 +45,7 @@ describe("PATCH /v1/topics", () => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: {
-          "requesting-service-user-id": userId,
-          "requested-at": requestedAt,
-        },
+        headers: { "requesting-service-user-id": userId },
         body: createTopics(emptyTopics),
       })
       .reply(200, createTopics(emptyTopics));
@@ -84,10 +78,7 @@ describe("PATCH /v1/topics", () => {
     http
       .gateway("udp")
       .post("/topics", {
-        headers: {
-          "requesting-service-user-id": userId,
-          "requested-at": requestedAt,
-        },
+        headers: { "requesting-service-user-id": userId },
         body: createTopics(),
       })
       .reply(500);
@@ -100,12 +91,34 @@ describe("PATCH /v1/topics", () => {
     expect(result.statusCode).toBe(502);
   });
 
-  describe("UDP requested-at header error", () => {
-    const lambdaRequestTimeInPast = new Date();
-    lambdaRequestTimeInPast.setDate(lambdaRequestTime.getDate() - 1);
+  describe("sendRequestedAtHeader feature flag is enabled", () => {
+    const requestedAt = lambdaRequestTime.toISOString();
 
-    beforeEach(() => {
-      vi.setSystemTime(lambdaRequestTimeInPast);
+    it.beforeEach(({ env }) => {
+      env.set({ sendRequestedAtHeader: "true" });
+    });
+
+    it("returns 204 when topics are updated including requested-at header", async ({
+      http,
+      sdk,
+    }) => {
+      http
+        .gateway("udp")
+        .post("/topics", {
+          headers: {
+            "requesting-service-user-id": userId,
+            "requested-at": requestedAt,
+          },
+          body: createTopics(),
+        })
+        .reply(200, createTopics());
+
+      const result = await handler(
+        sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
+        sdk.context(),
+      );
+
+      expect(result.statusCode).toBe(204);
     });
 
     it("returns 409 when the requested-at header is out of sync", async ({
@@ -117,7 +130,7 @@ describe("PATCH /v1/topics", () => {
         .post("/topics", {
           headers: {
             "requesting-service-user-id": userId,
-            "requested-at": lambdaRequestTimeInPast.toISOString(),
+            "requested-at": requestedAt,
           },
           body: createTopics(),
         })

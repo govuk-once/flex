@@ -4,15 +4,21 @@ import createHttpError from "http-errors";
 
 const context = routeContext<"PATCH /v1/topics">;
 
-export const handler = route("PATCH /v1/topics", async ({ auth }) => {
-  const userId = auth.pairwiseId as UserId;
+export const handler = route(
+  "PATCH /v1/topics",
+  async ({ auth, featureFlags }) => {
+    const userId = auth.pairwiseId as UserId;
 
-  await updateTopics(userId);
+    await updateTopics(userId, featureFlags.sendRequestedAtHeader);
 
-  return { status: 204 };
-});
+    return { status: 204 };
+  },
+);
 
-async function updateTopics(userId: UserId): Promise<void> {
+async function updateTopics(
+  userId: UserId,
+  sendRequestedAtHeader: boolean,
+): Promise<void> {
   const { body, integrations, logger } = context();
 
   const requestedAt = new Date().toISOString();
@@ -20,7 +26,7 @@ async function updateTopics(userId: UserId): Promise<void> {
   const result = await integrations.udpPostTopics({
     headers: {
       "requesting-service-user-id": userId,
-      "requested-at": requestedAt,
+      ...(sendRequestedAtHeader && { "requested-at": requestedAt }),
     },
     body,
   });

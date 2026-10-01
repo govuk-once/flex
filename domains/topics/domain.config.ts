@@ -13,6 +13,13 @@ export const { config, route, routeContext } = domain({
     access: "isolated",
     function: { timeoutSeconds: 20 },
   },
+  featureFlags: {
+    sendRequestedAtHeader: {
+      description: "Send requested-at header to UDP when upserting topics",
+      default: false,
+      environments: ["development"],
+    },
+  },
   resources: {
     privateGatewayUrl: {
       type: "ssm",
@@ -44,6 +51,7 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostTopics"],
             body: UpdateSelectedTopicsRequestSchema,
+            featureFlags: ["sendRequestedAtHeader"],
           },
         },
         GET: {
