@@ -1,5 +1,6 @@
 import { IacDomainConfig } from "@flex/sdk";
 import type { RouteAccess, Stage } from "@flex/utils";
+import { Environment } from "@flex/utils";
 import {
   AuthorizationType,
   IdentitySource,
@@ -96,6 +97,8 @@ export class FlexDomainStack extends BaseStack {
       },
     });
 
+    const isHigherEnvironment =
+      stage === Environment.staging || stage === Environment.production;
     const routes = flattenRoutes(config, stage);
     const [resourceReferences, integrationReferences] = resolveRouteReferences(
       routes,
@@ -145,13 +148,18 @@ export class FlexDomainStack extends BaseStack {
           config.common?.access,
         );
 
-        const lambda = this.#createFunction(functionId, routeAccess, {
-          domain: config.name,
-          entry: getDomainEntry(config.name, handlerPath),
-          ...toFunctionConfig(routeConfig.function, config.common?.function),
-          criticalAction,
-          warningAction,
-        });
+        const lambda = this.#createFunction(
+          functionId,
+          routeAccess,
+          isHigherEnvironment,
+          {
+            domain: config.name,
+            entry: getDomainEntry(config.name, handlerPath),
+            ...toFunctionConfig(routeConfig.function, config.common?.function),
+            criticalAction,
+            warningAction,
+          },
+        );
 
         if (routeConfig.resources?.length) {
           grantRouteResources(lambda.function, {
@@ -221,6 +229,7 @@ export class FlexDomainStack extends BaseStack {
   #createFunction(
     id: string,
     access: RouteAccess,
+    isHigherEnvironment: boolean,
     props: ReturnType<typeof toFunctionConfig> & {
       domain: string;
       entry: string;
@@ -237,12 +246,14 @@ export class FlexDomainStack extends BaseStack {
         return new FlexPublicFunction(this, id, props);
       case "private":
         return new FlexPrivateEgressFunction(this, id, {
+          ...(isHigherEnvironment && { memorySize: 1024 }),
           vpc,
           privateEgressSg,
           ...props,
         });
       case "isolated":
         return new FlexPrivateIsolatedFunction(this, id, {
+          ...(isHigherEnvironment && { memorySize: 1024 }),
           vpc,
           privateIsolatedSg,
           ...props,

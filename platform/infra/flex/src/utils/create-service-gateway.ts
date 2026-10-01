@@ -1,7 +1,7 @@
 import type { ValidatedGatewayConfig } from "@flex/service-gateway";
 import type { RouteAccess } from "@flex/utils";
-import { assertNever } from "@flex/utils";
-import { Duration } from "aws-cdk-lib";
+import { assertNever, getEnvConfig } from "@flex/utils";
+import { CfnResource, Duration } from "aws-cdk-lib";
 import type { IResource } from "aws-cdk-lib/aws-apigateway";
 import type { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
@@ -62,15 +62,17 @@ export function createServiceGateway(
     resources: config.resources,
   });
 
+  const { env } = getEnvConfig();
+  const isHigherEnvironment = env === "staging" || env === "production";
+
+  const handler = isHigherEnvironment
+    ? createProvisionedAlias(serviceGateway)
+    : serviceGateway.function;
+
   const method = "ANY";
   const path = `${config.name}/{proxy+}`;
 
-  createPrivateGatewayRoute(
-    path,
-    method,
-    serviceGateway.function,
-    gatewaysResource,
-  );
+  createPrivateGatewayRoute(path, method, handler, gatewaysResource);
 
   return { method, path };
 }
@@ -114,6 +116,17 @@ function createFunction(
     default:
       return assertNever(access);
   }
+}
+
+function createProvisionedAlias(
+  serviceGateway: FlexPrivateEgressFunction | FlexPrivateIsolatedFunction,
+) {
+  const alias = serviceGateway.function.addAlias("live");
+  const cfnAlias = alias.node.defaultChild as CfnResource;
+  cfnAlias.addPropertyOverride("ProvisionedConcurrencyConfig", {
+    ProvisionedConcurrentExecutions: 2,
+  });
+  return alias;
 }
 
 interface GrantResourcesOptions {
