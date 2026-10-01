@@ -122,7 +122,7 @@ export const { config, createHandler } = defineGateway({
         },
         requestedAt: {
           name: "requested-at",
-          required: true,
+          required: false,
         },
       },
       body: inboundUpdateSelectedTopicsRequestSchema,
