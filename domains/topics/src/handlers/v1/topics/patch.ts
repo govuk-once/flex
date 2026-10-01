@@ -35,13 +35,13 @@ async function updateTopics(
     const { status } = result.error;
 
     if (status === 409) {
-      logger.error("requested-at timestamp older than in record", {
+      logger.error("Update rejected because a newer version already exists", {
         status,
         userId,
         "requested-at": requestedAt,
       });
 
-      throw new createHttpError.Conflict("Oh no");
+      throw new createHttpError.Conflict();
     }
 
     logger.error("Failed to update user topics", { status });
