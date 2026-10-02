@@ -14,26 +14,32 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    name: ⚡️ Zap staging
+    name: ⚡️ Zap development
     permissions:
       id-token: write # Required for AWS OIDC
       contents: read
       security-events: write # Required for SARIF upload
+      actions: read
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          ref: ${{ github.ref }}
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
           persist-credentials: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
-          role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE  }}
+          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE  }}
           aws-region: "eu-west-2"
           role-session-name: ${{ github.run_id }}
+
+      - name: Get AWS account ID
+        id: aws-account
+        run: |
+          echo "account-id=$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -49,29 +55,607 @@ jobs:
 
       - name: Generate JWT
         env:
-          STAGE: "staging"
+          STAGE: "development"
         run: pnpm dastSetup
 
-      - name: Verify auth header
+      - name: Verify authentication values
         run: |
-          if [ -n "$ZAP_AUTH_HEADER_VALUE" ]; then
-            echo "Success: Auth header is available."
-          else
+          if [ -z "$ZAP_AUTH_HEADER_VALUE" ]; then
             echo "Failure: Auth header is missing!"
             exit 1
           fi
+          echo "Success: Authentication values are available."
 
-      - name: ZAP Scan
-        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
+      - name: Generate OpenAPI specifications
+        run: pnpm openapi:generate
+
+      - name: Merge public OpenAPI specifications for ZAP
+        shell: bash
+        run: |
+          cat > /tmp/merge-zap-openapi.ts <<'EOF'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { pathToFileURL } from "node:url";
+
+          async function main() {
+            const domainsRoot = path.resolve("domains");
+            const openApiRoot = path.resolve("dist/openapi/current");
+            const outputPath = path.resolve("dist/openapi/merged-openapi.json");
+
+            const index = JSON.parse(
+              fs.readFileSync(path.join(openApiRoot, "index.json"), "utf8"),
+            );
+
+            const merged: {
+              openapi: string;
+              info: {
+                title: string;
+                version: string;
+              };
+              paths: Record<string, Record<string, unknown>>;
+              components: {
+                schemas: Record<string, unknown>;
+              };
+            } = {
+              openapi: "3.1.0",
+              info: {
+                title: "Flex API - ZAP",
+                version: "1.0.0",
+              },
+              paths: {},
+              components: {
+                schemas: {},
+              },
+            };
+
+            for (const domain of index.domains) {
+              const configPath = path.join(
+                domainsRoot,
+                domain.name,
+                "domain.config.ts",
+              );
+
+              const { config } = await import(
+                pathToFileURL(configPath).href
+              );
+
+              const spec = JSON.parse(
+                fs.readFileSync(
+                  path.join(openApiRoot, domain.spec),
+                  "utf8",
+                ),
+              );
+
+              if (spec.components?.schemas) {
+                Object.assign(
+                  merged.components.schemas,
+                  spec.components.schemas,
+                );
+              }
+
+              for (const [version, routes] of Object.entries(
+                config.routes ?? {},
+              )) {
+                for (const [sdkPath, methods] of Object.entries(
+                  routes as Record<string, any>,
+                )) {
+                  for (const [method, route] of Object.entries(
+                    methods as Record<string, any>,
+                  )) {
+                    /*
+                     * ZAP should only scan routes explicitly exposed through
+                     * the public API.
+                     */
+                    if (!route?.public) {
+                      continue;
+                    }
+
+                    const openApiPath =
+                      `/app/${domain.name}/${version}${sdkPath}`
+                        .replace(
+                          /:([A-Za-z_]\w*)/g,
+                          "{$1}",
+                        )
+                        .replace(
+                          /\[([A-Za-z_]\w*)\]/g,
+                          "{$1}",
+                        );
+
+                    const operation =
+                      spec.paths?.[openApiPath]?.[
+                        method.toLowerCase()
+                      ];
+
+                    if (!operation) {
+                      console.error(
+                        `Missing generated operation: ${method} ${openApiPath}`,
+                      );
+                      process.exit(1);
+                    }
+
+                    merged.paths[openApiPath] ??= {};
+
+                    const zapOperation = structuredClone(operation);
+
+                    zapOperation.operationId =
+                      `${domain.name}-${version}-${method.toLowerCase()}-${sdkPath}`
+                        .replace(/[^A-Za-z0-9_-]/g, "-")
+                        .replace(/-+/g, "-")
+                        .replace(/^-|-$/g, "");
+
+                    merged.paths[openApiPath][
+                      method.toLowerCase()
+                    ] = zapOperation;
+
+                    console.log(
+                      `Included: ${method} ${openApiPath}`,
+                    );
+                  }
+                }
+              }
+            }
+
+            fs.writeFileSync(
+              outputPath,
+              `${JSON.stringify(merged, null, 2)}\n`,
+            );
+
+            console.log("");
+            console.log(
+              `Merged ${
+                Object.keys(merged.paths).length
+              } public paths for ZAP.`,
+            );
+
+            console.log(
+              `Merged ${
+                Object.keys(merged.components.schemas).length
+              } component schemas.`,
+            );
+          }
+
+          main().catch((error: unknown) => {
+            console.error(
+              error instanceof Error
+                ? error.message
+                : String(error),
+            );
+            process.exit(1);
+          });
+          EOF
+
+          pnpm exec tsx /tmp/merge-zap-openapi.ts
+  
+
+      - name: Validate generated OpenAPI specification
+        shell: bash
+        run: |
+          if ! jq -e '.paths["/app/udp/v1/users/me"]' \
+            dist/openapi/merged-openapi.json > /dev/null; then
+            echo "Failure: expected UDP users/me route is missing from generated OpenAPI."
+            exit 1
+          fi
+
+          echo "Success: generated OpenAPI contains /app/udp/v1/users/me."
+
+
+      - name: Run ZAP API scan
+        id: zap
+        shell: bash
+        env:
+          API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+        run: |
+          mkdir -p "${{ github.workspace }}/zap-reports"
+
+          ZAP_UID=$(docker run --rm \
+            ghcr.io/zaproxy/zaproxy:2.17.0@sha256:781a2bdaea47324e7bab583e2263f21d257b0aee61ed51521a5be45f5f5081ef \
+            id -u)
+
+          echo "ZAP container UID: ${ZAP_UID}"
+          sudo chown "${ZAP_UID}" "${{ github.workspace }}/zap-reports"
+
+          cat > "${{ github.workspace }}/zap-plan.yaml" <<EOF
+          env:
+            contexts:
+              - name: flex-api
+                urls:
+                  - "${API_URL}"
+
+            parameters:
+              failOnError: true
+              failOnWarning: false
+              continueOnFailure: true
+              progressToStdout: true
+
+          jobs:
+            - type: openapi
+              parameters:
+                apiFile: /zap/wrk/dist/openapi/merged-openapi.json
+                targetUrl: "${API_URL}"
+                context: flex-api
+
+            - type: passiveScan-wait
+              parameters:
+                maxDuration: 5
+
+            - type: activeScan
+              parameters:
+                context: flex-api
+                url: "${API_URL}"
+
+            - type: passiveScan-wait
+              parameters:
+                maxDuration: 5
+
+            - type: report
+              parameters:
+                template: traditional-json
+                reportDir: /zap/reports
+                reportFile: report_json.json
+                reportTitle: Flex API ZAP Scan
+
+            - type: report
+              parameters:
+                template: traditional-html
+                reportDir: /zap/reports
+                reportFile: report_html.html
+                reportTitle: Flex API ZAP Scan
+
+            - type: report
+              parameters:
+                template: traditional-md
+                reportDir: /zap/reports
+                reportFile: report_md.md
+                reportTitle: Flex API ZAP Scan
+
+            - type: report
+              parameters:
+                template: sarif-json
+                reportDir: /zap/reports
+                reportFile: report.sarif.json
+                reportTitle: Flex API ZAP Scan
+          EOF
+
+          set +e
+
+          docker run --rm \
+            --network=host \
+            -v "${{ github.workspace }}:/zap/wrk/:ro" \
+            -v "${{ github.workspace }}/zap-reports:/zap/reports:rw" \
+            -e ZAP_AUTH_HEADER_VALUE \
+            -e ZAP_AUTH_HEADER="Authorization" \
+            ghcr.io/zaproxy/zaproxy:2.17.0@sha256:781a2bdaea47324e7bab583e2263f21d257b0aee61ed51521a5be45f5f5081ef \
+            zap.sh \
+              -cmd \
+              -autorun /zap/wrk/zap-plan.yaml
+
+          ZAP_EXIT_CODE=$?
+
+          echo "ZAP exit code: ${ZAP_EXIT_CODE}"
+          echo "zap_exit_code=${ZAP_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+          exit 0
+
+      - name: Verify ZAP reports
+        shell: bash
+        run: |
+          echo "Generated reports:"
+
+          ls -lh \
+            zap-reports/report_json.json \
+            zap-reports/report_md.md \
+            zap-reports/report_html.html \
+            zap-reports/report.sarif.json
+
+          echo "ZAP JSON alerts:"
+          jq '[.site[].alerts[]] | length' \
+            zap-reports/report_json.json
+
+          echo "SARIF results:"
+          jq '[.runs[].results // []] | flatten | length' \
+            zap-reports/report.sarif.json
+
+          echo "SARIF version:"
+          jq -r '.version' \
+            zap-reports/report.sarif.json
+      
+      - name: Normalize ZAP SARIF for GitHub Code Scanning
+        shell: bash
+        run: |
+          jq \
+            --slurpfile zap zap-reports/report_json.json '
+            # Build a lookup of ZAP rule ID -> ZAP risk code.
+            ($zap[0].site
+              | map(.alerts // [])
+              | flatten
+              | map({
+                  key: (.pluginid | tostring),
+                  value: (.riskcode | tonumber)
+                })
+              | from_entries
+            ) as $risk |
+
+            # Convert API URLs to relative paths for GitHub Code Scanning.
+            walk(
+              if type == "object"
+                 and has("artifactLocation")
+                 and (.artifactLocation.uri? | type == "string")
+                 and (.artifactLocation.uri | test("^https?://"))
+              then
+                .artifactLocation.uri |=
+                  sub("^https?://[^/]+/?"; "")
+              else
+                .
+              end
+            )
+
+            |
+
+            # Add GitHub security severity using ZAP risk.
+            .runs |= map(
+              .tool.driver.rules |= map(
+                .properties = (.properties // {}) |
+                .properties.tags = (
+                  (.properties.tags // []) + ["security"] | unique
+                ) |
+
+                if $risk[.id] == 3 then
+                  .properties."security-severity" = "8.0"
+                elif $risk[.id] == 2 then
+                  .properties."security-severity" = "5.0"
+                elif $risk[.id] == 1 then
+                  .properties."security-severity" = "2.0"
+                elif $risk[.id] == 0 then
+                  .properties."security-severity" = "0.0"
+                else
+                  .
+                end
+              )
+            )
+          ' zap-reports/report.sarif.json \
+            > report.github.sarif.json
+
+          echo "Normalized SARIF locations:"
+          jq -r '
+            .runs[].results[]?.locations[]?
+            .physicalLocation.artifactLocation.uri
+          ' report.github.sarif.json | sort -u
+
+          echo "GitHub security severity mapping:"
+          jq -r '
+            .runs[].tool.driver.rules[]?
+            | [
+                .id,
+                .name,
+                (.properties."security-severity" // "not-set"),
+                ((.properties.tags // []) | join(","))
+              ]
+            | @tsv
+          ' report.github.sarif.json
+      
+      - name: Generate ZAP finding fingerprints
+        id: zap_fingerprints
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUTPUT="$RUNNER_TEMP/zap-findings-current.txt"
+
+          jq -r '
+            .runs[].results[]?
+            | . as $result
+            | ($result.ruleId // "unknown") as $rule
+            | $result.locations[]?
+            | .physicalLocation.artifactLocation.uri
+            | sub("^https?://[^/]+/?"; "")
+            | split("/")
+            | select(length >= 2)
+            | "\($rule)|\(.[1])"
+          ' report.github.sarif.json \
+            | LC_ALL=C sort -u \
+            > "$OUTPUT"
+
+          echo "Current ZAP finding fingerprints:"
+          cat "$OUTPUT"
+
+          COUNT="$(wc -l < "$OUTPUT" | tr -d ' ')"
+
+          echo ""
+          echo "Unique ZAP finding fingerprint count: $COUNT"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Load previous ZAP finding baseline
+        id: zap_baseline
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          CURRENT="$RUNNER_TEMP/zap-findings-current.txt"
+          BASELINE="$RUNNER_TEMP/zap-findings-baseline.txt"
+
+          touch "$BASELINE"
+
+          ARTIFACT_ID="$(
+            gh api \
+              "/repos/${GITHUB_REPOSITORY}/actions/artifacts?name=zap-api-development-baseline&per_page=100" \
+              --jq '
+                [
+                  .artifacts[]
+                  | select(.expired == false)
+                ]
+                | sort_by(.created_at)
+                | reverse
+                | .[0].id // ""
+              '
+          )"
+
+          if [ -z "$ARTIFACT_ID" ]; then
+            echo "No previous ZAP baseline found."
+            echo "This run will seed the initial baseline."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Found previous baseline artifact: $ARTIFACT_ID"
+
+          mkdir -p "$RUNNER_TEMP/zap-baseline-download"
+
+          gh api \
+            "/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            > "$RUNNER_TEMP/zap-baseline.zip"
+
+          unzip -q \
+            "$RUNNER_TEMP/zap-baseline.zip" \
+            -d "$RUNNER_TEMP/zap-baseline-download"
+
+          cp \
+            "$RUNNER_TEMP/zap-baseline-download/zap-findings-baseline.txt" \
+            "$BASELINE"
+
+          LC_ALL=C sort -u "$BASELINE" -o "$BASELINE"
+
+          echo "Previous ZAP finding baseline:"
+          cat "$BASELINE"
+
+          echo "found=true" >> "$GITHUB_OUTPUT"
+
+      - name: Detect new ZAP findings
+        id: new_zap_findings
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT="$RUNNER_TEMP/zap-findings-current.txt"
+          BASELINE="$RUNNER_TEMP/zap-findings-baseline.txt"
+          NEW="$RUNNER_TEMP/zap-findings-new.txt"
+
+          LC_ALL=C sort -u "$CURRENT" -o "$CURRENT"
+          LC_ALL=C sort -u "$BASELINE" -o "$BASELINE"
+
+          if [ "${{ steps.zap_baseline.outputs.found }}" = "false" ]; then
+            : > "$NEW"
+
+            echo "Initial baseline run - existing findings will not trigger a notification."
+          else
+            comm -13 "$BASELINE" "$CURRENT" > "$NEW"
+          fi
+
+          NEW_COUNT="$(wc -l < "$NEW" | tr -d ' ')"
+
+          echo ""
+          echo "New ZAP finding count: $NEW_COUNT"
+
+          if [ "$NEW_COUNT" -gt 0 ]; then
+            echo "New ZAP findings:"
+            cat "$NEW"
+          else
+            echo "No new ZAP findings detected."
+          fi
+
+          echo "count=$NEW_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare ZAP notification details
+        id: zap_notification
+        if: steps.new_zap_findings.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NEW="$RUNNER_TEMP/zap-findings-new.txt"
+
+          FINDINGS="$(
+            jq -r --rawfile new "$NEW" '
+              ($new | split("\n") | map(select(length > 0))) as $newKeys
+              |
+              [
+                .site[].alerts[]
+                | . as $alert
+                | .instances[].uri
+                | capture("/app/(?<domain>[^/]+)/")
+                | "\($alert.pluginid)|\(.domain)" as $key
+                | select($newKeys | index($key))
+                | {
+                    key: $key,
+                    name: $alert.name,
+                    severity: ($alert.riskdesc | split(" ")[0]),
+                    domain: ($key | split("|")[1])
+                  }
+              ]
+              | unique_by(.key)
+              | sort_by(.severity, .name, .domain)
+              | .[]
+              | "• [\(.severity)] \(.name) — \(.domain)"
+            ' zap-reports/report_json.json
+          )"
+
+          {
+            echo "findings<<ZAP_FINDINGS_EOF"
+            echo "$FINDINGS"
+            echo "ZAP_FINDINGS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build ZAP finding baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT="$RUNNER_TEMP/zap-findings-current.txt"
+          BASELINE="$RUNNER_TEMP/zap-findings-baseline.txt"
+          UPDATED="$RUNNER_TEMP/zap-findings-baseline-updated.txt"
+
+          cat "$BASELINE" "$CURRENT" \
+            | LC_ALL=C sort -u \
+            > "$UPDATED"
+
+          cp "$UPDATED" zap-findings-baseline.txt
+
+          echo "Updated ZAP finding baseline:"
+          cat zap-findings-baseline.txt
+
+      - name: Upload ZAP finding baseline
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          docker_name: "ghcr.io/zaproxy/zaproxy:stable"
-          format: openapi
-          target: ./.zap/merged-openapi.json
-          rules_file_name: "./.zap/rules.tsv"
-          # URL can't have trailing slash
-          cmd_options: '-a -O ${{ secrets.STAGING_API_URL }} -z "-config format.sarif=true -config report.sarif=report.sarif"' # Options https://github.com/zaproxy/zaproxy/blob/255a7b8e9cc923506a61367f935ae5aa7afdd811/docker/zap-api-scan.py#L87
-          allow_issue_writing: false # We don't want to create Github issues for now
+          name: zap-api-development-baseline
+          path: zap-findings-baseline.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload ZAP SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@88585263c0627ee42c0e1c5143a112c8d6f4aa18 # v4.38.2
+        with:
+          sarif_file: report.github.sarif.json
+          category: zap-api-development
+      
+
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zap-api-development-reports
+          path: |
+            zap-reports/report_html.html
+            zap-reports/report_json.json
+            zap-reports/report_md.md
+            zap-reports/report.sarif.json
+            report.github.sarif.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Send ZAP notification
+        uses: govuk-once/govuk-platform-notifications-gh-action@5e96ca088bc1b2a46a7900c9c9fb829fefee01e2
+        if: steps.new_zap_findings.outputs.count != '0'
+        with:
+          aws_account_id: ${{ steps.aws-account.outputs.account-id }}
+          message_type: security_alerts
+          title: "New ZAP security findings"
+          message: "New findings detected during the authenticated ZAP API scan."
+          finding_count: ${{ steps.new_zap_findings.outputs.count }}
+          findings: ${{ steps.zap_notification.outputs.findings }}
+          repository: ${{ github.repository }}
+          workflow_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          slack_channel: "#govuk-once-flex-alerting-dev"
 
   workflow_fail:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
