@@ -1,47 +1,51 @@
-import { route } from "@domain";
+import { route, routeContext } from "@domain";
 import { UserId } from "@flex/utils";
 import { GetSelectedTopicsResponse } from "@schemas/topic";
 import createHttpError from "http-errors";
 
-export const handler = route(
-  "GET /v1/topics",
-  async ({ auth, integrations, logger }) => {
-    const userId = UserId.parse(auth.pairwiseId);
+const context = routeContext<"GET /v1/topics">;
 
-    const result = await integrations.udpGetTopics({
-      headers: { "requesting-service-user-id": userId },
-    });
+export const handler = route("GET /v1/topics", async ({ auth }) => {
+  const userId = UserId.parse(auth.pairwiseId);
 
-    if (!result.ok) {
-      const { status } = result.error;
+  const topics = await getTopics(userId);
 
-      if (status === 404) {
-        logger.info("User not found", { status, userId });
+  return {
+    status: 200,
+    data: topics,
+  };
+});
 
-        const emptyTopics: GetSelectedTopicsResponse = {
-          topics: {
-            selectedTopics: [],
-          },
-        };
+async function getTopics(userId: UserId): Promise<GetSelectedTopicsResponse> {
+  const { integrations, logger } = context();
 
-        logger.info("Returning empty topics", { data: emptyTopics });
+  const result = await integrations.udpGetTopics({
+    headers: { "requesting-service-user-id": userId },
+  });
 
-        return {
-          status: 200,
-          data: emptyTopics,
-        };
-      }
+  if (!result.ok) {
+    const { status } = result.error;
 
-      logger.error("Failed to get user topics", { status });
+    if (status === 404) {
+      logger.info("User not found", { status, userId });
 
-      throw new createHttpError.BadGateway();
+      const emptyTopics: GetSelectedTopicsResponse = {
+        topics: {
+          selectedTopics: [],
+        },
+      };
+
+      logger.info("Returning empty topics", { data: emptyTopics });
+
+      return emptyTopics;
     }
 
-    logger.info("Successfully fetched topics", { data: result.data });
+    logger.error("Failed to get user topics", { status });
 
-    return {
-      status: 200,
-      data: result.data,
-    };
-  },
-);
+    throw new createHttpError.BadGateway();
+  }
+
+  logger.info("Successfully fetched topics", { data: result.data });
+
+  return result.data;
+}
