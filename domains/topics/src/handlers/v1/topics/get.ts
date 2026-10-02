@@ -1,12 +1,12 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
+import { UserId } from "@flex/utils";
 import { GetSelectedTopicsResponse } from "@schemas/topic";
 import createHttpError from "http-errors";
 
 export const handler = route(
   "GET /v1/topics",
   async ({ auth, integrations, logger }) => {
-    const userId = auth.pairwiseId as UserId;
+    const userId = UserId.parse(auth.pairwiseId);
 
     const result = await integrations.udpGetTopics({
       headers: { "requesting-service-user-id": userId },
