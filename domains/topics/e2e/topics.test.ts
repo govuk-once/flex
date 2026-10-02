@@ -3,7 +3,6 @@ import { it } from "@flex/testing/e2e";
 import {
   GetSelectedTopicsResponse,
   UpdateSelectedTopicsRequest,
-  UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
@@ -70,10 +69,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
-
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
             UpdateSelectedTopicsResponse
@@ -95,10 +90,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
               selectedTopics: [],
             },
           };
-
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
 
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
