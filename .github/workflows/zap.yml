@@ -14,7 +14,7 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    name: ⚡️ Zap staging
+    name: ⚡️ Zap development
     permissions:
       id-token: write # Required for AWS OIDC
       contents: read
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          ref: ${{ github.ref }}
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
           persist-credentials: false
 
