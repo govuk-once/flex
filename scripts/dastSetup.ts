@@ -1,7 +1,9 @@
 import fs from "node:fs";
 
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import { getJwtClient } from "@flex/testing/e2e/setup";
+import {
+  getE2eBypassToken,
+  getJwtClient,
+} from "@flex/testing/e2e/setup";
 
 async function main() {
   const stage = process.env.STAGE || "development";
@@ -11,14 +13,7 @@ async function main() {
 
     const generator = await getJwtClient(stage);
     const token = await generator.getToken();
-
-    const e2eBypassToken = await getSecret(
-      `/${stage}/flex-secret/waf/e2e-bypass`,
-    );
-
-    if (!e2eBypassToken) {
-      throw new Error(`E2E bypass secret not found for stage "${stage}"`);
-    }
+    const e2eBypassToken = await getE2eBypassToken(stage);
 
     console.log("\n--------------------------------------------------");
 
