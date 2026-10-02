@@ -68,6 +68,7 @@ jobs:
             -o /dev/null \
             -w "%{http_code}" \
             -H "Authorization: ${ZAP_AUTH_HEADER_VALUE}" \
+            -H "x-flex-e2e-bypass: ${E2E_BYPASS_TOKEN}" \
             "${{ secrets.DEVELOPMENT_API_URL }}/v1/users")
 
           echo "Development API returned HTTP ${HTTP_CODE}"
