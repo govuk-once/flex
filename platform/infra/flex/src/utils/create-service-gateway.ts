@@ -42,12 +42,16 @@ export function createServiceGateway(
     warningAction,
   }: CreateServiceGatewayOptions,
 ) {
+  const { env } = getEnvConfig();
+  const isHigherEnvironment = env === "staging" || env === "production";
+
   const serviceGateway = createFunction(scope, {
     access: config.access,
     id: `${toPascalCase(config.name)}ServiceGateway`,
     enableDefaultAlarms: config.function?.enableDefaultAlarms,
     securityGroups,
     functionProps: {
+      ...(isHigherEnvironment && { memorySize: 1024 }),
       domain: config.name,
       entry: getPlatformEntry(config.name, "gateway.ts"),
       timeout: Duration.seconds(30),
@@ -61,9 +65,6 @@ export function createServiceGateway(
     importValue,
     resources: config.resources,
   });
-
-  const { env } = getEnvConfig();
-  const isHigherEnvironment = env === "staging" || env === "production";
 
   const handler = isHigherEnvironment
     ? createProvisionedAlias(serviceGateway)
