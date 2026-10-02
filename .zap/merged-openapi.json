@@ -23,7 +23,7 @@
     }
   ],
   "paths": {
-    "/v1/driving-licence": {
+    "/app/v1/driving-licence": {
       "servers": [],
       "get": {
         "name": "get-users-drivers-licence",
@@ -49,7 +49,7 @@
         ]
       }
     },
-    "/v1/test-notification": {
+    "/app/v1/test-notification": {
       "servers": [],
       "post": {
         "name": "post-test-notification",
@@ -65,7 +65,7 @@
         ]
       }
     },
-    "/v1/customer-summary": {
+    "/app/v1/customer-summary": {
       "servers": [],
       "get": {
         "name": "get-customer-summary",
@@ -81,7 +81,7 @@
         ]
       }
     },
-    "/v1/driver-summary": {
+    "/app/v1/driver-summary": {
       "servers": [],
       "get": {
         "name": "get-driver-summary",
@@ -97,7 +97,7 @@
         ]
       }
     },
-    "/v1/identity/:service": {
+    "/app/v1/identity/:service": {
       "servers": [],
       "get": {
         "name": "get-service-identity",
@@ -116,7 +116,7 @@
         ]
       }
     },
-    "/v1/identity/:service/:id": {
+    "/app/v1/identity/:service/:id": {
       "servers": [],
       "post": {
         "name": "create-service-identity-link",
@@ -127,7 +127,7 @@
         ]
       }
     },
-    "/v1/users": {
+    "/app/v1/users": {
       "servers": [],
       "get": {
         "name": "get-user-notification-preferences",
@@ -168,7 +168,7 @@
         ]
       }
     },
-    "/v1/users/push-id": {
+    "/app/v1/users/push-id": {
       "servers": [],
       "get": {
         "name": "get-user-notification-push-id",
@@ -197,7 +197,7 @@
         ]
       }
     },
-    "/v1/users/notifications": {
+    "/app/v1/users/notifications": {
       "servers": [],
       "patch": {
         "name": "update-user-notification-preferences",
@@ -230,7 +230,7 @@
         ]
       }
     },
-    "/v1/notifications": {
+    "/app/v1/notifications": {
       "servers": [],
       "get": {
         "name": "get-notifications",
@@ -256,7 +256,7 @@
         ]
       }
     },
-    "/v1/notifications/:notificationId": {
+    "/app/v1/notifications/:notificationId": {
       "servers": [],
       "get": {
         "name": "get-notification-by-id",
@@ -295,7 +295,7 @@
         ]
       }
     },
-    "/v1/notifications/:notificationId/status": {
+    "/app/v1/notifications/:notificationId/status": {
       "servers": [],
       "patch": {
         "name": "patch-notification-status",
