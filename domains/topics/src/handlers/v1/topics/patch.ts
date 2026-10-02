@@ -27,5 +27,5 @@ async function updateTopics(userId: UserId): Promise<void> {
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User topics updated successfully");
+  logger.info("Successfully updated topics", { data: result.data });
 }
