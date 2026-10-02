@@ -52,20 +52,26 @@ jobs:
           STAGE: "development"
         run: pnpm dastSetup
 
-      - name: Verify auth header
+      - name: Verify authentication values
         run: |
-          if [ -n "$ZAP_AUTH_HEADER_VALUE" ]; then
-            echo "Success: Auth header is available."
-          else
+          if [ -z "$ZAP_AUTH_HEADER_VALUE" ]; then
             echo "Failure: Auth header is missing!"
             exit 1
           fi
 
-      - name: Test JWT against development API
+          if [ -z "$E2E_BYPASS_TOKEN" ]; then
+            echo "Failure: E2E bypass token is missing!"
+            exit 1
+          fi
+
+          echo "Success: Authentication values are available."
+
+      - name: Test authentication against development API
         shell: bash
         run: |
           HTTP_CODE=$(curl -sS \
-            -o /dev/null \
+            -D response-headers.txt \
+            -o response-body.txt \
             -w "%{http_code}" \
             -H "Authorization: ${ZAP_AUTH_HEADER_VALUE}" \
             -H "x-flex-e2e-bypass: ${E2E_BYPASS_TOKEN}" \
@@ -73,12 +79,19 @@ jobs:
 
           echo "Development API returned HTTP ${HTTP_CODE}"
 
+          echo "Response headers:"
+          cat response-headers.txt
+
+          echo "Response body:"
+          head -c 2000 response-body.txt
+          echo
+
           if [[ "$HTTP_CODE" == "401" || "$HTTP_CODE" == "403" ]]; then
-            echo "Failure: JWT authentication was rejected."
+            echo "Failure: request was rejected."
             exit 1
           fi
 
-          echo "Success: JWT authentication was accepted."
+          echo "Success: request was accepted."
 
 
       - name: ZAP Scan
