@@ -61,6 +61,25 @@ jobs:
             exit 1
           fi
 
+      - name: Test JWT against development API
+        shell: bash
+        run: |
+          HTTP_CODE=$(curl -sS \
+            -o /dev/null \
+            -w "%{http_code}" \
+            -H "Authorization: ${ZAP_AUTH_HEADER_VALUE}" \
+            "${{ secrets.DEVELOPMENT_API_URL }}/v1/users")
+
+          echo "Development API returned HTTP ${HTTP_CODE}"
+
+          if [[ "$HTTP_CODE" == "401" || "$HTTP_CODE" == "403" ]]; then
+            echo "Failure: JWT authentication was rejected."
+            exit 1
+          fi
+
+          echo "Success: JWT authentication was accepted."
+
+
       - name: ZAP Scan
         uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
         with:
