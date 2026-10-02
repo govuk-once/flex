@@ -1,11 +1,11 @@
 import { route, routeContext } from "@domain";
-import type { UserId } from "@flex/utils";
+import { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 const context = routeContext<"PATCH /v1/topics">;
 
 export const handler = route("PATCH /v1/topics", async ({ auth }) => {
-  const userId = auth.pairwiseId as UserId;
+  const userId = UserId.parse(auth.pairwiseId);
 
   await updateTopics(userId);
 
@@ -27,5 +27,5 @@ async function updateTopics(userId: UserId): Promise<void> {
     throw new createHttpError.BadGateway();
   }
 
-  logger.debug("User topics updated successfully");
+  logger.info("Successfully updated topics", { data: result.data });
 }

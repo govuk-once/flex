@@ -1,8 +1,9 @@
+import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 export const TopicSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
+  id: NonEmptyString,
+  title: NonEmptyString,
 });
 export type Topic = z.infer<typeof TopicSchema>;
 
