@@ -162,13 +162,17 @@ describe("createSecretRotationFailureAlert", () => {
     });
   });
 
-  it("keeps undelivered alerts for 14 days, encrypted with the alarm topic key", () => {
+  it("keeps undelivered alerts for 14 days, encrypted with a key other than the alarm topic key", () => {
     const { template, keyArn } = synthesise();
+    const [queue] = Object.values(
+      template.findResources("AWS::SQS::Queue"),
+    ) as { Properties: { KmsMasterKeyId: unknown } }[];
 
     template.hasResourceProperties("AWS::SQS::Queue", {
-      KmsMasterKeyId: keyArn,
       MessageRetentionPeriod: 1209600,
     });
+    expect(queue?.Properties.KmsMasterKeyId).toBeDefined();
+    expect(queue?.Properties.KmsMasterKeyId).not.toEqual(keyArn);
   });
 
   it("allows only this rule to send to the dead-letter queue, over TLS", () => {

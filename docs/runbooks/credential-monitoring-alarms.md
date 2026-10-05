@@ -39,6 +39,7 @@ The credential monitor Lambda runs every hour. It publishes counts to the `Flex/
 | `${STAGE}-credential-monitor-failing`                      | The monitor Lambda failed in each of the last 3 hours                                                    | Warning  |
 | `${STAGE}-dvla-secret-rotation-failed`                     | The DVLA secret rotation Lambda returned an error                                                        | Critical |
 | `${STAGE}-secret-rotation-alert-undelivered`               | A rotation failure alert could not be published to the critical topic and is in the dead-letter queue    | Warning  |
+| `${STAGE}-secret-rotation-alert-lost`                      | A rotation failure alert could not be published to the critical topic or to the dead-letter queue        | Warning  |
 | `${STAGE}-certificate-days-to-expiry`                      | The CloudFront certificate expires in under 30 days                                                      | Critical |
 
 Alongside these alarms, an EventBridge rule posts a message to the critical channel for every Secrets Manager `RotationFailed` or `TestRotationFailed` event. Secrets Manager retries a failed rotation, so this message can repeat for one failure.
@@ -84,8 +85,28 @@ Overdue entries have a `resourceName` and a `dueDate`. Unverifiable entries have
 | Cognito config drift     | The Platform team has changed the user pool or client in `flex-params`. Deploy the platform stack so the authorizer picks up the new values, and confirm the change with the Platform team.                                             |
 | Not reporting or failing | Read the monitor's errors in its log group. A configuration error (missing SSM parameter, permission) fails every run.                                                                                                                  |
 | DVLA rotation failed     | Read the rotation Lambda's logs. The secret keeps its current value. Check the secret's rotation status in Secrets Manager before retrying.                                                                                             |
-| Alert undelivered        | Read the message in the `SecretRotationAlertDeadLetterQueue` queue. It holds the rotation failure that was not delivered, and the reason delivery failed.                                                                               |
+| Alert undelivered        | Read the message in the dead-letter queue, see [Reading the dead-letter queue](#reading-the-dead-letter-queue). It holds the rotation failure that was not delivered, and the reason delivery failed.                                   |
+| Alert lost               | Nothing was kept. Find the failure in CloudTrail (`RotationFailed` or `TestRotationFailed` from `secretsmanager.amazonaws.com`), then check the `alias/${STAGE}-flex-secret-rotation-alert-dlq-key` key and the queue's policy.         |
 | Certificate expiry       | ACM renews at 45 days before expiry. Check the certificate's renewal status in ACM (`us-east-1`) and that its DNS validation records still exist in the hosted zone.                                                                    |
+
+### Reading the dead-letter queue
+
+The queue's name is generated. Find it from the `FlexCore` stack, then read its messages:
+
+```bash
+export DLQ_URL=$(aws cloudformation list-stack-resources \
+  --stack-name "${STAGE}-FlexCore" \
+  --query "StackResourceSummaries[?ResourceType=='AWS::SQS::Queue' && starts_with(LogicalResourceId, 'SecretRotationAlertDeadLetterQueue')].PhysicalResourceId" \
+  --output text)
+
+aws sqs receive-message \
+  --queue-url "$DLQ_URL" \
+  --max-number-of-messages 10 \
+  --message-attribute-names All \
+  --visibility-timeout 30
+```
+
+Reading needs `kms:Decrypt` on the `alias/${STAGE}-flex-secret-rotation-alert-dlq-key` key, which the AWS managed read-only policy does not grant. The `ERROR_CODE` and `ERROR_MESSAGE` message attributes give the reason delivery failed.
 
 ---
 
@@ -99,6 +120,8 @@ Overdue entries have a `resourceName` and a `dueDate`. Unverifiable entries have
   ```
 
   The `dvla-secret-rotation-failed` alarm does not depend on CloudTrail and covers DVLA rotation failures either way.
+
+- **Undelivered alerts are kept, not announced, when the alarm topic key fails.** The dead-letter queue has its own KMS key, so an alert that fails because of the alarm topic key is still stored. The `undelivered` and `lost` alarms notify through the warning topic, which uses the alarm topic key, so in that case they change state in CloudWatch without a Slack message.
 
 - **First deployment.** The not-reporting alarm fills missing hours with zero. Until the monitor has published its first result, the alarm's behaviour depends on how CloudWatch evaluates a metric with no data at all. Check its state history after the first deployment to each environment.
 

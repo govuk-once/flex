@@ -1,21 +1,19 @@
 import { getEnvConfig } from "@flex/utils";
 import { Duration } from "aws-cdk-lib";
-import {
-  Alarm,
-  ComparisonOperator,
-  type IAlarmAction,
-  Stats,
-  TreatMissingData,
-} from "aws-cdk-lib/aws-cloudwatch";
+import { type IAlarmAction, Metric, Stats } from "aws-cdk-lib/aws-cloudwatch";
 import { EventField, Rule, RuleTargetInput } from "aws-cdk-lib/aws-events";
 import { SnsTopic } from "aws-cdk-lib/aws-events-targets";
 import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import type { Key } from "aws-cdk-lib/aws-kms";
+import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { Queue, QueueEncryption } from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
+import { createAboveZeroAlarm } from "../../constructs/alarms/above-zero-alarm";
+
 const { env } = getEnvConfig();
+
+const ALARM_PERIOD = Duration.minutes(5);
 
 interface SecretRotationAlertsProps {
   criticalTopic: Topic;
@@ -31,12 +29,23 @@ export function createSecretRotationFailureAlert(
   const eventName = EventField.fromPath("$.detail.eventName");
   const eventsPrincipal = new ServicePrincipal("events.amazonaws.com");
 
+  const deadLetterQueueKey = new Key(
+    scope,
+    "SecretRotationAlertDeadLetterQueueKey",
+    {
+      alias: `alias/${env}-flex-secret-rotation-alert-dlq-key`,
+      description:
+        "KMS key for undelivered secret rotation failure alerts, separate from the alarm topic key",
+      enableKeyRotation: true,
+    },
+  );
+
   const deadLetterQueue = new Queue(
     scope,
     "SecretRotationAlertDeadLetterQueue",
     {
       encryption: QueueEncryption.KMS,
-      encryptionMasterKey: alarmTopicKey,
+      encryptionMasterKey: deadLetterQueueKey,
       enforceSSL: true,
       retentionPeriod: Duration.days(14),
     },
@@ -84,19 +93,35 @@ export function createSecretRotationFailureAlert(
     }),
   );
 
-  alarmTopicKey.grant(eventsPrincipal, "kms:Decrypt", "kms:GenerateDataKey*");
+  [alarmTopicKey, deadLetterQueueKey].forEach((key) =>
+    key.grant(eventsPrincipal, "kms:Decrypt", "kms:GenerateDataKey*"),
+  );
 
-  new Alarm(scope, "SecretRotationAlertUndelivered", {
-    alarmName: `${env}-secret-rotation-alert-undelivered`,
-    alarmDescription:
-      "Warning: a secret rotation failure alert could not be delivered to the critical topic and is in the dead-letter queue",
-    metric: deadLetterQueue.metricApproximateNumberOfMessagesVisible({
-      statistic: Stats.MAXIMUM,
-      period: Duration.minutes(5),
-    }),
-    threshold: 0,
-    evaluationPeriods: 1,
-    comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
-    treatMissingData: TreatMissingData.NOT_BREACHING,
-  }).addAlarmAction(warningAction);
+  [
+    {
+      id: "SecretRotationAlertUndelivered",
+      alarmName: `${env}-secret-rotation-alert-undelivered`,
+      alarmDescription:
+        "Warning: a secret rotation failure alert could not be delivered to the critical topic and is in the dead-letter queue",
+      metric: deadLetterQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: Stats.MAXIMUM,
+        period: ALARM_PERIOD,
+      }),
+    },
+    {
+      id: "SecretRotationAlertLost",
+      alarmName: `${env}-secret-rotation-alert-lost`,
+      alarmDescription:
+        "Warning: a secret rotation failure alert could not be delivered to the critical topic or to the dead-letter queue, so it is lost",
+      metric: new Metric({
+        namespace: "AWS/Events",
+        metricName: "InvocationsFailedToBeSentToDlq",
+        dimensionsMap: { RuleName: rule.ruleName },
+        statistic: Stats.SUM,
+        period: ALARM_PERIOD,
+      }),
+    },
+  ].forEach((alarm) =>
+    createAboveZeroAlarm(scope, { ...alarm, action: warningAction }),
+  );
 }

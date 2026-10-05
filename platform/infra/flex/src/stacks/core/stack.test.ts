@@ -54,11 +54,15 @@ describe("FlexCoreStack credential alerting", () => {
     });
   });
 
-  it("encrypts the rotation alert dead-letter queue with the alarm topic key", () => {
+  it("encrypts the rotation alert dead-letter queue with a key other than the alarm topic key", () => {
     const { template, alarmTopicKeyId } = result;
+    const [queue] = Object.values(
+      template.findResources("AWS::SQS::Queue"),
+    ) as { Properties: { KmsMasterKeyId: unknown } }[];
 
-    template.hasResourceProperties("AWS::SQS::Queue", {
-      KmsMasterKeyId: { "Fn::GetAtt": [alarmTopicKeyId, "Arn"] },
+    expect(queue?.Properties.KmsMasterKeyId).toBeDefined();
+    expect(queue?.Properties.KmsMasterKeyId).not.toEqual({
+      "Fn::GetAtt": [alarmTopicKeyId, "Arn"],
     });
   });
 
