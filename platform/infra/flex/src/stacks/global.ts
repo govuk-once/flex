@@ -22,13 +22,8 @@ import {
 } from "aws-cdk-lib/aws-cloudfront";
 import { HttpOrigin, S3BucketOrigin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { CfnAlarm } from "aws-cdk-lib/aws-cloudwatch";
-import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
-import {
-  Code,
-  Function as LambdaFunction,
-  Runtime,
-} from "aws-cdk-lib/aws-lambda";
 import {
   ARecord,
   CfnRecordSet,
@@ -45,15 +40,15 @@ import {
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { CfnProtection } from "aws-cdk-lib/aws-shield";
-import { Topic } from "aws-cdk-lib/aws-sns";
-import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { CfnWebACL } from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
+import { createAlarmRelay } from "../constructs/alarms/alarm-relay";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
+import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
@@ -73,47 +68,6 @@ interface DomainNames {
 const { env, persistent, stage } = getEnvConfig();
 
 export class FlexGlobalStack extends BaseStack {
-  #buildRelay(
-    severity: "Critical" | "Warning",
-    targetTopicArn: string,
-    alarmTopicKey: Key,
-  ) {
-    const relayTopic = new Topic(this, `${severity}RelayTopic`, {
-      masterKey: alarmTopicKey,
-    });
-
-    const relayFn = new LambdaFunction(this, `${severity}RelayFn`, {
-      runtime: Runtime.NODEJS_24_X,
-      handler: "index.handler",
-      timeout: Duration.seconds(10),
-      code: Code.fromInline(`
-          const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
-          const client = new SNSClient({ region: "eu-west-2" });
-          exports.handler = async (event) => {
-            for (const record of event.Records ?? []) {
-              await client.send(new PublishCommand({
-                TopicArn: ${targetTopicArn},
-                Subject: record.Sns.Subject?.slice(0, 100),
-                Message: record.Sns.Message,
-                MessageAttributes: record.Sns.MessageAttributes,
-              }));
-            }
-          };
-        `),
-    });
-
-    relayFn.addToRolePolicy(
-      new PolicyStatement({
-        actions: ["sns:Publish"],
-        resources: [targetTopicArn],
-      }),
-    );
-
-    relayTopic.addSubscription(new LambdaSubscription(relayFn));
-
-    return relayTopic;
-  }
-
   #createAlarmActions() {
     const criticalTargetArn = this.import(
       ENV_KEYS.TopicCriticalAlarms,
@@ -121,6 +75,10 @@ export class FlexGlobalStack extends BaseStack {
     );
     const warningTargetArn = this.import(
       ENV_KEYS.TopicWarningAlarms,
+      "eu-west-2",
+    );
+    const targetTopicKeyArn = this.import(
+      ENV_KEYS.AlarmTopicKeyArn,
       "eu-west-2",
     );
 
@@ -133,16 +91,23 @@ export class FlexGlobalStack extends BaseStack {
       new ServicePrincipal("cloudwatch.amazonaws.com"),
     );
 
-    const criticalRelay = this.#buildRelay(
-      "Critical",
-      criticalTargetArn,
-      alarmTopicKey,
-    );
-    const warningRelay = this.#buildRelay(
-      "Warning",
-      warningTargetArn,
-      alarmTopicKey,
-    );
+    const relayProps = {
+      stage,
+      targetTopicKeyArn,
+      relayTopicKey: alarmTopicKey,
+      ...createRelayHealthAction(this, stage),
+    };
+
+    const criticalRelay = createAlarmRelay(this, {
+      ...relayProps,
+      severity: "Critical",
+      targetTopicArn: criticalTargetArn,
+    });
+    const warningRelay = createAlarmRelay(this, {
+      ...relayProps,
+      severity: "Warning",
+      targetTopicArn: warningTargetArn,
+    });
 
     return importAlarmActions(this, {
       criticalTopicArn: criticalRelay.topicArn,
