@@ -21,6 +21,8 @@ import { getPlatformEntry } from "../../utils/getEntry";
 
 const { env } = getEnvConfig();
 
+export const DVLA_ROTATION_INTERVAL_DAYS = 60;
+
 interface DvlaSecretRotationProps extends AlarmActionProps {
   vpc: IVpc;
   privateEgressSg: ISecurityGroup;
@@ -133,7 +135,7 @@ export function createDvlaSecretRotation(
 
   dvlaSecret.addRotationSchedule("DvlaRotationSchedule", {
     rotationLambda: rotationFunction.function,
-    automaticallyAfter: Duration.days(60),
+    automaticallyAfter: Duration.days(DVLA_ROTATION_INTERVAL_DAYS),
   });
 
   rotationFunction.function.addPermission("SecretsManagerInvoke", {

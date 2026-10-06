@@ -46,10 +46,12 @@ Alongside these alarms, an EventBridge rule posts a message to the critical chan
 
 ### What counts as overdue
 
-- **Automatically rotated secrets**: every secret in the account with rotation enabled, excluding replicas of secrets whose primary is in another region. The due date is the earlier of the scheduled next rotation and the last rotation plus 90 days, so a schedule longer than the policy also counts.
-- **Required credentials**: DVLA, UDP and UNS consumer configurations, the smoke test user, and the E2E test user (the E2E private JWK in development). Each must have a current version younger than 90 days, whether or not rotation is enabled, so disabling rotation does not remove a credential from monitoring.
+- **Automatically rotated secrets**: every secret in the account with rotation enabled, excluding replicas of secrets whose primary is in another region and the DVLA consumer configuration, which is checked below so it is counted once. The due date is the earlier of the scheduled next rotation and the last rotation plus 60 days, the DVLA rotation interval, so a longer schedule also counts.
+- **DVLA consumer configuration**: must have a current version younger than 60 days, whether or not rotation is enabled, so disabling rotation does not remove it from monitoring.
 
 A 7-day grace period applies to both.
+
+No other credential has a required maximum age. The UDP consumer configuration is left out because its secret is in UDP's account, where the monitor cannot read it. The UNS consumer configuration, the smoke test user and the E2E test user are left out until a rotation interval is agreed for them. Any of these is still checked as an automatically rotated secret if rotation is enabled on it in this account.
 
 ---
 
@@ -125,7 +127,7 @@ Reading needs `kms:Decrypt` on the `alias/${STAGE}-flex-secret-rotation-alert-dl
 
 - **First deployment.** The not-reporting alarm fills missing hours with zero. Until the monitor has published its first result, the alarm's behaviour depends on how CloudWatch evaluates a metric with no data at all. Check its state history after the first deployment to each environment.
 
-- **Overdue on first run.** Credentials that have not been rotated within the last 97 days raise the overdue alarm on the monitor's first run. That is accurate under the policy.
+- **Overdue on first run.** If the DVLA consumer configuration has not rotated within the last 67 days, the overdue alarm is raised on the monitor's first run. That is accurate against its 60-day schedule.
 
 ---
 

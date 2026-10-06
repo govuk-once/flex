@@ -6,10 +6,21 @@ import { addDays, earliestDate, type RotationStatus } from "./deadline";
 interface AutomaticRotationProps {
   region: string;
   maximumIntervalDays: number;
+  excludedSecretIds?: string[];
 }
 
 function isLocalPrimary(secret: SecretListEntry, region: string): boolean {
   return !secret.PrimaryRegion || secret.PrimaryRegion === region;
+}
+
+function isExcluded(
+  secret: SecretListEntry,
+  excludedSecretIds: string[],
+): boolean {
+  return [secret.ARN, secret.Name].some(
+    (secretId) =>
+      secretId !== undefined && excludedSecretIds.includes(secretId),
+  );
 }
 
 function toRotationStatus(
@@ -42,11 +53,13 @@ function toRotationStatus(
 export async function getAutomaticRotationStatuses({
   region,
   maximumIntervalDays,
+  excludedSecretIds = [],
 }: AutomaticRotationProps): Promise<RotationStatus[]> {
   const secrets = await listSecrets();
 
   return secrets
     .filter((secret) => secret.RotationEnabled)
     .filter((secret) => isLocalPrimary(secret, region))
+    .filter((secret) => !isExcluded(secret, excludedSecretIds))
     .map((secret) => toRotationStatus(secret, maximumIntervalDays));
 }

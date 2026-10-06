@@ -15,10 +15,9 @@ import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
 import { getPlatformEntry } from "../utils/getEntry";
 import { resolveEncryptionKey } from "../utils/lambda";
 import { putMetricDataStatement } from "../utils/put-metric-data-statement";
+import { DVLA_ROTATION_INTERVAL_DAYS } from "./core/dvla-secret-rotation";
 
 const { env } = getEnvConfig();
-
-const DVLA_ROTATION_INTERVAL_DAYS = 60;
 
 interface MaximumAgeSecret {
   secretId: string;

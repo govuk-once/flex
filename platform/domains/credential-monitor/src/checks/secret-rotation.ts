@@ -21,7 +21,11 @@ export async function checkSecretRotation({
   now,
 }: SecretRotationCheckProps): Promise<void> {
   const [automatic, maximumAge] = await Promise.all([
-    getAutomaticRotationStatuses({ region, maximumIntervalDays }),
+    getAutomaticRotationStatuses({
+      region,
+      maximumIntervalDays,
+      excludedSecretIds: maximumAgeSecrets.map(({ secretId }) => secretId),
+    }),
     getMaximumAgeStatuses(maximumAgeSecrets),
   ]);
 

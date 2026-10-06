@@ -125,13 +125,12 @@ describe("FlexCredentialMonitorStack", () => {
     });
 
     it("reads version metadata of only the DVLA secret", () => {
-      const statement = statementWith(
-        template,
-        "secretsmanager:ListSecretVersionIds",
-      );
+      const resources = [
+        statementWith(template, "secretsmanager:ListSecretVersionIds")
+          ?.Resource,
+      ].flat();
 
-      expect(statement).toBeDefined();
-      expect([statement!.Resource].flat()).toHaveLength(1);
+      expect(resources).toEqual([expect.anything()]);
     });
 
     it("reads only the two Cognito parameters", () => {
