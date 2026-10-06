@@ -21,7 +21,7 @@ export function createPermissionsBoundary(
 ): ManagedPolicy {
   const policy = new ManagedPolicy(scope, id, {
     description:
-      "Permissions boundary for Flex Domain Service and Service Gateway Lambda roles. Denies lambda:InvokeFunction and restricts execute-api:Invoke to the Flex private API.",
+      "Permissions boundary for Flex Domain Service and Service Gateway Lambda roles. Denies lambda:InvokeFunction, iam:*, and Lambda reconfiguration actions; restricts execute-api:Invoke to the Flex private API.",
     statements: [
       // These are the baseline permissions that all Lambda functions have.
       new PolicyStatement({
@@ -85,6 +85,23 @@ export function createPermissionsBoundary(
         sid: "DenyDirectLambdaInvoke",
         effect: Effect.DENY,
         actions: ["lambda:InvokeFunction"],
+        resources: ["*"],
+      }),
+      new PolicyStatement({
+        sid: "DenyIamActions",
+        effect: Effect.DENY,
+        actions: ["iam:*"],
+        resources: ["*"],
+      }),
+      new PolicyStatement({
+        sid: "DenyLambdaReconfig",
+        effect: Effect.DENY,
+        actions: [
+          "lambda:CreateFunction",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:UpdateFunctionCode",
+          "lambda:AddPermission",
+        ],
         resources: ["*"],
       }),
     ],
