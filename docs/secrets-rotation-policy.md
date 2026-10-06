@@ -4,6 +4,8 @@
 
 This document defines the lifecycle policy for all credential types used by Flex, covering rotation cadence, expiry alerting, periodic access review, and pipeline secret hygiene.
 
+Each section clearly marks items as **Current** (implemented and active) or **Proposed** (target state, not yet implemented).
+
 ---
 
 ## 1. Credential Inventory
@@ -19,17 +21,30 @@ Self-generated random strings managed in CDK code. No external dependency; value
 
 Both secrets are 32-character random strings (no punctuation) and are replicated cross-region (E2E Bypass to `eu-west-2`, Origin Verify to `us-east-1`).
 
-### 1.2 External Service Credentials (Secrets Manager)
+**Rotation status:** Neither secret has a rotation schedule configured. See [Category A (Proposed)](#category-a--infrastructure-secrets-proposed-30-day-auto-rotation).
 
-API credentials for third-party services. The ARN is referenced via SSM Parameter Store; the secret value is provisioned externally.
+### 1.2 Flex-Managed External Credentials (Secrets Manager)
 
-| Secret | SSM Pointer Path | Purpose | Fields |
-|--------|-----------------|---------|--------|
-| DVLA Consumer Config | `/dvla/consumer-config-secret-arn` | DVLA API authentication | apiKey, apiUrl, apiUsername, apiPassword, wellKnownJwkUrl |
-| UDP Consumer Config | `/udp/consumer-config-secret-arn` | UDP API authentication | apiAccountId, apiKey, apiUrl, consumerRoleArn, region, externalId |
-| UNS Consumer Config | `/uns/consumer-config-secret` | UNS API authentication | apiKey, apiUrl, privateApiUrl, region, roleArn |
+Credentials where the secret resource is in the Flex AWS account (created by [`flex-params`](https://github.com/govuk-once/flex-params)) but the credential value is issued by an external provider.
 
-### 1.3 Test and E2E Secrets (Secrets Manager)
+| Secret | SSM Pointer Path | Purpose | Fields | Value Managed By | Rotation |
+|--------|-----------------|---------|--------|------------------|----------|
+| DVLA Consumer Config | `/dvla/consumer-config-secret-arn` | DVLA API authentication | apiKey, apiUrl, apiUsername, apiPassword, wellKnownJwkUrl | Flex (auto-rotated) | **Current**: 60-day automatic Lambda rotation |
+| UNS Consumer Config | `/uns/consumer-config-secret` | UNS API authentication | apiKey, apiUrl, privateApiUrl, region, roleArn | UNS team (externally managed) | None — see [External Dependencies](#3-external-dependencies) |
+
+### 1.3 Cross-Account External Credentials
+
+Credentials where the secret resource lives entirely in another team's AWS account. Flex has no direct access to inspect or rotate these secrets.
+
+| Secret | SSM Pointer Path | Purpose | Fields | Owner Account |
+|--------|-----------------|---------|--------|---------------|
+| UDP Consumer Config | `/udp/consumer-config-secret-arn` | UDP API authentication | apiAccountId, apiKey, apiUrl, consumerRoleArn, region, externalId | UDP team |
+
+Flex accesses the UDP secret at runtime via cross-account IAM role assumption (STS AssumeRole with ExternalId). The SSM parameter pointing to the secret ARN is provisioned by `flex-params`, but the secret itself and its value are owned entirely by the UDP team. Flex cannot call `ListSecretVersionIds`, `DescribeSecret`, or any other Secrets Manager API against this resource.
+
+**Rotation status:** Entirely the responsibility of the UDP team. See [External Dependencies](#3-external-dependencies).
+
+### 1.4 Test and E2E Secrets (Secrets Manager)
 
 Credentials used exclusively for automated testing. Not present in production traffic paths.
 
@@ -39,7 +54,9 @@ Credentials used exclusively for automated testing. Not present in production tr
 | Smoke Test User | `/${env}/flex-secret/smoke-test/user` | Smoke test user credentials | All environments |
 | E2E Test User | `/${stage}/flex-secret/e2e/test_user` | E2E test user credentials | Staging, Production |
 
-### 1.4 JWT Signing Keys (Cognito)
+**Rotation status:** No automated rotation. See [Category C](#category-c--test-and-e2e-secrets-proposed-manual-rotation).
+
+### 1.5 JWT Signing Keys (Cognito)
 
 | Credential | Environment | Management | Rotation |
 |------------|-------------|------------|----------|
@@ -50,7 +67,7 @@ Production and staging JWT verification uses the standard Cognito JWKS endpoint 
 
 The development stub key pair is stored in Secrets Manager at `/development/flex-secret/auth/e2e/private_jwk` and served via a Lambda Function URL that mimics the Cognito JWKS endpoint.
 
-### 1.5 Cognito App Client
+### 1.6 Cognito App Client
 
 | Credential | Type | Secret Required |
 |------------|------|-----------------|
@@ -60,7 +77,7 @@ The Cognito app client is configured as a **public client** with no client secre
 
 The user pool and client are provisioned externally in the [`flex-params`](https://github.com/govuk-once/flex-params) repository, owned by the Platform team. Flex consumes these as read-only SSM parameters — any changes to the user pool or client configuration require coordination with the Platform team via `flex-params`.
 
-### 1.6 API Certificates (ACM / CloudFront SSL)
+### 1.7 API Certificates (ACM / CloudFront SSL)
 
 | Certificate | Region | Validation | Cross-Account |
 |-------------|--------|------------|---------------|
@@ -74,7 +91,7 @@ ACM certificates used with CloudFront are automatically renewed by AWS (up to 60
 - CloudFront: `TLS_V1_2_2021` minimum protocol version
 - API Gateway: `SecurityPolicy_TLS13_1_2_2021_06`
 
-### 1.7 Pipeline Secrets (GitHub Actions)
+### 1.8 Pipeline Secrets (GitHub Actions)
 
 | Secret | Type | Purpose | Credential? |
 |--------|------|---------|-------------|
@@ -90,7 +107,7 @@ ACM certificates used with CloudFront are automatically renewed by AWS (up to 60
 
 Only **`SONAR_TOKEN_FLEX`** is a true stored credential secret requiring periodic rotation.
 
-### 1.8 Service-to-Service Authentication
+### 1.9 Service-to-Service Authentication
 
 | Pattern | Mechanism | Secret-Based |
 |---------|-----------|--------------|
@@ -98,7 +115,8 @@ Only **`SONAR_TOKEN_FLEX`** is a true stored credential secret requiring periodi
 | E2E tests → CloudFront WAF | Shared secret in `x-flex-e2e-bypass` header | Yes (covered in 1.1) |
 | Internal Lambda → Private API Gateway | IAM SigV4 signing + VPC endpoint restriction | No |
 | Cross-account external APIs (UDP, UNS) | STS AssumeRole + SigV4 signing + ExternalId | No |
-| External API keys (DVLA, UDP, UNS) | API keys from Secrets Manager passed as headers | Yes (covered in 1.2) |
+| External API keys (DVLA, UNS) | API keys from Secrets Manager passed as headers | Yes (covered in 1.2) |
+| UDP API keys | API keys from cross-account Secrets Manager | Yes (covered in 1.3) |
 | Client → Public API | Cognito JWT verified by Lambda authorizer | No |
 | Smoke test → Firebase | GCP Workload Identity Federation + App Check | No |
 | mTLS | Not used | N/A |
@@ -109,7 +127,24 @@ Internal service-to-service communication is entirely IAM-based (SigV4 signed re
 
 ## 2. Rotation Policy
 
-### Category A — Infrastructure Secrets (30-day auto-rotation)
+### Category DVLA — DVLA Consumer Config (Current: 60-day auto-rotation)
+
+| Attribute | Value |
+|-----------|-------|
+| Secret | DVLA Consumer Config |
+| Rotation interval | 60 days |
+| Mechanism | Automatic (custom Lambda implementing the four-step Secrets Manager rotation protocol) |
+| Owner | Flex team |
+| Status | **Current — implemented and active** |
+| Implementation | `platform/infra/flex/src/stacks/core/dvla-secret-rotation.ts` and `platform/domains/dvla-secret-rotation/` |
+
+The rotation Lambda runs in a VPC with private egress (NAT for DVLA API access), with a 60-second timeout and 0 retry attempts. It performs four steps:
+1. **createSecret** — generates a new password, calls the DVLA API to change it, requests a new API key, stores both under `AWSPENDING`. Uses an `AWSPENDING_CHECKPOINT` staging label for crash recovery.
+2. **setSecret** — no-op (DVLA credentials are updated during createSecret).
+3. **testSecret** — verifies the pending credentials by authenticating against the DVLA API.
+4. **finishSecret** — promotes `AWSPENDING` to `AWSCURRENT`, cleans up checkpoint labels.
+
+### Category A — Infrastructure Secrets (Proposed: 30-day auto-rotation)
 
 | Attribute | Value |
 |-----------|-------|
@@ -117,47 +152,56 @@ Internal service-to-service communication is entirely IAM-based (SigV4 signed re
 | Rotation interval | 30 days |
 | Mechanism | Automatic (Secrets Manager rotation schedule with Lambda) |
 | Owner | Flex team |
-| Rationale | Self-generated random strings with no external dependency. Frequent rotation is low-risk and high-value — limits exposure window with no coordination overhead. |
-| Dependencies | WAF rules and CloudFront custom headers reference the current secret value at runtime. Rotation Lambda must update both the secret and any downstream consumers atomically. Cross-region replication propagates the new value automatically. |
-| Risks | Transient mismatch during rotation window if a request arrives between secret update and replica propagation (mitigated by Secrets Manager's `AWSPENDING` / `AWSCURRENT` staging labels). |
+| Status | **Proposed — not yet implemented** |
+
+**Rationale:** Self-generated random strings with no external dependency. Frequent rotation is low-risk and high-value — limits exposure window with no coordination overhead.
+
+**Dependencies:** WAF rules and CloudFront custom headers reference the current secret value at runtime. Rotation Lambda must update both the secret and any downstream consumers atomically. Cross-region replication propagates the new value automatically.
+
+**Risks:** Transient mismatch during rotation window if a request arrives between secret update and replica propagation (mitigated by Secrets Manager's `AWSPENDING` / `AWSCURRENT` staging labels).
 
 **Implementation path:** Add a CDK `SecretRotation` construct (or a `RotationSchedule` with `automaticallyAfterDays: 30`) using the `SecretsManagerRotationSingleUser` application. The rotation Lambda generates a new 32-character random string and updates `AWSCURRENT`. No external API calls required.
 
-### Category B — External Service Credentials (90-day coordinated rotation)
+### Category B — UNS Consumer Config (Proposed: coordinated rotation, interval TBD)
 
 | Attribute | Value |
 |-----------|-------|
-| Secrets | DVLA Consumer Config, UDP Consumer Config, UNS Consumer Config |
-| Rotation interval | 90 days (or per provider contract, whichever is shorter) |
-| Mechanism | Manual, coordinated with external service provider |
-| Owner | Flex team (rotation execution) + external provider (new credential issuance) |
-| Rationale | These credentials authenticate against third-party APIs (DVLA, UDP, UNS). Rotation requires the provider to issue a new key/password and FLEX to update the stored value. Unilateral rotation would break authentication. |
-| Dependencies | Provider must support credential regeneration. Downstream Lambdas cache the secret value for up to 600 seconds (`maxAge` in Powertools parameters). A redeploy forces cold starts to pick up the new value immediately. |
-| Risks | Service disruption if the old credential is revoked before the new value propagates to all warm Lambda containers. Mitigate by deploying immediately after updating the secret. |
+| Secret | UNS Consumer Config |
+| Rotation interval | TBD — pending agreement with UNS team |
+| Mechanism | Manual, coordinated with UNS team |
+| Owner | UNS team (credential issuance) + Flex team (secret value update in Flex account) |
+| Status | **Proposed — no rotation mechanism or cadence agreed** |
 
-**Implementation path:**
-1. Establish rotation calendar (90-day cadence) with alerts via team calendar or automated reminder.
-2. Follow the rotation steps in the [Leaked Secret Runbook](/docs/runbooks/leaked-secret.md#rotating-and-redeploying-affected-services) — the same `put-secret-value` + redeploy process applies to planned rotation.
-3. Long-term: if the provider offers an API for key regeneration, implement a custom rotation Lambda that automates the full cycle.
+The UNS secret shell is in the Flex AWS account (created by `flex-params`) but the credential value is managed by the UNS team. Flex can monitor the secret's age via `ListSecretVersionIds` but cannot unilaterally rotate the value.
 
-### Category C — Test and E2E Secrets (90-day manual rotation)
+**Dependencies:** UNS team must issue new credentials. Downstream Lambdas cache the secret value for up to 600 seconds (10 minutes) via Powertools parameters `maxAge`. After the cache expires, the next invocation fetches the current value from Secrets Manager automatically — no deployment is needed.
+
+**Risks:** Service disruption if the old credential is revoked before the 10-minute cache window expires on all warm Lambda containers. Mitigate by waiting at least 10 minutes after updating the secret before confirming old credential revocation.
+
+**Requires agreement with UNS team on:** rotation cadence, notification process before/after rotation, and escalation path if credentials expire unexpectedly.
+
+### Category C — Test and E2E Secrets (Proposed: manual rotation, interval TBD)
 
 | Attribute | Value |
 |-----------|-------|
 | Secrets | E2E Private JWK, Smoke Test User, E2E Test User |
-| Rotation interval | 90 days |
+| Rotation interval | TBD — pending team agreement |
 | Mechanism | Manual or script-assisted |
 | Owner | Flex team |
-| Rationale | Low-risk secrets used only in non-production test flows. Rotation must coordinate with CI/CD pipelines and test infrastructure to avoid breaking automated tests. |
-| Dependencies | E2E test suites, smoke tests, and performance tests all consume these secrets at runtime. Rotation must be followed by verifying the full test suite passes. |
-| Risks | Broken CI/CD pipelines if rotation is not coordinated with test infrastructure updates. |
+| Status | **Proposed — no rotation schedule, scripts, or tracking in place** |
+
+**Rationale:** Low-risk secrets used only in non-production test flows. Rotation must coordinate with CI/CD pipelines and test infrastructure to avoid breaking automated tests.
+
+**Dependencies:** E2E test suites, smoke tests, and performance tests all consume these secrets at runtime. Rotation must be followed by verifying the full test suite passes.
+
+**Risks:** Broken CI/CD pipelines if rotation is not coordinated with test infrastructure updates.
 
 **Implementation path:**
 1. Create a rotation script that generates new test credentials and updates the secret value.
 2. For the private JWK: generate a new key pair, update the secret, and update any corresponding public key references.
 3. Run the full E2E and smoke test suites to validate.
 
-### Category D — Pipeline Secrets (180-day rotation)
+### Category D — Pipeline Secrets (Proposed: 180-day rotation)
 
 | Attribute | Value |
 |-----------|-------|
@@ -165,8 +209,11 @@ Internal service-to-service communication is entirely IAM-based (SigV4 signed re
 | Rotation interval | 180 days |
 | Mechanism | Manual — regenerate in SonarQube, update GitHub repository secret |
 | Owner | Flex team |
-| Rationale | Only one true credential exists in the pipeline (`SONAR_TOKEN_FLEX`). All AWS access uses OIDC federation (keyless). Low rotation frequency acceptable given limited blast radius (code quality scanning, not production access). |
-| Risks | Broken quality checks pipeline until the new token propagates. Schedule rotation during low-activity periods. |
+| Status | **Proposed — no rotation tracking in place** |
+
+**Rationale:** Only one true credential exists in the pipeline (`SONAR_TOKEN_FLEX`). All AWS access uses OIDC federation (keyless). Low rotation frequency acceptable given limited blast radius (code quality scanning, not production access).
+
+**Risks:** Broken quality checks pipeline until the new token propagates. Schedule rotation during low-activity periods.
 
 **Rotation steps:**
 1. Generate a new token in SonarQube (Project Settings → Security → Tokens).
@@ -189,20 +236,105 @@ These credentials require no manual rotation or alerting.
 
 ---
 
-## 3. Rotation Procedures
+## 3. External Dependencies
 
-### 3.1 Roles and Responsibilities
+Flex depends on credentials it does not own or cannot rotate. This section documents the monitoring backstops and required agreements for those dependencies.
+
+### 3.1 UDP Consumer Config (Cross-Account)
+
+| Attribute | Value |
+|-----------|-------|
+| Owner | UDP team |
+| Secret location | UDP's AWS account (not accessible by Flex) |
+| Flex's access | Cross-account IAM role assumption at runtime |
+| Can Flex inspect rotation status? | **No** — `ListSecretVersionIds` / `DescribeSecret` will return `AccessDenied` |
+| Monitoring backstop | API gateway 4xx error rate alarm — detects authentication failures reactively |
+
+**Current gap:** Flex has no proactive visibility into the age or rotation status of this credential. If UDP lets the credential expire, Flex's only signal is service failure.
+
+**Required agreement with UDP team:**
+- Agreed rotation cadence
+- Notification to Flex before and after credential rotation
+- Escalation path and SLA for emergency reissuance if credentials break unexpectedly
+- Consider: read-only cross-account access for Flex to check `LastRotatedDate`, or a shared health-check metric
+
+### 3.2 UNS Consumer Config (Flex Account, Externally Managed Value)
+
+| Attribute | Value |
+|-----------|-------|
+| Owner | UNS team (credential value), `flex-params` (secret resource) |
+| Secret location | Flex AWS account |
+| Flex's access | Full Secrets Manager read access |
+| Can Flex inspect rotation status? | **Yes** — `ListSecretVersionIds` returns AWSCURRENT version age |
+| Monitoring backstop | Credential monitor age check + API gateway 4xx error rate alarm |
+
+**Current gap:** Flex can detect when the credential is ageing but cannot rotate it. An age alert requires escalation to the UNS team.
+
+**Required agreement with UNS team:**
+- Agreed rotation cadence
+- Notification to Flex before and after credential rotation
+- Escalation path and SLA for emergency reissuance
+- Clear ownership of the rotation action
+
+---
+
+## 4. Rotation Procedures
+
+### 4.1 Roles and Responsibilities
 
 | Role | Responsibility |
 |------|---------------|
-| Flex Engineer (Executor) | Performs rotation for Flex-owned secrets (infrastructure, test/E2E, pipeline, service gateway credentials), verifies success, updates rotation log |
+| Flex Engineer (Executor) | Performs rotation for Flex-owned secrets (infrastructure, test/E2E, pipeline), verifies success, updates rotation log |
 | Flex Lead (Approver) | Approves non-automated rotations for Flex-owned secrets, reviews rotation log, escalation point |
 | Platform team | Owns Cognito user pool/client provisioning (via [`flex-params`](https://github.com/govuk-once/flex-params)), hosted zone DNS, and OIDC trust policies. Flex coordinates with Platform for changes to these resources |
-| Domain teams | Aware of which secrets their domain consumes. Flag rotation issues affecting their domain to Flex team |
-| External Provider Liaison | Coordinates with third-party providers (DVLA, UDP, UNS) for credential reissuance |
+| UNS team | Owns UNS credential value rotation. Notifies Flex before and after rotation |
+| UDP team | Owns UDP credential and its rotation entirely. Notifies Flex before and after rotation |
 | Security team | Consulted on exceptions, reviews quarterly rotation compliance report, audits IAM trust policies |
 
-### 3.2 Category A — Infrastructure Secrets (Automated)
+### 4.2 DVLA Consumer Config (Current — Automated)
+
+**Who initiates:** Secrets Manager rotation schedule (automatic, every 60 days).
+
+**Process:**
+1. Secrets Manager invokes the rotation Lambda on the configured schedule.
+2. Lambda generates a new password and calls the DVLA API to change it.
+3. Lambda requests a new API key from the DVLA API.
+4. Both values are stored under `AWSPENDING` (with checkpoint for crash recovery).
+5. Lambda verifies the pending credentials by authenticating against the DVLA API.
+6. On success, Lambda promotes `AWSPENDING` to `AWSCURRENT`.
+
+**Verification:** The rotation Lambda's test step confirms the new value works before promotion. CloudWatch alarm fires on `RotationFailed` if any step fails.
+
+**Rollback:** Secrets Manager retains the previous version as `AWSPREVIOUS`. If issues are detected post-rotation, manually promote `AWSPREVIOUS` back to `AWSCURRENT` via `aws secretsmanager update-secret-version-stage`.
+
+**Human intervention required only on failure** (alert-triggered).
+
+### 4.3 UNS Consumer Config (Proposed — Manual, Coordinated)
+
+**Who initiates:** Flex Engineer, triggered by credential monitor age alert or calendar reminder.
+
+**Process:**
+1. Flex Engineer contacts the UNS team to request new credentials at least 5 business days before the rotation deadline.
+2. UNS team issues new credentials and communicates them via secure channel.
+3. Flex Engineer updates the secret value:
+   ```bash
+   aws secretsmanager put-secret-value \
+     --secret-id <secret-arn> \
+     --secret-string '<new-json-value>'
+   ```
+4. Wait at least 10 minutes for the Powertools in-memory cache (`maxAge: 600`) to expire on all warm Lambda containers. No deployment is required — Lambdas fetch the new value automatically on the next invocation after the cache expires.
+5. Flex Engineer verifies API connectivity by checking CloudWatch error metrics and running smoke tests.
+6. Flex Engineer confirms with UNS team that the old credential can be revoked.
+7. UNS team revokes old credential.
+8. Flex Engineer updates the rotation log with the date and next rotation due date.
+
+**Approval:** Flex Lead must approve before step 3 (secret update in production).
+
+**Rollback:** If the new credential fails verification before old credential revocation (step 7), revert to the previous value using `put-secret-value` with the old credentials. Lambdas will pick up the restored value within 10 minutes.
+
+### 4.4 Category A — Infrastructure Secrets (Proposed — Automated)
+
+**Status:** Not yet implemented. Process below describes the target state.
 
 **Who initiates:** Secrets Manager rotation schedule (automatic).
 
@@ -213,50 +345,15 @@ These credentials require no manual rotation or alerting.
 4. On success, Lambda promotes `AWSPENDING` to `AWSCURRENT`.
 5. Cross-region replication propagates the new value automatically.
 
-**Verification:** The rotation Lambda's test step confirms the new value works before promotion. CloudWatch alarm fires on `RotationFailed` if any step fails.
+### 4.5 Category C — Test and E2E Secrets (Proposed — Manual/Scripted)
 
-**Rollback:** Secrets Manager retains the previous version as `AWSPREVIOUS`. If issues are detected post-rotation, manually promote `AWSPREVIOUS` back to `AWSCURRENT` via `aws secretsmanager update-secret-version-stage`.
-
-**Human intervention required only on failure** (alert-triggered).
-
-### 3.3 Category B — External Service Credentials (Manual, Coordinated)
-
-**Who initiates:** Flex Engineer, triggered by calendar reminder or expiry alert.
-
-**Process:**
-1. Flex Engineer raises a rotation request with the external provider (DVLA, UDP, or UNS) at least 5 business days before the rotation deadline.
-2. Provider issues new credentials and communicates them via secure channel.
-3. Flex Engineer updates the secret value:
-   ```bash
-   aws secretsmanager put-secret-value \
-     --secret-id <secret-arn> \
-     --secret-string '<new-json-value>'
-   ```
-4. Flex Engineer triggers a deployment to force Lambda cold starts:
-   ```bash
-   npx cdk deploy --all
-   ```
-5. Flex Engineer verifies API connectivity by checking CloudWatch error metrics and running smoke tests against the affected domain.
-6. Flex Engineer confirms with provider that the old credential can be revoked.
-7. Provider revokes old credential.
-8. Flex Engineer updates the rotation log with the date and next rotation due date.
-
-**Approval:** Flex Lead must approve before step 3 (secret update in production).
-
-**Verification:**
-- Smoke tests pass for the affected domain (DVLA/UDP/UNS).
-- No elevated 4xx/5xx error rates in CloudWatch for 30 minutes post-rotation.
-- API response times remain within baseline.
-
-**Rollback:** If the new credential fails verification before old credential revocation (step 7), revert to the previous value using `put-secret-value` with the old credentials and redeploy. If discovered after old credential revocation, escalate to provider for emergency reissuance.
-
-### 3.4 Category C — Test and E2E Secrets (Manual/Scripted)
+**Status:** Not yet implemented. No rotation scripts or tracking exist.
 
 **Who initiates:** Flex Engineer, triggered by calendar reminder or expiry alert.
 
 **Process:**
 1. **E2E Private JWK:**
-   - Generate a new RSA key pair: `node -e "const { generateKeyPairSync } = require('crypto'); ..."`
+   - Generate a new RSA key pair.
    - Update the secret at `/development/flex-secret/auth/e2e/private_jwk` with the new private JWK.
    - The stub JWKS endpoint Lambda automatically serves the updated public key on next invocation.
    - Run E2E test suite against development to verify token signing works.
@@ -268,16 +365,9 @@ These credentials require no manual rotation or alerting.
 
 3. Update the rotation log with the date and next rotation due date.
 
-**Approval:** No formal approval required (non-production secrets). Notify team via Slack.
+### 4.6 Category D — Pipeline Secrets (Proposed — Manual)
 
-**Verification:**
-- E2E test suite passes on all configured stages.
-- Smoke tests pass on all environments.
-- Performance test JWT pool generation succeeds.
-
-**Rollback:** Restore previous secret value via Secrets Manager version history. Test secrets have no production impact, so rollback urgency is low.
-
-### 3.5 Category D — Pipeline Secrets (Manual)
+**Status:** Not yet implemented. No rotation tracking exists.
 
 **Who initiates:** Flex Engineer, triggered by calendar reminder (180-day cadence).
 
@@ -289,15 +379,7 @@ These credentials require no manual rotation or alerting.
 5. Revoke the old token in SonarQube.
 6. Update `pipeline-secrets-last-rotated.json` and the team calendar for the next rotation date.
 
-**Approval:** No formal approval required. Notify team via Slack.
-
-**Verification:**
-- CI quality checks job completes successfully with the new token.
-- SonarQube dashboard shows updated analysis results.
-
-**Rollback:** If the new token fails, the old token is still active (not yet revoked in step 5). Re-update the GitHub secret with the old token value. Investigate and retry.
-
-### 3.6 Rotation Log
+### 4.7 Rotation Log
 
 All manual rotations must be recorded in a rotation log. Each entry includes:
 
@@ -315,33 +397,29 @@ The rotation log is maintained as a shared document accessible to the Flex team 
 
 ---
 
-## 4. Expiry Alerting
+## 5. Expiry Alerting
 
-### 4.1 Secrets Manager Rotation Monitoring
+### 5.1 Secrets Manager Rotation Monitoring
 
 For all secrets with configured rotation schedules, alerts fire when rotation fails or a secret approaches its rotation deadline.
 
-| Alert | Trigger | Channel | Severity |
-|-------|---------|---------|----------|
-| Rotation failure | Secrets Manager emits `RotationFailed` CloudTrail event | CloudWatch Alarm → SNS → team notification | High |
-| Rotation overdue | Secret's `LastRotatedDate` exceeds scheduled interval + 7-day grace | CloudWatch custom metric → SNS | Medium |
-| Secret not accessed | Secret has no `GetSecretValue` calls for 90+ days (potential orphan) | CloudWatch Insights query → scheduled report | Low |
+| Alert | Trigger | Channel | Severity | Status |
+|-------|---------|---------|----------|--------|
+| Rotation failure | Secrets Manager emits `RotationFailed` / `TestRotationFailed` CloudTrail event | EventBridge → SNS → team notification | Critical | **Current** (PR #551) |
+| Rotation overdue | Secret's `LastRotatedDate` exceeds scheduled interval + 7-day grace | Credential monitor Lambda → CloudWatch custom metric → alarm | Medium | **Current** (PR #551) |
+| Secret age exceeded | AWSCURRENT version age exceeds policy maximum | Credential monitor Lambda → CloudWatch custom metric → alarm | Medium | **Current** (PR #551) |
 
-**Implementation approach:**
-- CloudWatch EventBridge rule matching `aws.secretsmanager` `RotationFailed` events → SNS topic → Slack/email
-- Scheduled Lambda (daily) that checks `LastRotatedDate` for all Flex secrets against their configured cadence and publishes a custom CloudWatch metric `SecretRotationOverdue`
-- CloudWatch Alarm on `SecretRotationOverdue` metric → SNS topic
+**Scope of credential monitor:** The credential monitor checks secrets in the Flex account only. UDP is excluded because its secret is cross-account and inaccessible.
 
-### 4.2 ACM Certificate Expiry
+### 5.2 ACM Certificate Expiry
 
-| Alert | Trigger | Channel | Severity |
-|-------|---------|---------|----------|
-| Certificate approaching expiry | ACM emits `DaysToExpiry` metric < 45 days | CloudWatch Alarm → SNS | High |
-| Certificate renewal failed | ACM certificate status changes from `ISSUED` to `PENDING_VALIDATION` | EventBridge rule → SNS | Critical |
+| Alert | Trigger | Channel | Severity | Status |
+|-------|---------|---------|----------|--------|
+| Certificate approaching expiry | ACM `DaysToExpiry` metric < 45 days | CloudWatch Alarm → SNS | High | **Current** (PR #551) |
 
 ACM auto-renews certificates 60 days before expiry when DNS validation is in place. The alert at 45 days catches cases where auto-renewal has failed (e.g., DNS validation records removed).
 
-### 4.3 Pipeline Secret Expiry Reminders
+### 5.3 Pipeline Secret Expiry Reminders (Proposed)
 
 | Alert | Trigger | Channel | Severity |
 |-------|---------|---------|----------|
@@ -352,20 +430,21 @@ Pipeline secrets do not have automated expiry detection (GitHub does not expose 
 - Team calendar entries at 180-day intervals for `SONAR_TOKEN_FLEX`
 - A `pipeline-secrets-last-rotated.json` metadata file in the repository tracking rotation dates
 
-### 4.4 External Credential Expiry
+### 5.4 External Credential Failure Detection
 
-| Alert | Trigger | Channel | Severity |
-|-------|---------|---------|----------|
-| External credential rotation due | 90-day cadence from last rotation | Scheduled Lambda → SNS | Medium |
-| API authentication failure spike | 4xx error rate from external APIs exceeds threshold | CloudWatch Alarm on API error metrics | High |
+| Alert | Trigger | Channel | Severity | Status |
+|-------|---------|---------|----------|--------|
+| API authentication failure spike | 4xx error rate from external APIs exceeds threshold | CloudWatch Alarm on API error metrics | High | **Current** |
 
-The 4xx error rate alarm acts as a backstop — if a credential expires or is revoked unexpectedly, the elevated error rate triggers an immediate alert before the scheduled rotation date.
+This is the only monitoring backstop for the UDP credential (cross-account, not directly inspectable). It also serves as a secondary signal for UNS and DVLA alongside proactive age monitoring.
 
 ---
 
-## 5. Periodic Access Review Process
+## 6. Periodic Access Review Process (Proposed)
 
-### 5.1 Schedule
+The following review processes are proposed. None are currently scheduled or tooled.
+
+### 6.1 Schedule
 
 | Review | Frequency | Owner | Participants |
 |--------|-----------|-------|--------------|
@@ -373,10 +452,10 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 | GitHub Actions secrets audit | Quarterly | Flex Lead | Flex team |
 | IAM role trust policy review | Quarterly | Flex Lead | Flex team, Platform team, Security |
 | Cognito / `flex-params` configuration review | Bi-annually | Platform team | Flex team (consulted) |
-| External service credential audit | Bi-annually | Flex Lead | Flex team, external provider liaison |
+| External service credential audit | Bi-annually | Flex Lead | Flex team, UNS team, UDP team |
 | Full credential inventory reconciliation | Annually | Flex Lead | Flex team, Platform team, Security, Engineering Lead |
 
-### 5.2 Secrets Manager Access Review
+### 6.2 Secrets Manager Access Review
 
 **What:** Review which IAM roles and principals have access to each Flex secret.
 
@@ -389,7 +468,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 
 **Output:** Updated access matrix documenting which roles access which secrets, with justification.
 
-### 5.3 GitHub Actions Secrets Review
+### 6.3 GitHub Actions Secrets Review
 
 **What:** Verify that all pipeline secrets are still required, correctly scoped, and recently rotated.
 
@@ -403,7 +482,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 
 **Output:** Confirmation that all secrets are active, scoped, and rotated; removal of any orphaned secrets.
 
-### 5.4 IAM Role Trust Policy Review
+### 6.4 IAM Role Trust Policy Review
 
 **What:** Verify cross-account role assumptions and OIDC trust relationships are correctly scoped.
 
@@ -417,7 +496,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 
 **Output:** Trust policy audit log with any deviations flagged for remediation. Platform team remediates trust policy changes in their accounts; Flex team remediates permissions boundaries and API gateway grants.
 
-### 5.5 External Service Credential Audit
+### 6.5 External Service Credential Audit
 
 **What:** Confirm external credentials are still valid, minimally scoped, and documented.
 
@@ -431,9 +510,9 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 
 ---
 
-## 6. Pipeline Secret Hygiene Review Process
+## 7. Pipeline Secret Hygiene Review Process (Proposed)
 
-### 6.1 Principles
+### 7.1 Principles
 
 - **Keyless by default:** All AWS access uses OIDC federation. No long-lived AWS credentials are stored.
 - **Minimal stored secrets:** Only credentials that cannot use federated auth are stored (`SONAR_TOKEN_FLEX`).
@@ -441,7 +520,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 - **Least privilege:** Workflow permissions are declared explicitly per job, not inherited from repository defaults.
 - **No credential persistence:** All checkouts use `persist-credentials: false`.
 
-### 6.2 Hygiene Checklist (Run Quarterly)
+### 7.2 Hygiene Checklist (Run Quarterly)
 
 | # | Check | Pass Criteria |
 |---|-------|---------------|
@@ -456,7 +535,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 | 9 | No orphaned secrets | All configured secrets are referenced in at least one workflow |
 | 10 | Reusable workflows pass secrets explicitly | No use of `secrets: inherit` |
 
-### 6.3 Ownership and Escalation
+### 7.3 Ownership and Escalation
 
 | Role | Responsibility |
 |------|---------------|
@@ -465,7 +544,7 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 | Security team | Reviews OIDC trust policies, audits environment protection rules |
 | Engineering Lead | Approves exceptions, escalation point for failed checks |
 
-### 6.4 Remediation SLA
+### 7.4 Remediation SLA
 
 | Severity | Example | SLA |
 |----------|---------|-----|
@@ -476,33 +555,39 @@ The 4xx error rate alarm acts as a backstop — if a credential expires or is re
 
 ---
 
-## 7. Exceptions and Accepted Risks
+## 8. Accepted Risks and Gaps
 
-| Secret | Exception | Justification | Review Date |
-|--------|-----------|---------------|-------------|
-| E2E Private JWK (`/development/...`) | Accept 90-day manual rotation instead of auto-rotation | Development-only signing key with no production exposure. Auto-rotation would require synchronising public/private key pairs across test infrastructure, adding complexity disproportionate to the risk. | 2027-02-24 |
-| Smoke Test User | Accept 90-day manual rotation instead of auto-rotation | Test user credentials managed in conjunction with the identity provider's test environment. Auto-rotation depends on the provider supporting programmatic user credential updates. | 2027-02-24 |
-| E2E Test User | Accept 90-day manual rotation instead of auto-rotation | Same rationale as Smoke Test User — credentials are tied to test identity provider configuration. | 2027-02-24 |
-| External credentials (DVLA, UDP, UNS) | Accept 90-day manual rotation instead of auto-rotation | Rotation requires bilateral coordination with external providers who do not currently offer automated key regeneration APIs. | 2027-02-24 |
+| Item | Risk | Mitigation | Review Date |
+|------|------|------------|-------------|
+| E2E Bypass / Origin Verify have no rotation | Compromised value remains valid indefinitely | Proposed: 30-day auto-rotation (Category A). Until implemented, these are static secrets with no expiry | TBD |
+| UDP credential is not inspectable | Flex cannot detect ageing or failed rotation proactively | 4xx error rate alarm is the only backstop. Requires agreement with UDP team on rotation notification | TBD |
+| UNS credential rotation is not Flex-controlled | Age alert fires but Flex cannot action it alone | Requires agreement with UNS team on rotation cadence and escalation path | TBD |
+| Test/E2E secrets have no rotation schedule | Low risk (non-production) but no rotation interval agreed | Proposed: manual rotation with calendar tracking (Category C), interval TBD | TBD |
+| `SONAR_TOKEN_FLEX` has no rotation tracking | Token may age beyond 180-day target undetected | Proposed: `pipeline-secrets-last-rotated.json` + calendar reminders (Category D) | TBD |
+| E2E Private JWK | Development-only signing key with no production exposure. Auto-rotation would require synchronising public/private key pairs across test infrastructure, adding complexity disproportionate to the risk | Accept manual rotation | TBD |
+| Periodic access reviews not yet scheduled | No regular audit of who can access what | Proposed: quarterly review cadence (Section 6) | TBD |
+| Orphaned secrets in dev account | Leftover PR-environment and personal dev secrets accumulate | Requires cleanup and a process to prevent recurrence | TBD |
 
-All exceptions should be reviewed at or before their review date to assess whether automation has become feasible.
+All accepted risks should be assigned review dates once the team agrees on the target state and timelines.
 
 ---
 
-## 8. Rotation Cadence Summary
+## 9. Rotation Cadence Summary
 
-| Credential Type | Cadence | Mechanism | Owner |
-|-----------------|---------|-----------|-------|
-| Infrastructure secrets (WAF) | 30 days | Automatic (Secrets Manager + Lambda) | Flex team |
-| External service credentials | 90 days | Manual (coordinated with provider) | Flex team |
-| Test/E2E secrets | 90 days | Manual/scripted | Flex team |
-| Pipeline secrets (SonarQube) | 180 days | Manual (regenerate + update GitHub) | Flex team |
-| Cognito user pool / client | N/A | Provisioned via `flex-params` | Platform team |
-| Cognito JWT keys | Continuous | AWS-managed | AWS (via Platform team's Cognito setup) |
-| ACM certificates | Auto-renewed | AWS-managed (DNS validation) | Flex team (CDK definition) / AWS (renewal) |
-| OIDC deployment roles | N/A | Trust policies managed externally | Platform team |
-| IAM/STS credentials | Per-request | AWS-managed | AWS |
-| GitHub OIDC tokens | Per-workflow | GitHub-managed | GitHub |
+| Credential Type | Cadence | Mechanism | Owner | Status |
+|-----------------|---------|-----------|-------|--------|
+| DVLA consumer config | 60 days | Automatic (custom Lambda) | Flex team | **Current** |
+| Infrastructure secrets (WAF) | 30 days | Automatic (Secrets Manager + Lambda) | Flex team | **Proposed** |
+| UNS consumer config | TBD | Manual (coordinated with UNS team) | UNS team + Flex team | **Proposed** |
+| UDP consumer config | Unknown | Entirely external | UDP team | **Not Flex-controlled** |
+| Test/E2E secrets | TBD | Manual/scripted | Flex team | **Proposed** |
+| Pipeline secrets (SonarQube) | 180 days | Manual (regenerate + update GitHub) | Flex team | **Proposed** |
+| Cognito user pool / client | N/A | Provisioned via `flex-params` | Platform team | N/A |
+| Cognito JWT keys | Continuous | AWS-managed | AWS (via Platform team's Cognito setup) | **Current** |
+| ACM certificates | Auto-renewed | AWS-managed (DNS validation) | Flex team (CDK definition) / AWS (renewal) | **Current** |
+| OIDC deployment roles | N/A | Trust policies managed externally | Platform team | N/A |
+| IAM/STS credentials | Per-request | AWS-managed | AWS | **Current** |
+| GitHub OIDC tokens | Per-workflow | GitHub-managed | GitHub | **Current** |
 
 ---
 
@@ -513,6 +598,8 @@ All exceptions should be reviewed at or before their review date to assess wheth
 - [AWS Secrets Manager rotation documentation](https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html)
 - [`platform/infra/flex/src/stacks/global.ts`](/platform/infra/flex/src/stacks/global.ts) — E2E Bypass Secret and CloudFront distribution
 - [`platform/infra/flex/src/stacks/platform.ts`](/platform/infra/flex/src/stacks/platform.ts) — Origin Verify Secret and WAF rules
+- [`platform/infra/flex/src/stacks/core/dvla-secret-rotation.ts`](/platform/infra/flex/src/stacks/core/dvla-secret-rotation.ts) — DVLA rotation Lambda infrastructure
+- [`platform/domains/dvla-secret-rotation/`](/platform/domains/dvla-secret-rotation/) — DVLA rotation Lambda handler
 - [`platform/domains/dvla/gateway.config.ts`](/platform/domains/dvla/gateway.config.ts) — DVLA secret reference
 - [`platform/domains/udp/gateway.config.ts`](/platform/domains/udp/gateway.config.ts) — UDP secret reference
 - [`platform/domains/uns/gateway.config.ts`](/platform/domains/uns/gateway.config.ts) — UNS secret reference
