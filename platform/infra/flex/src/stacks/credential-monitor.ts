@@ -1,4 +1,4 @@
-import { Environment, getEnvConfig } from "@flex/utils";
+import { getEnvConfig } from "@flex/utils";
 import { METRIC_NAMESPACE } from "@platform/credential-monitor/metrics";
 import { Duration } from "aws-cdk-lib";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
@@ -18,7 +18,7 @@ import { putMetricDataStatement } from "../utils/put-metric-data-statement";
 
 const { env } = getEnvConfig();
 
-const POLICY_MAXIMUM_AGE_DAYS = 90;
+const DVLA_ROTATION_INTERVAL_DAYS = 60;
 
 interface MaximumAgeSecret {
   secretId: string;
@@ -31,38 +31,16 @@ export class FlexCredentialMonitorStack extends BaseStack {
     return { secretId: secretArn, resourceArn: secretArn, maxAgeDays };
   }
 
-  #secretByName(secretName: string, maxAgeDays: number): MaximumAgeSecret {
-    return {
-      secretId: secretName,
-      resourceArn: `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${secretName}-??????`,
-      maxAgeDays,
-    };
-  }
-
+  // Only DVLA is checked: it is the only secret with an agreed rotation interval.
+  // UDP is excluded: cross-account, ListSecretVersionIds would return AccessDenied.
+  // UNS, smoke test user, and E2E test user are excluded until a rotation
+  // policy and interval are agreed with the team.
   #getMaximumAgeSecrets(): MaximumAgeSecret[] {
-    const testUserSecretName =
-      env === Environment.development
-        ? `/${env}/flex-secret/auth/e2e/private_jwk`
-        : `/${env}/flex-secret/e2e/test_user`;
-
     return [
       this.#secretByArn(
         this.import(ENV_KEYS.DvlaConfigSecretArn),
-        POLICY_MAXIMUM_AGE_DAYS,
+        DVLA_ROTATION_INTERVAL_DAYS,
       ),
-      this.#secretByArn(
-        this.import(ENV_KEYS.UdpConfigSecretArn),
-        POLICY_MAXIMUM_AGE_DAYS,
-      ),
-      this.#secretByArn(
-        this.import(ENV_KEYS.UnsConfigSecret),
-        POLICY_MAXIMUM_AGE_DAYS,
-      ),
-      this.#secretByName(
-        `/${env}/flex-secret/smoke-test/user`,
-        POLICY_MAXIMUM_AGE_DAYS,
-      ),
-      this.#secretByName(testUserSecretName, POLICY_MAXIMUM_AGE_DAYS),
     ];
   }
 
@@ -103,7 +81,7 @@ export class FlexCredentialMonitorStack extends BaseStack {
       timeout: Duration.minutes(1),
       environment: {
         AUTHORIZER_FUNCTION_ARN: authorizerFunctionArn,
-        MAXIMUM_ROTATION_INTERVAL_DAYS: String(POLICY_MAXIMUM_AGE_DAYS),
+        MAXIMUM_ROTATION_INTERVAL_DAYS: String(DVLA_ROTATION_INTERVAL_DAYS),
         MAXIMUM_AGE_SECRETS: this.toJsonString(
           maximumAgeSecrets.map(({ secretId, maxAgeDays }) => ({
             secretId,

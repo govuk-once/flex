@@ -18,8 +18,6 @@ async function synthesiseFor(stage: string) {
     ENV_KEYS.TopicCriticalAlarms,
     ENV_KEYS.TopicWarningAlarms,
     ENV_KEYS.DvlaConfigSecretArn,
-    ENV_KEYS.UdpConfigSecretArn,
-    ENV_KEYS.UnsConfigSecret,
     STAGE_KEYS.ApigwPublicAuthorizerFn,
   ]);
 
@@ -79,9 +77,9 @@ describe("FlexCredentialMonitorStack", () => {
       vi.unstubAllEnvs();
     });
 
-    it("configures the policy's 90-day rotation interval", () => {
+    it("configures the DVLA 60-day rotation interval", () => {
       expect(monitorEnvironment(template)).toMatchObject({
-        MAXIMUM_ROTATION_INTERVAL_DAYS: "90",
+        MAXIMUM_ROTATION_INTERVAL_DAYS: "60",
         FLEX_ENVIRONMENT: "staging",
       });
     });
@@ -101,21 +99,17 @@ describe("FlexCredentialMonitorStack", () => {
       ]);
     });
 
-    it("requires DVLA, UDP, UNS, the smoke test user and the E2E test user to be younger than 90 days", () => {
+    it("checks only DVLA against its 60-day rotation interval", () => {
       const maximumAge = JSON.stringify(
         monitorEnvironment(template).MAXIMUM_AGE_SECRETS,
       );
 
-      [
-        "flexparamdvlaconsumerconfigsecretarn",
-        "flexparamudpconsumerconfigsecretarn",
-        "flexparamunsconsumerconfigsecret",
-        "/staging/flex-secret/smoke-test/user",
-        "/staging/flex-secret/e2e/test_user",
-      ].forEach((reference) => {
-        expect(maximumAge).toContain(reference);
-      });
-      expect(maximumAge.match(/maxAgeDays\\":90/g)).toHaveLength(5);
+      expect(maximumAge).toContain("flexparamdvlaconsumerconfigsecretarn");
+      expect(maximumAge.match(/maxAgeDays\\":60/g)).toHaveLength(1);
+      expect(maximumAge).not.toContain("udp");
+      expect(maximumAge).not.toContain("uns");
+      expect(maximumAge).not.toContain("smoke-test");
+      expect(maximumAge).not.toContain("test_user");
       expect(maximumAge).not.toContain("private_jwk");
     });
 
@@ -130,19 +124,14 @@ describe("FlexCredentialMonitorStack", () => {
       ).toBeUndefined();
     });
 
-    it("reads version metadata of exactly the five required secrets", () => {
-      const resources = statementWith(
+    it("reads version metadata of only the DVLA secret", () => {
+      const statement = statementWith(
         template,
         "secretsmanager:ListSecretVersionIds",
-      )?.Resource as unknown[];
-
-      expect(resources).toHaveLength(5);
-      expect(resources).toEqual(
-        expect.arrayContaining([
-          `arn:aws:secretsmanager:eu-west-2:${ACCOUNT}:secret:/staging/flex-secret/smoke-test/user-??????`,
-          `arn:aws:secretsmanager:eu-west-2:${ACCOUNT}:secret:/staging/flex-secret/e2e/test_user-??????`,
-        ]),
       );
+
+      expect(statement).toBeDefined();
+      expect([statement!.Resource].flat()).toHaveLength(1);
     });
 
     it("reads only the two Cognito parameters", () => {
@@ -204,15 +193,15 @@ describe("FlexCredentialMonitorStack", () => {
       ]);
     });
 
-    it("requires the E2E private JWK instead of the E2E test user", () => {
+    it("checks only DVLA in development too", () => {
       const maximumAge = JSON.stringify(
         monitorEnvironment(template).MAXIMUM_AGE_SECRETS,
       );
 
-      expect(maximumAge).toContain(
-        "/development/flex-secret/auth/e2e/private_jwk",
-      );
-      expect(maximumAge).not.toContain("e2e/test_user");
+      expect(maximumAge).toContain("flexparamdvlaconsumerconfigsecretarn");
+      expect(maximumAge).not.toContain("private_jwk");
+      expect(maximumAge).not.toContain("test_user");
+      expect(maximumAge).not.toContain("smoke-test");
     });
   });
 });
