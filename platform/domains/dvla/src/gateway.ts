@@ -9,6 +9,22 @@ import { JwkSetSchema } from "./schemas/domain/wellKnownJwk";
 import type { JwkSet } from "./schemas/remote/wellKnownJwk";
 
 let jwksCache: ApiResult<JwkSet> | undefined;
+let authCache: { result: ApiResult<unknown>; exp: number } | undefined;
+
+function getJwtExp(token: string): number | undefined {
+  try {
+    const payload: unknown = JSON.parse(
+      Buffer.from(token.split(".")[1] ?? "", "base64url").toString(),
+    );
+    if (typeof payload === "object" && payload !== null && "exp" in payload) {
+      const { exp } = payload;
+      return typeof exp === "number" ? exp : undefined;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 const baseHandler = createHandler({
   clients: ({ consumerConfig }) => {
@@ -31,16 +47,33 @@ const baseHandler = createHandler({
     };
   },
   routes: {
-    "GET /v1/authenticate": ({
+    "GET /v1/authenticate": async ({
       clients: { api },
       resources: { consumerConfig },
     }) => {
-      return api.post("/thirdparty-access/v1/authenticate", {
+      const now = Math.floor(Date.now() / 1000);
+      if (authCache?.result.ok && authCache.exp > now + 60) {
+        return authCache.result;
+      }
+
+      const result = await api.post("/thirdparty-access/v1/authenticate", {
         body: {
           userName: consumerConfig.apiUsername,
           password: consumerConfig.apiPassword, // pragma: allowlist secret
         },
       });
+
+      if (result.ok) {
+        const token = (result.data as { "id-token"?: string })["id-token"];
+        if (token) {
+          const exp = getJwtExp(token);
+          if (exp) {
+            authCache = { result, exp };
+          }
+        }
+      }
+
+      return result;
     },
     "GET /v1/customer/licence": ({
       clients: { api },
@@ -165,10 +198,20 @@ export const handler: GatewayLambda = async (event, context) => {
     typeof result === "object" &&
     (result.statusCode === 401 || result.statusCode === 403)
   ) {
-    logger.info("Auth failure from DVLA, clearing secret cache and retrying", {
-      statusCode: result.statusCode,
-    });
+    const isGatewayAuthRoute = event.path.endsWith("/v1/authenticate");
+
+    logger.info(
+      isGatewayAuthRoute
+        ? "Gateway auth failure, clearing caches and retrying"
+        : "Caller auth failure, clearing secret cache and retrying",
+      { statusCode: result.statusCode, path: event.path },
+    );
+
     clearCaches();
+    if (isGatewayAuthRoute) {
+      authCache = undefined;
+    }
+
     return baseHandler(event, context);
   }
 

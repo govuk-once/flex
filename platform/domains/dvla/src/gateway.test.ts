@@ -588,6 +588,40 @@ describe("DVLA Service Gateway", () => {
       expect(result).toMatchObject({ statusCode: 401 });
     });
 
+    it("retries caller-auth route on 401 with fresh secret but preserves auth cache", async ({
+      http,
+      platform,
+    }) => {
+      stubConsumerConfig(http);
+      stubConsumerConfig(http);
+
+      const mockCustomerLicence = {
+        driver: { lastName: "DOE" },
+        licence: { status: "Valid" },
+      };
+
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/govuk-app-service/v1/retrieve-customer-driving-licence", {
+          headers: mockAuthHeaders,
+          body: { linkingId: mockLinkingId },
+        })
+        .reply(401)
+        .reply(200, mockCustomerLicence);
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/customer/licence", {
+          headers: { auth: mockJwt },
+          query: { linkingId: mockLinkingId },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockCustomerLicence }),
+      );
+    });
+
     it("does not retry on non-auth errors", async ({ http, platform }) => {
       stubConsumerConfig(http);
 
