@@ -87,6 +87,23 @@ export function createPermissionsBoundary(
         actions: ["lambda:InvokeFunction"],
         resources: ["*"],
       }),
+      new PolicyStatement({
+        sid: "DenyIamActions",
+        effect: Effect.DENY,
+        actions: ["iam:*"],
+        resources: ["*"],
+      }),
+      new PolicyStatement({
+        sid: "DenyLambdaReconfig",
+        effect: Effect.DENY,
+        actions: [
+          "lambda:CreateFunction",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:UpdateFunctionCode",
+          "lambda:AddPermission",
+        ],
+        resources: ["*"],
+      }),
     ],
   });
 
