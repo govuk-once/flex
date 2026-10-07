@@ -156,7 +156,7 @@ The rotation Lambda runs in a VPC with private egress (NAT for DVLA API access),
 
 **Rationale:** Self-generated random strings with no external dependency. Frequent rotation is low-risk and high-value — limits exposure window with no coordination overhead.
 
-**Dependencies:** WAF rules and CloudFront custom headers reference the current secret value at runtime. Rotation Lambda must update both the secret and any downstream consumers atomically. Cross-region replication propagates the new value automatically.
+**Dependencies:** WAF rules and CloudFront custom headers contain values sourced from Secrets Manager during deployment, so a rotated value does not reach them until the stacks are redeployed. Rotation must update both the secret and any downstream consumers atomically. Cross-region replication propagates the new value automatically.
 
 **Risks:** Transient mismatch during rotation window if a request arrives between secret update and replica propagation (mitigated by Secrets Manager's `AWSPENDING` / `AWSCURRENT` staging labels).
 
@@ -232,7 +232,7 @@ The UNS secret shell is in the Flex AWS account (created by `flex-params`) but t
 | STS AssumeRole credentials (UDP, UNS) | STS | Per-invocation with 5-minute memoization |
 | GitHub Actions `GITHUB_TOKEN` | GitHub | Per-workflow-run |
 
-These credentials require no manual rotation or alerting.
+These credentials require no manual rotation. Only the ACM certificate is alerted on: its expiry alarm (see 5.2) catches a failed auto-renewal.
 
 ---
 
