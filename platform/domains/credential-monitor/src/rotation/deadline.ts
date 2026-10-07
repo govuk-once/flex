@@ -36,17 +36,35 @@ function isUnverifiable(
   return "reason" in status;
 }
 
+function onePerResource<T extends { resourceName: string }>(
+  statuses: T[],
+  replaces: (candidate: T, kept: T) => boolean,
+): T[] {
+  const byResource = statuses.reduce((kept, status) => {
+    const current = kept.get(status.resourceName);
+
+    return !current || replaces(status, current)
+      ? kept.set(status.resourceName, status)
+      : kept;
+  }, new Map<string, T>());
+
+  return [...byResource.values()];
+}
+
 export function selectOverdue(
   statuses: RotationStatus[],
   now: Date,
 ): RotationDeadline[] {
-  return statuses
-    .filter(isDeadline)
-    .filter(({ dueDate }) => addDays(dueDate, ROTATION_GRACE_DAYS) < now);
+  return onePerResource(
+    statuses
+      .filter(isDeadline)
+      .filter(({ dueDate }) => addDays(dueDate, ROTATION_GRACE_DAYS) < now),
+    (candidate, kept) => candidate.dueDate < kept.dueDate,
+  );
 }
 
 export function selectUnverifiable(
   statuses: RotationStatus[],
 ): UnverifiableRotation[] {
-  return statuses.filter(isUnverifiable);
+  return onePerResource(statuses.filter(isUnverifiable), () => false);
 }

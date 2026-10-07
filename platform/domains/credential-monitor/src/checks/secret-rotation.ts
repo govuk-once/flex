@@ -24,7 +24,7 @@ export async function checkSecretRotation({
     getAutomaticRotationStatuses({
       region,
       maximumIntervalDays,
-      excludedSecretIds: maximumAgeSecrets.map(({ secretId }) => secretId),
+      namedSecretIds: maximumAgeSecrets.map(({ secretId }) => secretId),
     }),
     getMaximumAgeStatuses(maximumAgeSecrets),
   ]);

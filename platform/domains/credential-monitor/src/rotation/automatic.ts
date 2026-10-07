@@ -6,28 +6,30 @@ import { addDays, earliestDate, type RotationStatus } from "./deadline";
 interface AutomaticRotationProps {
   region: string;
   maximumIntervalDays: number;
-  excludedSecretIds?: string[];
+  namedSecretIds?: string[];
 }
 
 function isLocalPrimary(secret: SecretListEntry, region: string): boolean {
   return !secret.PrimaryRegion || secret.PrimaryRegion === region;
 }
 
-function isExcluded(
+function toResourceName(
   secret: SecretListEntry,
-  excludedSecretIds: string[],
-): boolean {
-  return [secret.ARN, secret.Name].some(
-    (secretId) =>
-      secretId !== undefined && excludedSecretIds.includes(secretId),
+  namedSecretIds: string[],
+): string {
+  const namedSecretId = [secret.ARN, secret.Name].find(
+    (secretId) => secretId !== undefined && namedSecretIds.includes(secretId),
   );
+
+  return namedSecretId ?? secret.Name ?? secret.ARN ?? "unknown";
 }
 
 function toRotationStatus(
   secret: SecretListEntry,
   maximumIntervalDays: number,
+  namedSecretIds: string[],
 ): RotationStatus {
-  const resourceName = secret.Name ?? secret.ARN ?? "unknown";
+  const resourceName = toResourceName(secret, namedSecretIds);
   const lastRotated = secret.LastRotatedDate ?? secret.CreatedDate;
   const intervalDays = secret.RotationRules?.AutomaticallyAfterDays;
 
@@ -53,13 +55,14 @@ function toRotationStatus(
 export async function getAutomaticRotationStatuses({
   region,
   maximumIntervalDays,
-  excludedSecretIds = [],
+  namedSecretIds = [],
 }: AutomaticRotationProps): Promise<RotationStatus[]> {
   const secrets = await listSecrets();
 
   return secrets
     .filter((secret) => secret.RotationEnabled)
     .filter((secret) => isLocalPrimary(secret, region))
-    .filter((secret) => !isExcluded(secret, excludedSecretIds))
-    .map((secret) => toRotationStatus(secret, maximumIntervalDays));
+    .map((secret) =>
+      toRotationStatus(secret, maximumIntervalDays, namedSecretIds),
+    );
 }
