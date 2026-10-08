@@ -80,7 +80,7 @@ jobs:
           - Append `!` after the type or scope for a breaking change, e.g. `feat!:`.
           - A `<description>` is required after the colon and space.
 
-          See [docs/releases.md](https://github.com/govuk-once/flex/blob/main/docs/releases.md) for how versions are determined.
+          See [Releases](https://govuk-once.github.io/flex/delivery/releases/) for how versions are determined.
           EOF
           fi
 
@@ -99,5 +99,5 @@ jobs:
       - name: Fail if PR title is invalid
         if: github.actor != 'dependabot[bot]' && steps.validate.outputs.valid != 'true'
         run: |
-          echo "::error ::PR title must be '<JIRA-REF> <type>(<scope>)?: <description>', e.g 'FLEX-123 feat: add user preferences endpoint'. Types: feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert. Append ! to the type for breaking changes. See docs/releases.md"
+          echo "::error ::PR title must be '<JIRA-REF> <type>(<scope>)?: <description>', e.g 'FLEX-123 feat: add user preferences endpoint'. Types: feat|fix|chore|docs|style|refactor|test|perf|ci|build|revert. Append ! to the type for breaking changes. See https://govuk-once.github.io/flex/delivery/releases/"
           exit 1

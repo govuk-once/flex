@@ -1,0 +1,193 @@
+---
+// The path a request from the GOV.UK app takes through Flex, top to bottom.
+// Drawn with Starlight's colour variables so it follows the light and dark themes.
+---
+
+<figure class="platform">
+  <div class="scroll">
+    <svg
+      viewBox="0 0 600 1010"
+      role="img"
+      aria-labelledby="platform-title platform-desc"
+    >
+      <title id="platform-title">The journey of a request through Flex</title>
+      <desc id="platform-desc">
+        The GOV.UK app calls CloudFront, which is protected by AWS WAF. A CloudFront Function
+        checks the request's structure and sets a correlation id. CloudFront forwards the request
+        to the public API Gateway, which asks the Lambda authorizer to verify the token. API
+        Gateway invokes the domain Lambda for the route. The domain Lambda calls the private API
+        Gateway through a VPC endpoint, either to reach another domain's private route or a
+        service gateway. The service gateway Lambda calls the third-party API, over the internet
+        through a NAT gateway, or with a SigV4-signed call to a private API.
+      </desc>
+      <defs>
+        <marker
+          id="platform-arrow"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path d="M0,0 L10,5 L0,10 z" class="head"></path>
+        </marker>
+      </defs>
+
+      <!-- Caller -->
+      <rect class="external" x="200" y="10" width="200" height="40" rx="6"></rect>
+      <text class="label" x="300" y="36">GOV.UK app</text>
+
+      <!-- Edge -->
+      <rect class="section" x="20" y="70" width="560" height="190" rx="10"></rect>
+      <text class="section-title" x="36" y="98">Edge</text>
+      <text class="note" x="36" y="117">FlexGlobal stack</text>
+
+      <rect class="box" x="180" y="110" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="133">CloudFront</text>
+      <text class="sub" x="300" y="152">AWS WAF · rate limit</text>
+
+      <rect class="box" x="180" y="190" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="213">CloudFront Function</text>
+      <text class="sub" x="300" y="232">structural token check</text>
+
+      <!-- Public API -->
+      <rect class="section" x="20" y="280" width="560" height="120" rx="10"></rect>
+      <text class="section-title" x="36" y="308">Public API</text>
+      <text class="note" x="36" y="327">FlexPlatform stack</text>
+
+      <rect class="box" x="180" y="330" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="353">API Gateway</text>
+      <text class="sub" x="300" y="372">/app/&lt;domain&gt;/&lt;version&gt;/…</text>
+
+      <rect class="box" x="450" y="330" width="118" height="52" rx="6"></rect>
+      <text class="label small" x="509" y="353">Authorizer</text>
+      <text class="sub" x="509" y="372">Lambda</text>
+
+      <!-- Domains -->
+      <rect class="section" x="20" y="420" width="560" height="120" rx="10"></rect>
+      <text class="section-title" x="36" y="448">Domains</text>
+      <text class="note" x="36" y="467">one stack per domain</text>
+
+      <rect class="box accent" x="180" y="470" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="493">Domain Lambda</text>
+      <text class="sub" x="300" y="512">one per route</text>
+
+      <!-- Private API -->
+      <rect class="section" x="20" y="560" width="560" height="120" rx="10"></rect>
+      <text class="section-title" x="36" y="588">Private API</text>
+      <text class="note" x="36" y="607">FlexPlatform stack</text>
+
+      <rect class="box" x="180" y="610" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="633">API Gateway (private)</text>
+      <text class="sub" x="300" y="652">IAM · VPC endpoint only</text>
+
+      <rect class="box" x="450" y="610" width="118" height="52" rx="6"></rect>
+      <text class="label small" x="509" y="633">Domain Lambda</text>
+      <text class="sub" x="509" y="652">/domains/…</text>
+
+      <!-- Service gateways -->
+      <rect class="section" x="20" y="700" width="560" height="140" rx="10"></rect>
+      <text class="section-title" x="36" y="728">Service gateways</text>
+      <text class="note" x="36" y="747">FlexPlatform stack</text>
+
+      <rect class="box accent" x="180" y="770" width="240" height="52" rx="6"></rect>
+      <text class="label" x="300" y="793">Service gateway Lambda</text>
+      <text class="sub" x="300" y="812">anti-corruption layer</text>
+
+      <!-- Third party -->
+      <rect class="external" x="180" y="950" width="240" height="44" rx="6"></rect>
+      <text class="label" x="300" y="978">Third-party API</text>
+
+      <!-- Flow -->
+      <line class="flow" x1="300" y1="50" x2="300" y2="108"></line>
+      <line class="flow" x1="300" y1="162" x2="300" y2="188"></line>
+      <line class="flow" x1="300" y1="242" x2="300" y2="328"></line>
+      <text class="sub start" x="310" y="290">x-origin-verify header</text>
+      <line class="flow both" x1="420" y1="356" x2="448" y2="356"></line>
+      <line class="flow" x1="300" y1="382" x2="300" y2="468"></line>
+      <line class="flow" x1="300" y1="522" x2="300" y2="608"></line>
+      <text class="sub start" x="310" y="572">SigV4</text>
+      <line class="flow" x1="420" y1="636" x2="448" y2="636"></line>
+      <line class="flow" x1="300" y1="662" x2="300" y2="768"></line>
+      <text class="sub start" x="310" y="712">/gateways/&lt;name&gt;/…</text>
+      <line class="flow" x1="300" y1="822" x2="300" y2="948"></line>
+      <text class="sub start" x="310" y="890">NAT gateway (private)</text>
+      <text class="sub start" x="310" y="908">or a SigV4-signed private call (isolated)</text>
+    </svg>
+  </div>
+</figure>
+
+<style>
+  .platform {
+    margin-block: 1.5rem;
+  }
+  .scroll {
+    overflow-x: auto;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    min-width: 420px;
+    height: auto;
+    margin-inline: auto;
+    font-family: var(--sl-font);
+  }
+  .section {
+    fill: var(--sl-color-gray-6);
+    stroke: var(--sl-color-gray-5);
+  }
+  .box {
+    fill: var(--sl-color-bg);
+    stroke: var(--sl-color-gray-4);
+  }
+  .box.accent {
+    stroke: var(--sl-color-accent);
+    stroke-width: 2;
+  }
+  .external {
+    fill: none;
+    stroke: var(--sl-color-gray-4);
+    stroke-dasharray: 4 3;
+  }
+  .flow {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.5;
+    marker-end: url(#platform-arrow);
+  }
+  .flow.both {
+    marker-start: url(#platform-arrow);
+  }
+  .head {
+    fill: var(--sl-color-gray-3);
+  }
+  text {
+    fill: var(--sl-color-white);
+  }
+  .label {
+    font-size: 16px;
+    font-weight: 600;
+    text-anchor: middle;
+  }
+  .label.small {
+    font-size: 14px;
+  }
+  .sub {
+    font-size: 13px;
+    fill: var(--sl-color-gray-3);
+    text-anchor: middle;
+  }
+  .sub.start {
+    text-anchor: start;
+  }
+  .section-title {
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .note {
+    font-size: 13px;
+    fill: var(--sl-color-gray-3);
+  }
+</style>

@@ -30,3 +30,6 @@ cdk.context.json
 *.http
 
 eslint-report.json
+
+# Astro
+.astro/

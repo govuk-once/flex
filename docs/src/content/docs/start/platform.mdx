@@ -1,0 +1,152 @@
+---
+title: The platform
+description: How a request from the GOV.UK app travels through Flex, the stacks that make up an environment, and what Flex does today.
+---
+
+import PlatformDiagram from "../../../components/PlatformDiagram.astro";
+
+Flex sits between the GOV.UK app and the government services the app works with. The app calls one
+domain name. Flex checks and authenticates each request, then runs the code for the route in a
+**domain**. When a domain needs data from outside Flex, it calls a **service gateway**, which talks
+to the external API on its behalf.
+
+All of it runs in AWS, in `eu-west-2`, apart from CloudFront and the resources that sit beside it,
+which are in `us-east-1`. Everything is defined with CDK in
+[`platform/infra/flex`](https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/app.ts).
+
+<PlatformDiagram />
+
+## The journey of a request
+
+1. **CloudFront.** The app sends an HTTPS request to the environment's domain name, which points
+   at a CloudFront distribution. AWS WAF on the distribution applies AWS managed rule groups and
+   blocks any IP address that sends more than 2,000 requests in five minutes. In staging and
+   production, AWS Shield Advanced also protects the distribution.
+2. **CloudFront Function.** Before CloudFront forwards the request, a CloudFront Function checks
+   it. It gives the request an `x-correlation-id` if it lacks a valid one, and checks that the
+   `Authorization` header holds a bearer token shaped like a JWT. It does not verify the token. A request that fails is
+   rejected with `401`. See [CloudFront Functions](/flex/edge/cloudfront-functions/).
+3. **Public API Gateway.** CloudFront forwards the request to the public API Gateway, with caching
+   turned off. It adds an `x-origin-verify` header holding a secret. A second AWS WAF on the API
+   blocks every request without that header, so the API can only be reached through CloudFront.
+4. **Lambda authorizer.** API Gateway asks the Lambda authorizer to verify the token against the
+   Amazon Cognito user pool. A valid token gives the handler the user's pairwise id. An invalid one
+   gets `401` or `403` from API Gateway. See [Lambda authorizer](/flex/edge/authorizer/).
+5. **Domain Lambda.** API Gateway invokes the Lambda function for the route. Each route of each
+   domain is its own function. The SDK validates the request, runs the handler and validates the
+   response. See [Handlers](/flex/domains/handlers/).
+6. **Private API Gateway.** If the handler needs another domain or a service gateway, it calls an
+   integration. The SDK signs the request with SigV4 and sends it to the private API Gateway
+   through a VPC endpoint. See [Integrations](/flex/domains/integrations/).
+7. **Service gateway.** The service gateway Lambda turns the request into the shape the external
+   API expects, calls it, and validates and maps the response. See
+   [Service gateways](/flex/gateways/overview/).
+8. **The response** goes back the same way, through API Gateway and CloudFront, to the app.
+
+Each step writes a telemetry event to the logs, tied together by the correlation id, so one
+request can be followed from the edge to the third party. See
+[Telemetry](/flex/observability/telemetry/).
+
+## Public and private APIs
+
+Flex runs two REST APIs in API Gateway for each stage. Both have a `GET /health` route that
+returns a fixed response.
+
+|                | Public API                                              | Private API                                                     |
+| -------------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| Called by      | The GOV.UK app, through CloudFront                      | Flex Lambda functions inside the VPC                            |
+| Endpoint       | Regional, behind CloudFront and AWS WAF                 | Private, reachable only through the VPC's API Gateway endpoint  |
+| Authorisation  | The Lambda authorizer checks the user's token           | IAM: the caller signs with SigV4 and needs `execute-api:Invoke` |
+| Paths          | `/app/<domain>/<version>/<path>`                        | `/domains/<domain>/<version>/<path>` and `/gateways/<name>/...` |
+| Routes come from | Each domain's public routes                           | Each domain's private routes, and one catch-all route per service gateway |
+
+A domain chooses, per route and method, whether it is public, private or both. See
+[Configuration](/flex/domains/configuration/). A Lambda function can only call the private routes
+its integrations declare, because Flex grants `execute-api:Invoke` on exactly those routes.
+
+Whether a route is public or private is separate from the network a Lambda function runs in. A
+route's `access` value (`public`, `private` or `isolated`) chooses the network. See
+[Lambda constructs](/flex/infrastructure/lambda-constructs/).
+
+The same CloudFront distribution serves the hosted OpenAPI documentation under `/docs`, from an S3
+bucket. See [OpenAPI](/flex/domains/openapi/).
+
+## The stacks at a glance
+
+Each environment is a set of CloudFormation stacks. Most are named after the **stage**, such as
+`development`, `pr-123` or your username. Those that exist only in persistent environments are
+named after the **environment** (`development`, `staging` or `production`). See
+[Environments](/flex/delivery/environments/).
+
+| Stack                              | Region      | Deployed to              | Holds                                                                                                                                                                         |
+| ---------------------------------- | ----------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<env>-FlexCore`                   | `eu-west-2` | Persistent environments  | The VPC (public, private egress and isolated subnets in three zones), security groups, VPC endpoints, alarm topics and their Slack channel, the log group key, DVLA secret rotation |
+| `<stage>-FlexPlatform`             | `eu-west-2` | Every stage              | The public API and its WAF, the Lambda authorizer, the private API, every service gateway                                                                                     |
+| `<stage>-<domain>`                 | `eu-west-2` | Every stage              | One stack per domain: a Lambda function for each route, its API routes and its permissions                                                                                    |
+| `<stage>-FlexApiDeployment`        | `eu-west-2` | Every stage              | Deploys both APIs once every domain stack is in place, so new routes go live                                                                                                   |
+| `<stage>-FlexGlobal`               | `us-east-1` | Every stage              | CloudFront, its WAF, the CloudFront Functions, the certificate and DNS record, the OpenAPI docs bucket, Shield (not in development), the alarm relay                           |
+| `<env>-FlexSmokeTest`              | `eu-west-2` | Persistent environments  | A smoke test that calls the public API every five minutes                                                                                                                             |
+| `<env>-FlexCloudWatchDashboards`   | `eu-west-2` | Persistent environments  | CloudWatch dashboards                                                                                                                                                         |
+| `<env>-FlexMacie`                  | `us-east-1` | Persistent environments  | Amazon Macie scans of the CloudFront access logs                                                                                                                              |
+
+Stacks pass values to each other through SSM parameters. The dependencies run in this order:
+
+```text
+<env>-FlexCore           VPC, security groups, VPC endpoint, alarm topics
+      │
+      ▼
+<stage>-FlexPlatform     public and private API ids, authorizer, origin secret
+      │
+      ├──► <stage>-FlexGlobal ──► <env>-FlexMacie
+      │
+      ▼
+<stage>-<domain>         one per domain
+      │
+      ▼
+<stage>-FlexApiDeployment
+```
+
+Personal and PR stages have no core stack of their own. They use the VPC, security groups and
+alarm topics of the `development` core stack. Every stack is described in
+[Infrastructure](/flex/infrastructure/overview/).
+
+## Domains and service gateways
+
+Flex has two kinds of handler, built with different libraries for different jobs. They are not
+interchangeable.
+
+|                   | Domain                                                       | Service gateway                                                     |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Purpose           | The logic behind an area of the app                          | An anti-corruption layer in front of one external API               |
+| Library           | `@flex/sdk`                                                  | `@flex/service-gateway`                                             |
+| Lives in          | `domains/<name>/`, configured by `domain.config.ts`          | `platform/domains/<name>/`, configured by `gateway.config.ts`       |
+| Reached at        | The public API, the private API or both                      | The private API only                                                |
+| Knows the user    | Public routes get the pairwise id from the authorizer        | No: it receives what the domain sends                               |
+| Written by        | Domain developers                                            | The Flex team                                                       |
+
+Both are found automatically. The CDK app reads every `domains/*/domain.config.ts` and every
+`platform/domains/*/gateway.config.ts` when it synthesizes, and creates the infrastructure for
+each. Nobody writes CDK to add a domain or a gateway. Start with
+[Domains](/flex/domains/overview/) or [Service gateways](/flex/gateways/overview/).
+
+## What Flex does today
+
+Flex gives a domain:
+
+- authenticated, synchronous HTTP routes for the app, and private routes for other domains
+- request and response validation from Zod schemas, and an OpenAPI document generated from them
+- typed calls to other domains and to service gateways, with the permissions granted for you
+- SSM parameters, Secrets Manager secrets and KMS keys, with the permissions granted for you
+- structured logs with sensitive values redacted, telemetry events and tracing
+- alarms that notify Slack, and a personal, PR and persistent environment to deploy to
+
+Flex does not yet have:
+
+- queues, events or schedules: every domain route is a synchronous HTTP request
+- storage that a domain owns, such as a DynamoDB table or an S3 bucket
+- response caching, in CloudFront or API Gateway
+- rate limits per domain, beyond the per-IP limit in AWS WAF
+- a link from telemetry to an analytics platform: events are only in CloudWatch Logs
+
+These are gaps in the platform today, not decisions. See
+[Domains](/flex/domains/overview/) for what they mean when you design a domain.

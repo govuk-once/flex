@@ -1,143 +1,25 @@
-# FLEX (Federated Logic and Events eXchange System)
+# Flex
 
-Serverless platform for GOV.UK One services built on AWS CDK and TypeScript.
+Flex (Federated Logic and Events eXchange) is the serverless platform behind the GOV.UK app, built
+on AWS with CDK and TypeScript.
 
----
+**Documentation: <https://govuk-once.github.io/flex/>**, built from [`docs/`](docs/).
 
-## Quick Start
+## Working in this repo
+
+Use the Node version in `.nvmrc` and the pnpm version pinned in `package.json`.
 
 ```bash
-# Configure Node.js version
 nvm use
-
-# Install dependencies
 pnpm install
-
-# Install pre commit hooks
 pre-commit install
-
-# Verify local setup
+pnpm lint
+pnpm tsc
 pnpm test
+pnpm --filter @flex/docs dev   # the documentation site, with live reload
 ```
 
-See the [Environment Setup](/docs/environment-setup.md) for prerequisites and detailed configuration.
-
----
-
-## Development Utilities
-
-```bash
-# Generate a JWT against ephemeral or dev stack
-pnpm jwt
-
-# Generate a JWT against staging stack
-STAGE=staging pnpm jwt
-
-# Generate OpenAPI specs for every domain
-# (writes one JSON per domain plus an index manifest to dist/openapi/current)
-pnpm openapi:generate
-
-# Regenerate specs and open them in a local Swagger UI
-# (browses every domain via a dropdown at http://localhost:3000)
-pnpm docs:serve
-```
-
-> Note:
->
-> - You need to ensure you have AWS cli access setup to run the above in the correct environment
-> - `pnpm openapi:generate` runs automatically before deploys (see `package.json`); the committed `docs/specs/*.json` files reflect the schemas at `main`'s tip.
-
----
-
-## Developer Roles
-
-| Role         | Access             | Guide                                                       |
-| ------------ | ------------------ | ----------------------------------------------------------- |
-| **Platform** | Full repository    | [Platform Development Guide](/docs/platform-development.md) |
-| **Domain**   | `domains/<name>/*` | [Domain Development Guide](/docs/domain-development.md)     |
-
----
-
-## Repository Structure
-
-```text
-flex/
-├── docs/                # Development guides + Swagger UI viewer
-│   ├── index.html       # Run via `pnpm docs:serve`
-│   └── specs/           # Auto-generated OpenAPI 3.1 docs (per domain)
-├── domains/             # Domain-specific handlers
-├── libs/                # Shared packages (@flex/*)
-├── platform/
-│   ├── domains/         # Platform-level handlers
-│   └── infra/           # CDK stacks and constructs
-└── tests/
-    └── e2e/             # E2E tests against deployed infrastructure
-```
-
----
-
-## Packages
-
-| Package                                    | Description                                                |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| [`@flex/config`](/libs/config/README.md)   | Shared ESLint, TypeScript and Vitest configuration         |
-| [`@flex/logging`](/libs/logging/README.md) | Structured logging via AWS Lambda Powertools               |
-| [`@flex/sdk`](/libs/sdk/README.md)         | Declarative domain configuration and route handler factory |
-| [`@flex/testing`](/libs/testing/README.md) | Test fixtures, helpers and extended test functions         |
-| [`@flex/utils`](/libs/utils/README.md)     | Shared schemas, types and HTTP utilities                   |
-
----
-
-## Domains
-
-| Domain                                               | Description                                                       |
-| ---------------------------------------------------- | ----------------------------------------------------------------- |
-| [`@flex/example-domain`](/domains/example/README.md) | Example domain demonstrating route handler patterns using the SDK |
-| [`@flex/udp-domain`](/domains/udp/README.md)         | User Data Platform for user settings management                   |
-| [`@flex/topics-domain`](/domains/topics/README.md)   | Manage user topic selections via integration with UDP             |
-
----
-
-## Platform
-
-### Domain Handlers
-
-| Handler                                                                          | Description                                    |
-| -------------------------------------------------------------------------------- | ---------------------------------------------- |
-| [`@platform/auth`](/platform/domains/auth/README.md)                             | Lambda authorizer for Cognito JWT verification |
-| [`@platform/viewer-request-cff`](/platform/domains/viewer-request-cff/README.md) | CloudFront Function for structural validation  |
-
-### Infrastructure
-
-| Stack                                              | Description                                                |
-| -------------------------------------------------- | ---------------------------------------------------------- |
-| [`@platform/flex`](/platform/infra/flex/README.md) | VPC, API Gateway, CloudFront, Lambda constructs and routes |
-
----
-
-## Tests
-
-| Package                             | Description                               |
-| ----------------------------------- | ----------------------------------------- |
-| [`@flex/e2e`](/tests/e2e/README.md) | E2E tests against deployed infrastructure |
-
----
-
-## Guides
-
-| Guide                                                       | Description                                                           |
-| ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                             |
-| [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
-| [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
-| [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
-| [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications            |
-| [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
-| [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
-| [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline |
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](/.github/CONTRIBUTING.md) for commit message conventions and pull request guidelines.
+See [Environment setup](https://govuk-once.github.io/flex/start/environment-setup/) for
+prerequisites and AWS access, [Working in the repo](https://govuk-once.github.io/flex/start/working-in-the-repo/)
+for the commands, and [Conventions](https://govuk-once.github.io/flex/start/conventions/) for
+commits, pull requests and documentation.

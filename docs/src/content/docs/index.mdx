@@ -1,0 +1,57 @@
+---
+title: Flex
+description: Flex is the serverless platform behind the GOV.UK app. It hosts the APIs the app calls and connects them to government services.
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+Flex (Federated Logic and Events eXchange) is the serverless platform behind the GOV.UK app. It runs
+on AWS and is built with CDK and TypeScript. Every request the app makes to Flex comes in through
+one CloudFront distribution, is authenticated, and is handled by a **domain**.
+
+A domain holds the logic behind one area of the app, such as a user's settings or their driving
+licence. A domain is a directory under `domains/` with one configuration file and a handler for each
+route. Flex reads that file at deploy time and creates the Lambda functions, API routes, permissions
+and alarms for it. A domain reaches data outside Flex through a **service gateway**, a Lambda
+function the Flex team owns that sits in front of one external API.
+
+These docs are for two groups of people:
+
+- developers who build domains for the GOV.UK app
+- the Flex team, who maintain the platform, the service gateways and the delivery pipeline
+
+Start with [The platform](/flex/start/platform/) to see how the parts fit together, then set up
+your machine with [Environment setup](/flex/start/environment-setup/).
+
+<CardGrid>
+  <LinkCard
+    title="The platform"
+    description="How a request reaches a domain, the stacks, and what Flex does today."
+    href="/flex/start/platform/"
+  />
+  <LinkCard
+    title="Creating a domain"
+    description="Add a domain and its routes."
+    href="/flex/domains/creating-a-domain/"
+  />
+  <LinkCard
+    title="Creating a service gateway"
+    description="Put a new external API behind Flex."
+    href="/flex/gateways/creating-a-gateway/"
+  />
+  <LinkCard
+    title="Environments"
+    description="Personal, PR and persistent environments, and deploying by hand."
+    href="/flex/delivery/environments/"
+  />
+  <LinkCard
+    title="The pipeline"
+    description="What runs on a pull request and how a merge reaches production."
+    href="/flex/delivery/pipeline/"
+  />
+  <LinkCard
+    title="Runbooks"
+    description="What to do when an alarm fires or something breaks."
+    href="/flex/runbooks/overview/"
+  />
+</CardGrid>

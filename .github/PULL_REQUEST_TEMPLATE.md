@@ -31,7 +31,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] I have run the pre-commit
 - [ ] I have run all necessary tests
 - [ ] I have updated/added all necessary tests
-- [ ] I have added or updated documentation
+- [ ] I have updated the [documentation site](https://govuk-once.github.io/flex/) (`docs/`) where behaviour changed
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code in hard-to-understand areas
 - [ ] I have refactored my code to be more readable, maintainable and removed duplications.
