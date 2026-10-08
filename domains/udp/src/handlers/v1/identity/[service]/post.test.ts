@@ -514,7 +514,7 @@ describe("POST /v1/identity/:service", () => {
     expect(result.statusCode).toBe(401);
   });
 
-  it("returns 204 when the service identity is already linked with the same ID", async ({
+  it("returns 201 when the service identity is already linked with the same ID", async ({
     http,
     sdk,
   }) => {
@@ -533,6 +533,10 @@ describe("POST /v1/identity/:service", () => {
       .gateway("udp")
       .get(`/identity/${dvlaService}`, { headers: { "User-Id": userId } })
       .reply(200, dvlaLink);
+    http
+      .gateway("udp")
+      .post(`/identity/${dvlaService}/${serviceId}`)
+      .reply(201);
 
     const result = await handler(
       sdk.event.post(targetDvlaEndpoint, {
@@ -547,7 +551,7 @@ describe("POST /v1/identity/:service", () => {
       sdk.context({ secrets }),
     );
 
-    expect(result.statusCode).toBe(204);
+    expect(result.statusCode).toBe(201);
     expect(result.body).toBe("");
   });
 

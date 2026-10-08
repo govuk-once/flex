@@ -32,11 +32,7 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
   const userId = auth.pairwiseId as UserId;
   const identity = await getServiceIdentityLink(userId, service);
 
-  if (identity) {
-    if (identity.serviceId === serviceId) {
-      return { status: status.NO_CONTENT };
-    }
-
+  if (identity && identity.serviceId !== serviceId) {
     /** Remove old linking ID and update with new linking ID */
     await deleteServiceIdentity(identity.serviceName, identity.serviceId);
   }
