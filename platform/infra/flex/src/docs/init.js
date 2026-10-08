@@ -1,5 +1,4 @@
 /* eslint-disable no-undef */
-// NOSONAR S9383 Promises should not be left unhandled
 // prettier-ignore
 (async () => { // NOSONAR S9383 Promises should not be left unhandled
   const status = document.getElementById("status");
