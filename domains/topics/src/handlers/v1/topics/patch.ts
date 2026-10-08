@@ -5,7 +5,7 @@ import createHttpError from "http-errors";
 export const handler = route(
   "PATCH /v1/topics",
   async ({ auth, body, integrations, logger }) => {
-    const userId = auth.pairwiseId as UserId;
+    const userId = auth.pairwiseId;
 
     const result = await integrations.udpPostTopics({
       headers: { "requesting-service-user-id": userId },
