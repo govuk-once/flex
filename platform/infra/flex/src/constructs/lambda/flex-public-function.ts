@@ -6,6 +6,7 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 import { resolveEncryptionKey } from "../../utils/lambda";
+import { toKebabCase } from "../../utils/routes";
 import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
 
@@ -54,7 +55,7 @@ export class FlexPublicFunction extends Construct {
     if (enableDefaultAlarms) {
       new LambdaAlarms(this, `${id}Alarm`, {
         fn: this.function,
-        alarmNamePrefix: `${stage}-${id.toLowerCase()}-alarm`,
+        alarmNamePrefix: `${stage}-${toKebabCase(id)}-alarm`,
         criticalAction,
         warningAction,
       });
