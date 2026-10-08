@@ -12,18 +12,18 @@
     "test": "vitest --passWithNoTests"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch": "3.1091.0",
-    "@aws-sdk/client-lambda": "3.1091.0",
-    "@aws-sdk/client-secrets-manager": "3.1091.0",
-    "@aws-sdk/client-ssm": "3.1091.0",
+    "@aws-sdk/client-cloudwatch": "3.1144.0",
+    "@aws-sdk/client-lambda": "3.1144.0",
+    "@aws-sdk/client-secrets-manager": "3.1144.0",
+    "@aws-sdk/client-ssm": "3.1144.0",
     "@flex/logging": "workspace:*",
-    "zod": "4.4.3"
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
-    "@types/node": "26.1.1",
+    "@types/node": "26.6.3",
     "aws-sdk-client-mock": "4.1.0",
-    "eslint": "10.7.0",
+    "eslint": "10.11.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
