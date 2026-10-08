@@ -1,7 +1,6 @@
 /* eslint-disable no-undef */
-// NOSONAR S9383 Promises should not be left unhandled
 // prettier-ignore
-(async () => { // NOSONAR S9383 Promises should not be left unhandled
+(async () => {
   const status = document.getElementById("status");
   try {
     const res = await fetch("/docs/index.json", { cache: "no-cache" });

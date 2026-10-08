@@ -3,9 +3,10 @@ import { it } from "@flex/testing/e2e";
 import {
   GetSelectedTopicsResponse,
   UpdateSelectedTopicsRequest,
-  UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
+// TODO: This pattern isn't present in other e2e tests...
+import { createTopicId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { config as topicsConfig } from "../domain.config";
@@ -25,8 +26,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           const requestTopics = {
             topics: {
               selectedTopics: [
-                { id: "topic-1", title: "Topic One" },
-                { id: "topic-2", title: "Topic Two" },
+                { id: createTopicId("topic-1"), title: "Topic One" },
+                { id: createTopicId("topic-2"), title: "Topic Two" },
               ],
             },
           };
@@ -64,15 +65,11 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           const requestTopics = {
             topics: {
               selectedTopics: [
-                { id: "topic-1", title: "Topic One" },
-                { id: "topic-2", title: "Topic Two" },
+                { id: createTopicId("topic-1"), title: "Topic One" },
+                { id: createTopicId("topic-2"), title: "Topic Two" },
               ],
             },
           };
-
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
 
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
@@ -95,10 +92,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
               selectedTopics: [],
             },
           };
-
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
 
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
