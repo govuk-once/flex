@@ -12,8 +12,7 @@ const context = routeContext<"PATCH /v1/users/me/notifications">;
 export const handler = route(
   "PATCH /v1/users/me/notifications",
   async ({ auth, resources }) => {
-    // TODO: SDK auth alias
-    const userId = auth.pairwiseId as UserId;
+    const userId = auth.pairwiseId;
 
     const notifications = await updateNotifications(
       userId,
