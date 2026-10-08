@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
 import type { LambdaContext, LambdaEvent } from "../types";
+import { AuthorizationError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { createRouteContext, createRouteHandler } from "./create-route";
 import { mergeHeaders } from "./headers";
@@ -495,6 +496,26 @@ describe("createRouteHandler", () => {
       expect(result).toStrictEqual(
         sdk.result(400, {
           body: { message: error.message, type: "validation_error" },
+        }),
+      );
+    });
+
+    it("returns 401 with an auth error when the pairwise ID is invalid", async ({
+      sdk,
+    }) => {
+      const error = new AuthorizationError();
+
+      mockHandlerFn.mockRejectedValue(error);
+
+      const result = await invokeRoute();
+
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "Authorization failed",
+        { detail: error.message },
+      );
+      expect(result).toStrictEqual(
+        sdk.result(401, {
+          body: { message: error.message, type: "auth_error" },
         }),
       );
     });
