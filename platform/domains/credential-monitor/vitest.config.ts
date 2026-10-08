@@ -5,8 +5,9 @@ export default mergeConfig(
   config,
   defineConfig({
     test: {
-      testTimeout: 60_000,
-      hookTimeout: 60_000,
+      env: {
+        AWS_REGION: "eu-west-2",
+      },
     },
   }),
 );
