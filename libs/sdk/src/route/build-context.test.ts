@@ -4,6 +4,7 @@ import { RequestBodyParseError } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
 import { z } from "zod";
 
+import { AuthorizationError } from "../utils/errors";
 import type { BuildContextOptions } from "./build-context";
 import { buildHandlerContext } from "./build-context";
 
@@ -60,6 +61,27 @@ describe("buildHandlerContext", () => {
         ),
       ).toThrow("Failed to extract the pairwise ID from the request context");
     });
+
+    it.for([
+      { reason: "undefined", pairwiseId: undefined },
+      { reason: "not a string", pairwiseId: 123 },
+    ])(
+      "throws when pairwise ID is $reason in the authorizer context",
+      ({ pairwiseId }, { sdk }) => {
+        const event = sdk.event({
+          requestContext: {
+            authorizer: { pairwiseId: pairwiseId as unknown as string },
+          },
+        });
+
+        expect(() =>
+          buildHandlerContext(event, sdk.context(), {
+            ...contextOptions,
+            gateway: "public",
+          }),
+        ).toThrow(AuthorizationError);
+      },
+    );
   });
 
   describe("Request Body", () => {
