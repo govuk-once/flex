@@ -399,6 +399,8 @@ The rotation log is maintained as a shared document accessible to the Flex team 
 
 ## 5. Expiry Alerting
 
+Alerts are sent to the Slack alerting channel for the respective environment (`govuk-once-flex-alerting-dev`, `govuk-once-flex-alerting-staging`, `govuk-once-flex-alerting-production`) and are actioned by the Flex Engineer, with the Flex Lead as the escalation point.
+
 ### 5.1 Secrets Manager Rotation Monitoring
 
 For all secrets with configured rotation schedules, alerts fire when rotation fails or a secret approaches its rotation deadline.
@@ -555,7 +557,7 @@ The following review processes are proposed. None are currently scheduled or too
 
 ---
 
-## 8. Accepted Risks and Gaps
+## 8. Identified Risks and Gaps
 
 | Item | Risk | Mitigation | Review Date |
 |------|------|------------|-------------|
