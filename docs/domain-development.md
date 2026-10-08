@@ -186,6 +186,8 @@ export const handler = route(
 );
 ```
 
+`auth.pairwiseId` is validated by the SDK and typed as `UserId` (from `@flex/utils`), so it can be passed straight to functions expecting a `UserId` without casting or parsing.
+
 #### With Request Body
 
 Any route that defines a `body` schema will include `body` on the context. The SDK validates the request body before the handler runs, so the context will always contain validated and typed data:
