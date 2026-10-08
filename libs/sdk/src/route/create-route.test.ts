@@ -500,15 +500,18 @@ describe("createRouteHandler", () => {
       );
     });
 
-    it("returns 401 with an auth error when the pairwise ID is invalid", async ({
+    it("returns 401 with an auth error without invoking the handler when building the context fails authorization", async ({
       sdk,
     }) => {
       const error = new AuthorizationError();
 
-      mockHandlerFn.mockRejectedValue(error);
+      vi.mocked(buildHandlerContext).mockImplementation(() => {
+        throw error;
+      });
 
       const result = await invokeRoute();
 
+      expect(mockHandlerFn).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledExactlyOnceWith(
         "Authorization failed",
         { detail: error.message },
