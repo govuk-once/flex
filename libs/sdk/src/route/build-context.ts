@@ -1,6 +1,10 @@
 import type { Logger } from "@flex/logging";
 import type { HeaderConfig } from "@flex/utils";
-import { QueryParametersParseError, RequestBodyParseError } from "@flex/utils";
+import {
+  QueryParametersParseError,
+  RequestBodyParseError,
+  UserId,
+} from "@flex/utils";
 import type { ZodType } from "zod";
 import { ZodError } from "zod";
 
@@ -63,12 +67,14 @@ export function buildHandlerContext(
 }
 
 function extractAuth(requestContext: LambdaEvent["requestContext"]): RouteAuth {
-  const { pairwiseId } = requestContext.authorizer;
+  const { success, data } = UserId.safeParse(
+    requestContext.authorizer.pairwiseId,
+  );
 
-  if (!pairwiseId) throw new AuthorizationError();
+  if (!success) throw new AuthorizationError();
 
   return {
-    pairwiseId,
+    pairwiseId: data,
   };
 }
 

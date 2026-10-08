@@ -6,6 +6,7 @@ import type {
   HttpMethod,
   LogLevel,
   RouteAccess,
+  UserId,
 } from "@flex/utils";
 import type {
   APIGatewayProxyEventBase,
@@ -563,7 +564,7 @@ type WithBody<RouteConfig> = RouteConfig extends {
   : unknown;
 
 export interface RouteAuth {
-  readonly pairwiseId: string;
+  readonly pairwiseId: UserId;
 }
 
 interface HandlerSuccessResult {
