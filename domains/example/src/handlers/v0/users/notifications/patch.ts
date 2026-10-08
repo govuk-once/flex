@@ -1,4 +1,3 @@
-import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 import { route } from "../../../../../domain.config";
@@ -6,7 +5,7 @@ import { route } from "../../../../../domain.config";
 export const handler = route(
   "PATCH /v0/users/notifications",
   async ({ auth, body, integrations, logger, featureFlags }) => {
-    const userId = auth.pairwiseId as UserId;
+    const userId = auth.pairwiseId;
 
     const pushIdResponse = await integrations.udpGetPushId({
       headers: { "User-Id": userId },
