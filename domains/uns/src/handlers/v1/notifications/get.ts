@@ -1,12 +1,10 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 export const handler = route(
   "GET /v1/notifications",
   async ({ auth, integrations, logger }) => {
-    // TODO: Add SDK alias
-    const userId = auth.pairwiseId as UserId;
+    const userId = auth.pairwiseId;
 
     const pushIdResponse = await integrations.udpGetPushId({
       headers: { "User-Id": userId },
