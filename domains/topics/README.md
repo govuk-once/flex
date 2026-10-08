@@ -50,6 +50,14 @@ Replaces the authenticated user's selected topics. An empty `selectedTopics` arr
 
 `204 No Content`
 
+### Feature flags
+
+| Flag                                          | Default | Description                                                                                                            |
+| --------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [`sendRequestedAtHeader`](./domain.config.ts) | `false` | Includes a `requested-at` header (current UTC timestamp) on the UDP write request, enabling out-of-sequence detection. |
+
+> **Active rollout:** `sendRequestedAtHeader` is currently in progress. When enabled, a 409 response from UDP is treated as a stale write — the conflict is logged and surfaced to the caller rather than retried.
+
 ---
 
 ## GET `/v1/topics`
