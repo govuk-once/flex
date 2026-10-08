@@ -21,7 +21,7 @@ const getCtx = routeContext<GetIdentityRoutes>;
 
 export async function postServiceIdentity(serviceId: string, service: string) {
   const { auth, integrations, logger } = postCtx();
-  const userId = auth.pairwiseId as UserId;
+  const userId = auth.pairwiseId;
 
   const result =
     await integrations.udpCreateIdentity<CreateServiceIdentityLinkRequest>({
@@ -52,7 +52,7 @@ export async function deleteServiceIdentity(
   serviceId: string,
 ) {
   const { auth, integrations, logger } = deleteCtx();
-  const userId = auth.pairwiseId as UserId;
+  const userId = auth.pairwiseId;
 
   const result =
     await integrations.udpDeleteIdentity<DeleteServiceIdentityLinkResponse>({
