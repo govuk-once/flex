@@ -225,7 +225,7 @@ jobs:
           EOF
 
           pnpm exec tsx /tmp/merge-zap-openapi.ts
-  
+
 
       - name: Validate generated OpenAPI specification
         shell: bash
@@ -358,7 +358,7 @@ jobs:
           echo "SARIF version:"
           jq -r '.version' \
             zap-reports/report.sarif.json
-      
+
       - name: Normalize ZAP SARIF for GitHub Code Scanning
         shell: bash
         run: |
@@ -432,7 +432,7 @@ jobs:
               ]
             | @tsv
           ' report.github.sarif.json
-      
+
       - name: Generate ZAP finding fingerprints
         id: zap_fingerprints
         shell: bash
@@ -627,7 +627,7 @@ jobs:
         with:
           sarif_file: report.github.sarif.json
           category: zap-api-development
-      
+
 
       - name: Upload ZAP reports
         if: always()
