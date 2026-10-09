@@ -7,10 +7,6 @@ import { handler } from "./patch";
 describe("PATCH /v1/topics", () => {
   const endpoint = "/topics";
 
-  it.beforeEach(({ env }) => {
-    env.set({ sendRequestedAtHeader: "false" });
-  });
-
   it("returns 204 when topics are updated", async ({ http, sdk }) => {
     http
       .gateway("udp")
