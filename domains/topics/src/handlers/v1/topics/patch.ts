@@ -23,6 +23,15 @@ async function updateTopics(userId: UserId): Promise<void> {
   if (!result.ok) {
     const { status } = result.error;
 
+    if (status === 409) {
+      logger.error("Update rejected because a newer version already exists", {
+        status,
+        userId,
+      });
+
+      throw new createHttpError.Conflict();
+    }
+
     logger.error("Failed to update user topics", { status });
     throw new createHttpError.BadGateway();
   }
