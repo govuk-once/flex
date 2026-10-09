@@ -1,21 +1,14 @@
 import { it } from "@flex/testing";
 import { createTopics, userId } from "@tests/fixtures";
-import { describe, expect, vi } from "vitest";
+import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
 
 describe("PATCH /v1/topics", () => {
   const endpoint = "/topics";
-  const lambdaRequestTime = new Date("2026-09-14T12:00:00.000Z");
 
   it.beforeEach(({ env }) => {
     env.set({ sendRequestedAtHeader: "false" });
-    vi.useFakeTimers();
-    vi.setSystemTime(lambdaRequestTime);
-
-    return () => {
-      vi.useRealTimers();
-    };
   });
 
   it("returns 204 when topics are updated", async ({ http, sdk }) => {
@@ -71,6 +64,26 @@ describe("PATCH /v1/topics", () => {
     expect(result.statusCode).toBe(400);
   });
 
+  it("returns 409 when UDP write timestamps are out-of-sequence", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .post("/topics", {
+        headers: { "requesting-service-user-id": userId },
+        body: createTopics(),
+      })
+      .reply(409);
+
+    const result = await handler(
+      sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(409);
+  });
+
   it("returns 502 when the UDP post topics integration fails", async ({
     http,
     sdk,
@@ -89,59 +102,5 @@ describe("PATCH /v1/topics", () => {
     );
 
     expect(result.statusCode).toBe(502);
-  });
-
-  describe("sendRequestedAtHeader feature flag is enabled", () => {
-    const requestedAt = lambdaRequestTime.toISOString();
-
-    it.beforeEach(({ env }) => {
-      env.set({ sendRequestedAtHeader: "true" });
-    });
-
-    it("returns 204 when topics are updated including requested-at header", async ({
-      http,
-      sdk,
-    }) => {
-      http
-        .gateway("udp")
-        .post("/topics", {
-          headers: {
-            "requesting-service-user-id": userId,
-            "requested-at": requestedAt,
-          },
-          body: createTopics(),
-        })
-        .reply(200, createTopics());
-
-      const result = await handler(
-        sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
-        sdk.context(),
-      );
-
-      expect(result.statusCode).toBe(204);
-    });
-
-    it("returns 409 when the requested-at header is out of sync", async ({
-      http,
-      sdk,
-    }) => {
-      http
-        .gateway("udp")
-        .post("/topics", {
-          headers: {
-            "requesting-service-user-id": userId,
-            "requested-at": requestedAt,
-          },
-          body: createTopics(),
-        })
-        .reply(409);
-
-      const result = await handler(
-        sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
-        sdk.context(),
-      );
-
-      expect(result.statusCode).toBe(409);
-    });
   });
 });
