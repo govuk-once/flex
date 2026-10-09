@@ -136,7 +136,7 @@ export const handler = createHandler({
       clients: { api },
       resources: { consumerConfig },
       body,
-      headers: { requestingServiceUserId, requestedAt },
+      headers: { requestingServiceUserId },
     }) => {
       const result = await api.post("/v1/topics", {
         schema: upsertTopicsResponseSchema,
@@ -144,7 +144,7 @@ export const handler = createHandler({
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
-          ...(requestedAt && { "requested-at": requestedAt }),
+          "requested-at": new Date().toISOString(),
         },
         body: { data: body },
       });

@@ -120,10 +120,6 @@ export const { config, createHandler } = defineGateway({
           name: "requesting-service-user-id",
           required: true,
         },
-        requestedAt: {
-          name: "requested-at",
-          required: false, // domains/topics/domain.config.ts -> featureFlags.sendRequestedAtHeader
-        },
       },
       body: inboundUpdateSelectedTopicsRequestSchema,
       response: domainTopicsSchema,
