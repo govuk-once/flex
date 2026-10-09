@@ -13,8 +13,7 @@ const context = routeContext<"GET /v1/users/me">;
 export const handler = route(
   "GET /v1/users/me",
   async ({ auth, logger, resources }) => {
-    // TODO: SDK auth alias
-    const userId = auth.pairwiseId as UserId;
+    const userId = auth.pairwiseId;
 
     const pushId = getPushId(userId, resources.udpNotificationSecret);
 

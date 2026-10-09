@@ -1,5 +1,4 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
 import {
   deleteServiceIdentity,
   getServiceIdentityLink,
@@ -12,8 +11,7 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   const { environment } = resources;
   const service = pathParams.service.toLowerCase();
 
-  // TODO: SDK auth alias
-  const userId = auth.pairwiseId as UserId;
+  const userId = auth.pairwiseId;
 
   const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();
