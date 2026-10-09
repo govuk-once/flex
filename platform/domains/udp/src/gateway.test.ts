@@ -481,8 +481,20 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/topics", () => {
+    const now = new Date("2026-09-14T12:00:00.000Z");
+    const mockHeadersRequestedAt = {
+      ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+      "requested-at": now.toISOString(),
+    };
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(now);
+    });
+
+    it.afterEach(() => {
+      vi.useRealTimers();
     });
 
     it("returns updated selectedTopics for the requesting user", async ({
@@ -492,7 +504,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: mockHeadersRequestedAt,
           body: { data: mockTopics },
         })
         .reply(200, mockUpstreamTopics);
@@ -519,7 +531,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: mockHeadersRequestedAt,
           body: { data: mockTopicsEmpty },
         })
         .reply(200, mockUpstreamTopicsEmpty);
@@ -539,72 +551,33 @@ describe("UDP Service Gateway", () => {
       );
     });
 
-    describe("requested-at header", () => {
-      const now = new Date("2026-09-14T12:00:00.000Z");
-      const mockRequestedAt = now.toISOString();
+    it("returns 409 when upstream reports a conflict", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/topics", {
+          headers: mockHeadersRequestedAt,
+          body: { data: mockTopics },
+        })
+        .reply(409);
 
-      const mockHeadersRequestedAt = {
-        ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-        "requested-at": mockRequestedAt,
-      };
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/topics", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockTopics,
+        }),
+        platform.context(),
+      );
 
-      it("returns updated selectedTopics including requested-at header", async ({
-        http,
-        platform,
-      }) => {
-        http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/topics", {
-            headers: mockHeadersRequestedAt,
-            body: { data: mockTopics },
-          })
-          .reply(200, mockUpstreamTopics);
-
-        const result = await handler(
-          platform.gatewayEvent.post("/v1/topics", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-              "requested-at": mockRequestedAt,
-            },
-            body: mockTopics,
-          }),
-          platform.context(),
-        );
-
-        expect(result).toStrictEqual(
-          platform.gatewayResult(200, { body: mockTopics }),
-        );
-      });
-
-      it("returns 409 when requested-at header is out of sync", async ({
-        http,
-        platform,
-      }) => {
-        http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/topics", {
-            headers: mockHeadersRequestedAt,
-            body: { data: mockTopics },
-          })
-          .reply(409);
-
-        const result = await handler(
-          platform.gatewayEvent.post("/v1/topics", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-              "requested-at": mockRequestedAt,
-            },
-            body: mockTopics,
-          }),
-          platform.context(),
-        );
-
-        expect(result).toStrictEqual(
-          platform.gatewayResult(409, {
-            body: { message: "Conflict" },
-          }),
-        );
-      });
+      expect(result).toStrictEqual(
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
+        }),
+      );
     });
   });
 
