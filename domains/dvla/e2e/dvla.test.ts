@@ -42,7 +42,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicles") &&
-        isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicle/:id"),
+      isRouteDeployed(dvlaConfig, "GET /v1/customer/vehicle/:id"),
     )("/vehicles", () => {
       let vehicleId: string | undefined;
 
@@ -106,7 +106,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
 
     describe.runIf(
       isRouteDeployed(dvlaConfig, "POST /v1/share-code") &&
-        isRouteDeployed(dvlaConfig, "POST /v1/share-code/:id/cancel"),
+      isRouteDeployed(dvlaConfig, "POST /v1/share-code/:id/cancel"),
     )("/dvla/v1/share-code & /dvla/v1/share-code/:id/cancel", () => {
       it("creates and then proceeds to cancel newly created share-code", async ({
         cloudfront,
@@ -193,25 +193,7 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
           expect(validation.success).toBe(true);
         });
 
-        it("returns 502 when upstream returns a 500 error", async ({
-          cloudfront,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.get(
-            endpoint(mockRegistration.upstreamError),
-            { headers: authHeader },
-          );
-
-          expect(result.status).toBe(status.BAD_GATEWAY);
-        });
-
-        /**
-         * The below are no longer working with the new VES service DVLA are
-         * providing us, now returning 500 for these codes
-         * - Ask DVLA to look into their new service, will update the below once
-         *   resolved
-         */
-        it.todo(
+        it(
           "returns 404 for a non-existent vehicle registration",
           async ({ cloudfront, authHeader }) => {
             const result = await cloudfront.client.get(
@@ -222,6 +204,24 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
             expect(result.status).toBe(status.NOT_FOUND);
           },
         );
+
+        /**
+         * The below are no longer working with the new VES service DVLA are
+         * providing us, now returning 500 for these codes
+         * - Ask DVLA to look into their new service, will update the below once
+         *   resolved
+         */
+        it.todo("returns 502 when upstream returns a 500 error", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get(
+            endpoint(mockRegistration.upstreamError),
+            { headers: authHeader },
+          );
+
+          expect(result.status).toBe(status.BAD_GATEWAY);
+        });
 
         it.todo(
           "returns 400 for a bad vehicle registration request",
