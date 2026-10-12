@@ -1,40 +1,36 @@
-import { route, routeContext } from "@domain";
+import { route } from "@domain";
 import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
-const context = routeContext<"PATCH /v1/topics">;
+export const handler = route(
+  "PATCH /v1/topics",
+  async ({ auth, body, integrations, logger }) => {
+    const userId = auth.pairwiseId as UserId;
 
-export const handler = route("PATCH /v1/topics", async ({ auth }) => {
-  const userId = auth.pairwiseId as UserId;
+    const result = await integrations.udpPostTopics({
+      headers: { "requesting-service-user-id": userId },
+      body,
+    });
 
-  await updateTopics(userId);
+    if (!result.ok) {
+      const { status } = result.error;
 
-  return { status: 204 };
-});
+      if (status === 409) {
+        logger.error("Update rejected because a newer version already exists", {
+          status,
+          userId,
+        });
 
-async function updateTopics(userId: UserId): Promise<void> {
-  const { body, integrations, logger } = context();
+        throw new createHttpError.Conflict();
+      }
 
-  const result = await integrations.udpPostTopics({
-    headers: { "requesting-service-user-id": userId },
-    body,
-  });
+      logger.error("Failed to update user topics", { status });
 
-  if (!result.ok) {
-    const { status } = result.error;
-
-    if (status === 409) {
-      logger.error("Update rejected because a newer version already exists", {
-        status,
-        userId,
-      });
-
-      throw new createHttpError.Conflict();
+      throw new createHttpError.BadGateway();
     }
 
-    logger.error("Failed to update user topics", { status });
-    throw new createHttpError.BadGateway();
-  }
+    logger.info("Successfully updated topics", { data: result.data });
 
-  logger.info("Successfully updated topics", { data: result.data });
-}
+    return { status: 204 };
+  },
+);
