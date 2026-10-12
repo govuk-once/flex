@@ -1,12 +1,12 @@
 import { route, routeContext } from "@domain";
-import { UserId } from "@flex/utils";
+import type { UserId } from "@flex/utils";
 import { GetSelectedTopicsResponse } from "@schemas/topic";
 import createHttpError from "http-errors";
 
 const context = routeContext<"GET /v1/topics">;
 
 export const handler = route("GET /v1/topics", async ({ auth }) => {
-  const userId = UserId.parse(auth.pairwiseId);
+  const userId = auth.pairwiseId as UserId;
 
   const topics = await getTopics(userId);
 
