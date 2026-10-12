@@ -193,16 +193,16 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
           expect(validation.success).toBe(true);
         });
 
-        it("returns 502 when upstream returns a 500 error", async ({
+        it("returns 404 for a non-existent vehicle registration", async ({
           cloudfront,
           authHeader,
         }) => {
           const result = await cloudfront.client.get(
-            endpoint(mockRegistration.upstreamError),
+            endpoint(mockRegistration.notFound),
             { headers: authHeader },
           );
 
-          expect(result.status).toBe(status.BAD_GATEWAY);
+          expect(result.status).toBe(status.NOT_FOUND);
         });
 
         /**
@@ -212,14 +212,14 @@ describe.runIf(isDomainDeployed(dvlaConfig))("DVLA domain", () => {
          *   resolved
          */
         it.todo(
-          "returns 404 for a non-existent vehicle registration",
+          "returns 502 when upstream returns a 500 error",
           async ({ cloudfront, authHeader }) => {
             const result = await cloudfront.client.get(
-              endpoint(mockRegistration.notFound),
+              endpoint(mockRegistration.upstreamError),
               { headers: authHeader },
             );
 
-            expect(result.status).toBe(status.NOT_FOUND);
+            expect(result.status).toBe(status.BAD_GATEWAY);
           },
         );
 
