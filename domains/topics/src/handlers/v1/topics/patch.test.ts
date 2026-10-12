@@ -60,6 +60,26 @@ describe("PATCH /v1/topics", () => {
     expect(result.statusCode).toBe(400);
   });
 
+  it("returns 409 when UDP write timestamps are out-of-sequence", async ({
+    http,
+    sdk,
+  }) => {
+    http
+      .gateway("udp")
+      .post("/topics", {
+        headers: { "requesting-service-user-id": userId },
+        body: createTopics(),
+      })
+      .reply(409);
+
+    const result = await handler(
+      sdk.event.patch(endpoint, { auth: userId, body: createTopics() }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(409);
+  });
+
   it("returns 502 when the UDP post topics integration fails", async ({
     http,
     sdk,
