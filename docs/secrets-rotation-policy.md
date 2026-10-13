@@ -407,9 +407,9 @@ For all secrets with configured rotation schedules, alerts fire when rotation fa
 
 | Alert | Trigger | Channel | Severity | Status |
 |-------|---------|---------|----------|--------|
-| Rotation failure | Secrets Manager emits `RotationFailed` / `TestRotationFailed` CloudTrail event | EventBridge → SNS → team notification | Critical | **Current** (PR #551) |
-| Rotation overdue | Secret's `LastRotatedDate` exceeds scheduled interval + 7-day grace | Credential monitor Lambda → CloudWatch custom metric → alarm | Medium | **Current** (PR #551) |
-| Secret age exceeded | AWSCURRENT version age exceeds policy maximum | Credential monitor Lambda → CloudWatch custom metric → alarm | Medium | **Current** (PR #551) |
+| Rotation failure | Secrets Manager emits `RotationFailed` / `TestRotationFailed` CloudTrail event | EventBridge → SNS → Slack alerting channel | Critical | **Current** (PR #551) |
+| Rotation overdue | Secret's `LastRotatedDate` exceeds scheduled interval + 7-day grace | Credential monitor Lambda → CloudWatch alarm → Slack alerting channel | Medium | **Current** (PR #551) |
+| Secret age exceeded | AWSCURRENT version age exceeds policy maximum | Credential monitor Lambda → CloudWatch alarm → Slack alerting channel | Medium | **Current** (PR #551) |
 
 **Scope of credential monitor:** The credential monitor checks secrets in the Flex account only. UDP is excluded because its secret is cross-account and inaccessible.
 
@@ -417,7 +417,7 @@ For all secrets with configured rotation schedules, alerts fire when rotation fa
 
 | Alert | Trigger | Channel | Severity | Status |
 |-------|---------|---------|----------|--------|
-| Certificate approaching expiry | ACM `DaysToExpiry` metric < 45 days | CloudWatch Alarm → SNS | High | **Current** (PR #551) |
+| Certificate approaching expiry | ACM `DaysToExpiry` metric < 45 days | CloudWatch Alarm → SNS → Slack alerting channel | High | **Current** (PR #551) |
 
 ACM auto-renews certificates 60 days before expiry when DNS validation is in place. The alert at 45 days catches cases where auto-renewal has failed (e.g., DNS validation records removed).
 
@@ -436,7 +436,7 @@ Pipeline secrets do not have automated expiry detection (GitHub does not expose 
 
 | Alert | Trigger | Channel | Severity | Status |
 |-------|---------|---------|----------|--------|
-| API authentication failure spike | 4xx error rate from external APIs exceeds threshold | CloudWatch Alarm on API error metrics | High | **Current** |
+| API authentication failure spike | 4xx error rate from external APIs exceeds threshold | CloudWatch Alarm → Slack alerting channel | High | **Current** |
 
 This is the only monitoring backstop for the UDP credential (cross-account, not directly inspectable). It also serves as a secondary signal for UNS and DVLA alongside proactive age monitoring.
 
