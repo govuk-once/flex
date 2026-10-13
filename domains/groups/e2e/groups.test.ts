@@ -15,8 +15,8 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
 
   const group = {
     Namespace: "travel",
-    Group: "test country",
-    Subgroup: "test frequency",
+    Group: "test-country",
+    Subgroup: "test-frequency",
     Type: GroupTypeSchema.enum.NOTIFICATION,
   };
 
@@ -100,7 +100,7 @@ describe.runIf(isDomainDeployed(groupsConfig))("Groups domain", () => {
               body: [
                 {
                   Namespace: "travel",
-                  Group: "test country",
+                  Group: "test-country",
                   Type: GroupTypeSchema.enum.NOTIFICATION,
                 },
               ],
