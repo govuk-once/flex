@@ -7,6 +7,9 @@ dist/
 # Nx cache
 .nx/
 
+# Astro generated types
+.astro/
+
 # OS
 .DS_Store
 
