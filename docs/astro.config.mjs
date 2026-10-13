@@ -13,7 +13,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "FLEX",
-      description: "Flex is the platform behind the GOV.UK app. It connects what GOV.UK knows about a user with the government services the app is built to work with.",
+      description:
+        "Flex is the platform behind the GOV.UK app. It connects what GOV.UK knows about a user with the government services the app is built to work with.",
       social: [{ icon: "github", label: "GitHub", href: REPOSITORY }],
       editLink: { baseUrl: `${REPOSITORY}/edit/main/docs/` },
       lastUpdated: true,
