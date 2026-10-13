@@ -4,7 +4,6 @@ import { RequestBodyParseError } from "@flex/utils";
 import { describe, expect, vi } from "vitest";
 import { z } from "zod";
 
-import { AuthorizationError } from "../utils/errors";
 import type { BuildContextOptions } from "./build-context";
 import { buildHandlerContext } from "./build-context";
 
@@ -79,7 +78,7 @@ describe("buildHandlerContext", () => {
             ...contextOptions,
             gateway: "public",
           }),
-        ).toThrow(AuthorizationError);
+        ).toThrow("Failed to extract the pairwise ID from the request context");
       },
     );
   });
