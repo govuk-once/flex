@@ -5,8 +5,6 @@ import {
   UpdateSelectedTopicsRequest,
   UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
-// TODO: This pattern isn't present in other e2e tests...
-import { createTopicId } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { config as topicsConfig } from "../domain.config";
@@ -26,8 +24,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           const requestTopics = {
             topics: {
               selectedTopics: [
-                { id: createTopicId("topic-1"), title: "Topic One" },
-                { id: createTopicId("topic-2"), title: "Topic Two" },
+                { id: "topic-1", title: "Topic One" },
+                { id: "topic-2", title: "Topic Two" },
               ],
             },
           };
@@ -65,8 +63,8 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           const requestTopics = {
             topics: {
               selectedTopics: [
-                { id: createTopicId("topic-1"), title: "Topic One" },
-                { id: createTopicId("topic-2"), title: "Topic Two" },
+                { id: "topic-1", title: "Topic One" },
+                { id: "topic-2", title: "Topic Two" },
               ],
             },
           };

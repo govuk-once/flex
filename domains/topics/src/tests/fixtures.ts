@@ -1,17 +1,13 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
-import { type SelectedTopics, TopicIdBranded } from "@schemas/topic";
+import type { SelectedTopics } from "@schemas/topic";
 
 export const userId = createUserId("test-topics-user");
-
-export const createTopicId = (value: string) => {
-  return TopicIdBranded.parse(value);
-};
 
 const baseTopics: SelectedTopics = {
   topics: {
     selectedTopics: [
-      { id: createTopicId("topic-1"), title: "Topic One" },
-      { id: createTopicId("topic-2"), title: "Topic Two" },
+      { id: "topic-1", title: "Topic One" },
+      { id: "topic-2", title: "Topic Two" },
     ],
   },
 };

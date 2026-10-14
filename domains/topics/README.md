@@ -29,6 +29,14 @@ Alternatively, run `pnpm <command>` from within `domains/topics/`.
 
 ---
 
+## Data schema
+
+### Topic IDs
+
+`Topic.id` is currently validated only as a non-empty string. The final ID format may change (e.g., Slug, UUID) after a discussion with domain team. Until then, do not assume or validate any specific format, and treat IDs as opaque values. The schema can be tightened in [`topic.ts`](./src/schemas/topic.ts) if necessary.
+
+---
+
 ## PATCH `/v1/topics`
 
 Replaces the authenticated user's selected topics. An empty `selectedTopics` array clears all topics.

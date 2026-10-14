@@ -1,12 +1,8 @@
 import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
-// TODO: Topic IDs come from the app, so this may not be necessary?
-export const TopicIdBranded = NonEmptyString.brand<"TopicId">();
-export type TopicId = z.output<typeof TopicIdBranded>;
-
 export const TopicSchema = z.object({
-  id: TopicIdBranded,
+  id: NonEmptyString,
   title: NonEmptyString,
 });
 export type Topic = z.infer<typeof TopicSchema>;
