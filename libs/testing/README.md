@@ -84,13 +84,13 @@ Builds requests and context for testing domain handlers built with [`@flex/sdk`]
 
 Exposes HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a path and options:
 
-| Option    | Description                                                                                                                                                                                        |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Option    | Description                                                                                                                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `auth`    | A `UserId` to simulate an authenticated request, assigned to `auth.userId` on the handler context. Pass `false` to explicitly omit the authorizer context to simulate unauthenticated requests |
-| `headers` | Request headers                                                                                                                                                                                    |
-| `params`  | Path parameters                                                                                                                                                                                    |
-| `query`   | Query string parameters                                                                                                                                                                            |
-| `body`    | Request body (Only included for write operations)                                                                                                                                                  |
+| `headers` | Request headers                                                                                                                                                                                |
+| `params`  | Path parameters                                                                                                                                                                                |
+| `query`   | Query string parameters                                                                                                                                                                        |
+| `body`    | Request body (Only included for write operations)                                                                                                                                              |
 
 ```typescript
 import { it } from "@flex/testing";
