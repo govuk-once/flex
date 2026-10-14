@@ -86,7 +86,7 @@ The context object passed to the handler is scoped to the route definition. Only
 | Property       | Condition                                          |
 | -------------- | -------------------------------------------------- |
 | `logger`       | All handlers                                       |
-| `auth`         | All non-public handlers                            |
+| `auth`         | Public handlers (not `[private]`)                  |
 | `body`         | Included when the route declares a `body` schema   |
 | `queryParams`  | Included when the route declares a `query` schema  |
 | `pathParams`   | Included when the path contains a `:param` segment |

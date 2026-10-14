@@ -20,7 +20,7 @@ A domain is a folder under `domains/<name>` containing a single `domain.config.t
 
 ## What the platform provides
 
-- Authentication: Cognito JWT verification at the edge and at API Gateway. Public route handlers receive a pairwise pseudonymous user id (`auth.pairwiseId`); the raw token still travels with the request but is not surfaced to the handler unless a route declares the `Authorization` header, which none currently does.
+- Authentication: Cognito JWT verification at the edge and at API Gateway. Public route handlers receive a pairwise pseudonymous user id (`auth.userId`); the raw token still travels with the request but is not surfaced to the handler unless a route declares the `Authorization` header, which none currently does.
 - Edge protection: CloudFront, Shield, WAF managed rules and a global rate rule of 2000 requests per IP over a rolling five minute window.
 - Structured logging with correlation ids and aggressive automatic redaction of secrets and PII (keys, JWTs, emails, NINOs, postcodes and similar).
 - OpenAPI 3.1 generation and publication per domain, with a CI gate that fails a PR on breaking spec changes unless a `breaking-change-accepted` label is applied. This is what the app team consumes.

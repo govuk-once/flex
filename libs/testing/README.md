@@ -86,7 +86,7 @@ Exposes HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a pa
 
 | Option    | Description                                                                                                                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `auth`    | A `UserId` to simulate an authenticated request, assigned to `auth.pairwiseId` on the handler context. Pass `false` to explicitly omit the authorizer context to simulate unauthenticated requests |
+| `auth`    | A `UserId` to simulate an authenticated request, assigned to `auth.userId` on the handler context. Pass `false` to explicitly omit the authorizer context to simulate unauthenticated requests |
 | `headers` | Request headers                                                                                                                                                                                    |
 | `params`  | Path parameters                                                                                                                                                                                    |
 | `query`   | Query string parameters                                                                                                                                                                            |

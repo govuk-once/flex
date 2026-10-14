@@ -107,7 +107,7 @@ Create a new todo. Demonstrates request body validation on a private authenticat
 
 ### SDK Features
 
-- `auth`: Provides access to the pairwise ID
+- `auth`: Provides access to the user ID
 - `body`: Request schema validation
 - `response`: Response schema validation
 
@@ -275,7 +275,7 @@ Check whether an identity link exists for the authenticated user. Demonstrates r
 
 ### SDK Features
 
-- `auth`: Access to pairwise ID
+- `auth`: Access to user ID
 - `pathParams`: Path parameters
 - `integrations`: Access to domain integrations
 - `routeContext`: Accessing handler context outside the route function
@@ -322,7 +322,7 @@ Update user notifications in UDP. Demonstrates a service that uses `routeContext
 
 ### SDK Features
 
-- `auth`: Authentication (access to pairwise ID and validation)
+- `auth`: Authentication (access to user ID and validation)
 - `body`: Request schema validation
 - `response`: Response schema validation
 - `resources`: Access to domain resources
@@ -356,7 +356,7 @@ Get the authenticated user's notification preferences. Demonstrates chaining two
 
 ### SDK Features
 
-- `auth`: Access to pairwise ID
+- `auth`: Access to user ID
 - `response`: Response schema validation
 - `integrations`: Access to domain and gateway integrations, chained sequentially
 
@@ -374,7 +374,7 @@ Update the authenticated user's notification preferences. Demonstrates reading a
 
 ### SDK Features
 
-- `auth`: Access to pairwise ID
+- `auth`: Access to user ID
 - `body`: Request schema validation
 - `response`: Response schema validation
 - `resources`: Access to domain resources
