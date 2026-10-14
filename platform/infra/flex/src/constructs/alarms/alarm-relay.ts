@@ -1,6 +1,6 @@
 import { Duration } from "aws-cdk-lib";
 import { type IAlarmAction, Stats } from "aws-cdk-lib/aws-cloudwatch";
-import { PolicyStatement } from "aws-cdk-lib/aws-iam";
+import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import type { IKey } from "aws-cdk-lib/aws-kms";
 import {
   Code,
@@ -53,6 +53,14 @@ export function createAlarmRelay(
   const relayTopic = new Topic(scope, `${severity}RelayTopic`, {
     masterKey: relayTopicKey,
   });
+  relayTopic.grantPublish(
+    new ServicePrincipal("cloudwatch.amazonaws.com").withConditions({
+      StringEquals: { "aws:SourceAccount": relayTopic.stack.account },
+      ArnLike: {
+        "aws:SourceArn": `arn:${relayTopic.stack.partition}:cloudwatch:${relayTopic.stack.region}:${relayTopic.stack.account}:alarm:*`,
+      },
+    }),
+  );
 
   const relayFn = new LambdaFunction(scope, `${severity}RelayFn`, {
     runtime: Runtime.NODEJS_24_X,

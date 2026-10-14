@@ -49,6 +49,7 @@ import { createAlarmRelay } from "../constructs/alarms/alarm-relay";
 import { CertificateAlarms } from "../constructs/alarms/certificate";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
+import { createIamChangeAlerts } from "../constructs/alarms/iam-change-alerts";
 import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
@@ -110,10 +111,14 @@ export class FlexGlobalStack extends BaseStack {
       targetTopicArn: warningTargetArn,
     });
 
-    return importAlarmActions(this, {
-      criticalTopicArn: criticalRelay.topicArn,
-      warningTopicArn: warningRelay.topicArn,
-    });
+    return {
+      ...importAlarmActions(this, {
+        criticalTopicArn: criticalRelay.topicArn,
+        warningTopicArn: warningRelay.topicArn,
+      }),
+      criticalTopic: criticalRelay,
+      alarmTopicKey,
+    };
   }
 
   #getDomainName(): DomainNames {
@@ -596,7 +601,16 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
     });
 
-    const { criticalAction, warningAction } = this.#createAlarmActions();
+    const { criticalAction, warningAction, criticalTopic, alarmTopicKey } =
+      this.#createAlarmActions();
+
+    if (persistent) {
+      createIamChangeAlerts(this, {
+        criticalTopic,
+        alarmTopicKey,
+        warningAction,
+      });
+    }
 
     new CertificateAlarms(this, "CertificateAlarms", {
       alarmNamePrefix: `${stage}-certificate`,

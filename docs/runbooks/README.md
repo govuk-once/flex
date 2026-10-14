@@ -6,5 +6,6 @@ Operational runbooks for the Flex platform. Use the table below to find the runb
 | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | [Alarm Relay Failure](/docs/runbooks/alarm-relay-failures.md)                         | An alarm relay health alarm has fired and edge alarms may not have been sent.              |
 | [Credential Monitoring Alarms](/docs/runbooks/credential-monitoring-alarms.md)        | A secret rotation, Cognito drift, rotation failure or certificate expiry alarm has fired. |
+| [IAM Change Alert](/docs/runbooks/iam-change-alert.md)                               | An IAM, Lambda or CloudFormation change alert, or its delivery warning, has fired.       |
 | [Lambda Errors or Throttling Alarm](/docs/runbooks/lambda-errors-throttling-alarm.md) | A Lambda error rate, throttles or duration alarm has fired for a FLEX function.            |
 | [Verify Environment Health](/docs/runbooks/verify-environment-health.md)              | You need to confirm an environment is healthy, or find the cause when it is not.           |
