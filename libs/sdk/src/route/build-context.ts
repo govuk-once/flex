@@ -74,7 +74,7 @@ function extractAuth(requestContext: LambdaEvent["requestContext"]): RouteAuth {
   if (!success) throw new AuthorizationError();
 
   return {
-    pairwiseId: data,
+    userId: data,
   };
 }
 

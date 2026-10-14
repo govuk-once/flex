@@ -27,8 +27,7 @@ export const handler = route("POST /v1/identity/:service", async (ctx) => {
     throw new createHttpError.Unauthorized();
   }
 
-  const userId = auth.pairwiseId;
-  const identity = await getServiceIdentityLink(userId, service);
+  const identity = await getServiceIdentityLink(auth.userId, service);
 
   if (identity) {
     if (identity.serviceId === serviceId) {

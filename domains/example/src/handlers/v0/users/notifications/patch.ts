@@ -5,7 +5,7 @@ import { route } from "../../../../../domain.config";
 export const handler = route(
   "PATCH /v0/users/notifications",
   async ({ auth, body, integrations, logger, featureFlags }) => {
-    const userId = auth.pairwiseId;
+    const { userId } = auth;
 
     const pushIdResponse = await integrations.udpGetPushId({
       headers: { "User-Id": userId },

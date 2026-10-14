@@ -36,7 +36,7 @@ describe("buildHandlerContext", () => {
         { ...contextOptions, gateway: "public" },
       );
 
-      expect(store.auth).toStrictEqual({ pairwiseId: userId });
+      expect(store.auth).toStrictEqual({ userId: userId });
     });
 
     it("omits auth from the context when gateway is private", ({ sdk }) => {

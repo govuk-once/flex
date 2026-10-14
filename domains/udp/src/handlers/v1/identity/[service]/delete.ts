@@ -11,7 +11,7 @@ export const handler = route("DELETE /v1/identity/:service", async (ctx) => {
   const { environment } = resources;
   const service = pathParams.service.toLowerCase();
 
-  const userId = auth.pairwiseId;
+  const { userId } = auth;
 
   const identity = await getServiceIdentityLink(userId, service);
   if (!identity) throw new createHttpError.NotFound();

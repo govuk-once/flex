@@ -57,7 +57,7 @@ export async function getUserLinkingId(
 ): Promise<string> {
   const userLinkingIdResult = await ctx.integrations.udpGetLinkingId({
     path: "/dvla",
-    headers: { "User-Id": ctx.auth.pairwiseId },
+    headers: { "User-Id": ctx.auth.userId },
   });
 
   if (!userLinkingIdResult.ok) {

@@ -3,7 +3,7 @@ import createHttpError from "http-errors";
 import { route } from "../../../../../domain.config";
 
 export const handler = route("GET /v0/users/notifications", async (ctx) => {
-  const userId = ctx.auth.pairwiseId;
+  const userId = ctx.auth.userId;
 
   const pushIdResponse = await ctx.integrations.udpGetPushId({
     headers: { "User-Id": userId },

@@ -6,10 +6,8 @@ export const handler = route(
   async ({ auth, body, integrations, logger, pathParams }) => {
     const { notificationId } = pathParams;
 
-    const userId = auth.pairwiseId;
-
     const pushIdResponse = await integrations.udpGetPushId({
-      headers: { "User-Id": userId },
+      headers: { "User-Id": auth.userId },
     });
 
     if (!pushIdResponse.ok) {

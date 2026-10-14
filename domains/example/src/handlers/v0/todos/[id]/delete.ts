@@ -13,11 +13,11 @@ export const handler = route(
     const deleted = await store.delete(todoId);
 
     if (!deleted) {
-      logger.warn("Failed to delete todo", { todoId, userId: auth.pairwiseId });
+      logger.warn("Failed to delete todo", { todoId, userId: auth.userId });
       throw new createHttpError.NotFound(`Failed to delete todo: ${id}`);
     }
 
-    logger.info("Todo deleted", { todoId, userId: auth.pairwiseId });
+    logger.info("Todo deleted", { todoId, userId: auth.userId });
 
     return { status: 204 };
   },

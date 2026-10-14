@@ -12,7 +12,7 @@ const context = routeContext<"PATCH /v1/users/me/notifications">;
 export const handler = route(
   "PATCH /v1/users/me/notifications",
   async ({ auth, resources }) => {
-    const userId = auth.pairwiseId;
+    const { userId } = auth;
 
     const notifications = await updateNotifications(
       userId,

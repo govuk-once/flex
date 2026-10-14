@@ -6,7 +6,7 @@ import createHttpError from "http-errors";
 export const handler = route(
   "POST /v1/groups",
   async ({ auth, integrations, body, logger }) => {
-    const userId = auth.pairwiseId;
+    const { userId } = auth;
 
     const pushIdResponse = await integrations.udpGetPushId({
       headers: { "User-Id": userId },

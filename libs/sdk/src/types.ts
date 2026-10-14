@@ -564,7 +564,7 @@ type WithBody<RouteConfig> = RouteConfig extends {
   : unknown;
 
 export interface RouteAuth {
-  readonly pairwiseId: UserId;
+  readonly userId: UserId;
 }
 
 interface HandlerSuccessResult {
