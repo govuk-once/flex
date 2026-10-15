@@ -3,7 +3,6 @@ import { it } from "@flex/testing/e2e";
 import {
   GetSelectedTopicsResponse,
   UpdateSelectedTopicsRequest,
-  UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
@@ -70,10 +69,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
             },
           };
 
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
-
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
             UpdateSelectedTopicsResponse
@@ -95,10 +90,6 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
               selectedTopics: [],
             },
           };
-
-          expect(
-            UpdateSelectedTopicsRequestSchema.safeParse(requestTopics).success,
-          ).toBe(true);
 
           const result = await cloudfront.client.patch<
             UpdateSelectedTopicsRequest,
@@ -128,18 +119,35 @@ describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
           expect(result.status).toBe(401);
         });
 
-        it("returns 400 when the request body is invalid", async ({
-          cloudfront,
-          udpUser: _,
-          authHeader,
-        }) => {
-          const result = await cloudfront.client.patch(endpoint, {
-            headers: authHeader,
-            body: {},
-          });
+        it.for([
+          {
+            body: {
+              topics: {
+                selectedTopics: [{ id: 1234, title: "Topic with number ID" }],
+              },
+            },
+            reason: "topic ID is not a string",
+          },
+          {
+            body: {
+              topics: {
+                selectedTopics: [{ id: "", title: "Empty string" }],
+              },
+            },
+            reason: "topic ID is empty string",
+          },
+          { body: {}, reason: "is empty" },
+        ])(
+          "rejects request when body $reason",
+          async ({ body }, { cloudfront, authHeader }) => {
+            const result = await cloudfront.client.patch(endpoint, {
+              headers: authHeader,
+              body,
+            });
 
-          expect(result.status).toBe(400);
-        });
+            expect(result.status).toBe(400);
+          },
+        );
       },
     );
   });

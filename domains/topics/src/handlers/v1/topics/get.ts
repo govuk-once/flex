@@ -1,6 +1,5 @@
 import { route } from "@domain";
 import type { UserId } from "@flex/utils";
-import { GetSelectedTopicsResponse } from "@schemas/topic";
 import createHttpError from "http-errors";
 
 export const handler = route(
@@ -16,19 +15,14 @@ export const handler = route(
       const { status } = result.error;
 
       if (status === 404) {
-        logger.info("User not found", { status, userId });
-
-        const emptyTopics: GetSelectedTopicsResponse = {
-          topics: {
-            selectedTopics: [],
-          },
-        };
-
-        logger.info("Returning empty topics", { data: emptyTopics });
+        logger.info("User not found, returning empty topics", {
+          status,
+          userId,
+        });
 
         return {
           status: 200,
-          data: emptyTopics,
+          data: { topics: { selectedTopics: [] } },
         };
       }
 
@@ -37,7 +31,7 @@ export const handler = route(
       throw new createHttpError.BadGateway();
     }
 
-    logger.info("Successfully fetched topics", { data: result.data });
+    logger.info("Successfully fetched topics", { data: result });
 
     return {
       status: 200,
