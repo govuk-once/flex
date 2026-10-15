@@ -36,7 +36,7 @@ describe("buildHandlerContext", () => {
         { ...contextOptions, gateway: "public" },
       );
 
-      expect(store.auth).toStrictEqual({ pairwiseId: userId });
+      expect(store.auth).toStrictEqual({ userId: userId });
     });
 
     it("omits auth from the context when gateway is private", ({ sdk }) => {
@@ -60,6 +60,27 @@ describe("buildHandlerContext", () => {
         ),
       ).toThrow("Failed to extract the pairwise ID from the request context");
     });
+
+    it.for([
+      { reason: "undefined", pairwiseId: undefined },
+      { reason: "not a string", pairwiseId: 123 },
+    ])(
+      "throws when pairwise ID is $reason in the authorizer context",
+      ({ pairwiseId }, { sdk }) => {
+        const event = sdk.event({
+          requestContext: {
+            authorizer: { pairwiseId: pairwiseId as unknown as string },
+          },
+        });
+
+        expect(() =>
+          buildHandlerContext(event, sdk.context(), {
+            ...contextOptions,
+            gateway: "public",
+          }),
+        ).toThrow("Failed to extract the pairwise ID from the request context");
+      },
+    );
   });
 
   describe("Request Body", () => {

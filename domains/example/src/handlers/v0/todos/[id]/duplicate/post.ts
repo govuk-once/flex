@@ -13,11 +13,11 @@ export const handler = route(
     const todo = await store.getById(todoId);
 
     if (!todo) {
-      logger.warn("Todo not found", { todoId, userId: auth.pairwiseId });
+      logger.warn("Todo not found", { todoId, userId: auth.userId });
       throw new createHttpError.NotFound(`Todo not found: ${id}`);
     }
 
-    logger.info("Found todo", { todo, userId: auth.pairwiseId });
+    logger.info("Found todo", { todo, userId: auth.userId });
 
     const result = await integrations.createTodo({
       body: {
@@ -30,7 +30,7 @@ export const handler = route(
     if (!result.ok) {
       logger.error("Failed to duplicate todo", {
         todoId,
-        userId: auth.pairwiseId,
+        userId: auth.userId,
         error: result.error,
       });
       throw new createHttpError.BadGateway();

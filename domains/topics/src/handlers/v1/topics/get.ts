@@ -1,14 +1,11 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
 import createHttpError from "http-errors";
 
 export const handler = route(
   "GET /v1/topics",
   async ({ auth, integrations, logger }) => {
-    const userId = auth.pairwiseId as UserId;
-
     const result = await integrations.udpGetTopics({
-      headers: { "requesting-service-user-id": userId },
+      headers: { "requesting-service-user-id": auth.userId },
     });
 
     if (!result.ok) {
@@ -17,7 +14,7 @@ export const handler = route(
       if (status === 404) {
         logger.info("User not found, returning empty topics", {
           status,
-          userId,
+          userId: auth.userId,
         });
 
         return {

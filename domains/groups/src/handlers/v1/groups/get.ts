@@ -1,15 +1,12 @@
 import { route } from "@domain";
-import type { UserId } from "@flex/utils";
 import { GroupTypeSchema } from "@schemas/group";
 import createHttpError from "http-errors";
 
 export const handler = route(
   "GET /v1/groups",
   async ({ auth, integrations, logger }) => {
-    const userId = auth.pairwiseId as UserId;
-
     const pushIdResponse = await integrations.udpGetPushId({
-      headers: { "User-Id": userId },
+      headers: { "User-Id": auth.userId },
     });
 
     if (!pushIdResponse.ok) {

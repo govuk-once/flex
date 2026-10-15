@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
 import type { LambdaContext, LambdaEvent } from "../types";
+import { AuthorizationError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
 import { createRouteContext, createRouteHandler } from "./create-route";
 import { mergeHeaders } from "./headers";
@@ -495,6 +496,29 @@ describe("createRouteHandler", () => {
       expect(result).toStrictEqual(
         sdk.result(400, {
           body: { message: error.message, type: "validation_error" },
+        }),
+      );
+    });
+
+    it("returns 401 with an auth error without invoking the handler when building the context fails authorization", async ({
+      sdk,
+    }) => {
+      const error = new AuthorizationError();
+
+      vi.mocked(buildHandlerContext).mockImplementation(() => {
+        throw error;
+      });
+
+      const result = await invokeRoute();
+
+      expect(mockHandlerFn).not.toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+        "Authorization failed",
+        { detail: error.message },
+      );
+      expect(result).toStrictEqual(
+        sdk.result(401, {
+          body: { message: error.message, type: "auth_error" },
         }),
       );
     });

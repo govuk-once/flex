@@ -14,11 +14,11 @@ export const handler = route(
     const todo = await store.getById(todoId);
 
     if (!todo) {
-      logger.warn("Todo does not exist", { todoId, userId: auth.pairwiseId });
+      logger.warn("Todo does not exist", { todoId, userId: auth.userId });
       throw new createHttpError.NotFound(`Todo does not exist: ${id}`);
     }
 
-    logger.info("Found todo", { todo, userId: auth.pairwiseId });
+    logger.info("Found todo", { todo, userId: auth.userId });
 
     return {
       status: 200,

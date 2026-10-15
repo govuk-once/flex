@@ -20,7 +20,7 @@ export async function getAllIdentities(ctx: GetRouteContext) {
   const { auth, integrations, logger } = ctx;
 
   const response = await integrations.udpGetIdentities({
-    path: `/${auth.pairwiseId}`,
+    path: `/${auth.userId}`,
   });
 
   if (!response.ok) {

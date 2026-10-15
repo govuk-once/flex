@@ -166,25 +166,27 @@ export const handler = route("GET /v1/path", async ({ logger }) => {
 
 #### With Authentication
 
-All private and non-public access routes will include `auth` on the context:
+Public routes (those without the `[private]` suffix) include `auth` on the context. Private routes carry no user identity, so pass the user ID explicitly via a declared header:
 
 ```typescript
 import { route } from "path/to/domain.config";
 
 export const handler = route(
-  "POST /v1/path [private]",
+  "POST /v1/path",
   async ({ auth, logger }) => {
-    const { pairwiseId } = auth;
+    const { userId } = auth;
 
-    logger.info("Authenticated user", { userId: auth.pairwiseId });
+    logger.info("Authenticated user", { userId: auth.userId });
 
     return {
       status: 200,
-      data: { userId: pairwiseId },
+      data: { userId },
     };
   },
 );
 ```
+
+`auth.userId` is validated by the SDK and typed as `UserId` (from `@flex/utils`), so it can be passed straight to functions expecting a `UserId` without casting or parsing.
 
 #### With Request Body
 
@@ -408,7 +410,7 @@ export const handler = route(
     // Typed body and response (result.data) inferred from config
     const result = await integrations.udpPatchUser({
       body,
-      headers: { "requesting-service-user-id": auth.pairwiseId },
+      headers: { "requesting-service-user-id": auth.userId },
     });
 
     if (!result.ok) {
@@ -501,7 +503,7 @@ export const handler = route("GET /v1/user", async ({ auth, logger }) => {
 
   return {
     status: 200,
-    data: { userId: auth.pairwiseId, pushId, preferences },
+    data: { userId: auth.userId, pushId, preferences },
   };
 });
 
@@ -510,7 +512,7 @@ function getNotificationId() {
 
   return crypto
     .createHmac("sha256", resources.udpNotificationSecret)
-    .update(auth.pairwiseId)
+    .update(auth.userId)
     .digest("base64url");
 }
 
@@ -519,7 +521,7 @@ async function getUserPreferences() {
 
   return await integrations.udpRead<ResponseSchema>({
     path: "/notifications",
-    headers: { "requesting-service-user-id": auth.pairwiseId },
+    headers: { "requesting-service-user-id": auth.userId },
   });
 }
 
@@ -662,7 +664,7 @@ describe("GET /v0/users/notifications", () => {
 
 > `http.gateway("udp")` and `http.domain("udp")` both stub requests to the private gateway's `/gateways/udp` and `/domains/udp` prefixes, matching whichever integration type the handler calls through. The `http` fixture must match the URL the domain declares for its private gateway resource (E.g., `gatewayUrl`, `flexPrivateGatewayUrl`, etc). See the [`http` fixture](/libs/testing/README.md) for the full API reference.
 
-Build the request with `sdk.event`, which exposes common HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a path and options (`auth`, `headers`, `params`, `query`, `body`). Pass `auth` with a user ID to simulate an authenticated caller which populates the `auth.pairwiseId` on the handler context. Alternative authentication methods exist, such as a route reading a `User-Id` header; in this case, provide the mocked value via `headers` instead.
+Build the request with `sdk.event`, which exposes common HTTP methods (`get`, `post`, `put`, `patch`, `delete`), each taking a path and options (`auth`, `headers`, `params`, `query`, `body`). Pass `auth` with a user ID to simulate an authenticated caller which populates the `auth.userId` on the handler context. Alternative authentication methods exist, such as a route reading a `User-Id` header; in this case, provide the mocked value via `headers` instead.
 
 #### Handlers with runtime resources
 
