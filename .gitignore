@@ -28,5 +28,8 @@ cdk.context.json
 
 # HTTP client
 *.http
-
 eslint-report.json
+
+# Lambda Code Signing Manifest
+**/signed-artifacts.manifest.json
+signed-artifacts.manifest.json
