@@ -135,6 +135,7 @@ flex/
 | [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
 | [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
 | [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline |
+| [IAM change alerts](/docs/iam-change-alerts.md) | IAM, Lambda and CloudFormation change alerts. |
 
 ---
 
