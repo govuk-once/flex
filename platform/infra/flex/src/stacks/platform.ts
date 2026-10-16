@@ -7,6 +7,7 @@ import {
   AuthorizationType,
   CfnRestApi,
   EndpointType,
+  LambdaIntegration,
   LogGroupLogDestination,
   MethodLoggingLevel,
   MockIntegration,
@@ -93,6 +94,38 @@ export class FlexPlatformStack extends BaseStack {
     );
 
     return jwksEndpointStubFunctionUrl.url;
+  }
+
+  #createJwksKmsEndpoint(restApi: RestApi) {
+    const kmsKeyArns = this.import(ENV_KEYS.ThirdPartyEncryptionKeyArns);
+
+    const jwksKmsFunction = new NodejsFunction(this, "JwksKmsFunction", {
+      entry: getPlatformEntry("jwks-kms", "handler.ts"),
+      runtime: Runtime.NODEJS_24_X,
+      handler: "handler",
+      environment: {
+        KMS_KEY_ARNS: kmsKeyArns,
+      },
+    });
+
+    jwksKmsFunction.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["kms:GetPublicKey"],
+        resources: ["*"],
+      }),
+    );
+
+    const wellKnown = restApi.root.addResource(".well-known");
+    const jwksEndpoint = wellKnown
+      .addResource("jwks.json")
+      .addMethod("GET", new LambdaIntegration(jwksKmsFunction));
+
+    applyCheckovSkip(
+      jwksEndpoint,
+      "CKV_AWS_59",
+      "JWKS endpoint must be publicly accessible without authorization for external clients",
+    );
   }
 
   #createAuthorizerFunction({
@@ -513,6 +546,8 @@ export class FlexPlatformStack extends BaseStack {
       criticalAction,
       warningAction,
     });
+
+    this.#createJwksKmsEndpoint(restApi);
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });

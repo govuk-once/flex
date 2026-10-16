@@ -391,21 +391,23 @@ export class FlexGlobalStack extends BaseStack {
       },
     ).policy;
 
+    const apiOrigin = new HttpOrigin(
+      `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
+      {
+        originPath: "/prod",
+        customHeaders: {
+          "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
+        },
+      },
+    );
+
     const distribution = new Distribution(this, "Distribution", {
       comment: "Flex Platform CloudFront Distribution for Structural Checks",
       priceClass: PriceClass.PRICE_CLASS_100,
       minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
       webAclId: webAcl.attrArn,
       defaultBehavior: {
-        origin: new HttpOrigin(
-          `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
-          {
-            originPath: "/prod",
-            customHeaders: {
-              "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
-            },
-          },
-        ),
+        origin: apiOrigin,
         viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
         allowedMethods: AllowedMethods.ALLOW_ALL,
         cachePolicy: CachePolicy.CACHING_DISABLED,
@@ -431,6 +433,13 @@ export class FlexGlobalStack extends BaseStack {
               eventType: FunctionEventType.VIEWER_REQUEST,
             },
           ],
+        },
+        "/.well-known/jwks.json": {
+          origin: apiOrigin,
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: apiResponseHeadersPolicy,
         },
       },
       logBucket: accessLogBucket.bucket,
