@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { Environment, findProjectRoot, getEnvConfig } from "@flex/utils";
-import { CfnOutput, Duration, RemovalPolicy } from "aws-cdk-lib";
+import { CfnOutput, Duration, Fn, RemovalPolicy } from "aws-cdk-lib";
 import { IRestApi, RestApi } from "aws-cdk-lib/aws-apigateway";
 import {
   Certificate,
@@ -324,6 +324,7 @@ export class FlexGlobalStack extends BaseStack {
     cert,
     criticalAction,
     domainName,
+    jwksKmsFunctionUrl,
     openApiSpecBucket,
     restApi,
     secretHeaderArn,
@@ -333,6 +334,7 @@ export class FlexGlobalStack extends BaseStack {
   }: {
     cert: Certificate;
     domainName: string;
+    jwksKmsFunctionUrl: string;
     openApiSpecBucket: Bucket;
     restApi: IRestApi;
     secretHeaderArn: string;
@@ -432,6 +434,15 @@ export class FlexGlobalStack extends BaseStack {
               eventType: FunctionEventType.VIEWER_REQUEST,
             },
           ],
+        },
+        "/.well-known/jwks.json": {
+          origin: new HttpOrigin(
+            Fn.select(2, Fn.split("/", jwksKmsFunctionUrl)),
+          ),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: apiResponseHeadersPolicy,
         },
       },
       logBucket: accessLogBucket.bucket,
@@ -641,10 +652,16 @@ export class FlexGlobalStack extends BaseStack {
 
     const openApiSpecBucket = this.#createOpenApiSpecBucket();
 
+    const jwksKmsFunctionUrl = this.import(
+      STAGE_KEYS.JwksKmsFunctionUrl,
+      "eu-west-2",
+    );
+
     const distribution = this.#createCloudfrontDistribution({
       cert,
       criticalAction,
       domainName,
+      jwksKmsFunctionUrl,
       openApiSpecBucket,
       restApi,
       secretHeaderArn,
