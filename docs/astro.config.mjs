@@ -33,6 +33,7 @@ export default defineConfig({
         {
           label: "Getting started",
           items: [{ autogenerate: { directory: "getting-started" } }],
+          collapsed: true,
         },
         {
           label: "Domains",
@@ -41,26 +42,32 @@ export default defineConfig({
         {
           label: "Platform",
           items: [{ autogenerate: { directory: "platform" } }],
+          collapsed: true,
         },
         {
           label: "Delivery",
           items: [{ autogenerate: { directory: "delivery" } }],
+          collapsed: true,
         },
         {
           label: "Operations",
           items: [{ autogenerate: { directory: "operations" } }],
+          collapsed: true,
         },
         {
           label: "Observability",
           items: [{ autogenerate: { directory: "observability" } }],
+          collapsed: true,
         },
         {
           label: "Security",
           items: [{ autogenerate: { directory: "security" } }],
+          collapsed: true,
         },
         {
           label: "Reference",
           items: [{ autogenerate: { directory: "reference" } }],
+          collapsed: true,
         },
       ],
     }),
