@@ -92,7 +92,7 @@ describe("FlexPlatformStack authorizer", () => {
         ],
       ],
     });
-    template.resourceCountIs("AWS::Lambda::Url", 1);
+    template.resourceCountIs("AWS::Lambda::Url", 0);
   });
 
   it("uses the stub Cognito parameters and stub JWKS endpoint in development", async () => {
