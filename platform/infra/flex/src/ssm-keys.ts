@@ -57,5 +57,4 @@ export const STAGE_KEYS = {
   WafCfSecretHeaderArn: `/${stage}/flex-secret/origin-verify-secret`,
   //
   CloudfrontAccessLogBucketName: `/${stage}/flex/s3/cloudfront-access-log-bucket-name`,
-  JwksKmsFunctionUrl: `/${stage}/flex/jwks-kms/function-url`,
 };

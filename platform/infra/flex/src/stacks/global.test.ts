@@ -21,7 +21,6 @@ describe("FlexGlobalStack certificate alarm", () => {
       STAGE_KEYS.ApigwPublicRestId,
       STAGE_KEYS.ApigwPublicAppRoot,
       STAGE_KEYS.WafCfSecretHeaderArn,
-      STAGE_KEYS.JwksKmsFunctionUrl,
     ]);
 
     template = Template.fromStack(
