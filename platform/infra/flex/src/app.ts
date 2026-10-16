@@ -53,6 +53,7 @@ const externalExports = [
   ENV_KEYS.MonitoringSlackWorkspaceId,
   ENV_KEYS.MonitoringSlackChannelId,
   ENV_KEYS.MonitoringCriticalSlackChannelId,
+  ENV_KEYS.ThirdPartyEncryptionKeyArns,
   // Release Slack notifications only exist in the development environment
   ...(env === Environment.development ? [ENV_KEYS.ReleaseSlackChannelId] : []),
 
