@@ -1,5 +1,6 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
+import mermaid from "astro-mermaid";
 import starlightLinksValidator from "starlight-links-validator";
 
 const REPOSITORY = "https://github.com/govuk-once/flex";
@@ -11,6 +12,8 @@ export default defineConfig({
   base: "/flex",
   trailingSlash: "always",
   integrations: [
+    // Must come before starlight so mermaid fences are transformed first
+    mermaid(),
     starlight({
       title: "FLEX",
       description:
@@ -27,14 +30,38 @@ export default defineConfig({
             { autogenerate: { directory: "start-here" } },
           ],
         },
-        { label: "Getting started", items: [{ autogenerate: { directory: "getting-started" } }] },
-        { label: "Domains", items: [{ autogenerate: { directory: "domains" } }] },
-        { label: "Platform", items: [{ autogenerate: { directory: "platform" } }] },
-        { label: "Delivery", items: [{ autogenerate: { directory: "delivery" } }] },
-        { label: "Operations", items: [{ autogenerate: { directory: "operations" } }] },
-        { label: "Observability", items: [{ autogenerate: { directory: "observability" } }] },
-        { label: "Security", items: [{ autogenerate: { directory: "security" } }] },
-        { label: "Reference", items: [{ autogenerate: { directory: "reference" } }] },
+        {
+          label: "Getting started",
+          items: [{ autogenerate: { directory: "getting-started" } }],
+        },
+        {
+          label: "Domains",
+          items: [{ autogenerate: { directory: "domains" } }],
+        },
+        {
+          label: "Platform",
+          items: [{ autogenerate: { directory: "platform" } }],
+        },
+        {
+          label: "Delivery",
+          items: [{ autogenerate: { directory: "delivery" } }],
+        },
+        {
+          label: "Operations",
+          items: [{ autogenerate: { directory: "operations" } }],
+        },
+        {
+          label: "Observability",
+          items: [{ autogenerate: { directory: "observability" } }],
+        },
+        {
+          label: "Security",
+          items: [{ autogenerate: { directory: "security" } }],
+        },
+        {
+          label: "Reference",
+          items: [{ autogenerate: { directory: "reference" } }],
+        },
       ],
     }),
   ],
