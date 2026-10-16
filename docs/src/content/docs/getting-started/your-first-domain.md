@@ -8,12 +8,12 @@ sidebar:
 By the end of this page you should have a domain with one public route that calls the UDP service gateway. You will have unit tests, an E2E test, a personal deployment and a token to call it by hand.
 
 :::caution[AWS access]
-Steps 1 to 6 need no AWS access. **Steps 7 onward do.**
+Steps 1 to 5 need no AWS access. **Steps 6 onward do.**
 
 If you don't have access yet, stop after step 6 and see [Get started developing on GOV.UK](https://docs.publishing.service.gov.uk/manual/get-started.html#6-get-permissions-for-aws-github-and-other-third-party-services) for details on requesting access.
 :::
 
-This page keeps examples small and links to the [Domains](/flex/domains/overview/) section for the full detail. For how requests flow through the platform, see [How Flex works](/flex/start-here/how-flex-works/) and as the source of truth.
+This page keeps examples small and links to the [Domains](/flex/domains/overview/) section for the full detail. For how requests flow through the platform, see [How Flex works](/flex/start-here/how-flex-works/) as the source of truth.
 
 ## 1. Check your setup
 
@@ -188,12 +188,12 @@ export const { config, route, routeContext } = domain({
 
 ### Config options
 
-| Option         | Purpose                                                                              |
-| -------------- | ------------------------------------------------------------------------------------ |
-| `name`         | The name of your domain                                                              |
-| `environments` | Where the domain deploys. Start with `development`, add others when ready to promote |
-| `common`       | TODO                                                                                 |
-| `routes`       | API endpoints your domain exposes                                                    |
+| Option         | Purpose                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| `name`         | The name of your domain                                                                          |
+| `environments` | Where the domain deploys. Start with `development`, add others when ready to promote             |
+| `common`       | Defaults for every route (`access`, `logLevel`, `function`, `headers`). Routes can override them |
+| `routes`       | API endpoints your domain exposes                                                                |
 
 ### Handler
 
@@ -338,7 +338,7 @@ See [Testing](/flex/domains/testing/) for more detailed information.
 
 ```ts title="domains/hello/src/handlers/v1/greeting/get.test.ts"
 import { createUserId, it } from "@flex/testing";
-import { describe, expect, vi } from "vitest";
+import { describe, expect } from "vitest";
 
 import { handler } from "./get";
 
@@ -380,10 +380,6 @@ describe("GET /v1/greeting", () => {
   });
 });
 ```
-
-Unit tests run as the `development` environment, so the flag is on by default.
-
-TODO: Dump this in the feature flag page for now: The second test turns it off with `vi.stubEnv`: an environment variable named after the flag overrides its value.
 
 Run tests, should start in `watch` mode:
 
@@ -504,7 +500,5 @@ curl -H "Authorization: Bearer $TOKEN" \
 ## 9. Open a pull request
 
 - Use a [Conventional Commits](https://github.com/govuk-once/flex/blob/main/.github/CONTRIBUTING.md) title, such as `feat(hello): add greeting route`.
-- Put the Jira key in your Pull Reuqest title if you have one. If not, use `FLEX-000`
+- Put the Jira key in your Pull Request title if you have one. If not, use `FLEX-000`
 - `CODEOWNERS` sends every pull request under `domains/` to the Flex team for review.
-
-TODO: move this somewher else: A pull request that makes a breaking change to a domain's OpenAPI spec fails CI unless it carries the `breaking-change-accepted` label.
