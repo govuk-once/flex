@@ -24,6 +24,7 @@ export const ENV_KEYS = {
   UdpConfigSecretArn: `/${env}/flex-param/udp/consumer-config-secret-arn`,
   UdpConfigRoleArn: `/${env}/flex-param/udp/consumer-role-arn`,
   UdpCmkArn: `/${env}/flex-param/udp/cmk-arn`,
+  ThirdPartyEncryptionKeyArns: `/${env}/flex-param/third-party-encryption/key-arns`,
   MonitoringSlackWorkspaceId: `/${env}/flex-param/monitoring/slackWorkspaceId`,
   MonitoringSlackChannelId: `/${env}/flex-param/monitoring/slackChannelId`,
   ReleaseSlackChannelId: `/${env}/flex-param/monitoring/releaseSlackChannelId`,
@@ -54,4 +55,5 @@ export const STAGE_KEYS = {
   WafCfSecretHeaderArn: `/${stage}/flex-secret/origin-verify-secret`,
   //
   CloudfrontAccessLogBucketName: `/${stage}/flex/s3/cloudfront-access-log-bucket-name`,
+  JwksKmsFunctionUrl: `/${stage}/flex/jwks-kms/function-url`,
 };
