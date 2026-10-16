@@ -10,7 +10,7 @@ By the end of this page you should have a domain with one public route that call
 :::caution[AWS access]
 Steps 1 to 5 need no AWS access. **Steps 6 onward do.**
 
-If you don't have access yet, stop after step 6 and see [Get started developing on GOV.UK](https://docs.publishing.service.gov.uk/manual/get-started.html#6-get-permissions-for-aws-github-and-other-third-party-services) for details on requesting access.
+If you don't have access yet, stop after step 5 and see [Get started developing on GOV.UK](https://docs.publishing.service.gov.uk/manual/get-started.html#6-get-permissions-for-aws-github-and-other-third-party-services) for details on requesting access.
 :::
 
 This page keeps examples small and links to the [Domains](/flex/domains/overview/) section for the full detail. For how requests flow through the platform, see [How Flex works](/flex/start-here/how-flex-works/) as the source of truth.
@@ -461,27 +461,23 @@ pnpm --filter @flex/hello-domain test:e2e
 
 - The E2E setup finds your stack from its CloudFormation outputs and fetches its own token. You don't need to export one.
 - `authHeader` is a ready-made headers object with a valid `Authorization: Bearer <token>` and the `x-flex-e2e-bypass` header, which skips WAF rate limiting during test runs. Use it for authenticated requests.
-- CI runs the `test:e2e` script of every domain that has one, against each pull request's ephemeral environment.
+- CI runs the `test:e2e` script of every domain that has one, against each pull request's ephemeral environment and after each deploy to `development` and `staging`. It isn't a required check and doesn't block promotion, so check the result yourself.
 
 ## 8. Make requests by hand
 
-Find your stack's API URL from its CloudFormation output. The stack is `<stage>-FlexGlobal` in `us-east-1`, where your stage is your sanitised `$USER`:
+Your API URL is `https://<stage>.development.bl.once.service.gov.uk`, where `<stage>` is your personal stage name (see [Environment variables](/flex/getting-started/environment-setup/#environment-variables)).
 
-It should be: `https://<$USER_in_lowercase>.development.bl.once.service.gov.uk`
+It is also the `FlexApiUrl` output of your `<stage>-FlexGlobal` stack in `us-east-1`. This command works out your stage name the same way the deploy does (see [`sanitiseStageName`](https://github.com/govuk-once/flex/blob/main/libs/utils/src/infra/index.ts)), then reads the output:
 
-You can output it from your shell using the following command.
+```bash
+STAGE=$(printf '%s' "$USER" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-' | cut -c1-12)
 
-```zsh mark="USER:l"
 aws cloudformation describe-stacks \
   --region us-east-1 \
-  --stack-name "${USER:l}-FlexGlobal" \
+  --stack-name "${STAGE}-FlexGlobal" \
   --query "Stacks[0].Outputs[?OutputKey=='FlexApiUrl'].OutputValue" \
   --output text
 ```
-
-:::note
-For this command to work, `$USER` needs to be converted to lowercase. The `:l` lowercase modifier is for ZSH only. Bash may require an alternative.
-:::
 
 Generate a token. The script prints some progress text and then the token, so copy just the token:
 
@@ -499,6 +495,6 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ## 9. Open a pull request
 
-- Use a [Conventional Commits](https://github.com/govuk-once/flex/blob/main/.github/CONTRIBUTING.md) title, such as `feat(hello): add greeting route`.
-- Put the Jira key in your Pull Request title if you have one. If not, use `FLEX-000`
+- Title it with the Jira key followed by a [Conventional Commits](https://github.com/govuk-once/flex/blob/main/.github/CONTRIBUTING.md) message, such as `FLEX-123 feat(hello): add greeting route`. Pull requests are squash merged, so the title becomes the commit on `main` and sets the next release version. If there is no Jira ticket, use `FLEX-000`.
+- Use the pull request template and link the Jira ticket in the description.
 - `CODEOWNERS` sends every pull request under `domains/` to the Flex team for review.
