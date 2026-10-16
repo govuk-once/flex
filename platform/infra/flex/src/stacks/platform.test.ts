@@ -30,6 +30,7 @@ async function synthesise(stage: string) {
     ENV_KEYS.TopicCriticalAlarms,
     ENV_KEYS.TopicWarningAlarms,
     ENV_KEYS.VpcEApiGateway,
+    ENV_KEYS.ThirdPartyEncryptionKeyArns,
     ...VPC_EXPORTS.map((key) => `${ENV_KEYS.Vpc}/${key}`),
   ]);
 
@@ -91,7 +92,7 @@ describe("FlexPlatformStack authorizer", () => {
         ],
       ],
     });
-    template.resourceCountIs("AWS::Lambda::Url", 0);
+    template.resourceCountIs("AWS::Lambda::Url", 1);
   });
 
   it("uses the stub Cognito parameters and stub JWKS endpoint in development", async () => {

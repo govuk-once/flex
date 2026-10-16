@@ -95,6 +95,39 @@ export class FlexPlatformStack extends BaseStack {
     return jwksEndpointStubFunctionUrl.url;
   }
 
+  #createJwksKmsEndpoint() {
+    const kmsKeyArns = this.import(ENV_KEYS.ThirdPartyEncryptionKeyArns);
+
+    const jwksKmsFunction = new NodejsFunction(this, "JwksKmsFunction", {
+      entry: getPlatformEntry("jwks-kms", "handler.ts"),
+      runtime: Runtime.NODEJS_24_X,
+      handler: "handler",
+      environment: {
+        KMS_KEY_ARNS: kmsKeyArns,
+      },
+    });
+
+    jwksKmsFunction.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["kms:GetPublicKey"],
+        resources: ["*"],
+      }),
+    );
+
+    const jwksKmsFunctionUrl = jwksKmsFunction.addFunctionUrl({
+      authType: FunctionUrlAuthType.NONE,
+    });
+
+    applyCheckovSkip(
+      jwksKmsFunctionUrl,
+      "CKV_AWS_258",
+      "JWKS endpoint must be publicly accessible for external clients to fetch encryption keys",
+    );
+
+    this.export(STAGE_KEYS.JwksKmsFunctionUrl, jwksKmsFunctionUrl.url);
+  }
+
   #createAuthorizerFunction({
     userPoolId,
     clientId,
@@ -513,6 +546,8 @@ export class FlexPlatformStack extends BaseStack {
       criticalAction,
       warningAction,
     });
+
+    this.#createJwksKmsEndpoint();
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });
