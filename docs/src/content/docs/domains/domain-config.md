@@ -32,23 +32,19 @@ export const { config, route, routeContext } = domain({
 | `route`        | Handler files. See [Writing route handlers](/flex/domains/route-handlers/)                                 |
 | `routeContext` | Helpers that need the current route's context. See [Writing route handlers](/flex/domains/route-handlers/) |
 
-// TODO: I THINK A DEDICATED PAGE FOR ROUTECONTEXT, SHOWING EXAMPLES OF HANDLERS WIHT VARYING DEGRESS OF COMPLEXITY WOULD BE GOOD
-
 The config is validated against [`DomainConfigSchema`](https://github.com/govuk-once/flex/blob/main/libs/sdk/src/config/schema.ts) at deploy time, and TypeScript checks every cross-reference, such as a route naming a resource that doesn't exist.
 
 ## Top level
 
-// TODO: ADD A VERY SHORT DESCRIPTION PER ENTRY IN ADDITION TO LINKING TO SECTION BELOW
-
 | Field          | Required | Description                                                                                                                                  |
 | -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`         | Yes      | The domain name. Used in URLs (`/app/<name>/...`) and resource names.                                                                        |
-| `routes`       | Yes      | See [Routes](#routes).                                                                                                                       |
+| `routes`       | Yes      | The endpoints this domain exposes, nested by version, path and method. See [Routes](#routes).                                                |
 | `environments` | No       | Persistent environments to deploy to: `development`, `staging`, `production`. Defaults to all three. Personal and `pr-<n>` stages ignore it. |
-| `common`       | No       | Defaults for every route. See [Common](#common).                                                                                             |
-| `resources`    | No       | See [Resources](#resources).                                                                                                                 |
-| `integrations` | No       | See [Integrations](#integrations).                                                                                                           |
-| `featureFlags` | No       | See [Feature flags](/flex/domains/feature-flags/).                                                                                           |
+| `common`       | No       | Defaults shared by every route, such as network placement and timeouts. See [Common](#common).                                               |
+| `resources`    | No       | SSM parameters, secrets and KMS keys the platform looks up and injects. See [Resources](#resources).                                         |
+| `integrations` | No       | Typed clients for calling service gateways and other domains. See [Integrations](#integrations).                                             |
+| `featureFlags` | No       | Flags that routes can read at runtime. See [Feature flags](/flex/domains/feature-flags/).                                                    |
 | `owner`        | No       | Owning team, for reference.                                                                                                                  |
 
 ## Routes
@@ -128,9 +124,6 @@ Defaults for every route. A value set on a route takes precedence.
 
 Values the platform looks up and injects. Declare them once on the domain, then list them on the routes that need them. The key becomes the Lambda environment variable name and the property name in the handler's `resources`.
 
-// TODO: REMOVE NOTIFICATION SECRET IT'S TOO SPECIFIC AN EXAMPLE, PROVIDE DUMMY EXAMPLES OF SECRET AND KMS
-// TODO: PRIVATEGATEWAYURL IS REQUIRED FOR ANY GATEWAY CALL, SO THIS SHOULD PROBABLY BE MENTIONED IN THE OVERVIEW AND GIVEN MORE WEIGHT ON THIS PAGE
-
 ```ts
 resources: {
   privateGatewayUrl: {
@@ -138,9 +131,16 @@ resources: {
     path: "/flex/apigw/private/gateway-url",
     scope: "stage",
   },
-  notificationSecret: { type: "secret", path: "/flex-secret/udp/notification-hash-secret" },
+  apiKey: { type: "secret", path: "/flex-secret/<domain>/example-api-key" },
+  encryptionKeyArn: { type: "kms", path: "/flex-secret/encryption-key" },
 },
 ```
+
+### The private gateway URL
+
+Any domain with `integrations` must declare a resource with the path `/flex/apigw/private/gateway-url` and `scope: "stage"`, as `privateGatewayUrl` does above. Every call to a gateway or another domain goes through this URL. The key can be any name, because the platform finds the resource by its path.
+
+Without it, the integration setup throws `"/flex/apigw/private/gateway-url" resource was not found` when the Lambda starts.
 
 | Type            | Source              | Resolved                  | Handler gets        |
 | --------------- | ------------------- | ------------------------- | ------------------- |
@@ -151,21 +151,25 @@ resources: {
 
 Deploy-time values are baked into the Lambda environment, so a change needs a redeploy. Runtime values are fetched by the handler middleware, and only the name is stored in the environment.
 
-// TODO: THIS PART DOESN'T READ WELL. LET'S IMPROVE IT
-
 ### Paths and scope
 
-The platform prefixes `path` with the environment: `/development/flex/...` in `development`, personal and `pr-<n>` stages, `/staging/flex/...` in `staging`. Set `scope: "stage"` to prefix it with the stage instead (`/<stage>/flex/...`), for values that exist once per stage, such as the private gateway URL. `scope` has no effect on `kms`.
+The platform prefixes `path` with the environment it is deploying to. Set `scope: "stage"` to prefix it with the stage name instead, for values that exist once per stage, such as the private gateway URL.
 
-// TODO: GREAT, LET'S MOVE THIS UP TO GIVE IT MORE WEIGHT
+| `scope`                   | Deployed to                       | Resolved path           |
+| ------------------------- | --------------------------------- | ----------------------- |
+| `"environment"` (default) | `development`, personal, `pr-<n>` | `/development/flex/...` |
+| `"environment"` (default) | `staging`                         | `/staging/flex/...`     |
+| `"stage"`                 | Any                               | `/<stage>/flex/...`     |
 
-### The private gateway URL
-
-Any route with integrations must also list a resource with the path `/flex/apigw/private/gateway-url` and `scope: "stage"`. The key can be any name.
+`scope` has no effect on `kms`.
 
 ## Integrations
 
 Typed clients for calling service gateways and other domains' private routes. All calls go through the private API Gateway, signed with SigV4.
+
+:::caution
+The domain must declare the [private gateway URL](#the-private-gateway-url) as a resource, or its integrations fail at runtime.
+:::
 
 ```ts
 integrations: {

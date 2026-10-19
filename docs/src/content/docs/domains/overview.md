@@ -56,24 +56,14 @@ Two settings sound alike but answer different questions:
 | `public` / `private` on a route | **Who can call this route?**                  | Inbound   |
 | `access`                        | **What can this route's Lambda call out to?** | Outbound  |
 
-// TODO: VERIFY
+They are independent, and any combination is valid. For example, a `public` route with `access: "isolated"` (the usual case), or a `private` route with `access: "private"`.
 
-They are independent. A `private` route can have `access: "private"` or not, and so can a `public` one. The words overlap by accident.
+### `public` and `private`: who can call the route
 
-// TODO: END VERIFY
+- A **public** route is called by the GOV.UK app, through CloudFront. The Lambda authorizer checks the user's token, so the handler knows who the user is: `auth.userId`.
+- A **private** route is called only by other Flex Lambdas that have an IAM permission for that exact route. No user token comes with the request, so there is no `auth`. If the route needs to know the user, the caller passes their id in a header.
 
-// TODO: REWORD WITHOUT ANALOGY
-
-Think of each route's Lambda as a room in a secure office building.
-
-### `public` and `private`: which door
-
-- A **public** route has a door onto the street. The GOV.UK app comes in through CloudFront, and the Lambda authorizer checks the user's token at the door. The handler knows who the user is: `auth.userId`.
-- A **private** route has a staff-only door from inside the building. Only other Flex Lambdas with an IAM permission for that exact route can use it. No user token comes through it, so there is no `auth`. If the route needs to know the user, the caller passes their id in a header.
-
-A method can have both doors: `public` and `private` are separate routes with separate handler files.
-
-// TODO: REWORD WITHOUT ANALOGY
+A method can have both: `public` and `private` are separate routes with separate handler files.
 
 |            | Public                            | Private                                                 |
 | ---------- | --------------------------------- | ------------------------------------------------------- |
@@ -84,33 +74,31 @@ A method can have both doors: `public` and `private` are separate routes with se
 | Route key  | `GET /v1/topics`                  | `GET /v1/topics [private]`                              |
 | File       | `get.ts`                          | `get.private.ts`                                        |
 
-// TODO: REWORD WITHOUT ANALOGY
+### `access`: where the Lambda runs
 
-### `access`: which phone line
+`access` says nothing about who can call the route. It decides where the route's Lambda runs, and so what it can reach.
 
-`access` says nothing about callers. It decides where the room is, and so who the Lambda can phone.
+- **`"isolated"`** (the default): in the VPC, with no internet access. It can call other Flex routes and gateways through integrations, and AWS services such as SSM and Secrets Manager.
+- **`"private"`**: in the VPC, with internet access through a NAT gateway. Use it only if the handler itself must call something on the internet.
+- **`"public"`**: outside the VPC, with internet access. It can't reach the private API Gateway, so it can't use integrations.
 
-- **`"isolated"`** (the default): inside the building, with an internal line only. It can call other Flex routes and gateways through integrations, and AWS services such as SSM and Secrets Manager. It can't reach the internet.
-- **`"private"`**: inside the building, with an internal line plus an outside line through a switchboard (a NAT gateway). Use it only if the handler itself must call something on the internet.
-- **`"public"`**: outside the building, with an outside line only. It can reach the internet but **not** the private API Gateway, so it can't use integrations.
+Leave `access` alone. A domain reaches external services through a [service gateway](/flex/platform/service-gateways/), using an integration, so `"isolated"` covers almost every domain. See [Access](/flex/domains/domain-config/#access) for the full comparison.
 
-Leave `access` alone. A domain reaches external services through a [service gateway](/flex/platform/service-gateways/), using an integration, so `"isolated"` covers almost every domain.
+### Example: the topics domain
 
-// TODO: RENAME TO REAL-WORLD EXAMPLE
+`domains/topics` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway, which is the Lambda that can reach the internet. Because it makes integration calls, the domain declares the [private gateway URL](/flex/domains/domain-config/#the-private-gateway-url) as a resource, which every integration needs.
 
-### Putting it together
-
-`domains/topics` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway, which is the Lambda that holds the outside line.
+```text
+GOV.UK app → CloudFront → Lambda authorizer → topics Lambda → private API Gateway → udp gateway → UDP
+```
 
 See [How Flex works](/flex/start-here/how-flex-works/) for the full request flow.
 
-// TODO: RE-ORDER SO PERSONAL AND PR COMES FIRST, THEN REFERENCE DEPLOY ENVS INFORMATION COMING ON NEXT PAGE...
-
 ## Which environments a domain deploys to
 
-`environments` on the domain, or on a single route, limits which of `development`, `staging` and `production` it deploys to. Leave it out and it deploys to all three.
+Personal and `pr-<n>` stages deploy every domain and route by default, whatever `environments` says. You can also deploy a single domain to them. See [Deploying](/flex/domains/deploying/).
 
-Personal and `pr-<n>` stages always deploy every domain and route, whatever `environments` says.
+For the persistent environments (`development`, `staging` and `production`), `environments` on the domain, or on a single route, limits where it deploys. Leave it out and it deploys to all three. See [`environments`](/flex/domains/domain-config/#top-level) for details.
 
 ## How the platform picks it up
 
