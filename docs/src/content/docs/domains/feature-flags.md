@@ -2,7 +2,7 @@
 title: Feature flags
 description: Declaring, attaching and reading feature flags.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 Coming soon.

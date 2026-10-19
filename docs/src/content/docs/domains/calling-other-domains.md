@@ -2,7 +2,7 @@
 title: Calling other domains and gateways
 description: Declare an integration, call it, and handle what comes back.
 sidebar:
-  order: 4
+  order: 5
 ---
 
 A domain never calls another service directly. It declares an **integration**, and the SDK gives the handler a typed client for it. Every call goes through the private API Gateway, signed with SigV4, and IAM only allows the routes the integration declares.
