@@ -42,6 +42,7 @@ export default defineConfig({
         {
           label: "Domains",
           items: [{ autogenerate: { directory: "domains" } }],
+          collapsed: true,
         },
         {
           label: "Platform",
