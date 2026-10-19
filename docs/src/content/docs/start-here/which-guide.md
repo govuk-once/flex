@@ -13,16 +13,17 @@ sidebar:
 
 ## I'm building or changing a domain
 
-| I want to...                               | Read                                                                       |
-| ------------------------------------------ | -------------------------------------------------------------------------- |
-| Check Flex can do what I need              | [Current limits](/flex/start-here/current-limits/)                         |
-| Understand what a domain is                | [Domains overview](/flex/domains/overview/)                                |
-| Declare routes, resources and integrations | [Domain config reference](/flex/domains/domain-config/)                    |
-| Write a handler                            | [Writing route handlers](/flex/domains/route-handlers/)                    |
-| Call another domain or an external service | [Calling other domains and gateways](/flex/domains/calling-other-domains/) |
-| Gate a change behind a flag                | [Feature flags](/flex/domains/feature-flags/)                              |
-| Test a domain                              | [Testing](/flex/domains/testing/)                                          |
-| Deploy and check it works                  | [Deploying and verifying](/flex/domains/deploying/)                        |
+| I want to...                               | Read                                                                                                                                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Check Flex can do what I need              | [Current limits](/flex/start-here/current-limits/)                                                                                  |
+| Understand what a domain is                | [Domains overview](/flex/domains/overview/)                                                                                         |
+| Declare routes, resources and integrations | [Domain config reference](/flex/domains/domain-config/)                                                                             |
+| Add a route to an existing domain          | [Routes](/flex/domains/domain-config/#routes) in the config reference, then [Writing route handlers](/flex/domains/route-handlers/) |
+| Write a handler                            | [Writing route handlers](/flex/domains/route-handlers/)                                                                             |
+| Call another domain or an external service | [Calling other domains and gateways](/flex/domains/calling-other-domains/)                                                          |
+| Gate a change behind a flag                | [Feature flags](/flex/domains/feature-flags/)                                                                                       |
+| Test a domain                              | [Testing](/flex/domains/testing/)                                                                                                   |
+| Deploy and check it works                  | [Deploying and verifying](/flex/domains/deploying/)                                                                                 |
 
 ## I'm changing the platform
 

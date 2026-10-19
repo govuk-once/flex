@@ -219,6 +219,8 @@ export const handler = route("GET /v1/greeting", async (context) => {
 | `context`     | Usually destructured. Typed from the route's config, so only what you declare is available.                      |
 | `auth.userId` | User's pseudonymous id. Always present on public routes. More info in [Domains](/flex/domains/overview/) section |
 
+As a handler grows, you can split it into helper functions. Pass the values they need as arguments, or have them read the route's context with `routeContext`, the third thing `domain.config.ts` exports. See [Route context](/flex/domains/route-context/).
+
 ## 4. Call a gateway
 
 Domains reach external data through service gateways, declared as **integrations**.
