@@ -96,6 +96,8 @@ A flag's variable has the same name as the flag, such as `enableItemMetadata`. S
 
 Flag names share the Lambda's environment variable names with [resources](/flex/domains/domain-config/#resources), so a flag and a resource can't have the same name.
 
+Flags are read from the Lambda's environment on each request. So an environment variable changed by hand on a deployed Lambda, such as in the AWS console, changes the flag without a deploy. Don't rely on this. CloudFormation doesn't know about the change, so a later deploy that updates that function may overwrite it. Make the change in `domain.config.ts` instead.
+
 ## Testing a flag
 
 Unit tests run as `development`, so a flag that lists `development` is on by default. Use the `env` fixture to set a flag for one test. It sets an environment variable named after the flag, and puts it back after the test:
