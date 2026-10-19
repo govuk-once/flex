@@ -10,6 +10,6 @@ export const handler = route("GET /v1/identity", async (ctx) => {
     data:
       response === status.NOT_FOUND
         ? { services: [] }
-        : { services: response.linkedServices },
+        : { services: response.linkedServices.map((s) => s.serviceName) },
   };
 });

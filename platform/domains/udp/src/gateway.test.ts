@@ -19,8 +19,11 @@ const mockPushId = "test-push-id";
 const mockService = "test-service";
 const mockIdentity = "test-identity";
 const mockIdentityLink = { identity: mockIdentity };
-const mockLinkedService = "dvla";
-const mockIdentities = { linkedService: [mockLinkedService] };
+const mockLinkedService = { serviceName: "dvla" };
+const mockLinkedServiceWithTtl = { serviceName: "hmrc", ttl: 1893456000 };
+const mockIdentities = {
+  linkedServices: [mockLinkedService, mockLinkedServiceWithTtl],
+};
 const mockRequestingServiceUserId = "test-requesting-service-user-id";
 const mockUpstreamNotifications = {
   data: { consentStatus: "accepted", pushId: mockPushId },
