@@ -11,10 +11,7 @@ describe("GET /v1/identity", () => {
     http,
     sdk,
   }) => {
-    const serviceNames = [
-      createServiceName("dvla"),
-      createServiceName("hmrc"),
-    ];
+    const serviceNames = [createServiceName("dvla"), createServiceName("hmrc")];
     const linkedServices = [
       { serviceName: serviceNames[0] },
       { serviceName: serviceNames[1], ttl: 1893456000 },
