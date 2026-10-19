@@ -320,11 +320,7 @@ Private gateway routes carry no user identity of their own, so you pass the user
 
 If the gateway route you need doesn't exist, adding it is platform work. See [Current limits](/flex/start-here/current-limits/).
 
-Check that your integration points at a route that exists:
-
-```bash
-pnpm validate:integrations
-```
+Nothing checks a gateway integration's route before you call it, so compare it with the gateway's config in [`platform/domains/udp`](https://github.com/govuk-once/flex/tree/main/platform/domains/udp). `pnpm validate:integrations` only checks integrations to other domains.
 
 More in [Calling other domains and gateways](/flex/domains/calling-other-domains/).
 

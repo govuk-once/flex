@@ -31,7 +31,7 @@ The thinner the handler, the less there is to test and review. Add transformatio
 
 External partners are reached only through Flex-owned service gateways: `udp`, `uns`, `dvla` and `travel`.
 
-1. **The data is behind an existing gateway, or in another Flex domain.** This is self-service. Declare an integration in `domain.config.ts` and call it from the handler. CI validates that the target exists.
+1. **The data is behind an existing gateway, or in another Flex domain.** This is self-service. Declare an integration in `domain.config.ts` and call it from the handler. For another domain, CI checks the target route exists. For a gateway, nothing checks it until you call it.
 2. **The data needs a new external partner.** This is Flex team work: gateway config, handler, CDK wiring and secrets provisioning. Treat it as a cross-team dependency and not as a domain pull request.
 
 ## Deciding how to proceed
