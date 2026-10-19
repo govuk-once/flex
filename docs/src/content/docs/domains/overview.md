@@ -47,6 +47,8 @@ Each route in the config is its own Lambda. The handler file is found from the r
 | `GET /v1/topics/:id`        | `src/handlers/v1/topics/[id]/get.ts`     |
 | `POST /v1/topics [private]` | `src/handlers/v1/topics/post.private.ts` |
 
+To add a route to an existing domain, add it to `routes` in the config and create the handler file at the path above. Nothing needs registering, because the platform and CI find it from the config. The [route options](/flex/domains/domain-config/#route-options) table lists everything a route can declare.
+
 ## Who can call a route, and what it can call
 
 Two settings sound alike but answer different questions:
