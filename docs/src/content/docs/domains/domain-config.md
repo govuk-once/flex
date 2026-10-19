@@ -72,20 +72,20 @@ routes: {
 
 ### Route options
 
-| Field          | Description                                                                                                                                                     |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`         | Required. Short name, unique in the domain. Used in the log service name (`<domain>-<gateway>-<version>-<name>`).                                               |
-| `body`         | Zod schema for the request body. `POST`, `PUT` and `PATCH` only. An invalid body gets a `4xx` (see [Request data](/flex/domains/route-handlers/#request-data)). |
-| `query`        | Zod schema for query parameters. Invalid parameters get a `400`.                                                                                                |
-| `response`     | Zod schema for the response `data`. A response that doesn't match gets a `500`.                                                                                 |
-| `headers`      | Headers the route reads. See [Headers](#headers).                                                                                                               |
-| `resources`    | Keys from `resources` the route needs. Only these are granted and injected.                                                                                     |
-| `integrations` | Keys from `integrations` the route calls. Only these are granted and injected.                                                                                  |
-| `featureFlags` | Keys from `featureFlags` the route reads.                                                                                                                       |
-| `environments` | Narrows the domain's `environments` for this route.                                                                                                             |
-| `access`       | Overrides `common.access`.                                                                                                                                      |
-| `logLevel`     | Overrides `common.logLevel`.                                                                                                                                    |
-| `function`     | Overrides `common.function`.                                                                                                                                    |
+| Field          | Description                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`         | Required. Short name, unique in the domain. Used in the log service name (`<domain>-<gateway>-<version>-<name>`).                                             |
+| `body`         | Zod schema for the request body. `POST`, `PUT` and `PATCH` only. An invalid body gets a `4xx` (see [The context](/flex/domains/route-handlers/#the-context)). |
+| `query`        | Zod schema for query parameters. Invalid parameters get a `400`.                                                                                              |
+| `response`     | Zod schema for the response `data`. A response that doesn't match gets a `500`.                                                                               |
+| `headers`      | Headers the route reads. See [Headers](#headers).                                                                                                             |
+| `resources`    | Keys from `resources` the route needs. Only these are granted and injected.                                                                                   |
+| `integrations` | Keys from `integrations` the route calls. Only these are granted and injected.                                                                                |
+| `featureFlags` | Keys from `featureFlags` the route reads.                                                                                                                     |
+| `environments` | Narrows the domain's `environments` for this route.                                                                                                           |
+| `access`       | Overrides `common.access`.                                                                                                                                    |
+| `logLevel`     | Overrides `common.logLevel`.                                                                                                                                  |
+| `function`     | Overrides `common.function`.                                                                                                                                  |
 
 The `body`, `query` and `response` schemas also generate the domain's OpenAPI spec. Tag shared schemas with `.meta({ id: "PascalCaseName" })` so they appear once under `components.schemas` instead of inline.
 
