@@ -6,6 +6,7 @@ import {
   UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
+import { identitiesResponseSchema } from "./schemas/domain/identity";
 import {
   topicsResponseSchema,
   upsertTopicsResponseSchema,
@@ -32,6 +33,7 @@ export const handler = createHandler({
       pathParams: { id },
     }) => {
       return api.get(`/v1/identity/app/${id}/linked-services`, {
+        schema: identitiesResponseSchema,
         headers: { "x-api-key": consumerConfig.apiKey },
       });
     },

@@ -11,12 +11,19 @@ describe("GET /v1/identity", () => {
     http,
     sdk,
   }) => {
-    const services = [createServiceName("dvla"), createServiceName("hmrc")];
+    const serviceNames = [
+      createServiceName("dvla"),
+      createServiceName("hmrc"),
+    ];
+    const linkedServices = [
+      { serviceName: serviceNames[0] },
+      { serviceName: serviceNames[1], ttl: 1893456000 },
+    ];
 
     http
       .gateway("udp")
       .get(`/identities/${userId}`)
-      .reply(200, { linkedServices: services });
+      .reply(200, { linkedServices });
 
     const result = await handler(
       sdk.event.get(endpoint, { auth: userId }),
@@ -24,7 +31,7 @@ describe("GET /v1/identity", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual({ services });
+    expect(JSON.parse(result.body)).toStrictEqual({ services: serviceNames });
   });
 
   it("returns 200 with an empty services list when the user identity does not exist", async ({

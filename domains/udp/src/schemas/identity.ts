@@ -41,8 +41,13 @@ export type DeleteServiceIdentityLinkResponse = z.output<
   typeof DeleteServiceIdentityLinkResponseSchema
 >;
 
+const LinkedServiceSchema = z.object({
+  serviceName: NonEmptyString,
+  ttl: z.number().int().optional(),
+});
+
 export const GetIdentitiesGWResponseSchema = z.object({
-  linkedServices: z.array(NonEmptyString),
+  linkedServices: z.array(LinkedServiceSchema),
 });
 
 export const GetIdentitiesResponseSchema = z.object({

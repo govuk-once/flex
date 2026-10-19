@@ -3,7 +3,10 @@ import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 import { DomainGroupsSchema } from "./src/schemas/domain/groups";
-import { createIdentityRequestBodySchema } from "./src/schemas/domain/identity";
+import {
+  createIdentityRequestBodySchema,
+  identitiesResponseSchema,
+} from "./src/schemas/domain/identity";
 import {
   domainNotificationsResponseSchema,
   inboundCreateOrUpdateNotificationsRequestSchema,
@@ -45,6 +48,7 @@ export const { config, createHandler } = defineGateway({
   routes: {
     "GET /v1/identities/:id": {
       name: "getIdentities",
+      response: identitiesResponseSchema,
     },
     "GET /v1/identity/:serviceName": {
       name: "getIdentityLink",

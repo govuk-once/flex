@@ -23,8 +23,13 @@ export const identityResponseSchema = z.object({
   message: NonEmptyString,
 });
 
+const linkedServiceSchema = z.object({
+  serviceName: NonEmptyString,
+  ttl: z.number().int().optional(),
+});
+
 export const identitiesResponseSchema = z.object({
-  linkedServices: z.array(NonEmptyString),
+  linkedServices: z.array(linkedServiceSchema),
 });
 
 export const deleteIdentityRequestSchema = z.object({
