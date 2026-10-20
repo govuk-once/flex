@@ -6,7 +6,7 @@ import type { IResource } from "aws-cdk-lib/aws-apigateway";
 import type { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
-import type { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import type { Function } from "aws-cdk-lib/aws-lambda";
 import type { Construct } from "constructs";
 
 import type { AlarmActionProps } from "../constructs/alarms/types";
@@ -137,7 +137,7 @@ interface GrantResourcesOptions {
 
 function grantResources(
   scope: Construct,
-  target: NodejsFunction,
+  target: Function,
   { importValue, resources }: GrantResourcesOptions,
 ) {
   for (const [key, resource] of Object.entries(resources)) {

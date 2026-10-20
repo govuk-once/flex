@@ -20,8 +20,7 @@ import {
   PolicyDocument,
   PolicyStatement,
 } from "aws-cdk-lib/aws-iam";
-import { FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Function, FunctionUrlAuthType, Runtime } from "aws-cdk-lib/aws-lambda";
 import { LogGroup, LogRetention, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
@@ -39,6 +38,7 @@ import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
 import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
+import { resolveSignedLambdaConfig } from "../utils/lambda";
 
 const { env, stage } = getEnvConfig();
 
@@ -53,13 +53,19 @@ export class FlexPlatformStack extends BaseStack {
   public readonly privateRouteBindings: readonly RouteBinding[];
 
   #createStubJwksService() {
-    const jwksEndpointStubFunction = new NodejsFunction(
+    const { code, codeSigningConfig } = resolveSignedLambdaConfig(
+      this,
+      "JwksEndpointStubFunction",
+    );
+
+    const jwksEndpointStubFunction = new Function(
       this,
       "JwksEndpointStubFunction",
       {
-        entry: getPlatformEntry("auth", "functions/jwks-endpoint.ts"),
         runtime: Runtime.NODEJS_24_X,
-        handler: "handler",
+        handler: "index.handler",
+        code,
+        codeSigningConfig,
       },
     );
 

@@ -1,6 +1,6 @@
 import type { DomainResource } from "@flex/sdk";
 import { type IKey, Key } from "aws-cdk-lib/aws-kms";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import type { Function } from "aws-cdk-lib/aws-lambda";
 import { type ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
 import type { IStringParameter } from "aws-cdk-lib/aws-ssm";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
@@ -112,7 +112,7 @@ interface RouteResource {
 }
 
 export function grantRouteResources(
-  target: NodejsFunction,
+  target: Function,
   { keys, resources }: RouteResource,
 ) {
   keys.forEach((key) => {

@@ -1,12 +1,14 @@
 import { getEnvConfig } from "@flex/utils";
 import { Duration, Tags } from "aws-cdk-lib";
 import { ISecurityGroup, IVpc, SubnetType } from "aws-cdk-lib/aws-ec2";
-import { Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Function, Runtime, Tracing } from "aws-cdk-lib/aws-lambda";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
-import { resolveEncryptionKey } from "../../utils/lambda";
+import {
+  resolveEncryptionKey,
+  resolveSignedLambdaConfig,
+} from "../../utils/lambda";
 import { toKebabCase } from "../../utils/routes";
 import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
@@ -20,7 +22,7 @@ interface FlexPrivateEgressFunctionProps extends FlexFunctionProps {
 }
 
 export class FlexPrivateEgressFunction extends Construct {
-  public readonly function: NodejsFunction;
+  public readonly function: Function;
 
   constructor(
     scope: Construct,
@@ -31,6 +33,8 @@ export class FlexPrivateEgressFunction extends Construct {
       criticalAction,
       warningAction,
       enableDefaultAlarms = true,
+      entry: _entry,
+      domain,
       ...functionProps
     }: FlexPrivateEgressFunctionProps,
   ) {
@@ -41,12 +45,16 @@ export class FlexPrivateEgressFunction extends Construct {
     });
 
     const encryptionKey = resolveEncryptionKey(this);
+    const { code, codeSigningConfig } = resolveSignedLambdaConfig(this, id);
 
-    this.function = new NodejsFunction(this, "Function", {
+    this.function = new Function(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
+      handler: "index.handler",
       tracing: Tracing.ACTIVE,
       timeout: Duration.seconds(10),
       ...functionProps,
+      code,
+      codeSigningConfig,
       environmentEncryption: encryptionKey,
       environment: {
         ...functionProps.environment,
@@ -71,8 +79,8 @@ export class FlexPrivateEgressFunction extends Construct {
       });
     }
 
-    if (functionProps.domain) {
-      Tags.of(this.function).add("ResourceOwner", functionProps.domain, {
+    if (domain) {
+      Tags.of(this.function).add("ResourceOwner", domain, {
         priority: 200,
       });
     }

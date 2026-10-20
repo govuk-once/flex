@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "1.0",
+  "artifacts": {
+    "AuthorizerFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/AuthorizerFunction/a1b2c3d4e5f6/job-auth.zip",
+      "version": "ver-authorizer-001",
+      "codeSize": 4096
+    },
+    "JwksEndpointStubFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/JwksEndpointStubFunction/b2c3d4e5f6a1/job-jwks.zip",
+      "version": "ver-jwks-001",
+      "codeSize": 2048
+    },
+    "CredentialMonitorFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/CredentialMonitorFunction/c3d4e5f6a1b2/job-cred.zip",
+      "version": "ver-cred-monitor-001",
+      "codeSize": 3072
+    },
+    "SmokeTestFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/SmokeTestFunction/d4e5f6a1b2c3/job-smoke.zip",
+      "version": "ver-smoke-test-001",
+      "codeSize": 5120
+    },
+    "DvlaSecretRotation": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaSecretRotation/e5f6a1b2c3d4/job-dvla-rot.zip",
+      "version": "ver-dvla-rotation-001",
+      "codeSize": 4096
+    },
+    "DvlaServiceGateway": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaServiceGateway/f6a1b2c3d4e5/job-dvla-gw.zip",
+      "version": "ver-dvla-gw-001",
+      "codeSize": 6144
+    },
+    "TravelServiceGateway": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TravelServiceGateway/112233445566/job-travel-gw.zip",
+      "version": "ver-travel-gw-001",
+      "codeSize": 6144
+    },
+    "UdpServiceGateway": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpServiceGateway/223344556677/job-udp-gw.zip",
+      "version": "ver-udp-gw-001",
+      "codeSize": 6144
+    },
+    "UnsServiceGateway": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UnsServiceGateway/334455667788/job-uns-gw.zip",
+      "version": "ver-uns-gw-001",
+      "codeSize": 6144
+    },
+    "MockGatewayServiceGateway": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/MockGatewayServiceGateway/445566778899/job-mock-gw.zip",
+      "version": "ver-mock-gw-001",
+      "codeSize": 4096
+    },
+    "TestDomainPublicV1GetItems": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TestDomainPublicV1GetItems/556677889900/job-get-items.zip",
+      "version": "ver-get-items-001",
+      "codeSize": 2048
+    },
+    "TestDomainPublicV1CreateItem": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TestDomainPublicV1CreateItem/667788990011/job-create-item.zip",
+      "version": "ver-create-item-001",
+      "codeSize": 2048
+    },
+    "TestPublicFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TestPublicFunction/778899001122/job-public.zip",
+      "version": "ver-public-001",
+      "codeSize": 1024
+    },
+    "TestPrivateEgressFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TestPrivateEgressFunction/889900112233/job-egress.zip",
+      "version": "ver-egress-001",
+      "codeSize": 1024
+    },
+    "TestPrivateIsolatedFunction": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TestPrivateIsolatedFunction/990011223344/job-isolated.zip",
+      "version": "ver-isolated-001",
+      "codeSize": 1024
+    }
+  }
+}
