@@ -7,7 +7,7 @@ sidebar:
 
 ## I'm new to Flex
 
-1. [Introduction](/flex/) and [How Flex works](/flex/start-here/how-flex-works/) for the shape of the platform.
+1. [Introduction](/flex/) and [How Flex works](/flex/introduction/how-flex-works/) for the shape of the platform.
 2. [Environment setup](/flex/getting-started/environment-setup/) to get your machine ready.
 3. [Your first domain](/flex/getting-started/your-first-domain/) to build, test and deploy something end to end.
 
@@ -15,7 +15,7 @@ sidebar:
 
 | I want to...                               | Read                                                                                                                                |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Check Flex can do what I need              | [Current limits](/flex/start-here/current-limits/)                                                                                  |
+| Check Flex can do what I need              | [Current limits](/flex/introduction/current-limits/)                                                                                |
 | Understand what a domain is                | [Domains overview](/flex/domains/overview/)                                                                                         |
 | Declare routes, resources and integrations | [Domain config reference](/flex/domains/domain-config/)                                                                             |
 | Add a route to an existing domain          | [Routes](/flex/domains/domain-config/#routes) in the config reference, then [Writing route handlers](/flex/domains/route-handlers/) |

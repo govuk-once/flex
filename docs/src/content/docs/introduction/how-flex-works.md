@@ -101,7 +101,7 @@ Private routes have no authorizer and no `auth`, so they carry no user identity 
 
 The service gateway Lambda authenticates to the external service, calls it and maps the response to the Flex contract. The response then travels back along the same path.
 
-A new external partner needs a new gateway. That is platform work. See [Current limits](/flex/start-here/current-limits/).
+A new external partner needs a new gateway. That is platform work. See [Current limits](/flex/introduction/current-limits/).
 
 ## Inbound routes and outbound access
 

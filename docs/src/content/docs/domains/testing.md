@@ -312,7 +312,7 @@ Used in: [`domains/topics/e2e`](https://github.com/govuk-once/flex/blob/main/dom
 
 Public routes are covered through `cloudfront`. Private routes are harder to reach from a test:
 
-- The private API Gateway is only reachable through a VPC endpoint (see [How Flex works](/flex/start-here/how-flex-works/#inbound-public-and-private-routes)), so a request from outside the VPC, such as from your machine, can't normally get to it.
+- The private API Gateway is only reachable through a VPC endpoint (see [How Flex works](/flex/introduction/how-flex-works/#inbound-public-and-private-routes)), so a request from outside the VPC, such as from your machine, can't normally get to it.
 - Its routes use IAM authorisation, so a request has to be signed with SigV4. The `privateGateway` client is a plain HTTP client and doesn't sign requests.
 - No domain's E2E tests use `privateGateway` today.
 
@@ -336,7 +336,7 @@ The header carries a secret. The WAF compares it with a value in Secrets Manager
 - Always use `authHeader`. Never copy the value into a test, a script or a log.
 - Real clients never send it. It exists for tests only.
 
-See [How Flex works](/flex/start-here/how-flex-works/#1-edge) for the rest of the edge.
+See [How Flex works](/flex/introduction/how-flex-works/#1-edge) for the rest of the edge.
 
 ### Run against another stage
 
