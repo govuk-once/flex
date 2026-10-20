@@ -57,6 +57,10 @@ Before approving production, check that the staging E2E tests passed and that
 The run stops at the first stage that fails, so that is the stage to open. Expand the failing step in
 the job log.
 
+**Lambda artifact signing failures (`Sign Lambda artifacts` step):** Before CDK synthesises or deploys any stack, `pnpm run sign` bundles all enumerated Lambda entry points into deterministic `.zip` archives, uploads changed bundles to the versioned unsigned S3 bucket, starts AWS Signer jobs, and writes `signed-artifacts.manifest.json`.
+- **Observed signing latency:** Expect **1–5 minutes** of signing time when Lambda code changes. Unchanged functions with identical deterministic SHA-256 hashes reuse their existing signed S3 object version and skip re-signing.
+- **Waiter timeout:** Each signing job polls with a **5-minute waiter timeout** (`300,000 ms`). If any signing job reaches `Failed` status or exceeds the waiter timeout, the pipeline fails loudly before `cdk deploy` runs. Check the AWS Signer console (`DescribeSigningJob`) and verify that the signing profile in `/infra/signing/signingprofilename` is `Active` and the unsigned/signed S3 bucket policies allow `signer.amazonaws.com`.
+
 **E2E failures** are usually a problem with one of the services the tests depend on rather than with
 the change itself. Look at whether the failing journeys have a dependency in common, then re-run
 failed jobs. If it fails the same way twice, stop re-running and investigate.

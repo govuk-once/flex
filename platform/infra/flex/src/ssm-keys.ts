@@ -5,6 +5,10 @@ const { env, stage } = getEnvConfig();
 export const PLATFORM_KEYS = {
   HostedZoneId: "/infra/dns/hostedzoneid",
   HostedZoneName: "/infra/dns/hostedzonename",
+  SignedArtifactsBucket: "/infra/signing/signedartifactsbucket",
+  SigningProfileName: "/infra/signing/signingprofilename",
+  SigningProfileVersion: "/infra/signing/signingprofileversion",
+  SigningPlatformKeyFingerprint: "/infra/signing/signingplatformkeyfingerprint",
 } as const;
 
 export const ENV_KEYS = {

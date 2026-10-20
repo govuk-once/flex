@@ -45,6 +45,10 @@ const externalExports = [
   // Provided by platform team
   PLATFORM_KEYS.HostedZoneId,
   PLATFORM_KEYS.HostedZoneName,
+  PLATFORM_KEYS.SignedArtifactsBucket,
+  PLATFORM_KEYS.SigningProfileName,
+  PLATFORM_KEYS.SigningProfileVersion,
+  PLATFORM_KEYS.SigningPlatformKeyFingerprint,
   // Provided by flex-params repo
   ENV_KEYS.AuthClientId,
   ENV_KEYS.AuthClientIdStub,

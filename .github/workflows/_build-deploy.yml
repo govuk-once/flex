@@ -54,6 +54,9 @@ jobs:
           aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
+      - name: Sign Lambda artifacts
+        run: cd ./platform/infra/flex && pnpm run sign
+
       - name: Deploy FLEX AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy
 

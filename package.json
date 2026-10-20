@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "flex",
+    "sign": "pnpm --filter @platform/flex run sign",
     "deploy": "pnpm openapi:generate && pnpm --filter @platform/flex run deploy",
     "checkov": "nx affected --target=checkov",
     "tsc": "nx affected --target=tsc",
