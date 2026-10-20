@@ -94,7 +94,7 @@ Leave `access` alone. A domain reaches external services through a [service gate
 GOV.UK app → CloudFront → Lambda authorizer → topics Lambda → private API Gateway → udp gateway → UDP
 ```
 
-See [How Flex works](/flex/start-here/how-flex-works/) for the full request flow.
+See [How Flex works](/flex/introduction/how-flex-works/) for the full request flow.
 
 ## Which environments a domain deploys to
 
@@ -115,4 +115,4 @@ The same config drives the OpenAPI spec for each domain (`pnpm openapi:generate`
 
 - [Domain config reference](/flex/domains/domain-config/) for every option.
 - [Writing route handlers](/flex/domains/route-handlers/) for what a handler receives and returns.
-- [Current limits](/flex/start-here/current-limits/) before you design something new.
+- [Current limits](/flex/introduction/current-limits/) before you design something new.

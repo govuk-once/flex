@@ -28,10 +28,10 @@ export default defineConfig({
       },
       sidebar: [
         {
-          label: "Start here",
+          label: "Introduction",
           items: [
-            { label: "Introduction", slug: "" },
-            { autogenerate: { directory: "start-here" } },
+            { label: "Overview", slug: "" },
+            { autogenerate: { directory: "introduction" } },
           ],
         },
         {

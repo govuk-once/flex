@@ -15,12 +15,12 @@ A domain never calls another service directly. It declares an **integration**, a
 | `"domain"`  | Another domain's **private** route             | `/domains/<target>/<version>/...`  |
 
 :::note
-If no gateway has what you need, adding one is platform work. See [Current limits](/flex/start-here/current-limits/).
+If no gateway has what you need, adding one is platform work. See [Current limits](/flex/introduction/current-limits/).
 :::
 
 ### Calling a service gateway
 
-Service gateways live in [`platform/domains/`](https://github.com/govuk-once/flex/tree/main/platform/domains). Each one lists its routes in its `gateway.config.ts`, so find the route you need there. If it isn't listed, the gateway doesn't support it yet, and adding it is platform work (see [Current limits](/flex/start-here/current-limits/)).
+Service gateways live in [`platform/domains/`](https://github.com/govuk-once/flex/tree/main/platform/domains). Each one lists its routes in its `gateway.config.ts`, so find the route you need there. If it isn't listed, the gateway doesn't support it yet, and adding it is platform work (see [Current limits](/flex/introduction/current-limits/)).
 
 Declare the integration with `type: "gateway"` and the gateway's name as `target`:
 

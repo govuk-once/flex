@@ -23,8 +23,8 @@ A domain is usually thin: validate the request, call an upstream service, return
 
 | If you want to...                             | Read                                                        |
 | --------------------------------------------- | ----------------------------------------------------------- |
-| Understand how a request travels through Flex | [How Flex works](/flex/start-here/how-flex-works/)          |
-| Check whether Flex can do what you need       | [Current limits](/flex/start-here/current-limits/)          |
+| Understand how a request travels through Flex | [How Flex works](/flex/introduction/how-flex-works/)        |
+| Check whether Flex can do what you need       | [Current limits](/flex/introduction/current-limits/)        |
 | Set up your machine and build a first domain  | [Getting started](/flex/getting-started/environment-setup/) |
-| Find your way around the repository           | [Repository tour](/flex/start-here/repository-tour/)        |
-| Pick the right guide for a task               | [Which guide do I need?](/flex/start-here/which-guide/)     |
+| Find your way around the repository           | [Repository tour](/flex/introduction/repository-tour/)      |
+| Pick the right guide for a task               | [Which guide do I need?](/flex/introduction/which-guide/)   |

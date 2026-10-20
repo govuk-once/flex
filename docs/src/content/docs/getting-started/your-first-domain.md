@@ -13,7 +13,7 @@ Steps 1 to 5 need no AWS access. **Steps 6 onward do.**
 If you don't have access yet, stop after step 5 and see [Get started developing on GOV.UK](https://docs.publishing.service.gov.uk/manual/get-started.html#6-get-permissions-for-aws-github-and-other-third-party-services) for details on requesting access.
 :::
 
-This page keeps examples small and links to the [Domains](/flex/domains/overview/) section for the full detail. For how requests flow through the platform, see [How Flex works](/flex/start-here/how-flex-works/) as the source of truth.
+This page keeps examples small and links to the [Domains](/flex/domains/overview/) section for the full detail. For how requests flow through the platform, see [How Flex works](/flex/introduction/how-flex-works/) as the source of truth.
 
 ## 1. Check your setup
 
@@ -320,7 +320,7 @@ The integration name in the handler must match the key in the config, and its ty
 
 Private gateway routes carry no user identity of their own, so you pass the user id in a header.
 
-If the gateway route you need doesn't exist, adding it is platform work. See [Current limits](/flex/start-here/current-limits/).
+If the gateway route you need doesn't exist, adding it is platform work. See [Current limits](/flex/introduction/current-limits/).
 
 Nothing checks a gateway integration's route before you call it, so compare it with the gateway's config in [`platform/domains/udp`](https://github.com/govuk-once/flex/tree/main/platform/domains/udp). `pnpm validate:integrations` only checks integrations to other domains.
 

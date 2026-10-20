@@ -9,14 +9,14 @@ You can write code and run unit tests with just the tools on this page. Deployin
 
 ## Prerequisites
 
-| Tool       | Version                                                                                                                                 |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Node.js    | The version in [`.nvmrc`](https://github.com/govuk-once/flex/blob/main/.nvmrc)                                                          |
-| pnpm       | `11` - Exact version pinned in `packageManager` in the root [`package.json`](https://github.com/govuk-once/flex/blob/main/package.json) |
-| pre-commit | `4.x`                                                                                                                                   |
-| checkov    | `3.x`                                                                                                                                   |
-| AWS CLI    | `2.x`                                                                                                                                   |
-| GDS CLI    | `5.x`                                                                                                                                   |
+| Tool       | Version                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node.js    | The version in [`.nvmrc`](https://github.com/govuk-once/flex/blob/main/.nvmrc)                                                             |
+| pnpm       | Switches to the version pinned in `packageManager` in the root [`package.json`](https://github.com/govuk-once/flex/blob/main/package.json) |
+| pre-commit | `4.x`                                                                                                                                      |
+| checkov    | `3.x`                                                                                                                                      |
+| AWS CLI    | `2.x`                                                                                                                                      |
+| GDS CLI    | `5.x`                                                                                                                                      |
 
 ### Node.js
 
@@ -32,8 +32,10 @@ nvm use
 Install globally - [pnpm.io](https://pnpm.io/installation)
 
 ```bash
-npm install -g pnpm@11
+npm install -g pnpm@latest
 ```
+
+The root `package.json` pins an exact pnpm version in its `packageManager` field. pnpm switches to that version when you run it in the repository, so everyone uses the same one.
 
 ### pre-commit
 
@@ -87,6 +89,8 @@ You don't need AWS credentials to write code or run unit tests. You _will_ need 
 - Run E2E tests
 - Generate tokens with `pnpm jwt`
 
+Personal and PR environments live in the development account. Only use a staging or production role when you work on those environments.
+
 ### Setup the GDS CLI
 
 We use the [`gds-cli`](https://github.com/alphagov/gds-cli) to assume AWS roles and access the console, rather than the `aws cli` directly.
@@ -130,6 +134,10 @@ aws sts get-caller-identity
 # }
 ```
 
+Credentials expire. When a command fails with an expired token, or `pnpm jwt` prints `AWS credentials not found.`, export a fresh set.
+
+Flex runs in `eu-west-2`, with CloudFront and the resources beside it in `us-east-1`. The CDK app sets each stack's region itself.
+
 ### Accessing the AWS console
 
 To access the AWS console, run the following:
@@ -154,11 +162,6 @@ The [`@flex/e2e` README](https://github.com/govuk-once/flex/blob/main/tests/e2e/
 
 ## Editor
 
-The repository ships VS Code settings and a list of recommended extensions in `.vscode/`.
+The repository includes VS Code settings in `.vscode/`. It recommends the [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) extension, and VS Code offers to install it when you open the repository. The settings format on save using ESLint.
 
-VS Code offers to install them when you open the repository.
-
-- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-
-In other editors, make sure it follows the repository's ESLint config and formats with Prettier.
+Prettier runs inside ESLint, so you don't need a separate Prettier extension. In other editors, run ESLint fixes on save.

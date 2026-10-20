@@ -113,7 +113,7 @@ Private routes can't be called this way. See [Private routes](/flex/domains/test
 
 `pnpm jwt` makes the right kind for the stage in `STAGE`, and uses `development` if it is not set. Stub tokens expire after one hour, so generate another when you get a `401`.
 
-See [How Flex works](/flex/start-here/how-flex-works/#2-authorizer) for how the authorizer checks a token.
+See [How Flex works](/flex/introduction/how-flex-works/#2-authorizer) for how the authorizer checks a token.
 
 ## If it doesn't work
 
