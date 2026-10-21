@@ -61,6 +61,252 @@
       "version": "ver-mock-gw-001",
       "codeSize": 4096
     },
+    "DvlaPublicV1GetCustomerLicence": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1GetCustomerLicence/a001/job.zip",
+      "version": "ver-dvla-001",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1GetCustomerVehicle": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1GetCustomerVehicle/a002/job.zip",
+      "version": "ver-dvla-002",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1GetCustomerVehicles": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1GetCustomerVehicles/a003/job.zip",
+      "version": "ver-dvla-003",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1PostTestNotification": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1PostTestNotification/a004/job.zip",
+      "version": "ver-dvla-004",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1GetVehicleEnquiry": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1GetVehicleEnquiry/a005/job.zip",
+      "version": "ver-dvla-005",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1PostShareCode": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1PostShareCode/a006/job.zip",
+      "version": "ver-dvla-006",
+      "codeSize": 2048
+    },
+    "DvlaPublicV1CancelShareCode": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPublicV1CancelShareCode/a007/job.zip",
+      "version": "ver-dvla-007",
+      "codeSize": 2048
+    },
+    "DvlaPrivateV1UnlinkUser": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/DvlaPrivateV1UnlinkUser/a008/job.zip",
+      "version": "ver-dvla-008",
+      "codeSize": 2048
+    },
+    "UdpPublicV1GetUsersServiceIdentities": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1GetUsersServiceIdentities/b001/job.zip",
+      "version": "ver-udp-001",
+      "codeSize": 2048
+    },
+    "UdpPublicV1GetServiceIdentity": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1GetServiceIdentity/b002/job.zip",
+      "version": "ver-udp-002",
+      "codeSize": 2048
+    },
+    "UdpPrivateV1GetServiceIdentity": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPrivateV1GetServiceIdentity/b003/job.zip",
+      "version": "ver-udp-003",
+      "codeSize": 2048
+    },
+    "UdpPublicV1DeleteServiceIdentity": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1DeleteServiceIdentity/b004/job.zip",
+      "version": "ver-udp-004",
+      "codeSize": 2048
+    },
+    "UdpPublicV1CreateServiceIdentityLink": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1CreateServiceIdentityLink/b005/job.zip",
+      "version": "ver-udp-005",
+      "codeSize": 2048
+    },
+    "UdpPublicV1UpsertUser": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1UpsertUser/b006/job.zip",
+      "version": "ver-udp-006",
+      "codeSize": 2048
+    },
+    "UdpPrivateV1GetUserNotificationPushId": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPrivateV1GetUserNotificationPushId/b007/job.zip",
+      "version": "ver-udp-007",
+      "codeSize": 2048
+    },
+    "UdpPublicV1UpdateUserNotificationPreferences": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UdpPublicV1UpdateUserNotificationPreferences/b008/job.zip",
+      "version": "ver-udp-008",
+      "codeSize": 2048
+    },
+    "LocalCouncilPrivateV1UpsertLocalAuthority": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/LocalCouncilPrivateV1UpsertLocalAuthority/c001/job.zip",
+      "version": "ver-lc-001",
+      "codeSize": 2048
+    },
+    "LocalCouncilPrivateV1GetLocalAuthority": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/LocalCouncilPrivateV1GetLocalAuthority/c002/job.zip",
+      "version": "ver-lc-002",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0ListTodos": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0ListTodos/d001/job.zip",
+      "version": "ver-ex-001",
+      "codeSize": 2048
+    },
+    "ExamplePrivateV0CreateTodo": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePrivateV0CreateTodo/d002/job.zip",
+      "version": "ver-ex-002",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetTodo": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetTodo/d003/job.zip",
+      "version": "ver-ex-003",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0DeleteTodo": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0DeleteTodo/d004/job.zip",
+      "version": "ver-ex-004",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0DuplicateTodo": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0DuplicateTodo/d005/job.zip",
+      "version": "ver-ex-005",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetHeaders": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetHeaders/d006/job.zip",
+      "version": "ver-ex-006",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetResources": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetResources/d007/job.zip",
+      "version": "ver-ex-007",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetRuntimeResource": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetRuntimeResource/d008/job.zip",
+      "version": "ver-ex-008",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetIdentityLink": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetIdentityLink/d009/job.zip",
+      "version": "ver-ex-009",
+      "codeSize": 2048
+    },
+    "ExamplePrivateV0GetIdentityLink": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePrivateV0GetIdentityLink/d010/job.zip",
+      "version": "ver-ex-010",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0UpdateNotifications": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0UpdateNotifications/d011/job.zip",
+      "version": "ver-ex-011",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0UpdateUserNotificationPreferences": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0UpdateUserNotificationPreferences/d012/job.zip",
+      "version": "ver-ex-012",
+      "codeSize": 2048
+    },
+    "ExamplePublicV0GetUserNotifications": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/ExamplePublicV0GetUserNotifications/d013/job.zip",
+      "version": "ver-ex-013",
+      "codeSize": 2048
+    },
+    "GroupsPublicV1GetGroups": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/GroupsPublicV1GetGroups/e001/job.zip",
+      "version": "ver-grp-001",
+      "codeSize": 2048
+    },
+    "GroupsPublicV1PostGroups": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/GroupsPublicV1PostGroups/e002/job.zip",
+      "version": "ver-grp-002",
+      "codeSize": 2048
+    },
+    "UnsPublicV1GetNotifications": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UnsPublicV1GetNotifications/f001/job.zip",
+      "version": "ver-uns-001",
+      "codeSize": 2048
+    },
+    "UnsPublicV1GetNotificationById": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UnsPublicV1GetNotificationById/f002/job.zip",
+      "version": "ver-uns-002",
+      "codeSize": 2048
+    },
+    "UnsPublicV1DeleteNotification": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UnsPublicV1DeleteNotification/f003/job.zip",
+      "version": "ver-uns-003",
+      "codeSize": 2048
+    },
+    "UnsPublicV1PatchNotificationStatus": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/UnsPublicV1PatchNotificationStatus/f004/job.zip",
+      "version": "ver-uns-004",
+      "codeSize": 2048
+    },
+    "TravelPublicV1ListCountries": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TravelPublicV1ListCountries/g001/job.zip",
+      "version": "ver-trv-001",
+      "codeSize": 2048
+    },
+    "TravelPublicV1FetchRecentTravelAlerts": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TravelPublicV1FetchRecentTravelAlerts/g002/job.zip",
+      "version": "ver-trv-002",
+      "codeSize": 2048
+    },
+    "TopicsPublicV1UpsertTopics": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TopicsPublicV1UpsertTopics/h001/job.zip",
+      "version": "ver-top-001",
+      "codeSize": 2048
+    },
+    "TopicsPublicV1RetrieveTopics": {
+      "bucket": "test-signed-artifacts-bucket",
+      "key": "assets/TopicsPublicV1RetrieveTopics/h002/job.zip",
+      "version": "ver-top-002",
+      "codeSize": 2048
+    },
     "TestDomainPublicV1GetItems": {
       "bucket": "test-signed-artifacts-bucket",
       "key": "assets/TestDomainPublicV1GetItems/556677889900/job-get-items.zip",

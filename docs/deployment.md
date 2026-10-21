@@ -200,16 +200,16 @@ Each stage must complete before the next step begins. E2E tests run as part of e
 ### Deploying to a Specific Stage
 
 ```bash
-STAGE=development pnpm deploy
+STAGE=development pnpm run deploy
 ```
 
 ### Deploying a Single Domain
 
 ```bash
-domain=udp pnpm deploy
+domain=udp pnpm run deploy
 
 # With a specific stage
-domain=udp STAGE=development pnpm deploy
+domain=udp STAGE=development pnpm run deploy
 ```
 
 ### Comparing Changes

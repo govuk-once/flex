@@ -277,6 +277,20 @@ export async function signAllArtifacts(
 
   const artifacts: Record<string, ArtifactEntry> = {};
 
+  // Preserve existing manifest entries when running a filtered (e.g. single-domain) sign
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const existingRaw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+      const parsedExisting =
+        SignedArtifactsManifestSchema.safeParse(existingRaw);
+      if (parsedExisting.success) {
+        Object.assign(artifacts, parsedExisting.data.artifacts);
+      }
+    } catch {
+      // Ignore unreadable prior manifest; it will be overwritten atomically below
+    }
+  }
+
   for (const entry of entries) {
     const bundledCode = await bundleFn(entry.entry);
     const { buffer: zipBuffer, sha256 } = createDeterministicZip([

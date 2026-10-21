@@ -234,6 +234,8 @@ jobs:
           role-session-name: ${{ github.run_id }}
 
       - name: Infrastructure as Code (IaC) Linting with checkov
+        env:
+          SIGNED_ARTIFACTS_MANIFEST_PATH: ${{ github.workspace }}/platform/infra/flex/src/__tests__/fixtures/signed-artifacts.fixture.json
         run: pnpm run checkov
 
       - name: Run Dependency Review
@@ -246,6 +248,8 @@ jobs:
           show-openssf-scorecard: false
 
       - name: Run cdk synth
+        env:
+          SIGNED_ARTIFACTS_MANIFEST_PATH: ${{ github.workspace }}/platform/infra/flex/src/__tests__/fixtures/signed-artifacts.fixture.json
         run: |
           pnpm --filter @platform/flex synth
 

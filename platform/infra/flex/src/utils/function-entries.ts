@@ -70,6 +70,10 @@ export interface EnumerateFunctionEntriesOptions {
    * of current stage filters (useful for CI exhaustive signing).
    */
   readonly includeAllStages?: boolean;
+  /**
+   * Optional target domain filter (matches `process.env.domain` behavior in `app.ts`).
+   */
+  readonly targetDomain?: string;
 }
 
 /**
@@ -116,7 +120,12 @@ export async function enumerateFunctionEntries(
   }
 
   // 1. Domain Route Handlers
+  const targetDomain = includeAll
+    ? undefined
+    : (options.targetDomain ?? process.env.domain);
+
   for (const domain of deployableDomainConfigs) {
+    if (targetDomain && targetDomain !== domain.name) continue;
     const routes = flattenRoutes(domain, stage);
     for (const route of routes) {
       const functionId = toPascalCase(
