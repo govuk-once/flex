@@ -96,19 +96,23 @@ export class FlexPlatformStack extends BaseStack {
     return jwksEndpointStubFunctionUrl.url;
   }
 
-  #createJwksKmsEndpoint(restApi: RestApi) {
+  #createDvlaJwksKmsEndpoint(restApi: RestApi) {
     const kmsKeyArns = this.import(ENV_KEYS.ThirdPartyEncryptionKeyArns);
 
-    const jwksKmsFunction = new NodejsFunction(this, "JwksKmsFunction", {
-      entry: getPlatformEntry("jwks-kms", "handler.ts"),
-      runtime: Runtime.NODEJS_24_X,
-      handler: "handler",
-      environment: {
-        KMS_KEY_ARNS: kmsKeyArns,
+    const dvlaJwksKmsFunction = new NodejsFunction(
+      this,
+      "DvlaJwksKmsFunction",
+      {
+        entry: getPlatformEntry("dvla-jwks-kms", "handler.ts"),
+        runtime: Runtime.NODEJS_24_X,
+        handler: "handler",
+        environment: {
+          KMS_KEY_ARNS: kmsKeyArns,
+        },
       },
-    });
+    );
 
-    jwksKmsFunction.addToRolePolicy(
+    dvlaJwksKmsFunction.addToRolePolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
         actions: ["kms:GetPublicKey"],
@@ -117,9 +121,10 @@ export class FlexPlatformStack extends BaseStack {
     );
 
     const wellKnown = restApi.root.addResource(".well-known");
-    const jwksEndpoint = wellKnown
+    const dvlaResource = wellKnown.addResource("dvla");
+    const jwksEndpoint = dvlaResource
       .addResource("jwks.json")
-      .addMethod("GET", new LambdaIntegration(jwksKmsFunction));
+      .addMethod("GET", new LambdaIntegration(dvlaJwksKmsFunction));
 
     applyCheckovSkip(
       jwksEndpoint,
@@ -547,7 +552,7 @@ export class FlexPlatformStack extends BaseStack {
       warningAction,
     });
 
-    this.#createJwksKmsEndpoint(restApi);
+    this.#createDvlaJwksKmsEndpoint(restApi);
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });
