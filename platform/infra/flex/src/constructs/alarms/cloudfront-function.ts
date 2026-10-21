@@ -36,13 +36,8 @@ export class CloudFrontFunctionAlarms extends Construct {
   ) {
     super(scope, id);
 
-    const {
-      distribution,
-      cloudfrontFunction,
-      criticalAction,
-      warningAction,
-      alarmNamePrefix,
-    } = props;
+    const { distribution, cloudfrontFunction, warningAction, alarmNamePrefix } =
+      props;
 
     const fnDimensions = {
       DistributionId: distribution.distributionId,
@@ -57,7 +52,7 @@ export class CloudFrontFunctionAlarms extends Construct {
       {
         alarmName: `${alarmNamePrefix}-function-execution-errors`,
         alarmDescription:
-          "Critical: viewer request function execution errors over 5 consecutive 1 minute periods",
+          "Warning: viewer request function execution errors over 5 consecutive 1 minute periods. User impact shows in the CloudFront 5xx rate alarm",
         metric: new Metric({
           namespace: "AWS/CloudFront",
           metricName: "FunctionExecutionErrors",
@@ -71,13 +66,13 @@ export class CloudFrontFunctionAlarms extends Construct {
         treatMissingData: TreatMissingData.NOT_BREACHING,
       },
     );
-    this.functionExecutionErrorsAlarm.addAlarmAction(criticalAction);
+    this.functionExecutionErrorsAlarm.addAlarmAction(warningAction);
 
     // Function throttles - function exceeded compute time limit.
     this.functionThrottlesAlarm = new Alarm(this, "FunctionThrottles", {
       alarmName: `${alarmNamePrefix}-function-throttles`,
       alarmDescription:
-        "Warning: viewer request function throttled over 5 consecutive 1 minute periods",
+        "Warning: viewer request function throttled over 5 consecutive 1 minute periods. User impact shows in the CloudFront 5xx rate alarm",
       metric: new Metric({
         namespace: "AWS/CloudFront",
         metricName: "FunctionThrottles",
@@ -90,7 +85,7 @@ export class CloudFrontFunctionAlarms extends Construct {
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.functionThrottlesAlarm.addAlarmAction(criticalAction);
+    this.functionThrottlesAlarm.addAlarmAction(warningAction);
 
     // Function validation errors - function returned malformed event back
     // to CloudFront (bad headers, response shape, etc).

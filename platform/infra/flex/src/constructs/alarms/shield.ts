@@ -29,7 +29,7 @@ export class ShieldAlarms extends Construct {
     this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected", {
       alarmName: `${alarmNamePrefix}-ddos-detected`,
       alarmDescription:
-        "Critical: Shield Advanced has detected a DDoS attack against the CloudFront distribution",
+        "Critical: UNDER ATTACK: Shield Advanced has detected a DDoS attack against the CloudFront distribution. Mitigation is automatic; confirm users are still being served and engage the Shield Response Team if not",
       metric: new Metric({
         namespace: "AWS/DDoSProtection",
         metricName: "DDoSDetected",

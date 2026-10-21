@@ -31,13 +31,16 @@ Establish the scale and the shape of the failure before tracing individual reque
 
 1. **Read the alarm.** API Gateway alarms route by severity to SNS and into Slack via Amazon Q. The relevant ones are:
 
-   | Alarm                               | Threshold                  | Tells you                                                          |
-   | ----------------------------------- | -------------------------- | ------------------------------------------------------------------ |
-   | API Gateway 5XX rate                | > 1% over 5 min (critical) | Requests are failing outright, and roughly how many                |
-   | API Gateway integration p95 latency | backend latency high       | The backend is slow, which precedes 504s                           |
-   | API Gateway p95 latency             | > 3000ms (warning)         | End-to-end slowness; compare with integration latency to locate it |
-   | Lambda error rate                   | > 1% (critical)            | The handler is throwing, consistent with 500s and 502s             |
-   | Lambda p99 duration                 | > 80% of timeout (warning) | Requests approaching the timeout, consistent with imminent 504s    |
+   | Alarm                               | Threshold                                              | Tells you                                                                  |
+   | ----------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
+   | Journey fast burn                   | > 7.2% failed (1.44% for writes) over 1h and 5m (critical) | A user journey is failing at a rate that will miss its SLO; the alert names the journey |
+   | API Gateway 5XX rate                | > 1% over 5 min (warning)                              | Requests are failing outright, and roughly how many                        |
+   | API Gateway integration p95 latency | backend latency high                                   | The backend is slow, which precedes 504s                                   |
+   | API Gateway p95 latency             | > 3000ms (warning)                                     | End-to-end slowness; compare with integration latency to locate it         |
+   | Lambda error rate                   | > 1% (warning)                                         | The handler is throwing, consistent with 500s and 502s                     |
+   | Lambda p99 duration                 | > 80% of timeout (warning)                             | Requests approaching the timeout, consistent with imminent 504s            |
+
+   See [Critical alerts](/docs/critical-alerts.md) for which routes make up each journey and how the thresholds are derived.
 
 2. **Find the exact status code.** The 5XX alarm does not distinguish 500 from 504. Query the API access logs (a dedicated JSON CloudWatch log group per stage, with `status`, `requestId`, method, resource path and latency) to see the actual codes and which routes are affected:
 
