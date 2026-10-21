@@ -7,6 +7,7 @@ import {
   AuthorizationType,
   CfnRestApi,
   EndpointType,
+  LambdaIntegration,
   LogGroupLogDestination,
   MethodLoggingLevel,
   MockIntegration,
@@ -93,6 +94,43 @@ export class FlexPlatformStack extends BaseStack {
     );
 
     return jwksEndpointStubFunctionUrl.url;
+  }
+
+  #createDvlaJwksKmsEndpoint(restApi: RestApi) {
+    const kmsKeyArns = this.import(ENV_KEYS.ThirdPartyEncryptionKeyArns);
+
+    const dvlaJwksKmsFunction = new NodejsFunction(
+      this,
+      "DvlaJwksKmsFunction",
+      {
+        entry: getPlatformEntry("dvla-jwks-kms", "handler.ts"),
+        runtime: Runtime.NODEJS_24_X,
+        handler: "handler",
+        environment: {
+          KMS_KEY_ARNS: kmsKeyArns,
+        },
+      },
+    );
+
+    dvlaJwksKmsFunction.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ["kms:GetPublicKey"],
+        resources: ["*"],
+      }),
+    );
+
+    const wellKnown = restApi.root.addResource(".well-known");
+    const dvlaResource = wellKnown.addResource("dvla");
+    const jwksEndpoint = dvlaResource
+      .addResource("jwks.json")
+      .addMethod("GET", new LambdaIntegration(dvlaJwksKmsFunction));
+
+    applyCheckovSkip(
+      jwksEndpoint,
+      "CKV_AWS_59",
+      "JWKS endpoint must be publicly accessible without authorization for external clients",
+    );
   }
 
   #createAuthorizerFunction({
@@ -513,6 +551,8 @@ export class FlexPlatformStack extends BaseStack {
       criticalAction,
       warningAction,
     });
+
+    this.#createDvlaJwksKmsEndpoint(restApi);
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
       this.#createPrivateRestApi({ criticalAction, warningAction });
