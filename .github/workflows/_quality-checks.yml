@@ -271,7 +271,7 @@ jobs:
             # Unresolved Fn::ImportValue refs produce unparseable policies (false positives)
             EXCLUSIONS="policy-analysis-CheckAccessNotGrantedValidationException"
             # API Gateway Lambda integrations require lambda:InvokeFunction on the resource policy
-            EXCLUSIONS+=",JwksKmsFunction351433F6.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",DvlaJwksKmsFunction5CA1966A.policy-analysis-CheckAccessNotGranted"
             EXCLUSIONS+=",JwksEndpointStubFunctionE64FCBB8.policy-analysis-CheckAccessNotGranted"
             EXCLUSIONS+=",UnsServiceGatewayFunction8EEBB91B.policy-analysis-CheckAccessNotGranted"
             EXCLUSIONS+=",UdpServiceGatewayFunctionAC8DA85C.policy-analysis-CheckAccessNotGranted"
