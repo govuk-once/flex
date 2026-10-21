@@ -1,6 +1,7 @@
 export type {
   CreateServiceIdentityLinkRequest,
   DeleteServiceIdentityLinkResponse,
+  GetIdentitiesV2Response,
   GetServiceIdentityLinkResponse,
 } from "./identity";
 export {
@@ -8,6 +9,7 @@ export {
   DeleteServiceIdentityLinkResponseSchema,
   GetIdentitiesGWResponseSchema,
   GetIdentitiesResponseSchema,
+  GetIdentitiesV2ResponseSchema,
   GetServiceIdentityLinkResponseSchema,
 } from "./identity";
 export type {

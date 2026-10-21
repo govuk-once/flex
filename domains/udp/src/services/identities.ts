@@ -5,16 +5,21 @@ import status from "http-status";
 type PostRoute = "POST /v1/identity/:service";
 type DeleteRoute = "DELETE /v1/identity/:service";
 type GetAllRoute = "GET /v1/identity";
+type GetAllV2Route = "GET /v2/identity";
 
 const _postCtx = routeContext<PostRoute>;
 const _deleteCtx = routeContext<DeleteRoute>;
 const _getCtx = routeContext<GetAllRoute>;
+const _getV2Ctx = routeContext<GetAllV2Route>;
 
 type UpdateRouteContext =
   | ReturnType<typeof _postCtx>
   | ReturnType<typeof _deleteCtx>;
 
-type GetRouteContext = UpdateRouteContext | ReturnType<typeof _getCtx>;
+type GetRouteContext =
+  | UpdateRouteContext
+  | ReturnType<typeof _getCtx>
+  | ReturnType<typeof _getV2Ctx>;
 
 export async function getAllIdentities(ctx: GetRouteContext) {
   const { auth, integrations, logger } = ctx;

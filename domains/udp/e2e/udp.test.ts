@@ -4,6 +4,8 @@ import { describe, expect } from "vitest";
 
 import { config as udpConfig } from "../domain.config";
 import type {
+  GetIdentitiesResponse,
+  GetIdentitiesV2Response,
   GetUserResponse,
   UpdateNotificationPreferencesOutboundResponse,
   UpdateNotificationPreferencesRequest,
@@ -213,6 +215,85 @@ describe.runIf(isDomainDeployed(udpConfig))("UDP domain", () => {
         });
       });
     });
+  });
+
+  describe("GET /udp/v1/identity", () => {
+    const endpoint = "/udp/v1/identity";
+
+    describe.runIf(isRouteDeployed(udpConfig, "GET /v1/identity"))(
+      "GET",
+      () => {
+        it("returns 200 with a services array", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get<GetIdentitiesResponse>(
+            endpoint,
+            {
+              headers: authHeader,
+            },
+          );
+
+          expect(result.status).toBe(200);
+
+          const body = result.body as GetIdentitiesResponse;
+          expect(body).toHaveProperty("services");
+          expect(body.services).toBeInstanceOf(Array);
+        });
+
+        it("returns 401 when no auth header is provided", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(endpoint);
+
+          expect(result.status).toBe(401);
+        });
+      },
+    );
+  });
+
+  describe("/udp/v2/identity", () => {
+    const endpoint = "/udp/v2/identity";
+
+    describe.runIf(isRouteDeployed(udpConfig, "GET /v2/identity"))(
+      "GET",
+      () => {
+        it("returns 200 with a linkedServices array", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get<GetIdentitiesV2Response>(
+            endpoint,
+            {
+              headers: authHeader,
+            },
+          );
+
+          expect(result.status).toBe(200);
+
+          const body = result.body as GetIdentitiesV2Response;
+          expect(body).toHaveProperty("linkedServices");
+          expect(body.linkedServices).toBeInstanceOf(Array);
+
+          for (const service of body.linkedServices) {
+            expect(service).toHaveProperty("serviceName");
+            expect(typeof service.serviceName).toBe("string");
+
+            if (service.ttl !== undefined) {
+              expect(typeof service.ttl).toBe("number");
+            }
+          }
+        });
+
+        it("returns 401 when no auth header is provided", async ({
+          cloudfront,
+        }) => {
+          const result = await cloudfront.client.get(endpoint);
+
+          expect(result.status).toBe(401);
+        });
+      },
+    );
   });
 
   describe("/udp/v1/users/me", () => {

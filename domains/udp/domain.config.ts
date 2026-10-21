@@ -6,6 +6,7 @@ import {
   CreateUserRequestSchema,
   GetIdentitiesGWResponseSchema,
   GetIdentitiesResponseSchema,
+  GetIdentitiesV2ResponseSchema,
   GetNotificationPreferencesResponseSchema,
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
@@ -208,6 +209,18 @@ export const { config, route, routeContext } = domain({
             integrations: ["udpCreateNotificationPreferences"],
             body: UpdateNotificationPreferencesRequestSchema,
             response: UpdateNotificationPreferencesOutboundResponseSchema,
+          },
+        },
+      },
+    },
+    v2: {
+      "/identity": {
+        GET: {
+          public: {
+            name: "get-users-service-identities-v2",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetIdentities"],
+            response: GetIdentitiesV2ResponseSchema,
           },
         },
       },
