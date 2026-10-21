@@ -41,4 +41,22 @@ describe("FlexSmokeTestStack", () => {
       },
     });
   });
+
+  it("enforces signed code configuration on the smoke test Lambda", () => {
+    const codeSigningConfigs = template.findResources(
+      "AWS::Lambda::CodeSigningConfig",
+    );
+    const [cscLogicalId] = Object.keys(codeSigningConfigs);
+
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      CodeSigningConfigArn: {
+        "Fn::GetAtt": [cscLogicalId, "CodeSigningConfigArn"],
+      },
+      Code: {
+        S3Bucket: Match.anyValue(),
+        S3Key: "assets/SmokeTestFunction/d4e5f6a1b2c3/job-smoke.zip",
+        S3ObjectVersion: "ver-smoke-test-001",
+      },
+    });
+  });
 });

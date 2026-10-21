@@ -8,17 +8,18 @@ Main platform infrastructure for FLEX including API Gateway, Lambda constructs a
 
 Run these from the repository root:
 
-| Command                                | Description                          |
-| -------------------------------------- | ------------------------------------ |
-| `pnpm --filter @platform/flex checkov` | Run Checkov security scan            |
-| `pnpm --filter @platform/flex deploy`  | Deploy stack                         |
-| `pnpm --filter @platform/flex destroy` | Destroy stack                        |
-| `pnpm --filter @platform/flex dev`     | Watch and synthesise on file changes |
-| `pnpm --filter @platform/flex diff`    | Show deployment differences          |
-| `pnpm --filter @platform/flex hotswap` | Deploy with hotswap                  |
-| `pnpm --filter @platform/flex lint`    | Lint files                           |
-| `pnpm --filter @platform/flex synth`   | Synthesise CloudFormation            |
-| `pnpm --filter @platform/flex tsc`     | Run type check                       |
+| Command                                | Description                                                       |
+| -------------------------------------- | ----------------------------------------------------------------- |
+| `pnpm --filter @platform/flex checkov` | Run Checkov security scan                                         |
+| `pnpm --filter @platform/flex sign`    | Bundle and sign all Lambda artifacts (`signed-artifacts.manifest.json`) |
+| `pnpm --filter @platform/flex deploy`  | Deploy stack (requires `sign` to have run first, or use root `pnpm run deploy`) |
+| `pnpm --filter @platform/flex destroy` | Destroy stack                                                     |
+| `pnpm --filter @platform/flex diff`    | Show deployment differences                                       |
+| `pnpm --filter @platform/flex lint`    | Lint files                                                        |
+| `pnpm --filter @platform/flex synth`   | Synthesise CloudFormation                                         |
+| `pnpm --filter @platform/flex tsc`     | Run type check                                                    |
+
+> **Note on `hotswap` and `cdk watch`:** Because AWS Lambda Code Signing (`UntrustedArtifactOnDeployment.ENFORCE`) is enforced in all environments, `cdk deploy --hotswap` and `cdk watch` cannot be used to push unsigned Lambda code directly. Always deploy Lambda changes through `pnpm run deploy` (which runs `pnpm sign` before `cdk deploy`).
 
 > Alternatively, run `pnpm <command>` from within `platform/infra/flex/`.
 

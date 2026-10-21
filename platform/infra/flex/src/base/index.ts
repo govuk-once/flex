@@ -11,6 +11,7 @@ import { Construct } from "constructs";
 import Graph, { DirectedGraph } from "graphology";
 import { willCreateCycle } from "graphology-dag";
 
+import { applyCodeSigningExemption } from "../utils/applyCodeSigningExemption";
 import { createHash } from "../utils/create-hash";
 import { BaseStackProps, TagOptions } from "./types";
 
@@ -173,6 +174,11 @@ export abstract class BaseStack extends cdk.Stack {
           }),
         ]),
       },
+    );
+
+    applyCodeSigningExemption(
+      cr,
+      "CDK AwsCustomResource provider Lambda for cross-region SSM parameter reads is AWS-published CDK framework code, not team-authored code.",
     );
 
     return cr.getResponseField("Parameter.Value");

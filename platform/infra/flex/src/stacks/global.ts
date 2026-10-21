@@ -59,6 +59,7 @@ import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
+import { applyCodeSigningExemption } from "../utils/applyCodeSigningExemption";
 import { getPlatformEntry } from "../utils/getEntry";
 
 interface DomainNames {
@@ -570,6 +571,10 @@ export class FlexGlobalStack extends BaseStack {
       docsDeployment.handlerRole.node.findChild("DefaultPolicy"),
       "CKV_AWS_111",
       "CDK BucketDeployment grants cloudfront:CreateInvalidation on * by design; the construct does not support scoping.",
+    );
+    applyCodeSigningExemption(
+      docsDeployment,
+      "CDK BucketDeployment custom-resource provider Lambda is AWS-published CDK framework code inside aws-cdk-lib/aws-s3-deployment, not team-authored code.",
     );
   }
 

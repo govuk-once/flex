@@ -11,6 +11,7 @@ import { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { CfnPause } from "../constructs/infra/CfnPause";
 import { STAGE_KEYS } from "../ssm-keys";
+import { applyCodeSigningExemption } from "../utils/applyCodeSigningExemption";
 
 interface RouteBinding {
   readonly method: string;
@@ -50,7 +51,7 @@ export class FlexApiDeploymentStack extends BaseStack {
       ),
     };
 
-    return new AwsCustomResource(this, `${id}-DeployApi`, {
+    const resource = new AwsCustomResource(this, `${id}-DeployApi`, {
       onCreate: deployAction,
       onUpdate: deployAction,
       policy: AwsCustomResourcePolicy.fromStatements([
@@ -62,6 +63,13 @@ export class FlexApiDeploymentStack extends BaseStack {
         }),
       ]),
     });
+
+    applyCodeSigningExemption(
+      resource,
+      "CDK AwsCustomResource provider Lambda is AWS-published CDK framework code inside aws-cdk-lib/custom-resources, not team-authored code.",
+    );
+
+    return resource;
   }
 
   constructor(

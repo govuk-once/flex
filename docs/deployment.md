@@ -220,15 +220,9 @@ Preview changes before deploying:
 pnpm --filter @platform/flex diff
 ```
 
-### Hotswap Deployment
+### Hotswap Deployment (Not Supported for Signed Lambdas)
 
-For faster iteration when only Lambda code has changed:
-
-```bash
-pnpm --filter @platform/flex hotswap
-```
-
-Hotswap updates Lambda code directly without a full CloudFormation deployment. Use only for code changes, do not use for infrastructure changes.
+Because AWS Lambda Code Signing (`UntrustedArtifactOnDeployment.ENFORCE`) is enforced across all environments (including personal and `development` stages), `cdk deploy --hotswap` and `cdk watch` cannot be used for Lambda code updates (as hotswap pushes unsigned zip bundles directly to Lambda, which AWS rejects). Always use `pnpm run deploy` (or `domain=<name> pnpm run deploy`), which runs `pnpm sign` incrementally before deploying.
 
 ---
 

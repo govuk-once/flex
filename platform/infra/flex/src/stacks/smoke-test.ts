@@ -97,6 +97,18 @@ export class FlexSmokeTestStack extends BaseStack {
           ],
         }),
       );
+
+      // Allows the development smoke test to attempt an unsigned UpdateFunctionCode probe
+      // against itself and verify AWS Lambda rejects it with CodeVerificationFailedException.
+      role.addToPolicy(
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ["lambda:UpdateFunctionCode"],
+          resources: [
+            `arn:aws:lambda:eu-west-2:${this.account}:function:${stage}-FlexSmokeTest-SmokeTestFunction*`,
+          ],
+        }),
+      );
     }
 
     const smokeTest = new FlexPublicFunction(this, "SmokeTestFunction", {

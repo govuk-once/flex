@@ -13,6 +13,7 @@ import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { Queue, QueueEncryption } from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
+import { applyCodeSigningExemption } from "../../utils/applyCodeSigningExemption";
 import { createAboveZeroAlarm } from "./above-zero-alarm";
 import { RELAY_HANDLER_CODE } from "./relay-handler";
 
@@ -64,6 +65,10 @@ export function createAlarmRelay(
     code: Code.fromInline(RELAY_HANDLER_CODE),
     onFailure: new SqsDestination(failureQueue),
   });
+  applyCodeSigningExemption(
+    relayFn,
+    "US-East-1 CloudFront alarm relay uses static inline CloudFormation ZipFile code because the signed artifacts S3 bucket is regional to eu-west-2.",
+  );
 
   relayFn.addToRolePolicy(
     new PolicyStatement({

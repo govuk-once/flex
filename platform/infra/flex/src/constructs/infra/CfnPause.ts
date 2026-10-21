@@ -3,6 +3,8 @@ import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Provider } from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 
+import { applyCodeSigningExemption } from "../../utils/applyCodeSigningExemption";
+
 const createTimeoutFn = (seconds: number) => `
 exports.handler = async (event) => {
   if (event.RequestType === "Delete") {
@@ -34,5 +36,10 @@ export class CfnPause extends Construct {
       serviceToken: provider.serviceToken,
       properties: { timestamp: Date.now().toString() },
     });
+
+    applyCodeSigningExemption(
+      this,
+      "CfnPause uses CDK custom-resources Provider and an inline sleep handler for deployment-time API Gateway rate-limit spacing; not team application code.",
+    );
   }
 }
