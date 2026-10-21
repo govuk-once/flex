@@ -18,14 +18,13 @@ export interface Probe {
   /** Stable key used in metric dimensions and alarm names. */
   readonly journey: string;
   readonly path: string;
-  /** Mirrors the `environments` list of the domain that serves the route. */
   readonly environments: readonly Environment[];
 }
 
 /**
  * One request per gateway dependency that a signed in test user can make
- * without any linked service. DVLA needs a linked licence and UNS a
- * registered push id, so neither is probed yet.
+ * without any linked service. DVLA needs a linked licence and UNS needs a
+ * registered push id, so those are left out for now.
  */
 export const PROBES: readonly Probe[] = [
   {
