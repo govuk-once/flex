@@ -1,5 +1,5 @@
 {
-  "name": "@platform/jwks-kms",
+  "name": "@platform/dvla-jwks-kms",
   "version": "1.0.0",
   "type": "module",
   "private": true,
