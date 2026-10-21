@@ -1220,6 +1220,9 @@ importers:
       '@platform/credential-monitor':
         specifier: workspace:*
         version: link:../../domains/credential-monitor
+      '@platform/smoke-test':
+        specifier: workspace:*
+        version: link:../../smoke-test
       aws-cdk:
         specifier: 2.1132.0
         version: 2.1132.0

@@ -1,9 +1,16 @@
 import { Environment, getEnvConfig } from "@flex/utils";
+import {
+  DIMENSIONS,
+  METRIC_NAMESPACE,
+  METRICS,
+  probesForEnvironment,
+} from "@platform/smoke-test/probes";
 import { Duration } from "aws-cdk-lib";
 import {
   Alarm,
   ComparisonOperator,
   Metric,
+  Stats,
   TreatMissingData,
 } from "aws-cdk-lib/aws-cloudwatch";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
@@ -23,8 +30,13 @@ import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, PLATFORM_KEYS } from "../ssm-keys";
 import { getPlatformSmokeTestEntry } from "../utils/getEntry";
 import { putMetricDataStatement } from "../utils/put-metric-data-statement";
+import { toPascalCase } from "../utils/routes";
 
 const { env, stage } = getEnvConfig();
+
+const PROBE_PERIOD = Duration.minutes(1);
+const CONSECUTIVE_FAILURES = 3;
+const RUNBOOK = "docs/runbooks/verify-environment-health.md";
 
 export class FlexSmokeTestStack extends BaseStack {
   constructor(scope: Construct, id: string) {
@@ -84,7 +96,7 @@ export class FlexSmokeTestStack extends BaseStack {
       }),
     );
 
-    role.addToPolicy(putMetricDataStatement("Flex/SmokeTest"));
+    role.addToPolicy(putMetricDataStatement(METRIC_NAMESPACE));
 
     if (env === Environment.development) {
       // getStubTokenGenerator reads the e2e private JWK to self-sign tokens
@@ -110,27 +122,57 @@ export class FlexSmokeTestStack extends BaseStack {
     });
 
     const rule = new Rule(this, "SmokeTestSchedule", {
-      schedule: Schedule.rate(Duration.minutes(5)),
+      schedule: Schedule.rate(PROBE_PERIOD),
     });
 
     rule.addTarget(new LambdaFunction(smokeTest.function));
 
-    new Alarm(this, "SmokeTestAlarm", {
-      alarmName: `${stage}-smoke-test-no-success`,
-      alarmDescription:
-        "Smoke test has not reported a success in the last 15 minutes",
-      metric: new Metric({
-        namespace: "Flex/SmokeTest",
-        metricName: "SmokeTestSuccess",
-        dimensionsMap: { Environment: env },
-        period: Duration.minutes(15),
-        statistic: "Sum",
-      }),
-      threshold: 1,
-      evaluationPeriods: 1,
-      comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
-      treatMissingData: TreatMissingData.BREACHING,
-      actionsEnabled: true,
+    // One alarm per probed journey. A run that does not report counts as a
+    // failure, because a probe that cannot run tells us nothing about the
+    // platform and that is itself worth a human looking.
+    probesForEnvironment(env).forEach(({ journey }) => {
+      const alarm = new Alarm(this, `SmokeTest${toPascalCase(journey)}Alarm`, {
+        alarmName: `${stage}-smoke-test-${journey}-no-success`,
+        alarmDescription:
+          `Critical: SERVICE UNAVAILABLE: the ${journey} smoke test has failed ${String(CONSECUTIVE_FAILURES)} times in a row ` +
+          `(one run per minute). Catches an outage when traffic is too low for the journey alarms. Runbook: ${RUNBOOK}`,
+        metric: new Metric({
+          namespace: METRIC_NAMESPACE,
+          metricName: METRICS.success,
+          dimensionsMap: {
+            [DIMENSIONS.environment]: env,
+            [DIMENSIONS.journey]: journey,
+          },
+          period: PROBE_PERIOD,
+          statistic: Stats.SUM,
+        }),
+        threshold: 1,
+        evaluationPeriods: CONSECUTIVE_FAILURES,
+        datapointsToAlarm: CONSECUTIVE_FAILURES,
+        comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD,
+        treatMissingData: TreatMissingData.BREACHING,
+      });
+      alarm.addAlarmAction(criticalAction);
     });
+
+    const authRejected = new Alarm(this, "SmokeTestAuthRejectedAlarm", {
+      alarmName: `${stage}-smoke-test-auth-rejected`,
+      alarmDescription:
+        `Critical: AUTH FAILURE: the smoke test's valid token has been refused with a 401 or 403 ${String(CONSECUTIVE_FAILURES)} times in a row. ` +
+        `Check Cognito, the JWKS endpoint and the authorizer logs. Runbook: ${RUNBOOK}`,
+      metric: new Metric({
+        namespace: METRIC_NAMESPACE,
+        metricName: METRICS.authRejected,
+        dimensionsMap: { [DIMENSIONS.environment]: env },
+        period: PROBE_PERIOD,
+        statistic: Stats.SUM,
+      }),
+      threshold: 0,
+      evaluationPeriods: CONSECUTIVE_FAILURES,
+      datapointsToAlarm: CONSECUTIVE_FAILURES,
+      comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+    });
+    authRejected.addAlarmAction(criticalAction);
   }
 }
