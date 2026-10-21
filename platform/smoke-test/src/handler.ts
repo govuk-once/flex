@@ -3,6 +3,7 @@ import {
   type MetricDatum,
   PutMetricDataCommand,
 } from "@aws-sdk/client-cloudwatch";
+import { EnvironmentSchema } from "@flex/utils";
 import { z } from "zod";
 
 import { type Credentials, resolveCredentials } from "./credentials";
@@ -26,8 +27,6 @@ interface ProbeResult {
   readonly authRejected: boolean;
 }
 
-// Credentials survive across warm invocations so a run every minute does not
-// sign in to One Login every minute.
 let cachedCredentials: { credentials: Credentials; expiresAt: number } | null =
   null;
 
@@ -98,8 +97,6 @@ async function runProbes(env: string, probes: readonly Probe[]) {
       probes.map((probe) => runProbe(probe, credentials)),
     );
   } catch (error) {
-    // Without credentials no journey can be exercised, so every probe fails.
-    // The run itself still reports, which is what keeps the alarms honest.
     cachedCredentials = null;
     console.error("Smoke test could not obtain credentials:", error);
     return probes.map((probe) => ({
@@ -134,8 +131,7 @@ function toMetricData(env: string, results: readonly ProbeResult[]) {
 }
 
 export async function handler(): Promise<void> {
-  const env = process.env.FLEX_ENVIRONMENT;
-  if (!env) throw new Error("FLEX_ENVIRONMENT is not set");
+  const env = EnvironmentSchema.parse(process.env.FLEX_ENVIRONMENT);
 
   const results = await runProbes(env, probesForEnvironment(env));
 

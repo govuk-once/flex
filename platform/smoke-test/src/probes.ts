@@ -1,9 +1,11 @@
+import type { Environment } from "@flex/utils";
+
 export const METRIC_NAMESPACE = "Flex/SmokeTest";
 
 export const METRICS = {
-  /** 1 when the probe completed its journey, 0 when it did not. One datum per probe. */
+  /** Name of the per probe metric: 1 is published when the probe completed, 0 otherwise. */
   success: "SmokeTestSuccess",
-  /** Number of probes in the run that were refused with a 401 or 403. */
+  /** Name of the per run metric counting probes that failed with 401 or 403. */
   authRejected: "SmokeTestAuthRejected",
 } as const;
 
@@ -17,7 +19,7 @@ export interface Probe {
   readonly journey: string;
   readonly path: string;
   /** Mirrors the `environments` list of the domain that serves the route. */
-  readonly environments: readonly string[];
+  readonly environments: readonly Environment[];
 }
 
 /**
@@ -38,6 +40,6 @@ export const PROBES: readonly Probe[] = [
   },
 ];
 
-export function probesForEnvironment(env: string): readonly Probe[] {
+export function probesForEnvironment(env: Environment): readonly Probe[] {
   return PROBES.filter((probe) => probe.environments.includes(env));
 }

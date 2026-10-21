@@ -117,7 +117,6 @@ export class FlexSmokeTestStack extends BaseStack {
       role,
       criticalAction,
       warningAction,
-      // smoke test function already covers lambda health, so we don't need to create additional alarms for it
       enableDefaultAlarms: false,
     });
 
@@ -127,9 +126,6 @@ export class FlexSmokeTestStack extends BaseStack {
 
     rule.addTarget(new LambdaFunction(smokeTest.function));
 
-    // One alarm per probed journey. A run that does not report counts as a
-    // failure, because a probe that cannot run tells us nothing about the
-    // platform and that is itself worth a human looking.
     probesForEnvironment(env).forEach(({ journey }) => {
       const alarm = new Alarm(this, `SmokeTest${toPascalCase(journey)}Alarm`, {
         alarmName: `${stage}-smoke-test-${journey}-no-success`,

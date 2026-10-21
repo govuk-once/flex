@@ -481,7 +481,7 @@ export class FlexGlobalStack extends BaseStack {
       distribution,
       criticalAction,
       warningAction,
-      // Ephemeral and development stages have no steady traffic to learn from
+      // Ephemeral and development stages don't have enough traffic for this to work
       trafficCliff: env !== Environment.development,
     });
 
