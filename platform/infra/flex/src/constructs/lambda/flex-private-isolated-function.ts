@@ -7,6 +7,7 @@ import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
 import { resolveEncryptionKey } from "../../utils/lambda";
+import { getOtelTracingProps } from "../../utils/otel-tracing";
 import { toKebabCase } from "../../utils/routes";
 import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
@@ -39,15 +40,21 @@ export class FlexPrivateIsolatedFunction extends Construct {
     });
 
     const encryptionKey = resolveEncryptionKey(this);
+    const otelTracing = getOtelTracingProps(this);
 
     this.function = new NodejsFunction(this, "Function", {
       runtime: Runtime.NODEJS_24_X,
       tracing: Tracing.ACTIVE,
       timeout: Duration.seconds(10),
       ...functionProps,
+      ...(otelTracing.layers && {
+        tracing: Tracing.ACTIVE,
+        layers: [...(functionProps.layers ?? []), ...otelTracing.layers],
+      }),
       environmentEncryption: encryptionKey,
       environment: {
         ...functionProps.environment,
+        ...otelTracing.environment,
         FLEX_ENVIRONMENT: stage,
       },
       logGroup,
