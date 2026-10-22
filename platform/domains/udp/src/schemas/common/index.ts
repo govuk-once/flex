@@ -16,3 +16,8 @@ export const topicsSchema = z.object({
     selectedTopics: selectedTopicsSchema,
   }),
 });
+
+export const searchesSchema = z.object({
+  term: z.string().min(1),
+  timestamp: z.string().min(1),
+});

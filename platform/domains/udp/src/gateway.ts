@@ -206,5 +206,41 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data.groups);
     },
+
+    "POST /v1/searches": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.post("/v1/searches", {
+        schema: upsertTopicsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+          "requested-at": new Date().toISOString(),
+        },
+        body: { data: body },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
+    "GET /v1/searches": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/searches", {
+        schema: topicsResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
   },
 });

@@ -13,6 +13,7 @@ import {
   inboundUpdateSelectedTopicsRequestSchema,
 } from "./src/schemas/domain/topics";
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
+import {domainSearchesSchema, inboundUpdateSelectedSearchesRequestSchema} from "./src/schemas/domain/searches";
 
 export const { config, createHandler } = defineGateway({
   name: "udp",
@@ -134,6 +135,27 @@ export const { config, createHandler } = defineGateway({
       },
       body: DomainGroupsSchema,
       response: DomainGroupsSchema,
+    },
+    "GET /v1/activity/searches": {
+      name: "getSearches",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      response: domainSearchesSchema,
+    },
+    "POST /v1/activity/searches": {
+      name: "upsertSearches",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
+        },
+      },
+      body: inboundUpdateSelectedSearchesRequestSchema,
+      response: domainSearchesSchema,
     },
   },
 });

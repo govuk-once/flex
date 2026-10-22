@@ -41,7 +41,7 @@ importers:
         version: 0.28.1
       eslint:
         specifier: 10.7.0
-        version: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
+        version: 10.7.0(jiti@2.7.0)(supports-color@7.2.0)
       nx:
         specifier: 23.1.0
         version: 23.1.0
@@ -238,6 +238,61 @@ importers:
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
+      '@types/aws-lambda':
+        specifier: 8.10.162
+        version: 8.10.162
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
+      eslint:
+        specifier: 10.7.0
+        version: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
+      nock:
+        specifier: 14.0.16
+        version: 14.0.16
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+
+  domains/searches:
+    dependencies:
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/udp-domain':
+        specifier: workspace:*
+        version: link:../udp
+      '@flex/uns-domain':
+        specifier: workspace:*
+        version: link:../uns
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
+      http-status:
+        specifier: 2.1.0
+        version: 2.1.0
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../libs/testing
+      '@middy/secrets-manager':
+        specifier: 7.7.0
+        version: 7.7.0(@aws-sdk/client-secrets-manager@3.1091.0)
+      '@middy/ssm':
+        specifier: 7.7.0
+        version: 7.7.0(@aws-sdk/client-ssm@3.1091.0)
       '@types/aws-lambda':
         specifier: 8.10.162
         version: 8.10.162
@@ -8233,7 +8288,7 @@ snapshots:
       '@aws-sdk/credential-provider-process': 3.972.59
       '@aws-sdk/credential-provider-sso': 3.973.3
       '@aws-sdk/credential-provider-web-identity': 3.972.65
-      '@aws-sdk/types': 3.974.2
+      '@aws-sdk/types': 3.974.4
       '@smithy/core': 3.33.2
       '@smithy/credential-provider-imds': 4.4.11
       '@smithy/types': 4.17.2
@@ -8929,6 +8984,11 @@ snapshots:
       eslint: 10.5.0(jiti@2.7.0)(supports-color@8.1.1)
       eslint-visitor-keys: 3.4.3
 
+  '@eslint-community/eslint-utils@4.9.1(eslint@10.7.0(jiti@2.7.0)(supports-color@7.2.0))':
+    dependencies:
+      eslint: 10.7.0(jiti@2.7.0)(supports-color@7.2.0)
+      eslint-visitor-keys: 3.4.3
+
   '@eslint-community/eslint-utils@4.9.1(eslint@10.7.0(jiti@2.7.0)(supports-color@8.1.1))':
     dependencies:
       eslint: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
@@ -9019,6 +9079,14 @@ snapshots:
       eslint: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
       ts-pattern: 5.9.0
       typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@eslint/config-array@0.23.5(supports-color@7.2.0)':
+    dependencies:
+      '@eslint/object-schema': 3.0.5
+      debug: 4.4.3(supports-color@7.2.0)
+      minimatch: 10.2.5
     transitivePeerDependencies:
       - supports-color
 
@@ -11866,6 +11934,43 @@ snapshots:
       ajv: 6.15.0
       cross-spawn: 7.0.6
       debug: 4.4.3(supports-color@8.1.1)
+      escape-string-regexp: 4.0.0
+      eslint-scope: 9.1.2
+      eslint-visitor-keys: 5.0.1
+      espree: 11.2.0
+      esquery: 1.7.0
+      esutils: 2.0.3
+      fast-deep-equal: 3.1.3
+      file-entry-cache: 8.0.0
+      find-up: 5.0.0
+      glob-parent: 6.0.2
+      ignore: 5.3.2
+      imurmurhash: 0.1.4
+      is-glob: 4.0.3
+      json-stable-stringify-without-jsonify: 1.0.1
+      minimatch: 10.2.5
+      natural-compare: 1.4.0
+      optionator: 0.9.4
+    optionalDependencies:
+      jiti: 2.7.0
+    transitivePeerDependencies:
+      - supports-color
+
+  eslint@10.7.0(jiti@2.7.0)(supports-color@7.2.0):
+    dependencies:
+      '@eslint-community/eslint-utils': 4.9.1(eslint@10.7.0(jiti@2.7.0)(supports-color@7.2.0))
+      '@eslint-community/regexpp': 4.12.2
+      '@eslint/config-array': 0.23.5(supports-color@7.2.0)
+      '@eslint/config-helpers': 0.6.0
+      '@eslint/core': 1.2.1
+      '@eslint/plugin-kit': 0.7.2
+      '@humanfs/node': 0.16.8
+      '@humanwhocodes/module-importer': 1.0.1
+      '@humanwhocodes/retry': 0.4.3
+      '@types/estree': 1.0.9
+      ajv: 6.15.0
+      cross-spawn: 7.0.6
+      debug: 4.4.3(supports-color@7.2.0)
       escape-string-regexp: 4.0.0
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
