@@ -7,7 +7,7 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
 - **Deploying this change on its own changes nothing.** With `FLEX_OTEL_TRACING` unset, which is how every pipeline and developer deploys today, no layer, variable or tracing setting is added. Everything below about cost and risk applies only once the switch is set, which is the measurement the spike is for.
 - **What the conversion actually is.** FLEX has no application-level X-Ray SDK, so there's nothing to rip out. The conversion adds the AWS Lambda Layer for OpenTelemetry to the three Flex Lambda constructs. In-process instrumentation becomes OpenTelemetry, and spans are still delivered to X-Ray through the Lambda X-Ray daemon, so `Tracing.ACTIVE` stays on (and is forced on while the switch is on). Moving the trace backend off X-Ray would be a separate conversion.
 - **Cost, one-off:**
-  - The slice is 4 files and 90 lines added, behind the switch `FLEX_OTEL_TRACING` (`full` or `lite`; unset or empty is off).
+  - The slice is 2 files and 94 lines added (a CDK Aspect and its registration in `app.ts`; the Lambda constructs are unchanged), behind the switch `FLEX_OTEL_TRACING` (`full` or `lite`; unset or empty is off).
   - The three constructs are used at 9 call sites, so the slice reaches every domain route, service gateway and the API authorizer. It also reaches the DVLA secret rotation, credential monitor and smoke test functions in persistent environments.
   - Three kinds of rollout work remain:
     - setting the switch in CI;
@@ -57,7 +57,7 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
 
 | Touchpoint | Location | Count | In slice | Change |
 |---|---|---|---|---|
-| Lambda active tracing (`Tracing.ACTIVE`) | `platform/infra/flex/src/constructs/lambda/flex-public-function.ts`, `flex-private-egress-function.ts`, `flex-private-isolated-function.ts` | 3 constructs | Yes | Layer and environment added through the switch; active tracing kept, and forced on while the switch is on |
+| Lambda active tracing (`Tracing.ACTIVE`) | `platform/infra/flex/src/constructs/lambda/flex-public-function.ts`, `flex-private-egress-function.ts`, `flex-private-isolated-function.ts` | 3 constructs | Yes | None in the constructs. While the switch is on, the `EnableOtelTracing` Aspect adds the layer and environment to their functions and forces active tracing on |
 | Call sites of those constructs | `stacks/domain.ts:246`, `:248`, `:255`; `utils/create-service-gateway.ts:105`, `:110`; `stacks/platform.ts:112` (authorizer); `stacks/core/dvla-secret-rotation.ts:44`; `stacks/credential-monitor.ts:78`; `stacks/smoke-test.ts:102` | 9 | Yes, through the constructs | None at the call sites. The last three stacks exist only in persistent environments (`app.ts:64`, `:98`) | <!-- pragma: allowlist secret -->
 | API Gateway tracing (`tracingEnabled: true`) | `platform/infra/flex/src/stacks/platform.ts:151`, `:306` | 2 | No | None. Whether OpenTelemetry spans join API Gateway segments in a deployed trace is to be verified |
 | X-Ray SDK call sites | Whole repo | 0 | n/a | None to remove |
@@ -67,7 +67,7 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
 | Lambda functions not built from the Flex constructs | `constructs/infra/CfnPause.ts:22` and the CDK provider function it creates, `stacks/platform.ts:56` (JWKS stub), `constructs/alarms/alarm-relay.ts:65` | 4 | No | Out of scope. `constructs/cloudfront/flex-cloudfront-function.ts:59` is a CloudFront Function, not a Lambda |
 | Outbound HTTP (`flexFetch`, `typedFetch`, global `fetch`) | `libs/sdk/src/fetch/` | 1 mechanism | Yes | Traced by the layer's `undici` instrumentation; each retry (up to 6 attempts, `fetch.ts:69`) is its own span |
 | AWS SDK v3 client constructions | `domains/udp/src/services/linkingId.ts:18`; `libs/service-gateway/src/client/adapter/dynamo.ts:45`, `:50`; `libs/service-gateway/src/client/adapter/dynamodb/client.ts:40`, `:45`; `libs/utils/src/infra/index.ts:50`; `platform/domains/credential-monitor/src/aws/` (4); `platform/domains/dvla-secret-rotation/src/secrets-manager-client.ts:9`; `platform/infra/flex/src/constructs/alarms/relay-handler.ts:3`; `platform/smoke-test/src/handler.ts:8` | 13, of which 11 run in Flex functions | Yes, where the function is a Flex construct. `libs/utils/src/infra/index.ts:50` runs only in e2e test setup, and `relay-handler.ts:3` is the inline alarm relay, which is not a Flex construct | Traced by the layer's `aws-sdk` instrumentation, on by default. Secrets Manager and SSM reads through Powertools use SDK v3 clients, so they should be traced too (`inferred`) | <!-- pragma: allowlist secret -->
-| Runtime configuration | `platform/infra/flex/src/utils/otel-tracing.ts` | 1 layer, 4 variables | Yes | `AWS_LAMBDA_EXEC_WRAPPER`, `OTEL_AWS_APPLICATION_SIGNALS_ENABLED`, `OTEL_NODE_ENABLED_INSTRUMENTATIONS`, `OTEL_AWS_LAMBDA_FAST_START` |
+| Runtime configuration | `platform/infra/flex/src/aspects/otel-tracing.ts`, registered in `src/app.ts` | 1 layer, 4 variables | Yes | `AWS_LAMBDA_EXEC_WRAPPER`, `OTEL_AWS_APPLICATION_SIGNALS_ENABLED`, `OTEL_NODE_ENABLED_INSTRUMENTATIONS`, `OTEL_AWS_LAMBDA_FAST_START` |
 | Trace ID in logs (`xray_trace_id`) | `libs/logging/src/formatter.ts:44` | 1 | No | None. `_X_AMZN_TRACE_ID` is still set under active tracing |
 | VPC endpoints | `platform/infra/flex/src/stacks/core/endpoints.ts` | 6, none for X-Ray | No | None yet; delivery from isolated functions is an open question |
 | Bundling | `NodejsFunction` defaults (CommonJS, x86_64) | 3 constructs | No | None |
@@ -117,11 +117,11 @@ A personal stage doesn't build the Core, smoke-test or credential-monitor stacks
 | Branch | `PLAT-874-xray-to-otel-conversion`, from `origin/main` at `604331fe` |
 | Commit | not committed yet |
 | Switch | `FLEX_OTEL_TRACING` at synth time. Unset or empty: off. `full`: full SDK, with `OTEL_AWS_LAMBDA_FAST_START=false` set explicitly so a domain variable can't switch it to lite. `lite`: `OTEL_AWS_LAMBDA_FAST_START=true`. Any other non-empty value fails the synth |
-| Diff stat | 4 files, 90 lines added: `platform/infra/flex/src/utils/otel-tracing.ts` (new, 69 lines) and 7 lines in each of the three Lambda constructs |
+| Diff stat | 2 files, 94 lines added: `platform/infra/flex/src/aspects/otel-tracing.ts` (new, 92 lines), an Aspect that visits `FlexPublicFunction`, `FlexPrivateEgressFunction` and `FlexPrivateIsolatedFunction`, and 2 lines in `src/app.ts` to register it. The constructs are unchanged, which keeps SonarCloud's duplicated-code gate passing |
 | Layer | `arn:aws:lambda:eu-west-2:615299751070:layer:AWSOpenTelemetryDistroJs:16` (release v0.13.0, 22 September 2026), built from the stack's region |
 | Environment set | `AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-instrument`, `OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false`, `OTEL_NODE_ENABLED_INSTRUMENTATIONS=aws-sdk,undici`, `OTEL_AWS_LAMBDA_FAST_START` (`false` or `true`). These override a domain's own values for the same keys; other `OTEL_*` variables a domain sets still apply |
-| Tracing | While the switch is on, `tracing: Tracing.ACTIVE` is applied after the caller's props, so a caller can't disable the daemon the layer exports to. With the switch off, a caller's own `tracing` is kept as before |
-| Default build unchanged | `measured` for the public construct and the properties checked; `traced` for the other two. A synth of two `FlexPublicFunction`s (one with domain variables, one passing `tracing: DISABLED`) for each switch value: unset and empty print no `Layers`, only the domain variables and `FLEX_ENVIRONMENT`, and the caller's `TracingConfig`; `full` and `lite` add the layer and variables and set `TracingConfig: Active` on both; `bogus` fails with the expected error. The egress and isolated constructs use the same code, read but not synthesised. No full template comparison or deployed rollback has been done (see "How It Was Tested", step 8) |
+| Tracing | While the switch is on, a function whose caller disabled tracing gets `TracingConfig: Active` and the same `xray:PutTraceSegments` and `xray:PutTelemetryRecords` statement CDK adds for active tracing, so a caller can't disable the daemon the layer exports to. With the switch off, a caller's own `tracing` is kept as before |
+| Default build unchanged | `measured` for the public construct and the properties checked; `traced` for the other two. A synth of two `FlexPublicFunction`s (one with domain variables, one passing `tracing: DISABLED`) for each switch value: unset and empty print no `Layers`, only the domain variables and `FLEX_ENVIRONMENT`, and the caller's `TracingConfig`; `full` and `lite` add the layer and variables and set `TracingConfig: Active` on both, and both roles have the X-Ray statement; `bogus` fails with the expected error. The egress and isolated constructs go through the same Aspect branch, read but not synthesised. No full template comparison or deployed rollback has been done (see "How It Was Tested", step 8) |
 | Gates | `@platform/flex` lint and `tsc` exit 0, tests 14 files and 72 passing |
 
 To try it on a personal stage, follow "How to Test It Deployed" below: deploy with the switch unset (`pnpm run deploy`) and take the baseline, then `FLEX_OTEL_TRACING=full pnpm run deploy` and measure again, then the same with `lite`.
@@ -388,13 +388,15 @@ Each line should report 7 runs and status 200. The original results were 79, 183
 cd "$REPO/platform/infra/flex"
 echo 'export const handler = async () => ({ statusCode: 200 });' > otel-synth-entry.ts
 cat > otel-synth-check.ts <<'EOF'
-import { App, Stack } from "aws-cdk-lib";
+import { App, Aspects, Stack } from "aws-cdk-lib";
 import { Template } from "aws-cdk-lib/assertions";
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
 import { Tracing } from "aws-cdk-lib/aws-lambda";
 import { Topic } from "aws-cdk-lib/aws-sns";
+import { EnableOtelTracing } from "./src/aspects/otel-tracing";
 import { FlexPublicFunction } from "./src/constructs/lambda/flex-public-function";
 const app = new App();
+Aspects.of(app).add(new EnableOtelTracing());
 const stack = new Stack(app, "Check", { env: { account: "123456789012", region: "eu-west-2" } });
 const action = new SnsAction(new Topic(stack, "T"));
 const entry = `${process.cwd()}/otel-synth-entry.ts`;
@@ -463,7 +465,7 @@ It uses one personal stage in the development account, five deploys (switch unse
 
 - **Isolated** (`FlexPrivateIsolatedFunction`): the `example`, `udp`, `uns` and `travel` domain routes, and the UDP and UNS service gateways (all `access: "isolated"`).
 - **Egress** (`FlexPrivateEgressFunction`): the API authorizer (`stacks/platform.ts:112`), the `dvla` domain routes and the travel and DVLA service gateways (`access: "private"`).
-- **Public** (`FlexPublicFunction`): no domain route uses `access: "public"` today, and the credential monitor only exists in persistent environments. **The public construct is not exercised here**; its behaviour rests on the synth check and the shared code path.
+- **Public** (`FlexPublicFunction`): no domain route uses `access: "public"` today, and the credential monitor only exists in persistent environments. **The public construct is not exercised here**; its behaviour rests on the synth check and the shared Aspect branch.
 
 **0. Before you start.**
 
@@ -650,7 +652,7 @@ Estimates are the figures FLEX gave this approach (option B1) in its options ass
 | One-off | Cold start testing | 1 day | Local figures only; deployed measurement needed for development and staging separately | `measured` (local) |
 | One-off | CI switch per environment | not in the estimate | Not started | `traced` (workflows) |
 | One-off | Data classification of span attributes | not in the estimate | Not started | |
-| One-off | Change size | n/a | 4 files, 90 lines added, 0 removed | `measured` |
+| One-off | Change size | n/a | 2 files, 94 lines added, 0 removed | `measured` |
 | One-off | Iterations | n/a | Harness: 8 failed runs (module resolution, module type, invocation path, argument order, lite wrapper path) before valid results. Slice: 1 lint failure (number in a template literal), then 2 review fixes | `reported` (failure logs not kept) |
 | One-off | Effort | 7 to 11 days (B1 total) | AI-assisted session on 21 October 2026: branch 14:38, slice verified locally 14:57, review fixes applied by 15:33, plus layer research before and the documents after. Elapsed time only; active effort per phase was not recorded, and this is not a team estimate | `reported` |
 | Recurring runtime | Start-up overhead | Unmeasured | +86 ms (`lite`), +104 ms (`full`) locally; Lambda figure outstanding | `measured` (local) |
@@ -703,7 +705,7 @@ The constructs are shared, so the slice already covers every Flex function and t
 | How deep are traces with auto-instrumentation alone, against the ticket's "about 15 levels"? | Trace one gateway call end to end; count levels | FLEX with Cloud Platform |
 | What does X-Ray cost with the extra spans, including retries? | Trace volumes from the deployed stage and the X-Ray pricing page, cited with its date | FLEX |
 | Which span attributes may go to X-Ray (`url.full`, `url.path`, `url.query`, `aws.auth.account.access_key`)? | Check against `docs/data-classification-and-encryption.md`; test `AWS_REDACT_SPAN_ATTRIBUTES` in `full` mode | FLEX with security |
-| Should outbound calls carry trace headers, and which (`X-Amzn-Trace-Id`, `traceparent`, `baggage`)? | Decide whether third parties may receive them; if not, set `OTEL_PROPAGATORS` (for example to `xray`, or `none`) in `otel-tracing.ts` | Security |
+| Should outbound calls carry trace headers, and which (`X-Amzn-Trace-Id`, `traceparent`, `baggage`)? | Decide whether third parties may receive them; if not, set `OTEL_PROPAGATORS` (for example to `xray`, or `none`) in `aspects/otel-tracing.ts` | Security |
 | Does Lambda code signing (PLAT-713, `feat/PLAT-713-lambda-code-signing`, not merged) accept the AWS-published layer? | If code signing is enforced on the Flex constructs, an attached layer must be signed by an allowed profile; check the branch's `UntrustedArtifactOnDeployment` setting and test with both enabled. `inferred` from AWS's documented behaviour; the branch has not been read. Whichever change merges second handles it | FLEX with Cloud Platform |
 | How should the switch be set per environment in CI? | Agree whether it becomes an environment setting in `_build-deploy.yml` or a code default | FLEX |
 | Is Application Signals wanted? | It is off in the slice; enabling it needs `CfnDiscovery`, the managed policy and a permissions boundary review | Cloud Platform |
