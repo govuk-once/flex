@@ -10,7 +10,7 @@ import {
 
 export const { config, createHandler } = defineGateway({
   name: "travel",
-  environments: ["development", "staging"],
+  environments: ["development", "staging", "production"],
   // DynamoDB and STS are reached over the public AWS endpoints via NAT, which
   // isolated subnets cannot route to.
   access: "private",
