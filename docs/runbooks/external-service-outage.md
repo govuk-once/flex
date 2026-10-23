@@ -28,13 +28,14 @@ Do not assume; confirm. Establish that there is a real, current, dependency-rela
 
 1. **Read the alarm that brought you here.** FLEX alarms are routed by severity to two SNS topics and relayed into Slack by Amazon Q. The alarm name and description tell you the service and the threshold breached. The alarms most associated with a downstream outage are:
 
-   | Alarm                               | Threshold                               | What it points at                                                                               |
-   | ----------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------- |
-   | API Gateway integration p95 latency | backend-only latency high               | **The backend is slow** while API Gateway itself is fine; strongest signal of a slow dependency |
-   | Lambda error rate                   | > 1% over 5 min (critical)              | Calls are throwing, consistent with exhausted retries against a failing dependency              |
-   | Lambda p99 duration                 | > 80% of the function timeout (warning) | Requests are running long, consistent with a dependency timing out                              |
-   | API Gateway p95 latency             | > 3000ms (warning)                      | End-to-end slowness; compare against integration latency to locate the cause                    |
-   | API Gateway 5XX rate                | > 1% (critical)                         | Requests failing outright                                                                       |
+   | Alarm                               | Threshold                                                  | What it points at                                                                               |
+   | ----------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+   | Journey fast burn                   | > 7.2% failed (1.44% for writes) over 1h and 5m (critical) | **A journey is failing**; `DRIVING DEGRADED` points at DVLA, `READS`/`WRITES` at UDP, `NOTIFICATIONS` at UNS |
+   | API Gateway integration p95 latency | backend-only latency high                                  | **The backend is slow** while API Gateway itself is fine; strongest signal of a slow dependency |
+   | Lambda error rate                   | > 1% over 5 min (warning)                                  | Calls are throwing, consistent with exhausted retries against a failing dependency              |
+   | Lambda p99 duration                 | > 80% of the function timeout (warning)                    | Requests are running long, consistent with a dependency timing out                              |
+   | API Gateway p95 latency             | > 3000ms (warning)                                         | End-to-end slowness; compare against integration latency to locate the cause                    |
+   | API Gateway 5XX rate                | > 1% (warning)                                             | Requests failing outright                                                                       |
 
 2. **Distinguish "our side" from "their side".** The integration p95 latency alarm exists precisely to separate API Gateway overhead from backend slowness. If integration latency is high while API Gateway's own overhead is normal, the delay is downstream of FLEX, which points at a dependency rather than the platform.
 
