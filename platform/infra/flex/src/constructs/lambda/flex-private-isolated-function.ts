@@ -6,7 +6,10 @@ import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
-import { resolveEncryptionKey } from "../../utils/lambda";
+import {
+  resolveEncryptionKey,
+  resolveSignedLambdaConfig,
+} from "../../utils/lambda";
 import { toKebabCase } from "../../utils/routes";
 import { LambdaAlarms } from "../alarms/lambda";
 import { FlexFunctionProps } from "../types";
@@ -45,6 +48,7 @@ export class FlexPrivateIsolatedFunction extends Construct {
       tracing: Tracing.ACTIVE,
       timeout: Duration.seconds(10),
       ...functionProps,
+      ...resolveSignedLambdaConfig(this, id, functionProps.entry),
       environmentEncryption: encryptionKey,
       environment: {
         ...functionProps.environment,

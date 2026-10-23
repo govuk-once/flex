@@ -39,6 +39,7 @@ import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
 import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
+import { resolveSignedLambdaConfig } from "../utils/lambda";
 
 const { env, stage } = getEnvConfig();
 
@@ -57,9 +58,12 @@ export class FlexPlatformStack extends BaseStack {
       this,
       "JwksEndpointStubFunction",
       {
-        entry: getPlatformEntry("auth", "functions/jwks-endpoint.ts"),
         runtime: Runtime.NODEJS_24_X,
-        handler: "handler",
+        ...resolveSignedLambdaConfig(
+          this,
+          "JwksEndpointStubFunction",
+          getPlatformEntry("auth", "functions/jwks-endpoint.ts"),
+        ),
       },
     );
 
