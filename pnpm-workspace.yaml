@@ -1,4 +1,5 @@
 packages:
+  - docs
   - domains/*
   - libs/*
   - platform/domains/*
