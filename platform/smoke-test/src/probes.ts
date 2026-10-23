@@ -3,9 +3,7 @@ import type { Environment } from "@flex/utils";
 export const METRIC_NAMESPACE = "Flex/SmokeTest";
 
 export const METRICS = {
-  /** Name of the per probe metric: 1 is published when the probe completed, 0 otherwise. */
   success: "SmokeTestSuccess",
-  /** Name of the per run metric counting probes that failed with 401 or 403. */
   authRejected: "SmokeTestAuthRejected",
 } as const;
 
@@ -15,7 +13,6 @@ export const DIMENSIONS = {
 } as const;
 
 export interface Probe {
-  /** Stable key used in metric dimensions and alarm names. */
   readonly journey: string;
   readonly path: string;
   readonly environments: readonly Environment[];

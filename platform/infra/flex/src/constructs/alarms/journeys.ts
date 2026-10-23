@@ -14,10 +14,7 @@ import { BaseAlarmsProps } from "./types";
 
 /**
  * A user journey is a group of public API routes that a consumer uses to
- * complete one task. Alarms are raised per journey, not per route, so that
- * a seldom used route erroring does not page and a journey failing across
- * several routes does. Journeys are keyed by name, which is stable; order in
- * the array carries no meaning.
+ * complete one task.
  */
 export interface JourneyDefinition {
   readonly name: string;
@@ -27,7 +24,6 @@ export interface JourneyDefinition {
   /** API Gateway resource path patterns; `*` matches any suffix. */
   readonly resourcePaths: readonly string[];
   readonly excludedResourcePaths?: readonly string[];
-  /** Restrict to these HTTP methods; any method when omitted. */
   readonly httpMethods?: readonly string[];
   /** Where the fast burn alarm notifies. Slow burn is always a warning. */
   readonly fastBurnSeverity: "critical" | "warning";
@@ -107,7 +103,6 @@ const SLOW_BURN = {
   short: Duration.minutes(30),
 };
 
-/** Below this many valid requests in the window the rate is forced to zero. */
 const MIN_VALID_REQUESTS = 20;
 
 const METRIC_NAMESPACE = "Flex/Journeys";

@@ -15,7 +15,6 @@ export interface TwoWindowAlarmProps {
   readonly id: string;
   readonly alarmName: string;
   readonly alarmDescription: string;
-  /** Builds the rate metric for a given window so each child alarm gets a matching period. */
   readonly rateMetric: (period: Duration) => IMetric;
   readonly threshold: number;
   readonly longWindow: Duration;
