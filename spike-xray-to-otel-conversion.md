@@ -15,13 +15,15 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
     - a data classification review of span attributes.
   - Manual spans for function-level depth (the ticket's "about 15 levels") are not included.
 - **Cost, recurring:**
-  - Start-up overhead measured locally: +86 ms in `lite` mode and +104 ms in `full` mode, on a 79 ms baseline. This is not Lambda `Init Duration`; the deployed figure is still to be measured, and it will differ between functions with and without provisioned concurrency.
+  - Start-up overhead measured on a personal stage (128 MB, 33 functions, 5 cold starts each): Lambda `Init Duration` p50 rose from a median of 435 ms to 916 ms in `full` (+479 ms) and 863 ms in `lite` (+423 ms). The slowest start-up in any mode was 1,020 ms. There were no init or invocation timeouts, so the 10 to 15 second cold starts another team reported did not occur with this configuration (see "Deployed Results").
+  - The first invocation after a cold start also slowed, by a median of +1.2 s in `full` and +1.0 s in `lite`, and this adds up along chains of cold functions.
+  - Peak memory rose by a median of 14 MB, to 122 MB of 128 MB at worst. Personal and PR stages run at the 128 MB default, which leaves little headroom; higher environments use 1,024 MB. Provisioned concurrency was not measured.
   - The layer adds 7.17 MB uncompressed, 2.7% of the 250 MB limit.
   - The layer version is pinned, so it needs bumping when AWS releases a new one.
   - Span volume grows with outbound calls, including each `flexFetch` retry. X-Ray cost: not yet calculated.
 - **Difficulty: 3 overall**, from five dimensions:
   - **Breadth:** the change is three constructs, but it reaches every Flex function.
-  - **Unknowns and Verifiability:** isolated delivery, real `Init Duration`, the runtime's own loading path and cost can only be answered on a deployed stage.
+  - **Unknowns and Verifiability:** `Init Duration` has now been measured on a personal stage; isolated delivery, trace quality, span loss in `lite` and cost still need the X-Ray traces from that run, and staging needs its own measurement.
   - **Coupling:** Cloud Platform owns the spike, and security will want a say on span attributes.
   - **Constraints:** the isolated network, data classification, and CI configuration.
   - Depth and Reversibility are low: it's configuration only, and switching it off removes it.
@@ -32,11 +34,12 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
   - The layer's redaction (`AWS_REDACT_SPAN_ATTRIBUTES`) is registered only in `full` mode. **`lite` mode cannot redact.**
   - Outbound calls gain trace headers. The layer defaults `OTEL_PROPAGATORS` to `baggage,tracecontext,xray`, so every `fetch`, including calls to third parties, would carry `traceparent` and `X-Amzn-Trace-Id`, and `baggage` whenever the context holds any. FLEX sends none of these today. The slice leaves the default; whether to restrict it (for example to `xray` only) is for security to decide.
 - **Recommendation:**
-  1. On a personal stage, take the baseline with the switch unset.
-  2. Deploy `full` and take the same measurements, with redaction configured.
-  3. Measure `lite` only for comparison, since it can't redact.
-  4. Agree the span attributes and the outbound trace headers with security before any persistent environment.
-  5. Decide on adoption once the deployed numbers are in.
+  1. Done on 23 October 2026: baseline, `full` and `lite` cold starts measured on a personal stage (see "Deployed Results").
+  2. Prefer `full` over `lite`. `lite` saved a median of only 58 ms of `Init Duration` and nothing on the first invocation, while it can't redact and may lose spans.
+  3. Still to do on the same stage: check the X-Ray traces for both modes (isolated delivery, trace depth, span loss in `lite`), test redaction in `full`, and confirm the revert.
+  4. Before any environment that runs at 128 MB uses the switch, decide whether to raise memory, because peak use reached 122 MB.
+  5. Agree the span attributes and the outbound trace headers with security before any persistent environment.
+  6. Measure staging separately (1,024 MB, provisioned concurrency on gateways), then decide on adoption.
 
 ---
 
@@ -81,19 +84,70 @@ Follows `spike-conversion-method.md`. Reviewed by two AI reviewers (Codex and Gr
 
 ## Baseline
 
-The current traces and timings in AWS have not been measured yet; all of that needs a deployed stage. Capture these with the switch **unset first**, then repeat with `full` and `lite` on the same stage and routes:
+Measured with the switch unset on the personal stage `denislavdavi` (development account), 23 October 2026, 10:14 to 10:40 BST: 40 functions, 5 rounds of forced cold starts, 33 functions invoked by the e2e suites. The `full` and `lite` figures from the same stage and routes are in "Deployed Results".
 
 | Measure | Value | Unit | Source | Evidence |
 |---|---|---|---|---|
-| Lambda `Init Duration`, p50 and p95, over at least 20 cold starts, for a domain route and the authorizer | to measure | ms | REPORT lines in the function's log group | |
-| Lambda `Duration` p95 | to measure | ms | CloudWatch `AWS/Lambda` | |
-| API Gateway `Latency` p95 | to measure | ms | CloudWatch `AWS/ApiGateway` | |
+| Lambda `Init Duration` p50, median across 33 functions (5 cold starts each) | 435 (range 355 to 487) | ms | REPORT lines in each function's log group | `measured`, `baseline-20261023-1042.txt` |
+| Lambda `Init Duration`, slowest single start-up | 505 | ms | Same | `measured` |
+| Lambda `Init Duration` p50 for the authorizer / `example` `GetUserNotifications` / UDP gateway / travel gateway | 363 / 371 / 410 / 402 | ms | Same | `measured` |
+| Lambda `Duration` p95, median across 33 functions | 3,053 | ms | Same | `measured`. Most functions were only called 5 times, once per cold start, so this is mostly cold invocations |
+| Peak memory used, median across 33 functions | 106 (range 99 to 115) of 128 | MB | REPORT `Max Memory Used` | `measured` |
+| Init and invocation timeouts | 0 | count | `INIT_REPORT ... Status: timeout` and `Task timed out` log lines | `measured` |
+| API Gateway `Latency` p95 | not taken | ms | CloudWatch `AWS/ApiGateway` | Step 5 was skipped |
 | Trace depth for one gateway call | to measure | segments and subsegments, levels | X-Ray trace view | |
 | X-Ray traces recorded and retrieved per month, per environment | to measure | count | X-Ray console, Cost Explorer | |
 | Function package size | to measure | MB | Lambda console | |
 | Local start-up with no wrapper (example `GET /v0/headers` handler) | 79 | ms, median of 7 | Local run (see Evidence) | `measured` |
 
 A personal stage doesn't build the Core, smoke-test or credential-monitor stacks, has no provisioned concurrency on gateways (staging and production have 2, `utils/create-service-gateway.ts:69`, `:127`), and uses the default memory where higher environments use 1024 MB (`stacks/domain.ts:249`, `:256`). Its figures describe that development configuration only; they set no bound in either direction for staging or production, which need their own measurement.
+
+---
+
+## Deployed Results
+
+Measured on 23 October 2026 on the personal stage `denislavdavi` in the development account (`308036881389`), following "How to Test It Deployed" with 5 rounds of forced cold starts rather than 20. Each mode was deployed, then its cold-start loop run:
+
+| Mode | Window (BST) | Report file |
+|---|---|---|
+| Baseline (switch unset) | 10:14 to 10:40 | `baseline-20261023-1042.txt` |
+| `full` | 11:36 to 12:06 | `full-20261023-1205.txt` |
+| `lite` | 13:49 to 14:20 | `lite-20261023-1420.txt` |
+
+All 40 measured functions ran at 128 MB. In every mode the same 33 were invoked by the five e2e suites, each with exactly 5 cold starts. The 7 not invoked are left out. No round reported a traffic failure or a failed configuration update. With 5 cold starts per function, p95 is in effect the maximum of 5, so the medians across functions are the more reliable figures. The `layers` output for `full` and `lite` was not saved; that the layer was attached is `inferred` from the start-up and memory changes, which appear on every function.
+
+**Across the 33 functions (median of the per-function values):**
+
+| Measure | Baseline | `full` | `lite` | Evidence |
+|---|---|---|---|---|
+| `Init Duration` p50 | 435 ms | 916 ms (+479) | 863 ms (+423) | `measured` |
+| `Init Duration` p50, range across functions | 355 to 487 ms | 756 to 977 ms | 779 to 903 ms | `measured` |
+| Slowest single start-up | 505 ms | 1,020 ms | 969 ms | `measured` |
+| First invocation after a cold start, slowest per function | 3,351 ms | 4,453 ms (+1,212 median per function) | 4,310 ms (+1,027 median per function) | `measured` |
+| `Duration` p95 | 3,053 ms | 4,230 ms | 4,310 ms | `measured` |
+| Peak memory used | 106 MB | 121 MB (+14) | 119 MB (+13) | `measured` |
+| Highest memory used by any function | 115 MB | 122 MB | 122 MB | `measured` |
+| Init timeouts (`INIT_REPORT ... Status: timeout`) | 0 | 0 | 0 | `measured` |
+| Invocation timeouts (`Task timed out`) | 0 | 0 | 0 | `measured` |
+
+**Functions named in step 11 (baseline → `full` → `lite`):**
+
+| Function | Construct | `Init Duration` p50 (ms) | First invocation after a cold start, slowest (ms) | Peak memory (MB) |
+|---|---|---|---|---|
+| Authorizer | Egress | 363 → 814 → 779 | 888 → 2,572 → 2,521 | 99 → 116 → 115 |
+| `example` `GET /v0/users/notifications` | Isolated | 371 → 926 → 879 | 9,417 → 11,663 → 12,822 | 111 → 121 → 121 |
+| UDP gateway | Isolated | 410 → 904 → 821 | 3,859 → 4,596 → 4,070 | 106 → 120 → 118 |
+| Travel gateway | Egress | 402 → 869 → 808 | 2,566 → 3,331 → 3,324 | 105 → 119 → 118 |
+
+**What the figures show:**
+
+- **Start-up overhead is about half a second.** That is roughly double the baseline, and four to five times the local estimate of +104 ms. Isolated and egress functions show the same overhead.
+- **The reported 10 to 15 second cold starts did not occur.** The slowest start-up in any mode was 1,020 ms, and nothing timed out. The report query was extended (step 4) to catch an init over Lambda's 10 second limit, which would otherwise be retried inside the invocation and hidden from `Init Duration`. The other team's configuration (layer version, memory, mode, instrumentations, Application Signals) is not known, so the two results can't yet be compared.
+- **`lite` is barely faster than `full`.** It saved a median of 58 ms of `Init Duration` (faster on 31 of 33 functions) and made no consistent difference to the first invocation. Given that `lite` can't redact and may lose spans, the gain doesn't justify it.
+- **The first invocation costs more than the start-up itself.** After a cold start, the first invocation took about 1 s longer, and a chain of cold functions adds these up. `GET /v0/users/notifications` calls the UDP domain and the UNS gateway, and its slowest cold call rose from 9.4 s to 11.7 to 12.8 s. Which part of that comes from the layer instrumenting its first calls, and which from the downstream functions' own cold starts, was not separated.
+- **Memory headroom at 128 MB is nearly gone.** Peak use reached 122 of 128 MB in both modes. A larger payload or another instrumentation could push functions on personal and PR stages into out-of-memory kills or garbage collection pauses. Higher environments use 1,024 MB, so they are not affected.
+
+**Not yet taken from this run:** X-Ray traces for each mode (steps 6, 7 and 9: isolated delivery, trace depth, whether spans join API Gateway, span loss in `lite`), redaction (step 8), the revert (step 10), API Gateway latency (step 5) and package size.
 
 ---
 
@@ -115,7 +169,7 @@ A personal stage doesn't build the Core, smoke-test or credential-monitor stacks
 | Item | Value |
 |---|---|
 | Branch | `PLAT-874-xray-to-otel-conversion`, from `origin/main` at `604331fe` |
-| Commit | not committed yet |
+| Commit | `b9b3cafb` (slice), `0eb2dbe0` (detect-secrets allowlist), `86630095` (wiring moved into a CDK Aspect); PR #584 |
 | Switch | `FLEX_OTEL_TRACING` at synth time. Unset or empty: off. `full`: full SDK, with `OTEL_AWS_LAMBDA_FAST_START=false` set explicitly so a domain variable can't switch it to lite. `lite`: `OTEL_AWS_LAMBDA_FAST_START=true`. Any other non-empty value fails the synth |
 | Diff stat | 2 files, 94 lines added: `platform/infra/flex/src/aspects/otel-tracing.ts` (new, 92 lines), an Aspect that visits `FlexPublicFunction`, `FlexPrivateEgressFunction` and `FlexPrivateIsolatedFunction`, and 2 lines in `src/app.ts` to register it. The constructs are unchanged, which keeps SonarCloud's duplicated-code gate passing |
 | Layer | `arn:aws:lambda:eu-west-2:615299751070:layer:AWSOpenTelemetryDistroJs:16` (release v0.13.0, 22 September 2026), built from the stack's region |
@@ -457,7 +511,7 @@ These differences limit what the local evidence shows. It establishes that the l
 
 ## How to Test It Deployed
 
-This is the measurement that decides the conversion: it fills the Baseline table, the outstanding Cost rows and most of the Open Questions. **It has not been run yet.** It was written from the repo and the layer's code without AWS access, and two reviews found and corrected errors in earlier drafts. Treat each step as `inferred` until someone has run it, and correct this section where reality differs.
+This is the measurement that decides the conversion: it fills the Baseline table, the outstanding Cost rows and most of the Open Questions. **Steps 0 to 4, 7 and 9 were run on 23 October 2026** (with 5 rounds in step 3, not 20); the results are in "Deployed Results". Running them found and fixed three problems, now corrected below: the step 3 loop didn't split function names in zsh, `START` and `END` were lost when the loop was piped, and the step 4 query couldn't see an init over 10 seconds. Steps 5, 6, 8 and 10 have not been run; treat them as `inferred` until someone has, and correct this section where reality differs.
 
 It uses one personal stage in the development account, five deploys (switch unset, `full`, `full` with redaction, `lite`, then unset again) and a teardown. Allow about half a day, most of it in the cold start loop.
 
@@ -516,37 +570,74 @@ Check every suite passes on the baseline before going on. If one can't pass on a
 **3. Force cold starts, aiming for at least 20 per function.** Updating a function's configuration makes Lambda start new execution environments for the next invocations. Changing only the description does this without touching code or variables. Step 4 counts the cold starts it actually got; a function with far fewer than 20 either wasn't called by the suites (leave it out of the results) or wasn't cold-started by the description change (change an environment variable on that one instead).
 
 ```bash
-export START=$(date +%s)
-for i in $(seq 1 20); do
-  for f in $(measured); do aws lambda update-function-configuration --function-name "$f" --description "cold start run $i" > /dev/null || echo "update failed: $f"; done
-  for f in $(measured); do aws lambda wait function-updated --function-name "$f"; done
-  traffic
-done
-for f in $(measured); do aws lambda update-function-configuration --function-name "$f" --description "" > /dev/null || echo "reset failed: $f"; done
-export END=$(date +%s)
+coldstarts() {
+  # An array, not a string: zsh doesn't word-split unquoted variables
+  local fns
+  fns=($(measured))
+  echo "${#fns[@]} functions"
+  export START=$(date +%s)
+  for i in $(seq 1 "${ROUNDS:-20}"); do
+    echo "== round $i of ${ROUNDS:-20}"
+    for f in "${fns[@]}"; do aws lambda update-function-configuration --function-name "$f" --description "cold start run $i" > /dev/null || echo "update failed: $f"; done
+    for f in "${fns[@]}"; do aws lambda wait function-updated --function-name "$f"; done
+    traffic > /dev/null 2>&1 || echo "traffic had failures in round $i"
+  done
+  for f in "${fns[@]}"; do aws lambda update-function-configuration --function-name "$f" --description "" > /dev/null || echo "reset failed: $f"; done
+  export END=$(date +%s)
+  # Saved to a file as well, because a piped function runs in a subshell and its exports are lost
+  echo "export START=$START END=$END" > otel-window.sh
+  echo "START=$START END=$END"
+}
+coldstarts 2>&1 | tee baseline-coldstarts.log
 ```
 
-**4. Collect `Init Duration` and `Duration`.** The Flex constructs give each function its own log group, so the query looks each one up rather than assuming `/aws/lambda/<name>`. Each query is polled until it finishes, so partial results are never saved.
+With 40 functions and all five suites, one round took about 5 minutes on 23 October 2026, so 20 rounds take nearly 2 hours per mode. `ROUNDS=5 coldstarts` is enough to see a large regression; use 20 when the p95 figures matter.
+
+**4. Collect `Init Duration`, `Duration`, memory and timeouts.** The Flex constructs give each function its own log group, so the query looks each one up rather than assuming `/aws/lambda/<name>`. Each query is polled until it finishes, so partial results are never saved.
+
+Lambda caps the init phase at 10 seconds. An init that runs longer logs `INIT_REPORT ... Status: timeout` and is retried inside the first invocation, so its time shows up in `Duration`, not `Init Duration`, and can end in `Task timed out`. The authorizer's timeout is 10 seconds. The first query therefore counts both kinds of timeout, and the second takes `Duration` and memory for the cold invocations only.
 
 ```bash
+REPORT_QUERY='fields @initDuration, @duration, @message
+| stats count(@initDuration) as coldStarts,
+  pct(@initDuration, 50) as initP50, pct(@initDuration, 95) as initP95, max(@initDuration) as initMax,
+  pct(@duration, 95) as durationP95, max(@duration) as durationMax,
+  count(@duration) as invocations,
+  sum(strcontains(@message, "Status: timeout")) as initTimeouts,
+  sum(strcontains(@message, "Task timed out")) as taskTimeouts'
+COLD_QUERY='filter ispresent(@initDuration) | stats pct(@duration, 95) as coldDurP95, max(@duration) as coldDurMax, max(@maxMemoryUsed / 1048576) as maxMemMB'
+
+run_query() {
+  local q s
+  q=$(aws logs start-query --log-group-name "$1" --start-time "$START" --end-time "$END" --query-string "$2" --query queryId --output text)
+  if [ -z "$q" ]; then echo "QueryFailed"; return; fi
+  s=Running
+  while [ "$s" = "Running" ] || [ "$s" = "Scheduled" ]; do
+    sleep 2
+    s=$(aws logs get-query-results --query-id "$q" --query status --output text)
+  done
+  echo "$s $(aws logs get-query-results --query-id "$q" --query 'results[0][].[field,value]' --output text | tr '\n\t' '  ')"
+}
+
 report() {
+  if [ -z "${START:-}" ] || [ -z "${END:-}" ]; then
+    [ -f otel-window.sh ] && . ./otel-window.sh
+  fi
+  if [ -z "${START:-}" ] || [ -z "${END:-}" ]; then
+    echo "START and END are not set; run coldstarts first or export them" >&2
+    return 1
+  fi
+  echo "window START=$START END=$END"
   for f in $(measured); do
     LG=$(aws lambda get-function-configuration --function-name "$f" --query LoggingConfig.LogGroup --output text)
-    Q=$(aws logs start-query --log-group-name "$LG" --start-time "$START" --end-time "$END" \
-      --query-string 'filter @type = "REPORT" | stats count(@initDuration) as coldStarts, pct(@initDuration, 50) as initP50, pct(@initDuration, 95) as initP95, pct(@duration, 95) as durationP95, count() as invocations' \
-      --query queryId --output text)
-    S=Running
-    while [ "$S" = "Running" ] || [ "$S" = "Scheduled" ]; do
-      sleep 2
-      S=$(aws logs get-query-results --query-id "$Q" --query status --output text)
-    done
-    echo "$f $S $(aws logs get-query-results --query-id "$Q" --query 'results[0][].[field,value]' --output text | tr '\n\t' '  ')"
+    MEM=$(aws lambda get-function-configuration --function-name "$f" --query MemorySize --output text)
+    echo "$f memory=${MEM}MB $(run_query "$LG" "$REPORT_QUERY") $(run_query "$LG" "$COLD_QUERY")"
   done
 }
 report | tee "baseline-$(date +%Y%m%d-%H%M).txt"
 ```
 
-Every line should say `Complete`. A complete line with no figures means the function had no invocations in the window. Save the file, because the record's Principle 11 needs it.
+Every line should say `Complete` twice. A complete line with `None` means the function had no invocations in the window. Save the file, because the record's Principle 11 needs it.
 
 **5. API Gateway latency.** The public API's stage is called `prod` on every stage (`STAGE_NAME` in `stacks/platform.ts:45`), and its metrics are keyed by API name and stage.
 
@@ -619,9 +710,11 @@ No function should show the layer. That is the measured revert for the Cost tabl
 
 | Measure | Function | Baseline | `full` | `lite` |
 |---|---|---|---|---|
-| Cold starts collected | each measured function | | | |
-| `Init Duration` p50 / p95 (ms) | authorizer (egress), `example` route (isolated), UDP gateway (isolated), travel gateway (egress) | | | |
-| `Duration` p95 (ms) | same | | | |
+| Cold starts collected | each measured function | 5 on each of 33 | 5 on each of 33 | 5 on each of 33 |
+| `Init Duration` p50 / p95 (ms) | authorizer (egress), `example` route (isolated), UDP gateway (isolated), travel gateway (egress) | 363/375, 371/466, 410/429, 402/415 | 814/827, 926/951, 904/906, 869/907 | 779/790, 879/943, 821/850, 808/870 |
+| `Duration` p95 (ms) | same | 853, 9,417, 3,053, 2,566 | 1,637, 11,663, 3,500, 3,331 | 1,270, 12,822, 3,421, 3,324 |
+| Peak memory (MB of 128) | same | 99, 111, 106, 105 | 116, 121, 120, 119 | 115, 121, 118, 118 |
+| Init and invocation timeouts | all 33 | 0 | 0 | 0 |
 | API Gateway `Latency` p95 (ms) | public API, if its name is unique to the stage | | | |
 | Trace depth (levels) and subsegments | `GET /example/v0/users/notifications`, one `travel` route | | | |
 | Isolated function spans reach X-Ray | `example`, UDP and UNS gateways | n/a | | |
@@ -649,13 +742,14 @@ Estimates are the figures FLEX gave this approach (option B1) in its options ass
 | One-off | Resolve layer, esbuild and handler compatibility | 1 to 3 days | No change was needed locally; the deployed runtime may still differ (see the harness differences) | `measured` (local) |
 | One-off | Validate trace quality against native X-Ray | 1 day | Outstanding, needs a deployed stage | |
 | One-off | Manual spans for function-level depth | 3 to 5 days | Not started | |
-| One-off | Cold start testing | 1 day | Local figures only; deployed measurement needed for development and staging separately | `measured` (local) |
+| One-off | Cold start testing | 1 day | Personal stage measured on 23 October 2026: three deploys and three 5-round loops of 25 to 31 minutes each, from 10:14 to 14:20 BST, plus fixes to the procedure's scripts. Staging still to measure | `measured` (personal stage), `reported` (elapsed time) |
 | One-off | CI switch per environment | not in the estimate | Not started | `traced` (workflows) |
 | One-off | Data classification of span attributes | not in the estimate | Not started | |
 | One-off | Change size | n/a | 2 files, 94 lines added, 0 removed | `measured` |
 | One-off | Iterations | n/a | Harness: 8 failed runs (module resolution, module type, invocation path, argument order, lite wrapper path) before valid results. Slice: 1 lint failure (number in a template literal), then 2 review fixes | `reported` (failure logs not kept) |
 | One-off | Effort | 7 to 11 days (B1 total) | AI-assisted session on 21 October 2026: branch 14:38, slice verified locally 14:57, review fixes applied by 15:33, plus layer research before and the documents after. Elapsed time only; active effort per phase was not recorded, and this is not a team estimate | `reported` |
-| Recurring runtime | Start-up overhead | Unmeasured | +86 ms (`lite`), +104 ms (`full`) locally; Lambda figure outstanding | `measured` (local) |
+| Recurring runtime | Start-up overhead | Unmeasured | Lambda `Init Duration` p50 +479 ms (`full`) and +423 ms (`lite`), median across 33 functions at 128 MB, on a 435 ms baseline; slowest start-up 1,020 ms; no timeouts. The first invocation after a cold start was a median of +1.2 s (`full`) and +1.0 s (`lite`) slower. Locally the overhead was +104 ms and +86 ms. Not measured at 1,024 MB or with provisioned concurrency | `measured` (personal stage, 5 cold starts per function) |
+| Recurring runtime | Memory | Unmeasured | Peak memory +14 MB (`full`) and +13 MB (`lite`), median across 33 functions; up to 122 of 128 MB | `measured` (personal stage) |
 | Recurring runtime | Package size | Unmeasured | +7.17 MB per function (2.7% of the limit) | `measured` |
 | Recurring runtime | X-Ray cost | Not estimated | Outstanding; needs trace volumes, including retry spans, and the X-Ray pricing page | |
 | Recurring operational | New dependency | 1 | 1 AWS-published layer, pinned to version 16. The two releases checked (v0.12.0 on 30 June, v0.13.0 on 22 September 2026) were about 12 weeks apart; the future cadence is not established | `traced` |
@@ -670,7 +764,7 @@ Estimates are the figures FLEX gave this approach (option B1) in its options ass
 |---|---|---|
 | Breadth | 3 | Three constructs change, but through 9 call sites they reach every domain and gateway function, the authorizer and three platform functions ("every domain" is a 3 in the method) |
 | Depth | 1 | Configuration only; no handler or library call site changes |
-| Unknowns | 3 | Isolated delivery, Lambda `Init Duration`, the runtime's own loading path, export before freeze in `lite`, and cost can only be answered on a deployed stage |
+| Unknowns | 3 | Lambda `Init Duration` is now measured on a personal stage. Isolated delivery, the runtime's own loading path, export before freeze in `lite`, staging figures and cost are still open |
 | Verifiability | 3 | Locally only a harness and synth; trace quality and timings need a deployed environment, and staging needs its own measurement |
 | Reversibility | 1 | Unset the switch and redeploy |
 | Coupling | 3 | Cloud Platform owns the spike, security needs to agree the span attributes, and the layer is published by AWS |
@@ -698,7 +792,9 @@ The constructs are shared, so the slice already covers every Flex function and t
 | Question | How to answer | Who |
 |---|---|---|
 | Do spans from isolated functions reach X-Ray without an X-Ray VPC endpoint? | "How to Test It Deployed", step 7: compare spans from isolated functions with spans from egress functions in the same run | FLEX |
-| What is the `Init Duration` overhead in Lambda for `full` and `lite`, with and without provisioned concurrency? | On-demand cold starts from `Init Duration` on REPORT lines ("How to Test It Deployed", steps 3 and 4). Provisioned environments initialise before any request, so measure them separately in staging, and confirm there which log line carries their initialisation time | FLEX |
+| What is the `Init Duration` overhead in Lambda for `full` and `lite`, with and without provisioned concurrency? | Answered for on-demand cold starts at 128 MB: +479 ms (`full`) and +423 ms (`lite`), see "Deployed Results". Still open at 1,024 MB and with provisioned concurrency: provisioned environments initialise before any request, so measure them separately in staging, and confirm there which log line carries their initialisation time | FLEX |
+| Why did another team see 10 to 15 second cold starts with OpenTelemetry? | Not reproduced here (slowest start-up 1,020 ms, no timeouts). Ask for their layer version, memory size, mode, enabled instrumentations and whether Application Signals was on, and compare | FLEX with the other team |
+| Should personal and PR stages raise memory while the switch is on? | Peak use reached 122 of 128 MB. Decide whether to set 256 MB or more on those stages before using the switch there regularly | FLEX |
 | Does the Lambda Node.js 24 runtime load the handler in a way the layer patches, as the harness did? | Same deployment; check for the `aws-lambda` span | FLEX |
 | Do OpenTelemetry spans join the API Gateway segment in one trace? | Same deployment; open one trace from API Gateway to the gateway call | FLEX |
 | Does `lite` send its spans before Lambda freezes the environment? | Compare, for sampled invocations of the same route only, the share of traces with the expected spans in `full` and `lite` ("How to Test It Deployed", step 9) | FLEX |
@@ -714,4 +810,4 @@ The constructs are shared, so the slice already covers every Flex function and t
 
 ## Decision
 
-Not decided. Take the baseline on a personal stage with the switch unset, then measure `full` (with redaction) and `lite`, fill in the Baseline and the outstanding Cost rows, agree the span attributes and outbound headers with security, then record the decision here: what was decided, the date, who decided, and the evidence it rests on.
+Not decided. Cold starts for the baseline, `full` and `lite` were measured on a personal stage on 23 October 2026, and point to `full` as the mode to adopt (see "Deployed Results"). Still needed before a decision: the X-Ray traces from that run, redaction in `full`, the revert, a staging measurement, and agreement with security on span attributes and outbound headers. Then record the decision here: what was decided, the date, who decided, and the evidence it rests on.
