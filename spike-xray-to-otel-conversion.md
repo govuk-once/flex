@@ -631,7 +631,8 @@ report() {
   for f in $(measured); do
     LG=$(aws lambda get-function-configuration --function-name "$f" --query LoggingConfig.LogGroup --output text)
     MEM=$(aws lambda get-function-configuration --function-name "$f" --query MemorySize --output text)
-    echo "$f memory=${MEM}MB $(run_query "$LG" "$REPORT_QUERY") $(run_query "$LG" "$COLD_QUERY")"
+    # Trailing spaces stripped, or the repo's trailing-whitespace hook fails on the saved file
+    echo "$f memory=${MEM}MB $(run_query "$LG" "$REPORT_QUERY") $(run_query "$LG" "$COLD_QUERY")" | sed 's/[[:space:]]*$//'
   done
 }
 report | tee "baseline-$(date +%Y%m%d-%H%M).txt"
