@@ -165,9 +165,16 @@ export function getRouteAccess(common?: RouteAccess, route?: RouteAccess) {
   return route ?? common ?? "isolated";
 }
 
+/**
+ * Production always runs at INFO. Clamping here, rather than only in the
+ * logger, means everything derived from the level (event logging, Zod issues
+ * in response bodies) follows the effective level too.
+ */
 export function getRouteLogLevel(
   common?: LogLevel,
   route?: LogLevel,
 ): LogLevel {
+  if (process.env.FLEX_ENVIRONMENT === Environment.production) return "INFO";
+
   return route ?? common ?? "INFO";
 }
