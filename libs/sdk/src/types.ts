@@ -482,8 +482,6 @@ export interface DomainResult<Config extends DomainConfig> {
 // Route Context & Handler
 // ----------------------------------------------------------------------------
 
-// Only the public API Gateway authorises a user token, so only routes on it
-// carry `auth`. Network `access` has nothing to do with it.
 type WithAuth<Route extends string> =
   ExtractRouteSegments<Route> extends { gateway: "public" }
     ? { readonly auth: RouteAuth }
