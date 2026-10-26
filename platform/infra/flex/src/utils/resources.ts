@@ -31,14 +31,6 @@ function importFlexKmsKeyAlias(scope: Construct, kmsKeyAlias: string) {
   });
 }
 
-function importFlexSecret(scope: Construct, secret: string) {
-  return Secret.fromSecretNameV2(
-    scope,
-    `FlexSecret${createHash(secret)}`,
-    getParamName(secret),
-  );
-}
-
 function importFlexParameter(scope: Construct, param: string) {
   return StringParameter.fromStringParameterName(
     scope,
@@ -62,9 +54,10 @@ function importResource(
     case "secret":
       return {
         type: "secret",
-        construct: importFlexSecret(
+        construct: Secret.fromSecretNameV2(
           scope,
-          isStageScoped ? getStageParamName(path) : path,
+          `FlexSecret${createHash(path)}`,
+          isStageScoped ? getStageParamName(path) : getParamName(path),
         ),
       };
     case "ssm":
