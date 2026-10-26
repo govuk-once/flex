@@ -261,7 +261,7 @@ describe("getRouteFeatureFlags", () => {
     it("uses the environment-specific value when no process.env override is set", ({
       env,
     }) => {
-      env.set({ STAGE: "staging" });
+      env.set({ FLEX_ENVIRONMENT: "staging" });
 
       expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
         envAwareFlag: true,
@@ -271,7 +271,7 @@ describe("getRouteFeatureFlags", () => {
     it("falls back to the global default when no env override or environment-specific value matches", ({
       env,
     }) => {
-      env.set({ STAGE: "staging" });
+      env.set({ FLEX_ENVIRONMENT: "staging" });
 
       expect(getRouteFeatureFlags(flags, ["myFlag"])).toStrictEqual({
         myFlag: false,
@@ -282,7 +282,7 @@ describe("getRouteFeatureFlags", () => {
       env,
     }) => {
       const flagWithNoDefault = { myFlag: {} };
-      env.delete("STAGE");
+      env.delete("FLEX_ENVIRONMENT");
 
       expect(getRouteFeatureFlags(flagWithNoDefault, ["myFlag"])).toStrictEqual(
         {
@@ -298,9 +298,9 @@ describe("getRouteFeatureFlags", () => {
       { stage: "staging", expected: true },
       { stage: "production", expected: false },
     ])(
-      "resolves the $stage environment-specific value when STAGE=$stage",
+      "resolves the $stage environment-specific value when FLEX_ENVIRONMENT=$stage",
       ({ stage, expected }, { env }) => {
-        env.set({ STAGE: stage });
+        env.set({ FLEX_ENVIRONMENT: stage });
 
         expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
           envAwareFlag: expected,
@@ -309,15 +309,23 @@ describe("getRouteFeatureFlags", () => {
     );
 
     it("treats a personal stage as 'development'", ({ env }) => {
-      env.set({ STAGE: "ljones" });
+      env.set({ FLEX_ENVIRONMENT: "ljones" });
 
       expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
         envAwareFlag: true,
       });
     });
 
-    it("treats an unset STAGE as 'development'", ({ env }) => {
-      env.delete("STAGE");
+    it("treats a pull request stage as 'development'", ({ env }) => {
+      env.set({ FLEX_ENVIRONMENT: "pr-123" });
+
+      expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
+        envAwareFlag: true,
+      });
+    });
+
+    it("treats an unset FLEX_ENVIRONMENT as 'development'", ({ env }) => {
+      env.delete("FLEX_ENVIRONMENT");
 
       expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
         envAwareFlag: true,
@@ -327,7 +335,7 @@ describe("getRouteFeatureFlags", () => {
     it("process.env override takes precedence over the environment-specific value", ({
       env,
     }) => {
-      env.set({ STAGE: "staging", envAwareFlag: "false" });
+      env.set({ FLEX_ENVIRONMENT: "staging", envAwareFlag: "false" });
 
       expect(getRouteFeatureFlags(flags, ["envAwareFlag"])).toStrictEqual({
         envAwareFlag: false,
