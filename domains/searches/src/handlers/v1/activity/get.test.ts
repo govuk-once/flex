@@ -1,7 +1,7 @@
 import { it } from "@flex/testing";
 import {
   createSearch,
-  emptySearches,
+  emptySearches, multipleSearch,
   singleSearch,
   userId,
 } from "@tests/fixtures";
@@ -35,7 +35,7 @@ describe("GET /v1/activity/searches", () => {
       .get("/activity/searches", {
         headers: { "requesting-service-user-id": userId },
       })
-      .reply(200, createSearch());
+      .reply(200, createSearch(multipleSearch));
 
     const result = await handler(
       sdk.event.get(endpoint, { auth: userId }),
@@ -43,7 +43,7 @@ describe("GET /v1/activity/searches", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(createSearch());
+    expect(JSON.parse(result.body)).toStrictEqual(multipleSearch);
   });
 
   it("returns 200 with empty selectedSearches", async ({ http, sdk }) => {
@@ -60,7 +60,7 @@ describe("GET /v1/activity/searches", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(createSearch(emptySearches));
+    expect(JSON.parse(result.body)).toStrictEqual(emptySearches);
   });
 
   it("returns 200 with empty selectedSearches when UDP user not found", async ({
@@ -80,7 +80,7 @@ describe("GET /v1/activity/searches", () => {
     );
 
     expect(result.statusCode).toBe(200);
-    expect(JSON.parse(result.body)).toStrictEqual(createSearch(emptySearches));
+    expect(JSON.parse(result.body)).toStrictEqual(emptySearches);
   });
 
   it("returns 502 when the UDP post searches integration fails", async ({

@@ -20,7 +20,7 @@ export const handler = route(
 
             const emptySearches: GetSelectedSearchesResponse = {
                 searches: {
-                    selectedSearches: [],
+                    existingSearches: [],
                 },
             };
 

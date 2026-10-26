@@ -1,23 +1,25 @@
 import { it } from "@flex/testing";
-import { createSearch, userId } from "@tests/fixtures";
+import {createLongSearch, createSearch, userId} from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./patch";
+import {UpdatedSearches} from "@schemas/search";
 
 describe("PATCH /v1/activity/searches", () => {
     const endpoint = "/activity/searches";
 
     it("returns 204 when searches are updated", async ({ http, sdk }) => {
+        const body = createSearch()
         http
             .gateway("udp")
             .post("/activity/searches", {
                 headers: { "requesting-service-user-id": userId },
-                body: createSearch(),
+                body,
             })
-            .reply(200, createSearch());
+            .reply(200, body);
 
         const result = await handler(
-            sdk.event.patch(endpoint, { auth: userId, body: createSearch() }),
+            sdk.event.patch(endpoint, { auth: userId, body: body }),
             sdk.context(),
         );
 
@@ -25,11 +27,27 @@ describe("PATCH /v1/activity/searches", () => {
         expect(result.body).toBe("");
     });
 
+    it("returns 201 when search term is too long", async ({ http, sdk }) => {
+        const body = createLongSearch()
+
+        const result = await handler(
+            sdk.event.patch(endpoint, { auth: userId, body: body }),
+            sdk.context(),
+        );
+
+        expect(result.statusCode).toBe(201);
+        expect(result.body).toBe("");
+    });
+
     it("returns 204 when clearing all searches with an empty array", async ({
                                                                               http,
                                                                               sdk,
                                                                           }) => {
-        const emptySearches = { searches: { selectedSearches: [] } };
+        const emptySearches: UpdatedSearches = {
+            searches: {
+                existingSearches: [],
+            },
+        };
 
         http
             .gateway("udp")

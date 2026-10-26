@@ -6,9 +6,17 @@ export const SearchSchema = z.object({
 });
 export type Search = z.infer<typeof SearchSchema>;
 
+const UpdatedSearchesSchema = z.object({
+  searches: z.object({
+    newSearch: SearchSchema.optional(),
+    existingSearches: z.array(SearchSchema),
+  }),
+});
+export type UpdatedSearches= z.infer<typeof UpdatedSearchesSchema>;
+
 const SelectedSearchesSchema = z.object({
   searches: z.object({
-    selectedSearches: z.array(SearchSchema),
+    existingSearches: z.array(SearchSchema),
   }),
 });
 export type SelectedSearches= z.infer<typeof SelectedSearchesSchema>;
@@ -18,7 +26,7 @@ export type GetSelectedSearchesResponse = z.infer<
   typeof GetSelectedSearchesResponseSchema
 >;
 
-export const UpdateSelectedSearchesRequestSchema = SelectedSearchesSchema;
+export const UpdateSelectedSearchesRequestSchema = UpdatedSearchesSchema;
 export type UpdateSelectedSearchesRequest = z.infer<
     typeof UpdateSelectedSearchesRequestSchema
 >;

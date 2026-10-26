@@ -10,6 +10,7 @@ import {
   topicsResponseSchema,
   upsertTopicsResponseSchema,
 } from "./schemas/remote/topics";
+import {domainSearchesSchema} from "./schemas/domain/searches";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -207,14 +208,14 @@ export const handler = createHandler({
       return mapApiResult(result, ({ data }) => data.groups);
     },
 
-    "POST /v1/searches": async ({
+    "POST /v1/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
       body,
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.post("/v1/searches", {
-        schema: upsertTopicsResponseSchema,
+      const result = await api.post("/v1/activity/searches", {
+        schema: domainSearchesSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
@@ -226,12 +227,12 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data);
     },
-    "GET /v1/searches": async ({
+    "GET /v1/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.get("/v1/searches", {
+      const result = await api.get("/v1/activity/searches", {
         schema: topicsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,

@@ -7,6 +7,18 @@ const context = routeContext<"PATCH /v1/activity/searches">;
 export const handler = route("PATCH /v1/activity/searches", async ({ auth }) => {
     const userId = auth.pairwiseId as UserId;
 
+    const { body, logger } = context();
+
+    const searchToSave = body.searches.newSearch
+    if (searchToSave && searchToSave.term.length > 200) {
+        logger.warn("Search term too long", {
+            searchToSave,
+            userId: auth.pairwiseId,
+        });
+
+        return { status: 201 };
+    }
+
     await updateSearches(userId);
 
     return { status: 204 };
