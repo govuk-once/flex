@@ -4,10 +4,13 @@ import {
   HttpMethodSchema,
   LogLevelSchema,
   NonEmptyString,
+  type NumberUpTo,
   RouteAccessSchema,
 } from "@flex/utils";
 import type { ZodType } from "zod";
 import { z } from "zod";
+
+import { MAX_ATTEMPTS, MAX_DELAY_MS, MIN_DELAY_MS } from "../fetch/constants";
 
 export const FunctionConfigSchema = z.object({
   environment: z.record(NonEmptyString, NonEmptyString).optional(),
@@ -20,6 +23,14 @@ const DomainIntegrationBaseSchema = z.object({
   target: NonEmptyString.optional(),
   body: z.custom<ZodType>().optional(),
   response: z.custom<ZodType>().optional(),
+  retryAttempts: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_ATTEMPTS - 1)
+    .transform((attempts) => attempts as NumberUpTo<typeof MAX_ATTEMPTS>)
+    .optional(),
+  maxRetryDelay: z.number().min(MIN_DELAY_MS).max(MAX_DELAY_MS).optional(),
 });
 
 const IntegrationDomainServiceSchema = DomainIntegrationBaseSchema.extend({
