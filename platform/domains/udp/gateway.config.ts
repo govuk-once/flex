@@ -13,7 +13,7 @@ import {
   inboundUpdateSelectedTopicsRequestSchema,
 } from "./src/schemas/domain/topics";
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
-import {domainSearchesSchema, inboundUpdateSelectedSearchesRequestSchema} from "./src/schemas/domain/searches";
+import {domainSearchesSchema, inboundUpdateUserSearchesRequestSchema} from "./src/schemas/domain/searches";
 
 export const { config, createHandler } = defineGateway({
   name: "udp",
@@ -154,7 +154,7 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpdateSelectedSearchesRequestSchema,
+      body: inboundUpdateUserSearchesRequestSchema,
       response: domainSearchesSchema,
     },
   },

@@ -1,11 +1,13 @@
 import { z } from "zod";
 
-import { searchesSchema } from "../common";
+export const searchTermSchema = z.object({
+    term: z.string().min(1),
+    timestamp: z.string().min(1),
+});
 
-export const inboundUpdateSelectedSearchesRequestSchema = searchesSchema;
-export type InboundUpdateSelectedSearchesRequest = z.infer<
-    typeof inboundUpdateSelectedSearchesRequestSchema
->;
+export const userSearchesSchema = z.object({
+    searches: z.array(searchTermSchema)
+})
+export const inboundUpdateUserSearchesRequestSchema = userSearchesSchema;
 
-export const domainSearchesSchema = searchesSchema;
-export type DomainSearches = z.infer<typeof domainSearchesSchema>;
+export const domainSearchesSchema = z.array(searchTermSchema);

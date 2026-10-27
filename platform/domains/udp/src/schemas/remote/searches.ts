@@ -1,9 +1,10 @@
 import { z } from "zod";
+import {userSearchesSchema} from "../domain/searches";
+import {DomainGroupsSchema} from "../domain/groups";
 
-import { searchesSchema } from "../common";
-
-export const searchesResponseSchema = z.object({ data: searchesSchema });
-export type SearchesResponse = z.infer<typeof searchesResponseSchema>;
-
-export const upsertSearchesResponseSchema = z.object({ data: searchesSchema });
-export type UpsertSearchesResponse = z.infer<typeof upsertSearchesResponseSchema>;
+export const searchesResponseSchema = z.object({ data: userSearchesSchema });
+export const GroupsResponseSchema = z.object({
+    data: z.object({
+        groups: DomainGroupsSchema,
+    }),
+});

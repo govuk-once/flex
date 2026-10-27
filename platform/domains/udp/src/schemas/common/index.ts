@@ -16,16 +16,3 @@ export const topicsSchema = z.object({
     selectedTopics: selectedTopicsSchema,
   }),
 });
-
-export const searchSchema = z.object({
-  term: z.string().min(1),
-  timestamp: z.string().min(1),
-});
-
-export const selectedSearchesSchema = z.array(searchSchema);
-
-export const searchesSchema = z.object({
-  searches: z.object({
-    selectedSearches: selectedSearchesSchema,
-  })
-});

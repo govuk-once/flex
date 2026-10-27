@@ -11,6 +11,7 @@ import {
   upsertTopicsResponseSchema,
 } from "./schemas/remote/topics";
 import {domainSearchesSchema} from "./schemas/domain/searches";
+import {searchesResponseSchema} from "./schemas/remote/searches";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -225,7 +226,7 @@ export const handler = createHandler({
         body: { data: body },
       });
 
-      return mapApiResult(result, ({ data }) => data);
+      return mapApiResult(result, ({  }) => body);
     },
     "GET /v1/activity/searches": async ({
       clients: { api },
@@ -233,7 +234,7 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       const result = await api.get("/v1/activity/searches", {
-        schema: topicsResponseSchema,
+        schema: searchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
