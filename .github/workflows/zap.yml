@@ -88,11 +88,6 @@ jobs:
         shell: bash
         run: bash scripts/zap/verify-reports.sh
 
-      - name: ZAP security gate
-        id: security_gate
-        shell: bash
-        run: bash scripts/zap/security-gate.sh
-
       - name: Normalize ZAP SARIF for GitHub Code Scanning
         shell: bash
         run: bash scripts/zap/normalize-sarif.sh
@@ -168,6 +163,11 @@ jobs:
           repository: ${{ github.repository }}
           workflow_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           slack_channel: "#govuk-once-flex-alerting-dev"
+
+      - name: ZAP security gate
+        id: security_gate
+        shell: bash
+        run: bash scripts/zap/security-gate.sh
 
   workflow_fail:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}

@@ -1,0 +1,8 @@
+plugin_id	method	endpoint	parameter	reason
+40018	PATCH	/app/topics/v1/topics	id	Reviewed false positive - FLEX-528
+40018	PATCH	/app/topics/v1/topics	title	Reviewed false positive - FLEX-528
+40018	POST	/app/groups/v1/groups	Action	Reviewed false positive - FLEX-528
+40018	POST	/app/groups/v1/groups	Group	Reviewed false positive - FLEX-528
+40018	POST	/app/groups/v1/groups	Namespace	Reviewed false positive - FLEX-528
+40018	POST	/app/groups/v1/groups	Subgroup	Reviewed false positive - FLEX-528
+40018	POST	/app/groups/v1/groups	Type	Reviewed false positive - FLEX-528
