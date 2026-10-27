@@ -151,7 +151,6 @@ jobs:
           retention-days: 14
 
       - name: Send ZAP notification
-        if: steps.new_zap_findings.outputs.count != '0'
         uses: govuk-once/govuk-platform-notifications-gh-action/security-alerts@9790ae74363e58ed5600a4705a77af94b583435d
         with:
           aws_account_id: ${{ steps.aws-account.outputs.account-id }}
