@@ -24,7 +24,7 @@ DETAILS="$(
       | . as $alert
       | .instances[]?
       | .uri as $uri
-      | ($uri | capture("/app/(?<domain>[^/]+)/")?.domain // empty) as $domain
+      | ($uri | try capture("/app/(?<domain>[^/]+)/").domain catch empty) as $domain
       | "\($alert.pluginid)|\($domain)" as $key
       | select($newKeys | index($key))
       | {
