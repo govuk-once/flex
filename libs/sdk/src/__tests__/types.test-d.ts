@@ -38,6 +38,9 @@ expectTypeOf<
 expectTypeOf<InferRouteContext<Config, "POST /v1/items">>().toHaveProperty(
   "auth",
 );
+expectTypeOf<
+  InferRouteContext<Config, "POST /v1/items">["auth"]
+>().toEqualTypeOf<RouteAuth>();
 
 expectTypeOf<
   InferRouteContext<Config, "GET /v1/items [private]">
