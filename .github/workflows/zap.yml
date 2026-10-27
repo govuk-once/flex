@@ -151,11 +151,11 @@ jobs:
           retention-days: 14
 
       - name: Send ZAP notification
-        uses: govuk-once/govuk-platform-notifications-gh-action/security-alerts@a9eeebe303e5ad72772c7171d8823b6f6834d1dc
         if: steps.new_zap_findings.outputs.count != '0'
+        uses: govuk-once/govuk-platform-notifications-gh-action/security-alerts@9790ae74363e58ed5600a4705a77af94b583435d
         with:
           aws_account_id: ${{ steps.aws-account.outputs.account-id }}
-          message_type: security_alerts
+          aws_region: eu-west-2
           title: "New ZAP security findings"
           message: "New findings detected during the authenticated ZAP API scan."
           finding_count: ${{ steps.new_zap_findings.outputs.count }}
