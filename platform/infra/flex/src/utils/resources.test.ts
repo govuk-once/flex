@@ -27,45 +27,44 @@ describe("importResources", () => {
     vi.unstubAllEnvs();
   });
 
-  it("prefixes stage-scoped secrets with the stage only", async () => {
-    const resources = await importForStage("ljones", {
-      stageSecret: {
-        type: "secret",
-        path: "/flex-secret/example",
-        scope: "stage",
-      },
-    });
+  it.for<{
+    type: DomainResource["type"];
+    path: string;
+    scope: DomainResource["scope"];
+    expected: string;
+  }>([
+    {
+      type: "secret",
+      path: "/flex-secret/example",
+      scope: "stage",
+      expected: "/ljones/flex-secret/example",
+    },
+    {
+      type: "secret",
+      path: "/flex-secret/example",
+      scope: undefined,
+      expected: "/development/flex-secret/example",
+    },
+    {
+      type: "ssm:runtime",
+      path: "/flex/example",
+      scope: "stage",
+      expected: "/ljones/flex/example",
+    },
+    {
+      type: "ssm:runtime",
+      path: "/flex/example",
+      scope: undefined,
+      expected: "/development/flex/example",
+    },
+  ])(
+    "resolves $type $path with scope $scope to $expected",
+    async ({ type, path, scope, expected }) => {
+      const resources = await importForStage("ljones", {
+        resource: { type, path, scope },
+      });
 
-    expect(resolvedName(resources.get("stageSecret"))).toBe(
-      "/ljones/flex-secret/example",
-    );
-  });
-
-  it("prefixes environment-scoped secrets with the environment", async () => {
-    const resources = await importForStage("ljones", {
-      envSecret: { type: "secret", path: "/flex-secret/example" },
-    });
-
-    expect(resolvedName(resources.get("envSecret"))).toBe(
-      "/development/flex-secret/example",
-    );
-  });
-
-  it("prefixes SSM parameters the same way as secrets", async () => {
-    const resources = await importForStage("ljones", {
-      stageParam: {
-        type: "ssm:runtime",
-        path: "/flex/example",
-        scope: "stage",
-      },
-      envParam: { type: "ssm:runtime", path: "/flex/example-env" },
-    });
-
-    expect(resolvedName(resources.get("stageParam"))).toBe(
-      "/ljones/flex/example",
-    );
-    expect(resolvedName(resources.get("envParam"))).toBe(
-      "/development/flex/example-env",
-    );
-  });
+      expect(resolvedName(resources.get("resource"))).toBe(expected);
+    },
+  );
 });
