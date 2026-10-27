@@ -284,6 +284,7 @@ udpGetTopics: {
 - `retryAttempts` is the number of retries after the first try, up to `5`.
 - Waits use exponential backoff with full jitter. `maxRetryDelay` caps each wait in milliseconds, between `10` and `1000`. The default cap is `1000`.
 - Each retry logs a warning and emits `third_party_request_retried`.
+- Values set on the integration are checked against these limits when the domain config is loaded, so an out-of-range value fails the deploy.
 
 There is no timeout per call. A request that hangs runs until the Lambda's `timeoutSeconds`.
 

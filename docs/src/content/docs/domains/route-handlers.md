@@ -75,8 +75,8 @@ export const handler = route("GET /v1/topics", async ({ logger }) => {
 
 - Its service name is `<domain>-<public or private>-<version>-<route name>`, for example `topics-public-v1-retrieve-topics`.
 - It carries the request's `x-correlation-id`, so you can follow one request across Lambdas.
-- Its level comes from the route's `logLevel`, then `common.logLevel`, then `INFO`. In `production` the logger stays at `INFO` whatever you set.
-- At `DEBUG` or `TRACE` the whole incoming event is logged too, and this still happens in `production`. See the warning under [Returning a response](#returning-a-response).
+- Its level comes from the route's `logLevel`, then `common.logLevel`, then `INFO`. In `production` it is always set to `INFO`.
+- At `DEBUG` or `TRACE` the whole incoming event is logged too. This never happens in `production`.
 - Redaction is partial. It matches field names such as `authorization`, `token`, `password` and `email`, and some values such as JWTs and email addresses. Anything else is logged as it is, so don't log data you wouldn't want to see in a log. See [Log redaction](/flex/observability/log-redaction/).
 
 Log the outcome, not the payload. `userId` is pseudonymous and safe to log.
@@ -92,7 +92,7 @@ export const handler = route("GET /v1/topics", async ({ auth, logger }) => {
 });
 ```
 
-Private routes have no `auth`, because no user token reaches them. Declare a header for the user id instead, and have the caller send it:
+Private routes have no `auth` - it isn't in their type and no user token reaches them. Declare a header for the user id instead, and have the caller send it:
 
 ```ts title="domain.config.ts"
 POST: {
@@ -112,10 +112,6 @@ export const handler = route(
   },
 );
 ```
-
-:::caution
-TypeScript currently allows `auth` on private routes, but it is `undefined` at runtime. Don't use it there.
-:::
 
 ### With a request body
 
@@ -344,11 +340,7 @@ If the route has a `response` schema, `data` is checked twice:
 - **At build time**, TypeScript checks `data` against the schema.
 - **At runtime**, the SDK checks it again. A mismatch returns a `500`, logs the Zod issues and emits a `response_validation_failed` telemetry event.
 
-With `logLevel` set to `DEBUG` or `TRACE`, the Zod issues are also included in the response body, which helps while developing.
-
-:::danger
-This happens in `production` too, along with logging the whole incoming event. Never promote a route with `logLevel` set to `DEBUG` or `TRACE`.
-:::
+With `logLevel` set to `DEBUG` or `TRACE`, the Zod issues are also included in the response body, which helps while developing. In `production` the level is always `INFO`, so this never happens there.
 
 ## Errors
 

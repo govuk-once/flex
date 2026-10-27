@@ -79,16 +79,16 @@ For each flag, the first rule that applies wins:
 3. **`default`**, if it is set.
 4. Otherwise, `false`.
 
-| `default` | `environments`            | `development` | `staging` | `production` |
-| --------- | ------------------------- | ------------- | --------- | ------------ |
-| not set   | not set                   | off           | off       | off          |
-| `false`   | `["development"]`         | on            | off       | off          |
-| `false`   | `["development", "staging"]` | on         | on        | off          |
-| `true`    | `["development"]`         | on            | on        | on           |
+| `default` | `environments`               | `development` | `staging` | `production` |
+| --------- | ---------------------------- | ------------- | --------- | ------------ |
+| not set   | not set                      | off           | off       | off          |
+| `false`   | `["development"]`            | on            | off       | off          |
+| `false`   | `["development", "staging"]` | on            | on        | off          |
+| `true`    | `["development"]`            | on            | on        | on           |
 
 The last row shows why `environments` can't turn a flag off: `default: true` is on everywhere. Leave `default` out, or set it to `false`, and list the environments where the flag should be on.
 
-Personal and `pr-<n>` stages count as `development`.
+The current environment is the stage the Lambda is deployed to, read from `FLEX_ENVIRONMENT`, which the platform sets on every deployed Lambda. Personal and `pr-<n>` stages count as `development`.
 
 ### Environment variables
 

@@ -96,7 +96,7 @@ Defaults for every route. A value set on a route takes precedence.
 | Field      | Default      | Description                                                                |
 | ---------- | ------------ | -------------------------------------------------------------------------- |
 | `access`   | `"isolated"` | Lambda network placement. See [Access](#access).                           |
-| `logLevel` | `"INFO"`     | Log level. Ignored in `production`.                                        |
+| `logLevel` | `"INFO"`     | Log level. Always `INFO` in `production`.                                  |
 | `function` | —            | Lambda options. See [Function](#function).                                 |
 | `headers`  | —            | Headers every route reads. Merged with route `headers`, the route winning. |
 
@@ -163,6 +163,34 @@ The platform prefixes `path` with the environment it is deploying to. Set `scope
 
 `scope` has no effect on `kms`.
 
+#### Secrets
+
+A secret is imported by name, and the platform doesn't create it, so it must exist in Secrets Manager under the resolved name. Each route's Lambda is granted read on only the secrets it lists.
+
+```ts
+resources: {
+  // One value shared by every stage in an environment
+  apiKey: { type: "secret", path: "/flex-secret/<domain>/example-api-key" },
+  // A separate value for each stage
+  stageToken: {
+    type: "secret",
+    path: "/flex-secret/<domain>/example-token",
+    scope: "stage",
+  },
+},
+```
+
+| Deployed to           | `apiKey`                                            | `stageToken`                                     |
+| --------------------- | --------------------------------------------------- | ------------------------------------------------ |
+| Personal stage `jane` | `/development/flex-secret/<domain>/example-api-key` | `/jane/flex-secret/<domain>/example-token`       |
+| `pr-123`              | `/development/flex-secret/<domain>/example-api-key` | `/pr-123/flex-secret/<domain>/example-token`     |
+| `staging`             | `/staging/flex-secret/<domain>/example-api-key`     | `/staging/flex-secret/<domain>/example-token`    |
+| `production`          | `/production/flex-secret/<domain>/example-api-key`  | `/production/flex-secret/<domain>/example-token` |
+
+Use the default for credentials that belong to an environment, such as a partner API key. Use `scope: "stage"` for a value that differs per stage, such as one a stage's own stack creates. The platform's own `e2e-bypass` and `origin-verify-secret` secrets are named this way in [`stacks/global.ts`](https://github.com/govuk-once/flex/blob/main/platform/infra/flex/src/stacks/global.ts) and `stacks/platform.ts`. On `staging` and `production` the stage is the environment, so both scopes resolve to the same name.
+
+Used in: environment-scoped secrets in [`domains/udp`](https://github.com/govuk-once/flex/blob/main/domains/udp/domain.config.ts). No domain uses a stage-scoped secret yet.
+
 ## Integrations
 
 Typed clients for calling service gateways and other domains' private routes. All calls go through the private API Gateway, signed with SigV4.
@@ -190,8 +218,8 @@ integrations: {
 | `route`         | `METHOD /version/path`. End with `/*` to allow any path below it, which the handler then supplies.                               |
 | `body`          | Request body schema, which types the call. For a `/*` route, pass the type as a generic when calling instead.                    |
 | `response`      | Response schema, which types `result.data`.                                                                                      |
-| `retryAttempts` | Retries on a failed request.                                                                                                     |
-| `maxRetryDelay` | Longest wait between retries.                                                                                                    |
+| `retryAttempts` | Retries on a failed request, `0` to `5`.                                                                                         |
+| `maxRetryDelay` | Longest wait between retries in milliseconds, `10` to `1000`.                                                                    |
 
 IAM grants the route exactly the method and path declared. See [Calling other domains and gateways](/flex/domains/calling-other-domains/) for how to call them and handle errors.
 
