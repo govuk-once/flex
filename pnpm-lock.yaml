@@ -257,6 +257,40 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
 
+  domains/mikeisthebest:
+    dependencies:
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../libs/testing
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
+      eslint:
+        specifier: 10.7.0
+        version: 10.7.0(jiti@2.7.0)(supports-color@8.1.1)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.0.11(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
+
   domains/topics:
     dependencies:
       '@flex/sdk':
@@ -2965,6 +2999,7 @@ packages:
   '@opentelemetry/sdk-trace-base@2.7.1':
     resolution: {integrity: sha512-NAYIlsF8MPUsKqJMiDQJTMPOmlbawC1Iz/omMLygZ1C9am8fTKYjTaI+OZM+WTY3t3Glo0wnOg/6/pac6RGPPw==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
