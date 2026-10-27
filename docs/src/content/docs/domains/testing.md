@@ -191,10 +191,10 @@ Try a `404`, a `500` and a response that doesn't match the integration's `respon
 
 The resources a route lists are available in unit tests in two ways, depending on when they resolve:
 
-| Resource type               | Resolved    | Set it in                                |
-| --------------------------- | ----------- | ---------------------------------------- |
-| `"kms"`, `"ssm"`            | Deploy time | `env` in the domain's `vitest.config.ts` |
-| `"secret"`, `"ssm:runtime"` | Run time    | The test, through `sdk.context()`        |
+| Resource type               | Resolved    | Set it in                                                         |
+| --------------------------- | ----------- | ----------------------------------------------------------------- |
+| `"kms"`, `"ssm"`            | Deploy time | `env` in the domain's `vitest.config.ts`                          |
+| `"secret"`, `"ssm:runtime"` | Run time    | `env` (a placeholder name), and the test, through `sdk.context()` |
 
 #### Deploy-time resources
 
@@ -202,7 +202,7 @@ These are read when the handler module loads, so they must be in `env` in `vites
 
 #### Run-time resources
 
-In a deployed Lambda, middleware fetches these before the handler runs. In a test, hand their values to the context:
+In a deployed Lambda, middleware fetches these before the handler runs. The handler module still checks, when it loads, that an environment variable named after each resource exists, and throws if not. So add an entry for each one to `env` in `vitest.config.ts` too, with any placeholder such as the resource name. The real value comes from the context. In a test, hand their values to the context:
 
 ```ts
 const result = await handler(

@@ -88,7 +88,7 @@ Leave `access` alone. A domain reaches external services through a [service gate
 
 ### Example: the topics domain
 
-`domains/topics` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway, which is the Lambda that can reach the internet. Because it makes integration calls, the domain declares the [private gateway URL](/flex/domains/domain-config/#the-private-gateway-url) as a resource, which every integration needs.
+`domains/topics` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway. Because it makes integration calls, the domain declares the [private gateway URL](/flex/domains/domain-config/#the-private-gateway-url) as a resource, which every integration needs.
 
 ```text
 GOV.UK app → CloudFront → Lambda authorizer → topics Lambda → private API Gateway → udp gateway → UDP

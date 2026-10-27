@@ -14,7 +14,7 @@ The platform does the shared work for you:
 - **Authentication.** Requests are checked at the edge and again by a Lambda authorizer. Handlers receive a pseudonymous `auth.userId`.
 - **Edge protection.** CloudFront, Shield and WAF sit in front of everything.
 - **Service-to-service calls.** Domains call other domains and the service gateways through typed integrations. Calls are signed and scoped by IAM to exactly the routes declared.
-- **Logging and telemetry.** Structured logs with automatic redaction of secrets and personal data.
+- **Logging and telemetry.** Structured logs with partial redaction of secrets and personal data.
 - **OpenAPI.** A spec is generated for every domain, and CI fails a pull request that makes a breaking change.
 
 A domain is usually thin: validate the request, call an upstream service, return the response. External services are reached only through Flex-owned service gateways.

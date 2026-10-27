@@ -74,7 +74,7 @@ Domains with public routes have a Lambda authorizer on the `Authorization` heade
 
 - It checks the signature against the Cognito JWKS, and checks the token is an access token for the expected client.
 - It takes the `username` claim as the **pairwise id**: a pseudonymous id for the user. It returns this to API Gateway as `pairwiseId` in the authorizer context.
-- If anything is wrong it returns a deny, and the gateway responds `401`.
+- If anything is wrong it returns a deny, and the gateway responds `403`.
 
 In personal stages, `pr-<n>` stages and `development`, the JWKS comes from a stub endpoint, so stub tokens from `pnpm jwt` are accepted. See [Environment setup](/flex/getting-started/environment-setup/). `staging` and `production` use the real Cognito JWKS.
 
