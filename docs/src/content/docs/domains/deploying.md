@@ -23,7 +23,7 @@ A **stage** is one complete copy of Flex. Every deploy, API URL and token belong
 
 Your personal stage is named after `$USER`, lower-cased, with anything other than letters, numbers and hyphens removed, and cut to 12 characters. Set `STAGE=<name>` to use another name. Everything is named after the stage, such as the `<stage>-FlexPlatform` stack.
 
-Personal and `pr-<n>` stages share the `development` environment's core infrastructure. They are isolated from the shared environments, so deploy and break things freely.
+Personal and `pr-<n>` stages share the `development` environment's core infrastructure. Their stacks are separate from the shared environments, but they still use the `development` gateway configuration and upstream URLs, so calls to a service gateway reach the real `development` upstream. Deploy freely, but be careful what your code sends upstream.
 
 ## Deploy
 

@@ -414,7 +414,7 @@ Sign in with the GDS CLI first.
 
 ## 6. Deploy your personal stack
 
-Your stack is named after `$USER` and is isolated from the shared environments.
+Your stack is named after `$USER` and deploys into the development account, separate from staging and production. It shares the development environment's configuration, so calls through the gateways reach the development upstream services.
 
 ```bash
 # Deploy everything
