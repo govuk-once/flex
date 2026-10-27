@@ -159,6 +159,20 @@ describe("getRouteLogLevel", () => {
   it('defaults to "INFO" log level when common and route log levels are not defined', () => {
     expect(getRouteLogLevel()).toBe("INFO");
   });
+
+  it.for([
+    { stage: "development", expected: route },
+    { stage: "staging", expected: route },
+    { stage: "ljones", expected: route },
+    { stage: "production", expected: "INFO" },
+  ])(
+    "resolves to $expected when FLEX_ENVIRONMENT=$stage",
+    ({ stage, expected }, { env }) => {
+      env.set({ FLEX_ENVIRONMENT: stage });
+
+      expect(getRouteLogLevel(common, route)).toBe(expected);
+    },
+  );
 });
 
 describe("getRouteResources", () => {

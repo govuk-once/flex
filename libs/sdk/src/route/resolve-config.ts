@@ -169,5 +169,7 @@ export function getRouteLogLevel(
   common?: LogLevel,
   route?: LogLevel,
 ): LogLevel {
+  if (process.env.FLEX_ENVIRONMENT === Environment.production) return "INFO";
+
   return route ?? common ?? "INFO";
 }
