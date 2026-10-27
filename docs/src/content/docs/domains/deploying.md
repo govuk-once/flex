@@ -41,15 +41,30 @@ With `domain=<name>`, only that domain's stack is deployed. The platform, global
 
 ### Preview and iterate
 
+Run `diff` to see what a deploy would change before you make it.
+
+While you iterate on handler code, `hotswap` updates the Lambda code directly instead of going through CloudFormation, so it is faster than a full deploy. Use it for code changes only.
+
+A change to the config or any infrastructure needs a full deploy. Because it skips CloudFormation, it deliberately introduces drift between the stack and its template, so use it on your personal stage only. When you have finished, deploy your stage again in full. See the [`cdk deploy` reference](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html) for how hotswap works, its limits and how to reconcile drift.
+
+The app has several stacks, so `hotswap` needs a stack selector. Pick the narrowest one that covers your change.
+
 ```bash
 # Show what a deploy would change
 pnpm --filter @platform/flex diff
 
-# Update Lambda code without a full CloudFormation deploy
-pnpm --filter @platform/flex hotswap
-```
+# Update Lambda code without a full CloudFormation deploy.
+# A single stack name updates only that stack, such as the domain you are
+# working on.
+pnpm --filter @platform/flex hotswap "<stage>-<domain>"
 
-Use `hotswap` for code changes only. A change to the config or any infrastructure needs a full deploy.
+# "<stage>-*" matches all of your stage's stacks.
+pnpm --filter @platform/flex hotswap "<stage>-*"
+
+# --all selects every stack in the app. The app only builds your own stage's
+# stacks, so this is the same set as above.
+pnpm --filter @platform/flex hotswap --all
+```
 
 ### Tear down
 
