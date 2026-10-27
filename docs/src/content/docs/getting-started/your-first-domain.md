@@ -227,9 +227,14 @@ Domains reach external data through service gateways, declared as **integrations
 
 ### Update domain config
 
-Add a resource, an integration and wire both into the route. Highlighted lines are keyed and explained below.
+Add a resource, an integration and wire both into the route. This is the full file, so it replaces the one from step 3. Highlighted lines are the additions, keyed and explained below.
 
-```ts title="domain.config.ts" ins={"1":1-8} ins={"2":10-16} ins={"3":17-24} ins={"4":31-32}
+```ts title="domain.config.ts" ins={"1":6-12} ins={"2":18-24} ins={"3":25-32} ins={"4":39-40}
+const GreetingResponseSchema = z.object({
+  message: NonEmptyString,
+  topicCount: z.number().optional(),
+});
+
 const SelectedTopicsResponseSchema = z.object({
   topics: z.object({
     selectedTopics: z.array(
@@ -239,6 +244,9 @@ const SelectedTopicsResponseSchema = z.object({
 });
 
 export const { config, route, routeContext } = domain({
+  name: "hello",
+  environments: ["development"],
+  common: { access: "isolated" },
   resources: {
     privateGatewayUrl: {
       type: "ssm",
