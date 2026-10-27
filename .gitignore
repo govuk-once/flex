@@ -33,3 +33,6 @@ cdk.context.json
 *.http
 
 eslint-report.json
+
+# OTel metrics spike evidence (account IDs and ARNs)
+otel-metrics-evidence/
