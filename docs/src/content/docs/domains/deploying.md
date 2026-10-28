@@ -19,7 +19,7 @@ A **stage** is one complete copy of Flex. Every deploy, API URL and token belong
 | `pr-<n>`      | CI, for each pull request         | All                                                                             | [Stub](#tokens)      |
 | `development` | The pipeline, after merge         | Those whose [`environments`](/flex/domains/domain-config/#top-level) include it | [Stub](#tokens)      |
 | `staging`     | The pipeline, after `development` | Those whose `environments` include it                                           | [One Login](#tokens) |
-| `production`  | The pipeline, after `staging`     | Those whose `environments` include it                                           | [One Login](#tokens) |
+| `production`  | The pipeline, after `staging`     | Those whose `environments` include it                                           | —                    |
 
 Your personal stage is named after `$USER`, lower-cased, with anything other than letters, numbers and hyphens removed, and cut to 12 characters. Set `STAGE=<name>` to use another name. Everything is named after the stage, such as the `<stage>-FlexPlatform` stack.
 
@@ -124,7 +124,7 @@ Private routes can't be called this way. See [Private routes](/flex/domains/test
 | Stages                               | Token                                                                                            |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | Personal, `pr-<n>` and `development` | A stub token, signed with a stub key and accepted because these stages use a stub JWKS endpoint. |
-| `staging` and `production`           | A real token, from signing a test user in to GOV.UK One Login.                                   |
+| `staging`                            | A real token, from signing a test user in to GOV.UK One Login.                                   |
 
 `pnpm jwt` makes the right kind for the stage in `STAGE`, and uses `development` if it is not set. Stub tokens expire after one hour, so generate another when you get a `401`.
 
