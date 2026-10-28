@@ -7,7 +7,7 @@ const GreetingResponseSchema = z.object({
 });
 
 export const { config, route, routeContext } = domain({
-  name: "xtreme-awesome",
+  name: "mikeisthebest",
   environments: ["development"],
   common: { access: "isolated" },
   routes: {
