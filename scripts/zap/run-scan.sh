@@ -128,6 +128,8 @@ jq -e '
   exit 1
 }
 
+sudo chown -R "$(id -u):$(id -g)" "$REPORT_DIR"
+
 # Record successful execution only after report validation.
 python3 - "$COMPLETION_MARKER" "$ZAP_EXIT_CODE" <<'PY'
 import json
