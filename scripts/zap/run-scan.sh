@@ -6,40 +6,43 @@ ZAP_IMAGE="ghcr.io/zaproxy/zaproxy:2.17.0@sha256:781a2bdaea47324e7bab583e2263f21
 
 WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
 REPORT_DIR="${WORKSPACE}/zap-reports"
+COMPLETION_MARKER="${REPORT_DIR}/scan-complete.json"
 PLAN_TEMPLATE="${WORKSPACE}/scripts/zap/zap-plan.yaml"
 PLAN_FILE="${WORKSPACE}/zap-plan.yaml"
 
 if [[ -z "${API_URL:-}" ]]; then
-  echo "ERROR: API_URL is not configured"
+  echo "::error::API_URL is not configured"
   exit 1
 fi
 
 if [[ -z "${ZAP_AUTH_HEADER_VALUE:-}" ]]; then
-  echo "ERROR: ZAP authentication header is missing"
+  echo "::error::ZAP authentication header is missing"
   exit 1
 fi
 
 if [[ ! -s "${WORKSPACE}/dist/openapi/merged-openapi.json" ]]; then
-  echo "ERROR: Merged OpenAPI specification is missing"
+  echo "::error::Merged OpenAPI specification is missing"
   exit 1
 fi
 
 if [[ ! -s "$PLAN_TEMPLATE" ]]; then
-  echo "ERROR: ZAP automation plan template is missing"
+  echo "::error::ZAP automation plan template is missing"
   exit 1
 fi
 
 mkdir -p "$REPORT_DIR"
 
-# Clear previous reports to avoid validating stale scan results.
+# Remove previous scan completion evidence and reports.
 rm -f \
+  "$COMPLETION_MARKER" \
   "$REPORT_DIR/report_json.json" \
   "$REPORT_DIR/report_html.html" \
   "$REPORT_DIR/report_md.md" \
   "$REPORT_DIR/report.sarif.json"
 
-# Substitute the staging API URL without interpreting it as shell code.
+# Generate the ZAP automation plan.
 export API_URL
+
 python3 - "$PLAN_TEMPLATE" "$PLAN_FILE" <<'PY'
 import os
 import pathlib
@@ -89,16 +92,57 @@ fi
 echo "Report directory contents:"
 ls -lah "$REPORT_DIR"
 
+# Fail closed on any non-zero execution result.
 if [[ "$ZAP_EXIT_CODE" -ne 0 ]]; then
-  echo "ZAP returned exit code $ZAP_EXIT_CODE"
+  echo "::error::ZAP execution failed or returned a non-zero result (code $ZAP_EXIT_CODE)"
+  exit 1
 fi
 
-# Preserve existing workflow behaviour.
-# Exit code 1 is currently tolerated; report validation and
-# the new security gate will enforce the release requirements.
-if [[ "$ZAP_EXIT_CODE" -gt 1 ]]; then
-  echo "ZAP execution failed (exit code $ZAP_EXIT_CODE)"
-  exit "$ZAP_EXIT_CODE"
-fi
+# Verify that all expected reports were generated.
+for report in \
+  report_json.json \
+  report_html.html \
+  report_md.md \
+  report.sarif.json
+do
+  if [[ ! -s "$REPORT_DIR/$report" ]]; then
+    echo "::error::Missing or empty ZAP report: $report"
+    exit 1
+  fi
+done
 
-exit 0
+# Validate JSON and SARIF report structures.
+jq -e '
+  (.site | type == "array")
+  and (.site | length > 0)
+' "$REPORT_DIR/report_json.json" >/dev/null || {
+  echo "::error::ZAP JSON report is invalid."
+  exit 1
+}
+
+jq -e '
+  (.runs | type == "array")
+  and (.runs | length > 0)
+' "$REPORT_DIR/report.sarif.json" >/dev/null || {
+  echo "::error::ZAP SARIF report is invalid."
+  exit 1
+}
+
+# Record successful execution only after report validation.
+python3 - "$COMPLETION_MARKER" "$ZAP_EXIT_CODE" <<'PY'
+import json
+import pathlib
+import sys
+from datetime import datetime, timezone
+
+path = pathlib.Path(sys.argv[1])
+exit_code = int(sys.argv[2])
+
+path.write_text(json.dumps({
+    "completed": True,
+    "zap_exit_code": exit_code,
+    "completed_at": datetime.now(timezone.utc).isoformat()
+}, indent=2))
+PY
+
+echo "ZAP scan completed successfully."

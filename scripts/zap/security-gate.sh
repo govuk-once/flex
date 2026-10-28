@@ -5,8 +5,24 @@ set -euo pipefail
 WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
 REPORT="$WORKSPACE/zap-reports/report_json.json"
 RULES_FILE="$WORKSPACE/.zap/rules.tsv"
+COMPLETION_MARKER="$WORKSPACE/zap-reports/scan-complete.json"
 
 echo "Evaluating ZAP security gate..."
+
+# Require evidence that the scan completed successfully.
+if [[ ! -s "$COMPLETION_MARKER" ]]; then
+  echo "::error::ZAP scan completion evidence is missing."
+  exit 1
+fi
+
+jq -e '
+  .completed == true
+  and .zap_exit_code == 0
+  and (.completed_at | type == "string")
+' "$COMPLETION_MARKER" >/dev/null || {
+  echo "::error::ZAP scan completion evidence is invalid."
+  exit 1
+}
 
 if [[ ! -s "$REPORT" ]]; then
   echo "::error::ZAP report is missing or empty."
@@ -18,7 +34,7 @@ if [[ ! -f "$RULES_FILE" ]]; then
   exit 1
 fi
 
-# Validate the report before evaluating exceptions.
+# Validate the ZAP report structure.
 jq -e '
   (.site | type == "array" and length > 0)
   and all(.site[];
@@ -39,7 +55,7 @@ jq -e '
   exit 1
 }
 
-# Convert the reviewed TSV exceptions into JSON.
+# Convert reviewed TSV exceptions into JSON.
 RULES_JSON="$(mktemp)"
 trap 'rm -f "$RULES_JSON"' EXIT
 
@@ -68,7 +84,7 @@ with open(destination, "w", encoding="utf-8") as f:
     json.dump(rules, f)
 PY
 
-# Evaluate every Medium/High instance individually.
+# Evaluate every Medium/High finding instance.
 jq -r --slurpfile rules "$RULES_JSON" '
   $rules[0] as $exceptions |
 
@@ -134,4 +150,3 @@ if [[ "$BLOCKING_COUNT" -gt 0 ]]; then
 fi
 
 echo "ZAP security gate PASSED."
-
