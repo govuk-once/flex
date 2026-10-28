@@ -171,6 +171,17 @@ jobs:
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
 
+  zapSecurityScan:
+    name: ZAP Security Scan (Staging)
+    needs: deployStaging
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+      security-events: write
+    uses: ./.github/workflows/zap.yml
+    secrets: inherit
+
   deployProd:
     name: Deploy to Production
     needs: deployStaging

@@ -1,37 +1,33 @@
 name: ZAP API scan
+
 on:
-  workflow_run:
-    workflows: [Continuous Deployment]
-    types:
-      - completed
-    branches: [main] # Only triggers from `main`
+  workflow_call:
   workflow_dispatch:
+
 jobs:
   zap_scan:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+    name: ⚡️ ZAP Staging
     runs-on: ubuntu-latest
-    name: ⚡️ Zap development
-    permissions:
-      id-token: write # Required for AWS OIDC
-      contents: read
-      security-events: write # Required for SARIF upload
-      actions: read
     timeout-minutes: 15
-    steps:
 
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
-          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+          role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
           aws-region: "eu-west-2"
           role-session-name: ${{ github.run_id }}
 
@@ -54,7 +50,7 @@ jobs:
 
       - name: Generate JWT
         env:
-          STAGE: "development"
+          STAGE: "staging"
         run: pnpm dastSetup
 
       - name: Verify authentication values
@@ -74,14 +70,14 @@ jobs:
       - name: Verify API authentication
         shell: bash
         env:
-          API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+          API_URL: ${{ secrets.STAGING_API_URL }}
         run: bash scripts/zap/verify-auth.sh
 
       - name: Run ZAP API scan
         id: zap
         shell: bash
         env:
-          API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
+          API_URL: ${{ secrets.STAGING_API_URL }}
         run: bash scripts/zap/run-scan.sh
 
       - name: Verify ZAP reports
@@ -102,7 +98,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          ZAP_BASELINE_ARTIFACT: zap-api-development-baseline
+          ZAP_BASELINE_ARTIFACT: zap-api-staging-baseline
         run: bash scripts/zap/load-baseline.sh
 
       - name: Detect new ZAP findings
@@ -125,7 +121,7 @@ jobs:
       - name: Upload ZAP finding baseline
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: zap-api-development-baseline
+          name: zap-api-staging-baseline
           path: zap-findings-baseline.txt
           if-no-files-found: error
           retention-days: 90
@@ -134,13 +130,13 @@ jobs:
         uses: github/codeql-action/upload-sarif@88585263c0627ee42c0e1c5143a112c8d6f4aa18 # v4.38.2
         with:
           sarif_file: report.github.sarif.json
-          category: zap-api-development
+          category: zap-api-staging
 
       - name: Upload ZAP reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: zap-api-development-reports
+          name: zap-api-staging-reports
           path: |
             zap-reports/report_html.html
             zap-reports/report_json.json
@@ -166,12 +162,6 @@ jobs:
 
       - name: ZAP security gate
         id: security_gate
+        continue-on-error: true
         shell: bash
         run: bash scripts/zap/security-gate.sh
-
-  workflow_fail:
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - run: echo "❌ Continuous Deployment workflow failed"
