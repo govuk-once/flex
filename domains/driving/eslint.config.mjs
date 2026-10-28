@@ -1,1 +1,1 @@
-export { config as default } from "@flex/config/eslint";  
+export { config as default } from "@flex/config/eslint";
