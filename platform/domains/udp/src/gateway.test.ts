@@ -64,7 +64,6 @@ const mockGroupsBody = [
 ];
 
 const searchTimestamp = Date.now().toLocaleString()
-
 const mockSearches = {
   searches: {
     selectedSearches: [
@@ -73,11 +72,8 @@ const mockSearches = {
     ]
   }
 };
-
 const mockSearchesEmpty = {searches: {selectedSearches: []}};
-
 const mockUpstreamSearches = { data: mockSearches };
-
 const mockUpstreamSearchesEmpty = { data: mockSearchesEmpty };
 
 const mockTopics = {
@@ -698,8 +694,7 @@ describe("UDP Service Gateway", () => {
       http
           .url(mockConsumerConfig.apiUrl)
           .post("/v1/activity/searches", {
-            headers: mockHeadersRequestedAt,
-            body: { },
+            headers: mockHeadersRequestedAt
           })
           .reply(200, mockUpstreamSearches);
 
@@ -707,8 +702,7 @@ describe("UDP Service Gateway", () => {
           platform.gatewayEvent.post("/v1/activity/searches", {
             headers: {
               "requesting-service-user-id": mockRequestingServiceUserId,
-            },
-            body: { },
+            }
           }),
           platform.context(),
       );
@@ -771,7 +765,7 @@ describe("UDP Service Gateway", () => {
             headers: mockHeadersRequestedAt,
             body: { data: mockSearches },
           })
-          .reply(200, mockUpstreamTopics);
+          .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
           platform.gatewayEvent.post("/v1/activity/searches", {
@@ -832,7 +826,7 @@ describe("UDP Service Gateway", () => {
             headers: {
               "requesting-service-user-id": mockRequestingServiceUserId,
             },
-            body: mockTopics,
+            body: mockUpstreamSearchesEmpty,
           }),
           platform.context(),
       );

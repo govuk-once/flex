@@ -5,9 +5,14 @@ export const searchTermSchema = z.object({
     timestamp: z.string().min(1),
 });
 
+export const selectedSearchesSchema = z.array(searchTermSchema);
+
 export const userSearchesSchema = z.object({
-    searches: z.array(searchTermSchema)
-})
+    searches: z.object({
+        selectedSearches: selectedSearchesSchema,
+    }),
+});
+
 export const inboundUpdateUserSearchesRequestSchema = userSearchesSchema;
 
 export const domainSearchesSchema = z.array(searchTermSchema);

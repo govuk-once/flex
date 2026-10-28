@@ -215,25 +215,23 @@ export const handler = createHandler({
       body,
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.post("/v1/activity/searches", {
-        schema: domainSearchesSchema,
+      return api.post("/v1/activity/searches", {
+        schema: searchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
           "requested-at": new Date().toISOString(),
         },
-        body: { data: body },
+        body: { body },
       });
-
-      return mapApiResult(result, ({  }) => body);
     },
     "GET /v1/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.get("/v1/activity/searches", {
+      return api.get("/v1/activity/searches", {
         schema: searchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
@@ -241,8 +239,6 @@ export const handler = createHandler({
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
-
-      return mapApiResult(result, ({ data }) => data);
     },
   },
 });
