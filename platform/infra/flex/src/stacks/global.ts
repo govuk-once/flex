@@ -50,6 +50,7 @@ import { CertificateAlarms } from "../constructs/alarms/certificate";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
 import { createIamChangeAlerts } from "../constructs/alarms/iam-change-alerts";
+import { createKeyChangeAlerts } from "../constructs/alarms/key-change-alerts";
 import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
@@ -61,6 +62,7 @@ import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../utils/getEntry";
+import { createSlackNotifications } from "./core/notifications";
 
 interface DomainNames {
   domainName: string;
@@ -93,11 +95,13 @@ export class FlexGlobalStack extends BaseStack {
       new ServicePrincipal("cloudwatch.amazonaws.com"),
     );
 
+    const relayHealth = createRelayHealthAction(this, stage);
     const relayProps = {
       stage,
       targetTopicKeyArn,
       relayTopicKey: alarmTopicKey,
-      ...createRelayHealthAction(this, stage),
+      healthKey: relayHealth.healthKey,
+      healthAction: relayHealth.healthAction,
     };
 
     const criticalRelay = createAlarmRelay(this, {
@@ -118,7 +122,32 @@ export class FlexGlobalStack extends BaseStack {
       }),
       criticalTopic: criticalRelay,
       alarmTopicKey,
+      relayHealth,
     };
+  }
+
+  // The relay health alarms deliberately bypass the relay, so they need their
+  // own route to Slack. They are critical: while one fires, no edge alarm can
+  // be trusted to have arrived. Ephemeral stages are left out to avoid a
+  // Chatbot configuration per pull request.
+  #subscribeRelayHealth({
+    healthKey,
+    healthTopic,
+  }: ReturnType<typeof createRelayHealthAction>) {
+    createSlackNotifications(this, {
+      id: "RelayHealthSlackChannel",
+      channelConfigurationName: `flex-alerts-relay-health-${stage}`,
+      topicKey: healthKey,
+      topics: [healthTopic],
+      slackWorkspaceId: this.import(
+        ENV_KEYS.MonitoringSlackWorkspaceId,
+        "eu-west-2",
+      ),
+      slackChannelId: this.import(
+        ENV_KEYS.MonitoringCriticalSlackChannelId,
+        "eu-west-2",
+      ),
+    });
   }
 
   #getDomainName(): DomainNames {
@@ -452,6 +481,8 @@ export class FlexGlobalStack extends BaseStack {
       distribution,
       criticalAction,
       warningAction,
+      // Ephemeral and development stages don't have enough traffic for this to work
+      trafficCliff: env !== Environment.development,
     });
 
     new CloudFrontFunctionAlarms(this, "CffAlarmsPlatform", {
@@ -601,11 +632,22 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
     });
 
-    const { criticalAction, warningAction, criticalTopic, alarmTopicKey } =
-      this.#createAlarmActions();
+    const {
+      criticalAction,
+      warningAction,
+      criticalTopic,
+      alarmTopicKey,
+      relayHealth,
+    } = this.#createAlarmActions();
 
     if (persistent) {
+      this.#subscribeRelayHealth(relayHealth);
       createIamChangeAlerts(this, {
+        criticalTopic,
+        alarmTopicKey,
+        warningAction,
+      });
+      createKeyChangeAlerts(this, {
         criticalTopic,
         alarmTopicKey,
         warningAction,

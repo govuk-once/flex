@@ -39,9 +39,11 @@ The prefix is derived from the CDK construct id in lowercase, which is not neces
 
 | Alarm        | Metric                                     | Threshold                       | Window                  | Missing data  | Severity |
 | ------------ | ------------------------------------------ | ------------------------------- | ----------------------- | ------------- | -------- |
-| `error-rate` | `100 * (Errors / Invocations)`, both `Sum` | `> 1%`, at 10+ invocations      | 2 x 5 min (both breach) | Not breaching | Critical |
-| `throttles`  | `Throttles`, `Sum`                         | `> 0`                           | 1 x 1 min               | Not breaching | Critical |
-| `duration`   | `Duration`, `p99`                          | `> 80%` of the function timeout | 1 x 5 min               | Not breaching | Warning  |
+| `error-rate` | `100 * (Errors / Invocations)`, both `Sum` | `> 1%`, at 10+ invocations      | 2 x 5 min (both breach) | Not breaching | Warning  |
+| `throttles`  | `Throttles`, `Sum`                         | `> 0`                           | 1 x 1 min               | Not breaching | Warning  |
+| `duration`   | `Duration`, `p99`, at 10+ invocations      | `> 80%` of the function timeout | 2 of 3 x 5 min          | Not breaching | Warning  |
+
+All three are warnings. Whether users are affected is measured by the journey burn rate alarms, which are the critical ones; see [Critical alerts](/docs/critical-alerts.md). A single function's alarm tells you where to look once a journey alarm has fired, or flags a problem worth fixing in working hours before it becomes one.
 
 Which alarms fire together is usually a faster read than any single alarm:
 
@@ -68,7 +70,7 @@ Below 10 invocations in the window the alarm cannot fire. If a failure is report
 
 ### Throttles
 
-Fires on a single throttled invocation in any 1 minute window. This is a critical alarm as dropped invocations are user impacting, and on synchronous routes the caller receives a 429 rather than a handled error.
+Fires on a single throttled invocation in any 1 minute window. Dropped invocations are user impacting, and on synchronous routes the caller receives a 429 rather than a handled error, which is why the journey alarms count 429s as failures.
 
 Because there is no smoothing, a brief burst that Lambda absorbs within a minute will still page. Check the `Throttles` count in `StateReason` and the concurrency groupings in step 4 to tell a one-off scaling burst from sustained capacity pressure.
 
@@ -78,7 +80,7 @@ No FLEX function sets reserved or provisioned concurrency, so every function in 
 
 ### Duration
 
-Fires at 80% of the function's configured timeout, as an early warning before invocations start timing out.
+Fires at 80% of the function's configured timeout, as an early warning before invocations start timing out. The p99 is forced to zero below 10 invocations in the window and 2 of 3 windows must breach, so a cold start on a near idle function does not alarm. At low traffic the p99 of a 5 minute window is just the slowest invocation, and the slowest is usually the first.
 
 There is no default threshold. The construct fails at synth if a function has no explicit timeout, so the threshold always tracks a chosen value. It varies per function, confirm the real timeout from the `list-functions` output in step 1 before judging whether a p99 is close to the limit.
 

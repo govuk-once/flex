@@ -1,6 +1,6 @@
 # IAM change alerts
 
-FLEX uses EventBridge to send alerts for individual IAM, Lambda and CloudFormation API calls, including denied calls, to the environment's alerting Slack channel.
+FLEX uses EventBridge to send alerts for individual IAM, Lambda, CloudFormation, KMS and Cognito API calls, including denied calls, to the environment's critical alerting Slack channel.
 
 ## Rules and events
 
@@ -13,6 +13,10 @@ Rules match `AWS API Call via CloudTrail` events on the default event bus.
 | Lambda function change | `us-east-1` | `FlexGlobalStack` | `CreateFunction20150331`, `UpdateFunctionConfiguration20150331v2`, `UpdateFunctionCode20150331v2` |
 | CloudFormation call | `eu-west-2` | `FlexCoreStack` | `CreateStack`, `UpdateStack`, `CreateChangeSet`, `ExecuteChangeSet` |
 | CloudFormation call | `us-east-1` | `FlexGlobalStack` | `CreateStack`, `UpdateStack`, `CreateChangeSet`, `ExecuteChangeSet` |
+| KMS key change | `eu-west-2` | `FlexCoreStack` | `DisableKey`, `ScheduleKeyDeletion`, `PutKeyPolicy`, `DeleteAlias`, `DisableKeyRotation` |
+| KMS key change | `us-east-1` | `FlexGlobalStack` | `DisableKey`, `ScheduleKeyDeletion`, `PutKeyPolicy`, `DeleteAlias`, `DisableKeyRotation` |
+| Cognito user pool change | `eu-west-2` | `FlexCoreStack` | `DeleteUserPool`, `DeleteUserPoolClient` |
+| Cognito user pool change | `us-east-1` | `FlexGlobalStack` | `DeleteUserPool`, `DeleteUserPoolClient` |
 
 The sources are `aws.iam` / `iam.amazonaws.com`, `aws.lambda` / `lambda.amazonaws.com` and `aws.cloudformation` / `cloudformation.amazonaws.com`. Lambda event names are exact CloudTrail names, rather than API names or a `CreateFunction` prefix that would also match `CreateFunctionUrlConfig`.
 
@@ -36,6 +40,8 @@ The exclusions use these default CDK bootstrap roles:
 IAM and Lambda calls are suppressed only when both `detail.userIdentity.sessionContext.sessionIssuer.arn` is an excluded execution role and `detail.userIdentity.invokedBy` is `cloudformation.amazonaws.com`. The IAM rule excludes the execution roles for both Regions, because an IAM change made by the London execution role is recorded in `us-east-1`. Each Lambda rule excludes only its own Region's execution role.
 
 CloudFormation calls are suppressed when the session issuer is that Region's deploy role. An absent issuer or, for IAM and Lambda, an absent `invokedBy` still matches the rule.
+
+KMS calls are suppressed when made by either Region's execution role through CloudFormation, since key policies are set and ephemeral stage keys are deleted on every deploy; the CloudFormation change alert covers those. Cognito deletions have no exclusion: the user pool is not created by a FLEX stack, so any deletion is unexpected. A disabled or deleted key stops FLEX decrypting secrets and configuration, and a deleted user pool is a full outage, so both alerts are titled `PLATFORM AT RISK` in Slack.
 
 The exclusions also suppress misuse of these bootstrap roles; they cannot establish that a deployment was authorised. Update the exclusions if the bootstrap qualifier or role names change.
 

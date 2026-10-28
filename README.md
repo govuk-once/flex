@@ -136,6 +136,7 @@ flex/
 | [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
 | [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline |
 | [IAM change alerts](/docs/iam-change-alerts.md) | IAM, Lambda and CloudFormation change alerts. |
+| [Critical alerts](/docs/critical-alerts.md) | What is critical, where alerts go, how to respond, and the alarm catalogue. |
 
 ---
 

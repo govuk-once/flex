@@ -28,13 +28,8 @@ export class ApiGatewayAlarms extends Construct {
   constructor(scope: Construct, id: string, props: ApiGatewayAlarmsProps) {
     super(scope, id);
 
-    const {
-      api,
-      authFailureAccessLogGroup,
-      criticalAction,
-      warningAction,
-      alarmNamePrefix,
-    } = props;
+    const { api, authFailureAccessLogGroup, warningAction, alarmNamePrefix } =
+      props;
 
     const dimensions = {
       ApiName: api.restApiName,
@@ -51,7 +46,7 @@ export class ApiGatewayAlarms extends Construct {
     this.fiveXxAlarm = new Alarm(this, "5xxErrorRate", {
       alarmName: `${alarmNamePrefix}-5xx-error-rate`,
       alarmDescription:
-        `Critical: 5XX error rate above ${fiveXxErrorRatePercent.toString()}% ` +
+        `Warning: 5XX error rate above ${fiveXxErrorRatePercent.toString()}% ` +
         `over ${errorRateEvaluationPeriods.toString()} consecutive ` +
         `${errorRatePeriod.toMinutes().toString()} minute periods`,
       metric: new Metric({
@@ -66,7 +61,7 @@ export class ApiGatewayAlarms extends Construct {
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.fiveXxAlarm.addAlarmAction(criticalAction);
+    this.fiveXxAlarm.addAlarmAction(warningAction);
 
     const fourXxErrorRate: IMetric = authFailureAccessLogGroup
       ? this.#authFailureRate(

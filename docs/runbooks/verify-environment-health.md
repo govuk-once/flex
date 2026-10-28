@@ -38,7 +38,7 @@ export STAGE=<development|staging|production>
 
 ```bash
 aws cloudwatch describe-alarms \
-  --alarm-names "${STAGE}-smoke-test-no-success" \
+  --alarm-names "${STAGE}-smoke-test-udp-no-success" \
   --query "MetricAlarms[0].{State:StateValue,Since:StateUpdatedTimestamp}" \
   --output table \
   --region eu-west-2
@@ -46,10 +46,10 @@ aws cloudwatch describe-alarms \
 
 | Alarm State | Meaning                                                                                                                              | Action                          |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
-| `OK`        | Successful test result within the last 15 minutes                                                                                    | Continue to next step           |
-| `ALARM`     | Unsuccessful test result within the last 15 minutes. Could be an issue with the path under test or the smoke test being unresponsive | Go to [Smoke Test](#smoke-test) |
+| `OK`        | The probe succeeded in at least one of the last 3 minutes                                                                            | Continue to next step           |
+| `ALARM`     | The probe failed, or did not report, 3 minutes in a row. Could be an issue with the path under test or the smoke test being unresponsive | Go to [Smoke Test](#smoke-test) |
 
-> **Smoke test alarm must be checked manually**: The smoke test alarm does not post to any Slack channels so you must verify the alarm state manually, see [Smoke Test](#smoke-test).
+The smoke test runs every minute and probes one route per gateway dependency that a signed in test user can reach: `udp` in every environment and `travel` in development and staging. Each probe has its own alarm, `${STAGE}-smoke-test-<journey>-no-success`, and all of them post to the critical Slack channel. A separate alarm, `${STAGE}-smoke-test-auth-rejected`, fires when the probe's valid token is refused with a 401 or 403 three runs in a row.
 
 ### 2. Review alarms activity
 
@@ -64,7 +64,7 @@ aws cloudwatch describe-alarms \
 
 ### 3. Review recent Slack channel activity
 
-Warning and critical alarms both notify the same channel for each environment. The alarm severity is mentioned in the alerting message itself. All Slack channels use AWS Chatbot, so you can also query CloudWatch via Amazon Q within the channel given it has read-only access.
+Critical and warning alarms notify separate channels for each environment; see [Critical alerts](/docs/critical-alerts.md) for which alarms are critical and how to respond. All Slack channels use AWS Chatbot, so you can also query CloudWatch via Amazon Q within the channel given it has read-only access.
 
 You can navigate to the CloudWatch Logs console by clicking the link provided in the message title, or use the Amazon Q chatbot to search for the logs instead.
 
@@ -135,7 +135,9 @@ This check verifies there are no active alarms currently breaching. The list of 
 
 | Alarm Name                                        | Description                       |
 | ------------------------------------------------- | --------------------------------- |
-| `${STAGE}-smoke-test-no-success`                  | Smoke Test alarm                  |
+| `${STAGE}-smoke-test-<journey>-no-success`        | Smoke Test alarms, one per probe  |
+| `${STAGE}-smoke-test-auth-rejected`               | Smoke Test token refused          |
+| `${STAGE}-journey-*`                              | Journey burn rate alarms          |
 | `${STAGE}-apigw-*`, `${STAGE}-apigw-private-*`    | API Gateway alarms                |
 | `${STAGE}-<function-name>-alarm-*`                | Lambda alarms                     |
 | `${STAGE}-cloudfront-*`                           | CloudFront alarms                 |

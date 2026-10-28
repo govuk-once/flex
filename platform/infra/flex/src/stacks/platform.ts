@@ -30,6 +30,8 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../base";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
+import { AuthFailureAlarms } from "../constructs/alarms/auth-failure";
+import { JourneyAlarms } from "../constructs/alarms/journeys";
 import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
@@ -145,6 +147,10 @@ export class FlexPlatformStack extends BaseStack {
   }
 
   #createRestApi({ criticalAction, warningAction }: AlarmActionProps) {
+    const accessLogGroup = new LogGroup(this, "ApiAccessLogs", {
+      retention: RetentionDays.ONE_YEAR,
+    });
+
     const restApi = new RestApi(this, "Api", {
       description: "Central API Gateway for the Flex Platform",
       deployOptions: {
@@ -153,11 +159,7 @@ export class FlexPlatformStack extends BaseStack {
         stageName: STAGE_NAME,
         loggingLevel: MethodLoggingLevel.ERROR,
         dataTraceEnabled: false,
-        accessLogDestination: new LogGroupLogDestination(
-          new LogGroup(this, "ApiAccessLogs", {
-            retention: RetentionDays.ONE_YEAR,
-          }),
-        ),
+        accessLogDestination: new LogGroupLogDestination(accessLogGroup),
         accessLogFormat: AccessLogFormat.jsonWithStandardFields({
           httpMethod: true,
           ip: true,
@@ -222,6 +224,20 @@ export class FlexPlatformStack extends BaseStack {
       criticalAction,
       warningAction,
       api: restApi,
+    });
+
+    new AuthFailureAlarms(this, "AuthFailureAlarms", {
+      alarmNamePrefix: `${stage}-apigw`,
+      accessLogGroup,
+      criticalAction,
+      warningAction,
+    });
+
+    new JourneyAlarms(this, "JourneyAlarms", {
+      alarmNamePrefix: `${stage}-journey`,
+      accessLogGroup,
+      criticalAction,
+      warningAction,
     });
 
     return {

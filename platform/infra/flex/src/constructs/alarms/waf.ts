@@ -64,7 +64,7 @@ export class WafAlarms extends Construct {
     this.managedRuleBlocksAlarm = new Alarm(this, "ManagedRuleBlocks", {
       alarmName: `${alarmNamePrefix}-managed-rules-blocked-requests-v2`,
       alarmDescription:
-        "Critical: AWS managed rules blocking requests (known-bad inputs)",
+        "Warning: AWS managed rules blocking requests (known-bad inputs). The WAF is doing its job; look for a pattern, not an incident",
       metric: new MathExpression({
         expression: Object.keys(managedBlocks)
           .map((id) => `FILL(${id}, 0)`)
@@ -77,7 +77,7 @@ export class WafAlarms extends Construct {
       comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: TreatMissingData.NOT_BREACHING,
     });
-    this.managedRuleBlocksAlarm.addAlarmAction(criticalAction);
+    this.managedRuleBlocksAlarm.addAlarmAction(warningAction);
 
     this.blockingAllRequestsAlarm = new Alarm(
       this,
@@ -85,7 +85,7 @@ export class WafAlarms extends Construct {
       {
         alarmName: `${alarmNamePrefix}-blocking-90-percent-requests-v2`,
         alarmDescription:
-          "Critical: WAF blocking >90% of total requests over 5 minutes",
+          "Critical: UNDER ATTACK: WAF blocking >90% of total requests over 5 minutes, so real users are being refused. Check for a bad rule change before assuming an attack. Runbook: docs/runbooks/verify-environment-health.md",
         metric: new MathExpression({
           expression:
             "IF((blocked + allowed) > 0, 100 * (blocked / (blocked + allowed)), 0)",

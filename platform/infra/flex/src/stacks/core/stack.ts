@@ -6,6 +6,7 @@ import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
 import { createIamChangeAlerts } from "../../constructs/alarms/iam-change-alerts";
+import { createKeyChangeAlerts } from "../../constructs/alarms/key-change-alerts";
 import { createLogGroupKey } from "../../constructs/kms/log-group-key";
 import { ENV_KEYS } from "../../ssm-keys";
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
@@ -89,13 +90,30 @@ export class FlexCoreStack extends BaseStack {
       warningAction,
     });
 
+    createKeyChangeAlerts(this, {
+      criticalTopic,
+      alarmTopicKey,
+      warningAction,
+    });
+
+    // Critical alarms go to their own channel so that it stays quiet;
+    // warnings keep the original channel.
+    const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
     createSlackNotifications(this, {
       id: "SlackChannel",
       channelConfigurationName: `flex-alerts-${stage}`,
       topicKey: alarmTopicKey,
-      topics: [warningTopic, criticalTopic],
-      slackWorkspaceId: this.import(ENV_KEYS.MonitoringSlackWorkspaceId),
+      topics: [warningTopic],
+      slackWorkspaceId,
       slackChannelId: this.import(ENV_KEYS.MonitoringSlackChannelId),
+    });
+    createSlackNotifications(this, {
+      id: "CriticalSlackChannel",
+      channelConfigurationName: `flex-alerts-critical-${stage}`,
+      topicKey: alarmTopicKey,
+      topics: [criticalTopic],
+      slackWorkspaceId,
+      slackChannelId: this.import(ENV_KEYS.MonitoringCriticalSlackChannelId),
     });
 
     // Release notifications are published once per pipeline run, so the
@@ -112,7 +130,6 @@ export class FlexCoreStack extends BaseStack {
         .map((id) => id.trim())
         .filter(Boolean);
 
-      const slackWorkspaceId = this.import(ENV_KEYS.MonitoringSlackWorkspaceId);
       releaseChannelIds.forEach((slackChannelId) => {
         createSlackNotifications(this, {
           id: `ReleaseSlackChannel${slackChannelId}`,
