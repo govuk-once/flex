@@ -1,0 +1,35 @@
+{
+  "name": "@flex/driving-domain",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./domain.config.ts"
+  },
+  "scripts": {
+    "tsc": "tsc --noEmit",
+    "lint": "eslint --max-warnings=0 .",
+    "test": "vitest --passWithNoTests",
+    "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@flex/logging": "workspace:*",
+    "@flex/sdk": "workspace:*",
+    "@flex/utils": "workspace:*",
+    "http-errors": "2.0.1",
+    "http-status": "2.1.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@flex/config": "workspace:*",
+    "@flex/dvsa-service-gateway": "workspace:*",
+    "@flex/testing": "workspace:*",
+    "@types/aws-lambda": "8.10.162",
+    "@types/http-errors": "2.0.5",
+    "eslint": "10.7.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}
