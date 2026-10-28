@@ -155,7 +155,6 @@ export const { config, createHandler } = defineGateway({
         },
       },
       body: inboundUpdateUserSearchesRequestSchema,
-      response: domainSearchesSchema,
     },
   },
 });

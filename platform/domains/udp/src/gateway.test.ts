@@ -761,20 +761,20 @@ describe("UDP Service Gateway", () => {
       vi.useRealTimers();
     });
 
-    it("returns updated selectedTopics for the requesting user", async ({
+    it("updates to selectedSearches for the requesting user", async ({
                                                                           http,
                                                                           platform,
                                                                         }) => {
       http
           .url(mockConsumerConfig.apiUrl)
-          .post("/v1/topics", {
+          .post("/v1/activity/searches", {
             headers: mockHeadersRequestedAt,
-            body: { data: mockTopics },
+            body: { data: mockSearches },
           })
           .reply(200, mockUpstreamTopics);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/topics", {
+          platform.gatewayEvent.post("/v1/activity/searches", {
             headers: {
               "requesting-service-user-id": mockRequestingServiceUserId,
             },
@@ -784,34 +784,34 @@ describe("UDP Service Gateway", () => {
       );
 
       expect(result).toStrictEqual(
-          platform.gatewayResult(200, { body: mockTopics }),
+          platform.gatewayResult(200),
       );
     });
 
-    it("returns empty selectedTopics when clearing all topics", async ({
+    it("updates to empty selectedSearches when clearing all topics", async ({
                                                                          http,
                                                                          platform,
                                                                        }) => {
       http
           .url(mockConsumerConfig.apiUrl)
-          .post("/v1/topics", {
+          .post("/v1/activity/searches", {
             headers: mockHeadersRequestedAt,
-            body: { data: mockTopicsEmpty },
+            body: { data: mockUpstreamSearchesEmpty },
           })
           .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/topics", {
+          platform.gatewayEvent.post("/v1/activity/searches", {
             headers: {
               "requesting-service-user-id": mockRequestingServiceUserId,
             },
-            body: mockTopicsEmpty,
+            body: mockUpstreamSearchesEmpty,
           }),
           platform.context(),
       );
 
       expect(result).toStrictEqual(
-          platform.gatewayResult(200, { body: mockTopicsEmpty }),
+          platform.gatewayResult(200),
       );
     });
 
@@ -821,14 +821,14 @@ describe("UDP Service Gateway", () => {
                                                               }) => {
       http
           .url(mockConsumerConfig.apiUrl)
-          .post("/v1/topics", {
+          .post("/v1/activity/searches", {
             headers: mockHeadersRequestedAt,
             body: { data: mockTopics },
           })
           .reply(409);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/topics", {
+          platform.gatewayEvent.post("/v1/activity/searches", {
             headers: {
               "requesting-service-user-id": mockRequestingServiceUserId,
             },
