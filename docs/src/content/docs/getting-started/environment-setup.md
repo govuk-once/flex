@@ -105,15 +105,19 @@ Once configured, you can assume a role in your shell using a command following t
 gds-cli aws once-<team>-<environment>-<role> -<action>
 ```
 
-To assume the development role for this repo, run the following commands:
+To assume the development role for this repo, follow these steps in the terminal window where you will run your `pnpm` commands. The credentials only apply to that one window, so a new tab or window needs the steps again.
+
+1. Run the command to export credentials for the role:
 
 ```bash
-# 1. Export credentials for a role into your shell
 gds-cli aws once-bl-development-admin -e
+```
 
-# 2. You may need to provide your aws-vault password and provide MFA
+2. Authenticate if asked. You may need to give your aws-vault password and an MFA code.
 
-# 3. Copy the output where <aws-variables> are replaced with real values
+3. Read the output. The command doesn't set anything in your shell itself. It prints a block of lines like the ones below, with real values in place of the `<placeholders>`. You don't need to edit anything. These lines are output for you to copy, not commands to type:
+
+```bash
 unset AWS_CREDENTIAL_FILE;
 unset AWS_DEFAULT_PROFILE;
 unset AWS_PROFILE;
@@ -122,10 +126,13 @@ export AWS_DEFAULT_REGION='<aws-default-region>';
 export AWS_ACCESS_KEY_ID='<aws-access-key-id>';
 export AWS_SECRET_ACCESS_KEY='<aws-secret-access-key>';
 export AWS_SESSION_TOKEN='<aws-session-token>';
+```
 
-# 4. Paste back into your shell
+4. Copy the whole block, paste it into the same terminal window and press Enter. Include the `unset` lines, which clear any profile settings that would override the new keys. Nothing is printed when it works.
 
-# 5. (Optional) Confirm you are in the right account
+5. Check that it worked:
+
+```bash
 aws sts get-caller-identity
 # {
 #    "UserId": "<user-id>",
@@ -134,7 +141,9 @@ aws sts get-caller-identity
 # }
 ```
 
-Credentials expire. When a command fails with an expired token, or `pnpm jwt` prints `AWS credentials not found.`, export a fresh set.
+The `Arn` should contain `assumed-role`, and the `Account` should be the development account. An error here means the credentials didn't reach this window. Go back to step 4 and check you pasted into the right one.
+
+Credentials expire, after 60 minutes by default. When a command fails with an expired token, or `pnpm jwt` prints `AWS credentials not found.`, export a fresh set.
 
 Flex runs in `eu-west-2`, with CloudFront and the resources beside it in `us-east-1`. The CDK app sets each stack's region itself.
 
