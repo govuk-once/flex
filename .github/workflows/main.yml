@@ -180,7 +180,7 @@ jobs:
       actions: read
       security-events: write
     uses: ./.github/workflows/zap.yml
-    secrets: inherit
+    secrets: inherit # pragma: allowlist secret
 
   deployProd:
     name: Deploy to Production
