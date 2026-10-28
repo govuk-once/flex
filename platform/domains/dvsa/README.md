@@ -27,10 +27,10 @@ Declared in [`gateway.config.ts`](/platform/domains/dvsa/gateway.config.ts).
 
 > `consumerConfig` is available on the handler context, while `encryptionKey` is declared for infrastructure provisioning only.
 
-| Name             | Type     | Description                                                        |
-| ---------------- | -------- | ------------------------------------------------------------------ |
+| Name             | Type     | Description                                                                 |
+| ---------------- | -------- | --------------------------------------------------------------------------- |
 | `consumerConfig` | `secret` | DVSA OAuth2 credentials (`clientId`, `clientSecret`, `apiKey`) and API URLs |
-| `encryptionKey`  | `kms`    | CMK provisioned for the gateway                                    |
+| `encryptionKey`  | `kms`    | CMK provisioned for the gateway                                             |
 
 ---
 
@@ -38,10 +38,10 @@ Declared in [`gateway.config.ts`](/platform/domains/dvsa/gateway.config.ts).
 
 Implemented in [`src/gateway.ts`](/platform/domains/dvsa/src/gateway.ts), tested in [`src/gateway.test.ts`](/platform/domains/dvsa/src/gateway.test.ts).
 
-| Route                    | Name              | Description                                      |
-| ------------------------ | ----------------- | ------------------------------------------------ |
-| `GET /v1/authenticate`   | `getAuthenticate` | OAuth2 token via Azure AD `client_credentials`   |
-| `GET /v1/vehicle/mot/:id`| `getVehicleMot`   | MOT history by vehicle registration number       |
+| Route                     | Name              | Description                                    |
+| ------------------------- | ----------------- | ---------------------------------------------- |
+| `GET /v1/authenticate`    | `getAuthenticate` | OAuth2 token via Azure AD `client_credentials` |
+| `GET /v1/vehicle/mot/:id` | `getVehicleMot`   | MOT history by vehicle registration number     |
 
 ---
 
@@ -49,9 +49,9 @@ Implemented in [`src/gateway.ts`](/platform/domains/dvsa/src/gateway.ts), tested
 
 The `GET /v1/authenticate` route uses `flexFetch` directly (form-urlencoded POST to Azure AD). The MOT route uses a REST client built with [`createRestClient`](/libs/service-gateway/README.md#rest-client).
 
-| Name  | Type                                                        | Base URL                  | Authentication |
-| ----- | ----------------------------------------------------------- | ------------------------- | -------------- |
-| `mot` | [`RestClient`](/libs/service-gateway/README.md#rest-client) | `consumerConfig.apiMotUrl`| `"public"`     |
+| Name  | Type                                                        | Base URL                   | Authentication |
+| ----- | ----------------------------------------------------------- | -------------------------- | -------------- |
+| `mot` | [`RestClient`](/libs/service-gateway/README.md#rest-client) | `consumerConfig.apiMotUrl` | `"public"`     |
 
 ---
 
