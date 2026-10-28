@@ -86,7 +86,7 @@ When you open a pull request, CI deploys a `pr-<n>` stage, runs every domain's E
 pnpm --filter @flex/<name>-domain test:e2e
 ```
 
-The tests find your stack from its CloudFormation outputs and fetch their own token. See [Testing](/flex/domains/testing/#end-to-end-tests).
+The tests find your stack from its CloudFormation outputs and fetch their own token. See [Testing](/flex/domains/testing/#end-to-end-tests). If they fail with `unable to get local issuer certificate`, see [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate).
 
 ### Make a request by hand
 

@@ -465,6 +465,10 @@ Then run:
 pnpm --filter @flex/hello-domain test:e2e
 ```
 
+:::caution[Certificate error?]
+If the run fails with `unable to get local issuer certificate`, your network is probably inspecting HTTPS traffic. See [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate), and reach out to the Flex team.
+:::
+
 - The E2E setup finds your stack from its CloudFormation outputs and fetches its own token. You don't need to export one.
 - `authHeader` is a ready-made headers object with a valid `Authorization: Bearer <token>` and the `x-flex-e2e-bypass` header, which skips WAF rate limiting during test runs. Use it for authenticated requests.
 - CI runs the `test:e2e` script of every domain that has one, against each pull request's ephemeral environment and after each deploy to `development` and `staging`. It isn't a required check and doesn't block promotion, so check the result yourself.

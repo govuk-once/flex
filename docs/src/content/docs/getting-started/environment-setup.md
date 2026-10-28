@@ -167,7 +167,7 @@ Most tasks need none. These matter when you deploy or run E2E tests:
 
 Your personal stage name is `$USER` lowercased, with anything other than `a-z`, `0-9` and `-` removed, cut to 12 characters.
 
-The [`@flex/e2e` README](https://github.com/govuk-once/flex/blob/main/tests/e2e/README.md) lists the variables specific to E2E tests.
+The [`@flex/e2e` README](https://github.com/govuk-once/flex/blob/main/tests/e2e/README.md) lists the variables specific to E2E tests. If E2E tests fail with `unable to get local issuer certificate`, see [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate).
 
 ## Editor
 

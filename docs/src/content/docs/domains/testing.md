@@ -236,7 +236,7 @@ Helpers and services that read [`routeContext`](/flex/domains/route-context/) on
 An E2E test sends real HTTP requests to your deployed stack, through CloudFront, the authorizer and the Lambda. Use it to check what unit tests can't: the deployed config, permissions and the live gateways.
 
 :::note
-E2E tests need AWS access and a deployed personal stack. See [Your first domain](/flex/getting-started/your-first-domain/#7-run-the-e2e-test) to deploy and run one.
+E2E tests need AWS access and a deployed personal stack. See [Your first domain](/flex/getting-started/your-first-domain/#7-run-the-e2e-test) to deploy and run one. If they fail with `unable to get local issuer certificate`, see [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate).
 :::
 
 ### Set up the domain
