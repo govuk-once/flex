@@ -1220,6 +1220,9 @@ importers:
       '@platform/credential-monitor':
         specifier: workspace:*
         version: link:../../domains/credential-monitor
+      '@platform/smoke-test':
+        specifier: workspace:*
+        version: link:../../smoke-test
       aws-cdk:
         specifier: 2.1132.0
         version: 2.1132.0
@@ -1303,6 +1306,9 @@ importers:
       '@flex/testing':
         specifier: workspace:*
         version: link:../../libs/testing
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
       axios:
         specifier: 1.18.1
         version: 1.18.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -1334,9 +1340,6 @@ importers:
       '@flex/config':
         specifier: workspace:*
         version: link:../../libs/config
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../libs/utils
       '@types/node':
         specifier: 26.1.1
         version: 26.1.1

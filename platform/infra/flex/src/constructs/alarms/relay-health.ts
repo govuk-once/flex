@@ -21,5 +21,5 @@ export function createRelayHealthAction(scope: Construct, stage: string) {
   });
   healthTopic.grantPublish(cloudwatchPrincipal);
 
-  return { healthKey, healthAction: new SnsAction(healthTopic) };
+  return { healthKey, healthTopic, healthAction: new SnsAction(healthTopic) };
 }
