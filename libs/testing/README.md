@@ -31,6 +31,8 @@ Unit tests don't need an AWS login or an assumed role. The shared Vitest config 
 | `AWS_SECRET_ACCESS_KEY` | `test`       | Dummy secret key so signing has credentials                           |
 | `AWS_PROFILE`           | `""` (blank) | Clears any profile from your shell, as the SDK prefers it to the keys |
 
+E2E tests don't get these values. They extend `@flex/config/vitest/e2e`, so they use your real credentials.
+
 Used in: [`libs/config/src/vitest.ts`](../config/src/vitest.ts)
 
 ### Overriding the defaults
