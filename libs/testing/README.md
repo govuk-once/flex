@@ -20,6 +20,25 @@ Run these from the repository root:
 
 Alternatively, run `pnpm <command>` from within `libs/testing/`.
 
+## AWS credentials in unit tests
+
+Unit tests don't need an AWS login or an assumed role. The shared Vitest config (`@flex/config/vitest`) sets dummy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values and blanks `AWS_PROFILE`, so SigV4 signing never reaches the real credential provider chain. This applies even if your shell has real, expired or stale AWS variables set.
+
+To use different values in a workspace, set them under `test.env` in its `vitest.config.ts`. These are merged over the shared defaults, so only the variables you set change:
+
+```ts
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      env: {
+        AWS_ACCESS_KEY_ID: "my-test-key", // pragma: allowlist secret
+      },
+    },
+  }),
+);
+```
+
 ## API
 
 ### `it`
