@@ -1,4 +1,4 @@
-import { config } from "@flex/config/vitest";
+import { baseConfig } from "@flex/config/vitest/base";
 import { defineConfig, mergeConfig } from "vitest/config";
 
 /**
@@ -7,7 +7,7 @@ import { defineConfig, mergeConfig } from "vitest/config";
  * (e.g. a longer `testTimeout`) rather than duplicating the whole config.
  */
 export const e2eConfig = mergeConfig(
-  config,
+  baseConfig,
   defineConfig({
     test: {
       globalSetup: ["@flex/testing/e2e/setup"],

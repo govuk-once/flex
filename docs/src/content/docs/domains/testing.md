@@ -32,7 +32,7 @@ Platform code, such as service gateways and authorizers, uses a different fixtur
 
 ### Set up the domain
 
-Each domain has a `vitest.config.ts` that extends the shared Flex config:
+Each domain has a `vitest.config.ts` that extends the [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts):
 
 ```ts title="vitest.config.ts"
 import { config } from "@flex/config/vitest";
@@ -49,9 +49,6 @@ export default mergeConfig(
         // "./src/tests/setup.ts",
       ],
       env: {
-        AWS_REGION: "eu-west-2",
-        AWS_ACCESS_KEY_ID: "test", // pragma: allowlist secret
-        AWS_SECRET_ACCESS_KEY: "test", // pragma: allowlist secret
         // One entry per deploy-time resource the domain declares
         privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
       },
@@ -65,6 +62,36 @@ export default mergeConfig(
 | `exclude`    | Keeps `e2e/` out of the unit run. E2E tests have their own config.                                                                                                                                              |
 | `setupFiles` | Runs before the tests. `@flex/testing/setup/sdk` stubs the Secrets Manager and SSM middleware and switches off network access. Add your own file to the array for any setup or teardown specific to the domain. |
 | `env`        | Environment variables for every test. Add a [resource](#resources) here for each deploy-time resource.                                                                                                          |
+
+#### AWS credentials and region
+
+Unit tests don't need an AWS login or an assumed role. The [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts) sets these environment variables for every unit test. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in a domain's `env`.
+
+| Variable                | Value       | Purpose                                                                          |
+| ----------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `AWS_REGION`            | `eu-west-2` | The region SDK clients use and ARNs are built with.                              |
+| `AWS_ACCESS_KEY_ID`     | `test`      | A dummy key, so request signing never looks for real credentials.                |
+| `AWS_SECRET_ACCESS_KEY` | `test`      | A dummy secret, for the same reason.                                             |
+| `AWS_PROFILE`           | blank       | Clears any profile from your shell, which the SDK would use instead of the keys. |
+
+To use a different value in one domain, set it under `env` in the domain's `vitest.config.ts`. It is merged over the shared default, so only the variables you set change. Any of the four can be overridden:
+
+```ts
+env: {
+  AWS_REGION: "eu-west-1",
+  AWS_ACCESS_KEY_ID: "my-test-key", // pragma: allowlist secret
+  AWS_SECRET_ACCESS_KEY: "my-test-secret", // pragma: allowlist secret
+  AWS_PROFILE: "my-profile",
+},
+```
+
+You rarely need `AWS_PROFILE`. A non-empty profile makes the SDK ignore the dummy keys and load that profile's credentials, so only set it if a domain deliberately needs real profile resolution.
+
+A single test can also change a variable with the `env` fixture, for example `env.set({ AWS_REGION: undefined })` to test what happens when the region is missing. See [Feature flags and environment variables](#feature-flags-and-environment-variables).
+
+E2E tests don't get these values. They extend a separate shared config, so they use your real AWS credentials. See [End-to-end tests](#end-to-end-tests) below.
+
+Used in: [`libs/config/src/vitest.ts`](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts)
 
 ### Write a test
 
@@ -263,6 +290,8 @@ export default mergeConfig(
   "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
 }
 ```
+
+`e2eConfig` shares the base settings with the unit config (path aliases, the `node` environment and coverage) but not the dummy AWS values, so E2E tests use your real credentials. Always extend `e2eConfig` here and never `@flex/config/vitest`, which is the unit config. See [`libs/config/src`](https://github.com/govuk-once/flex/tree/main/libs/config/src).
 
 CI finds domains to test by looking for a `test:e2e` script. Used in: [`domains/topics`](https://github.com/govuk-once/flex/blob/main/domains/topics/vitest.e2e.config.ts).
 
