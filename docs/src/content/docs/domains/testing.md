@@ -65,7 +65,7 @@ export default mergeConfig(
 
 #### AWS credentials and region
 
-Unit tests don't need an AWS login or an assumed role. The [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts) sets these environment variables for every test. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in a domain's `env`.
+Unit tests don't need an AWS login or an assumed role. The [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts) sets these environment variables for every unit test. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in a domain's `env`.
 
 | Variable                | Value       | Purpose                                                                          |
 | ----------------------- | ----------- | -------------------------------------------------------------------------------- |
@@ -81,6 +81,8 @@ env: {
   AWS_REGION: "eu-west-1",
 },
 ```
+
+E2E tests don't get these values. They extend a separate shared config, so they use your real AWS credentials. See [End-to-end tests](#end-to-end-tests) below.
 
 Used in: [`libs/config/src/vitest.ts`](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts)
 
@@ -283,6 +285,8 @@ export default mergeConfig(
   "test:e2e": "vitest --passWithNoTests --config vitest.e2e.config.ts"
 }
 ```
+
+`e2eConfig` shares the base settings with the unit config (path aliases, the `node` environment and coverage) but not the dummy AWS values, so E2E tests use your real credentials. Always extend `e2eConfig` here and never `@flex/config/vitest`, which is the unit config. See [`libs/config/src`](https://github.com/govuk-once/flex/tree/main/libs/config/src).
 
 CI finds domains to test by looking for a `test:e2e` script. Used in: [`domains/topics`](https://github.com/govuk-once/flex/blob/main/domains/topics/vitest.e2e.config.ts).
 

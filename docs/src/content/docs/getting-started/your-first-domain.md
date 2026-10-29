@@ -140,6 +140,8 @@ export default mergeConfig(
 );
 ```
 
+`e2eConfig` doesn't set the dummy AWS values from the unit config, so E2E tests use your real credentials. See [Testing](/flex/domains/testing/#end-to-end-tests).
+
 ### README.md
 
 Add a short `README.md` saying what the domain does.
