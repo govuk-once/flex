@@ -18,6 +18,7 @@
     "semantic:release": "semantic-release",
     "openapi:generate": "tsx scripts/generateOpenapi.ts",
     "docs:serve": "tsx scripts/serveDocs.ts",
+    "docs:dev": "pnpm --filter @flex/docs dev",
     "validate:integrations": "pnpm --filter @platform/flex run validate:integrations",
     "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage"
   },

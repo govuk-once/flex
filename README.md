@@ -40,6 +40,9 @@ pnpm openapi:generate
 # Regenerate specs and open them in a local Swagger UI
 # (browses every domain via a dropdown at http://localhost:3000)
 pnpm docs:serve
+
+# Run the documentation site locally with live reload
+pnpm docs:dev
 ```
 
 > Note:

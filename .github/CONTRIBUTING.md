@@ -60,7 +60,7 @@ BREAKING CHANGE: The old request structure is no longer supported.
 When opening a pull request:
 
 1. Use the [pull request template](/.github/PULL_REQUEST_TEMPLATE.md) provided
-2. Ensure the PR title is the Jira reference followed by the commit message format above, e.g. `FLEX-123 feat: add user preferences endpoint`. PRs are squash merged, so the title becomes the commit on `main` and determines the next release version
+2. Ensure the PR title is the Jira reference followed by the commit message format above, e.g. `FLEX-123 feat: add user preferences endpoint`. PRs are squash merged, so the title becomes the commit on `main` and determines the next release version. If there is no Jira ticket, use `FLEX-000`
 3. Link to the related JIRA ticket in the description
 4. Complete all checklist items before requesting review
 5. Keep PRs small and focused, where large changes should be broken into smaller PRs

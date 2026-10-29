@@ -56,6 +56,8 @@ For personal development, you must deploy your own stack before running E2E test
 1. Assume a role via GDS CLI with access to the target AWS account
 2. Run tests using one of the options below
 
+If the tests fail with `unable to get local issuer certificate`, see [Troubleshooting](/docs/src/content/docs/getting-started/troubleshooting.md).
+
 #### Option A: Automatic Resolution (Recommended)
 
 Environment variables are resolved from CloudFormation stack outputs based on `STAGE`. Defaults to `$USER` if no stage is set:
