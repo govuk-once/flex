@@ -16,8 +16,6 @@ describe("FlexGlobalStack certificate alarm", () => {
       ENV_KEYS.TopicCriticalAlarms,
       ENV_KEYS.TopicWarningAlarms,
       ENV_KEYS.AlarmTopicKeyArn,
-      ENV_KEYS.MonitoringSlackWorkspaceId,
-      ENV_KEYS.MonitoringCriticalSlackChannelId,
       PLATFORM_KEYS.HostedZoneId,
       PLATFORM_KEYS.HostedZoneName,
       STAGE_KEYS.ApigwPublicRestId,
@@ -34,17 +32,10 @@ describe("FlexGlobalStack certificate alarm", () => {
     vi.unstubAllEnvs();
   });
 
-  it("subscribes the relay health topic to the critical Slack channel", () => {
-    const healthTopicId = Object.keys(
-      template.findResources("AWS::SNS::Topic", {
-        Properties: { TopicName: "staging-flex-alerts-relay-health" },
-      }),
-    )[0];
-
-    expect(healthTopicId).toBeDefined();
-    template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
-      ConfigurationName: "flex-alerts-relay-health-staging",
-      SnsTopicArns: [{ Ref: healthTopicId }],
+  it("creates no Slack channel configuration of its own, since Amazon Q allows one per channel per account", () => {
+    template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 0);
+    template.hasResourceProperties("AWS::SNS::Topic", {
+      TopicName: "staging-flex-alerts-relay-health",
     });
   });
 

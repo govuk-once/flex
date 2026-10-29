@@ -48,9 +48,9 @@ Alarms publish to one of two SNS topics in `eu-west-2`, `flex-alerts-critical` a
 | --- | --- | --- |
 | `flex-alerts-critical` | `flex-alerts-critical-<env>` | `/<env>/flex-param/monitoring/criticalSlackChannelId` |
 | `flex-alerts-warning` | `flex-alerts-<env>` | `/<env>/flex-param/monitoring/slackChannelId` |
-| `<stage>-flex-alerts-relay-health` (`us-east-1`) | `flex-alerts-relay-health-<stage>` | `/<env>/flex-param/monitoring/criticalSlackChannelId` |
+| `<stage>-flex-alerts-relay-health` (`us-east-1`) | `flex-alerts-critical-<stage>` | `/<env>/flex-param/monitoring/criticalSlackChannelId` |
 
-The relay health topic bypasses the relay on purpose: if the relay is broken, its own alarms must still arrive, so they go straight to the critical channel. This subscription exists in development, staging and production only; personal and PR stages have the relay health alarms but no Slack route for them.
+The relay health topic bypasses the relay on purpose: if the relay is broken, its own alarms must still arrive, so they go straight to the critical channel. Amazon Q allows one configuration per Slack channel per AWS account, so the topic is added to the critical channel configuration owned by FlexCore rather than getting one of its own; FlexCore builds the topic ARN from its deterministic name. This subscription exists in development, staging and production only; personal and PR stages have the relay health alarms but no Slack route for them.
 
 > The channel id parameters are provisioned by the [`flex-params`](https://github.com/govuk-once/flex-params) stack, like every other `/<env>/flex-param/*` value, and must be deployed before `FlexCore` or `FlexGlobal`. To move critical alerts to a dedicated channel, create it with the Platform team, add Amazon Q to it, and change `/monitoring/criticalSlackChannelId` for that environment in `flex-params`. Personal and PR stages reuse the development parameters.
 

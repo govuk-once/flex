@@ -1,12 +1,21 @@
 import { Environment, getEnvConfig } from "@flex/utils";
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
-import { ManagedPolicy, PermissionsBoundary } from "aws-cdk-lib/aws-iam";
+import {
+  ManagedPolicy,
+  PermissionsBoundary,
+  PolicyStatement,
+} from "aws-cdk-lib/aws-iam";
+import { Topic } from "aws-cdk-lib/aws-sns";
 import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
 import { createIamChangeAlerts } from "../../constructs/alarms/iam-change-alerts";
 import { createKeyChangeAlerts } from "../../constructs/alarms/key-change-alerts";
+import {
+  relayHealthKeyAlias,
+  relayHealthTopicName,
+} from "../../constructs/alarms/relay-health";
 import { createLogGroupKey } from "../../constructs/kms/log-group-key";
 import { ENV_KEYS } from "../../ssm-keys";
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
@@ -107,14 +116,45 @@ export class FlexCoreStack extends BaseStack {
       slackWorkspaceId,
       slackChannelId: this.import(ENV_KEYS.MonitoringSlackChannelId),
     });
-    createSlackNotifications(this, {
+    // Amazon Q allows one configuration per Slack channel per account, so the
+    // relay health topic that FlexGlobal creates in us-east-1 rides on this
+    // configuration rather than one of its own. Its name and key alias are
+    // deterministic, which avoids a circular import between the two stacks.
+    const relayHealthTopic = Topic.fromTopicArn(
+      this,
+      "RelayHealthTopic",
+      this.formatArn({
+        service: "sns",
+        region: "us-east-1",
+        resource: relayHealthTopicName(stage),
+      }),
+    );
+    const { role: criticalChannelRole } = createSlackNotifications(this, {
       id: "CriticalSlackChannel",
       channelConfigurationName: `flex-alerts-critical-${stage}`,
       topicKey: alarmTopicKey,
-      topics: [criticalTopic],
+      topics: [criticalTopic, relayHealthTopic],
       slackWorkspaceId,
       slackChannelId: this.import(ENV_KEYS.MonitoringCriticalSlackChannelId),
     });
+    criticalChannelRole.addToPrincipalPolicy(
+      new PolicyStatement({
+        actions: ["kms:Decrypt", "kms:GenerateDataKey"],
+        resources: [
+          this.formatArn({
+            service: "kms",
+            region: "us-east-1",
+            resource: "key",
+            resourceName: "*",
+          }),
+        ],
+        conditions: {
+          "ForAnyValue:StringEquals": {
+            "kms:ResourceAliases": relayHealthKeyAlias(stage),
+          },
+        },
+      }),
+    );
 
     // Release notifications are published once per pipeline run, so the
     // topic and channel config only exist in the development environment

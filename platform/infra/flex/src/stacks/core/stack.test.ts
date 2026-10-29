@@ -46,12 +46,43 @@ describe("FlexCoreStack alert routing", () => {
     vi.unstubAllEnvs();
   });
 
-  it("sends critical alarms to their own Slack channel", () => {
+  it("sends critical alarms and relay health alarms to the critical Slack channel", () => {
     const { template, criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
       ConfigurationName: "flex-alerts-critical-staging",
-      SnsTopicArns: [{ Ref: criticalTopicId }],
+      SnsTopicArns: [
+        { Ref: criticalTopicId },
+        {
+          "Fn::Join": Match.arrayWith([
+            Match.arrayWith([
+              Match.stringLikeRegexp(
+                ":sns:us-east-1:.*:staging-flex-alerts-relay-health$",
+              ),
+            ]),
+          ]),
+        },
+      ],
+    });
+  });
+
+  it("lets the critical channel decrypt the relay health topic key by alias", () => {
+    const { template } = result;
+
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: ["kms:Decrypt", "kms:GenerateDataKey"],
+            Condition: {
+              "ForAnyValue:StringEquals": {
+                "kms:ResourceAliases":
+                  "alias/staging-flex-alerts-relay-health-key",
+              },
+            },
+          }),
+        ]),
+      }),
     });
   });
 

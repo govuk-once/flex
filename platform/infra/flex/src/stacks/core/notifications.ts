@@ -1,14 +1,14 @@
 import { SlackChannelConfiguration } from "aws-cdk-lib/aws-chatbot";
 import { ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
-import { Topic } from "aws-cdk-lib/aws-sns";
+import type { ITopic } from "aws-cdk-lib/aws-sns";
 import { Construct } from "constructs";
 
 interface NotificationsProps {
   id: string;
   channelConfigurationName: string;
   topicKey: Key;
-  topics: Topic[];
+  topics: ITopic[];
   slackWorkspaceId: string;
   slackChannelId: string;
 }
@@ -45,4 +45,6 @@ export function createSlackNotifications(
       resources: [topicKey.keyArn],
     }),
   );
+
+  return { configuration: slack, role: slack.role };
 }
