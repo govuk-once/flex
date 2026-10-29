@@ -9,11 +9,15 @@ import {
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
 import {
+  domainSearchesSchema,
+  inboundUpdateUserSearchesRequestSchema,
+  userSearchesSchema,
+} from "./src/schemas/domain/searches";
+import {
   domainTopicsSchema,
   inboundUpdateSelectedTopicsRequestSchema,
 } from "./src/schemas/domain/topics";
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
-import {domainSearchesSchema, inboundUpdateUserSearchesRequestSchema} from "./src/schemas/domain/searches";
 
 export const { config, createHandler } = defineGateway({
   name: "udp",
@@ -144,7 +148,7 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      response: domainSearchesSchema,
+      response: userSearchesSchema,
     },
     "POST /v1/activity/searches": {
       name: "upsertSearches",

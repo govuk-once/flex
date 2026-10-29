@@ -63,16 +63,16 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
-const searchTimestamp = Date.now().toLocaleString()
+const searchTimestamp = Date.now().toLocaleString();
 const mockSearches = {
   searches: {
     selectedSearches: [
       { term: "a term 1", timestamp: searchTimestamp },
       { term: "a term 2", timestamp: searchTimestamp },
-    ]
-  }
+    ],
+  },
 };
-const mockSearchesEmpty = {searches: {selectedSearches: []}};
+const mockSearchesEmpty = { searches: { selectedSearches: [] } };
 const mockUpstreamSearches = { data: mockSearches };
 const mockUpstreamSearchesEmpty = { data: mockSearchesEmpty };
 
@@ -671,69 +671,57 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("GET /v1/activity/searches", () => {
-    const now = new Date("2026-09-14T12:00:00.000Z");
-    const mockHeadersRequestedAt = {
-      ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-      "requested-at": now.toISOString(),
-    };
-
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(now);
-    });
-
-    it.afterEach(() => {
-      vi.useRealTimers();
     });
 
     it("returns searches for the requesting user", async ({
-                                                                          http,
-                                                                          platform,
-                                                                        }) => {
+      http,
+      platform,
+    }) => {
       http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/activity/searches", {
-            headers: mockHeadersRequestedAt
-          })
-          .reply(200, mockUpstreamSearches);
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/activity/searches", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamSearches);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/activity/searches", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-            }
-          }),
-          platform.context(),
+        platform.gatewayEvent.get("/v1/activity/searches", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
       );
 
       expect(result).toStrictEqual(
-          platform.gatewayResult(200, { body: mockSearches }),
+        platform.gatewayResult(200, { body: mockSearches }),
       );
     });
 
     it("returns empty searches for the requesting user", async ({
-                                                                        http,
-                                                                        platform,
-                                                                      }) => {
+      http,
+      platform,
+    }) => {
       http
-          .url(mockConsumerConfig.apiUrl)
-          .get("/v1/activity/searches", {
-            headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-          })
-          .reply(200, mockUpstreamTopicsEmpty);
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/activity/searches", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
-          platform.gatewayEvent.get("/v1/activity/searches", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-            },
-          }),
-          platform.context(),
+        platform.gatewayEvent.get("/v1/activity/searches", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
       );
 
       expect(result).toStrictEqual(
-          platform.gatewayResult(200, { body: mockUpstreamSearchesEmpty}),
+        platform.gatewayResult(200, { body: mockSearchesEmpty }),
       );
     });
   });
@@ -756,87 +744,82 @@ describe("UDP Service Gateway", () => {
     });
 
     it("updates to selectedSearches for the requesting user", async ({
-                                                                          http,
-                                                                          platform,
-                                                                        }) => {
+      http,
+      platform,
+    }) => {
       http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/activity/searches", {
-            headers: mockHeadersRequestedAt,
-            body: { data: mockSearches },
-          })
-          .reply(200, mockUpstreamSearchesEmpty);
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/activity/searches", {
+          headers: mockHeadersRequestedAt,
+          body: { data: mockSearches },
+        })
+        .reply(200);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/activity/searches", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-            },
-            body: mockTopics,
-          }),
-          platform.context(),
+        platform.gatewayEvent.post("/v1/activity/searches", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockSearches,
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual(
-          platform.gatewayResult(200),
-      );
+      expect(result).toStrictEqual(platform.gatewayResult(200));
     });
 
     it("updates to empty selectedSearches when clearing all topics", async ({
-                                                                         http,
-                                                                         platform,
-                                                                       }) => {
+      http,
+      platform,
+    }) => {
       http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/activity/searches", {
-            headers: mockHeadersRequestedAt,
-            body: { data: mockUpstreamSearchesEmpty },
-          })
-          .reply(200, mockUpstreamTopicsEmpty);
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/activity/searches", {
+          headers: mockHeadersRequestedAt,
+          body: { data: mockSearchesEmpty },
+        })
+        .reply(200);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/activity/searches", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-            },
-            body: mockUpstreamSearchesEmpty,
-          }),
-          platform.context(),
+        platform.gatewayEvent.post("/v1/activity/searches", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockSearchesEmpty,
+        }),
+        platform.context(),
       );
 
-      expect(result).toStrictEqual(
-          platform.gatewayResult(200),
-      );
+      expect(result).toStrictEqual(platform.gatewayResult(200));
     });
 
     it("returns 409 when upstream reports a conflict", async ({
-                                                                http,
-                                                                platform,
-                                                              }) => {
+      http,
+      platform,
+    }) => {
       http
-          .url(mockConsumerConfig.apiUrl)
-          .post("/v1/activity/searches", {
-            headers: mockHeadersRequestedAt,
-            body: { data: mockTopics },
-          })
-          .reply(409);
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/activity/searches", {
+          headers: mockHeadersRequestedAt,
+          body: { data: mockSearchesEmpty },
+        })
+        .reply(409);
 
       const result = await handler(
-          platform.gatewayEvent.post("/v1/activity/searches", {
-            headers: {
-              "requesting-service-user-id": mockRequestingServiceUserId,
-            },
-            body: mockUpstreamSearchesEmpty,
-          }),
-          platform.context(),
+        platform.gatewayEvent.post("/v1/activity/searches", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockSearchesEmpty,
+        }),
+        platform.context(),
       );
 
       expect(result).toStrictEqual(
-          platform.gatewayResult(409, {
-            body: { message: "Conflict" },
-          }),
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
+        }),
       );
     });
   });
-
 });

@@ -1,17 +1,17 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
+import { domainSearchesSchema } from "./schemas/domain/searches";
 import {
   GroupsResponseSchema,
   UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
+import { searchesResponseSchema } from "./schemas/remote/searches";
 import {
   topicsResponseSchema,
   upsertTopicsResponseSchema,
 } from "./schemas/remote/topics";
-import {domainSearchesSchema} from "./schemas/domain/searches";
-import {searchesResponseSchema} from "./schemas/remote/searches";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -208,7 +208,6 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data.groups);
     },
-
     "POST /v1/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
@@ -216,14 +215,13 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       return api.post("/v1/activity/searches", {
-        schema: searchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
           "requesting-service-user-id": requestingServiceUserId,
           "requested-at": new Date().toISOString(),
         },
-        body: { body },
+        body: { data: body },
       });
     },
     "GET /v1/activity/searches": async ({
@@ -231,7 +229,7 @@ export const handler = createHandler({
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      return api.get("/v1/activity/searches", {
+      const result = await api.get("/v1/activity/searches", {
         schema: searchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
@@ -239,6 +237,8 @@ export const handler = createHandler({
           "requesting-service-user-id": requestingServiceUserId,
         },
       });
+
+      return mapApiResult(result, ({ data }) => data);
     },
   },
 });
