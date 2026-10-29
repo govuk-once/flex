@@ -49,9 +49,6 @@ export default mergeConfig(
         // "./src/tests/setup.ts",
       ],
       env: {
-        AWS_REGION: "eu-west-2",
-        AWS_ACCESS_KEY_ID: "test", // pragma: allowlist secret
-        AWS_SECRET_ACCESS_KEY: "test", // pragma: allowlist secret
         // One entry per deploy-time resource the domain declares
         privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
       },
@@ -65,6 +62,22 @@ export default mergeConfig(
 | `exclude`    | Keeps `e2e/` out of the unit run. E2E tests have their own config.                                                                                                                                              |
 | `setupFiles` | Runs before the tests. `@flex/testing/setup/sdk` stubs the Secrets Manager and SSM middleware and switches off network access. Add your own file to the array for any setup or teardown specific to the domain. |
 | `env`        | Environment variables for every test. Add a [resource](#resources) here for each deploy-time resource.                                                                                                          |
+
+#### AWS credentials and region
+
+Unit tests don't need an AWS login or an assumed role. The shared config sets `AWS_REGION` to `eu-west-2`, sets dummy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values, and blanks `AWS_PROFILE`. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in the domain's `env`.
+
+To use a different value in one domain, set that variable under `env`. It is merged over the shared default:
+
+```ts
+env: {
+  AWS_REGION: "eu-west-1",
+},
+```
+
+Used in: [`libs/config/src/vitest.ts`](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts)
+
+See the [`@flex/testing` README](https://github.com/govuk-once/flex/blob/main/libs/testing/README.md#aws-credentials-in-unit-tests) for every variable and an override example for each.
 
 ### Write a test
 

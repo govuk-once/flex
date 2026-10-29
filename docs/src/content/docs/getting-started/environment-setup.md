@@ -83,7 +83,7 @@ pnpm test
 
 ## AWS access
 
-You don't need AWS credentials to write code or run unit tests. You _will_ need them to:
+You don't need AWS credentials to write code or run unit tests. The tests set their own dummy credentials, so they pass whether or not you have a role assumed, and ignore any AWS variables in your shell. You _will_ need real credentials to:
 
 - Deploy a personal stack
 - Run E2E tests
