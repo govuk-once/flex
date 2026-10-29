@@ -55,11 +55,11 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
       zod-openapi:
         specifier: 6.0.0
-        version: 6.0.0(zod@4.4.3)
+        version: 6.0.0(zod@4.6.7)
 
   docs:
     dependencies:
@@ -146,8 +146,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@aws-lambda-powertools/parameters':
         specifier: 2.34.0
@@ -204,8 +204,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -256,8 +256,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -296,8 +296,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -336,8 +336,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -373,8 +373,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -416,8 +416,8 @@ importers:
         specifier: 6.2.3
         version: 6.2.3
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -468,8 +468,8 @@ importers:
         specifier: 2.1.0
         version: 2.1.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -523,8 +523,8 @@ importers:
         specifier: 4.23.1
         version: 4.23.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -679,8 +679,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@aws-sdk/client-ssm':
         specifier: 3.1091.0
@@ -752,8 +752,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -786,8 +786,8 @@ importers:
         specifier: workspace:*
         version: link:../logging
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -883,8 +883,8 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.3.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
 
   libs/utils:
     dependencies:
@@ -895,11 +895,11 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
       zod-openapi:
         specifier: 6.0.0
-        version: 6.0.0(zod@4.4.3)
+        version: 6.0.0(zod@4.6.7)
     devDependencies:
       '@aws-sdk/client-cloudformation':
         specifier: 3.1091.0
@@ -959,8 +959,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1011,8 +1011,8 @@ importers:
         specifier: workspace:*
         version: link:../../../libs/logging
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1054,8 +1054,8 @@ importers:
         specifier: 14.0.1
         version: 14.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1085,8 +1085,8 @@ importers:
         specifier: workspace:*
         version: link:../../../libs/logging
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1174,8 +1174,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1208,8 +1208,8 @@ importers:
         specifier: workspace:*
         version: link:../../../libs/utils
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1242,8 +1242,8 @@ importers:
         specifier: workspace:*
         version: link:../../../libs/utils
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1352,8 +1352,8 @@ importers:
         specifier: 2.7.0
         version: 2.7.0
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1386,8 +1386,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/sdk
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1444,8 +1444,8 @@ importers:
         specifier: 6.0.2
         version: 6.0.2
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@flex/config':
         specifier: workspace:*
@@ -1487,11 +1487,11 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.3.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
       zod-openapi:
         specifier: 6.0.0
-        version: 6.0.0(zod@4.4.3)
+        version: 6.0.0(zod@4.6.7)
 
   tests/e2e:
     devDependencies:
@@ -1517,8 +1517,8 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(vite@8.3.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))
       zod:
-        specifier: 4.4.3
-        version: 4.4.3
+        specifier: 4.6.7
+        version: 4.6.7
 
   tests/performance:
     dependencies:
@@ -9266,9 +9266,6 @@ packages:
     engines: {node: '>=18.0.0'}
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
-
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
@@ -18798,15 +18795,13 @@ snapshots:
 
   yoga-layout@3.2.1: {}
 
-  zod-openapi@6.0.0(zod@4.4.3):
+  zod-openapi@6.0.0(zod@4.6.7):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.7
 
   zod-validation-error@4.0.2(zod@4.6.7):
     dependencies:
       zod: 4.6.7
-
-  zod@4.4.3: {}
 
   zod@4.6.7: {}
 
