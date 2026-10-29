@@ -8,7 +8,6 @@ export default mergeConfig(
       exclude: [...configDefaults.exclude, "e2e/**"],
       setupFiles: ["@flex/testing/setup/sdk"],
       env: {
-        AWS_REGION: "eu-west-2",
         privateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
         unsFlexPrivateGatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
         udpNotificationSecret: "test-notification-name", // pragma: allowlist secret

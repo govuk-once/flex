@@ -8,7 +8,6 @@ export default mergeConfig(
       exclude: [...configDefaults.exclude, "e2e/**"],
       setupFiles: ["@flex/testing/setup/platform"],
       env: {
-        AWS_REGION: "eu-west-2",
         FLEX_GATEWAY_NAME: "udp",
       },
     },

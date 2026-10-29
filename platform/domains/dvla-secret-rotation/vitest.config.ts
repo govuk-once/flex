@@ -6,9 +6,6 @@ export default mergeConfig(
   defineConfig({
     test: {
       setupFiles: ["@flex/testing/setup/platform"],
-      env: {
-        AWS_REGION: "eu-west-2",
-      },
     },
   }),
 );

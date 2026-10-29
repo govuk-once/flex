@@ -22,9 +22,40 @@ Alternatively, run `pnpm <command>` from within `libs/testing/`.
 
 ## AWS credentials in unit tests
 
-Unit tests don't need an AWS login or an assumed role. The shared Vitest config (`@flex/config/vitest`) sets dummy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values and blanks `AWS_PROFILE`, so SigV4 signing never reaches the real credential provider chain. This applies even if your shell has real, expired or stale AWS variables set.
+Unit tests don't need an AWS login or an assumed role. The shared Vitest config (`@flex/config/vitest`) sets these environment variables, so SigV4 signing never reaches the real credential provider chain. This applies even if your shell has real, expired or stale AWS variables set.
 
-To use different values in a workspace, set them under `test.env` in its `vitest.config.ts`. These are merged over the shared defaults, so only the variables you set change:
+| Variable                | Default      | Purpose                                                               |
+| ----------------------- | ------------ | --------------------------------------------------------------------- |
+| `AWS_REGION`            | `eu-west-2`  | Region used by SDK clients and when building ARNs                     |
+| `AWS_ACCESS_KEY_ID`     | `test`       | Dummy access key so signing has credentials                           |
+| `AWS_SECRET_ACCESS_KEY` | `test`       | Dummy secret key so signing has credentials                           |
+| `AWS_PROFILE`           | `""` (blank) | Clears any profile from your shell, as the SDK prefers it to the keys |
+
+Used in: [`libs/config/src/vitest.ts`](../config/src/vitest.ts)
+
+### Overriding the defaults
+
+To use different values in a workspace, set them under `test.env` in its `vitest.config.ts`. These are merged over the shared defaults, so only the variables you set change. Each example below is a standalone `vitest.config.ts`.
+
+#### `AWS_REGION`
+
+```ts
+import { config } from "@flex/config/vitest";
+import { defineConfig, mergeConfig } from "vitest/config";
+
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      env: {
+        AWS_REGION: "eu-west-1",
+      },
+    },
+  }),
+);
+```
+
+#### `AWS_ACCESS_KEY_ID`
 
 ```ts
 export default mergeConfig(
@@ -38,6 +69,40 @@ export default mergeConfig(
   }),
 );
 ```
+
+#### `AWS_SECRET_ACCESS_KEY`
+
+```ts
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      env: {
+        AWS_SECRET_ACCESS_KEY: "my-test-secret", // pragma: allowlist secret
+      },
+    },
+  }),
+);
+```
+
+#### `AWS_PROFILE`
+
+You rarely need this. A non-empty profile makes the SDK ignore the dummy keys and load that profile's credentials, so only set it if a workspace deliberately needs real profile resolution.
+
+```ts
+export default mergeConfig(
+  config,
+  defineConfig({
+    test: {
+      env: {
+        AWS_PROFILE: "my-profile",
+      },
+    },
+  }),
+);
+```
+
+A test can also change a variable for a single case with the [`env`](#env) fixture, for example `env.set({ AWS_REGION: undefined })` to test behaviour when the region is missing.
 
 ## API
 
