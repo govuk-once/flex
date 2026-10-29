@@ -62,7 +62,6 @@ import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../utils/getEntry";
-import { createSlackNotifications } from "./core/notifications";
 
 interface DomainNames {
   domainName: string;
@@ -95,13 +94,11 @@ export class FlexGlobalStack extends BaseStack {
       new ServicePrincipal("cloudwatch.amazonaws.com"),
     );
 
-    const relayHealth = createRelayHealthAction(this, stage);
     const relayProps = {
       stage,
       targetTopicKeyArn,
       relayTopicKey: alarmTopicKey,
-      healthKey: relayHealth.healthKey,
-      healthAction: relayHealth.healthAction,
+      ...createRelayHealthAction(this, stage),
     };
 
     const criticalRelay = createAlarmRelay(this, {
@@ -122,32 +119,7 @@ export class FlexGlobalStack extends BaseStack {
       }),
       criticalTopic: criticalRelay,
       alarmTopicKey,
-      relayHealth,
     };
-  }
-
-  // The relay health alarms deliberately bypass the relay, so they need their
-  // own route to Slack. They are critical: while one fires, no edge alarm can
-  // be trusted to have arrived. Ephemeral stages are left out to avoid a
-  // Chatbot configuration per pull request.
-  #subscribeRelayHealth({
-    healthKey,
-    healthTopic,
-  }: ReturnType<typeof createRelayHealthAction>) {
-    createSlackNotifications(this, {
-      id: "RelayHealthSlackChannel",
-      channelConfigurationName: `flex-alerts-relay-health-${stage}`,
-      topicKey: healthKey,
-      topics: [healthTopic],
-      slackWorkspaceId: this.import(
-        ENV_KEYS.MonitoringSlackWorkspaceId,
-        "eu-west-2",
-      ),
-      slackChannelId: this.import(
-        ENV_KEYS.MonitoringCriticalSlackChannelId,
-        "eu-west-2",
-      ),
-    });
   }
 
   #getDomainName(): DomainNames {
@@ -632,16 +604,10 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
     });
 
-    const {
-      criticalAction,
-      warningAction,
-      criticalTopic,
-      alarmTopicKey,
-      relayHealth,
-    } = this.#createAlarmActions();
+    const { criticalAction, warningAction, criticalTopic, alarmTopicKey } =
+      this.#createAlarmActions();
 
     if (persistent) {
-      this.#subscribeRelayHealth(relayHealth);
       createIamChangeAlerts(this, {
         criticalTopic,
         alarmTopicKey,
