@@ -159,11 +159,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Unit Tests
-        env:
-          AWS_REGION: eu-west-2
-          AWS_DEFAULT_REGION: eu-west-2
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test # pragma: allowlist secret
         run: pnpm exec nx run-many --target=test --all --run --coverage --skip-nx-cache
 
       - name: Cache SonarQube scanner
