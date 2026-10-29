@@ -74,19 +74,24 @@ Unit tests don't need an AWS login or an assumed role. The [shared Flex config](
 | `AWS_SECRET_ACCESS_KEY` | `test`      | A dummy secret, for the same reason.                                             |
 | `AWS_PROFILE`           | blank       | Clears any profile from your shell, which the SDK would use instead of the keys. |
 
-To use a different value in one domain, set that variable under `env`. It is merged over the shared default:
+To use a different value in one domain, set it under `env` in the domain's `vitest.config.ts`. It is merged over the shared default, so only the variables you set change. Any of the four can be overridden:
 
 ```ts
 env: {
   AWS_REGION: "eu-west-1",
+  AWS_ACCESS_KEY_ID: "my-test-key", // pragma: allowlist secret
+  AWS_SECRET_ACCESS_KEY: "my-test-secret", // pragma: allowlist secret
+  AWS_PROFILE: "my-profile",
 },
 ```
+
+You rarely need `AWS_PROFILE`. A non-empty profile makes the SDK ignore the dummy keys and load that profile's credentials, so only set it if a domain deliberately needs real profile resolution.
+
+A single test can also change a variable with the `env` fixture, for example `env.set({ AWS_REGION: undefined })` to test what happens when the region is missing. See [Feature flags and environment variables](#feature-flags-and-environment-variables).
 
 E2E tests don't get these values. They extend a separate shared config, so they use your real AWS credentials. See [End-to-end tests](#end-to-end-tests) below.
 
 Used in: [`libs/config/src/vitest.ts`](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts)
-
-See the [`@flex/testing` README](https://github.com/govuk-once/flex/blob/main/libs/testing/README.md#aws-credentials-in-unit-tests) for every variable and an override example for each.
 
 ### Write a test
 
