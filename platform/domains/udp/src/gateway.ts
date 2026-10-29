@@ -1,7 +1,6 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
-import { domainSearchesSchema } from "./schemas/domain/searches";
 import {
   GroupsResponseSchema,
   UpsertGroupsResponseSchema,

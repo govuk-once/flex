@@ -15,4 +15,4 @@ export const userSearchesSchema = z.object({
 
 export const inboundUpdateUserSearchesRequestSchema = userSearchesSchema;
 
-export const domainSearchesSchema = z.array(searchTermSchema);
+export const domainSearchesSchema = userSearchesSchema;

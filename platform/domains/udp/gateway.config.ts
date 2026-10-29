@@ -9,9 +9,9 @@ import {
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
 import {
-  domainSearchesSchema,
-  inboundUpdateUserSearchesRequestSchema,
-  userSearchesSchema,
+    domainSearchesSchema,
+    inboundUpdateUserSearchesRequestSchema,
+    userSearchesSchema,
 } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
@@ -20,145 +20,145 @@ import {
 import { inboundCreateUserRequestSchema } from "./src/schemas/domain/user";
 
 export const { config, createHandler } = defineGateway({
-  name: "udp",
-  environments: ["development", "staging", "production"],
-  access: "isolated",
-  resources: {
-    consumerConfig: {
-      type: "secret",
-      path: "/udp/consumer-config-secret-arn",
-      env: "FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN",
-      scope: "environment",
-      config: z.object({
-        apiAccountId: NonEmptyString,
-        apiKey: NonEmptyString,
-        apiUrl: NonEmptyString,
-        consumerRoleArn: NonEmptyString,
-        region: NonEmptyString,
-        externalId: NonEmptyString.optional(),
-      }),
-    },
-    consumerRole: {
-      type: "role",
-      path: "/udp/consumer-role-arn",
-    },
-    cmk: {
-      type: "kms",
-      path: "/udp/cmk-arn",
-    },
-  },
-  routes: {
-    "GET /v1/identities/:id": {
-      name: "getIdentities",
-    },
-    "GET /v1/identity/:serviceName": {
-      name: "getIdentityLink",
-      headers: {
-        userId: { name: "User-Id", required: true },
-      },
-    },
-    "GET /v1/notifications": {
-      name: "getNotificationPreferences",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+    name: "udp",
+    environments: ["development", "staging", "production"],
+    access: "isolated",
+    resources: {
+        consumerConfig: {
+            type: "secret",
+            path: "/udp/consumer-config-secret-arn",
+            env: "FLEX_UDP_CONSUMER_CONFIG_SECRET_ARN",
+            scope: "environment",
+            config: z.object({
+                apiAccountId: NonEmptyString,
+                apiKey: NonEmptyString,
+                apiUrl: NonEmptyString,
+                consumerRoleArn: NonEmptyString,
+                region: NonEmptyString,
+                externalId: NonEmptyString.optional(),
+            }),
         },
-      },
-      response: domainNotificationsResponseSchema,
-    },
-    "POST /v1/identity/:serviceName/:identifier": {
-      name: "createIdentityLink",
-      body: createIdentityRequestBodySchema,
-    },
-    "POST /v1/notifications": {
-      name: "updateNotificationPreferences",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        consumerRole: {
+            type: "role",
+            path: "/udp/consumer-role-arn",
         },
-      },
-      body: inboundCreateOrUpdateNotificationsRequestSchema,
-      response: domainNotificationsResponseSchema,
-    },
-    "POST /v1/users": {
-      name: "createUser",
-      body: inboundCreateUserRequestSchema,
-    },
-    "DELETE /v1/identity/:serviceName/:identifier": {
-      name: "deleteIdentityLink",
-    },
-    "DELETE /v1/notifications": {
-      name: "deleteNotificationPreferences",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        cmk: {
+            type: "kms",
+            path: "/udp/cmk-arn",
         },
-      },
     },
-    "GET /v1/groups": {
-      name: "getGroupSubscriptions",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+    routes: {
+        "GET /v1/identities/:id": {
+            name: "getIdentities",
         },
-      },
-      response: DomainGroupsSchema,
-    },
-    "GET /v1/topics": {
-      name: "getTopics",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        "GET /v1/identity/:serviceName": {
+            name: "getIdentityLink",
+            headers: {
+                userId: { name: "User-Id", required: true },
+            },
         },
-      },
-      response: domainTopicsSchema,
-    },
-    "POST /v1/topics": {
-      name: "upsertTopics",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        "GET /v1/notifications": {
+            name: "getNotificationPreferences",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            response: domainNotificationsResponseSchema,
         },
-      },
-      body: inboundUpdateSelectedTopicsRequestSchema,
-      response: domainTopicsSchema,
-    },
-    "POST /v1/groups": {
-      name: "updateGroupSubscriptions",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        "POST /v1/identity/:serviceName/:identifier": {
+            name: "createIdentityLink",
+            body: createIdentityRequestBodySchema,
         },
-      },
-      body: DomainGroupsSchema,
-      response: DomainGroupsSchema,
-    },
-    "GET /v1/activity/searches": {
-      name: "getSearches",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        "POST /v1/notifications": {
+            name: "updateNotificationPreferences",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            body: inboundCreateOrUpdateNotificationsRequestSchema,
+            response: domainNotificationsResponseSchema,
         },
-      },
-      response: userSearchesSchema,
-    },
-    "POST /v1/activity/searches": {
-      name: "upsertSearches",
-      headers: {
-        requestingServiceUserId: {
-          name: "requesting-service-user-id",
-          required: true,
+        "POST /v1/users": {
+            name: "createUser",
+            body: inboundCreateUserRequestSchema,
         },
-      },
-      body: inboundUpdateUserSearchesRequestSchema,
+        "DELETE /v1/identity/:serviceName/:identifier": {
+            name: "deleteIdentityLink",
+        },
+        "DELETE /v1/notifications": {
+            name: "deleteNotificationPreferences",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+        },
+        "GET /v1/groups": {
+            name: "getGroupSubscriptions",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            response: DomainGroupsSchema,
+        },
+        "GET /v1/topics": {
+            name: "getTopics",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            response: domainTopicsSchema,
+        },
+        "POST /v1/topics": {
+            name: "upsertTopics",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            body: inboundUpdateSelectedTopicsRequestSchema,
+            response: domainTopicsSchema,
+        },
+        "POST /v1/groups": {
+            name: "updateGroupSubscriptions",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            body: DomainGroupsSchema,
+            response: DomainGroupsSchema,
+        },
+        "GET /v1/activity/searches": {
+            name: "getSearches",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            response: domainSearchesSchema,
+        },
+        "POST /v1/activity/searches": {
+            name: "upsertSearches",
+            headers: {
+                requestingServiceUserId: {
+                    name: "requesting-service-user-id",
+                    required: true,
+                },
+            },
+            body: inboundUpdateUserSearchesRequestSchema,
+        },
     },
-  },
 });
