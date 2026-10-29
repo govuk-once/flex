@@ -32,7 +32,7 @@ Platform code, such as service gateways and authorizers, uses a different fixtur
 
 ### Set up the domain
 
-Each domain has a `vitest.config.ts` that extends the shared Flex config:
+Each domain has a `vitest.config.ts` that extends the [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts):
 
 ```ts title="vitest.config.ts"
 import { config } from "@flex/config/vitest";
@@ -65,7 +65,14 @@ export default mergeConfig(
 
 #### AWS credentials and region
 
-Unit tests don't need an AWS login or an assumed role. The shared config sets `AWS_REGION` to `eu-west-2`, sets dummy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values, and blanks `AWS_PROFILE`. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in the domain's `env`.
+Unit tests don't need an AWS login or an assumed role. The [shared Flex config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts) sets these environment variables for every test. This applies even if your shell has real, expired or stale AWS variables, so you don't need to repeat them in a domain's `env`.
+
+| Variable                | Value       | Purpose                                                                          |
+| ----------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `AWS_REGION`            | `eu-west-2` | The region SDK clients use and ARNs are built with.                              |
+| `AWS_ACCESS_KEY_ID`     | `test`      | A dummy key, so request signing never looks for real credentials.                |
+| `AWS_SECRET_ACCESS_KEY` | `test`      | A dummy secret, for the same reason.                                             |
+| `AWS_PROFILE`           | blank       | Clears any profile from your shell, which the SDK would use instead of the keys. |
 
 To use a different value in one domain, set that variable under `env`. It is merged over the shared default:
 

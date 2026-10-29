@@ -83,7 +83,13 @@ pnpm test
 
 ## AWS access
 
-You don't need AWS credentials to write code or run unit tests. The tests set their own dummy credentials, so they pass whether or not you have a role assumed, and ignore any AWS variables in your shell. You _will_ need real credentials to:
+You don't need AWS credentials to write code or run unit tests.
+
+The [shared vitest config](https://github.com/govuk-once/flex/blob/main/libs/config/src/vitest.ts) sets dummy `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values, a default `AWS_REGION` and a blank `AWS_PROFILE` for every test, so they pass whether or not you have a role assumed, and ignore any AWS variables in your shell.
+
+See [Testing](/flex/domains/testing/#aws-credentials-and-region) for the variables and how to override one.
+
+You _will_ need real credentials to:
 
 - Deploy a personal stack
 - Run E2E tests
