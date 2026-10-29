@@ -7,4 +7,4 @@ const HelloSchema = z.object({
 type Hello = z.infer<typeof HelloSchema>;
 
 export const GetHelloResponseSchema = HelloSchema;
-export type GetHelloResponse = Hello;
+export type { Hello as GetHelloResponse };
