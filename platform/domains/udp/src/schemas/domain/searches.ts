@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const searchTermSchema = z.object({
   term: z.string().min(1),
-  timestamp: z.string().min(1),
+  timestamp: z.iso.datetime(),
 });
 
 export const selectedSearchesSchema = z.array(searchTermSchema);

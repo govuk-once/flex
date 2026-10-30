@@ -66,12 +66,12 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
-const searchTimestamp = Date.now().toLocaleString();
+const searchTimestamp = new Date();
 const mockSearches = {
   searches: {
     selectedSearches: [
-      { term: "a term 1", timestamp: searchTimestamp },
-      { term: "a term 2", timestamp: searchTimestamp },
+      { term: "a term 1", timestamp: searchTimestamp.toISOString() },
+      { term: "a term 2", timestamp: searchTimestamp.toISOString() },
     ],
   },
 };
