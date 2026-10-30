@@ -50,6 +50,7 @@ import { CertificateAlarms } from "../constructs/alarms/certificate";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
 import { createIamChangeAlerts } from "../constructs/alarms/iam-change-alerts";
+import { createKeyChangeAlerts } from "../constructs/alarms/key-change-alerts";
 import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
@@ -452,6 +453,8 @@ export class FlexGlobalStack extends BaseStack {
       distribution,
       criticalAction,
       warningAction,
+      // Ephemeral and development stages don't have enough traffic for this to work
+      trafficCliff: env !== Environment.development,
     });
 
     new CloudFrontFunctionAlarms(this, "CffAlarmsPlatform", {
@@ -606,6 +609,11 @@ export class FlexGlobalStack extends BaseStack {
 
     if (persistent) {
       createIamChangeAlerts(this, {
+        criticalTopic,
+        alarmTopicKey,
+        warningAction,
+      });
+      createKeyChangeAlerts(this, {
         criticalTopic,
         alarmTopicKey,
         warningAction,

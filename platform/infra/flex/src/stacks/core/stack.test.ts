@@ -12,6 +12,7 @@ async function synthesise() {
     ENV_KEYS.DvlaConfigSecretArn,
     ENV_KEYS.MonitoringSlackWorkspaceId,
     ENV_KEYS.MonitoringSlackChannelId,
+    ENV_KEYS.MonitoringCriticalSlackChannelId,
   ]);
 
   const stack = new FlexCoreStack(app, "staging-FlexCore");
@@ -25,11 +26,86 @@ async function synthesise() {
     criticalTopicId: resourceId("AWS::SNS::Topic", {
       TopicName: "flex-alerts-critical",
     }),
+    warningTopicId: resourceId("AWS::SNS::Topic", {
+      TopicName: "flex-alerts-warning",
+    }),
     alarmTopicKeyId: resourceId("AWS::KMS::Key", {
       Description: "KMS key for alarm SNS topics",
     }),
   };
 }
+
+describe("FlexCoreStack alert routing", () => {
+  let result: Awaited<ReturnType<typeof synthesise>>;
+
+  beforeAll(async () => {
+    result = await synthesise();
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("sends critical alarms and relay health alarms to the critical Slack channel", () => {
+    const { template, criticalTopicId } = result;
+
+    template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+      ConfigurationName: "flex-alerts-critical-staging",
+      SnsTopicArns: [
+        { Ref: criticalTopicId },
+        {
+          "Fn::Join": Match.arrayWith([
+            Match.arrayWith([
+              Match.stringLikeRegexp(
+                ":sns:us-east-1:.*:staging-flex-alerts-relay-health$",
+              ),
+            ]),
+          ]),
+        },
+      ],
+    });
+  });
+
+  it("lets the critical channel decrypt the relay health topic key by alias", () => {
+    const { template } = result;
+
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: ["kms:Decrypt", "kms:GenerateDataKey"],
+            Condition: {
+              "ForAnyValue:StringEquals": {
+                "kms:ResourceAliases":
+                  "alias/staging-flex-alerts-relay-health-key",
+              },
+            },
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("keeps warnings on the original channel without the critical topic", () => {
+    const { template, warningTopicId } = result;
+
+    template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+      ConfigurationName: "flex-alerts-staging",
+      SnsTopicArns: [{ Ref: warningTopicId }],
+    });
+  });
+
+  it("alerts on KMS key and Cognito user pool changes through the critical topic", () => {
+    const { template, criticalTopicId } = result;
+
+    ["aws.kms", "aws.cognito-idp"].forEach((source) => {
+      template.hasResourceProperties("AWS::Events::Rule", {
+        EventPattern: Match.objectLike({ source: [source] }),
+        Targets: [Match.objectLike({ Arn: { Ref: criticalTopicId } })],
+      });
+    });
+  });
+});
 
 describe("FlexCoreStack credential alerting", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;

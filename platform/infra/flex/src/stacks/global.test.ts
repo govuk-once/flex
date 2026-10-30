@@ -1,4 +1,4 @@
-import { Template } from "aws-cdk-lib/assertions";
+import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../__tests__/load-infra";
@@ -30,6 +30,36 @@ describe("FlexGlobalStack certificate alarm", () => {
 
   afterAll(() => {
     vi.unstubAllEnvs();
+  });
+
+  it("creates no Slack channel configuration of its own, since Amazon Q allows one per channel per account", () => {
+    template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 0);
+    template.hasResourceProperties("AWS::SNS::Topic", {
+      TopicName: "staging-flex-alerts-relay-health",
+    });
+  });
+
+  it("pages when traffic at the edge falls below its learned baseline", () => {
+    const criticalRelayId = Object.keys(
+      template.findResources("AWS::SNS::Topic"),
+    ).find((id) => id.startsWith("CriticalRelayTopic"));
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "staging-cloudfront-traffic-cliff",
+      ComparisonOperator: "LessThanLowerThreshold",
+      EvaluationPeriods: 3,
+      DatapointsToAlarm: 3,
+      TreatMissingData: "breaching",
+      ThresholdMetricId: Match.anyValue(),
+      Metrics: Match.arrayWith([
+        Match.objectLike({
+          MetricStat: Match.objectLike({
+            Metric: Match.objectLike({ MetricName: "Requests" }),
+          }),
+        }),
+      ]),
+      AlarmActions: [{ Ref: criticalRelayId }],
+    });
   });
 
   it("alarms on the CloudFront certificate through the critical relay", () => {
