@@ -1,6 +1,6 @@
 # Spike Record: OpenTelemetry Enrichment of CloudWatch Metrics (PLAT-873)
 
-Status: desk research, code slice and spike script done on 26 October 2026; the deployed session with Platform has not run yet ("How to Test It Deployed" says how to run it). Every claim carries its evidence: `measured` (run here, output kept), `traced` (primary source read directly), `reported` (someone else's report, not checked) or `inferred` (reasoned, not observed). These follow principle 6 of the conversion method in PR 584 (`spike-conversion-method.md`); this spike adds a capability rather than replacing one, so it borrows the record's shape, not the whole method.
+Status: desk research, code slice and spike script done on 26 October 2026; read-only step 0 (`preflight`) run in the development account on 30 October 2026 (see "Deployed Results"); nothing enabled yet, pending agreement with Platform ("How to Test It Deployed" says how to run the rest). Every claim carries its evidence: `measured` (run here, output kept), `traced` (primary source read directly), `reported` (someone else's report, not checked) or `inferred` (reasoned, not observed). These follow principle 6 of the conversion method in PR 584 (`spike-conversion-method.md`); this spike adds a capability rather than replacing one, so it borrows the record's shape, not the whole method.
 
 ## Summary
 
@@ -358,13 +358,15 @@ What it doesn't cover: staging and production accounts, metrics from Central Obs
 
 ## Deployed Results
 
-Not run yet. To be filled in from the evidence folders.
+Step 0 `preflight` was run on 30 October 2026. Nothing has been enabled; `enable --apply` waits for agreement with Platform. The rest is to be filled in from the evidence folders.
 
 | Item | Result | Evidence folder |
 |---|---|---|
-| Date, account, stage, who ran it | | |
-| Either setting already on before the spike? | | `preflight` |
-| Series counts, `scoped` and `all`, and the cost ceiling | | `preflight` |
+| Date, account, stage, who ran it | 30 October 2026, the development account, eu-west-2, by a FLEX engineer. Account and caller details are in the evidence folder only | `preflight` |
+| Either setting already on before the spike? | No. Resource tags on telemetry: `NotConfigured` (never enabled). OTel enrichment: `Stopped`, no filters. `measured` | `preflight` |
+| Resource Explorer indexes already present | Yes, a local index in eu-west-2 and in other regions, no aggregator. Who created them is to be agreed with Platform before `enable`. `measured` | `preflight` |
+| Series counts, `scoped` and `all`, and the cost ceiling | `scoped` about 150 series active in the 3 hours before the run, $1.45 to $3.22 a month; `all` about 250, $2.41 to $5.36 a month, at 450 to 1,000 bytes a point, if every series reported every minute. Besides Lambda and API Gateway, the account has active series in other supported namespaces (messaging, networking, encryption), so `all` would enrich more than FLEX's functions and APIs. `measured` (counts), `inferred` (cost) | `preflight` |
+| Cost before the change | Not run yet (`cost --days 7`) | |
 | Time from `enable` to the first enriched data | | `enable`, `collect` |
 | Tag labels present; CloudFormation system tags present? | | `collect` section 1 |
 | Median label bytes per series | | `collect` section 1 |
@@ -376,7 +378,7 @@ Not run yet. To be filled in from the evidence folders.
 | Logs Insights by tag works? | | screenshot |
 | Real enrichment GB per day and USD per day | | `cost` |
 | Turned off, and when | | `disable` |
-| Anything that didn't match "How to Test It Deployed" | | |
+| Anything that didn't match "How to Test It Deployed" | In an account where resource tags on telemetry was never turned on, `get-telemetry-enrichment-status` fails with `ResourceNotFoundException` ("TelemetryEnrichmentStatus is not found") rather than returning a status. The script first treated that as an unreadable state and stopped `enable` with exit code 2; it now reads it as `NotConfigured` (`scripts/lib/otelMetrics/status.ts`). `measured` | `enable` (dry run) |
 
 ---
 
@@ -409,7 +411,7 @@ Overall 3, driven by unknowns, verifiability and coupling. None of them is techn
 | Is either setting already on in any FLEX account, perhaps turned on by Platform or another team? | Step 0 | Platform |
 | Should it be managed in FLEX's core stack or in Platform's account baseline? The singleton belongs to the account, not to FLEX | Agree before step 2; if Platform owns it, drop the switch from this branch | Platform, FLEX |
 | Do our CloudFormation deploy roles have `observabilityadmin:*`, `iam:CreateServiceLinkedRole` and the `resource-explorer-2` actions? | Try step 2 through code in development | Platform |
-| Does the account already have a Resource Explorer index, and does turning resource tags on conflict with it? | Step 0 (`preflight` lists the indexes) | Platform |
+| Does the account already have a Resource Explorer index, and does turning resource tags on conflict with it? | Partly answered: the development account already has local indexes, including eu-west-2, and no aggregator (`preflight`, 30 October 2026). Who created them, and whether resource tags may attach to the eu-west-2 one, is for Platform | Platform |
 | Are `aws:cloudformation:*` system tags included as labels, and how big is a FLEX data point really? | Step 3 section 1, then `cost` in step 5 | Session |
 | Do PromQL and classic graphs of the same metric agree? | Step 3 section 2 | Session |
 | Do Metrics Insights with tags answer the same questions without the PromQL charge? | Step 3 section 4 | Session |
