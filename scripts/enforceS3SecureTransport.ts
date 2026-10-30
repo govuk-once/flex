@@ -8,6 +8,7 @@ import {
   S3ServiceException,
 } from "@aws-sdk/client-s3";
 
+import { readFlag } from "./lib/args";
 import type { BucketPolicy, BucketStatus } from "./lib/s3SecureTransport";
 import {
   classifyPolicy,
@@ -48,16 +49,6 @@ interface ApplyResult {
 }
 
 const DEFAULT_REGION = "eu-west-2";
-
-function readFlag(argv: string[], flag: string): string | undefined {
-  const index = argv.indexOf(flag);
-  if (index === -1) return undefined;
-  const value = argv[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value`);
-  }
-  return value;
-}
 
 function parseArgs(argv: string[]): Options {
   const single = readFlag(argv, "--bucket");

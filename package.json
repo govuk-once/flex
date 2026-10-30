@@ -15,6 +15,7 @@
     "jwt:playground": "tsx scripts/generatePlaygroundToken.ts",
     "dastSetup": "tsx scripts/dastSetup.ts",
     "s3:enforce-tls": "tsx scripts/enforceS3SecureTransport.ts",
+    "otel:spike": "tsx scripts/otelMetricsSpike.ts",
     "semantic:release": "semantic-release",
     "openapi:generate": "tsx scripts/generateOpenapi.ts",
     "docs:serve": "tsx scripts/serveDocs.ts",
