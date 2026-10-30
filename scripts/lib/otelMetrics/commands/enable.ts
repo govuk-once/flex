@@ -9,6 +9,7 @@ import type { OTelStatus } from "../status";
 import {
   accountProblem,
   isRunning,
+  readResourceTagsStatus,
   readStatus,
   reportStatus,
   stateProblem,
@@ -27,10 +28,7 @@ async function waitForResourceTags(
 ): Promise<boolean> {
   const deadline = Date.now() + POLL_LIMIT_MS;
   while (Date.now() < deadline) {
-    const status = awsJson<{ Status?: string }>(region, [
-      "observabilityadmin",
-      "get-telemetry-enrichment-status",
-    ]);
+    const status = readResourceTagsStatus(region);
     const value = status.ok
       ? (status.value.Status ?? "unknown")
       : `error: ${status.error}`;

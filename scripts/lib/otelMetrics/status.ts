@@ -27,13 +27,33 @@ export interface AccountStatus {
   otel: Result<OTelStatus>;
 }
 
-export function readStatus(region: string): AccountStatus {
-  return {
-    identity: awsJson<CallerIdentity>(region, ["sts", "get-caller-identity"]),
-    resourceTags: awsJson<ResourceTagsStatus>(region, [
+export const NOT_CONFIGURED = "NotConfigured";
+
+// An account where resource tags on telemetry was never turned on answers
+// ResourceNotFoundException ("TelemetryEnrichmentStatus is not found"), which means off
+export function resourceTagsNotFoundAsOff(
+  result: Result<ResourceTagsStatus>,
+): Result<ResourceTagsStatus> {
+  return !result.ok && result.error.includes("ResourceNotFoundException")
+    ? { ok: true, value: { Status: NOT_CONFIGURED } }
+    : result;
+}
+
+export function readResourceTagsStatus(
+  region: string,
+): Result<ResourceTagsStatus> {
+  return resourceTagsNotFoundAsOff(
+    awsJson<ResourceTagsStatus>(region, [
       "observabilityadmin",
       "get-telemetry-enrichment-status",
     ]),
+  );
+}
+
+export function readStatus(region: string): AccountStatus {
+  return {
+    identity: awsJson<CallerIdentity>(region, ["sts", "get-caller-identity"]),
+    resourceTags: readResourceTagsStatus(region),
     otel: awsJson<OTelStatus>(region, ["cloudwatch", "get-o-tel-enrichment"]),
   };
 }
