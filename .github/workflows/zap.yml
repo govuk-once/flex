@@ -70,14 +70,14 @@ jobs:
       - name: Verify API authentication
         shell: bash
         env:
-          API_URL: ${{ secrets.DEV_API_URL }}
+          API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
         run: bash scripts/zap/verify-auth.sh
 
       - name: Run ZAP API scan
         id: zap
         shell: bash
         env:
-          API_URL: ${{ secrets.DEV_API_URL }}
+          API_URL: ${{ secrets.DEVELOPMENT_API_URL }}
         run: bash scripts/zap/run-scan.sh
 
       - name: Verify ZAP reports
