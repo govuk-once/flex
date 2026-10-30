@@ -12,9 +12,8 @@ import {
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
 import {
-    domainSearchesSchema,
-    inboundUpdateUserSearchesRequestSchema,
-    userSearchesSchema,
+  domainSearchesSchema,
+  inboundUpdateUserSearchesRequestSchema,
 } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
@@ -145,24 +144,24 @@ export const { config, createHandler } = defineGateway({
       response: DomainGroupsSchema,
     },
     "GET /v1/activity/searches": {
-        name: "getSearches",
-        headers: {
-            requestingServiceUserId: {
-                name: "requesting-service-user-id",
-                required: true,
-            },
+      name: "getSearches",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
         },
-        response: domainSearchesSchema,
+      },
+      response: domainSearchesSchema,
     },
     "POST /v1/activity/searches": {
-        name: "upsertSearches",
-        headers: {
-            requestingServiceUserId: {
-                name: "requesting-service-user-id",
-                required: true,
-            },
+      name: "upsertSearches",
+      headers: {
+        requestingServiceUserId: {
+          name: "requesting-service-user-id",
+          required: true,
         },
-        body: inboundUpdateUserSearchesRequestSchema,
+      },
+      body: inboundUpdateUserSearchesRequestSchema,
     },
   },
 });
