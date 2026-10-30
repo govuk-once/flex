@@ -8,14 +8,14 @@ describe("PATCH /v1/activity/searches", () => {
     const endpoint = "/activity/searches";
 
     it("returns 204 when searches are updated", async ({ http, sdk }) => {
-        const body = { term: "a search", timestamp: Date.now().toLocaleString() }
+        const body = createListOfSearches()
         http
             .gateway("udp")
             .post("/activity/searches", {
                 headers: { "requesting-service-user-id": userId },
                 body,
             })
-            .reply(200, body);
+            .reply(204);
 
         const result = await handler(
             sdk.event.patch(endpoint, { auth: userId, body: body }),

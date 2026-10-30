@@ -1,5 +1,5 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
-import { SearchTerm } from "@schemas/search";
+import { SearchTerm, SelectedSearches, UserSearches} from "@schemas/search";
 
 export const userId = createUserId("test-searches-user");
 
@@ -20,21 +20,27 @@ const longSearchTerm = generateRandomString(101)
 const searchTimestamp = Date.now().toLocaleString()
 
 const longSearch: SearchTerm = { term: longSearchTerm, timestamp: searchTimestamp };
-const validSearch1: SearchTerm = { term: "a search", timestamp: searchTimestamp };
-const validSearch2: SearchTerm = { term: "a search", timestamp: searchTimestamp };
 
-export const singleSearchList = [
-    validSearch1,
-]
+const singleSearchList: SelectedSearches = {
+    searches: {
+        selectedSearches: [
+            { term: "a search 1", timestamp: searchTimestamp },
+       ],
+    },
+};
 
-const existingSearches = [
-    validSearch1,
-    validSearch2,
-]
+const baseSearches: SelectedSearches = {
+    searches: {
+        selectedSearches: [
+            { term: "a search 1", timestamp: searchTimestamp },
+            { term: "a search 2", timestamp: searchTimestamp },
+        ],
+    },
+};
 
 const emptySearch: SearchTerm[] = []
 
 export const createLongSearch = createFixtureBuilder<SearchTerm>(longSearch);
-export const createListOfSingleSearch = createFixtureBuilder<SearchTerm[]>(singleSearchList);
-export const createListOfSearches = createFixtureBuilder<SearchTerm[]>(existingSearches);
+export const createListOfSingleSearch = createFixtureBuilder<SelectedSearches>(singleSearchList);
+export const createListOfSearches = createFixtureBuilder<SelectedSearches>(baseSearches);
 export const createEmptySearch = createFixtureBuilder<SearchTerm[]>(emptySearch);

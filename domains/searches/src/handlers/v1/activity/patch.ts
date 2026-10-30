@@ -10,7 +10,7 @@ const maxTerms = 10
 
 export const handler = route("PATCH /v1/activity/searches", async ({ auth }) => {
     const userId = auth.pairwiseId as UserId;
-    const { body, integrations, logger } = context();
+    const { body, logger } = context();
 
     const searchToSave = body
     if (searchToSave && searchToSave.term.length > maxTermLength) {
