@@ -7,6 +7,7 @@ import {
   UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
+import { searchesResponseSchema } from "./schemas/remote/searches";
 import {
   topicsResponseSchema,
   upsertTopicsResponseSchema,
@@ -207,6 +208,38 @@ export const handler = createHandler({
       });
 
       return mapApiResult(result, ({ data }) => data.groups);
+    },
+    "POST /v1/activity/searches": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      return api.post("/v1/activity/searches", {
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+          "requested-at": new Date().toISOString(),
+        },
+        body: { data: body },
+      });
+    },
+    "GET /v1/activity/searches": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/activity/searches", {
+        schema: searchesResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
     },
   },
 });
