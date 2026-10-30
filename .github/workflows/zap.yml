@@ -6,7 +6,7 @@ on:
 
 jobs:
   zap_scan:
-    name: ⚡️ ZAP Staging
+    name: ⚡️ ZAP development
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -27,7 +27,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
-          role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
+          role-to-assume: ${{ secrets.DEVELOPMENT_DEPLOYMENT_ROLE }}
           aws-region: "eu-west-2"
           role-session-name: ${{ github.run_id }}
 
@@ -50,7 +50,7 @@ jobs:
 
       - name: Generate JWT
         env:
-          STAGE: "staging"
+          STAGE: "development"
         run: pnpm dastSetup
 
       - name: Verify authentication values
@@ -70,14 +70,14 @@ jobs:
       - name: Verify API authentication
         shell: bash
         env:
-          API_URL: ${{ secrets.STAGING_API_URL }}
+          API_URL: ${{ secrets.DEV_API_URL }}
         run: bash scripts/zap/verify-auth.sh
 
       - name: Run ZAP API scan
         id: zap
         shell: bash
         env:
-          API_URL: ${{ secrets.STAGING_API_URL }}
+          API_URL: ${{ secrets.DEV_API_URL }}
         run: bash scripts/zap/run-scan.sh
 
       - name: Verify ZAP reports
@@ -98,7 +98,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          ZAP_BASELINE_ARTIFACT: zap-api-staging-baseline
+          ZAP_BASELINE_ARTIFACT: zap-api-development-baseline
         run: bash scripts/zap/load-baseline.sh
 
       - name: Detect new ZAP findings
@@ -121,7 +121,7 @@ jobs:
       - name: Upload ZAP finding baseline
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: zap-api-staging-baseline
+          name: zap-api-development-baseline
           path: zap-findings-baseline.txt
           if-no-files-found: error
           retention-days: 90
@@ -130,13 +130,13 @@ jobs:
         uses: github/codeql-action/upload-sarif@88585263c0627ee42c0e1c5143a112c8d6f4aa18 # v4.38.2
         with:
           sarif_file: report.github.sarif.json
-          category: zap-api-staging
+          category: zap-api-development
 
       - name: Upload ZAP reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: zap-api-staging-reports
+          name: zap-api-development-reports
           path: |
             zap-reports/report_html.html
             zap-reports/report_json.json
