@@ -9,11 +9,12 @@ Walk the user from "I want a new domain" to a package that type-checks, lints, p
 
 ## Sources of truth
 
-Read these before scaffolding. Don't copy their content into chat; follow them.
+Follow these; don't copy their content into chat. The guide is loaded with the skill. Read the others before scaffolding.
 
-1. **The first-domain guide**: `docs/src/content/docs/getting-started/your-first-domain.md`. This skill builds on it: same files, same order. If it isn't in this checkout yet (it lands with the docs site), fall back to `docs/domain-development.md`.
-2. **Domain config reference**: `docs/src/content/docs/domains/domain-config.md` if present, else `libs/sdk/README.md`.
-3. **The living example**: `domains/topics/`. When the guide and `topics` disagree on a dependency version or config file, `topics` wins, because it's what CI is passing today.
+1. **The first-domain guide**: @docs/src/content/docs/getting-started/your-first-domain.md. This skill builds on it: same files, same order.
+2. **Domain config reference**: `docs/src/content/docs/domains/domain-config.md`.
+3. **Integrations and tests**, when the user wants them: `docs/src/content/docs/domains/calling-other-domains.md` and `docs/src/content/docs/domains/testing.md`.
+4. **The living example**: `domains/topics/`. When the guide and `topics` disagree on a dependency version or config file, `topics` wins, because it's what CI is passing today.
 
 ## 1. Interview
 
