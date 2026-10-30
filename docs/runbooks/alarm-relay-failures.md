@@ -44,7 +44,7 @@ Names are `${STAGE}-flex-alarm-relay-${SEVERITY}-<type>`. All three use a 5 minu
 
 These alarms do not go through the relay. They publish to `${STAGE}-flex-alerts-relay-health` in `us-east-1`, which has its own KMS key, so a broken relay cannot silence them.
 
-> The health topic is created without subscribers. Until one is added for the environment, the alarms change state in CloudWatch but nobody is notified.
+The health topic is subscribed to the environment's critical Slack channel through the `flex-alerts-critical-${STAGE}` Amazon Q configuration in FlexCore, so a relay failure is treated as critical: while it fires, no edge alarm can be trusted to have arrived.
 
 ---
 

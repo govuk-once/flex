@@ -89,7 +89,7 @@ export function getRouteResources(
 }
 
 function resolveCurrentEnvironment(): Environment {
-  const stage = process.env.STAGE;
+  const stage = process.env.FLEX_ENVIRONMENT;
   return stage && isPersistentEnvironment(stage)
     ? stage
     : Environment.development;
@@ -104,7 +104,8 @@ function resolveCurrentEnvironment(): Environment {
  * 3. `default`: global fallback
  * 4. `false`
  *
- * The current environment is read from `process.env.STAGE`. Any stage that is
+ * The current environment is read from `process.env.FLEX_ENVIRONMENT`, which the
+ * Lambda constructs set to the deployed stage. Any stage that is
  * not one of "development", "staging", or "production" (e.g. a personal stage)
  * is treated as "development".
  */
@@ -169,5 +170,7 @@ export function getRouteLogLevel(
   common?: LogLevel,
   route?: LogLevel,
 ): LogLevel {
+  if (process.env.FLEX_ENVIRONMENT === Environment.production) return "INFO";
+
   return route ?? common ?? "INFO";
 }

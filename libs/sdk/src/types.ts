@@ -302,18 +302,6 @@ export type DomainRoutes<Config extends DomainConfig> = Config extends {
     }[keyof ConfigRoutes & string]
   : never;
 
-type ResolveRouteAccess<Config, RouteConfig> = RouteConfig extends {
-  readonly access: infer Access extends RouteAccess;
-}
-  ? Access
-  : Config extends {
-        readonly common: {
-          readonly access: infer CommonRouteAccess extends RouteAccess;
-        };
-      }
-    ? CommonRouteAccess
-    : "isolated";
-
 export type ResolveRouteConfig<Config, Route extends string> =
   ExtractRouteSegments<Route> extends {
     method: infer Method extends HttpMethod;
@@ -494,9 +482,10 @@ export interface DomainResult<Config extends DomainConfig> {
 // Route Context & Handler
 // ----------------------------------------------------------------------------
 
-type WithAuth<Access extends RouteAccess> = Access extends "public"
-  ? unknown
-  : { readonly auth: RouteAuth };
+type WithAuth<Route extends string> =
+  ExtractRouteSegments<Route> extends { gateway: "public" }
+    ? { readonly auth: RouteAuth }
+    : unknown;
 
 type WithHeaders<Config extends DomainConfig, RouteConfig> = ResolveHeaders<
   MergeRouteHeaders<Config, RouteConfig>
@@ -606,9 +595,7 @@ type RouteContext<
   Route extends string,
   Config extends DomainConfig,
   RouteConfig,
-> = { readonly logger: Logger } & WithAuth<
-  ResolveRouteAccess<Config, RouteConfig>
-> &
+> = { readonly logger: Logger } & WithAuth<Route> &
   WithResources<RouteConfig> &
   WithFeatureFlags<RouteConfig> &
   WithIntegrations<Config, RouteConfig> &

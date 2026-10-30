@@ -1,0 +1,59 @@
+
+env:
+  contexts:
+    - name: flex-api
+      urls:
+        - "${API_URL}"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    continueOnFailure: true
+    progressToStdout: true
+
+jobs:
+  - type: openapi
+    parameters:
+      apiFile: /zap/wrk/dist/openapi/merged-openapi.json
+      targetUrl: "${API_URL}"
+      context: flex-api
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: activeScan
+    parameters:
+      context: flex-api
+      url: "${API_URL}"
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/reports
+      reportFile: report_json.json
+      reportTitle: Flex API ZAP Scan
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/reports
+      reportFile: report_html.html
+      reportTitle: Flex API ZAP Scan
+
+  - type: report
+    parameters:
+      template: traditional-md
+      reportDir: /zap/reports
+      reportFile: report_md.md
+      reportTitle: Flex API ZAP Scan
+
+  - type: report
+    parameters:
+      template: sarif-json
+      reportDir: /zap/reports
+      reportFile: report.sarif.json
+      reportTitle: Flex API ZAP Scan

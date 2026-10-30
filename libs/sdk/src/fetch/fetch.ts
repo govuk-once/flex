@@ -3,11 +3,8 @@ import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { NumberUpTo } from "@flex/utils";
 import { backOff } from "exponential-backoff";
 
+import { MAX_ATTEMPTS, MAX_DELAY_MS, MIN_DELAY_MS } from "./constants";
 import { buildHeaders } from "./headers";
-
-const MAX_ATTEMPTS = 6;
-const MIN_DELAY_MS = 10;
-const MAX_DELAY_MS = 1000;
 
 export interface FlexFetchRequestInit extends RequestInit {
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
