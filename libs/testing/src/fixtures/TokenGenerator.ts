@@ -70,7 +70,7 @@ export async function getAccessToken(
     csrfPresent: $('input[name="_csrf"]').length > 0,
     htmlReceived: typeof initResponse.data === "string",
   });
-  
+
   const csrfToken = $('input[name="_csrf"]').val() as string;
   if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
 
