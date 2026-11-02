@@ -1,4 +1,3 @@
-
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -159,9 +158,7 @@ function parseDomainRoutes(value: unknown): DomainRoutes {
         }
 
         methods[method] = {
-          public:
-            routeValue.public === true ||
-            isRecord(routeValue.public),
+          public: routeValue.public === true || isRecord(routeValue.public),
         };
       }
 
