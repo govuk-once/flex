@@ -1,3 +1,4 @@
+
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -147,15 +148,20 @@ function parseDomainRoutes(value: unknown): DomainRoutes {
           continue;
         }
 
+        // Public routes may use a boolean or a configuration object.
+        // Reject unexpected types rather than silently including them.
         if (
           routeValue.public !== undefined &&
-          typeof routeValue.public !== "boolean"
+          typeof routeValue.public !== "boolean" &&
+          !isRecord(routeValue.public)
         ) {
           throw new Error(`Invalid public flag for ${method} ${sdkPath}`);
         }
 
         methods[method] = {
-          public: routeValue.public === true,
+          public:
+            routeValue.public === true ||
+            isRecord(routeValue.public),
         };
       }
 
