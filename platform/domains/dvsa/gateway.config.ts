@@ -9,7 +9,7 @@ export const { config, createHandler } = defineGateway({
   resources: {
     consumerConfig: {
       type: "secret",
-      path: "/dvsa/consumer-config-secret-arn-nathan",
+      path: "/dvsa/consumer-config-secret-arn",
       env: "FLEX_DVSA_CONSUMER_CONFIG_SECRET_ARN",
       scope: "environment",
       config: z.object({
