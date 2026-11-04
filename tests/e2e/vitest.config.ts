@@ -1,8 +1,8 @@
-import { config } from "@flex/config/vitest";
+import { baseConfig } from "@flex/config/vitest/base";
 import { defineConfig, mergeConfig } from "vitest/config";
 
 export default mergeConfig(
-  config,
+  baseConfig,
   defineConfig({
     test: {
       globalSetup: "@flex/testing/e2e/setup",

@@ -19,11 +19,13 @@ Alternatively, run `pnpm <command>` from within `libs/config/`.
 
 ## API
 
-| Name                                                    | Description                     | Code                        |
-| ------------------------------------------------------- | ------------------------------- | --------------------------- |
-| [`@flex/config/eslint`](#flexconfigeslint)              | Shared ESLint configuration     | [View](./src/eslint.mjs)    |
-| [`@flex/config/tsconfig.json`](#flexconfigtsconfigjson) | Shared TypeScript configuration | [View](./src/tsconfig.json) |
-| [`@flex/config/vitest`](#flexconfigvitest)              | Shared Vitest configuration     | [View](./src/vitest.ts)     |
+| Name                                                    | Description                                | Code                         |
+| ------------------------------------------------------- | ------------------------------------------ | ---------------------------- |
+| [`@flex/config/eslint`](#flexconfigeslint)              | Shared ESLint configuration                | [View](./src/eslint.mjs)     |
+| [`@flex/config/tsconfig.json`](#flexconfigtsconfigjson) | Shared TypeScript configuration            | [View](./src/tsconfig.json)  |
+| [`@flex/config/vitest`](#flexconfigvitest)              | Shared Vitest configuration for unit tests | [View](./src/vitest.ts)      |
+| [`@flex/config/vitest/base`](#base-and-e2e-variants)    | Vitest settings shared by unit and E2E     | [View](./src/vitest.base.ts) |
+| [`@flex/config/vitest/e2e`](#base-and-e2e-variants)     | Shared Vitest configuration for E2E tests  | [View](./src/vitest.e2e.ts)  |
 
 ---
 
@@ -81,7 +83,7 @@ Include the Vitest configuration file for type checking:
 
 ## `@flex/config/vitest`
 
-Shared Vitest configuration with coverage settings.
+Shared Vitest configuration for unit tests. It extends the base config (below) and sets dummy AWS values for every test: `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and a blank `AWS_PROFILE`. See [AWS credentials in unit tests](/libs/testing/README.md#aws-credentials-in-unit-tests).
 
 ### Usage
 
@@ -108,6 +110,10 @@ export default mergeConfig(
   }),
 );
 ```
+
+### Base and E2E variants
+
+`@flex/config/vitest/base` holds the settings common to every run: path aliases, the `node` environment and coverage. `@flex/config/vitest/e2e` extends it for E2E tests and does not set the AWS values, so E2E runs use your real credentials. Don't import `@flex/config/vitest` in an E2E config.
 
 ---
 
