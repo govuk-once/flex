@@ -26,4 +26,5 @@ const emptySearches: UserSearches = {
 };
 
 export const createSearches = createFixtureBuilder<UserSearches>(baseSearches);
-export const createEmptySearches = createFixtureBuilder<UserSearches>(emptySearches);
+export const createEmptySearches =
+    createFixtureBuilder<UserSearches>(emptySearches);
