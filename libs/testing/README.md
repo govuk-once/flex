@@ -20,6 +20,10 @@ Run these from the repository root:
 
 Alternatively, run `pnpm <command>` from within `libs/testing/`.
 
+## AWS credentials in unit tests
+
+Unit tests don't need an AWS login or an assumed role. The shared Vitest config (`@flex/config/vitest`) sets dummy `AWS_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` values and a blank `AWS_PROFILE`. E2E tests don't get them. See [Testing: AWS credentials and region](/docs/src/content/docs/domains/testing.md#aws-credentials-and-region) for the values and how to override them.
+
 ## API
 
 ### `it`

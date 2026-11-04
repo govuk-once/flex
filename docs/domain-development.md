@@ -600,7 +600,6 @@ export default mergeConfig(
         // "./src/tests/setup.ts"
       ],
       env: {
-        AWS_REGION: "eu-west-2",
         exampleKey: "arn:aws:kms:eu-west-2:123456789012:key/test-key",
         gatewayUrl: "https://execute-api.eu-west-2.amazonaws.com",
         mySecret: "/path/to/name",
