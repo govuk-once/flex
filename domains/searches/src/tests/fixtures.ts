@@ -1,8 +1,6 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
 import { SearchTerm, UserSearches } from "@schemas/search";
 
-export const userId = createUserId("test-topics-user");
-
 const searchTimestamp = Date.now().toLocaleString();
 
 const baseSearch: SearchTerm = {
@@ -21,4 +19,11 @@ const baseSearches: UserSearches = {
     },
 };
 
+const emptySearches: UserSearches = {
+    searches: {
+        userSearches: [],
+    },
+};
+
 export const createSearches = createFixtureBuilder<UserSearches>(baseSearches);
+export const createEmptySearches = createFixtureBuilder<UserSearches>(emptySearches);
