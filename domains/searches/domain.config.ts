@@ -16,11 +16,17 @@ export const { config, route, routeContext } = domain({
         },
     },
     integrations: {
-        udpPostSearch: {
+        udpPostSearches: {
             type: "gateway",
             target: "udp",
             route: "POST /v1/activity/searches",
             body: UserSearchesSchema,
+            response: UserSearchesSchema,
+        },
+        udpGetSearches: {
+            type: "gateway",
+            target: "udp",
+            route: "GET /v1/activity/searches",
             response: UserSearchesSchema,
         },
     },
@@ -31,7 +37,7 @@ export const { config, route, routeContext } = domain({
                     public: {
                         name: "upsert-searches",
                         resources: ["privateGatewayUrl"],
-                        integrations: ["udpPostSearch"],
+                        integrations: ["udpPostSearches", "udpGetSearches"],
                         body: SearchTermSchema,
                     },
                 },

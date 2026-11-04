@@ -1,23 +1,52 @@
 import { route } from "@domain";
-import { UserSearches } from "@schemas/search";
+import { SearchTerm, UserSearches } from "@schemas/search";
 import createHttpError from "http-errors";
+
+const MAX_SEARCH_TERM_LENGTH = 100;
+const MAX_SEARCH_TERMS = 10;
 
 export const handler = route(
     "PATCH /v1/activity/searches",
     async ({ auth, body, integrations, logger }) => {
-        const searches: UserSearches = {
-            searches: {
-                userSearches: [{ term: body.term, timestamp: body.timestamp }],
-            },
-        };
-
-        const result = await integrations.udpPostSearch({
+        const result = await integrations.udpGetSearches({
             headers: { "requesting-service-user-id": auth.userId },
-            body: searches,
         });
 
         if (!result.ok) {
             const { status } = result.error;
+
+            if (status === 404) {
+                logger.info("User not found, not saving search", {
+                    status,
+                    userId: auth.userId,
+                });
+
+                return {
+                    status: 200,
+                    data: {  },
+                };
+            }
+
+            logger.error("Failed to get existing searches, not saving search", {
+                status,
+            });
+
+            throw new createHttpError.BadGateway();
+        }
+
+        const existingSearches: UserSearches = result.data;
+        const newSearches: UserSearches = consolidateSearches(
+            existingSearches,
+            body
+        );
+
+        const postResult = await integrations.udpPostSearches({
+            headers: { "requesting-service-user-id": auth.userId },
+            body: newSearches,
+        });
+
+        if (!postResult.ok) {
+            const { status } = postResult.error;
 
             if (status === 409) {
                 logger.error(
@@ -36,8 +65,25 @@ export const handler = route(
             throw new createHttpError.BadGateway();
         }
 
-        logger.info("Successfully updated searches", { data: result.data });
+        logger.info("Successfully updated searches", { data: postResult.data });
 
         return { status: 204 };
     }
 );
+
+const consolidateSearches = (
+    existingSearches: UserSearches,
+    newSearch: SearchTerm
+): UserSearches => {
+    if (newSearch.term.length > MAX_SEARCH_TERM_LENGTH) {
+        return existingSearches;
+    }
+
+    if (existingSearches.searches.userSearches.length === MAX_SEARCH_TERMS) {
+        existingSearches.searches.userSearches.pop();
+    }
+
+    existingSearches.searches.userSearches.push(newSearch);
+
+    return existingSearches;
+};
