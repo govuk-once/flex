@@ -1,10 +1,10 @@
 export type {
-    SearchTerm,
-    UpdateUserSearchRequest,
-    UserSearches,
+  SearchTerm,
+  UpdateUserSearchRequest,
+  UserSearches,
 } from "./schemas/search";
 export {
-    SearchTermSchema,
-    UpdateUserSearchRequestSchema,
-    UserSearchesSchema,
+  SearchTermSchema,
+  UpdateUserSearchRequestSchema,
+  UserSearchesSchema,
 } from "./schemas/search";
