@@ -1,5 +1,5 @@
 import type { Logger } from "@flex/logging";
-import { injectLambdaContext } from "@flex/logging";
+import { addSecretValue, injectLambdaContext } from "@flex/logging";
 import middy from "@middy/core";
 import httpErrorHandler from "@middy/http-error-handler";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
@@ -55,17 +55,19 @@ export function configureMiddleware({
     const secrets = entries.filter(([_, { type }]) => type === "secret");
 
     if (secrets.length > 0) {
-      middyHandler.use(
-        secretsManagerMiddleware({
-          fetchData: Object.fromEntries(
-            secrets.map(([key, { value }]) => [
-              key,
-              secretsManagerParam(value),
-            ]),
-          ),
-          setToContext: true,
-        }),
-      );
+      middyHandler
+        .use(
+          secretsManagerMiddleware({
+            fetchData: Object.fromEntries(
+              secrets.map(([key, { value }]) => [
+                key,
+                secretsManagerParam(value),
+              ]),
+            ),
+            setToContext: true,
+          }),
+        )
+        .use(registerSecretsForRedaction(secrets.map(([key]) => key)));
     }
 
     const params = entries.filter(([_, { type }]) => type === "ssm:runtime");
@@ -83,4 +85,17 @@ export function configureMiddleware({
   }
 
   return middyHandler;
+}
+
+function registerSecretsForRedaction(
+  keys: readonly string[],
+): middy.MiddlewareObj<LambdaEvent, LambdaResult> {
+  return {
+    before: ({ context }) => {
+      const loaded = context as unknown as Record<string, unknown>;
+      keys.forEach((key) => {
+        addSecretValue(loaded[key]);
+      });
+    },
+  };
 }
