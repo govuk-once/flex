@@ -99,6 +99,12 @@ flex/
 | [`@flex/udp-domain`](/domains/udp/README.md)         | User Data Platform for user settings management                   |
 | [`@flex/topics-domain`](/domains/topics/README.md)   | Manage user topic selections via integration with UDP             |
 
+### Bootstrapping a domain with Claude
+
+The [`bootstrap-domain`](/.claude/skills/bootstrap-domain/SKILL.md) skill scaffolds a new domain for you. In [Claude Code](https://claude.com/claude-code), from the repository root, run `/bootstrap-domain <name>` or ask something like "bootstrap a domain called parking".
+
+Claude asks for a name and a one-line purpose, then proposes sensible defaults (a public `GET /v1/hello` route, development only, no integrations, with an E2E test) for you to confirm or change. It then creates `domains/<name>/`, runs type-check, lint, unit tests and `cdk synth`, and gives you the commands to deploy to your personal stack and call the route. It never deploys on its own.
+
 ---
 
 ## Platform
