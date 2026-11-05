@@ -1,7 +1,7 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
-import { requestingUserWriteHeaders } from "./headers";
+import { requestingUserHeaders, requestingUserWriteHeaders } from "./headers";
 import { identitiesResponseSchema } from "./schemas/domain/identity";
 import {
   GroupsResponseSchema,
@@ -46,11 +46,7 @@ export const handler = createHandler({
       pathParams: { serviceName },
     }) => {
       return api.get("/v1/identity/exchange", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
+        headers: requestingUserHeaders(consumerConfig.apiKey, userId),
         query: { requiredService: serviceName },
       });
     },
@@ -61,11 +57,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/notifications", {
         schema: notificationsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
@@ -159,11 +154,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/topics", {
         schema: topicsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
@@ -175,11 +169,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/groups", {
         schema: GroupsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data.groups);
@@ -227,11 +220,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/activity/searches", {
         schema: searchesResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
