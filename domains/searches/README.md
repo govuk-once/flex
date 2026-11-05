@@ -27,3 +27,48 @@ Alternatively, run `pnpm <command>` from within `domains/searches/`.
 | [`PATCH /v1/activity/searches`](#patch-v1searches) | Public | Upsert user search selections | [View](./src/handlers/v1/activity/searches/patch.ts) |
 
 ---
+
+## Data schema
+
+### Search Terms
+
+`Search.term` is currently validated as a non-empty string of no more than 100 characters length. The term must be unique on a case-insensitive basis.
+
+---
+
+## PATCH `/v1/activity/searches`
+
+Adds a search to the existing collection according to the rules for search terms above.
+
+### Request
+
+```json
+{
+  "term": "a new search term",
+  "timestamp": "2026-11-03T14:20:00Z"
+}
+```
+
+### Response
+
+```json
+{
+  "searches": {
+    "userSearches": [
+      { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
+      { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
+    ]
+  }
+}
+```
+
+---
+
+## Related
+
+**FLEX:**
+
+- [@flex/sdk](/libs/sdk/README.md)
+- [@flex/testing](/libs/testing/README.md)
+- [@flex/utils](/libs/utils/README.md)
+- [Domain Development Guide](/docs/domain-development.md)
