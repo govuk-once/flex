@@ -44,8 +44,8 @@ Adds a search to the existing collection according to the rules for search terms
 
 ```json
 {
-    "term": "a new search term",
-    "timestamp": "2026-11-03T14:20:00Z"
+  "term": "a new search term",
+  "timestamp": "2026-11-03T14:20:00Z"
 }
 ```
 
@@ -53,12 +53,12 @@ Adds a search to the existing collection according to the rules for search terms
 
 ```json
 {
-    "searches": {
-        "userSearches": [
-            { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
-            { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
-        ]
-    }
+  "searches": {
+    "userSearches": [
+      { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
+      { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
+    ]
+  }
 }
 ```
 
