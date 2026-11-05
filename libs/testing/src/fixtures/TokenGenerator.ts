@@ -75,7 +75,7 @@ export async function getAccessToken(
 
     if (attempt < AUTH_MAX_RETRIES) {
       console.warn(
-        `Auth response returned status ${initResponse.status} without CSRF token (attempt ${attempt + 1}/${AUTH_MAX_RETRIES + 1}), retrying in ${AUTH_RETRY_DELAY_MS}ms...`,
+        `Auth response returned status ${String(initResponse.status)} without CSRF token (attempt ${String(attempt + 1)}/${String(AUTH_MAX_RETRIES + 1)}), retrying in ${String(AUTH_RETRY_DELAY_MS)}ms...`,
       );
       await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
     }
