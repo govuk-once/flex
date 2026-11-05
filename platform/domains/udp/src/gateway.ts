@@ -1,6 +1,7 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
+import { requestingUserWriteHeaders } from "./headers";
 import { identitiesResponseSchema } from "./schemas/domain/identity";
 import {
   GroupsResponseSchema,
@@ -93,11 +94,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/notifications", {
         schema: notificationsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserWriteHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
         body: { data: body, requestingServiceUserId },
       });
 
@@ -143,12 +143,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/topics", {
         schema: upsertTopicsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-          "requested-at": new Date().toISOString(),
-        },
+        headers: requestingUserWriteHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
         body: { data: body },
       });
 
@@ -194,11 +192,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/groups", {
         schema: UpsertGroupsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserWriteHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
         body: {
           data: {
             groups: body,
@@ -216,12 +213,10 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       return api.post("/v1/activity/searches", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-          "requested-at": new Date().toISOString(),
-        },
+        headers: requestingUserWriteHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
         body: { data: body },
       });
     },
