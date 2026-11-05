@@ -1,7 +1,7 @@
-import { createFixtureBuilder, createUserId } from "@flex/testing";
+import { createFixtureBuilder } from "@flex/testing";
 import { SearchTerm, UserSearches } from "@schemas/search";
 
-const searchTimestamp = Date.now().toLocaleString();
+const searchTimestamp = "2026-11-04T13:45:00Z";
 
 const baseSearch: SearchTerm = {
   term: "a search",
