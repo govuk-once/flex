@@ -1,7 +1,7 @@
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
-import { UserSearches, UserSearchesSchema } from "@schemas/search";
-import { createEmptySearches, createSearches } from "@tests/fixtures";
+import {SearchTerm, UserSearches} from "@schemas/search";
+import {createSearch} from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { config as searchesConfig } from "../domain.config";
@@ -19,27 +19,11 @@ describe.runIf(isDomainDeployed(searchesConfig))("Searches domain", () => {
                 authHeader,
             }) => {
                 const result = await cloudfront.client.patch<
-                    UserSearches,
+                    SearchTerm,
                     UserSearches
                 >(endpoint, {
                     headers: authHeader,
-                    body: createSearches(),
-                });
-
-                expect(result.status).toBe(204);
-            });
-
-            it("returns 204 with cleared selected searches", async ({
-                cloudfront,
-                udpUser: _,
-                authHeader,
-            }) => {
-                const result = await cloudfront.client.patch<
-                    UserSearches,
-                    UserSearches
-                >(endpoint, {
-                    headers: authHeader,
-                    body: createEmptySearches(),
+                    body: createSearch(),
                 });
 
                 expect(result.status).toBe(204);
@@ -49,10 +33,10 @@ describe.runIf(isDomainDeployed(searchesConfig))("Searches domain", () => {
                 cloudfront,
             }) => {
                 const result = await cloudfront.client.patch<
-                    UserSearches,
+                    SearchTerm,
                     UserSearches
                 >(endpoint, {
-                    body: createEmptySearches(),
+                    body: createSearch(),
                 });
 
                 expect(result.status).toBe(401);
