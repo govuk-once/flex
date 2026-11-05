@@ -1,5 +1,5 @@
 import { domain } from "@flex/sdk";
-import { SearchTermSchema, UserSearchesSchema } from "@schemas/search";
+import { SearchTermSchema, UserSearchesSchema } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
     name: "searches",
