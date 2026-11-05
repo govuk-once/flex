@@ -24,7 +24,7 @@
     "pkce-challenge": "6.0.0",
     "totp-generator": "2.0.1",
     "tough-cookie": "6.0.2",
-    "zod": "4.4.3"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
