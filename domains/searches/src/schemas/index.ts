@@ -1,9 +1,6 @@
-export type {
-  SearchTerm,
-  UserSearches,
-} from "./search";
+export type { SearchTerm, UserSearches } from "./search";
 export {
   SearchTermSchema,
-  UserSearchesSchema,
   UpdateUserSearchRequestSchema,
+  UserSearchesSchema,
 } from "./search";
