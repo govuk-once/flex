@@ -8,6 +8,16 @@ const MAX_SEARCH_TERMS = 10;
 export const handler = route(
     "PATCH /v1/activity/searches",
     async ({ auth, body, integrations, logger }) => {
+        // Terms over MAX_SEARCH_TERM_LENGTH are rejected
+        if (body.term.length > MAX_SEARCH_TERM_LENGTH) {
+            const status = 400;
+            logger.error("Specified search is too long, not saving search", {
+                status,
+            });
+
+            throw new createHttpError.BadRequest();
+        }
+
         const result = await integrations.udpGetSearches({
             headers: { "requesting-service-user-id": auth.userId },
         });
@@ -34,17 +44,24 @@ export const handler = route(
             throw new createHttpError.BadGateway();
         }
 
-        const existingSearches: UserSearches = result.data;
-        const newSearches: UserSearches = consolidateSearches(
-            existingSearches,
+        const foundSearches = result.data.searches.userSearches;
+        const newSearches: SearchTerm[] = consolidateSearches(
+            foundSearches,
             body
         );
+        const newUserSearches: UserSearches = {
+            searches: {
+                userSearches: newSearches,
+            },
+        };
 
+        logger.info("STEP 3: " + JSON.stringify(newUserSearches));
         const postResult = await integrations.udpPostSearches({
             headers: { "requesting-service-user-id": auth.userId },
-            body: newSearches,
+            body: newUserSearches,
         });
 
+        logger.info("STEP 4");
         if (!postResult.ok) {
             const { status } = postResult.error;
 
@@ -72,18 +89,25 @@ export const handler = route(
 );
 
 const consolidateSearches = (
-    existingSearches: UserSearches,
+    existingSearches: SearchTerm[],
     newSearch: SearchTerm
-): UserSearches => {
-    if (newSearch.term.length > MAX_SEARCH_TERM_LENGTH) {
-        return existingSearches;
+): SearchTerm[] => {
+    // Remove any existing (case-insensitive) match
+    const indexToRemove: number = existingSearches.findIndex(
+        (search) => search.term.toLowerCase() === newSearch.term.toLowerCase()
+    );
+
+    if (indexToRemove >= 0) {
+        existingSearches.splice(indexToRemove, 1);
     }
 
-    if (existingSearches.searches.userSearches.length === MAX_SEARCH_TERMS) {
-        existingSearches.searches.userSearches.pop();
+    // If array already has MAX_SEARCH_TERMS entries, remove the oldest
+    if (existingSearches.length === MAX_SEARCH_TERMS) {
+        existingSearches.splice(0, 1);
     }
 
-    existingSearches.searches.userSearches.push(newSearch);
+    // Push on the new term
+    existingSearches.push(newSearch);
 
     return existingSearches;
 };
