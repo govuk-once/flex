@@ -110,96 +110,48 @@ describe("PATCH /v1/activity/searches", () => {
         expect(result.body).toBe("");
     });
 
-    it("returns 204 without new term when existing searches are updated with too long term", async ({
-        http,
-        sdk,
-    }) => {
-        const existingSearchTerm: SearchTerm = {
-            term: "existing search",
-            timestamp: "2026-11-04T13:45:00Z",
-        };
-
-        const newSearchTerm: SearchTerm = {
-            term: "a new search that is too long to be stored in the data store. oh it is very very long indeed. so long in fact that it might just wrap around the line. and it is full of garbage afgn jlri3qt42 v u928t jgrlt 42i regjflab feal",
-            timestamp: "2026-11-04T13:45:00Z",
-        };
-
-        http.gateway("udp")
-            .post(endpoint, {
-                headers: { "requesting-service-user-id": userId },
-                body: {
-                    searches: {
-                        userSearches: [existingSearchTerm],
-                    },
-                },
-            })
-            .reply(200, {
-                searches: {
-                    userSearches: [existingSearchTerm],
-                },
-            });
-
-        http.gateway("udp")
-            .get(endpoint, {
-                headers: { "requesting-service-user-id": userId },
-            })
-            .reply(200, {
-                searches: {
-                    userSearches: [existingSearchTerm],
-                },
-            });
-
-        const result = await handler(
-            sdk.event.patch(endpoint, { auth: userId, body: newSearchTerm }),
-            sdk.context()
-        );
-
-        expect(result.statusCode).toBe(204);
-        expect(result.body).toBe("");
-    });
-
-    it("returns 204 and replaces the oldest term with the new term when existing searches are updated and there are already the maximum held", async ({
+    it("returns 204 and removes the oldest term with the new term when existing searches are updated and there are already the maximum held", async ({
         http,
         sdk,
     }) => {
         const existingSearchTerm0: SearchTerm = {
-            term: "existing search",
+            term: "existing search 0",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm1: SearchTerm = {
-            term: "existing search",
+            term: "existing search 1",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm2: SearchTerm = {
-            term: "existing search",
+            term: "existing search 2",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm3: SearchTerm = {
-            term: "existing search",
+            term: "existing search 3",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm4: SearchTerm = {
-            term: "existing search",
+            term: "existing search 4",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm5: SearchTerm = {
-            term: "existing search",
+            term: "existing search 5",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm6: SearchTerm = {
-            term: "existing search",
+            term: "existing search 6",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm7: SearchTerm = {
-            term: "existing search",
+            term: "existing search 7",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm8: SearchTerm = {
-            term: "existing search",
+            term: "existing search 8",
             timestamp: "2026-11-04T13:45:00Z",
         };
         const existingSearchTerm9: SearchTerm = {
-            term: "existing search",
+            term: "existing search 9",
             timestamp: "2026-11-04T13:45:00Z",
         };
 
@@ -273,6 +225,104 @@ describe("PATCH /v1/activity/searches", () => {
 
         expect(result.statusCode).toBe(204);
         expect(result.body).toBe("");
+    });
+
+    it("returns 204 and replaces and existing matching term with the new term when existing searches are updated", async ({
+        http,
+        sdk,
+    }) => {
+        const existingSearchTerm0: SearchTerm = {
+            term: "existing search 0",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+        const existingSearchTerm1: SearchTerm = {
+            term: "existing search 1",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+        const existingSearchTerm2: SearchTerm = {
+            term: "MatChIng sEarch terM",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+        const existingSearchTerm3: SearchTerm = {
+            term: "existing search 3",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+        const existingSearchTerm4: SearchTerm = {
+            term: "existing search 4",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+
+        const newSearchTerm: SearchTerm = {
+            term: "matchIng sEaRch Term",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+
+        http.gateway("udp")
+            .post(endpoint, {
+                headers: { "requesting-service-user-id": userId },
+                body: {
+                    searches: {
+                        userSearches: [
+                            existingSearchTerm0,
+                            existingSearchTerm1,
+                            existingSearchTerm3,
+                            existingSearchTerm4,
+                            newSearchTerm,
+                        ],
+                    },
+                },
+            })
+            .reply(200, {
+                searches: {
+                    userSearches: [
+                        existingSearchTerm0,
+                        existingSearchTerm1,
+                        existingSearchTerm3,
+                        existingSearchTerm4,
+                        newSearchTerm,
+                    ],
+                },
+            });
+
+        http.gateway("udp")
+            .get(endpoint, {
+                headers: { "requesting-service-user-id": userId },
+            })
+            .reply(200, {
+                searches: {
+                    userSearches: [
+                        existingSearchTerm0,
+                        existingSearchTerm1,
+                        existingSearchTerm2,
+                        existingSearchTerm3,
+                        existingSearchTerm4,
+                    ],
+                },
+            });
+
+        const result = await handler(
+            sdk.event.patch(endpoint, { auth: userId, body: newSearchTerm }),
+            sdk.context()
+        );
+
+        expect(result.statusCode).toBe(204);
+        expect(result.body).toBe("");
+    });
+
+    it("returns 400 without new term when existing searches are updated with too long term", async ({
+        sdk,
+    }) => {
+        const newSearchTerm: SearchTerm = {
+            term: "a new search that is too long to be stored in the data store. oh it is very very long indeed. so long in fact that it might just wrap around the line. and it is full of garbage afgn jlri3qt42 v u928t jgrlt 42i regjflab feal",
+            timestamp: "2026-11-04T13:45:00Z",
+        };
+
+        const result = await handler(
+            sdk.event.patch(endpoint, { auth: userId, body: newSearchTerm }),
+            sdk.context()
+        );
+
+        expect(result.statusCode).toBe(400);
     });
 
     it("returns 409 when UDP write timestamps are out-of-sequence", async ({
