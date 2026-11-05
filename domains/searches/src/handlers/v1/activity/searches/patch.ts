@@ -52,13 +52,11 @@ export const handler = route(
       },
     };
 
-    logger.info("STEP 3: " + JSON.stringify(newUserSearches));
     const postResult = await integrations.udpPostSearches({
       headers: { "requesting-service-user-id": auth.userId },
       body: newUserSearches,
     });
 
-    logger.info("STEP 4");
     if (!postResult.ok) {
       const { status } = postResult.error;
 
