@@ -28,6 +28,9 @@ export interface JwtAuthConfig {
 
 export type OneLoginAuthConfig = JwtAuthConfig;
 
+const AUTH_RETRY_DELAY_MS = 2_000;
+const AUTH_MAX_RETRIES = 5;
+
 export async function getAccessToken(
   config: OneLoginAuthConfig,
 ): Promise<string> {
@@ -51,27 +54,33 @@ export async function getAccessToken(
     idpidentifier: "onelogin",
   });
 
-  const initResponse = await client.get<string>(
-    `https://${config.authUrl}/oauth2/authorize?${query}`,
-    {
-      headers: {
-        ...(config.attestationToken && {
-          "X-Firebase-App-Check": config.attestationToken,
-        }),
-      },
-    },
-  );
+  const authorizeUrl = `https://${config.authUrl}/oauth2/authorize?${query}`;
+  const authorizeHeaders = {
+    ...(config.attestationToken && {
+      "X-Firebase-App-Check": config.attestationToken,
+    }),
+  };
 
-  const $ = load(initResponse.data);
+  let csrfToken: string | undefined;
 
-  console.log("Cognito response diagnostics:", {
-    status: initResponse.status,
-    contentType: initResponse.headers["content-type"],
-    csrfPresent: $('input[name="_csrf"]').length > 0,
-    htmlReceived: typeof initResponse.data === "string",
-  });
+  for (let attempt = 0; attempt <= AUTH_MAX_RETRIES; attempt++) {
+    const initResponse = await client.get<string>(authorizeUrl, {
+      headers: authorizeHeaders,
+    });
 
-  const csrfToken = $('input[name="_csrf"]').val() as string;
+    const $ = load(initResponse.data);
+    csrfToken = $('input[name="_csrf"]').val() as string | undefined;
+
+    if (csrfToken) break;
+
+    if (attempt < AUTH_MAX_RETRIES) {
+      console.warn(
+        `Auth response returned status ${initResponse.status} without CSRF token (attempt ${attempt + 1}/${AUTH_MAX_RETRIES + 1}), retrying in ${AUTH_RETRY_DELAY_MS}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+    }
+  }
+
   if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
 
   const oneLoginDomain =
