@@ -13,7 +13,6 @@ import {
 } from "./src/schemas/domain/notifications";
 import {
   domainSearchesSchema,
-  inboundUpdateUserSearchesRequestSchema,
 } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
@@ -161,7 +160,7 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpdateUserSearchesRequestSchema,
+      body: domainSearchesSchema,
     },
   },
 });
