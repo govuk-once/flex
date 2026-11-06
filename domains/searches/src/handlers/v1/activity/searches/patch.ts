@@ -22,30 +22,33 @@ export const handler = route(
       headers: { "requesting-service-user-id": auth.userId },
     });
 
-    if (!result.ok) {
-      const { status } = result.error;
+    let existingUserSearches: UserSearches
+    if (result.ok) {
+      existingUserSearches = result.data;
+    } else {
+      const {status} = result.error;
 
       if (status === 404) {
-        logger.info("User not found, not saving search", {
+        logger.info("Data not found, setting up new search data", {
           status,
           userId: auth.userId,
         });
-
-        return {
-          status: 200,
-          data: {},
+        existingUserSearches = {
+          searches: {
+            userSearches: [
+            ],
+          },
         };
+      } else {
+            logger.error("Failed to get existing searches, not saving search", {
+          status,
+        });
+
+        throw new createHttpError.BadGateway();
       }
-
-      logger.error("Failed to get existing searches, not saving search", {
-        status,
-      });
-
-      throw new createHttpError.BadGateway();
     }
 
-    const foundSearches = result.data.searches.userSearches;
-    const newSearches: SearchTerm[] = consolidateSearches(foundSearches, body);
+    const newSearches: SearchTerm[] = consolidateSearches(existingUserSearches.searches.userSearches, body);
     const newUserSearches: UserSearches = {
       searches: {
         userSearches: newSearches,
