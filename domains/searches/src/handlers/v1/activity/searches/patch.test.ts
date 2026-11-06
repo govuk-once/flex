@@ -70,26 +70,22 @@ describe("PATCH /v1/activity/searches", () => {
   });
 
   it("returns 204 and new term when no existing searches exist", async ({
-                                                                             http,
-                                                                             sdk,
-                                                                           }) => {
+    http,
+    sdk,
+  }) => {
     http
       .gateway("udp")
       .post(endpoint, {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            selectedSearches: [
-              newSearchTerm,
-            ],
+            selectedSearches: [newSearchTerm],
           },
         },
       })
       .reply(200, {
         searches: {
-          selectedSearches: [
-            newSearchTerm,
-          ],
+          selectedSearches: [newSearchTerm],
         },
       });
 
