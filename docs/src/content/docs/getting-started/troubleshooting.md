@@ -76,3 +76,12 @@ It usually appears when you run the E2E tests on a network that inspects HTTPS t
 If you see this error, reach out to the Flex team. They can tell you the right fix for your network.
 
 Don't set `NODE_TLS_REJECT_UNAUTHORIZED=0` to get past this. It turns off certificate checking for everything Node.js does.
+
+### TypeError when running E2E tests
+
+The error looks like this:
+
+```text
+TypeError: code.charCodeAt is not a function
+```
+This appears when running E2E tests and your AWS credentials have expired. Follow the steps above to re-authenticate and re-export the credentials and try again.
