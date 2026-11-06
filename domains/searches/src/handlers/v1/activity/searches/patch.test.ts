@@ -69,6 +69,46 @@ describe("PATCH /v1/activity/searches", () => {
     expect(result.body).toBe("");
   });
 
+  it("returns 204 and new term when no existing searches exist", async ({
+                                                                             http,
+                                                                             sdk,
+                                                                           }) => {
+    http
+      .gateway("udp")
+      .post(endpoint, {
+        headers: { "requesting-service-user-id": userId },
+        body: {
+          searches: {
+            userSearches: [
+              newSearchTerm,
+            ],
+          },
+        },
+      })
+      .reply(200, {
+        searches: {
+          userSearches: [
+            newSearchTerm,
+          ],
+        },
+      });
+
+    http
+      .gateway("udp")
+      .get(endpoint, {
+        headers: { "requesting-service-user-id": userId },
+      })
+      .reply(404);
+
+    const result = await handler(
+      sdk.event.patch(endpoint, { auth: userId, body: newSearchTerm }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(204);
+    expect(result.body).toBe("");
+  });
+
   it("returns 204 and new term when empty searches are updated", async ({
     http,
     sdk,
