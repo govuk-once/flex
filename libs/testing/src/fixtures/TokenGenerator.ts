@@ -28,6 +28,9 @@ export interface JwtAuthConfig {
 
 export type OneLoginAuthConfig = JwtAuthConfig;
 
+const AUTH_RETRY_DELAY_MS = 2_000;
+const AUTH_MAX_RETRIES = 5;
+
 export async function getAccessToken(
   config: OneLoginAuthConfig,
 ): Promise<string> {
@@ -52,16 +55,32 @@ export async function getAccessToken(
     idpidentifier: "onelogin",
   });
 
-  const initResponse = await client.get<string>(
-    `https://${config.authUrl}/oauth2/authorize?${query}`,
-    {
-      headers: {
-        ...(config.attestationToken && {
-          "X-Firebase-App-Check": config.attestationToken,
-        }),
-      },
-    },
-  );
+  const authorizeUrl = `https://${config.authUrl}/oauth2/authorize?${query}`;
+  const authorizeHeaders = {
+    ...(config.attestationToken && {
+      "X-Firebase-App-Check": config.attestationToken,
+    }),
+  };
+
+  let csrfToken: string | undefined;
+
+  for (let attempt = 0; attempt <= AUTH_MAX_RETRIES; attempt++) {
+    const initResponse = await client.get<string>(authorizeUrl, {
+      headers: authorizeHeaders,
+    });
+
+    const $ = load(initResponse.data);
+    csrfToken = $('input[name="_csrf"]').val() as string | undefined;
+
+    if (csrfToken) break;
+
+    if (attempt < AUTH_MAX_RETRIES) {
+      console.warn(
+        `Auth response returned status ${String(initResponse.status)} without CSRF token (attempt ${String(attempt + 1)}/${String(AUTH_MAX_RETRIES + 1)}), retrying in ${String(AUTH_RETRY_DELAY_MS)}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
+    }
+  }
 
   const $ = load(initResponse.data);
 
