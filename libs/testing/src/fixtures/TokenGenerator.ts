@@ -43,6 +43,7 @@ export async function getAccessToken(
   );
 
   const { code_verifier, code_challenge } = await pkceChallenge();
+
   const query = querystring.stringify({
     client_id: config.clientId,
     response_type: "code",
@@ -81,12 +82,37 @@ export async function getAccessToken(
     }
   }
 
-  if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
+  const $ = load(initResponse.data);
+
+  // Capture the final response URL after Axios follows redirects.
+  // Only log the hostname and pathname, never the query string.
+  const request = initResponse.request as
+    | { res?: { responseUrl?: string } }
+    | undefined;
+
+  const finalResponseUrl = request?.res?.responseUrl;
+  const finalUrl = finalResponseUrl ? new URL(finalResponseUrl) : undefined;
+
+  console.log("Cognito response diagnostics:", {
+    status: initResponse.status,
+    contentType: initResponse.headers["content-type"],
+    csrfPresent: $('input[name="_csrf"]').length > 0,
+    htmlReceived: typeof initResponse.data === "string",
+    finalHostname: finalUrl?.hostname ?? "unknown",
+    finalPathname: finalUrl?.pathname ?? "unknown",
+  });
+
+  const csrfToken = $('input[name="_csrf"]').val() as string | undefined;
+
+  if (!csrfToken) {
+    throw new Error("Could not find CSRF token in auth response");
+  }
 
   const oneLoginDomain =
     config.oneLoginEnvironment === "production"
       ? "signin.account.gov.uk"
       : `signin.${config.oneLoginEnvironment}.account.gov.uk`;
+
   const post = (path: string, data: object) =>
     client.post(
       `https://${oneLoginDomain}${path}`,
@@ -118,10 +144,15 @@ export async function getAccessToken(
     if (!codeRedirectUrl) throw error;
   }
 
-  if (!codeRedirectUrl) throw new Error("TOTP step did not produce a redirect");
+  if (!codeRedirectUrl) {
+    throw new Error("TOTP step did not produce a redirect");
+  }
 
   const code = new URL(codeRedirectUrl).searchParams.get("code");
-  if (!code) throw new Error("No code found in redirect URL");
+
+  if (!code) {
+    throw new Error("No code found in redirect URL");
+  }
 
   const response = await fetch(`https://${config.tokenUrl}/oauth2/token`, {
     method: "POST",
@@ -141,10 +172,14 @@ export async function getAccessToken(
     }),
   });
 
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(`Token exchange failed: ${await response.text()}`);
+  }
 
-  const { access_token } = (await response.json()) as { access_token: string };
+  const { access_token } = (await response.json()) as {
+    access_token: string;
+  };
+
   return access_token;
 }
 
