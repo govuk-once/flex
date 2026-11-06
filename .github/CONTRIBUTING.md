@@ -2,6 +2,32 @@
 
 This document describes the process of contributing to FLEX.
 
+## Domain and platform work
+
+FLEX is split into domain work and platform work:
+
+|                | Domain work                                                                                                                                   | Platform work                                                                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| What it is     | Application code for a single domain: its `domain.config.ts`, route handlers and tests                                                        | Anything that changes what FLEX provides or how it is deployed: infrastructure, shared libraries, service gateways, authentication, CI and docs |
+| Where it lives | `domains/<name>/`, including the domain's own E2E tests                                                                                       | `libs/`, `platform/`, `tests/`, `scripts/`, `docs/`, `.github/` and repo root config                                                            |
+| Who does it    | Any domain developer                                                                                                                          | [FLEX platform team](https://github.com/orgs/govuk-once/teams/govuk-once-flex-platform-developers)                                              |
+| Guide          | [Domain Development Guide](/docs/domain-development.md) and [FLEX capabilities for domain developers](/docs/domain-developer-capabilities.md) | [Platform Development Guide](/docs/platform-development.md)                                                                                     |
+
+If a change touches both, it should be split into separate PRs if possible, so a domain change is not held up by platform review.
+
+Which paths are 'platform' and which are 'domain' is defined in [CODEOWNERS](/.github/CODEOWNERS), where each section is labelled.
+
+Platform paths are owned by `@govuk-once/govuk-once-flex-platform-developers`, so platform changes need review from that team. Domain paths are owned by `@govuk-once/govuk-once-flex-developers` (plus the domain's own team as domains onboard), so a domain-only PR does not need platform team review.
+
+### Need platform work done?
+
+If your domain needs something that is not in `domains/` (a new external partner or service gateway, a change to a shared library, new infrastructure, a platform capability that does not exist yet), raise it with the FLEX platform team rather than making the change yourself:
+
+- Ask in Slack: [#govuk-connect-flex](https://gds.slack.com/archives/C09H3EPRQJJ). Contacts: Jason Hooper (Delivery Manager), Richard Dunn (Product Owner)
+- Track the request on the Jira board: [FLEX Jira board](https://gdsgovukagents.atlassian.net/jira/software/c/projects/FLEX/boards/67)
+
+Raise it early, as platform work is often on the critical path for a domain. See [Current limits](/docs/domain-developer-capabilities.md#current-limits) for known gaps.
+
 ## Commit Message Guidelines
 
 We use the Conventional Commits specification.

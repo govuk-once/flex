@@ -1,38 +1,69 @@
+# Ownership is split into PLATFORM paths (FLEX team work) and DOMAIN paths
+# (application code any domain developer can change). See .github/CONTRIBUTING.md.
+#
+# PLATFORM paths (and anything not matched below) are owned by
+# govuk-once-flex-platform-developers. DOMAIN paths are owned by
+# govuk-once-flex-developers, plus the relevant domain team as they onboard.
+
 # Default owner for everything in the repo
 
-* @govuk-once/govuk-once-flex-developers
+* @govuk-once/govuk-once-flex-platform-developers
 
-# Github Actions workflows
+# Repository root configuration (package.json, pnpm-workspace.yaml, nx.json,
+# tsconfig.json, eslint.config.mjs, sonar-project.properties, README.md, etc.)
+# Kept above the directory entries below so that they take precedence, as
+# this pattern also matches dot-directories such as .github.
 
-/.github/workflows/ @govuk-once/govuk-once-flex-developers
+/*.* @govuk-once/govuk-once-flex-platform-developers
 
-# Github configuration (dependabot, CODEOWNERS, etc.)
+# ------------------------------------------------------------------
+# DOMAIN: application code for a single domain
+# ------------------------------------------------------------------
 
-/.github/ @govuk-once/govuk-once-flex-developers
-
-# Platform infrastructure
-
-/platform/infra/ @govuk-once/govuk-once-flex-developers
-
-# Platform domains (auth, gateways, etc.)
-
-/platform/domains/ @govuk-once/govuk-once-flex-developers
-
-# Platform libraries
-
-/libs/ @govuk-once/govuk-once-flex-developers
-
-# Domain application source code
+# Domain config, handlers, unit tests and per-domain E2E tests
 # TODO: Assign to respective domain teams as they onboard
 # Example:
 # /domains/udp/ @govuk-once/govuk-once-udp-developers
 
 /domains/ @govuk-once/govuk-once-flex-developers
 
-# End-to-end tests
+# ------------------------------------------------------------------
+# PLATFORM: FLEX team work
+# ------------------------------------------------------------------
 
-/tests/ @govuk-once/govuk-once-flex-developers
+# Github Actions workflows
+
+/.github/workflows/ @govuk-once/govuk-once-flex-platform-developers
+
+# Github configuration (dependabot, CODEOWNERS, etc.)
+
+/.github/ @govuk-once/govuk-once-flex-platform-developers
+
+# Platform infrastructure
+
+/platform/infra/ @govuk-once/govuk-once-flex-platform-developers
+
+# Platform domains (auth, gateways, etc.)
+
+/platform/domains/ @govuk-once/govuk-once-flex-platform-developers
+
+# Platform shared code and smoke tests
+
+/platform/shared/ @govuk-once/govuk-once-flex-platform-developers
+/platform/smoke-test/ @govuk-once/govuk-once-flex-platform-developers
+
+# Platform libraries
+
+/libs/ @govuk-once/govuk-once-flex-platform-developers
+
+# Platform end-to-end tests (domain E2E tests live in each domain directory)
+
+/tests/ @govuk-once/govuk-once-flex-platform-developers
+
+# Repository tooling
+
+/scripts/ @govuk-once/govuk-once-flex-platform-developers
 
 # Documentation
 
-/docs/ @govuk-once/govuk-once-flex-developers
+/docs/ @govuk-once/govuk-once-flex-platform-developers
