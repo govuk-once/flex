@@ -28,9 +28,6 @@ export interface JwtAuthConfig {
 
 export type OneLoginAuthConfig = JwtAuthConfig;
 
-const AUTH_RETRY_DELAY_MS = 2_000;
-const AUTH_MAX_RETRIES = 5;
-
 export async function getAccessToken(
   config: OneLoginAuthConfig,
 ): Promise<string> {
@@ -43,6 +40,7 @@ export async function getAccessToken(
   );
 
   const { code_verifier, code_challenge } = await pkceChallenge();
+
   const query = querystring.stringify({
     client_id: config.clientId,
     response_type: "code",
@@ -54,39 +52,48 @@ export async function getAccessToken(
     idpidentifier: "onelogin",
   });
 
-  const authorizeUrl = `https://${config.authUrl}/oauth2/authorize?${query}`;
-  const authorizeHeaders = {
-    ...(config.attestationToken && {
-      "X-Firebase-App-Check": config.attestationToken,
-    }),
-  };
+  const initResponse = await client.get<string>(
+    `https://${config.authUrl}/oauth2/authorize?${query}`,
+    {
+      headers: {
+        ...(config.attestationToken && {
+          "X-Firebase-App-Check": config.attestationToken,
+        }),
+      },
+    },
+  );
 
-  let csrfToken: string | undefined;
+  const $ = load(initResponse.data);
 
-  for (let attempt = 0; attempt <= AUTH_MAX_RETRIES; attempt++) {
-    const initResponse = await client.get<string>(authorizeUrl, {
-      headers: authorizeHeaders,
-    });
+  // Capture the final response URL after Axios follows redirects.
+  // Only log the hostname and pathname, never the query string.
+  const request = initResponse.request as
+    | { res?: { responseUrl?: string } }
+    | undefined;
 
-    const $ = load(initResponse.data);
-    csrfToken = $('input[name="_csrf"]').val() as string | undefined;
+  const finalResponseUrl = request?.res?.responseUrl;
+  const finalUrl = finalResponseUrl ? new URL(finalResponseUrl) : undefined;
 
-    if (csrfToken) break;
+  console.log("Cognito response diagnostics:", {
+    status: initResponse.status,
+    contentType: initResponse.headers["content-type"],
+    csrfPresent: $('input[name="_csrf"]').length > 0,
+    htmlReceived: typeof initResponse.data === "string",
+    finalHostname: finalUrl?.hostname ?? "unknown",
+    finalPathname: finalUrl?.pathname ?? "unknown",
+  });
 
-    if (attempt < AUTH_MAX_RETRIES) {
-      console.warn(
-        `Auth response returned status ${String(initResponse.status)} without CSRF token (attempt ${String(attempt + 1)}/${String(AUTH_MAX_RETRIES + 1)}), retrying in ${String(AUTH_RETRY_DELAY_MS)}ms...`,
-      );
-      await new Promise((resolve) => setTimeout(resolve, AUTH_RETRY_DELAY_MS));
-    }
+  const csrfToken = $('input[name="_csrf"]').val() as string | undefined;
+
+  if (!csrfToken) {
+    throw new Error("Could not find CSRF token in auth response");
   }
-
-  if (!csrfToken) throw new Error("Could not find CSRF token in auth response");
 
   const oneLoginDomain =
     config.oneLoginEnvironment === "production"
       ? "signin.account.gov.uk"
       : `signin.${config.oneLoginEnvironment}.account.gov.uk`;
+
   const post = (path: string, data: object) =>
     client.post(
       `https://${oneLoginDomain}${path}`,
@@ -118,10 +125,15 @@ export async function getAccessToken(
     if (!codeRedirectUrl) throw error;
   }
 
-  if (!codeRedirectUrl) throw new Error("TOTP step did not produce a redirect");
+  if (!codeRedirectUrl) {
+    throw new Error("TOTP step did not produce a redirect");
+  }
 
   const code = new URL(codeRedirectUrl).searchParams.get("code");
-  if (!code) throw new Error("No code found in redirect URL");
+
+  if (!code) {
+    throw new Error("No code found in redirect URL");
+  }
 
   const response = await fetch(`https://${config.tokenUrl}/oauth2/token`, {
     method: "POST",
@@ -141,10 +153,14 @@ export async function getAccessToken(
     }),
   });
 
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(`Token exchange failed: ${await response.text()}`);
+  }
 
-  const { access_token } = (await response.json()) as { access_token: string };
+  const { access_token } = (await response.json()) as {
+    access_token: string;
+  };
+
   return access_token;
 }
 
