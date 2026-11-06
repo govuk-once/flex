@@ -13,6 +13,4 @@ export const userSearchesSchema = z.object({
   }),
 });
 
-export const inboundUpdateUserSearchesRequestSchema = userSearchesSchema;
-
 export const domainSearchesSchema = userSearchesSchema;
