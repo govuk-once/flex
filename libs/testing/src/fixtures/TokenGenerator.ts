@@ -32,6 +32,7 @@ export async function getAccessToken(
   config: OneLoginAuthConfig,
 ): Promise<string> {
   const jar = new CookieJar();
+
   const client = wrapper(
     axios.create({
       jar,
@@ -66,21 +67,51 @@ export async function getAccessToken(
   const $ = load(initResponse.data);
 
   // Capture the final response URL after Axios follows redirects.
-  // Only log the hostname and pathname, never the query string.
+  // Do not log query parameters, cookies or tokens.
   const request = initResponse.request as
     | { res?: { responseUrl?: string } }
     | undefined;
 
   const finalResponseUrl = request?.res?.responseUrl;
-  const finalUrl = finalResponseUrl ? new URL(finalResponseUrl) : undefined;
+
+  let finalHostname = "unknown";
+  let finalPathname = "unknown";
+
+  if (finalResponseUrl) {
+    try {
+      const finalUrl = new URL(finalResponseUrl);
+      finalHostname = finalUrl.hostname;
+      finalPathname = finalUrl.pathname;
+    } catch {
+      // Diagnostics must not interrupt authentication.
+    }
+  }
+
+  // Read HTTP headers safely for strict TypeScript linting.
+  const getResponseHeader = (name: string): string => {
+    const value: unknown = initResponse.headers[name.toLowerCase()];
+
+    return typeof value === "string" ? value : "not present";
+  };
 
   console.log("Cognito response diagnostics:", {
     status: initResponse.status,
-    contentType: initResponse.headers["content-type"],
+    contentType: getResponseHeader("content-type"),
     csrfPresent: $('input[name="_csrf"]').length > 0,
     htmlReceived: typeof initResponse.data === "string",
-    finalHostname: finalUrl?.hostname ?? "unknown",
-    finalPathname: finalUrl?.pathname ?? "unknown",
+    finalHostname,
+    finalPathname,
+
+    // AWS WAF diagnostics
+    wafAction: getResponseHeader("x-amzn-waf-action"),
+    wafRule: getResponseHeader("x-amzn-waf-rule"),
+
+    // HTTP infrastructure diagnostics
+    server: getResponseHeader("server"),
+    via: getResponseHeader("via"),
+    xCache: getResponseHeader("x-cache"),
+    requestId: getResponseHeader("x-amzn-requestid"),
+    retryAfter: getResponseHeader("retry-after"),
   });
 
   const csrfToken = $('input[name="_csrf"]').val() as string | undefined;
@@ -188,7 +219,9 @@ export async function getTokenGenerator(
 ): Promise<TokenGenerator> {
   const [userSecretRaw, clientId, oneLoginEnvironment, authUrl, tokenUrl] =
     await Promise.all([
-      getSecret(`/${stage}/flex-secret/e2e/test_user`, { transform: "json" }),
+      getSecret(`/${stage}/flex-secret/e2e/test_user`, {
+        transform: "json",
+      }),
       getParameter(`/${stage}/flex-param/auth/client-id`),
       getParameter(`/${stage}/flex-param/auth/one-login-environment`),
       getParameter(`/${stage}/flex-param/auth/auth-url`),
