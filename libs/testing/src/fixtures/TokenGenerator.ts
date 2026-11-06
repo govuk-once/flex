@@ -89,7 +89,7 @@ export async function getAccessToken(
 
   // Read HTTP headers safely for strict TypeScript linting.
   const getResponseHeader = (name: string): string => {
-    const value: unknown = initResponse.headers.get(name);
+    const value: unknown = initResponse.headers[name.toLowerCase()];
 
     return typeof value === "string" ? value : "not present";
   };
