@@ -22,11 +22,11 @@ export const handler = route(
       headers: { "requesting-service-user-id": auth.userId },
     });
 
-    let existingUserSearches: UserSearches
+    let existingUserSearches: UserSearches;
     if (result.ok) {
       existingUserSearches = result.data;
     } else {
-      const {status} = result.error;
+      const { status } = result.error;
 
       if (status === 404) {
         logger.info("Data not found, setting up new search data", {
@@ -35,12 +35,11 @@ export const handler = route(
         });
         existingUserSearches = {
           searches: {
-            selectedSearches: [
-            ],
+            selectedSearches: [],
           },
         };
       } else {
-            logger.error("Failed to get existing searches, not saving search", {
+        logger.error("Failed to get existing searches, not saving search", {
           status,
         });
 
@@ -48,7 +47,10 @@ export const handler = route(
       }
     }
 
-    const newSearches: SearchTerm[] = consolidateSearches(existingUserSearches.searches.selectedSearches, body);
+    const newSearches: SearchTerm[] = consolidateSearches(
+      existingUserSearches.searches.selectedSearches,
+      body,
+    );
     const newUserSearches: UserSearches = {
       searches: {
         selectedSearches: newSearches,
@@ -72,7 +74,12 @@ export const handler = route(
         throw new createHttpError.Conflict();
       }
 
-      const fullMessage = "Failed to update user searches (" + message + "), (" + JSON.stringify(body) + ")"
+      const fullMessage =
+        "Failed to update user searches (" +
+        message +
+        "), (" +
+        JSON.stringify(body) +
+        ")";
       logger.error(fullMessage, { status });
 
       throw new createHttpError.BadGateway();
