@@ -12,7 +12,7 @@ export const createSearch = createFixtureBuilder<SearchTerm>(baseSearch);
 
 const baseSearches: UserSearches = {
   searches: {
-    userSearches: [
+    selectedSearches: [
       { term: "search 1", timestamp: searchTimestamp },
       { term: "search 2", timestamp: searchTimestamp },
     ],
@@ -21,7 +21,7 @@ const baseSearches: UserSearches = {
 
 const emptySearches: UserSearches = {
   searches: {
-    userSearches: [],
+    selectedSearches: [],
   },
 };
 

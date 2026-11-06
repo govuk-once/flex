@@ -8,7 +8,7 @@ export type SearchTerm = z.infer<typeof SearchTermSchema>;
 
 export const UserSearchesSchema = z.object({
   searches: z.object({
-    userSearches: z.array(SearchTermSchema),
+    selectedSearches: z.array(SearchTermSchema),
   }),
 });
 export type UserSearches = z.infer<typeof UserSearchesSchema>;
