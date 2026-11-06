@@ -54,7 +54,7 @@ Adds a search to the existing collection according to the rules for search terms
 ```json
 {
   "searches": {
-    "userSearches": [
+    "selectedSearches": [
       { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
       { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
     ]

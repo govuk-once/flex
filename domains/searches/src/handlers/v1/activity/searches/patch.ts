@@ -35,7 +35,7 @@ export const handler = route(
         });
         existingUserSearches = {
           searches: {
-            userSearches: [
+            selectedSearches: [
             ],
           },
         };
@@ -48,10 +48,10 @@ export const handler = route(
       }
     }
 
-    const newSearches: SearchTerm[] = consolidateSearches(existingUserSearches.searches.userSearches, body);
+    const newSearches: SearchTerm[] = consolidateSearches(existingUserSearches.searches.selectedSearches, body);
     const newUserSearches: UserSearches = {
       searches: {
-        userSearches: newSearches,
+        selectedSearches: newSearches,
       },
     };
 
@@ -61,7 +61,7 @@ export const handler = route(
     });
 
     if (!postResult.ok) {
-      const { status } = postResult.error;
+      const { status, message, body } = postResult.error;
 
       if (status === 409) {
         logger.error("Update rejected because a newer version already exists", {
@@ -72,7 +72,8 @@ export const handler = route(
         throw new createHttpError.Conflict();
       }
 
-      logger.error("Failed to update user searches", { status });
+      const fullMessage = "Failed to update user searches (" + message + "), (" + JSON.stringify(body) + ")"
+      logger.error(fullMessage, { status });
 
       throw new createHttpError.BadGateway();
     }

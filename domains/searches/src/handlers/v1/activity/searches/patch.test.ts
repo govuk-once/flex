@@ -31,7 +31,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [
+            selectedSearches: [
               existingSearchTerm0,
               existingSearchTerm1,
               newSearchTerm,
@@ -41,7 +41,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             existingSearchTerm0,
             existingSearchTerm1,
             newSearchTerm,
@@ -56,7 +56,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [existingSearchTerm0, existingSearchTerm1],
+          selectedSearches: [existingSearchTerm0, existingSearchTerm1],
         },
       });
 
@@ -79,7 +79,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [
+            selectedSearches: [
               newSearchTerm,
             ],
           },
@@ -87,7 +87,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             newSearchTerm,
           ],
         },
@@ -124,13 +124,13 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [newSearchTerm],
+            selectedSearches: [newSearchTerm],
           },
         },
       })
       .reply(200, {
         searches: {
-          userSearches: [newSearchTerm],
+          selectedSearches: [newSearchTerm],
         },
       });
 
@@ -141,7 +141,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [],
+          selectedSearches: [],
         },
       });
 
@@ -210,7 +210,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [
+            selectedSearches: [
               existingSearchTerm1,
               existingSearchTerm2,
               existingSearchTerm3,
@@ -227,7 +227,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             existingSearchTerm1,
             existingSearchTerm2,
             existingSearchTerm3,
@@ -249,7 +249,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             existingSearchTerm0,
             existingSearchTerm1,
             existingSearchTerm2,
@@ -309,7 +309,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [
+            selectedSearches: [
               existingSearchTerm0,
               existingSearchTerm1,
               existingSearchTerm3,
@@ -321,7 +321,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             existingSearchTerm0,
             existingSearchTerm1,
             existingSearchTerm3,
@@ -338,7 +338,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [
+          selectedSearches: [
             existingSearchTerm0,
             existingSearchTerm1,
             existingSearchTerm2,
@@ -383,7 +383,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [newSearchTerm],
+            selectedSearches: [newSearchTerm],
           },
         },
       })
@@ -396,7 +396,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [],
+          selectedSearches: [],
         },
       });
 
@@ -418,7 +418,7 @@ describe("PATCH /v1/activity/searches", () => {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
-            userSearches: [newSearchTerm],
+            selectedSearches: [newSearchTerm],
           },
         },
       })
@@ -431,7 +431,7 @@ describe("PATCH /v1/activity/searches", () => {
       })
       .reply(200, {
         searches: {
-          userSearches: [],
+          selectedSearches: [],
         },
       });
 
