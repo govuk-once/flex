@@ -1,4 +1,4 @@
-import { injectLambdaContext, logger } from "@flex/logging";
+import { addSecretValue, injectLambdaContext, logger } from "@flex/logging";
 import { it } from "@flex/testing";
 import httpErrorHandler from "@middy/http-error-handler";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
@@ -35,6 +35,21 @@ const options: MiddlewareOptions = {
   logLevel: "INFO",
   hasRequestBody: false,
 };
+
+interface RedactionMiddleware {
+  before: (request: { context: Record<string, unknown> }) => void;
+}
+
+function findRedactionMiddleware(): RedactionMiddleware | undefined {
+  return mockMiddyUse.mock.calls
+    .map(([middleware]: unknown[]) => middleware)
+    .find(
+      (middleware): middleware is RedactionMiddleware =>
+        typeof middleware === "object" &&
+        middleware !== null &&
+        "before" in middleware,
+    );
+}
 
 describe("configureMiddleware", () => {
   beforeEach(() => {
@@ -160,11 +175,53 @@ describe("configureMiddleware", () => {
       );
     });
 
+    it("registers loaded secret values for log redaction", () => {
+      const resources: Record<string, ResolvedResource> = {
+        testSecret: { type: "secret", value: "/path/to/secret" },
+        testParam: { type: "ssm:runtime", value: "/path/to/param" },
+      };
+
+      configureMiddleware({ ...options, resources });
+
+      const redaction = findRedactionMiddleware();
+      assert(redaction);
+
+      redaction.before({
+        context: {
+          testSecret: "loaded-secret-value", // pragma: allowlist secret
+          testParam: "loaded-param-value",
+        },
+      });
+
+      expect(addSecretValue).toHaveBeenCalledExactlyOnceWith(
+        "loaded-secret-value",
+      );
+    });
+
+    it("registers redaction immediately after the secrets manager middleware", () => {
+      const resources: Record<string, ResolvedResource> = {
+        testSecret: { type: "secret", value: "/path/to/secret" },
+      };
+
+      const secretsManagerMiddleware = { name: "secrets-manager" };
+      vi.mocked(secretsManager).mockReturnValueOnce(secretsManagerMiddleware);
+
+      configureMiddleware({ ...options, resources });
+
+      const used = mockMiddyUse.mock.calls.map(
+        ([middleware]: unknown[]) => middleware,
+      );
+      expect(used.indexOf(findRedactionMiddleware())).toBe(
+        used.indexOf(secretsManagerMiddleware) + 1,
+      );
+    });
+
     it("omits middleware when no secret resources are provided", () => {
       configureMiddleware(options);
 
       expect(secretsManager).not.toHaveBeenCalled();
       expect(secretsManagerParam).not.toHaveBeenCalled();
+      expect(findRedactionMiddleware()).toBeUndefined();
     });
 
     it("omits middleware when resources is empty", () => {

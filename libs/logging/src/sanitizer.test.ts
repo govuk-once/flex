@@ -183,6 +183,32 @@ describe("sanitizer", () => {
       expect(sanitize("message", "normal message")).toBe("normal message");
     });
 
+    it("registers every string value of a JSON secret", () => {
+      addSecretValue({
+        apiKey: "json-api-key", // pragma: allowlist secret
+        nested: { password: "json-password" }, // pragma: allowlist secret
+        tags: ["json-tag"],
+        retries: 3,
+      });
+
+      expect(
+        sanitize(
+          "message",
+          "json-api-key json-password json-tag 3", // pragma: allowlist secret
+        ),
+      ).toBe(`${REDACTED} ${REDACTED} ${REDACTED} 3`);
+    });
+
+    it("registers the same value once", () => {
+      const secret = "repeated-secret"; // pragma: allowlist secret
+      addSecretValue(secret);
+      addSecretValue(secret);
+
+      expect(sanitize("message", `${secret} and ${secret}`)).toBe(
+        `${REDACTED} and ${REDACTED}`,
+      );
+    });
+
     it("ignores empty string values", () => {
       addSecretValue("");
       addSecretValue("   ");
