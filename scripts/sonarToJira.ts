@@ -96,14 +96,12 @@ const organization = "govuk-once";
 const sonarProject = "govuk-once_flex";
 const jiraProject = "GUV";
 
-const testMode = process.env.TEST_TICKET === "true";
 const dryRun = process.env.DRY_RUN !== "false";
 const maxTickets = 5;
 
 const jiraEnvironment = "Staging";
-const stakeholderName = "Ashley Toole";
+const stakeholderName = "Richard Dunn";
 
-// Optional: supply the verified Atlassian account ID directly.
 const stakeholderAccountIdOverride =
   process.env.JIRA_STAKEHOLDER_ACCOUNT_ID?.trim();
 
@@ -154,7 +152,7 @@ const severityOrder: SonarSeverity[] = [
   "INFO",
 ];
 
-// Calendar days based on the VM remediation guidance.
+// Calendar-day remediation defaults from VM guidance.
 const remediationDays: Partial<Record<SonarSeverity, number>> = {
   BLOCKER: 2,
   HIGH: 7,
@@ -194,27 +192,12 @@ function validateExecution(): void {
     return;
   }
 
-  if (testMode) {
-    const allowed =
-      process.env.GITHUB_EVENT_NAME === "pull_request" &&
-      process.env.GITHUB_HEAD_REF === "GUOIT-202" &&
-      process.env.GITHUB_BASE_REF === "main";
-
-    if (!allowed) {
-      throw new Error(
-        "Test mode is restricted to the GUOIT-202 PR targeting main",
-      );
-    }
-
-    return;
-  }
-
   const isMainPush =
     process.env.GITHUB_EVENT_NAME === "push" &&
     process.env.GITHUB_REF === "refs/heads/main";
 
   if (!isMainPush) {
-    throw new Error("Production Jira integration must run on a push to main");
+    throw new Error("Jira integration must run on a push to main");
   }
 }
 
@@ -572,7 +555,6 @@ function createDescription(
     remediation: string;
   },
   severity: SeverityMapping,
-  isTest: boolean,
 ): {
   type: string;
   version: number;
@@ -612,22 +594,10 @@ function createDescription(
 
     paragraph(`Branch: main | Component: ${issue.component}`),
 
-    paragraph(`Environment: ${jiraEnvironment}`),
-
-    paragraph(`Initial stakeholder: ${stakeholderName}`),
-
     paragraph(`Finding URL: ${findingUrl(issue)}`),
 
     ...(issue.creationDate
       ? [paragraph(`First detected: ${issue.creationDate}`)]
-      : []),
-
-    ...(isTest
-      ? [
-          paragraph(
-            "TEST ONLY - simulated finding, not an actual vulnerability",
-          ),
-        ]
       : []),
 
     divider(),
@@ -680,7 +650,6 @@ function environmentAdf(value: string): {
 
 async function createTicket(
   issue: SonarIssue,
-  isTest: boolean,
   stakeholderAccountId: string,
 ): Promise<string> {
   const ruleKey = requiredRule(issue);
@@ -692,26 +661,12 @@ async function createTicket(
 
   const rule = await getRuleDetails(ruleKey);
 
-  const labels = [
-    "sonarcloud",
-    "security",
-    "sast",
-    "automated",
-    issueLabel(issue.key),
-  ];
+  const labels = ["automated", issueLabel(issue.key)];
 
-  if (isTest) {
-    labels.push("guoit-202-sast-template-test-v5");
-  }
+  const summary =
+    `[SonarCloud][${mappedSeverity.label}] ${issue.message}`.slice(0, 255);
 
-  const summary = [
-    isTest ? "[TEST] " : "",
-    `[SonarCloud][${mappedSeverity.label}] ${issue.message}`,
-  ]
-    .join("")
-    .slice(0, 255);
-
-  const description = createDescription(issue, rule, mappedSeverity, isTest);
+  const description = createDescription(issue, rule, mappedSeverity);
 
   const fields: Record<string, unknown> = {
     project: {
@@ -736,10 +691,8 @@ async function createTicket(
       id: mappedSeverity.priorityId,
     },
 
-    // Jira Cloud Environment requires ADF.
     [jiraFields.environment]: environmentAdf(jiraEnvironment),
 
-    // Multi-user picker requires Atlassian account IDs.
     [jiraFields.stakeholders]: [
       {
         accountId: stakeholderAccountId,
@@ -753,10 +706,10 @@ async function createTicket(
       : {}),
   };
 
-  // Impact is not inferred from technical severity.
-  // CVSS and EPSS are populated only when verified.
-  // Exception review dates require approved exceptions.
-  // Jira issue security must be verified before production.
+  // Impact requires security triage.
+  // CVSS and EPSS require verified scoring.
+  // Exception review date requires approval.
+  // Issue security must be verified before production.
 
   const response = await jiraRequest("/rest/api/3/issue", {
     method: "POST",
@@ -768,67 +721,6 @@ async function createTicket(
   const created = (await response.json()) as JiraCreated;
 
   return created.key;
-}
-
-async function runTest(): Promise<void> {
-  const ruleKey = required("TEST_SONAR_RULE_KEY");
-
-  const issue: SonarIssue = {
-    key: "GUOIT-202-SAST-TEMPLATE-V5",
-
-    message: "Template verification - simulated security finding",
-
-    component: "govuk-once_flex:libs/testing/src/mock-security.ts",
-
-    line: 42,
-
-    rule: ruleKey,
-
-    creationDate: new Date().toISOString(),
-
-    impacts: [
-      {
-        softwareQuality: "SECURITY",
-        severity: "HIGH",
-      },
-    ],
-  };
-
-  const label = issueLabel(issue.key);
-
-  const existing = await existingTicket(label);
-
-  if (existing) {
-    console.log(`Test ticket already exists: ${jiraUrl}/browse/${existing}`);
-    return;
-  }
-
-  const severity = getSeverity(issue);
-  const mappedSeverity = jiraSeverity(severity);
-
-  const dueDate = calculateDueDate(severity, issue.creationDate);
-
-  const rule = await getRuleDetails(requiredRule(issue));
-
-  console.log(`Rule: ${rule.name}`);
-  console.log(`Severity: ${mappedSeverity.label}`);
-  console.log(`Priority ID: ${mappedSeverity.priorityId}`);
-  console.log(`Environment: ${jiraEnvironment}`);
-  console.log(`Stakeholder: ${stakeholderName}`);
-  console.log(`Due date: ${dueDate ?? "N/A"}`);
-
-  console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
-
-  const stakeholderAccountId = await resolveStakeholderAccountId();
-
-  if (dryRun) {
-    console.log("[DRY RUN] Would create one SAST template test ticket");
-    return;
-  }
-
-  const key = await createTicket(issue, true, stakeholderAccountId);
-
-  console.log(`Created test ticket: ${jiraUrl}/browse/${key}`);
 }
 
 async function runProduction(): Promise<void> {
@@ -871,7 +763,7 @@ async function runProduction(): Promise<void> {
       continue;
     }
 
-    const key = await createTicket(issue, false, stakeholderAccountId);
+    const key = await createTicket(issue, stakeholderAccountId);
 
     console.log(
       `Created ${jiraUrl}/browse/${key} for ${issue.key} | Due: ${dueDate ?? "N/A"}`,
@@ -894,14 +786,8 @@ async function runProduction(): Promise<void> {
 async function main(): Promise<void> {
   validateExecution();
 
-  console.log(`Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}`);
-
+  console.log("Mode: MAIN FINDINGS");
   console.log(`Dry run: ${String(dryRun)}`);
-
-  if (testMode) {
-    await runTest();
-    return;
-  }
 
   await runProduction();
 }
