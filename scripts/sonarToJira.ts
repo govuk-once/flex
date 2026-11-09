@@ -1,22 +1,43 @@
 import { createHash } from "node:crypto";
 
+type SonarSeverity = "BLOCKER" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+
 type SonarLocation = {
   component?: string;
-  textRange?: { startLine?: number };
+  textRange?: {
+    startLine?: number;
+  };
   msg?: string;
 };
-type SonarFlow = { locations?: SonarLocation[] };
+
+type SonarFlow = {
+  locations?: SonarLocation[];
+};
+
 type SonarIssue = {
   key: string;
   message: string;
   component: string;
   line?: number;
   rule?: string;
-  impacts?: { softwareQuality: string; severity: string }[];
+  impacts?: {
+    softwareQuality: string;
+    severity: string;
+  }[];
   flows?: SonarFlow[];
 };
-type SonarSearch = { total: number; issues: SonarIssue[] };
-type RuleSection = { key?: string; content?: string; htmlContent?: string };
+
+type SonarSearch = {
+  total: number;
+  issues: SonarIssue[];
+};
+
+type RuleSection = {
+  key?: string;
+  content?: string;
+  htmlContent?: string;
+};
+
 type RuleDetails = {
   rule?: {
     name?: string;
@@ -25,51 +46,132 @@ type RuleDetails = {
     descriptionSections?: RuleSection[];
   };
 };
-type JiraSearch = { issues: { key: string; fields?: { labels?: string[] } }[] };
-type JiraCreated = { key: string };
+
+type JiraSearch = {
+  issues: {
+    key: string;
+    fields?: {
+      labels?: string[];
+    };
+  }[];
+};
+
+type JiraCreated = {
+  key: string;
+};
+
 type AdfNode = Record<string, unknown>;
+
+type SeverityMapping = {
+  label: string;
+  optionId: string;
+  priority: string;
+};
 
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
   return value;
 }
 
 const sonarUrl = required("SONAR_URL").replace(/\/$/, "");
 const sonarToken = required("SONAR_TOKEN_FLEX");
+
 const jiraUrl = required("JIRA_URL").replace(/\/$/, "");
 const jiraEmail = required("JIRA_EMAIL");
 const jiraToken = required("JIRA_API_TOKEN");
+
 const organization = "govuk-once";
 const sonarProject = "govuk-once_flex";
 const jiraProject = "GUV";
+
 const testMode = process.env.TEST_TICKET === "true";
 const dryRun = process.env.DRY_RUN !== "false";
+
 const maxTickets = 5;
+
+// Confirmed GUV custom fields
+const jiraFields = {
+  source: "customfield_10545",
+  severity: "customfield_10546",
+  stakeholders: "customfield_10547",
+  impact: "customfield_10004",
+  cvss: "customfield_10512",
+  epss: "customfield_10479",
+  exceptionReviewDate: "customfield_10580",
+  environment: "environment",
+} as const;
+
+// Confirmed GUV severity option IDs.
+// Priority names must still be verified against Jira.
+const severityMappings: Record<SonarSeverity, SeverityMapping> = {
+  BLOCKER: {
+    label: "Critical",
+    optionId: "10138",
+    priority: "Highest",
+  },
+  HIGH: {
+    label: "High",
+    optionId: "10137",
+    priority: "High",
+  },
+  MEDIUM: {
+    label: "Medium",
+    optionId: "10136",
+    priority: "Medium",
+  },
+  LOW: {
+    label: "Low",
+    optionId: "10135",
+    priority: "Low",
+  },
+  INFO: {
+    label: "Informational",
+    optionId: "10134",
+    priority: "Lowest",
+  },
+};
+
+const severityOrder: SonarSeverity[] = [
+  "BLOCKER",
+  "HIGH",
+  "MEDIUM",
+  "LOW",
+  "INFO",
+];
+
 const jiraAuth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString("base64");
 
 function validateExecution(): void {
-  if (process.env.GITHUB_ACTIONS !== "true") return;
+  if (process.env.GITHUB_ACTIONS !== "true") {
+    return;
+  }
 
   if (testMode) {
-    const isApprovedPrTest =
+    const allowed =
       process.env.GITHUB_EVENT_NAME === "pull_request" &&
       process.env.GITHUB_HEAD_REF === "GUOIT-202" &&
       process.env.GITHUB_BASE_REF === "main";
 
-    if (!isApprovedPrTest) {
+    if (!allowed) {
       throw new Error(
-        "GitHub test mode is restricted to the GUOIT-202 PR targeting main",
+        "Test mode is restricted to the GUOIT-202 PR targeting main",
       );
     }
+
     return;
   }
 
-  if (
-    process.env.GITHUB_EVENT_NAME !== "push" ||
-    process.env.GITHUB_REF !== "refs/heads/main"
-  ) {
-    throw new Error("Production Jira integration must run from a push to main");
+  const isMainPush =
+    process.env.GITHUB_EVENT_NAME === "push" &&
+    process.env.GITHUB_REF === "refs/heads/main";
+
+  if (!isMainPush) {
+    throw new Error("Production Jira integration must run on a push to main");
   }
 }
 
@@ -104,6 +206,7 @@ async function jiraRequest(
   options: RequestInit = {},
 ): Promise<Response> {
   const headers = new Headers(options.headers);
+
   headers.set("Authorization", `Basic ${jiraAuth}`);
   headers.set("Accept", "application/json");
   headers.set("Content-Type", "application/json");
@@ -139,7 +242,9 @@ async function getFindings(): Promise<SonarIssue[]> {
     });
 
     findings.push(...data.issues);
+
     more = findings.length < data.total && data.issues.length > 0;
+
     page += 1;
   }
 
@@ -173,6 +278,7 @@ async function getRuleDetails(
   }
 
   const sections = data.rule.descriptionSections ?? [];
+
   const fixSections = sections.filter((section) =>
     /fix|solution|remediat/i.test(section.key ?? ""),
   );
@@ -186,8 +292,26 @@ async function getRuleDetails(
     name: data.rule.name ?? ruleKey,
     remediation:
       remediation ||
-      "Rule-specific remediation was not available from the API. Review the linked SonarCloud rule's 'How can I fix it?' guidance.",
+      "Rule-specific remediation was not returned by the API. Review the SonarCloud rule guidance before remediation.",
   };
+}
+
+function getSeverity(issue: SonarIssue): SonarSeverity {
+  const securityImpacts = (issue.impacts ?? [])
+    .filter((impact) => impact.softwareQuality === "SECURITY")
+    .map((impact) => impact.severity);
+
+  for (const severity of severityOrder) {
+    if (securityImpacts.includes(severity)) {
+      return severity;
+    }
+  }
+
+  throw new Error(`No supported SECURITY severity found for ${issue.key}`);
+}
+
+function jiraSeverity(severity: SonarSeverity): SeverityMapping {
+  return severityMappings[severity];
 }
 
 function locationText(location: SonarLocation): string {
@@ -234,7 +358,8 @@ function trace(issue: SonarIssue): {
 }
 
 function issueLabel(key: string): string {
-  const identifier = [sonarProject, key].join(":");
+  const identifier = `${sonarProject}:${key}`;
+
   const hash = createHash("sha256")
     .update(identifier)
     .digest("hex")
@@ -250,71 +375,90 @@ async function existingTicket(label: string): Promise<string | undefined> {
     "jql",
     `project = ${jiraProject} AND labels = "${label}"`,
   );
+
   url.searchParams.set("fields", "labels");
   url.searchParams.set("maxResults", "100");
 
   const response = await jiraRequest(`${url.pathname}${url.search}`);
+
   const data = (await response.json()) as JiraSearch;
 
   return data.issues.find((item) => item.fields?.labels?.includes(label))?.key;
 }
 
-const paragraph = (value: string): AdfNode => ({
-  type: "paragraph",
-  content: [
-    {
-      type: "text",
-      text: value.slice(0, 12000) || " ",
-    },
-  ],
-});
+function paragraph(value: string): AdfNode {
+  return {
+    type: "paragraph",
+    content: [
+      {
+        type: "text",
+        text: value.slice(0, 12000) || " ",
+      },
+    ],
+  };
+}
 
-const heading = (value: string): AdfNode => ({
-  type: "heading",
-  attrs: { level: 3 },
-  content: [{ type: "text", text: value }],
-});
+function heading(value: string): AdfNode {
+  return {
+    type: "heading",
+    attrs: { level: 3 },
+    content: [
+      {
+        type: "text",
+        text: value,
+      },
+    ],
+  };
+}
 
-const bullet = (value: string): AdfNode => ({
-  type: "bulletList",
-  content: [
-    {
-      type: "listItem",
-      content: [paragraph(value)],
-    },
-  ],
-});
+function bullet(value: string): AdfNode {
+  return {
+    type: "bulletList",
+    content: [
+      {
+        type: "listItem",
+        content: [paragraph(value)],
+      },
+    ],
+  };
+}
 
-const divider = (): AdfNode => ({ type: "rule" });
-
-function getSeverity(issue: SonarIssue): string {
-  return (
-    issue.impacts
-      ?.filter((impact) => impact.softwareQuality === "SECURITY")
-      .map((impact) => impact.severity)
-      .join(", ") || "HIGH"
-  );
+function divider(): AdfNode {
+  return { type: "rule" };
 }
 
 function requiredRule(issue: SonarIssue): string {
   if (!issue.rule) {
     throw new Error(`Finding ${issue.key} has no rule key`);
   }
+
   return issue.rule;
 }
 
-async function createTicket(
-  issue: SonarIssue,
-  isTest: boolean,
-): Promise<string> {
-  const ruleKey = requiredRule(issue);
-  const rule = await getRuleDetails(ruleKey);
-  const traced = trace(issue);
-  const severity = getSeverity(issue);
+function findingUrl(issue: SonarIssue): string {
+  const url = new URL("/project/issues", `${sonarUrl}/`);
 
-  const link = new URL("/project/issues", `${sonarUrl}/`);
-  link.searchParams.set("id", sonarProject);
-  link.searchParams.set("issues", issue.key);
+  url.searchParams.set("id", sonarProject);
+  url.searchParams.set("issues", issue.key);
+
+  return url.toString();
+}
+
+function createDescription(
+  issue: SonarIssue,
+  rule: {
+    name: string;
+    remediation: string;
+  },
+  severity: SeverityMapping,
+  isTest: boolean,
+): {
+  type: string;
+  version: number;
+  content: AdfNode[];
+} {
+  const traced = trace(issue);
+  const ruleKey = requiredRule(issue);
 
   const content: AdfNode[] = [
     heading("SOURCE"),
@@ -324,20 +468,23 @@ async function createTicket(
 
     heading("SINK"),
     bullet(traced.sink),
+
     ...(traced.flow.length > 0
       ? [paragraph(`Reported execution flow: ${traced.flow.join(" -> ")}`)]
       : []),
+
     divider(),
 
     heading("Vulnerability Summary"),
-    paragraph(`Severity: ${severity} | Type: ${rule.name} (${ruleKey})`),
+    paragraph(`Severity: ${severity.label} | Type: ${rule.name} (${ruleKey})`),
     paragraph(issue.message),
     divider(),
 
     heading("Details"),
     paragraph(`SonarCloud issue: ${issue.key}`),
     paragraph(`Branch: main | Component: ${issue.component}`),
-    paragraph(`Finding URL: ${link.toString()}`),
+    paragraph(`Finding URL: ${findingUrl(issue)}`),
+
     ...(isTest
       ? [
           paragraph(
@@ -345,20 +492,38 @@ async function createTicket(
           ),
         ]
       : []),
+
     divider(),
 
     heading("Proposed Remediation"),
     paragraph(rule.remediation),
     paragraph(
-      `Review the complete rule guidance in SonarCloud: ${sonarUrl}/coding_rules?open=${encodeURIComponent(ruleKey)}&rule_key=${encodeURIComponent(ruleKey)}`,
+      "Review the full rule guidance in SonarCloud before implementing the remediation.",
     ),
     divider(),
 
     heading("DEFINITION OF DONE"),
     paragraph(
-      "☐ Finding resolved according to the vulnerability management process",
+      "Finding remediated and verified according to the vulnerability management process.",
     ),
   ];
+
+  return {
+    type: "doc",
+    version: 1,
+    content,
+  };
+}
+
+async function createTicket(
+  issue: SonarIssue,
+  isTest: boolean,
+): Promise<string> {
+  const ruleKey = requiredRule(issue);
+
+  const severity = getSeverity(issue);
+  const mappedSeverity = jiraSeverity(severity);
+  const rule = await getRuleDetails(ruleKey);
 
   const labels = [
     "sonarcloud",
@@ -369,26 +534,55 @@ async function createTicket(
   ];
 
   if (isTest) {
-    labels.push("guoit-202-sast-template-test-v2");
+    labels.push("guoit-202-sast-template-test-v3");
   }
 
-  const payload = {
-    fields: {
-      project: { key: jiraProject },
-      issuetype: { name: "Task" },
-      summary: [
-        isTest ? "[TEST] " : "",
-        `[SonarCloud][${severity}] ${issue.message}`,
-      ]
-        .join("")
-        .slice(0, 255),
-      labels,
-      description: {
-        type: "doc",
-        version: 1,
-        content,
-      },
+  const summary = [
+    isTest ? "[TEST] " : "",
+    `[SonarCloud][${mappedSeverity.label}] ${issue.message}`,
+  ]
+    .join("")
+    .slice(0, 255);
+
+  const description = createDescription(issue, rule, mappedSeverity, isTest);
+
+  const fields: Record<string, unknown> = {
+    project: {
+      key: jiraProject,
     },
+
+    issuetype: {
+      name: "Task",
+    },
+
+    summary,
+    labels,
+    description,
+
+    // Actual Jira Source field
+    [jiraFields.source]: "SonarCloud SAST",
+
+    // Actual Jira Severity field
+    [jiraFields.severity]: {
+      id: mappedSeverity.optionId,
+    },
+
+    // Jira Priority must match severity.
+    // Priority names require verification.
+    priority: {
+      name: mappedSeverity.priority,
+    },
+  };
+
+  // Impact is deliberately not derived from severity.
+  // CVSS and EPSS are not available for every SAST issue.
+  // Stakeholders require an approved ownership mapping.
+  // Exception review date is only set for approved exceptions.
+  // Environment must reflect a verified deployment environment.
+  // These fields remain unset until reliable values exist.
+
+  const payload = {
+    fields,
   };
 
   const response = await jiraRequest("/rest/api/3/issue", {
@@ -396,55 +590,58 @@ async function createTicket(
     body: JSON.stringify(payload),
   });
 
-  return ((await response.json()) as JiraCreated).key;
+  const created = (await response.json()) as JiraCreated;
+
+  return created.key;
 }
 
-async function main(): Promise<void> {
-  validateExecution();
+async function runTest(): Promise<void> {
+  const ruleKey = required("TEST_SONAR_RULE_KEY");
 
-  console.log(
-    `Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}; dry run: ${String(dryRun)}`,
-  );
+  const issue: SonarIssue = {
+    key: "GUOIT-202-SAST-TEMPLATE-V3",
+    message: "Template verification - simulated security finding",
+    component: "govuk-once_flex:libs/testing/src/mock-security.ts",
+    line: 42,
+    rule: ruleKey,
+    impacts: [
+      {
+        softwareQuality: "SECURITY",
+        severity: "HIGH",
+      },
+    ],
+  };
 
-  if (testMode) {
-    const ruleKey = required("TEST_SONAR_RULE_KEY");
+  const label = issueLabel(issue.key);
+  const existing = await existingTicket(label);
 
-    const issue: SonarIssue = {
-      key: "GUOIT-202-SAST-TEMPLATE-V2",
-      message: "Template verification - simulated security finding",
-      component: "govuk-once_flex:libs/testing/src/mock-security.ts",
-      line: 42,
-      rule: ruleKey,
-      impacts: [
-        {
-          softwareQuality: "SECURITY",
-          severity: "HIGH",
-        },
-      ],
-    };
-
-    const label = issueLabel(issue.key);
-    const existing = await existingTicket(label);
-
-    if (existing) {
-      console.log(`Test ticket already exists: ${jiraUrl}/browse/${existing}`);
-      return;
-    }
-
-    const rule = await getRuleDetails(ruleKey);
-    console.log(`Rule: ${rule.name}`);
-    console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
-
-    if (dryRun) {
-      console.log("[DRY RUN] Would create one SAST template test ticket");
-      return;
-    }
-
-    const key = await createTicket(issue, true);
-    console.log(`Created test ticket: ${jiraUrl}/browse/${key}`);
+  if (existing) {
+    console.log(`Test ticket already exists: ${jiraUrl}/browse/${existing}`);
     return;
   }
 
+  const severity = getSeverity(issue);
+  const mappedSeverity = jiraSeverity(severity);
+
+  const rule = await getRuleDetails(ruleKey);
+
+  console.log(`Rule: ${rule.name}`);
+  console.log(`Severity: ${mappedSeverity.label}`);
+  console.log(`Priority: ${mappedSeverity.priority}`);
+
+  console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
+
+  if (dryRun) {
+    console.log("[DRY RUN] Would create one SAST template test ticket");
+    return;
+  }
+
+  const key = await createTicket(issue, true);
+
+  console.log(`Created test ticket: ${jiraUrl}/browse/${key}`);
+}
+
+async function runProduction(): Promise<void> {
   const findings = await getFindings();
 
   console.log(
@@ -454,6 +651,10 @@ async function main(): Promise<void> {
   let created = 0;
 
   for (const issue of findings) {
+    if (!dryRun && created >= maxTickets) {
+      break;
+    }
+
     const label = issueLabel(issue.key);
     const existing = await existingTicket(label);
 
@@ -462,12 +663,15 @@ async function main(): Promise<void> {
       continue;
     }
 
+    const severity = getSeverity(issue);
+    const mappedSeverity = jiraSeverity(severity);
+
     if (dryRun) {
-      console.log(`[DRY RUN] Would create ticket for ${issue.key}`);
+      console.log(
+        `[DRY RUN] Would create ${mappedSeverity.label} ticket for ${issue.key}`,
+      );
       continue;
     }
-
-    if (created >= maxTickets) break;
 
     const key = await createTicket(issue, false);
 
@@ -477,6 +681,21 @@ async function main(): Promise<void> {
   }
 
   console.log(`Created ${String(created)} Jira tickets`);
+}
+
+async function main(): Promise<void> {
+  validateExecution();
+
+  console.log(`Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}`);
+
+  console.log(`Dry run: ${String(dryRun)}`);
+
+  if (testMode) {
+    await runTest();
+    return;
+  }
+
+  await runProduction();
 }
 
 main().catch((error: unknown) => {

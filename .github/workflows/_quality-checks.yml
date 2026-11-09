@@ -197,8 +197,8 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           pnpm exec tsx scripts/sonarToJira.ts
-    
-      - name: GUOIT-202 - Discover Jira Field Options
+
+      - name: GUOIT-202 - Discover Jira Priorities
         if: >-
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.ref == 'GUOIT-202'
@@ -213,54 +213,32 @@ jobs:
           import json
           import base64
           import urllib.request
-          import urllib.error
 
           base = os.environ["JIRA_URL"].rstrip("/")
+          email = os.environ["JIRA_EMAIL"]
+          token = os.environ["JIRA_API_TOKEN"]
+
           auth = base64.b64encode(
-              f'{os.environ["JIRA_EMAIL"]}:{os.environ["JIRA_API_TOKEN"]}'.encode()
+              f"{email}:{token}".encode()
           ).decode()
 
-          def jira_get(path):
-              req = urllib.request.Request(
-                  base + path,
-                  headers={
-                      "Authorization": f"Basic {auth}",
-                      "Accept": "application/json",
-                  },
-              )
-              with urllib.request.urlopen(req) as response:
-                  return json.load(response)
-
-          issue_types = jira_get(
-              "/rest/api/3/issue/createmeta/GUV/issuetypes"
+          req = urllib.request.Request(
+              base + "/rest/api/3/priority",
+              headers={
+                  "Authorization": f"Basic {auth}",
+                  "Accept": "application/json",
+              },
           )
 
-          task = next(
-              (item for item in issue_types.get("issueTypes", [])
-              if item.get("name") == "Task"),
-              None,
-          )
+          with urllib.request.urlopen(req) as response:
+              priorities = json.load(response)
 
-          if not task:
-              raise RuntimeError("Task issue type not found")
-
-          task_id = task["id"]
-
-          data = jira_get(
-              f"/rest/api/3/issue/createmeta/GUV/issuetypes/{task_id}?maxResults=200"
-          )
-
-          for field in data.get("fields", []):
-              if field.get("fieldId") in {
-                  "customfield_10546",
-                  "customfield_10004",
-              }:
-                  print(json.dumps({
-                      "name": field.get("name"),
-                      "fieldId": field.get("fieldId"),
-                      "required": field.get("required"),
-                      "allowedValues": field.get("allowedValues", []),
-                  }, indent=2))
+          for priority in priorities:
+              print(json.dumps({
+                  "id": priority.get("id"),
+                  "name": priority.get("name"),
+                  "description": priority.get("description"),
+              }, indent=2))
           PY
 
       - name: GUOIT-202 - Test SAST Jira Ticket
