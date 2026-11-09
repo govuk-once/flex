@@ -69,10 +69,11 @@ async function getFindings(target: AnalysisTarget): Promise<SonarIssue[]> {
     url.searchParams.set("componentKeys", projectKey);
     url.searchParams.set("impactSoftwareQualities", "SECURITY");
     url.searchParams.set("impactSeverities", "HIGH,BLOCKER");
-    url.searchParams.set("issueStatuses", "OPEN,CONFIRMED");
     url.searchParams.set("ps", "100");
     url.searchParams.set("p", String(page));
     url.searchParams.set(target.parameter, target.value);
+
+    console.log(`Requesting SonarCloud findings - page ${String(page)}`);
 
     const response = await fetch(url, {
       headers: {
@@ -82,8 +83,10 @@ async function getFindings(target: AnalysisTarget): Promise<SonarIssue[]> {
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
+
       throw new Error(
-        `SonarCloud API returned HTTP ${String(response.status)}`,
+        `SonarCloud API returned HTTP ${String(response.status)}: ${errorBody}`,
       );
     }
 
