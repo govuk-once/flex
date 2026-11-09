@@ -1,0 +1,43 @@
+name: GUOIT-202 SAST Jira Template Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-jira:
+    name: Test SAST Jira Ticket
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GUOIT-202
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: GUOIT-202
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create SAST Jira test ticket
+        env:
+          SONAR_URL: ${{ secrets.SONAR_URL }}
+          SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TEST_TICKET: "true"
+          TEST_SONAR_RULE_KEY: "typescript:S2068"
+          DRY_RUN: "false"
+        run: pnpm exec tsx scripts/sonarToJira.ts
