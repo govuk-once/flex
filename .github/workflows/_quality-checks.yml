@@ -187,7 +187,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
-
       - name: SonarCloud Security Findings to Jira
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
