@@ -20,6 +20,9 @@ jobs:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
       SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
       SONAR_URL: ${{ secrets.SONAR_URL }}
+      JIRA_URL: ${{ secrets.JIRA_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
   release:
     name: Release
