@@ -4,7 +4,9 @@ type SonarSeverity = "BLOCKER" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
 
 type SonarLocation = {
   component?: string;
-  textRange?: { startLine?: number };
+  textRange?: {
+    startLine?: number;
+  };
   msg?: string;
 };
 
@@ -47,7 +49,9 @@ type RuleDetails = {
 type JiraSearch = {
   issues: {
     key: string;
-    fields?: { labels?: string[] };
+    fields?: {
+      labels?: string[];
+    };
   }[];
   nextPageToken?: string;
 };
@@ -99,8 +103,7 @@ const maxTickets = 5;
 const jiraEnvironment = "Staging";
 const stakeholderName = "Ashley Toole";
 
-// Optional override if Jira cannot search for the user.
-// Must contain the actual Atlassian account ID, not a display name.
+// Optional: supply the verified Atlassian account ID directly.
 const stakeholderAccountIdOverride =
   process.env.JIRA_STAKEHOLDER_ACCOUNT_ID?.trim();
 
@@ -151,8 +154,7 @@ const severityOrder: SonarSeverity[] = [
   "INFO",
 ];
 
-// Conservative defaults based on the VM remediation policy.
-// These are calendar days, not business days.
+// Calendar days based on the VM remediation guidance.
 const remediationDays: Partial<Record<SonarSeverity, number>> = {
   BLOCKER: 2,
   HIGH: 7,
@@ -654,6 +656,28 @@ function createDescription(
   };
 }
 
+function environmentAdf(value: string): {
+  type: string;
+  version: number;
+  content: AdfNode[];
+} {
+  return {
+    type: "doc",
+    version: 1,
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: value,
+          },
+        ],
+      },
+    ],
+  };
+}
+
 async function createTicket(
   issue: SonarIssue,
   isTest: boolean,
@@ -712,8 +736,10 @@ async function createTicket(
       id: mappedSeverity.priorityId,
     },
 
-    [jiraFields.environment]: jiraEnvironment,
+    // Jira Cloud Environment requires ADF.
+    [jiraFields.environment]: environmentAdf(jiraEnvironment),
 
+    // Multi-user picker requires Atlassian account IDs.
     [jiraFields.stakeholders]: [
       {
         accountId: stakeholderAccountId,
@@ -793,8 +819,6 @@ async function runTest(): Promise<void> {
 
   console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
 
-  // Resolve the stakeholder even during dry runs.
-  // This validates the Jira account mapping.
   const stakeholderAccountId = await resolveStakeholderAccountId();
 
   if (dryRun) {
