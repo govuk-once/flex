@@ -13,7 +13,7 @@ describe.runIf(isDomainDeployed(searchesConfig))("Searches domain", () => {
       isRouteDeployed(searchesConfig, "PATCH /v1/activity/searches"),
     )("PATCH", () => {
       const searchTerm: SearchTerm = {
-        term: "a new search",
+        term: "A New Search 11",
         timestamp: "2026-11-04T13:45:00Z",
       };
 

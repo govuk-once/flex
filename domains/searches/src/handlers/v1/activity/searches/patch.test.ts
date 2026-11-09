@@ -40,12 +40,14 @@ describe("PATCH /v1/activity/searches", () => {
         },
       })
       .reply(200, {
-        searches: {
-          selectedSearches: [
-            existingSearchTerm0,
-            existingSearchTerm1,
-            newSearchTerm,
-          ],
+        data: {
+          searches: {
+            selectedSearches: [
+              existingSearchTerm0,
+              existingSearchTerm1,
+              newSearchTerm,
+            ],
+          },
         },
       });
 
@@ -84,8 +86,10 @@ describe("PATCH /v1/activity/searches", () => {
         },
       })
       .reply(200, {
-        searches: {
-          selectedSearches: [newSearchTerm],
+        data: {
+          searches: {
+            selectedSearches: [newSearchTerm],
+          },
         },
       });
 
@@ -125,8 +129,10 @@ describe("PATCH /v1/activity/searches", () => {
         },
       })
       .reply(200, {
-        searches: {
-          selectedSearches: [newSearchTerm],
+        data: {
+          searches: {
+            selectedSearches: [newSearchTerm],
+          },
         },
       });
 
@@ -222,19 +228,21 @@ describe("PATCH /v1/activity/searches", () => {
         },
       })
       .reply(200, {
-        searches: {
-          selectedSearches: [
-            existingSearchTerm1,
-            existingSearchTerm2,
-            existingSearchTerm3,
-            existingSearchTerm4,
-            existingSearchTerm5,
-            existingSearchTerm6,
-            existingSearchTerm7,
-            existingSearchTerm8,
-            existingSearchTerm9,
-            newSearchTerm,
-          ],
+        data: {
+          searches: {
+            selectedSearches: [
+              existingSearchTerm1,
+              existingSearchTerm2,
+              existingSearchTerm3,
+              existingSearchTerm4,
+              existingSearchTerm5,
+              existingSearchTerm6,
+              existingSearchTerm7,
+              existingSearchTerm8,
+              existingSearchTerm9,
+              newSearchTerm,
+            ],
+          },
         },
       });
 
@@ -316,14 +324,16 @@ describe("PATCH /v1/activity/searches", () => {
         },
       })
       .reply(200, {
-        searches: {
-          selectedSearches: [
-            existingSearchTerm0,
-            existingSearchTerm1,
-            existingSearchTerm3,
-            existingSearchTerm4,
-            newSearchTerm,
-          ],
+        data: {
+          searches: {
+            selectedSearches: [
+              existingSearchTerm0,
+              existingSearchTerm1,
+              existingSearchTerm3,
+              existingSearchTerm4,
+              newSearchTerm,
+            ],
+          },
         },
       });
 

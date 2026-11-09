@@ -29,7 +29,7 @@ export const handler = route(
       const { status } = result.error;
 
       if (status === 404) {
-        logger.info("Data not found, setting up new search data", {
+        logger.info("Existing search data not found, setting up new collection for user", {
           status,
           userId: auth.userId,
         });
@@ -62,6 +62,7 @@ export const handler = route(
       body: newUserSearches,
     });
 
+    logger.info("***DEBUG*** Post to udp returned", JSON.stringify(postResult));
     if (!postResult.ok) {
       const { status, message, body } = postResult.error;
 

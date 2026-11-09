@@ -1,8 +1,9 @@
+import { NonEmptyString } from "@flex/utils";
 import { z } from "zod";
 
 export const SearchTermSchema = z.object({
-  term: z.string().min(1),
-  timestamp: z.iso.datetime(),
+  term: NonEmptyString,
+  timestamp: NonEmptyString,
 });
 export type SearchTerm = z.infer<typeof SearchTermSchema>;
 
@@ -17,3 +18,5 @@ export const UpdateUserSearchRequestSchema = SearchTermSchema;
 export type UpdateUserSearchRequest = z.infer<
   typeof UpdateUserSearchRequestSchema
 >;
+
+export const UpsertUserSearchResponseSchema = z.object({ data: UserSearchesSchema });
