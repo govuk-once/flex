@@ -41,8 +41,6 @@ type RuleSection = {
 type RuleDetails = {
   rule?: {
     name?: string;
-    htmlDesc?: string;
-    mdDesc?: string;
     descriptionSections?: RuleSection[];
   };
 };
@@ -54,6 +52,7 @@ type JiraSearch = {
       labels?: string[];
     };
   }[];
+  nextPageToken?: string;
 };
 
 type JiraCreated = {
@@ -65,7 +64,7 @@ type AdfNode = Record<string, unknown>;
 type SeverityMapping = {
   label: string;
   optionId: string;
-  priority: string;
+  priorityId: string;
 };
 
 function required(name: string): string {
@@ -91,10 +90,8 @@ const jiraProject = "GUV";
 
 const testMode = process.env.TEST_TICKET === "true";
 const dryRun = process.env.DRY_RUN !== "false";
-
 const maxTickets = 5;
 
-// Confirmed GUV custom fields
 const jiraFields = {
   source: "customfield_10545",
   severity: "customfield_10546",
@@ -106,33 +103,32 @@ const jiraFields = {
   environment: "environment",
 } as const;
 
-// Confirmed GUV severity option IDs.
-// Priority names must still be verified against Jira.
+// Confirmed GUV Severity option IDs and Jira Priority IDs.
 const severityMappings: Record<SonarSeverity, SeverityMapping> = {
   BLOCKER: {
     label: "Critical",
     optionId: "10138",
-    priority: "Highest",
+    priorityId: "1",
   },
   HIGH: {
     label: "High",
     optionId: "10137",
-    priority: "High",
+    priorityId: "2",
   },
   MEDIUM: {
     label: "Medium",
     optionId: "10136",
-    priority: "Medium",
+    priorityId: "3",
   },
   LOW: {
     label: "Low",
     optionId: "10135",
-    priority: "Low",
+    priorityId: "4",
   },
   INFO: {
     label: "Informational",
     optionId: "10134",
-    priority: "Lowest",
+    priorityId: "5",
   },
 };
 
@@ -369,21 +365,37 @@ function issueLabel(key: string): string {
 }
 
 async function existingTicket(label: string): Promise<string | undefined> {
-  const url = new URL("/rest/api/3/search/jql", `${jiraUrl}/`);
+  let nextPageToken: string | undefined;
 
-  url.searchParams.set(
-    "jql",
-    `project = ${jiraProject} AND labels = "${label}"`,
-  );
+  do {
+    const url = new URL("/rest/api/3/search/jql", `${jiraUrl}/`);
 
-  url.searchParams.set("fields", "labels");
-  url.searchParams.set("maxResults", "100");
+    url.searchParams.set(
+      "jql",
+      `project = ${jiraProject} AND labels = "${label}"`,
+    );
+    url.searchParams.set("fields", "labels");
+    url.searchParams.set("maxResults", "100");
 
-  const response = await jiraRequest(`${url.pathname}${url.search}`);
+    if (nextPageToken) {
+      url.searchParams.set("nextPageToken", nextPageToken);
+    }
 
-  const data = (await response.json()) as JiraSearch;
+    const response = await jiraRequest(`${url.pathname}${url.search}`);
+    const data = (await response.json()) as JiraSearch;
 
-  return data.issues.find((item) => item.fields?.labels?.includes(label))?.key;
+    const existing = data.issues.find((item) =>
+      item.fields?.labels?.includes(label),
+    )?.key;
+
+    if (existing) {
+      return existing;
+    }
+
+    nextPageToken = data.nextPageToken;
+  } while (nextPageToken);
+
+  return undefined;
 }
 
 function paragraph(value: string): AdfNode {
@@ -534,7 +546,7 @@ async function createTicket(
   ];
 
   if (isTest) {
-    labels.push("guoit-202-sast-template-test-v3");
+    labels.push("guoit-202-sast-template-test-v4");
   }
 
   const summary = [
@@ -559,35 +571,28 @@ async function createTicket(
     labels,
     description,
 
-    // Actual Jira Source field
+    // Confirmed Jira Source field
     [jiraFields.source]: "SonarCloud SAST",
 
-    // Actual Jira Severity field
+    // Confirmed Jira Severity option
     [jiraFields.severity]: {
       id: mappedSeverity.optionId,
     },
 
-    // Jira Priority must match severity.
-    // Priority names require verification.
+    // Confirmed Jira Priority ID
     priority: {
-      name: mappedSeverity.priority,
+      id: mappedSeverity.priorityId,
     },
   };
 
-  // Impact is deliberately not derived from severity.
-  // CVSS and EPSS are not available for every SAST issue.
-  // Stakeholders require an approved ownership mapping.
+  // Do not infer Impact from Severity.
+  // Leave CVSS, EPSS and Stakeholders unset without verified data.
   // Exception review date is only set for approved exceptions.
-  // Environment must reflect a verified deployment environment.
-  // These fields remain unset until reliable values exist.
-
-  const payload = {
-    fields,
-  };
+  // Environment requires a verified deployment mapping.
 
   const response = await jiraRequest("/rest/api/3/issue", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ fields }),
   });
 
   const created = (await response.json()) as JiraCreated;
@@ -599,7 +604,7 @@ async function runTest(): Promise<void> {
   const ruleKey = required("TEST_SONAR_RULE_KEY");
 
   const issue: SonarIssue = {
-    key: "GUOIT-202-SAST-TEMPLATE-V3",
+    key: "GUOIT-202-SAST-TEMPLATE-V4",
     message: "Template verification - simulated security finding",
     component: "govuk-once_flex:libs/testing/src/mock-security.ts",
     line: 42,
@@ -622,12 +627,11 @@ async function runTest(): Promise<void> {
 
   const severity = getSeverity(issue);
   const mappedSeverity = jiraSeverity(severity);
-
   const rule = await getRuleDetails(ruleKey);
 
   console.log(`Rule: ${rule.name}`);
   console.log(`Severity: ${mappedSeverity.label}`);
-  console.log(`Priority: ${mappedSeverity.priority}`);
+  console.log(`Priority ID: ${mappedSeverity.priorityId}`);
 
   console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
 
@@ -687,7 +691,6 @@ async function main(): Promise<void> {
   validateExecution();
 
   console.log(`Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}`);
-
   console.log(`Dry run: ${String(dryRun)}`);
 
   if (testMode) {
