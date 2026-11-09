@@ -56,7 +56,7 @@ const sonarProject = "govuk-once_flex";
 const jiraProject = "GUV";
 
 const maxTicketsPerRun = 5;
-const dryRun = process.env.DRY_RUN === "true";
+const dryRun = process.env.DRY_RUN === "false";
 
 const jiraAuth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString("base64");
 
