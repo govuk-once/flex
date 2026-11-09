@@ -3,8 +3,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../../__tests__/load-infra";
 
-async function synthesise() {
-  const { SsmApp, ENV_KEYS } = await loadInfra("staging");
+async function synthesise(stage = "staging") {
+  const { SsmApp, ENV_KEYS } = await loadInfra(stage);
   const { FlexCoreStack } = await import("./stack");
 
   const app = new SsmApp();
@@ -13,9 +13,10 @@ async function synthesise() {
     ENV_KEYS.MonitoringSlackWorkspaceId,
     ENV_KEYS.MonitoringSlackChannelId,
     ENV_KEYS.MonitoringCriticalSlackChannelId,
+    ENV_KEYS.MonitoringConnectCriticalSlackChannelId,
   ]);
 
-  const stack = new FlexCoreStack(app, "staging-FlexCore");
+  const stack = new FlexCoreStack(app, `${stage}-FlexCore`);
   const template = Template.fromStack(stack);
 
   const resourceId = (type: string, properties: Record<string, unknown>) =>
@@ -95,6 +96,12 @@ describe("FlexCoreStack alert routing", () => {
     });
   });
 
+  it("does not post to the GOV.UK Connect channel outside production", () => {
+    const { template } = result;
+
+    template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 2);
+  });
+
   it("alerts on KMS key and Cognito user pool changes through the critical topic", () => {
     const { template, criticalTopicId } = result;
 
@@ -103,6 +110,27 @@ describe("FlexCoreStack alert routing", () => {
         EventPattern: Match.objectLike({ source: [source] }),
         Targets: [Match.objectLike({ Arn: { Ref: criticalTopicId } })],
       });
+    });
+  });
+});
+
+describe("FlexCoreStack production alert routing", () => {
+  let result: Awaited<ReturnType<typeof synthesise>>;
+
+  beforeAll(async () => {
+    result = await synthesise("production");
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("also posts critical alarms to the shared GOV.UK Connect channel", () => {
+    const { template, criticalTopicId } = result;
+
+    template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+      ConfigurationName: "flex-alerts-critical-production-govuk-connect",
+      SnsTopicArns: [{ Ref: criticalTopicId }],
     });
   });
 });

@@ -27,6 +27,7 @@ export const ENV_KEYS = {
   MonitoringSlackWorkspaceId: `/${env}/flex-param/monitoring/slackWorkspaceId`,
   MonitoringSlackChannelId: `/${env}/flex-param/monitoring/slackChannelId`,
   MonitoringCriticalSlackChannelId: `/${env}/flex-param/monitoring/criticalSlackChannelId`,
+  MonitoringConnectCriticalSlackChannelId: `/${env}/flex-param/monitoring/connectCriticalSlackChannelId`,
   ReleaseSlackChannelId: `/${env}/flex-param/monitoring/releaseSlackChannelId`,
   TopicReleaseNotifications: `/${env}/flex/topic/release-notifications`,
   FlexEncryptionKey: `/${env}/flex-param/secret/encryption-key`,
