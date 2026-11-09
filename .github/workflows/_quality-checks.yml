@@ -178,6 +178,16 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FLEX }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
+
+      - name: Test SonarCloud Security Findings Retrieval
+        if: success() && github.event_name == 'pull_request'
+        env:
+          SONAR_URL: ${{ secrets.SONAR_URL }}
+          SONAR_TOKEN_FLEX: ${{ secrets.SONAR_TOKEN_FLEX }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pnpm exec tsx scripts/sonarToJira.ts
+
   security:
     name: Security
     runs-on: ubuntu-latest
