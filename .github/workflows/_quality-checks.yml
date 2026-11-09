@@ -20,6 +20,15 @@ on:
       SONAR_URL:
         description: "SonarQube URL"
         required: true
+      JIRA_URL:
+        description: "Jira Cloud base URL"
+        required: false
+      JIRA_EMAIL:
+        description: "Jira API account email"
+        required: false
+      JIRA_API_TOKEN:
+        description: "Jira API token for temporary integration testing"
+        required: false
 
 jobs:
   hygiene:
@@ -187,6 +196,15 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           pnpm exec tsx scripts/sonarToJira.ts
+
+      - name: GUOIT-202 - Test Jira Ticket Creation
+        if: success() && github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'GUOIT-202'
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          pnpm exec tsx scripts/testSonarJira.ts
 
   security:
     name: Security
