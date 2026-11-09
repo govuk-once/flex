@@ -35,6 +35,8 @@ function requiredEnv(name: string): string {
 
 const sonarUrl = requiredEnv("SONAR_URL").replace(/\/$/, "");
 const sonarToken = requiredEnv("SONAR_TOKEN_FLEX");
+
+const organization = "govuk-once";
 const projectKey = "govuk-once_flex";
 
 function getAnalysisTarget(): AnalysisTarget {
@@ -66,6 +68,7 @@ async function getFindings(target: AnalysisTarget): Promise<SonarIssue[]> {
   while (hasMorePages) {
     const url = new URL("/api/issues/search", `${sonarUrl}/`);
 
+    url.searchParams.set("organization", organization);
     url.searchParams.set("componentKeys", projectKey);
     url.searchParams.set("impactSoftwareQualities", "SECURITY");
     url.searchParams.set("impactSeverities", "HIGH,BLOCKER");
@@ -109,6 +112,7 @@ async function getFindings(target: AnalysisTarget): Promise<SonarIssue[]> {
 async function main(): Promise<void> {
   const target = getAnalysisTarget();
 
+  console.log(`Organization: ${organization}`);
   console.log(`Project: ${projectKey}`);
   console.log(`Analysis: ${target.label}`);
 
