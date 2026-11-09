@@ -4,9 +4,7 @@ type SonarSeverity = "BLOCKER" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
 
 type SonarLocation = {
   component?: string;
-  textRange?: {
-    startLine?: number;
-  };
+  textRange?: { startLine?: number };
   msg?: string;
 };
 
@@ -20,6 +18,7 @@ type SonarIssue = {
   component: string;
   line?: number;
   rule?: string;
+  creationDate?: string;
   impacts?: {
     softwareQuality: string;
     severity: string;
@@ -48,11 +47,16 @@ type RuleDetails = {
 type JiraSearch = {
   issues: {
     key: string;
-    fields?: {
-      labels?: string[];
-    };
+    fields?: { labels?: string[] };
   }[];
   nextPageToken?: string;
+};
+
+type JiraUser = {
+  accountId: string;
+  displayName?: string;
+  active?: boolean;
+  accountType?: string;
 };
 
 type JiraCreated = {
@@ -92,6 +96,14 @@ const testMode = process.env.TEST_TICKET === "true";
 const dryRun = process.env.DRY_RUN !== "false";
 const maxTickets = 5;
 
+const jiraEnvironment = "Staging";
+const stakeholderName = "Ashley Toole";
+
+// Optional override if Jira cannot search for the user.
+// Must contain the actual Atlassian account ID, not a display name.
+const stakeholderAccountIdOverride =
+  process.env.JIRA_STAKEHOLDER_ACCOUNT_ID?.trim();
+
 const jiraFields = {
   source: "customfield_10545",
   severity: "customfield_10546",
@@ -103,7 +115,6 @@ const jiraFields = {
   environment: "environment",
 } as const;
 
-// Confirmed GUV Severity option IDs and Jira Priority IDs.
 const severityMappings: Record<SonarSeverity, SeverityMapping> = {
   BLOCKER: {
     label: "Critical",
@@ -140,7 +151,41 @@ const severityOrder: SonarSeverity[] = [
   "INFO",
 ];
 
+// Conservative defaults based on the VM remediation policy.
+// These are calendar days, not business days.
+const remediationDays: Partial<Record<SonarSeverity, number>> = {
+  BLOCKER: 2,
+  HIGH: 7,
+  MEDIUM: 15,
+  LOW: 30,
+};
+
 const jiraAuth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString("base64");
+
+function calculateDueDate(
+  severity: SonarSeverity,
+  detectionDate?: string,
+): string | undefined {
+  const days = remediationDays[severity];
+
+  if (days === undefined) {
+    return undefined;
+  }
+
+  const detected = detectionDate ? new Date(detectionDate) : new Date();
+
+  if (Number.isNaN(detected.getTime())) {
+    throw new Error(
+      `Invalid SonarCloud detection date: ${String(detectionDate)}`,
+    );
+  }
+
+  const due = new Date(detected);
+
+  due.setUTCDate(due.getUTCDate() + days);
+
+  return due.toISOString().slice(0, 10);
+}
 
 function validateExecution(): void {
   if (process.env.GITHUB_ACTIONS !== "true") {
@@ -221,8 +266,60 @@ async function jiraRequest(
   return response;
 }
 
+async function resolveStakeholderAccountId(): Promise<string> {
+  if (stakeholderAccountIdOverride) {
+    console.log("Using configured Jira stakeholder account ID");
+
+    return stakeholderAccountIdOverride;
+  }
+
+  const url = new URL("/rest/api/3/user/search", `${jiraUrl}/`);
+
+  url.searchParams.set("query", stakeholderName);
+
+  url.searchParams.set("maxResults", "100");
+
+  const response = await jiraRequest(`${url.pathname}${url.search}`);
+
+  const users = (await response.json()) as JiraUser[];
+
+  const matches = users.filter(
+    (user) =>
+      user.displayName?.trim().toLowerCase() ===
+        stakeholderName.toLowerCase() &&
+      user.active !== false &&
+      user.accountType !== "app",
+  );
+
+  if (matches.length === 0) {
+    throw new Error(
+      `Could not resolve Jira stakeholder "${stakeholderName}". ` +
+        "Check Jira user-search permissions or configure " +
+        "JIRA_STAKEHOLDER_ACCOUNT_ID.",
+    );
+  }
+
+  if (matches.length > 1) {
+    throw new Error(
+      `Multiple Jira users match "${stakeholderName}". ` +
+        "Configure JIRA_STAKEHOLDER_ACCOUNT_ID to select the correct account.",
+    );
+  }
+
+  const accountId = matches[0]?.accountId;
+
+  if (!accountId) {
+    throw new Error(`Jira did not return an account ID for ${stakeholderName}`);
+  }
+
+  console.log(`Resolved Jira stakeholder: ${stakeholderName}`);
+
+  return accountId;
+}
+
 async function getFindings(): Promise<SonarIssue[]> {
   const findings: SonarIssue[] = [];
+
   let page = 1;
   let more = true;
 
@@ -261,9 +358,10 @@ function plainText(value: string): string {
     .trim();
 }
 
-async function getRuleDetails(
-  ruleKey: string,
-): Promise<{ name: string; remediation: string }> {
+async function getRuleDetails(ruleKey: string): Promise<{
+  name: string;
+  remediation: string;
+}> {
   const data = await sonarGet<RuleDetails>("/api/rules/show", {
     key: ruleKey,
     organization,
@@ -312,6 +410,7 @@ function jiraSeverity(severity: SonarSeverity): SeverityMapping {
 
 function locationText(location: SonarLocation): string {
   const file = location.component ?? "Unknown file";
+
   const line = location.textRange?.startLine;
 
   return [
@@ -374,7 +473,9 @@ async function existingTicket(label: string): Promise<string | undefined> {
       "jql",
       `project = ${jiraProject} AND labels = "${label}"`,
     );
+
     url.searchParams.set("fields", "labels");
+
     url.searchParams.set("maxResults", "100");
 
     if (nextPageToken) {
@@ -382,6 +483,7 @@ async function existingTicket(label: string): Promise<string | undefined> {
     }
 
     const response = await jiraRequest(`${url.pathname}${url.search}`);
+
     const data = (await response.json()) as JiraSearch;
 
     const existing = data.issues.find((item) =>
@@ -413,7 +515,9 @@ function paragraph(value: string): AdfNode {
 function heading(value: string): AdfNode {
   return {
     type: "heading",
-    attrs: { level: 3 },
+    attrs: {
+      level: 3,
+    },
     content: [
       {
         type: "text",
@@ -436,7 +540,9 @@ function bullet(value: string): AdfNode {
 }
 
 function divider(): AdfNode {
-  return { type: "rule" };
+  return {
+    type: "rule",
+  };
 }
 
 function requiredRule(issue: SonarIssue): string {
@@ -451,6 +557,7 @@ function findingUrl(issue: SonarIssue): string {
   const url = new URL("/project/issues", `${sonarUrl}/`);
 
   url.searchParams.set("id", sonarProject);
+
   url.searchParams.set("issues", issue.key);
 
   return url.toString();
@@ -475,7 +582,9 @@ function createDescription(
   const content: AdfNode[] = [
     heading("SOURCE"),
     bullet(traced.source),
+
     paragraph(`Scanner: SonarCloud SAST | Project: ${sonarProject}`),
+
     divider(),
 
     heading("SINK"),
@@ -488,14 +597,28 @@ function createDescription(
     divider(),
 
     heading("Vulnerability Summary"),
+
     paragraph(`Severity: ${severity.label} | Type: ${rule.name} (${ruleKey})`),
+
     paragraph(issue.message),
+
     divider(),
 
     heading("Details"),
+
     paragraph(`SonarCloud issue: ${issue.key}`),
+
     paragraph(`Branch: main | Component: ${issue.component}`),
+
+    paragraph(`Environment: ${jiraEnvironment}`),
+
+    paragraph(`Initial stakeholder: ${stakeholderName}`),
+
     paragraph(`Finding URL: ${findingUrl(issue)}`),
+
+    ...(issue.creationDate
+      ? [paragraph(`First detected: ${issue.creationDate}`)]
+      : []),
 
     ...(isTest
       ? [
@@ -508,13 +631,17 @@ function createDescription(
     divider(),
 
     heading("Proposed Remediation"),
+
     paragraph(rule.remediation),
+
     paragraph(
       "Review the full rule guidance in SonarCloud before implementing the remediation.",
     ),
+
     divider(),
 
     heading("DEFINITION OF DONE"),
+
     paragraph(
       "Finding remediated and verified according to the vulnerability management process.",
     ),
@@ -530,11 +657,15 @@ function createDescription(
 async function createTicket(
   issue: SonarIssue,
   isTest: boolean,
+  stakeholderAccountId: string,
 ): Promise<string> {
   const ruleKey = requiredRule(issue);
 
   const severity = getSeverity(issue);
   const mappedSeverity = jiraSeverity(severity);
+
+  const dueDate = calculateDueDate(severity, issue.creationDate);
+
   const rule = await getRuleDetails(ruleKey);
 
   const labels = [
@@ -546,7 +677,7 @@ async function createTicket(
   ];
 
   if (isTest) {
-    labels.push("guoit-202-sast-template-test-v4");
+    labels.push("guoit-202-sast-template-test-v5");
   }
 
   const summary = [
@@ -571,28 +702,41 @@ async function createTicket(
     labels,
     description,
 
-    // Confirmed Jira Source field
     [jiraFields.source]: "SonarCloud SAST",
 
-    // Confirmed Jira Severity option
     [jiraFields.severity]: {
       id: mappedSeverity.optionId,
     },
 
-    // Confirmed Jira Priority ID
     priority: {
       id: mappedSeverity.priorityId,
     },
+
+    [jiraFields.environment]: jiraEnvironment,
+
+    [jiraFields.stakeholders]: [
+      {
+        accountId: stakeholderAccountId,
+      },
+    ],
+
+    ...(dueDate
+      ? {
+          duedate: dueDate,
+        }
+      : {}),
   };
 
-  // Do not infer Impact from Severity.
-  // Leave CVSS, EPSS and Stakeholders unset without verified data.
-  // Exception review date is only set for approved exceptions.
-  // Environment requires a verified deployment mapping.
+  // Impact is not inferred from technical severity.
+  // CVSS and EPSS are populated only when verified.
+  // Exception review dates require approved exceptions.
+  // Jira issue security must be verified before production.
 
   const response = await jiraRequest("/rest/api/3/issue", {
     method: "POST",
-    body: JSON.stringify({ fields }),
+    body: JSON.stringify({
+      fields,
+    }),
   });
 
   const created = (await response.json()) as JiraCreated;
@@ -604,11 +748,18 @@ async function runTest(): Promise<void> {
   const ruleKey = required("TEST_SONAR_RULE_KEY");
 
   const issue: SonarIssue = {
-    key: "GUOIT-202-SAST-TEMPLATE-V4",
+    key: "GUOIT-202-SAST-TEMPLATE-V5",
+
     message: "Template verification - simulated security finding",
+
     component: "govuk-once_flex:libs/testing/src/mock-security.ts",
+
     line: 42,
+
     rule: ruleKey,
+
+    creationDate: new Date().toISOString(),
+
     impacts: [
       {
         softwareQuality: "SECURITY",
@@ -618,6 +769,7 @@ async function runTest(): Promise<void> {
   };
 
   const label = issueLabel(issue.key);
+
   const existing = await existingTicket(label);
 
   if (existing) {
@@ -627,20 +779,30 @@ async function runTest(): Promise<void> {
 
   const severity = getSeverity(issue);
   const mappedSeverity = jiraSeverity(severity);
-  const rule = await getRuleDetails(ruleKey);
+
+  const dueDate = calculateDueDate(severity, issue.creationDate);
+
+  const rule = await getRuleDetails(requiredRule(issue));
 
   console.log(`Rule: ${rule.name}`);
   console.log(`Severity: ${mappedSeverity.label}`);
   console.log(`Priority ID: ${mappedSeverity.priorityId}`);
+  console.log(`Environment: ${jiraEnvironment}`);
+  console.log(`Stakeholder: ${stakeholderName}`);
+  console.log(`Due date: ${dueDate ?? "N/A"}`);
 
   console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
+
+  // Resolve the stakeholder even during dry runs.
+  // This validates the Jira account mapping.
+  const stakeholderAccountId = await resolveStakeholderAccountId();
 
   if (dryRun) {
     console.log("[DRY RUN] Would create one SAST template test ticket");
     return;
   }
 
-  const key = await createTicket(issue, true);
+  const key = await createTicket(issue, true, stakeholderAccountId);
 
   console.log(`Created test ticket: ${jiraUrl}/browse/${key}`);
 }
@@ -653,6 +815,7 @@ async function runProduction(): Promise<void> {
   );
 
   let created = 0;
+  let stakeholderAccountId: string | undefined;
 
   for (const issue of findings) {
     if (!dryRun && created >= maxTickets) {
@@ -660,6 +823,7 @@ async function runProduction(): Promise<void> {
     }
 
     const label = issueLabel(issue.key);
+
     const existing = await existingTicket(label);
 
     if (existing) {
@@ -670,16 +834,32 @@ async function runProduction(): Promise<void> {
     const severity = getSeverity(issue);
     const mappedSeverity = jiraSeverity(severity);
 
+    const dueDate = calculateDueDate(severity, issue.creationDate);
+
+    if (stakeholderAccountId === undefined) {
+      stakeholderAccountId = await resolveStakeholderAccountId();
+    }
+
     if (dryRun) {
       console.log(
-        `[DRY RUN] Would create ${mappedSeverity.label} ticket for ${issue.key}`,
+        `[DRY RUN] Would create ${mappedSeverity.label} ticket for ${issue.key} | Environment: ${jiraEnvironment} | Stakeholder: ${stakeholderName} | Due: ${dueDate ?? "N/A"}`,
       );
       continue;
     }
 
-    const key = await createTicket(issue, false);
+    const key = await createTicket(issue, false, stakeholderAccountId);
 
-    console.log(`Created ${jiraUrl}/browse/${key} for ${issue.key}`);
+    console.log(
+      `Created ${jiraUrl}/browse/${key} for ${issue.key} | Due: ${dueDate ?? "N/A"}`,
+    );
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (dueDate && dueDate < today) {
+      console.warn(
+        `Remediation due date already passed for ${issue.key}: ${dueDate}`,
+      );
+    }
 
     created += 1;
   }
@@ -691,6 +871,7 @@ async function main(): Promise<void> {
   validateExecution();
 
   console.log(`Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}`);
+
   console.log(`Dry run: ${String(dryRun)}`);
 
   if (testMode) {
