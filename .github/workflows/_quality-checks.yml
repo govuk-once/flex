@@ -198,6 +198,62 @@ jobs:
         run: |
           pnpm exec tsx scripts/sonarToJira.ts
 
+      - name: GUOIT-202 - Discover Jira VM Fields
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.ref == 'GUOIT-202'
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import json
+          import urllib.request
+
+          base = os.environ["JIRA_URL"].rstrip("/")
+          email = os.environ["JIRA_EMAIL"]
+          token = os.environ["JIRA_API_TOKEN"]
+
+          import base64
+          auth = base64.b64encode(f"{email}:{token}".encode()).decode()
+
+          def jira_get(path):
+              req = urllib.request.Request(
+                  base + path,
+                  headers={
+                      "Authorization": f"Basic {auth}",
+                      "Accept": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req) as response:
+                  return json.load(response)
+
+          fields = jira_get("/rest/api/3/field")
+
+          wanted = {
+              "source",
+              "severity",
+              "impact",
+              "stakeholders",
+              "cvss",
+              "epss",
+              "exception review date",
+              "environment",
+          }
+
+          for field in fields:
+              name = field.get("name", "")
+              if name.lower() in wanted:
+                  print(json.dumps({
+                      "name": name,
+                      "id": field.get("id"),
+                      "schema": field.get("schema"),
+                  }, indent=2))
+          PY
+
       - name: GUOIT-202 - Test SAST Jira Ticket
         if: >-
           success() &&
