@@ -1,6 +1,6 @@
 import { domain } from "@flex/sdk";
 
-import { SearchTermSchema, UserSearchesSchema } from "./src/schemas";
+import {SearchTermSchema, UpsertUserSearchResponseSchema, UserSearchesSchema} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "searches",
@@ -22,7 +22,7 @@ export const { config, route, routeContext } = domain({
       target: "udp",
       route: "POST /v1/activity/searches",
       body: UserSearchesSchema,
-      response: UserSearchesSchema,
+      response: UpsertUserSearchResponseSchema,
     },
     udpGetSearches: {
       type: "gateway",

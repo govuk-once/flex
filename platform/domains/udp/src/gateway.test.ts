@@ -756,7 +756,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearches },
         })
-        .reply(200);
+        .reply(200, mockSearches);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
@@ -768,7 +768,7 @@ describe("UDP Service Gateway", () => {
         platform.context(),
       );
 
-      expect(result).toStrictEqual(platform.gatewayResult(200));
+      expect(result).toStrictEqual(platform.gatewayResult(200, { body: mockSearches }));
     });
 
     it("updates to empty selectedSearches when clearing all topics", async ({
@@ -781,7 +781,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearchesEmpty },
         })
-        .reply(200);
+        .reply(200, mockSearchesEmpty);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
@@ -793,7 +793,7 @@ describe("UDP Service Gateway", () => {
         platform.context(),
       );
 
-      expect(result).toStrictEqual(platform.gatewayResult(200));
+      expect(result).toStrictEqual(platform.gatewayResult(200, { body: mockSearchesEmpty }));
     });
 
     it("returns 409 when upstream reports a conflict", async ({

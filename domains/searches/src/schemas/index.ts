@@ -3,4 +3,5 @@ export {
   SearchTermSchema,
   UpdateUserSearchRequestSchema,
   UserSearchesSchema,
+  UpsertUserSearchResponseSchema,
 } from "./search";
