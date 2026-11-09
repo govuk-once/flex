@@ -34,6 +34,7 @@ function required(name: string): string {
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
+
 const sonarUrl = required("SONAR_URL").replace(/\/$/, "");
 const sonarToken = required("SONAR_TOKEN_FLEX");
 const jiraUrl = required("JIRA_URL").replace(/\/$/, "");
@@ -48,19 +49,27 @@ const maxTickets = 5;
 const jiraAuth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString("base64");
 
 function validateExecution(): void {
-  if (process.env.GITHUB_ACTIONS === "true") {
-    if (
-      process.env.GITHUB_EVENT_NAME !== "push" ||
-      process.env.GITHUB_REF !== "refs/heads/main"
-    ) {
+  if (process.env.GITHUB_ACTIONS !== "true") return;
+
+  if (testMode) {
+    const isApprovedPrTest =
+      process.env.GITHUB_EVENT_NAME === "pull_request" &&
+      process.env.GITHUB_HEAD_REF === "GUOIT-202" &&
+      process.env.GITHUB_BASE_REF === "main";
+
+    if (!isApprovedPrTest) {
       throw new Error(
-        "Jira integration must run from a push to main in GitHub Actions",
+        "GitHub test mode is restricted to the GUOIT-202 PR targeting main",
       );
     }
-    if (testMode)
-      throw new Error(
-        "TEST_TICKET is local-only; do not enable it in GitHub Actions",
-      );
+    return;
+  }
+
+  if (
+    process.env.GITHUB_EVENT_NAME !== "push" ||
+    process.env.GITHUB_REF !== "refs/heads/main"
+  ) {
+    throw new Error("Production Jira integration must run from a push to main");
   }
 }
 
@@ -69,18 +78,24 @@ async function sonarGet<T>(
   params: Record<string, string>,
 ): Promise<T> {
   const url = new URL(path, `${sonarUrl}/`);
-  for (const [key, value] of Object.entries(params))
+
+  for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
+  }
+
   const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${sonarToken}`,
       Accept: "application/json",
     },
   });
-  if (!response.ok)
+
+  if (!response.ok) {
     throw new Error(
       `SonarCloud ${path} HTTP ${String(response.status)}: ${await response.text()}`,
     );
+  }
+
   return (await response.json()) as T;
 }
 
@@ -92,11 +107,18 @@ async function jiraRequest(
   headers.set("Authorization", `Basic ${jiraAuth}`);
   headers.set("Accept", "application/json");
   headers.set("Content-Type", "application/json");
-  const response = await fetch(`${jiraUrl}${path}`, { ...options, headers });
-  if (!response.ok)
+
+  const response = await fetch(`${jiraUrl}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
     throw new Error(
       `Jira HTTP ${String(response.status)}: ${await response.text()}`,
     );
+  }
+
   return response;
 }
 
@@ -104,6 +126,7 @@ async function getFindings(): Promise<SonarIssue[]> {
   const findings: SonarIssue[] = [];
   let page = 1;
   let more = true;
+
   while (more) {
     const data = await sonarGet<SonarSearch>("/api/issues/search", {
       organization,
@@ -114,10 +137,12 @@ async function getFindings(): Promise<SonarIssue[]> {
       ps: "100",
       p: String(page),
     });
+
     findings.push(...data.issues);
     more = findings.length < data.total && data.issues.length > 0;
     page += 1;
   }
+
   return findings;
 }
 
@@ -142,17 +167,21 @@ async function getRuleDetails(
     key: ruleKey,
     organization,
   });
-  if (!data.rule) throw new Error(`SonarCloud did not return rule ${ruleKey}`);
+
+  if (!data.rule) {
+    throw new Error(`SonarCloud did not return rule ${ruleKey}`);
+  }
+
   const sections = data.rule.descriptionSections ?? [];
   const fixSections = sections.filter((section) =>
     /fix|solution|remediat/i.test(section.key ?? ""),
   );
+
   const remediation = fixSections
     .map((section) => plainText(section.content ?? section.htmlContent ?? ""))
-    .filter((text) => text.length > 0)
+    .filter((value) => value.length > 0)
     .join("\n\n");
-  // Older SonarCloud rules may only expose a general description. Do not
-  // misrepresent it as specific remediation advice.
+
   return {
     name: data.rule.name ?? ruleKey,
     remediation:
@@ -164,6 +193,7 @@ async function getRuleDetails(
 function locationText(location: SonarLocation): string {
   const file = location.component ?? "Unknown file";
   const line = location.textRange?.startLine;
+
   return [
     file,
     line === undefined ? "" : `:${String(line)}`,
@@ -179,17 +209,23 @@ function trace(issue: SonarIssue): {
   const locations = issue.flows?.find(
     (flow) => (flow.locations?.length ?? 0) >= 2,
   )?.locations;
-  if (locations && locations.length >= 2) {
+
+  const firstLocation = locations?.[0];
+  const lastLocation = locations?.at(-1);
+
+  if (locations && firstLocation && lastLocation) {
     return {
-      source: locationText(locations[0]),
-      sink: locationText(locations[locations.length - 1]),
+      source: locationText(firstLocation),
+      sink: locationText(lastLocation),
       flow: locations.map(locationText),
     };
   }
+
   const primary = [
     issue.component,
     issue.line === undefined ? "" : `:${String(issue.line)}`,
   ].join("");
+
   return {
     source: "Source-to-sink trace not supplied for this finding",
     sink: `Primary finding location (not a verified sink): ${primary}`,
@@ -203,35 +239,52 @@ function issueLabel(key: string): string {
     .update(identifier)
     .digest("hex")
     .slice(0, 24);
+
   return `sonar-${hash}`;
 }
 
 async function existingTicket(label: string): Promise<string | undefined> {
   const url = new URL("/rest/api/3/search/jql", `${jiraUrl}/`);
+
   url.searchParams.set(
     "jql",
     `project = ${jiraProject} AND labels = "${label}"`,
   );
   url.searchParams.set("fields", "labels");
   url.searchParams.set("maxResults", "100");
+
   const response = await jiraRequest(`${url.pathname}${url.search}`);
   const data = (await response.json()) as JiraSearch;
+
   return data.issues.find((item) => item.fields?.labels?.includes(label))?.key;
 }
 
 const paragraph = (value: string): AdfNode => ({
   type: "paragraph",
-  content: [{ type: "text", text: value.slice(0, 12000) || " " }],
+  content: [
+    {
+      type: "text",
+      text: value.slice(0, 12000) || " ",
+    },
+  ],
 });
+
 const heading = (value: string): AdfNode => ({
   type: "heading",
   attrs: { level: 3 },
   content: [{ type: "text", text: value }],
 });
+
 const bullet = (value: string): AdfNode => ({
   type: "bulletList",
-  content: [{ type: "listItem", content: [paragraph(value)] }],
+  content: [
+    {
+      type: "listItem",
+      content: [paragraph(value)],
+    },
+  ],
 });
+
 const divider = (): AdfNode => ({ type: "rule" });
 
 function getSeverity(issue: SonarIssue): string {
@@ -243,6 +296,13 @@ function getSeverity(issue: SonarIssue): string {
   );
 }
 
+function requiredRule(issue: SonarIssue): string {
+  if (!issue.rule) {
+    throw new Error(`Finding ${issue.key} has no rule key`);
+  }
+  return issue.rule;
+}
+
 async function createTicket(
   issue: SonarIssue,
   isTest: boolean,
@@ -251,24 +311,29 @@ async function createTicket(
   const rule = await getRuleDetails(ruleKey);
   const traced = trace(issue);
   const severity = getSeverity(issue);
+
   const link = new URL("/project/issues", `${sonarUrl}/`);
   link.searchParams.set("id", sonarProject);
   link.searchParams.set("issues", issue.key);
+
   const content: AdfNode[] = [
     heading("SOURCE"),
     bullet(traced.source),
     paragraph(`Scanner: SonarCloud SAST | Project: ${sonarProject}`),
     divider(),
+
     heading("SINK"),
     bullet(traced.sink),
     ...(traced.flow.length > 0
       ? [paragraph(`Reported execution flow: ${traced.flow.join(" -> ")}`)]
       : []),
     divider(),
+
     heading("Vulnerability Summary"),
     paragraph(`Severity: ${severity} | Type: ${rule.name} (${ruleKey})`),
     paragraph(issue.message),
     divider(),
+
     heading("Details"),
     paragraph(`SonarCloud issue: ${issue.key}`),
     paragraph(`Branch: main | Component: ${issue.component}`),
@@ -281,17 +346,20 @@ async function createTicket(
         ]
       : []),
     divider(),
+
     heading("Proposed Remediation"),
     paragraph(rule.remediation),
     paragraph(
       `Review the complete rule guidance in SonarCloud: ${sonarUrl}/coding_rules?open=${encodeURIComponent(ruleKey)}&rule_key=${encodeURIComponent(ruleKey)}`,
     ),
     divider(),
+
     heading("DEFINITION OF DONE"),
     paragraph(
       "☐ Finding resolved according to the vulnerability management process",
     ),
   ];
+
   const labels = [
     "sonarcloud",
     "security",
@@ -299,7 +367,11 @@ async function createTicket(
     "automated",
     issueLabel(issue.key),
   ];
-  if (isTest) labels.push("guoit-202-sast-template-test-v2");
+
+  if (isTest) {
+    labels.push("guoit-202-sast-template-test-v2");
+  }
+
   const payload = {
     fields: {
       project: { key: jiraProject },
@@ -311,76 +383,99 @@ async function createTicket(
         .join("")
         .slice(0, 255),
       labels,
-      description: { type: "doc", version: 1, content },
+      description: {
+        type: "doc",
+        version: 1,
+        content,
+      },
     },
   };
+
   const response = await jiraRequest("/rest/api/3/issue", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  return ((await response.json()) as JiraCreated).key;
-}
 
-function requiredRule(issue: SonarIssue): string {
-  if (!issue.rule) throw new Error(`Finding ${issue.key} has no rule key`);
-  return issue.rule;
+  return ((await response.json()) as JiraCreated).key;
 }
 
 async function main(): Promise<void> {
   validateExecution();
+
   console.log(
-    `Mode: ${testMode ? "LOCAL TEMPLATE TEST" : "MAIN FINDINGS"}; dry run: ${String(dryRun)}`,
+    `Mode: ${testMode ? "TEMPLATE TEST" : "MAIN FINDINGS"}; dry run: ${String(dryRun)}`,
   );
+
   if (testMode) {
     const ruleKey = required("TEST_SONAR_RULE_KEY");
+
     const issue: SonarIssue = {
       key: "GUOIT-202-SAST-TEMPLATE-V2",
       message: "Template verification - simulated security finding",
       component: "govuk-once_flex:libs/testing/src/mock-security.ts",
       line: 42,
       rule: ruleKey,
-      impacts: [{ softwareQuality: "SECURITY", severity: "HIGH" }],
+      impacts: [
+        {
+          softwareQuality: "SECURITY",
+          severity: "HIGH",
+        },
+      ],
     };
+
     const label = issueLabel(issue.key);
     const existing = await existingTicket(label);
+
     if (existing) {
       console.log(`Test ticket already exists: ${jiraUrl}/browse/${existing}`);
       return;
     }
-    // Check rule retrieval before creating any Jira ticket.
+
     const rule = await getRuleDetails(ruleKey);
     console.log(`Rule: ${rule.name}`);
     console.log(`Remediation preview: ${rule.remediation.slice(0, 400)}`);
+
     if (dryRun) {
       console.log("[DRY RUN] Would create one SAST template test ticket");
       return;
     }
+
     const key = await createTicket(issue, true);
     console.log(`Created test ticket: ${jiraUrl}/browse/${key}`);
     return;
   }
 
   const findings = await getFindings();
+
   console.log(
     `Found ${String(findings.length)} HIGH/BLOCKER security findings on main`,
   );
+
   let created = 0;
+
   for (const issue of findings) {
     const label = issueLabel(issue.key);
     const existing = await existingTicket(label);
+
     if (existing) {
       console.log(`Already tracked: ${issue.key} -> ${existing}`);
       continue;
     }
+
     if (dryRun) {
       console.log(`[DRY RUN] Would create ticket for ${issue.key}`);
       continue;
     }
+
     if (created >= maxTickets) break;
+
     const key = await createTicket(issue, false);
+
     console.log(`Created ${jiraUrl}/browse/${key} for ${issue.key}`);
+
     created += 1;
   }
+
   console.log(`Created ${String(created)} Jira tickets`);
 }
 
