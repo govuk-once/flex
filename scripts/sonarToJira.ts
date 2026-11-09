@@ -282,7 +282,7 @@ async function main(): Promise<void> {
       break;
     }
 
-    const ticketKey = await createTicket(issue);
+    const ticketKey = await createTicket(label);
 
     console.log(`Created Jira ticket: ${jiraUrl}/browse/${ticketKey}`);
 
