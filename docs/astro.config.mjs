@@ -31,6 +31,11 @@ export default defineConfig({
           label: "Introduction",
           items: [
             { label: "Overview", slug: "" },
+            {
+              label: "Contributing",
+              link: "https://github.com/govuk-once/flex/blob/main/.github/CONTRIBUTING.md",
+              attrs: { target: "_blank" },
+            },
             { autogenerate: { directory: "introduction" } },
           ],
         },
