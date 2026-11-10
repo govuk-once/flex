@@ -1,30 +1,53 @@
-import { createFixtureBuilder } from "@flex/testing";
 import { SearchTerm, UserSearches } from "@schemas/search";
 
-const searchTimestamp = "2026-11-04T13:45:00Z";
-
-const baseSearch: SearchTerm = {
-  term: "a search",
-  timestamp: searchTimestamp,
+export const existingSearchTerm0: SearchTerm = {
+  term: "existing search 0",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm1: SearchTerm = {
+  term: "existing search 1",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm2: SearchTerm = {
+  term: "existing search 2",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm3: SearchTerm = {
+  term: "existing search 3",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm4: SearchTerm = {
+  term: "existing search 4",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm5: SearchTerm = {
+  term: "existing search 5",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm6: SearchTerm = {
+  term: "existing search 6",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm7: SearchTerm = {
+  term: "existing search 7",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm8: SearchTerm = {
+  term: "existing search 8",
+  timestamp: "2026-11-04T13:45:00Z",
+};
+export const existingSearchTerm9: SearchTerm = {
+  term: "existing search 9",
+  timestamp: "2026-11-04T13:45:00Z",
 };
 
-export const createSearch = createFixtureBuilder<SearchTerm>(baseSearch);
-
-const baseSearches: UserSearches = {
-  searches: {
-    selectedSearches: [
-      { term: "search 1", timestamp: searchTimestamp },
-      { term: "search 2", timestamp: searchTimestamp },
-    ],
-  },
+export const newSearchTerm: SearchTerm = {
+  term: "a new search",
+  timestamp: "2026-11-04T13:45:00Z",
 };
 
-const emptySearches: UserSearches = {
+export const baseSearches: UserSearches = {
   searches: {
     selectedSearches: [],
   },
 };
-
-export const createSearches = createFixtureBuilder<UserSearches>(baseSearches);
-export const createEmptySearches =
-  createFixtureBuilder<UserSearches>(emptySearches);

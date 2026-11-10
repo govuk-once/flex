@@ -11,9 +11,7 @@ import {
   domainNotificationsResponseSchema,
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
-import {
-  domainSearchesSchema,
-} from "./src/schemas/domain/searches";
+import { domainSearchesSchema } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
   inboundUpdateSelectedTopicsRequestSchema,

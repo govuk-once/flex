@@ -65,7 +65,6 @@ export const handler = route(
       body: newUserSearches,
     });
 
-    logger.info("***DEBUG*** Post to udp returned", JSON.stringify(postResult));
     if (!postResult.ok) {
       const { status, message, body } = postResult.error;
 
@@ -89,9 +88,9 @@ export const handler = route(
       throw new createHttpError.BadGateway();
     }
 
-    logger.info("Successfully updated searches", { data: postResult.data });
+    logger.info("Successfully updated searches");
 
-    return { status: 204 };
+    return { status: 201 };
   },
 );
 

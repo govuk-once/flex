@@ -17,7 +17,7 @@ describe.runIf(isDomainDeployed(searchesConfig))("Searches domain", () => {
         timestamp: "2026-11-04T13:45:00Z",
       };
 
-      it("returns 204 with updated user searches", async ({
+      it("returns 201 with updated user searches", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -27,7 +27,8 @@ describe.runIf(isDomainDeployed(searchesConfig))("Searches domain", () => {
           body: searchTerm,
         });
 
-        expect(result.status).toBe(204);
+        expect(result.status).toBe(201);
+        expect(result.body).toBe(undefined);
       });
 
       it("returns 401 when no auth is provided", async ({ cloudfront }) => {

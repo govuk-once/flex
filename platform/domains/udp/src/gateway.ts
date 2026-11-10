@@ -12,7 +12,6 @@ import {
   topicsResponseSchema,
   upsertTopicsResponseSchema,
 } from "./schemas/remote/topics";
-import {userSearchesSchema} from "./schemas/domain/searches";
 
 export const handler = createHandler({
   clients: ({ consumerConfig }) => ({
@@ -216,8 +215,8 @@ export const handler = createHandler({
       body,
       headers: { requestingServiceUserId },
     }) => {
-      return api.post("/v1/activity/searches", {
-        schema: userSearchesSchema,
+      const result = await api.post("/v1/activity/searches", {
+        schema: UpsertSearchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
@@ -226,6 +225,7 @@ export const handler = createHandler({
         },
         body: { data: body },
       });
+      return mapApiResult(result, ({ data }) => data);
     },
     "GET /v1/activity/searches": async ({
       clients: { api },
