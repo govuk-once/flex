@@ -195,6 +195,7 @@ jobs:
           JIRA_URL: ${{ secrets.JIRA_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          DRY_RUN: 'false'
         run: |
           pnpm exec tsx scripts/sonarToJira.ts
 
