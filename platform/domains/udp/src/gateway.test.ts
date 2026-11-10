@@ -66,12 +66,11 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
-const searchTimestamp = new Date();
 const mockSearches = {
   searches: {
     selectedSearches: [
-      { term: "a term 1", timestamp: searchTimestamp.toISOString() },
-      { term: "a term 2", timestamp: searchTimestamp.toISOString() },
+      { term: "a term 1", timestamp: "2026-11-04T13:45:00Z" },
+      { term: "a term 2", timestamp: "2026-11-04T13:45:00Z" },
     ],
   },
 };
@@ -756,7 +755,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearches },
         })
-        .reply(200, mockSearches);
+        .reply(200, mockUpstreamSearches);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
@@ -783,7 +782,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearchesEmpty },
         })
-        .reply(200, mockSearchesEmpty);
+        .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
