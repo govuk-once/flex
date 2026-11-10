@@ -1,6 +1,10 @@
 import { domain } from "@flex/sdk";
 
-import {SearchTermSchema, UpsertUserSearchResponseSchema, UserSearchesSchema} from "./src/schemas";
+import {
+  SearchTermSchema,
+  UpsertUserSearchResponseSchema,
+  UserSearchesSchema,
+} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "searches",
