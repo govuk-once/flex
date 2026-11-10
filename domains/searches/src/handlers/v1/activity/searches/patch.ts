@@ -29,10 +29,13 @@ export const handler = route(
       const { status } = result.error;
 
       if (status === 404) {
-        logger.info("Existing search data not found, setting up new collection for user", {
-          status,
-          userId: auth.userId,
-        });
+        logger.info(
+          "Existing search data not found, setting up new collection for user",
+          {
+            status,
+            userId: auth.userId,
+          },
+        );
         existingUserSearches = {
           searches: {
             selectedSearches: [],

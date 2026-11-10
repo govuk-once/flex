@@ -2,6 +2,6 @@ export type { SearchTerm, UserSearches } from "./search";
 export {
   SearchTermSchema,
   UpdateUserSearchRequestSchema,
-  UserSearchesSchema,
   UpsertUserSearchResponseSchema,
+  UserSearchesSchema,
 } from "./search";
