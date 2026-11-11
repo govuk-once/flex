@@ -49,6 +49,9 @@ Alarms publish to one of two SNS topics in `eu-west-2`, `flex-alerts-critical` a
 | `flex-alerts-critical` | `flex-alerts-critical-<env>` | `/<env>/flex-param/monitoring/criticalSlackChannelId` |
 | `flex-alerts-warning` | `flex-alerts-<env>` | `/<env>/flex-param/monitoring/slackChannelId` |
 | `<stage>-flex-alerts-relay-health` (`us-east-1`) | `flex-alerts-critical-<stage>` | `/<env>/flex-param/monitoring/criticalSlackChannelId` |
+| `flex-alerts-critical` (production only) | `flex-alerts-critical-production-govuk-connect` | `/production/flex-param/monitoring/connectCriticalSlackChannelId` |
+
+In production the critical topic is also posted to the GOV.UK Connect critical alarms channel shared with the other Connect services, through a second configuration, so those teams see a FLEX outage without joining the FLEX channel. The channel keeps the same critical only rule as the FLEX channel.
 
 The relay health topic bypasses the relay on purpose: if the relay is broken, its own alarms must still arrive, so they go straight to the critical channel. Amazon Q allows one configuration per Slack channel per AWS account, so the topic is added to the critical channel configuration owned by FlexCore rather than getting one of its own; FlexCore builds the topic ARN from its deterministic name. This subscription exists in development, staging and production only; personal and PR stages have the relay health alarms but no Slack route for them.
 

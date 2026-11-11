@@ -156,6 +156,19 @@ export class FlexCoreStack extends BaseStack {
       }),
     );
 
+    if (env === Environment.production) {
+      createSlackNotifications(this, {
+        id: "ConnectCriticalSlackChannel",
+        channelConfigurationName: `flex-alerts-critical-${stage}-govuk-connect`,
+        topicKey: alarmTopicKey,
+        topics: [criticalTopic],
+        slackWorkspaceId,
+        slackChannelId: this.import(
+          ENV_KEYS.MonitoringConnectCriticalSlackChannelId,
+        ),
+      });
+    }
+
     // Release notifications are published once per pipeline run, so the
     // topic and channel config only exist in the development environment
     if (env === Environment.development) {
