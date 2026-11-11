@@ -96,7 +96,6 @@ const mockUpstreamTopics = { data: mockTopics };
 const mockTopicsEmpty = { topics: { selectedTopics: [] } };
 const mockUpstreamTopicsEmpty = { data: mockTopicsEmpty };
 
-// Pins `Date` to `mockNow` for the tests in the enclosing describe block.
 const useFixedDate = () => {
   it.beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
