@@ -26,9 +26,9 @@
     "@flex/config": "workspace:*",
     "@flex/dvsa-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
+    "@types/aws-lambda": "8.10.164",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.7.0",
+    "eslint": "10.14.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
