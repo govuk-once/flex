@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { logger } from "@flex/logging";
+import { addSecretValue, logger } from "@flex/logging";
 import type { SecretsManagerRotationEvent } from "aws-lambda";
 
 import { authenticate, changePassword, requestNewApiKey } from "./dvla-client";
@@ -68,7 +68,7 @@ async function handleCreateSecret(
   const CHECKPOINT_STAGE = "AWSPENDING_CHECKPOINT";
 
   const currentSecretString = await getSecretValue(secretId, "AWSCURRENT");
-  const currentSecret = DvlaSecretSchema.parse(JSON.parse(currentSecretString));
+  const currentSecret = parseDvlaSecret(currentSecretString);
 
   // Check if the final AWSPENDING version (tagged with the rotation token) already exists
   try {
@@ -77,7 +77,7 @@ async function handleCreateSecret(
       "AWSPENDING",
       token,
     );
-    const finalPending = DvlaSecretSchema.parse(JSON.parse(finalPendingString));
+    const finalPending = parseDvlaSecret(finalPendingString);
 
     if (finalPending.apiKey !== currentSecret.apiKey) {
       logger.info(
@@ -93,7 +93,7 @@ async function handleCreateSecret(
   let checkpointSecret: typeof currentSecret | undefined;
   try {
     const checkpointString = await getSecretValue(secretId, CHECKPOINT_STAGE);
-    checkpointSecret = DvlaSecretSchema.parse(JSON.parse(checkpointString));
+    checkpointSecret = parseDvlaSecret(checkpointString);
   } catch {
     // No checkpoint exists
   }
@@ -130,6 +130,7 @@ async function handleCreateSecret(
     currentApiKey: currentSecret.apiKey,
     jwt,
   });
+  addSecretValue(newApiKey);
 
   await putSecretValue(
     secretId,
@@ -143,8 +144,16 @@ async function handleCreateSecret(
   logger.info("createSecret: new password and API key stored in AWSPENDING");
 }
 
+function parseDvlaSecret(secretString: string): DvlaSecret {
+  const secret = DvlaSecretSchema.parse(JSON.parse(secretString));
+  addSecretValue(secret.apiPassword);
+  addSecretValue(secret.apiKey);
+  return secret;
+}
+
 async function rotatePassword(currentSecret: DvlaSecret): Promise<string> {
   const newPassword = generatePassword(20);
+  addSecretValue(newPassword);
 
   await changePassword({
     apiUrl: currentSecret.apiUrl,
@@ -165,7 +174,7 @@ async function handleTestSecret(
     "AWSPENDING",
     token,
   );
-  const pendingSecret = DvlaSecretSchema.parse(JSON.parse(pendingSecretString));
+  const pendingSecret = parseDvlaSecret(pendingSecretString);
 
   await authenticate({
     apiUrl: pendingSecret.apiUrl,

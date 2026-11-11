@@ -1,3 +1,4 @@
+import { addSecretValue } from "@flex/logging";
 import { it } from "@flex/testing";
 import type { SecretsManagerRotationEvent } from "aws-lambda";
 import { describe, expect, vi } from "vitest";
@@ -157,6 +158,29 @@ describe("handler", () => {
           wellKnownJwkUrl: "https://dvla.example.com/.well-known/jwks.json",
         }),
         token,
+      );
+    });
+
+    it("registers loaded and generated credentials for log redaction", async () => {
+      vi.mocked(getSecretValue)
+        .mockResolvedValueOnce(currentSecret)
+        .mockRejectedValueOnce(new Error("not found"))
+        .mockRejectedValueOnce(new Error("not found"));
+
+      vi.mocked(generatePassword).mockReturnValue("new-random-password1");
+      vi.mocked(authenticate).mockResolvedValue("new-jwt-token");
+      vi.mocked(requestNewApiKey).mockResolvedValue("new-api-key-value");
+
+      await handler(createEvent("createSecret"));
+
+      const registered = vi.mocked(addSecretValue).mock.calls.flat();
+      expect(registered).toEqual(
+        expect.arrayContaining([
+          "current-password", // pragma: allowlist secret
+          "current-api-key", // pragma: allowlist secret
+          "new-random-password1", // pragma: allowlist secret
+          "new-api-key-value", // pragma: allowlist secret
+        ]),
       );
     });
 

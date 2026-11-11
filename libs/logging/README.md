@@ -108,7 +108,9 @@ childLogger.info("Processing request");
 
 ## `addSecretValue`
 
-Registers a runtime secret value for redaction in log output. Any occurrence of the registered value in log strings will be replaced with `***REDACTED***`.
+Registers a runtime secret value for redaction in log output. Any occurrence of the registered value in log strings, including messages and error text, will be replaced with `***REDACTED***`. Objects and arrays are walked so a JSON secret registers each of its string values.
+
+The SDK calls this for every `secret` resource a route loads, so domain handlers get it for free. Call it yourself for secrets fetched by any other means.
 
 ### Usage
 
@@ -116,7 +118,7 @@ Registers a runtime secret value for redaction in log output. Any occurrence of 
 import { addSecretValue } from "@flex/logging";
 
 addSecretValue(databasePassword);
-addSecretValue(apiKey);
+addSecretValue({ apiKey, apiPassword });
 ```
 
 ---

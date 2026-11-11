@@ -18,7 +18,7 @@ FLEX uses three layers of protection to ensure sensitive data is never persisted
 
 ## Sanitiser
 
-The sanitiser ([`libs/logging/src/sanitizer.ts`](/libs/logging/src/sanitizer.ts)) runs on every log entry via the `FlexLogFormatter`. It processes all attributes recursively, including nested objects and arrays.
+The sanitiser ([`libs/logging/src/sanitizer.ts`](/libs/logging/src/sanitizer.ts)) runs on every log entry as the logger's JSON replacer. It processes the message and all attributes recursively, including nested objects and arrays.
 
 ### Secret patterns (always redacted)
 
@@ -28,7 +28,14 @@ These are never bypassed, regardless of environment or toggle settings.
 
 **By value:** JWT tokens (strings starting with `eyJ...`)
 
-**By runtime registration:** Values registered with `addSecretValue()` are replaced inline wherever they appear in log strings.
+**By runtime registration:** Secret values registered with `addSecretValue()` are replaced inline wherever they appear in log strings, including inside messages and error text. The SDK registers every `secret` resource a route loads before the handler runs, so domain code does not need to do anything. A JSON secret registers each of its string values. Secrets fetched by any other means (for example platform functions that call Secrets Manager directly) must be registered by the code that loads them:
+
+```typescript
+import { addSecretValue } from "@flex/logging";
+
+const secret = await getSecretValue(secretId);
+addSecretValue(secret);
+```
 
 ### PII patterns (redacted by default)
 

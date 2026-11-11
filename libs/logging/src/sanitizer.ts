@@ -55,11 +55,11 @@ const piiValuePatterns: Array<RegExp> = [
   /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, // IPv4 addresses
 ];
 
-const secretValues: string[] = [];
+const secretValues = new Set<string>();
 let secretValuesRegex: RegExp | null = null;
 
 function rebuildSecretRegex(): void {
-  if (!secretValues.length) {
+  if (!secretValues.size) {
     secretValuesRegex = null;
     return;
   }
@@ -143,23 +143,30 @@ export function addSensitivePattern(pattern: RegExp) {
 }
 
 /**
- * Adds a secret value to be redacted from logs.
- * Call this after loading secrets to ensure they are sanitized.
+ * Adds a secret value to be redacted from logs. Objects and arrays are walked
+ * so a JSON secret registers each of its string values.
+ *
+ * The SDK calls this for every `secret` resource a route loads. Call it
+ * yourself for secrets fetched by any other means.
  */
 export function addSecretValue(value: unknown): void {
-  if (value === null || value === undefined) {
+  if (typeof value === "string") {
+    registerSecretString(value);
     return;
   }
 
-  if (typeof value !== "string") {
-    return;
+  if (value && typeof value === "object") {
+    Object.values(value).forEach(addSecretValue);
   }
+}
 
+function registerSecretString(value: string): void {
   const stringValue = value.trim();
-  if (stringValue && !secretValues.includes(stringValue)) {
-    secretValues.push(stringValue);
-    rebuildSecretRegex();
-  }
+  if (!stringValue) return;
+
+  const sizeBefore = secretValues.size;
+  secretValues.add(stringValue);
+  if (secretValues.size > sizeBefore) rebuildSecretRegex();
 }
 
 /**

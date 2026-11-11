@@ -77,7 +77,7 @@ export const handler = route("GET /v1/topics", async ({ logger }) => {
 - It carries the request's `x-correlation-id`, so you can follow one request across Lambdas.
 - Its level comes from the route's `logLevel`, then `common.logLevel`, then `INFO`. In `production` it is always set to `INFO`.
 - At `DEBUG` or `TRACE` the whole incoming event is logged too. This never happens in `production`.
-- Redaction is partial. It matches field names such as `authorization`, `token`, `password` and `email`, and some values such as JWTs and email addresses. Anything else is logged as it is, so don't log data you wouldn't want to see in a log. See [Log redaction](/flex/observability/log-redaction/).
+- Redaction is partial. It matches field names such as `authorization`, `token`, `password` and `email`, and some values such as JWTs and email addresses. The value of every `secret` resource the route loads is redacted wherever it appears. Anything else is logged as it is, so don't log data you wouldn't want to see in a log. See [Log redaction](/flex/observability/log-redaction/).
 
 Log the outcome, not the payload. `userId` is pseudonymous and safe to log.
 
