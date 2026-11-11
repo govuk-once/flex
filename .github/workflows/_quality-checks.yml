@@ -292,6 +292,7 @@ jobs:
             EXCLUSIONS+=",UdpServiceGatewayFunctionAC8DA85C.policy-analysis-CheckAccessNotGranted"
             EXCLUSIONS+=",TravelServiceGatewayFunction6F065CFF.policy-analysis-CheckAccessNotGranted"
             EXCLUSIONS+=",DvlaServiceGatewayFunction043A0515.policy-analysis-CheckAccessNotGranted"
+            EXCLUSIONS+=",DvsaServiceGatewayFunctionB1F9C6DB.policy-analysis-CheckAccessNotGranted"
 
             cfn-policy-validator check-access-not-granted \
               --template-path "$template" \

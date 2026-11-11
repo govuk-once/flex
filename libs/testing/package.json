@@ -42,6 +42,6 @@
     "tough-cookie": "6.0.2",
     "typescript": "6.0.3",
     "vitest": "4.1.10",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   }
 }
