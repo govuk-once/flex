@@ -41,6 +41,7 @@ const mockConsumerConfig = {
   region: "eu-west-2",
   externalId: "test-external-id",
 };
+const mockNow = new Date(timestamp);
 const mockHeaders = {
   apiKey: { "x-api-key": mockConsumerConfig.apiKey }, // pragma: allowlist secret
   withServiceUserId: (requestingServiceUserId: string) => ({
@@ -48,15 +49,16 @@ const mockHeaders = {
     "requesting-service": "app",
     "requesting-service-user-id": requestingServiceUserId,
   }),
-};
-const mockNow = new Date(timestamp);
-const mockHeadersRequestedAt = {
-  ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-  "requested-at": mockNow.toISOString(),
-};
-const mockHeadersApiKeyRequestedAt = {
-  ...mockHeaders.apiKey,
-  "requested-at": mockNow.toISOString(),
+  apiKeyRequestedAt: {
+    "x-api-key": mockConsumerConfig.apiKey,
+    "requested-at": mockNow.toISOString(),
+  },
+  withServiceUserIdRequestedAt: {
+    "x-api-key": mockConsumerConfig.apiKey,
+    "requesting-service": "app",
+    "requesting-service-user-id": mockRequestingServiceUserId,
+    "requested-at": mockNow.toISOString(),
+  },
 };
 const mockUpstreamGroups = {
   data: {
@@ -320,7 +322,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post(`/v1/identity/${mockService}/${mockIdentity}`, {
-          headers: mockHeadersApiKeyRequestedAt,
+          headers: mockHeaders.apiKeyRequestedAt,
           body: { appId: mockUserId, expiresAt: mockExpiresAt },
         })
         .reply(201);
@@ -351,7 +353,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/notifications", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: {
             data: { consentStatus: "accepted" },
             requestingServiceUserId: mockRequestingServiceUserId,
@@ -388,7 +390,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/user", {
-          headers: mockHeadersApiKeyRequestedAt,
+          headers: mockHeaders.apiKeyRequestedAt,
           body: { pushId: mockPushId, appId: mockUserId },
         })
         .reply(200, mockCreatedUser);
@@ -529,7 +531,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopics },
         })
         .reply(200, mockUpstreamTopics);
@@ -556,7 +558,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopicsEmpty },
         })
         .reply(200, mockUpstreamTopicsEmpty);
@@ -583,7 +585,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopics },
         })
         .reply(409);
@@ -658,7 +660,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/groups", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: {
             data: {
               groups: mockGroupsBody,
@@ -754,7 +756,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearches },
         })
         .reply(200, mockUpstreamSearches);
@@ -781,7 +783,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(200, mockUpstreamSearchesEmpty);
@@ -808,7 +810,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(409);
