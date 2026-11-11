@@ -73,7 +73,7 @@ Serialized Error: { code: 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY' }
 
 It usually appears when you run the E2E tests on a network that inspects HTTPS traffic, such as a corporate proxy. The proxy re-signs each connection with its own certificate authority (CA). Your operating system trusts that CA, but Node.js uses its own built-in list and doesn't, so it rejects the connection.
 
-If you see this error, reach out to the Flex team. They can tell you the right fix for your network.
+If you see this error, reach out to the [Flex platform team](https://gds.slack.com/archives/C09H3EPRQJJ). They can tell you the right fix for your network.
 
 Don't set `NODE_TLS_REJECT_UNAUTHORIZED=0` to get past this. It turns off certificate checking for everything Node.js does.
 
@@ -84,4 +84,5 @@ The error looks like this:
 ```text
 TypeError: code.charCodeAt is not a function
 ```
+
 This appears when running E2E tests and your AWS credentials have expired. Follow the steps above to re-authenticate and re-export the credentials and try again.

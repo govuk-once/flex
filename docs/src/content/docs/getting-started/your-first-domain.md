@@ -471,7 +471,7 @@ pnpm --filter @flex/hello-domain test:e2e
 ```
 
 :::caution[Certificate error?]
-If the run fails with `unable to get local issuer certificate`, your network is probably inspecting HTTPS traffic. See [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate), and reach out to the Flex team.
+If the run fails with `unable to get local issuer certificate`, your network is probably inspecting HTTPS traffic. See [Troubleshooting](/flex/getting-started/troubleshooting/#unable-to-get-local-issuer-certificate), and reach out to the [Flex platform team](https://gds.slack.com/archives/C09H3EPRQJJ).
 :::
 
 - The E2E setup finds your stack from its CloudFormation outputs and fetches its own token. You don't need to export one.
@@ -512,4 +512,4 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 - Title it with the Jira key followed by a [Conventional Commits](https://github.com/govuk-once/flex/blob/main/.github/CONTRIBUTING.md) message, such as `FLEX-123 feat(hello): add greeting route`. Pull requests are squash merged, so the title becomes the commit on `main` and sets the next release version. If there is no Jira ticket, use `FLEX-000`.
 - Use the pull request template and link the Jira ticket in the description.
-- `CODEOWNERS` sends every pull request under `domains/` to the Flex team for review.
+- `CODEOWNERS` sends pull requests under `domains/` to the Flex developers group for review. Platform team review is optional, unless you also change files outside `domains/`.

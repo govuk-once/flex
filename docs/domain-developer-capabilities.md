@@ -32,7 +32,7 @@ A domain is a folder under `domains/<name>` containing a single `domain.config.t
 External partners are reached only through FLEX owned service gateways, currently DVLA, UDP and UNS. Two cases matter for planning:
 
 1. The data lives behind an existing gateway, or in another FLEX domain: fully self service. Declare an integration in the config and call it from the handler; CI validates the target exists.
-2. The data needs a new external partner: this is FLEX team work (gateway config, handler, CDK wiring and secrets provisioning in a separate repo). Budget for a cross team dependency, not a domain PR.
+2. The data needs a new external partner: this is [FLEX platform team](https://gds.slack.com/archives/C09H3EPRQJJ) work (gateway config, handler, CDK wiring and secrets provisioning in a separate repo). Budget for a cross team dependency, not a domain PR.
 
 ## Handler patterns
 
@@ -46,7 +46,7 @@ A reasonable default is to start with passthrough and introduce transformation o
 
 ## Current limits
 
-FLEX is an expanding platform, so the limits below describe the platform today rather than permanent decisions. Where a genuine need arises (storage being the obvious example), it is something that can be added; raise it with the FLEX team early so it can be planned rather than worked around.
+FLEX is an expanding platform, so the limits below describe the platform today rather than permanent decisions. Where a genuine need arises (storage being the obvious example), it is something that can be added; raise it with the [FLEX platform team](https://gds.slack.com/archives/C09H3EPRQJJ) early so it can be planned rather than worked around.
 
 - Synchronous HTTP only. There is no queue, event, schedule or cron surface, so anything asynchronous needs either a platform conversation or a redesign around request/response.
 - No domain owned persistence. There is no DynamoDB or S3 for domains. State must live with a partner service behind a gateway or be derivable per request. Note the gateways are strict contracts, not general stores: UDP, the only user data store, accepts only its fixed shapes (identity links with optional service tokens, a push id and a notification consent status), so arbitrary domain data cannot be parked there.
@@ -54,14 +54,14 @@ FLEX is an expanding platform, so the limits below describe the platform today r
 - Private routes carry no user identity; the caller must pass an explicit user id header.
 - Log level settings are ignored in production, so debug verbosity cannot be raised there.
 - No CORS configuration exists, which is fine for the app, currently the only client.
-- Onboarding is not yet self service: the scaffolding CLI is still in development and does not yet produce a working domain (copy `domains/example` or the small `local-council` domain instead) and CODEOWNERS routes every domain PR through the FLEX team.
+- Onboarding is not yet self service: the scaffolding CLI is still in development and does not yet produce a working domain (copy `domains/example` or the small `local-council` domain instead) and CODEOWNERS currently assigns `/domains/` to the FLEX developers group until domain teams onboard.
 
 ## Delivery workflow
 
-No local API emulation exists; unit tests run the full SDK pipeline in process using `@flex/testing` fixtures, with outbound calls intercepted by nock. `pnpm run deploy` gives a personal stack, each PR gets an ephemeral `pr-<n>` environment with per domain E2E, and merges flow development to staging to production with manual approval gates. PRs need conventional commit titles and a FLEX team review.
+No local API emulation exists; unit tests run the full SDK pipeline in process using `@flex/testing` fixtures, with outbound calls intercepted by nock. `pnpm run deploy` gives a personal stack, each PR gets an ephemeral `pr-<n>` environment with per domain E2E, and merges flow development to staging to production with manual approval gates. PRs need conventional commit titles and review from the code owners of the paths they change.
 
 ## Deciding how to proceed
 
 - New read or write functionality over data already behind a gateway: a new domain (or a route in an existing one) is self service and quick; `local-council` is the best small template.
-- Functionality needing a new external data source: raise it with the FLEX team first, since the gateway is the long pole.
-- Functionality needing stored state, background work or events: not currently expressible in FLEX; the design should be challenged or the gap raised with the FLEX team before committing.
+- Functionality needing a new external data source: raise it with the [FLEX platform team](https://gds.slack.com/archives/C09H3EPRQJJ) first, since the gateway is the long pole.
+- Functionality needing stored state, background work or events: not currently expressible in FLEX; the design should be challenged or the gap raised with the [FLEX platform team](https://gds.slack.com/archives/C09H3EPRQJJ) before committing.
