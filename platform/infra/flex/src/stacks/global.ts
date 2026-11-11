@@ -435,7 +435,7 @@ export class FlexGlobalStack extends BaseStack {
             },
           ],
         },
-        "/.well-known/dvla/jwks.json": {
+        "/.well-known/jwks.json": {
           origin: apiOrigin,
           viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
