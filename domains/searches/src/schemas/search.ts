@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const SearchTermSchema = z.object({
   term: NonEmptyString,
-  timestamp: NonEmptyString,
+  timestamp: z.iso.datetime(),
 });
 export type SearchTerm = z.infer<typeof SearchTermSchema>;
 

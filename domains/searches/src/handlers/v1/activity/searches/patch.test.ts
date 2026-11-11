@@ -2,16 +2,8 @@ import { createFixtureBuilder, it, userId } from "@flex/testing";
 import { SearchTerm, UserSearches } from "@schemas/search";
 import {
   baseSearches,
-  existingSearchTerm0,
-  existingSearchTerm1,
-  existingSearchTerm2,
-  existingSearchTerm3,
-  existingSearchTerm4,
-  existingSearchTerm5,
-  existingSearchTerm6,
-  existingSearchTerm7,
-  existingSearchTerm8,
-  existingSearchTerm9,
+  makeFilledSearches,
+  makeSearchTerm,
   newSearchTerm,
 } from "@tests/fixtures";
 import { describe, expect } from "vitest";
@@ -25,8 +17,12 @@ describe("PATCH /v1/activity/searches", () => {
     http,
     sdk,
   }) => {
-    baseSearches.searches.selectedSearches.push(existingSearchTerm0);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm1);
+    baseSearches.searches.selectedSearches.push(
+      makeSearchTerm("search term 0"),
+    );
+    baseSearches.searches.selectedSearches.push(
+      makeSearchTerm("search term 1"),
+    );
     const oldSearches = createFixtureBuilder<UserSearches>(baseSearches);
     baseSearches.searches.selectedSearches.push(newSearchTerm);
     const newSearches = createFixtureBuilder<UserSearches>(baseSearches);
@@ -95,10 +91,7 @@ describe("PATCH /v1/activity/searches", () => {
     http,
     sdk,
   }) => {
-    const newSearchTerm: SearchTerm = {
-      term: "a new search",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
+    const newSearchTerm: SearchTerm = makeSearchTerm("a new search");
 
     const emptySearches: UserSearches = {
       searches: {
@@ -136,19 +129,10 @@ describe("PATCH /v1/activity/searches", () => {
     http,
     sdk,
   }) => {
-    baseSearches.searches.selectedSearches.push(existingSearchTerm0);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm1);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm2);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm3);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm4);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm5);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm6);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm7);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm8);
-    baseSearches.searches.selectedSearches.push(existingSearchTerm9);
-    const oldSearches = createFixtureBuilder<UserSearches>(baseSearches);
-    baseSearches.searches.selectedSearches.push(newSearchTerm);
-    const newSearches = createFixtureBuilder<UserSearches>(baseSearches);
+    const userSearches = makeFilledSearches(10);
+    const oldSearches = createFixtureBuilder<UserSearches>(userSearches);
+    userSearches.searches.selectedSearches.push(newSearchTerm);
+    const newSearches = createFixtureBuilder<UserSearches>(userSearches);
 
     http
       .gateway("udp")
@@ -178,40 +162,16 @@ describe("PATCH /v1/activity/searches", () => {
     http,
     sdk,
   }) => {
-    const existingSearchTerm0: SearchTerm = {
-      term: "existing search 0",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
-    const existingSearchTerm1: SearchTerm = {
-      term: "existing search 1",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
-    const existingSearchTerm2: SearchTerm = {
-      term: "MatChIng sEarch terM",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
-    const existingSearchTerm3: SearchTerm = {
-      term: "existing search 3",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
-    const existingSearchTerm4: SearchTerm = {
-      term: "existing search 4",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
-
-    const newSearchTerm: SearchTerm = {
-      term: "matchIng sEaRch Term",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
+    const newSearchTerm: SearchTerm = makeSearchTerm("matchIng sEaRch Term");
 
     const baseSearches: UserSearches = {
       searches: {
         selectedSearches: [
-          existingSearchTerm0,
-          existingSearchTerm1,
-          existingSearchTerm2,
-          existingSearchTerm3,
-          existingSearchTerm4,
+          makeSearchTerm("search 0"),
+          makeSearchTerm("MatChIng sEarch terM"),
+          makeSearchTerm("search 2"),
+          makeSearchTerm("search 3"),
+          makeSearchTerm("search 4"),
         ],
       },
     };
@@ -246,10 +206,9 @@ describe("PATCH /v1/activity/searches", () => {
   it("returns 400 without new term when existing searches are updated with too long term", async ({
     sdk,
   }) => {
-    const newSearchTerm: SearchTerm = {
-      term: "a new search that is too long to be stored in the data store. oh it is very very long indeed. so long in fact that it might just wrap around the line. and it is full of garbage afgn jlri3qt42 v u928t jgrlt 42i regjflab feal",
-      timestamp: "2026-11-04T13:45:00Z",
-    };
+    const newSearchTerm: SearchTerm = makeSearchTerm(
+      "a new search that is too long to be stored in the data store. oh it is very very long indeed. so long in fact that it might just wrap around the line. and it is full of garbage afgn jlri3qt42 v u928t jgrlt 42i regjflab feal",
+    );
 
     const result = await handler(
       sdk.event.patch(endpoint, { auth: userId, body: newSearchTerm }),

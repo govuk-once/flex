@@ -1,10 +1,8 @@
 import { z } from "zod";
 
-import { userSearchesSchema } from "../domain/searches";
+import { userSearchesSchema } from "../common";
 
-export const UpsertSearchesResponseSchema = z.object({
+export const SearchesResponseSchema = z.object({
   data: userSearchesSchema,
 });
-export type UpsertSearchesResponse = z.infer<
-  typeof UpsertSearchesResponseSchema
->;
+export type SearchesResponse = z.infer<typeof SearchesResponseSchema>;

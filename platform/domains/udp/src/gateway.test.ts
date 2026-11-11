@@ -772,7 +772,7 @@ describe("UDP Service Gateway", () => {
       );
     });
 
-    it("updates to empty selectedSearches when clearing all topics", async ({
+    it("updates to empty selectedSearches when clearing all searches", async ({
       http,
       platform,
     }) => {
