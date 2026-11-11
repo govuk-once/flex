@@ -8,7 +8,6 @@ const MAX_SEARCH_TERMS = 10;
 export const handler = route(
   "PATCH /v1/activity/searches",
   async ({ auth, body, integrations, logger }) => {
-    // Terms over MAX_SEARCH_TERM_LENGTH are rejected
     if (body.term.length > MAX_SEARCH_TERM_LENGTH) {
       const status = 400;
       logger.error("Specified search is too long, not saving search", {
@@ -77,12 +76,7 @@ export const handler = route(
         throw new createHttpError.Conflict();
       }
 
-      const fullMessage =
-        "Failed to update user searches (" +
-        message +
-        "), (" +
-        JSON.stringify(body) +
-        ")";
+      const fullMessage = `Failed to update user searches (${message}), (${JSON.stringify(body)})`;
       logger.error(fullMessage, { status });
 
       throw new createHttpError.BadGateway();
@@ -98,22 +92,18 @@ const consolidateSearches = (
   existingSearches: SearchTerm[],
   newSearch: SearchTerm,
 ): SearchTerm[] => {
-  // Remove any existing (case-insensitive) match
-  const indexToRemove: number = existingSearches.findIndex(
-    (search) => search.term.toLowerCase() === newSearch.term.toLowerCase(),
+  // Clone the incoming collection, removing a match if present
+  const updatedSearches = existingSearches.filter(
+    (search) => search.term.toLowerCase() !== newSearch.term.toLowerCase(),
   );
 
-  if (indexToRemove >= 0) {
-    existingSearches.splice(indexToRemove, 1);
-  }
-
   // If array already has MAX_SEARCH_TERMS entries, remove the oldest
-  if (existingSearches.length === MAX_SEARCH_TERMS) {
-    existingSearches.splice(0, 1);
+  if (updatedSearches.length === MAX_SEARCH_TERMS) {
+    updatedSearches.splice(0, 1);
   }
 
   // Push on the new term
-  existingSearches.push(newSearch);
+  updatedSearches.push(newSearch);
 
-  return existingSearches;
+  return updatedSearches;
 };

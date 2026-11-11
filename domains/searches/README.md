@@ -32,13 +32,16 @@ Alternatively, run `pnpm <command>` from within `domains/searches/`.
 
 ### Search Terms
 
-`Search.term` is currently validated as a non-empty string of no more than 100 characters length. The term must be unique on a case-insensitive basis.
+`Search.term` is currently validated as:
+
+- The term must be a non-empty string of no more than 100 characters length
+- The term must be unique on a case-insensitive basis within the collection of terms for the user.
 
 ---
 
 ## PATCH `/v1/activity/searches`
 
-Adds a search to the existing collection according to the rules for search terms above.
+Adds a search to the existing collection. The search term is validated according to the rules for `Search Terms` above.
 
 ### Request
 
