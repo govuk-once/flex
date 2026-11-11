@@ -13,16 +13,12 @@ export function requestingUserHeaders(
 }
 
 /**
- * {@link requestingUserHeaders} plus `requested-at`, which the upstream uses to order
- * write requests. `now` is injectable so callers can pin the timestamp.
+ * Adds `requested-at`, which the upstream uses to order write requests, to any
+ * set of headers. `now` is injectable so callers can pin the timestamp.
  */
-export function requestingUserWriteHeaders(
-  apiKey: string,
-  requestingServiceUserId: string,
+export function withRequestedAt<T extends Readonly<Record<string, string>>>(
+  headers: T,
   now: Date = new Date(),
 ) {
-  return {
-    ...requestingUserHeaders(apiKey, requestingServiceUserId),
-    "requested-at": now.toISOString(),
-  };
+  return { ...headers, "requested-at": now.toISOString() };
 }

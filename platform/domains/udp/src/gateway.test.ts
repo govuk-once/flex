@@ -54,6 +54,10 @@ const mockHeadersRequestedAt = {
   ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
   "requested-at": mockNow.toISOString(),
 };
+const mockHeadersApiKeyRequestedAt = {
+  ...mockHeaders.apiKey,
+  "requested-at": mockNow.toISOString(),
+};
 const mockUpstreamGroups = {
   data: {
     groups: [
@@ -317,7 +321,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post(`/v1/identity/${mockService}/${mockIdentity}`, {
-          headers: mockHeaders.apiKey,
+          headers: mockHeadersApiKeyRequestedAt,
           body: { appId: mockUserId, expiresAt: mockExpiresAt },
         })
         .reply(201);
@@ -373,6 +377,8 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/users", () => {
+    useFixedDate();
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -383,7 +389,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/user", {
-          headers: mockHeaders.apiKey,
+          headers: mockHeadersApiKeyRequestedAt,
           body: { pushId: mockPushId, appId: mockUserId },
         })
         .reply(200, mockCreatedUser);
