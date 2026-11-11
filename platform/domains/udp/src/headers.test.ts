@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { requestingUserHeaders, requestingUserWriteHeaders } from "./headers";
+import { requestingUserHeaders, withRequestedAt } from "./headers";
 
 const apiKey = "test-api-key"; // pragma: allowlist secret
 const userId = "test-user-id";
@@ -15,16 +15,16 @@ describe("requestingUserHeaders", () => {
   });
 });
 
-describe("requestingUserWriteHeaders", () => {
+describe("withRequestedAt", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("adds requested-at from the supplied time", () => {
+  it("keeps the given headers and adds requested-at from the supplied time", () => {
     const now = new Date("2026-09-14T12:00:00.000Z");
 
-    expect(requestingUserWriteHeaders(apiKey, userId, now)).toStrictEqual({
-      ...requestingUserHeaders(apiKey, userId),
+    expect(withRequestedAt({ "x-api-key": apiKey }, now)).toStrictEqual({
+      "x-api-key": apiKey,
       "requested-at": "2026-09-14T12:00:00.000Z",
     });
   });
@@ -33,9 +33,9 @@ describe("requestingUserWriteHeaders", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-14T12:00:00.000Z"));
 
-    const first = requestingUserWriteHeaders(apiKey, userId);
+    const first = withRequestedAt({ "x-api-key": apiKey });
     vi.advanceTimersByTime(1000);
-    const second = requestingUserWriteHeaders(apiKey, userId);
+    const second = withRequestedAt({ "x-api-key": apiKey });
 
     expect(first["requested-at"]).toBe("2026-09-14T12:00:00.000Z");
     expect(second["requested-at"]).toBe("2026-09-14T12:00:01.000Z");
