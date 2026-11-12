@@ -7,4 +7,5 @@ export {
   SearchTermSchema,
   UpdateUserSearchRequestSchema,
   UserSearchesSchema,
+  UserSearchResponseSchema,
 } from "./schemas/search";

@@ -339,7 +339,7 @@ describe("Exercise PATCH utility processing", () => {
     const testIndex = 4;
     const oldSearches: UserSearches = makeFilledSearches(arrayLimit);
     const oldMatch = oldSearches.searches.selectedSearches[testIndex];
-    const event = new Date("05 October 2011 14:48 UTC");
+    const event = new Date();
     const newSearch: SearchTerm = {
       // @ts-expect-error - ignored because the indexed term may technically be undefined but here is expected to exist
       term: oldMatch.term.toUpperCase(),

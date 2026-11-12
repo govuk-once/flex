@@ -2,8 +2,8 @@ import { domain } from "@flex/sdk";
 
 import {
   SearchTermSchema,
-  UpsertUserSearchResponseSchema,
   UserSearchesSchema,
+  UserSearchResponseSchema,
 } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
@@ -26,7 +26,7 @@ export const { config, route, routeContext } = domain({
       target: "udp",
       route: "POST /v1/activity/searches",
       body: UserSearchesSchema,
-      response: UpsertUserSearchResponseSchema,
+      response: UserSearchResponseSchema,
     },
     udpGetSearches: {
       type: "gateway",
@@ -44,6 +44,14 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostSearches", "udpGetSearches"],
             body: SearchTermSchema,
+          },
+        },
+        GET: {
+          public: {
+            name: "retrieve-searches",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetSearches"],
+            response: UserSearchesSchema,
           },
         },
       },
