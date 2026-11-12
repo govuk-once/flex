@@ -62,6 +62,18 @@ describe("FlexGlobalStack certificate alarm", () => {
     });
   });
 
+  it("creates a well-known S3 bucket for the CloudFront distribution", () => {
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      BucketName: "flex-staging-well-known",
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      },
+    });
+  });
+
   it("alarms on the CloudFront certificate through the critical relay", () => {
     const certificateId = Object.keys(
       template.findResources("AWS::CertificateManager::Certificate"),

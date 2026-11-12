@@ -20,7 +20,8 @@
     "docs:serve": "tsx scripts/serveDocs.ts",
     "docs:dev": "pnpm --filter @flex/docs dev",
     "validate:integrations": "pnpm --filter @platform/flex run validate:integrations",
-    "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage"
+    "validate:macie-coverage": "pnpm --filter @platform/flex run validate:macie-coverage",
+    "jwks:upload": "tsx scripts/uploadWellKnownJwks.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1091.0",

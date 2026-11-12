@@ -57,6 +57,11 @@ jobs:
       - name: Deploy FLEX AWS infra
         run: cd ./platform/infra/flex && pnpm run deploy
 
+      - name: Upload well-known JWKS to S3
+        env:
+          STAGE: ${{ env.STAGE }}
+        run: pnpm run jwks:upload
+
       - name: Platform E2E tests
         if: inputs.STAGE != 'production'
         env:
