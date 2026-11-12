@@ -29,3 +29,5 @@ export const userSearchesSchema = z.object({
     selectedSearches: selectedSearchesSchema,
   }),
 });
+
+export const domainSearchesSchema = userSearchesSchema;

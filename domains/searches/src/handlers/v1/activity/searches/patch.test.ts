@@ -319,7 +319,7 @@ describe("Exercise PATCH utility processing", () => {
       arrayLimit,
     );
 
-    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).toHaveLength(arrayLimit - 1);
     expect(newSearches).not.toContain(oldestSearch);
   });
 
@@ -331,7 +331,7 @@ describe("Exercise PATCH utility processing", () => {
       arrayLimit,
     );
 
-    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).toHaveLength(arrayLimit - 1);
     expect(newSearches).toContain(oldestSearch);
   });
 
@@ -351,7 +351,7 @@ describe("Exercise PATCH utility processing", () => {
       newSearch,
     );
 
-    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).toHaveLength(arrayLimit - 1);
     expect(newSearches).not.toContain(oldMatch);
   });
 });
