@@ -1,9 +1,10 @@
 import { SearchTerm, UserSearches } from "@schemas/search";
 
 export const makeSearchTerm = (term: string): SearchTerm => {
+  const event = new Date("05 October 2011 14:48 UTC");
   return {
     term,
-    timestamp: "2026-11-04T13:45:00Z",
+    timestamp: event.toISOString(),
   };
 };
 
