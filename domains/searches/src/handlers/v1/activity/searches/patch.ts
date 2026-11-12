@@ -49,13 +49,22 @@ export const handler = route(
       }
     }
 
-    const newSearches: SearchTerm[] = consolidateSearches(
+    const uniqueSearches: SearchTerm[] = removeDuplicates(
       existingUserSearches.searches.selectedSearches,
       body,
     );
+
+    const limitedSearches: SearchTerm[] = limitArraySize(
+      uniqueSearches,
+      MAX_SEARCH_TERMS,
+    );
+
+    // Push on the new term
+    limitedSearches.push(body);
+
     const newUserSearches: UserSearches = {
       searches: {
-        selectedSearches: newSearches,
+        selectedSearches: limitedSearches,
       },
     };
 
@@ -88,22 +97,24 @@ export const handler = route(
   },
 );
 
-const consolidateSearches = (
+export const removeDuplicates = (
   existingSearches: SearchTerm[],
   newSearch: SearchTerm,
 ): SearchTerm[] => {
-  // Clone the incoming collection, removing a match if present
-  const updatedSearches = existingSearches.filter(
+  // Clone the incoming collection, removing any matches if present
+  return existingSearches.filter(
     (search) => search.term.toLowerCase() !== newSearch.term.toLowerCase(),
   );
+};
 
-  // If array already has MAX_SEARCH_TERMS entries, remove the oldest
-  if (updatedSearches.length === MAX_SEARCH_TERMS) {
-    updatedSearches.splice(0, 1);
+export const limitArraySize = (
+  existingSearches: SearchTerm[],
+  maxArraySize: number,
+): SearchTerm[] => {
+  // If array already has maxArraySize entries, remove the oldest
+  if (existingSearches.length === maxArraySize) {
+    existingSearches.splice(0, 1);
   }
 
-  // Push on the new term
-  updatedSearches.push(newSearch);
-
-  return updatedSearches;
+  return existingSearches;
 };

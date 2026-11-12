@@ -8,7 +8,7 @@ import {
 } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
-import { handler } from "./patch";
+import { handler, limitArraySize, removeDuplicates } from "./patch";
 
 describe("PATCH /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
@@ -305,5 +305,53 @@ describe("PATCH /v1/activity/searches", () => {
     );
 
     expect(result.statusCode).toBe(502);
+  });
+});
+
+describe("Exercise PATCH utility processing", () => {
+  const arrayLimit = 10;
+
+  it("limitArraySize: removes the oldest term when there are already the maximum held", () => {
+    const oldSearches = makeFilledSearches(arrayLimit);
+    const oldestSearch = oldSearches.searches.selectedSearches[0];
+    const newSearches = limitArraySize(
+      oldSearches.searches.selectedSearches,
+      arrayLimit,
+    );
+
+    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).not.toContain(oldestSearch);
+  });
+
+  it("limitArraySize: leave array the same when there are less than the maximum held", () => {
+    const oldSearches = makeFilledSearches(arrayLimit - 1);
+    const oldestSearch = oldSearches.searches.selectedSearches[0];
+    const newSearches = limitArraySize(
+      oldSearches.searches.selectedSearches,
+      arrayLimit,
+    );
+
+    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).toContain(oldestSearch);
+  });
+
+  it("removeDuplicates: replaces and existing matching term with the new term when existing searches are updated", () => {
+    const testIndex = 4;
+    const oldSearches: UserSearches = makeFilledSearches(arrayLimit);
+    const oldMatch = oldSearches.searches.selectedSearches[testIndex];
+    const event = new Date("05 October 2011 14:48 UTC");
+    const newSearch: SearchTerm = {
+      // @ts-expect-error - ignored because the indexed term may technically be undefined but here is expected to exist
+      term: oldMatch.term.toUpperCase(),
+      timestamp: event.toISOString(),
+    };
+
+    const newSearches = removeDuplicates(
+      oldSearches.searches.selectedSearches,
+      newSearch,
+    );
+
+    expect(newSearches.length).toBe(arrayLimit - 1);
+    expect(newSearches).not.toContain(oldMatch);
   });
 });
