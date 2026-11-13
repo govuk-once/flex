@@ -548,9 +548,9 @@ export class FlexGlobalStack extends BaseStack {
     );
 
     return new Bucket(this, "WellKnownBucket", {
-      // NOSONAR S6249 enforceSSL applied globally via EnforceS3Https
       bucketName: `flex-${stage}-well-known`,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
       encryption: BucketEncryption.S3_MANAGED,
       removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
       autoDeleteObjects: !persistent,
