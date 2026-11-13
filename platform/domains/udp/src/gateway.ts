@@ -241,5 +241,21 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data);
     },
+    "POST /v1/activity/pages": ({
+      clients: { api },
+      resources: { consumerConfig },
+      body,
+      headers: { requestingServiceUserId },
+    }) => {
+      return api.post("/v1/activity/pages", {
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+          "requested-at": new Date().toISOString(),
+        },
+        body: { data: body },
+      });
+    },
   },
 });

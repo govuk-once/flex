@@ -79,6 +79,21 @@ const mockSearchesEmpty = { searches: { selectedSearches: [] } };
 const mockUpstreamSearches = { data: mockSearches };
 const mockUpstreamSearchesEmpty = { data: mockSearchesEmpty };
 
+const mockPages = [
+  {
+    id: "abcd1234",
+    title: "Page title",
+    date: 1760000000,
+    url: "https://www.gov.uk/page-one",
+  },
+  {
+    id: "dcba4321",
+    title: "Another page",
+    date: 1760000100,
+    url: "https://www.gov.uk/page-two",
+  },
+];
+
 const mockTopics = {
   topics: {
     selectedTopics: [
@@ -823,6 +838,72 @@ describe("UDP Service Gateway", () => {
           body: { message: "Conflict" },
         }),
       );
+    });
+  });
+
+  describe("POST /v1/activity/pages", () => {
+    const now = new Date("2026-09-14T12:00:00.000Z");
+    const [mockPage] = mockPages;
+    const mockHeadersRequestedAt = {
+      ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+      "requested-at": now.toISOString(),
+    };
+
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(now);
+    });
+
+    it.afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("stores a visited page for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/activity/pages", {
+          headers: mockHeadersRequestedAt,
+          body: { data: mockPage },
+        })
+        .reply(200);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/activity/pages", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockPage,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(platform.gatewayResult(200));
+    });
+  });
+
+  describe("POST /v1/activity/pages validation", () => {
+    const [mockPage] = mockPages;
+
+    it.for([
+      { reason: "url is invalid", page: { ...mockPage, url: "not-a-url" } },
+      { reason: "date is not an integer", page: { ...mockPage, date: 1.5 } },
+      { reason: "id is missing", page: { ...mockPage, id: undefined } },
+    ])("returns 400 when $reason", async ({ page }, { platform }) => {
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/activity/pages", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: page,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toMatchObject({ statusCode: 400 });
     });
   });
 });
