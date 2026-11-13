@@ -1,7 +1,7 @@
 import { SearchTerm, UserSearches } from "@schemas/search";
 
 export const makeSearchTerm = (term: string): SearchTerm => {
-  const event = new Date("05 October 2011 14:48 UTC");
+  const event = new Date();
   return {
     term,
     timestamp: event.toISOString(),
@@ -9,11 +9,14 @@ export const makeSearchTerm = (term: string): SearchTerm => {
 };
 
 export const newSearchTerm: SearchTerm = makeSearchTerm("a new search");
+export const testSearchTermBase: string = "search term";
 
 export const makeFilledSearches = (terms: number): UserSearches => {
   const selectedSearches: SearchTerm[] = [];
   for (let i = 0; i < terms; i++) {
-    selectedSearches.push(makeSearchTerm(`search term (${i.toString()})`));
+    selectedSearches.push(
+      makeSearchTerm(`(${testSearchTermBase}) (${i.toString()})`),
+    );
   }
 
   return {

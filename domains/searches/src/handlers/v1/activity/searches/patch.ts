@@ -2,8 +2,8 @@ import { route } from "@domain";
 import { SearchTerm, UserSearches } from "@schemas/search";
 import createHttpError from "http-errors";
 
-const MAX_SEARCH_TERM_LENGTH = 100;
-const MAX_SEARCH_TERMS = 10;
+export const MAX_SEARCH_TERM_LENGTH = 100;
+export const MAX_SEARCH_TERMS = 10;
 
 export const handler = route(
   "PATCH /v1/activity/searches",
@@ -101,7 +101,6 @@ export const removeDuplicates = (
   existingSearches: SearchTerm[],
   newSearch: SearchTerm,
 ): SearchTerm[] => {
-  // Clone the incoming collection, removing any matches if present
   return existingSearches.filter(
     (search) => search.term.toLowerCase() !== newSearch.term.toLowerCase(),
   );
@@ -111,7 +110,6 @@ export const limitArraySize = (
   existingSearches: SearchTerm[],
   maxArraySize: number,
 ): SearchTerm[] => {
-  // If array already has maxArraySize entries, remove the oldest
   if (existingSearches.length === maxArraySize) {
     existingSearches.splice(0, 1);
   }
