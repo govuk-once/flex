@@ -10,11 +10,14 @@ export const makeSearchTerm = (term: string): SearchTerm => {
 };
 
 export const newSearchTerm: SearchTerm = makeSearchTerm("a new search");
+export const testSearchTermBase: string = "search term";
 
 export const makeFilledSearches = (terms: number): UserSearches => {
   const selectedSearches: SearchTerm[] = [];
   for (let i = 0; i < terms; i++) {
-    selectedSearches.push(makeSearchTerm(`search term (${i.toString()})`));
+    selectedSearches.push(
+      makeSearchTerm(`(${testSearchTermBase}) (${i.toString()})`),
+    );
   }
 
   return {
