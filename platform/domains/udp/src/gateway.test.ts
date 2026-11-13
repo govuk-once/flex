@@ -1,5 +1,5 @@
 import type { HttpFixture } from "@flex/testing";
-import { it } from "@flex/testing";
+import { it, timestamp } from "@flex/testing";
 import { describe, expect, vi } from "vitest";
 
 import { handler } from "./gateway";
@@ -41,6 +41,7 @@ const mockConsumerConfig = {
   region: "eu-west-2",
   externalId: "test-external-id",
 };
+const mockNow = new Date(timestamp);
 const mockHeaders = {
   apiKey: { "x-api-key": mockConsumerConfig.apiKey }, // pragma: allowlist secret
   withServiceUserId: (requestingServiceUserId: string) => ({
@@ -48,6 +49,16 @@ const mockHeaders = {
     "requesting-service": "app",
     "requesting-service-user-id": requestingServiceUserId,
   }),
+  apiKeyRequestedAt: {
+    "x-api-key": mockConsumerConfig.apiKey,
+    "requested-at": mockNow.toISOString(),
+  },
+  withServiceUserIdRequestedAt: {
+    "x-api-key": mockConsumerConfig.apiKey,
+    "requesting-service": "app",
+    "requesting-service-user-id": mockRequestingServiceUserId,
+    "requested-at": mockNow.toISOString(),
+  },
 };
 const mockUpstreamGroups = {
   data: {
@@ -90,6 +101,17 @@ const mockTopics = {
 const mockUpstreamTopics = { data: mockTopics };
 const mockTopicsEmpty = { topics: { selectedTopics: [] } };
 const mockUpstreamTopicsEmpty = { data: mockTopicsEmpty };
+
+const useFixedDate = () => {
+  it.beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(mockNow);
+
+    return () => {
+      vi.useRealTimers();
+    };
+  });
+};
 
 const stubConsumerConfig = (http: HttpFixture) =>
   http
@@ -284,18 +306,14 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/identity/:serviceName/:identifier", () => {
-    const now = new Date("2026-08-13T00:00:00.000Z");
+    useFixedDate();
+
     const sixtyDaysInSeconds = 60 * 24 * 60 * 60;
-    const mockExpiresAt = Math.floor(now.getTime() / 1000) + sixtyDaysInSeconds;
+    const mockExpiresAt =
+      Math.floor(mockNow.getTime() / 1000) + sixtyDaysInSeconds;
 
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers();
-      vi.setSystemTime(now);
-
-      return () => {
-        vi.useRealTimers();
-      };
     });
 
     it("links the service identity for the requesting user", async ({
@@ -305,7 +323,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post(`/v1/identity/${mockService}/${mockIdentity}`, {
-          headers: mockHeaders.apiKey,
+          headers: mockHeaders.apiKeyRequestedAt,
           body: { appId: mockUserId, expiresAt: mockExpiresAt },
         })
         .reply(201);
@@ -323,6 +341,8 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/notifications", () => {
+    useFixedDate();
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -334,7 +354,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/notifications", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: {
             data: { consentStatus: "accepted" },
             requestingServiceUserId: mockRequestingServiceUserId,
@@ -359,6 +379,8 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/users", () => {
+    useFixedDate();
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -369,7 +391,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/user", {
-          headers: mockHeaders.apiKey,
+          headers: mockHeaders.apiKeyRequestedAt,
           body: { pushId: mockPushId, appId: mockUserId },
         })
         .reply(200, mockCreatedUser);
@@ -497,20 +519,10 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/topics", () => {
-    const now = new Date("2026-09-14T12:00:00.000Z");
-    const mockHeadersRequestedAt = {
-      ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-      "requested-at": now.toISOString(),
-    };
+    useFixedDate();
 
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(now);
-    });
-
-    it.afterEach(() => {
-      vi.useRealTimers();
     });
 
     it("returns updated selectedTopics for the requesting user", async ({
@@ -520,7 +532,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopics },
         })
         .reply(200, mockUpstreamTopics);
@@ -547,7 +559,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopicsEmpty },
         })
         .reply(200, mockUpstreamTopicsEmpty);
@@ -574,7 +586,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/topics", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockTopics },
         })
         .reply(409);
@@ -630,6 +642,8 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/groups", () => {
+    useFixedDate();
+
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -647,7 +661,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/groups", {
-          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: {
             data: {
               groups: mockGroupsBody,
@@ -730,20 +744,10 @@ describe("UDP Service Gateway", () => {
   });
 
   describe("POST /v1/activity/searches", () => {
-    const now = new Date("2026-09-14T12:00:00.000Z");
-    const mockHeadersRequestedAt = {
-      ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
-      "requested-at": now.toISOString(),
-    };
+    useFixedDate();
 
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(now);
-    });
-
-    it.afterEach(() => {
-      vi.useRealTimers();
     });
 
     it("updates to selectedSearches for the requesting user", async ({
@@ -753,7 +757,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearches },
         })
         .reply(200);
@@ -778,7 +782,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(200);
@@ -803,7 +807,7 @@ describe("UDP Service Gateway", () => {
       http
         .url(mockConsumerConfig.apiUrl)
         .post("/v1/activity/searches", {
-          headers: mockHeadersRequestedAt,
+          headers: mockHeaders.withServiceUserIdRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(409);

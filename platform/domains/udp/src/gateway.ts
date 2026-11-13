@@ -1,6 +1,7 @@
 import { createRestClient, mapApiResult } from "@flex/service-gateway";
 
 import { createHandler } from "../gateway.config";
+import { requestingUserHeaders, withRequestedAt } from "./headers";
 import { identitiesResponseSchema } from "./schemas/domain/identity";
 import {
   GroupsResponseSchema,
@@ -45,11 +46,7 @@ export const handler = createHandler({
       pathParams: { serviceName },
     }) => {
       return api.get("/v1/identity/exchange", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
+        headers: requestingUserHeaders(consumerConfig.apiKey, userId),
         query: { requiredService: serviceName },
       });
     },
@@ -60,11 +57,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/notifications", {
         schema: notificationsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
@@ -78,7 +74,7 @@ export const handler = createHandler({
       const SIXTY_DAYS_IN_SECONDS = 60 * 24 * 60 * 60;
 
       return api.post(`/v1/identity/${serviceName}/${identifier}`, {
-        headers: { "x-api-key": consumerConfig.apiKey },
+        headers: withRequestedAt({ "x-api-key": consumerConfig.apiKey }),
         body: {
           ...body,
           expiresAt: Math.floor(Date.now() / 1000) + SIXTY_DAYS_IN_SECONDS,
@@ -93,11 +89,9 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/notifications", {
         schema: notificationsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: withRequestedAt(
+          requestingUserHeaders(consumerConfig.apiKey, requestingServiceUserId),
+        ),
         body: { data: body, requestingServiceUserId },
       });
 
@@ -109,7 +103,7 @@ export const handler = createHandler({
       body,
     }) => {
       return api.post("/v1/user", {
-        headers: { "x-api-key": consumerConfig.apiKey },
+        headers: withRequestedAt({ "x-api-key": consumerConfig.apiKey }),
         body: { pushId: body.pushId, appId: body.userId },
       });
     },
@@ -143,12 +137,9 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/topics", {
         schema: upsertTopicsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-          "requested-at": new Date().toISOString(),
-        },
+        headers: withRequestedAt(
+          requestingUserHeaders(consumerConfig.apiKey, requestingServiceUserId),
+        ),
         body: { data: body },
       });
 
@@ -161,11 +152,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/topics", {
         schema: topicsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
@@ -177,11 +167,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/groups", {
         schema: GroupsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data.groups);
@@ -194,11 +183,9 @@ export const handler = createHandler({
     }) => {
       const result = await api.post("/v1/groups", {
         schema: UpsertGroupsResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: withRequestedAt(
+          requestingUserHeaders(consumerConfig.apiKey, requestingServiceUserId),
+        ),
         body: {
           data: {
             groups: body,
@@ -216,12 +203,9 @@ export const handler = createHandler({
       headers: { requestingServiceUserId },
     }) => {
       return api.post("/v1/activity/searches", {
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-          "requested-at": new Date().toISOString(),
-        },
+        headers: withRequestedAt(
+          requestingUserHeaders(consumerConfig.apiKey, requestingServiceUserId),
+        ),
         body: { data: body },
       });
     },
@@ -232,11 +216,10 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/activity/searches", {
         schema: searchesResponseSchema,
-        headers: {
-          "x-api-key": consumerConfig.apiKey,
-          "requesting-service": "app",
-          "requesting-service-user-id": requestingServiceUserId,
-        },
+        headers: requestingUserHeaders(
+          consumerConfig.apiKey,
+          requestingServiceUserId,
+        ),
       });
 
       return mapApiResult(result, ({ data }) => data);
