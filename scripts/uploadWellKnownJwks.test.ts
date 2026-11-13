@@ -66,24 +66,28 @@ describe("uploadWellKnownJwks", () => {
     expect(s3Calls).toHaveLength(1);
 
     const putCall = s3Calls.at(0)?.args[0].input;
-    expect(putCall.Bucket).toBe("flex-development-well-known");
-    expect(putCall.Key).toBe(".well-known/jwks.json");
-    expect(putCall.ContentType).toBe("application/json");
-    expect(putCall.CacheControl).toBe(
+    expect(putCall).toBeDefined();
+
+    expect(putCall?.Bucket).toBe("flex-development-well-known");
+    expect(putCall?.Key).toBe(".well-known/jwks.json");
+    expect(putCall?.ContentType).toBe("application/json");
+    expect(putCall?.CacheControl).toBe(
       "public, max-age=86400, stale-while-revalidate=3600",
     );
 
-    const body = JSON.parse(putCall.Body as string) as JwksResponse;
+    const body = JSON.parse(putCall?.Body as string) as JwksResponse;
     expect(body.keys).toHaveLength(1);
 
     const key = body.keys.at(0);
-    expect(key.kty).toBe("RSA");
-    expect(key.alg).toBe("RSA-OAEP-256");
-    expect(key.use).toBe("enc");
-    expect(key.key_ops).toEqual(["encrypt", "wrapKey"]);
-    expect(key.kid).toMatch(/^[a-f0-9]{64}$/);
-    expect(key.n).toBeDefined();
-    expect(key.e).toBeDefined();
+    expect(key).toBeDefined();
+
+    expect(key?.kty).toBe("RSA");
+    expect(key?.alg).toBe("RSA-OAEP-256");
+    expect(key?.use).toBe("enc");
+    expect(key?.key_ops).toEqual(["encrypt", "wrapKey"]);
+    expect(key?.kid).toMatch(/^[a-f0-9]{64}$/);
+    expect(key?.n).toBeDefined();
+    expect(key?.e).toBeDefined();
   });
 
   it("supports multiple KMS key ARNs", async () => {
@@ -115,7 +119,7 @@ describe("uploadWellKnownJwks", () => {
     expect(s3Calls).toHaveLength(1);
 
     const body = JSON.parse(
-      s3Calls.at(0)?.args[0].input.Body as string,
+      s3Calls.at(0)?.args[0].input.Body as string ?? "{}",
     ) as JwksResponse;
     expect(body.keys).toHaveLength(2);
 
