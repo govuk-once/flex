@@ -119,7 +119,7 @@ describe("uploadWellKnownJwks", () => {
     expect(s3Calls).toHaveLength(1);
 
     const body = JSON.parse(
-      s3Calls.at(0)?.args[0].input.Body as string ?? "{}",
+      s3Calls.at(0)?.args[0].input.Body as string,
     ) as JwksResponse;
     expect(body.keys).toHaveLength(2);
 
