@@ -101,6 +101,7 @@ const maxTickets = 5;
 
 const jiraEnvironment = "Staging";
 const stakeholderName = "Richard Dunn";
+const jiraWorkstreamOptionId = "10230"; // Flex
 
 const stakeholderAccountIdOverride =
   process.env.JIRA_STAKEHOLDER_ACCOUNT_ID?.trim();
@@ -109,6 +110,7 @@ const jiraFields = {
   source: "customfield_10545",
   severity: "customfield_10546",
   stakeholders: "customfield_10547",
+  workstream: "customfield_10847",
   impact: "customfield_10004",
   cvss: "customfield_10512",
   epss: "customfield_10479",
@@ -685,6 +687,10 @@ async function createTicket(
 
     [jiraFields.severity]: {
       id: mappedSeverity.optionId,
+    },
+
+    [jiraFields.workstream]: {
+      id: jiraWorkstreamOptionId,
     },
 
     priority: {
