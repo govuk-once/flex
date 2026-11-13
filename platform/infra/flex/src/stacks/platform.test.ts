@@ -30,6 +30,7 @@ async function synthesise(stage: string) {
     ENV_KEYS.TopicCriticalAlarms,
     ENV_KEYS.TopicWarningAlarms,
     ENV_KEYS.VpcEApiGateway,
+    ENV_KEYS.ThirdPartyEncryptionKeyArns,
     ...VPC_EXPORTS.map((key) => `${ENV_KEYS.Vpc}/${key}`),
   ]);
 

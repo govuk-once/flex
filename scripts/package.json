@@ -9,10 +9,14 @@
     "test": "vitest --passWithNoTests"
   },
   "devDependencies": {
+    "@aws-sdk/client-kms": "3.1091.0",
     "@aws-sdk/client-s3": "3.1091.0",
+    "@aws-sdk/client-ssm": "3.1091.0",
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
+    "@flex/utils": "workspace:*",
     "@types/node": "26.1.1",
+    "aws-sdk-client-mock": "4.1.0",
     "eslint": "10.7.0",
     "typescript": "6.0.3",
     "vitest": "4.1.10",

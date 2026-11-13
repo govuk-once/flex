@@ -330,6 +330,7 @@ export class FlexGlobalStack extends BaseStack {
     subdomainName,
     warningAction,
     webAcl,
+    wellKnownBucket,
   }: {
     cert: Certificate;
     domainName: string;
@@ -338,6 +339,7 @@ export class FlexGlobalStack extends BaseStack {
     secretHeaderArn: string;
     subdomainName?: string;
     webAcl: CfnWebACL;
+    wellKnownBucket: Bucket;
   } & AlarmActionProps) {
     const { function: viewerRequestPlatformFunction } =
       new FlexCloudfrontFunction(this, "ViewerRequestPlatformFunction", {
@@ -392,21 +394,23 @@ export class FlexGlobalStack extends BaseStack {
       },
     ).policy;
 
+    const apiOrigin = new HttpOrigin(
+      `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
+      {
+        originPath: "/prod",
+        customHeaders: {
+          "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
+        },
+      },
+    );
+
     const distribution = new Distribution(this, "Distribution", {
       comment: "Flex Platform CloudFront Distribution for Structural Checks",
       priceClass: PriceClass.PRICE_CLASS_100,
       minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
       webAclId: webAcl.attrArn,
       defaultBehavior: {
-        origin: new HttpOrigin(
-          `${restApi.restApiId}.execute-api.eu-west-2.amazonaws.com`,
-          {
-            originPath: "/prod",
-            customHeaders: {
-              "x-origin-verify": originVerifySecret.secretValue.unsafeUnwrap(),
-            },
-          },
-        ),
+        origin: apiOrigin,
         viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
         allowedMethods: AllowedMethods.ALLOW_ALL,
         cachePolicy: CachePolicy.CACHING_DISABLED,
@@ -432,6 +436,13 @@ export class FlexGlobalStack extends BaseStack {
               eventType: FunctionEventType.VIEWER_REQUEST,
             },
           ],
+        },
+        "/.well-known/jwks.json": {
+          origin: S3BucketOrigin.withOriginAccessControl(wellKnownBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: apiResponseHeadersPolicy,
         },
       },
       logBucket: accessLogBucket.bucket,
@@ -528,6 +539,24 @@ export class FlexGlobalStack extends BaseStack {
     });
     const cfnRecordSet = domainAliasRecord.node.defaultChild as CfnRecordSet;
     cfnRecordSet.overrideLogicalId("CloudfrontDomainAliasRecord0A299B62");
+  }
+
+  #createWellKnownBucket() {
+    const accessLogBucket = new AccessLogBucket(
+      this,
+      "WellKnownAccessLogBucket",
+    );
+
+    return new Bucket(this, "WellKnownBucket", {
+      bucketName: `flex-${stage}-well-known`,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !persistent,
+      versioned: true,
+      serverAccessLogsBucket: accessLogBucket.bucket,
+    });
   }
 
   #createOpenApiSpecBucket() {
@@ -640,6 +669,7 @@ export class FlexGlobalStack extends BaseStack {
     );
 
     const openApiSpecBucket = this.#createOpenApiSpecBucket();
+    const wellKnownBucket = this.#createWellKnownBucket();
 
     const distribution = this.#createCloudfrontDistribution({
       cert,
@@ -651,6 +681,7 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
       warningAction,
       webAcl,
+      wellKnownBucket,
     });
 
     this.#deploySwaggerUi({ bucket: openApiSpecBucket, distribution });
