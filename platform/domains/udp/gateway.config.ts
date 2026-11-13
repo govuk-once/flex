@@ -11,10 +11,7 @@ import {
   domainNotificationsResponseSchema,
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
-import {
-  domainSearchesSchema,
-  inboundUpdateUserSearchesRequestSchema,
-} from "./src/schemas/domain/searches";
+import { domainSearchesSchema } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
   inboundUpdateSelectedTopicsRequestSchema,
@@ -161,7 +158,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpdateUserSearchesRequestSchema,
+      body: domainSearchesSchema,
+      response: domainSearchesSchema,
     },
   },
 });
