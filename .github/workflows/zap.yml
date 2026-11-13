@@ -102,21 +102,34 @@ jobs:
         run: bash scripts/zap/load-baseline.sh
 
       - name: Detect new ZAP findings
-        id: new_zap_findings
-        shell: bash
-        env:
-          BASELINE_FOUND: ${{ steps.zap_baseline.outputs.found }}
+        id: zap_findings
         run: bash scripts/zap/detect-new-findings.sh
+
+      - name: ZAP Security Findings to Jira
+        if: >-
+          ${{
+            github.ref == 'refs/heads/main' &&
+            (github.event_name == 'push' ||
+             github.event_name == 'workflow_dispatch') &&
+            steps.zap_findings.outputs.count != '0'
+          }}
+        continue-on-error: true
+        env:
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          DRY_RUN: 'false'
+          ZAP_REPORT_PATH: zap-reports/report_json.json
+        run: pnpm exec tsx scripts/zapToJira.ts
+
+      - name: Build ZAP finding baseline
+        run: bash scripts/zap/update-baseline.sh
 
       - name: Prepare ZAP notification details
         id: zap_notification
-        if: steps.new_zap_findings.outputs.count != '0'
+        if: steps.zap_findings.outputs.count != '0'
         shell: bash
         run: bash scripts/zap/prepare-notification.sh
-
-      - name: Build ZAP finding baseline
-        shell: bash
-        run: bash scripts/zap/update-baseline.sh
 
       - name: Upload ZAP finding baseline
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -147,14 +160,14 @@ jobs:
           retention-days: 14
 
       - name: Send ZAP notification
-        if: steps.new_zap_findings.outputs.count != '0'
+        if: steps.zap_findings.outputs.count != '0'
         uses: govuk-once/govuk-platform-notifications-gh-action/security-alerts@9790ae74363e58ed5600a4705a77af94b583435d
         with:
           aws_account_id: ${{ steps.aws-account.outputs.account-id }}
           aws_region: eu-west-2
           title: "New ZAP security findings"
           message: "New findings detected during the authenticated ZAP API scan."
-          finding_count: ${{ steps.new_zap_findings.outputs.count }}
+          finding_count: ${{ steps.zap_findings.outputs.count }}
           findings: ${{ steps.zap_notification.outputs.findings }}
           repository: ${{ github.repository }}
           workflow_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
