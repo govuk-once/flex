@@ -1,3 +1,4 @@
+import { createFixtureBuilder } from "@flex/testing";
 import { SearchTerm, UserSearches } from "@schemas/search";
 
 export const makeSearchTerm = (term: string): SearchTerm => {
@@ -31,3 +32,5 @@ export const baseSearches: UserSearches = {
     selectedSearches: [],
   },
 };
+
+export const createSearches = createFixtureBuilder<UserSearches>(baseSearches);

@@ -22,9 +22,10 @@ Alternatively, run `pnpm <command>` from within `domains/searches/`.
 
 ### Handlers
 
-| Name                                               | Access | Description                   | Code                                                 |
-| -------------------------------------------------- | ------ | ----------------------------- | ---------------------------------------------------- |
-| [`PATCH /v1/activity/searches`](#patch-v1searches) | Public | Upsert user search selections | [View](./src/handlers/v1/activity/searches/patch.ts) |
+| Name                                               | Access | Description                     | Code                                                 |
+| -------------------------------------------------- | ------ | ------------------------------- | ---------------------------------------------------- |
+| [`PATCH /v1/activity/searches`](#patch-v1searches) | Public | Upsert user search selections   | [View](./src/handlers/v1/activity/searches/patch.ts) |
+| [`GET /v1/activity/searches`](#patch-v1searches)   | Public | Retrieve user search selections | [View](./src/handlers/v1/activity/searches/get.ts)   |
 
 ---
 
@@ -51,6 +52,23 @@ Adds a search to the existing collection. The search term is validated according
   "timestamp": "2026-11-03T14:20:00Z"
 }
 ```
+
+### Response
+
+```json
+{
+  "searches": {
+    "selectedSearches": [
+      { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
+      { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
+    ]
+  }
+}
+```
+
+## GET `/v1/activity/searches`
+
+Returns the authenticated user's searches.
 
 ### Response
 
