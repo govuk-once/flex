@@ -39,5 +39,29 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         });
       },
     );
+
+    describe.runIf(isRouteDeployed(config, "GET /v1/activity/searches"))(
+      "GET",
+      () => {
+        it("returns 201 with found user searches", async ({
+          cloudfront,
+          udpUser: _,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: authHeader,
+          });
+
+          expect(result.status).toBe(200);
+          expect(result.body).toBeDefined();
+        });
+
+        it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+          const result = await cloudfront.client.get(endpoint, {});
+
+          expect(result.status).toBe(401);
+        });
+      },
+    );
   });
 });
