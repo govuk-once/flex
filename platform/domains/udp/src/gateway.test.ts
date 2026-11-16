@@ -66,12 +66,11 @@ const mockGroupsBody = [
   { Namespace: "travel", Group: "test country", Type: "NOTIFICATION" as const },
 ];
 
-const searchTimestamp = new Date();
 const mockSearches = {
   searches: {
     selectedSearches: [
-      { term: "a term 1", timestamp: searchTimestamp.toISOString() },
-      { term: "a term 2", timestamp: searchTimestamp.toISOString() },
+      { term: "a term 1", timestamp: "2026-11-04T13:45:00Z" },
+      { term: "a term 2", timestamp: "2026-11-04T13:45:00Z" },
     ],
   },
 };
@@ -756,7 +755,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearches },
         })
-        .reply(200);
+        .reply(200, mockUpstreamSearches);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
@@ -768,10 +767,12 @@ describe("UDP Service Gateway", () => {
         platform.context(),
       );
 
-      expect(result).toStrictEqual(platform.gatewayResult(200));
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockSearches }),
+      );
     });
 
-    it("updates to empty selectedSearches when clearing all topics", async ({
+    it("updates to empty selectedSearches when clearing all searches", async ({
       http,
       platform,
     }) => {
@@ -781,7 +782,7 @@ describe("UDP Service Gateway", () => {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearchesEmpty },
         })
-        .reply(200);
+        .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
         platform.gatewayEvent.post("/v1/activity/searches", {
@@ -793,7 +794,9 @@ describe("UDP Service Gateway", () => {
         platform.context(),
       );
 
-      expect(result).toStrictEqual(platform.gatewayResult(200));
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockSearchesEmpty }),
+      );
     });
 
     it("returns 409 when upstream reports a conflict", async ({
