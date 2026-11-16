@@ -54,6 +54,21 @@ Implemented in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), tested 
 
 ---
 
+## Request headers
+
+Built in [`src/headers.ts`](/platform/domains/udp/src/headers.ts).
+
+| Header                       | Sent on             | Description                                      |
+| ---------------------------- | ------------------- | ------------------------------------------------ |
+| `x-api-key`                  | All requests        | UDP API key from `consumerConfig`                |
+| `requesting-service`         | User-scoped routes  | Requesting service, always `app`                 |
+| `requesting-service-user-id` | User-scoped routes  | ID of the user the request is made on behalf of  |
+| `requested-at`               | All `POST` requests | ISO 8601 timestamp, set per request at call time |
+
+`DELETE` and `GET` requests do not send `requested-at`.
+
+---
+
 ## Clients
 
 | Name  | Type                                                        | Base URL                | Authentication |
