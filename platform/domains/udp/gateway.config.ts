@@ -11,11 +11,7 @@ import {
   domainNotificationsResponseSchema,
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
-import { inboundAddVisitedPageRequestSchema } from "./src/schemas/domain/pages";
-import {
-  domainSearchesSchema,
-  inboundUpdateUserSearchesRequestSchema,
-} from "./src/schemas/domain/searches";
+import { domainSearchesSchema } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
   inboundUpdateSelectedTopicsRequestSchema,
@@ -162,7 +158,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpdateUserSearchesRequestSchema,
+      body: domainSearchesSchema,
+      response: domainSearchesSchema,
     },
     "POST /v1/activity/pages": {
       name: "addVisitedPage",
