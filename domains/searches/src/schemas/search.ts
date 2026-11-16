@@ -19,4 +19,4 @@ export type UpdateUserSearchRequest = z.infer<
   typeof UpdateUserSearchRequestSchema
 >;
 
-export const UpsertUserSearchResponseSchema = UserSearchesSchema;
+export const UserSearchResponseSchema = UserSearchesSchema;
