@@ -51,6 +51,10 @@ Implemented in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), tested 
 | `DELETE /v1/notifications`                     | `deleteNotificationPreferences` |
 | `GET /v1/groups`                               | `getGroupSubscriptions`         |
 | `POST /v1/groups`                              | `updateGroupSubscriptions`      |
+| `GET /v1/topics`                               | `getTopics`                     |
+| `POST /v1/topics`                              | `upsertTopics`                  |
+| `GET /v1/activity/searches`                    | `getSearches`                   |
+| `POST /v1/activity/searches`                   | `upsertSearches`                |
 
 ---
 
