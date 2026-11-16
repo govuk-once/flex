@@ -14,7 +14,6 @@ import {
 import { inboundAddVisitedPageRequestSchema } from "./src/schemas/domain/pages";
 import {
   domainSearchesSchema,
-  inboundUpdateUserSearchesRequestSchema,
 } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,
@@ -162,7 +161,8 @@ export const { config, createHandler } = defineGateway({
           required: true,
         },
       },
-      body: inboundUpdateUserSearchesRequestSchema,
+      body: domainSearchesSchema,
+      response: domainSearchesSchema,
     },
     "POST /v1/activity/pages": {
       name: "addVisitedPage",
