@@ -116,7 +116,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         userSearches = result.body as UserSearches;
         searches = userSearches.searches.selectedSearches;
 
-        expect(searches.length).toBe(numFoundSearches - 1);
+        expect(searches).toHaveLength(numFoundSearches - 1);
         expect(searches).not.toContain(termToDelete);
         numFoundSearches = searches.length;
 
@@ -140,7 +140,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         userSearches = result.body as UserSearches;
         searches = userSearches.searches.selectedSearches;
 
-        expect(searches.length).toBe(numFoundSearches);
+        expect(searches).toHaveLength(numFoundSearches);
       });
 
       it("returns 401 when no auth is provided", async ({ cloudfront }) => {
@@ -187,7 +187,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         const userSearches = result.body as UserSearches;
         const searches = userSearches.searches.selectedSearches;
 
-        expect(searches.length).toBe(0);
+        expect(searches).toHaveLength(0);
       });
 
       it("returns 401 when no auth is provided", async ({ cloudfront }) => {

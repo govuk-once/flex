@@ -6,7 +6,7 @@ export const handler = route(
   "DELETE /v1/activity/searches/:term",
   async (ctx) => {
     const { auth, pathParams, integrations, logger } = ctx;
-    let newSearchTerms: SearchTerm[] = [];
+    let newSearchTerms: SearchTerm[];
 
     if (pathParams.term.length > 0) {
       const normalisedTermToRemove: string = decodeURIComponent(
@@ -67,6 +67,12 @@ export const handler = route(
           searchTerm.term.toLowerCase() !==
           normalisedTermToRemove.toLowerCase(),
       );
+    } else {
+      logger.info("No valid term specified, returning", {
+        userId: auth.userId,
+      });
+
+      return { status: 201 };
     }
 
     const postResult = await integrations.udpPostSearches({
