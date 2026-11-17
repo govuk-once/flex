@@ -74,7 +74,7 @@ export const handler = createHandler({
       const SIXTY_DAYS_IN_SECONDS = 60 * 24 * 60 * 60;
 
       return api.post(`/v1/identity/${serviceName}/${identifier}`, {
-        headers: withRequestedAt({ "x-api-key": consumerConfig.apiKey }),
+        headers: { "x-api-key": consumerConfig.apiKey },
         body: {
           ...body,
           expiresAt: Math.floor(Date.now() / 1000) + SIXTY_DAYS_IN_SECONDS,
@@ -103,7 +103,7 @@ export const handler = createHandler({
       body,
     }) => {
       return api.post("/v1/user", {
-        headers: withRequestedAt({ "x-api-key": consumerConfig.apiKey }),
+        headers: { "x-api-key": consumerConfig.apiKey },
         body: { pushId: body.pushId, appId: body.userId },
       });
     },

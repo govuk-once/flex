@@ -67,9 +67,11 @@ Built in [`src/headers.ts`](/platform/domains/udp/src/headers.ts).
 | `x-api-key`                  | All requests        | UDP API key from `consumerConfig`                |
 | `requesting-service`         | User-scoped routes  | Requesting service, always `app`                 |
 | `requesting-service-user-id` | User-scoped routes  | ID of the user the request is made on behalf of  |
-| `requested-at`               | All `POST` requests | ISO 8601 timestamp, set per request at call time |
+| `requested-at`               | Data `POST` routes  | ISO 8601 timestamp, set per request at call time |
 
-`DELETE` and `GET` requests do not send `requested-at`.
+Data `POST` routes are `/v1/notifications`, `/v1/topics`, `/v1/groups` and `/v1/activity/searches`. UDP rejects a write with `409 Conflict` when its `requested-at` is older than the stored record, and the gateway passes the `409` through.
+
+Identity and user `POST` requests, and all `DELETE` and `GET` requests, do not send `requested-at`.
 
 ---
 
