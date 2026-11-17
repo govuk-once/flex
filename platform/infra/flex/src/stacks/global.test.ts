@@ -62,6 +62,21 @@ describe("FlexGlobalStack certificate alarm", () => {
     });
   });
 
+  it("warns through the relay when log ingestion in us-east-1 is excessive", () => {
+    const warningRelayId = Object.keys(
+      template.findResources("AWS::SNS::Topic"),
+    ).find((id) => id.startsWith("WarningRelayTopic"));
+
+    expect(warningRelayId).toBeDefined();
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "staging-log-volume-incoming-bytes",
+      Namespace: "AWS/Logs",
+      MetricName: "IncomingBytes",
+      AlarmActions: [{ Ref: warningRelayId }],
+    });
+  });
+
   it("alarms on the CloudFront certificate through the critical relay", () => {
     const certificateId = Object.keys(
       template.findResources("AWS::CertificateManager::Certificate"),

@@ -102,6 +102,17 @@ describe("FlexCoreStack alert routing", () => {
     template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 2);
   });
 
+  it("warns when log ingestion in eu-west-2 is excessive", () => {
+    const { template, warningTopicId } = result;
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "staging-log-volume-incoming-bytes",
+      Namespace: "AWS/Logs",
+      MetricName: "IncomingBytes",
+      AlarmActions: [{ Ref: warningTopicId }],
+    });
+  });
+
   it("alerts on KMS key and Cognito user pool changes through the critical topic", () => {
     const { template, criticalTopicId } = result;
 
