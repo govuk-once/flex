@@ -6,7 +6,7 @@ This document describes the classification of persistent FLEX data, and the encr
 
 ## Classification
 
-FLEX currently exclusively persists operational log data: CloudWatch log groups (Lambda, API Gateway access and execution logs), VPC flow logs, S3 access logs and Macie findings. There are no application data stores (no DynamoDB tables and no application S3 buckets). Secrets and PII are prevented from reaching logs by the controls described in [Log Redaction and Filtering](/docs/log-redaction.md), with Macie scanning as a backup.
+FLEX currently exclusively persists operational log data: CloudWatch log groups (Lambda, API Gateway access and execution logs), VPC flow logs, S3 access logs, WAF request logs and Macie findings. There are no application data stores (no DynamoDB tables and no application S3 buckets). Secrets and PII are prevented from reaching logs by the controls described in [Log Redaction and Filtering](/docs/log-redaction.md), with Macie scanning as a backup.
 
 Everything FLEX persists is classified OFFICIAL and handled as internal data under a single encryption baseline. There is no per-class policy because there is _currently_ only one class.
 
@@ -18,15 +18,16 @@ The one store holding user records is the Cognito user pool, which does not supp
 
 ## Encryption baseline at rest
 
-| Store                              | Control                                                                          |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| CloudWatch log groups              | Customer managed KMS key with rotation (`alias/flex-log-group-key`)              |
+| Store                              | Control                                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| CloudWatch log groups              | Customer managed KMS key with rotation (`alias/flex-log-group-key`)                  |
 | CloudWatch log groups in us-east-1 | Local customer managed keys in the global and Macie stacks (log groups are regional) |
-| VPC flow log bucket                | Customer managed KMS key (`alias/flex-vpc-flow-logs-key`)                        |
-| Macie results bucket               | Customer managed KMS key                                                         |
-| S3 access log buckets              | SSE-S3, as S3 server access log delivery does not support KMS customer keys      |
-| Alarm SNS topics                   | Customer managed KMS key (`alias/flex-alerts-key`)                               |
-| Lambda environment variables       | Environment-level customer managed key (`FlexEncryptionKey`, from `flex-params`) |
+| VPC flow log bucket                | Customer managed KMS key (`alias/flex-vpc-flow-logs-key`)                            |
+| Macie results bucket               | Customer managed KMS key                                                             |
+| S3 access log buckets              | SSE-S3, as S3 server access log delivery does not support KMS customer keys          |
+| WAF request log buckets            | SSE-S3 (WAF log delivery supports SSE-S3 or a customer managed key only)             |
+| Alarm SNS topics                   | Customer managed KMS key (`alias/flex-alerts-key`)                                   |
+| Lambda environment variables       | Environment-level customer managed key (`FlexEncryptionKey`, from `flex-params`)     |
 
 The log group key for eu-west-2 is provisioned in the core stack and its ARN published over SSM (`/<env>/flex/kms/log-group-key-arn`), so it is created once per environment and shared by every stage stack.
 
