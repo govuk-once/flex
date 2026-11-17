@@ -27,6 +27,15 @@ export const handler = route(
     if (!result.ok) {
       const { status, body } = result.error;
 
+      if (status === 409) {
+        logger.error("Update rejected because a newer version already exists", {
+          status,
+          userId,
+        });
+
+        throw new createHttpError.Conflict();
+      }
+
       logger.error("Failed to update notifications", { status, body });
 
       throw new createHttpError.BadGateway();

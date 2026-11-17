@@ -35,6 +35,15 @@ async function sendToUpstream(userId: UserId, pushId: PushId) {
   });
 
   if (!result.ok) {
+    if (result.error.status === 409) {
+      logger.error("Update rejected because a newer version already exists", {
+        status: result.error.status,
+        userId,
+      });
+
+      throw new createHttpError.Conflict();
+    }
+
     logger.error("Failed to update notifications", {
       userId,
       pushId,

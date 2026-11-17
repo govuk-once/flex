@@ -53,22 +53,32 @@ describe("PATCH /v0/notifications", () => {
     expect(JSON.parse(result.body)).toStrictEqual(notifications);
   });
 
-  it("returns 502 when the upstream fails", async ({ http, sdk }) => {
-    http
-      .gateway("udp")
-      .post("/notifications", {
-        headers: { "requesting-service-user-id": userId },
-      })
-      .reply(500);
+  it.for([
+    {
+      reason: "reports out-of-sequence write timestamps",
+      upstream: 409,
+      expected: 409,
+    },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the upstream $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .post("/notifications", {
+          headers: { "requesting-service-user-id": userId },
+        })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.patch(endpoint, {
-        auth: userId,
-        body: { consentStatus: "accepted" },
-      }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.patch(endpoint, {
+          auth: userId,
+          body: { consentStatus: "accepted" },
+        }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+    },
+  );
 });
