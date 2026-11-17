@@ -187,7 +187,7 @@ jobs:
 
   deployProd:
     name: Deploy to Production
-    needs: deployStaging
+    needs: [deployStaging, zapSecurityScan]
     uses: ./.github/workflows/_build-deploy.yml
     permissions:
       id-token: write
