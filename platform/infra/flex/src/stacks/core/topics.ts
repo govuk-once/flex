@@ -1,7 +1,9 @@
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
-import { Topic } from "aws-cdk-lib/aws-sns";
+import { LoggingProtocol, Topic } from "aws-cdk-lib/aws-sns";
 import { Construct } from "constructs";
+
+import { enableDeliveryStatusLogging } from "../../constructs/sns/delivery-status-logging";
 
 export function createAlarmTopics(scope: Construct) {
   const cloudwatchPrincipal = new ServicePrincipal("cloudwatch.amazonaws.com");
@@ -27,6 +29,10 @@ export function createAlarmTopics(scope: Construct) {
 
   criticalTopic.grantPublish(cloudwatchPrincipal);
   warningTopic.grantPublish(cloudwatchPrincipal);
+
+  [criticalTopic, warningTopic].forEach((topic) => {
+    enableDeliveryStatusLogging(topic, LoggingProtocol.HTTP);
+  });
 
   return { criticalTopic, warningTopic, alarmTopicKey };
 }
