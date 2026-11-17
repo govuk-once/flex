@@ -35,6 +35,7 @@ import { JourneyAlarms } from "../constructs/alarms/journeys";
 import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { WafRequestLogging } from "../constructs/waf/WafRequestLogging";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
@@ -42,7 +43,7 @@ import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
-const { env, stage } = getEnvConfig();
+const { env, persistent, stage } = getEnvConfig();
 
 const STAGE_NAME = "prod";
 
@@ -478,6 +479,13 @@ export class FlexPlatformStack extends BaseStack {
       webAclArn: webAcl.attrArn,
       resourceArn: restApiStageArn,
     });
+
+    if (persistent) {
+      new WafRequestLogging(this, "ApiWafRequestLogging", {
+        webAcl,
+        bucketNameSuffix: `flex-${stage}-api`,
+      });
+    }
 
     new WafAlarms(this, "WafApiAlarms", {
       alarmNamePrefix: `${stage}-api-waf`,
