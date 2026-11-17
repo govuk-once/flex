@@ -6,6 +6,7 @@ export const handler = route(
   "DELETE /v1/activity/searches/:term",
   async (ctx) => {
     const { auth, pathParams, integrations, logger } = ctx;
+    const userId = auth.userId;
     let newSearchTerms: SearchTerm[];
 
     if (pathParams.term.length > 0) {
@@ -13,7 +14,7 @@ export const handler = route(
         pathParams.term,
       ).toLowerCase();
       const result = await integrations.udpGetSearches({
-        headers: { "requesting-service-user-id": auth.userId },
+        headers: { "requesting-service-user-id": userId },
       });
 
       let existingUserSearches: UserSearches;
@@ -24,7 +25,7 @@ export const handler = route(
 
         if (status === 404) {
           logger.info("Existing search data not found, returning", {
-            userId: auth.userId,
+            userId: userId,
           });
 
           return { status: 201 };
@@ -39,44 +40,32 @@ export const handler = route(
 
       const existingSearchTerms: SearchTerm[] =
         existingUserSearches.searches.selectedSearches;
-      if (existingSearchTerms.length === 0) {
-        logger.info("Existing search data is empty, returning", {
-          userId: auth.userId,
-        });
 
-        return { status: 201 };
-      }
-
-      const matchedTerm = existingSearchTerms.find(
-        ({ term }) =>
-          term.toLowerCase() === normalisedTermToRemove.toLowerCase(),
-      );
-      if (matchedTerm === undefined) {
+      if (termNeedsRemoving(existingSearchTerms, normalisedTermToRemove)) {
+        newSearchTerms = existingSearchTerms.filter(
+          (searchTerm) =>
+            searchTerm.term.toLowerCase() !== normalisedTermToRemove,
+        );
+      } else {
         logger.info(
-          "Existing search data does not contain specified term, returning",
+          "Existing search data does not contain the specified search term, returning",
           {
-            userId: auth.userId,
+            userId: userId,
           },
         );
 
         return { status: 201 };
       }
-
-      newSearchTerms = existingSearchTerms.filter(
-        (searchTerm) =>
-          searchTerm.term.toLowerCase() !==
-          normalisedTermToRemove.toLowerCase(),
-      );
     } else {
       logger.info("No valid term specified, returning", {
-        userId: auth.userId,
+        userId: userId,
       });
 
       return { status: 201 };
     }
 
     const postResult = await integrations.udpPostSearches({
-      headers: { "requesting-service-user-id": auth.userId },
+      headers: { "requesting-service-user-id": userId },
       body: {
         searches: {
           selectedSearches: newSearchTerms,
@@ -90,13 +79,13 @@ export const handler = route(
       if (status === 409) {
         logger.error("Delete rejected because a newer version already exists", {
           status,
-          userId: auth.userId,
+          userId: userId,
         });
 
         throw new createHttpError.Conflict();
       }
 
-      const fullMessage = `Failed to delete user search (${message}), (${JSON.stringify(body)})`;
+      const fullMessage = `Failed to delete specified user search (${message}), (${JSON.stringify(body)})`;
       logger.error(fullMessage, { status });
 
       throw new createHttpError.BadGateway();
@@ -107,3 +96,18 @@ export const handler = route(
     return { status: 201 };
   },
 );
+
+export const termNeedsRemoving = (
+  existingSearches: SearchTerm[],
+  termToRemove: string,
+): boolean => {
+  if (existingSearches.length === 0) {
+    return false;
+  }
+
+  const matchedTerm = existingSearches.find(
+    ({ term }) => term.toLowerCase() === termToRemove,
+  );
+
+  return matchedTerm !== undefined;
+};
