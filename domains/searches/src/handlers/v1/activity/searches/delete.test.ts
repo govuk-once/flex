@@ -1,5 +1,5 @@
 import { it, userId } from "@flex/testing";
-import {makeFilledSearches, newSearchTerm} from "@tests/fixtures";
+import { makeFilledSearches } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./delete";

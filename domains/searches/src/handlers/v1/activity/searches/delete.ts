@@ -1,5 +1,4 @@
 import { route } from "@domain";
-import createHttpError from "http-errors";
 
 export const handler = route(
   "DELETE /v1/activity/searches",

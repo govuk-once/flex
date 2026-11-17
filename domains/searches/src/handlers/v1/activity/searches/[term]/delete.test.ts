@@ -16,9 +16,9 @@ describe("DELETE /v1/activity/searches/:term", () => {
     const oldSearches = createFixtureBuilder<UserSearches>(userSearches);
     userSearches.searches.selectedSearches.pop();
     const newSearches = createFixtureBuilder<UserSearches>(userSearches);
-    const firstUserTerm = userSearches.searches.selectedSearches[0]
+    const firstUserTerm = userSearches.searches.selectedSearches[0];
     // @ts-expect-error - it thinks the entry may not be defined
-    const firstTerm = firstUserTerm.term
+    const firstTerm = firstUserTerm.term;
 
     http
       .gateway("udp")
@@ -36,7 +36,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
       .reply(201, oldSearches);
 
     const result = await handler(
-      sdk.event.delete('/activity/searches/:term', {
+      sdk.event.delete("/activity/searches/:term", {
         auth: userId,
         params: { term: firstTerm },
       }),
@@ -59,9 +59,9 @@ describe("DELETE /v1/activity/searches/:term", () => {
       .reply(500);
 
     const result = await handler(
-      sdk.event.delete('/activity/searches/:term', {
+      sdk.event.delete("/activity/searches/:term", {
         auth: userId,
-        params: { term: 'xyz' },
+        params: { term: "xyz" },
       }),
       sdk.context(),
     );
