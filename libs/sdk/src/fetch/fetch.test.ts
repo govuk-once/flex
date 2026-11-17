@@ -11,12 +11,13 @@ vi.mock("@flex/logging");
 describe("flex-fetch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("setTimeout", (fn: () => unknown) => fn());
     nock.cleanAll();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Delayed replies from aborted requests otherwise leak into the next test
+    nock.abortPendingRequests();
   });
 
   const EXAMPLE_BASE_URL = "https://example.com";
@@ -77,7 +78,7 @@ describe("flex-fetch", () => {
   it("clamps maxRetryDelay between 10 and 1000", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).times(4).replyWithError(err);
 
     const { request: request1 } = flexFetch("https://example.com/data", {
       retryAttempts: 1,
@@ -129,27 +130,32 @@ describe("flex-fetch", () => {
   it("stops retries when aborted during retry", async () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
 
+    // Injected fetcher rather than nock so timing is deterministic: the first
+    // attempt fails, later attempts stay in flight until the signal aborts
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL)
-      .get(EXAMPLE_PATH)
-      .once()
-      .replyWithError(err)
-      .get(EXAMPLE_PATH)
-      .once()
-      .delay(200)
-      .replyWithError(err);
-
-    const { request, abort } = flexFetch("https://example.com/data", {
-      retryAttempts: 5,
-      maxRetryDelay: 100,
+    const fetcher = vi.fn<typeof fetch>((_url, init) => {
+      if (fetcher.mock.calls.length === 1) return Promise.reject(err);
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("This operation was aborted", "AbortError"));
+        });
+      });
     });
 
-    vi.unstubAllGlobals();
-    setTimeout(abort, 200);
+    const { request, abort } = flexFetch(
+      "https://example.com/data",
+      { retryAttempts: 5, maxRetryDelay: 100 },
+      fetcher,
+    );
 
-    await expect(request).rejects.toThrow();
+    await vi.waitFor(() => {
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+    abort();
 
-    expect(nock.isDone()).toBe(true);
+    await expect(request).rejects.toThrow("This operation was aborted");
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
     expect(backoffSpy).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
@@ -163,7 +169,7 @@ describe("flex-fetch", () => {
     const backoffSpy = vi.spyOn(backOff, "backOff");
 
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).times(6).replyWithError(err);
 
     const { request } = flexFetch("https://example.com/data", {
       retryAttempts: 10 as never,
@@ -187,19 +193,25 @@ describe("flex-fetch", () => {
       retryAttempts: 1,
     });
 
-    await expect(request).rejects.toThrow(err);
+    // fetch wraps network errors in TypeError("fetch failed", { cause })
+    const fetchFailed = expect.objectContaining({
+      name: "TypeError",
+      cause: err,
+    }) as unknown;
+    await expect(request).rejects.toThrow("fetch failed");
+    await expect(request).rejects.toEqual(fetchFailed);
 
     expect(logger.error).toHaveBeenCalledTimes(1);
     expect(logger.error).toHaveBeenCalledWith("flex-fetch failed", {
       url: "https://example.com/data",
-      error: err,
+      error: fetchFailed,
     });
     expect(logger.debug).toHaveBeenCalledWith("options", expect.any(Object));
   });
 
   it("correctly logs the request URL when a Request object is provided", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).times(4).replyWithError(err);
 
     const { request } = flexFetch(new Request("https://example.com/data"), {
       retryAttempts: 3,
@@ -219,7 +231,7 @@ describe("flex-fetch", () => {
 
   it("correctly logs options on error", async () => {
     const err = new Error("network");
-    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).once().replyWithError(err);
+    nock(EXAMPLE_BASE_URL).get(EXAMPLE_PATH).times(4).replyWithError(err);
 
     const { request } = flexFetch(new Request("https://example.com/data"), {
       retryAttempts: 3,

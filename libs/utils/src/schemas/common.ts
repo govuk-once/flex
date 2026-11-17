@@ -33,13 +33,13 @@ export type Slug = z.output<typeof Slug>;
 
 export const TraceId = Uuid.meta({
   description: "Unique identifier for distributed tracing",
-  example: "[UUID v4]",
+  examples: ["[UUID v4]"],
 });
 export type TraceId = z.output<typeof TraceId>;
 
 export const RequestId = Uuid.meta({
   description: "Unique identifier for the request correlation",
-  example: "[UUID v4]",
+  examples: ["[UUID v4]"],
 });
 export type RequestId = z.output<typeof RequestId>;
 
@@ -50,7 +50,7 @@ export const Authorization = z
   })
   .meta({
     description: "Authorization header containing a Bearer JWT token",
-    example: "Bearer [token]",
+    examples: ["Bearer [token]"],
   });
 export type Authorization = z.output<typeof Authorization>;
 
@@ -61,10 +61,12 @@ export const TracingHeaders = z
   })
   .meta({
     description: "Tracing headers for request correlation",
-    example: {
-      "x-trace-id": "[UUID v4]",
-      "x-request-id": "[UUID v4]",
-    },
+    examples: [
+      {
+        "x-trace-id": "[UUID v4]",
+        "x-request-id": "[UUID v4]",
+      },
+    ],
   });
 export type TracingHeaders = z.output<typeof TracingHeaders>;
 
@@ -72,11 +74,13 @@ export const AuthenticatedHeaders = TracingHeaders.extend({
   authorization: Authorization,
 }).meta({
   description: "Required headers for authenticated requests",
-  example: {
-    "x-trace-id": "[UUID v4]",
-    "x-request-id": "[UUID v4]",
-    authorization: "Bearer [token]",
-  },
+  examples: [
+    {
+      "x-trace-id": "[UUID v4]",
+      "x-request-id": "[UUID v4]",
+      authorization: "Bearer [token]",
+    },
+  ],
 });
 
 // ============================================================================

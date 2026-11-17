@@ -129,14 +129,14 @@ export class FlexGlobalStack extends BaseStack {
     return { domainName, subdomainName };
   }
 
-  #createCertificate({ domainName, subdomainName }: DomainNames) {
+  #createCertificate({ domainName, subdomainName = domainName }: DomainNames) {
     const hostedZone = HostedZone.fromHostedZoneAttributes(this, "Zone", {
       hostedZoneId: this.import(PLATFORM_KEYS.HostedZoneId, "eu-west-2"),
       zoneName: this.import(PLATFORM_KEYS.HostedZoneName, "eu-west-2"),
     });
 
     const cert = new Certificate(this, "FlexCert", {
-      domainName: subdomainName ?? domainName,
+      domainName: subdomainName,
       validation: CertificateValidation.fromDns(hostedZone),
     });
 
@@ -327,7 +327,7 @@ export class FlexGlobalStack extends BaseStack {
     openApiSpecBucket,
     restApi,
     secretHeaderArn,
-    subdomainName,
+    subdomainName = domainName,
     warningAction,
     webAcl,
   }: {
@@ -436,7 +436,7 @@ export class FlexGlobalStack extends BaseStack {
       },
       logBucket: accessLogBucket.bucket,
       publishAdditionalMetrics: true,
-      domainNames: [subdomainName ?? domainName],
+      domainNames: [subdomainName],
       certificate: cert,
     });
     const cfnDistribution = distribution.node.defaultChild as CfnDistribution;

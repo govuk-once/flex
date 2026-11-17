@@ -16,9 +16,12 @@ export const baseLambdaContext: Context = {
   logGroupName: "/aws/lambda/test-function",
   logStreamName: "2026/01/01/[$LATEST]test-request-id",
   getRemainingTimeInMillis: () => 30_000,
+  // Deprecated legacy methods are still required by the Context type
+  /* eslint-disable @typescript-eslint/no-deprecated */
   done: () => {},
   fail: () => {},
   succeed: () => {},
+  /* eslint-enable @typescript-eslint/no-deprecated */
 };
 
 export const buildLambdaContext = createFixtureBuilder(baseLambdaContext);

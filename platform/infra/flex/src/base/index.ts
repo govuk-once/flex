@@ -133,7 +133,7 @@ export class SsmApp extends cdk.App {
       console.log(
         `Adding dependency between source: ${sourceStack.stackName} and target: ${targetStack.stackName}`,
       );
-      targetStack.addDependency(sourceStack);
+      targetStack.addStackDependency(sourceStack);
     });
 
     this.printDependencyTree(this.#stackGraph);

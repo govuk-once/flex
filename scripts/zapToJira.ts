@@ -231,8 +231,8 @@ async function existingTicket(label: string): Promise<string | undefined> {
   return undefined;
 }
 
-function plainText(value: string | undefined): string {
-  return (value ?? "")
+function plainText(value = ""): string {
+  return value
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
     .replace(/<\/(?:p|div|li|h[1-6])\s*>/gi, "\n")
     .replace(/<[^>]*>/g, "")

@@ -36,19 +36,19 @@ export function flexFetch(
 
 export function flexFetch(
   url: string | Request | URL,
-  options?: FlexFetchRequestInit,
+  options: FlexFetchRequestInit = {},
   fetcher: typeof fetch = fetch,
 ): { request: Promise<Response>; abort: () => void } {
   logger.debug("flex-fetch called", { url });
   logger.debug("flex-fetch options", { options });
 
   const {
-    retryAttempts,
-    maxRetryDelay,
+    retryAttempts = 0,
+    maxRetryDelay = MAX_DELAY_MS,
     headers: inputHeaders,
     signal: callerSignal,
     ...fetchOptions
-  } = options ?? {};
+  } = options;
 
   const requestUrl = url instanceof Request ? url.url : url.toString();
   const headers = buildHeaders(url, inputHeaders);
@@ -60,10 +60,10 @@ export function flexFetch(
 
   const retryDelayNormalised = Math.max(
     MIN_DELAY_MS,
-    Math.min(MAX_DELAY_MS, maxRetryDelay ?? MAX_DELAY_MS),
+    Math.min(MAX_DELAY_MS, maxRetryDelay),
   );
 
-  const totalAttempts = Math.min((retryAttempts ?? 0) + 1, MAX_ATTEMPTS);
+  const totalAttempts = Math.min(retryAttempts + 1, MAX_ATTEMPTS);
 
   return {
     request: backOff(
