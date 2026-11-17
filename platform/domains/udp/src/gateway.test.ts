@@ -371,6 +371,38 @@ describe("UDP Service Gateway", () => {
         platform.gatewayResult(200, { body: mockNotifications }),
       );
     });
+
+    it("returns 409 when upstream reports a conflict", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/notifications", {
+          headers: mockHeaders.withServiceUserIdRequestedAt,
+          body: {
+            data: { consentStatus: "accepted" },
+            requestingServiceUserId: mockRequestingServiceUserId,
+          },
+        })
+        .reply(409);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/notifications", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: { consentStatus: "accepted" },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
+        }),
+      );
+    });
   });
 
   describe("POST /v1/users", () => {
@@ -676,6 +708,40 @@ describe("UDP Service Gateway", () => {
 
       expect(result).toStrictEqual(
         platform.gatewayResult(200, { body: mockGroupsBody }),
+      );
+    });
+
+    it("returns 409 when upstream reports a conflict", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .post("/v1/groups", {
+          headers: mockHeaders.withServiceUserIdRequestedAt,
+          body: {
+            data: {
+              groups: mockGroupsBody,
+            },
+            requestingServiceUserId: mockRequestingServiceUserId,
+          },
+        })
+        .reply(409);
+
+      const result = await handler(
+        platform.gatewayEvent.post("/v1/groups", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+          body: mockGroupsBody,
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(409, {
+          body: { message: "Conflict" },
+        }),
       );
     });
   });
