@@ -128,7 +128,7 @@ describe("GET /v1/users/me", () => {
 
   it.for([
     {
-      reason: "reports out-of-sequence write timestamps",
+      reason: "rejects the create because a newer request already created them",
       upstream: 409,
       expected: 409,
     },

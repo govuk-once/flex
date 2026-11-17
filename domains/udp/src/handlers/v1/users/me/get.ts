@@ -96,10 +96,10 @@ async function createNotifications(
 
   if (!result.ok) {
     if (result.error.status === 409) {
-      logger.error("Update rejected because a newer version already exists", {
-        status: result.error.status,
-        userId,
-      });
+      logger.error(
+        "Create rejected because a newer request already created user notification preferences",
+        { status: result.error.status, userId },
+      );
 
       throw new createHttpError.Conflict();
     }
