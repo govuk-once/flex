@@ -7,4 +7,6 @@ export const visitedPageSchema = z.object({
   url: z.url(),
 });
 
+export const domainVisitedPagesSchema = z.array(visitedPageSchema);
+
 export const inboundAddVisitedPageRequestSchema = visitedPageSchema;

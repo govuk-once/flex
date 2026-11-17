@@ -844,6 +844,60 @@ describe("UDP Service Gateway", () => {
     });
   });
 
+  describe("GET /v1/activity/pages", () => {
+    it.beforeEach(({ http }) => {
+      stubConsumerConfig(http);
+    });
+
+    it("returns the visited pages for the requesting user", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/activity/pages", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, { data: mockPages });
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/activity/pages", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(
+        platform.gatewayResult(200, { body: mockPages }),
+      );
+    });
+
+    it("returns an empty list when the user has no visited pages", async ({
+      http,
+      platform,
+    }) => {
+      http
+        .url(mockConsumerConfig.apiUrl)
+        .get("/v1/activity/pages", {
+          headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
+        })
+        .reply(200, { data: [] });
+
+      const result = await handler(
+        platform.gatewayEvent.get("/v1/activity/pages", {
+          headers: {
+            "requesting-service-user-id": mockRequestingServiceUserId,
+          },
+        }),
+        platform.context(),
+      );
+
+      expect(result).toStrictEqual(platform.gatewayResult(200, { body: [] }));
+    });
+  });
+
   describe("POST /v1/activity/pages", () => {
     const now = new Date("2026-09-14T12:00:00.000Z");
     const [mockPage] = mockPages;

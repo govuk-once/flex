@@ -7,6 +7,7 @@ import {
   UpsertGroupsResponseSchema,
 } from "./schemas/remote/groups";
 import { notificationsResponseSchema } from "./schemas/remote/notifications";
+import { VisitedPagesResponseSchema } from "./schemas/remote/pages";
 import { SearchesResponseSchema } from "./schemas/remote/searches";
 import {
   topicsResponseSchema,
@@ -234,6 +235,22 @@ export const handler = createHandler({
     }) => {
       const result = await api.get("/v1/activity/searches", {
         schema: SearchesResponseSchema,
+        headers: {
+          "x-api-key": consumerConfig.apiKey,
+          "requesting-service": "app",
+          "requesting-service-user-id": requestingServiceUserId,
+        },
+      });
+
+      return mapApiResult(result, ({ data }) => data);
+    },
+    "GET /v1/activity/pages": async ({
+      clients: { api },
+      resources: { consumerConfig },
+      headers: { requestingServiceUserId },
+    }) => {
+      const result = await api.get("/v1/activity/pages", {
+        schema: VisitedPagesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
           "requesting-service": "app",
