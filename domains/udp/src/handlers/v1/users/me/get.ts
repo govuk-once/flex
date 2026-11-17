@@ -95,6 +95,15 @@ async function createNotifications(
   });
 
   if (!result.ok) {
+    if (result.error.status === 409) {
+      logger.error("Update rejected because a newer version already exists", {
+        status: result.error.status,
+        userId,
+      });
+
+      throw new createHttpError.Conflict();
+    }
+
     logger.error("Failed to create user notification preferences", {
       status: result.error.status,
     });
