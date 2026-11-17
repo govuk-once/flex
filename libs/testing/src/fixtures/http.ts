@@ -1,9 +1,5 @@
 import type { QueryParams } from "@flex/utils";
 import { extractQueryParams } from "@flex/utils";
-import type {
-  ReplyBody as NockReplyBody,
-  RequestBodyMatcher as NockRequestBodyMatcher,
-} from "nock";
 import nock from "nock";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -49,7 +45,7 @@ function buildApi(baseUrl: string, prefix = ""): Api {
       const reply = (status: number, body?: unknown): Interceptor => {
         const interceptor = scope[httpMethodMap[method]](
           `${prefix}${path}`,
-          requestBody as NockRequestBodyMatcher,
+          requestBody as nock.RequestBodyMatcher,
         );
 
         if (query && Object.keys(query).length > 0) {
@@ -62,7 +58,7 @@ function buildApi(baseUrl: string, prefix = ""): Api {
           }
         }
 
-        interceptor.reply(status, body as NockReplyBody);
+        interceptor.reply(status, body as nock.ReplyBody);
 
         return { reply };
       };

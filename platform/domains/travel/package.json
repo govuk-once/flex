@@ -13,20 +13,15 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@flex/logging": "workspace:*",
-    "@flex/sdk": "workspace:*",
     "@flex/service-gateway": "workspace:*",
     "@flex/utils": "workspace:*",
-    "http-errors": "2.0.1",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/http-errors": "2.0.5",
-    "@vitest/coverage-v8": "4.1.10",
-    "eslint": "10.7.0",
+    "eslint": "10.14.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "5.1.0"
   }
 }

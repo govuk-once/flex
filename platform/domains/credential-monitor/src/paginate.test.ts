@@ -16,8 +16,8 @@ describe("collectPages", () => {
       second: { items: ["b", "c"], nextToken: "third" }, // pragma: allowlist secret
       third: { items: ["d"] },
     };
-    const fetchPage = vi.fn((token?: string) =>
-      Promise.resolve(pages[token ?? "start"] ?? { items: [] }),
+    const fetchPage = vi.fn((token: string = "start") =>
+      Promise.resolve(pages[token] ?? { items: [] }),
     );
 
     await expect(collectPages(fetchPage)).resolves.toEqual([

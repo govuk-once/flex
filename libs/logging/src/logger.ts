@@ -1,12 +1,18 @@
 import { Logger as PowerToolsLogger } from "@aws-lambda-powertools/logger";
 import { search } from "@aws-lambda-powertools/logger/correlationId";
+import type { ConstructorOptions } from "@aws-lambda-powertools/logger/types";
 import { LogLevel } from "@aws-lambda-powertools/logger/types";
 
 import { FlexLogFormatter } from "./formatter";
 import { createSanitizer } from "./sanitizer";
 
-type FlexLoggerOptions = Omit<
-  ConstructorParameters<typeof PowerToolsLogger>[0],
+// ConstructorOptions is a union, so Omit must distribute over each member
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+type FlexLoggerOptions = DistributiveOmit<
+  ConstructorOptions,
   "logFormatter" | "logRecordOrder" | "jsonReplacerFn"
 >;
 
