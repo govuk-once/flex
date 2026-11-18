@@ -1495,7 +1495,13 @@ importers:
 
   scripts:
     devDependencies:
+      '@aws-sdk/client-kms':
+        specifier: 3.1165.0
+        version: 3.1165.0
       '@aws-sdk/client-s3':
+        specifier: 3.1165.0
+        version: 3.1165.0
+      '@aws-sdk/client-ssm':
         specifier: 3.1165.0
         version: 3.1165.0
       '@flex/config':
@@ -1504,9 +1510,15 @@ importers:
       '@flex/testing':
         specifier: workspace:*
         version: link:../libs/testing
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../libs/utils
       '@types/node':
         specifier: 26.6.6
         version: 26.6.6
+      aws-sdk-client-mock:
+        specifier: 4.1.0
+        version: 4.1.0
       eslint:
         specifier: 10.14.0
         version: 10.14.0(jiti@2.7.0)(supports-color@10.2.2)
