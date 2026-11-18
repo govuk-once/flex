@@ -1,6 +1,11 @@
 import { domain } from "@flex/sdk";
 
 import {
+  SearchTermSchema,
+  UserSearchesSchema,
+  UserSearchResponseSchema,
+} from "./src/schemas/search";
+import {
   GetSelectedTopicsResponseSchema,
   UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponseSchema,
@@ -34,6 +39,19 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/topics",
       response: GetSelectedTopicsResponseSchema,
     },
+    udpPostSearches: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/activity/searches",
+      body: UserSearchesSchema,
+      response: UserSearchResponseSchema,
+    },
+    udpGetSearches: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/activity/searches",
+      response: UserSearchesSchema,
+    },
   },
   routes: {
     v1: {
@@ -52,6 +70,24 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpGetTopics"],
             response: GetSelectedTopicsResponseSchema,
+          },
+        },
+      },
+      "/activity/searches": {
+        PATCH: {
+          public: {
+            name: "upsert-searches",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpPostSearches", "udpGetSearches"],
+            body: SearchTermSchema,
+          },
+        },
+        GET: {
+          public: {
+            name: "retrieve-searches",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetSearches"],
+            response: UserSearchesSchema,
           },
         },
       },
