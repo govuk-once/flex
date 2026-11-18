@@ -1,5 +1,11 @@
 import { domain } from "@flex/sdk";
 
+import {
+  GetSelectedTopicsResponseSchema,
+  UpdateSelectedTopicsRequestSchema,
+  UpdateSelectedTopicsResponseSchema,
+} from "./src/schemas/topic";
+
 export const { config, route, routeContext } = domain({
   name: "app-personalisation",
   environments: ["development", "staging"],
@@ -14,5 +20,41 @@ export const { config, route, routeContext } = domain({
       scope: "stage",
     },
   },
-  routes: {},
+  integrations: {
+    udpPostTopics: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/topics",
+      body: UpdateSelectedTopicsRequestSchema,
+      response: UpdateSelectedTopicsResponseSchema,
+    },
+    udpGetTopics: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/topics",
+      response: GetSelectedTopicsResponseSchema,
+    },
+  },
+  routes: {
+    v1: {
+      "/preferences/topics": {
+        PATCH: {
+          public: {
+            name: "upsert-topics",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpPostTopics"],
+            body: UpdateSelectedTopicsRequestSchema,
+          },
+        },
+        GET: {
+          public: {
+            name: "retrieve-topics",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetTopics"],
+            response: GetSelectedTopicsResponseSchema,
+          },
+        },
+      },
+    },
+  },
 });
