@@ -92,7 +92,7 @@ export const handler = route(
 );
 ```
 
-Used in: [`domains/topics/src/handlers/v1/topics/get.ts`](https://github.com/govuk-once/flex/blob/main/domains/topics/src/handlers/v1/topics/get.ts).
+Used in: [`domains/app-personalisation/src/handlers/v1/preferences/topics/get.ts`](https://github.com/govuk-once/flex/blob/main/domains/app-personalisation/src/handlers/v1/preferences/topics/get.ts).
 
 ### 2. Helpers that take arguments
 
