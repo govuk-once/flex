@@ -95,11 +95,7 @@ async function uploadToS3(body: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  console.log(`Uploading JWKS to s3://${BUCKET_NAME}/${S3_KEY}`);
-
   const arns = await getKmsKeyArns();
-  console.log(`Found ${String(arns.length)} KMS key ARN(s)`);
-
   const keys = await fetchJwks(arns);
   const body = JSON.stringify({ keys });
 
