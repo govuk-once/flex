@@ -79,7 +79,7 @@ Each condition maps to a test in the rule above. Burn rate alarms are composites
 | # | Condition | Alarm | Stack | Fires when |
 | --- | --- | --- | --- | --- |
 | C1 | Authentication failing for most requests | `<stage>-apigw-auth-failure`, `<stage>-smoke-test-auth-rejected` | `FlexPlatform`, `FlexSmokeTest` | 401 and 403 above 50% of public API requests over both 15 and 5 minutes with at least 20 requests, or the smoke test's valid token is refused 3 runs in a row |
-| C2 | Reads degraded | `<stage>-journey-reads-fast-burn` | `FlexPlatform` | Failed requests above 7.2% of valid GET requests on the udp, topics and groups routes over both 1 hour and 5 minutes |
+| C2 | Reads degraded | `<stage>-journey-reads-fast-burn` | `FlexPlatform` | Failed requests above 7.2% of valid GET requests on the udp, app-personalisation and groups routes over both 1 hour and 5 minutes |
 | C3 | Writes degraded | `<stage>-journey-writes-fast-burn` | `FlexPlatform` | Failed requests above 1.44% of valid POST, PATCH, PUT and DELETE requests on the same routes over both windows |
 | C4 | Driving degraded | `<stage>-journey-driving-fast-burn` | `FlexPlatform` | Failed requests above 7.2% on the dvla routes over both windows. The alert names the DVLA gateway |
 | C5 | Notifications degraded | `<stage>-journey-notifications-fast-burn` | `FlexPlatform` | Failed requests above 7.2% on the uns routes over both windows |
@@ -97,7 +97,7 @@ A journey is a group of public API routes a consumer uses for one task. The mapp
 
 | Journey | Routes | SLO | Fast burn pages at |
 | --- | --- | --- | --- |
-| reads | `GET` on `/app/udp/v1/*`, `/app/topics/v1/*`, `/app/groups/v1/*` | 99.5% | 7.2% |
+| reads | `GET` on `/app/udp/v1/*`, `/app/app-personalisation/v1/*`, `/app/groups/v1/*` | 99.5% | 7.2% |
 | writes | `POST`, `PATCH`, `PUT`, `DELETE` on the same paths | 99.9% | 1.44% |
 | driving | `/app/dvla/v1/*` except `/test-notification` | 99.5% | 7.2% |
 | notifications | `/app/uns/v1/*` | 99.5% | 7.2% |
