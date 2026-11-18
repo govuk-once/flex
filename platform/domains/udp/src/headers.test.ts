@@ -23,8 +23,12 @@ describe("withRequestedAt", () => {
   it("keeps the given headers and adds requested-at from the supplied time", () => {
     const now = new Date("2026-09-14T12:00:00.000Z");
 
-    expect(withRequestedAt({ "x-api-key": apiKey }, now)).toStrictEqual({
+    expect(
+      withRequestedAt(requestingUserHeaders(apiKey, userId), now),
+    ).toStrictEqual({
       "x-api-key": apiKey,
+      "requesting-service": "app",
+      "requesting-service-user-id": userId,
       "requested-at": "2026-09-14T12:00:00.000Z",
     });
   });
@@ -33,9 +37,9 @@ describe("withRequestedAt", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-14T12:00:00.000Z"));
 
-    const first = withRequestedAt({ "x-api-key": apiKey });
+    const first = withRequestedAt(requestingUserHeaders(apiKey, userId));
     vi.advanceTimersByTime(1000);
-    const second = withRequestedAt({ "x-api-key": apiKey });
+    const second = withRequestedAt(requestingUserHeaders(apiKey, userId));
 
     expect(first["requested-at"]).toBe("2026-09-14T12:00:00.000Z");
     expect(second["requested-at"]).toBe("2026-09-14T12:00:01.000Z");
