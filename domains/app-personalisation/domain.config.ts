@@ -1,6 +1,10 @@
 import { domain } from "@flex/sdk";
 
 import {
+  LocalAuthorityResponseSchema,
+  LocalAuthoritySchema,
+} from "./src/schemas/local-authority";
+import {
   SearchTermSchema,
   UserSearchesSchema,
   UserSearchResponseSchema,
@@ -52,6 +56,18 @@ export const { config, route, routeContext } = domain({
       route: "GET /v1/activity/searches",
       response: UserSearchesSchema,
     },
+    udpSaveLocalAuthority: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/local-council/*",
+      body: LocalAuthoritySchema,
+    },
+    udpGetLocalAuthority: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/local-council/*",
+      response: LocalAuthorityResponseSchema,
+    },
   },
   routes: {
     v1: {
@@ -88,6 +104,31 @@ export const { config, route, routeContext } = domain({
             resources: ["privateGatewayUrl"],
             integrations: ["udpGetSearches"],
             response: UserSearchesSchema,
+          },
+        },
+      },
+      // Not deployed to development, staging or production: UDP has no
+      // local-council gateway route yet. To be refactored and completed in
+      // FLEX-268 (GET), FLEX-269 (POST) and FLEX-270 (DELETE).
+      "/preferences/local-council/:id": {
+        POST: {
+          private: {
+            name: "upsert-local-authority",
+            environments: [],
+            function: { timeoutSeconds: 30 },
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpSaveLocalAuthority"],
+            body: LocalAuthoritySchema,
+          },
+        },
+        GET: {
+          private: {
+            name: "get-local-authority",
+            environments: [],
+            function: { timeoutSeconds: 30 },
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetLocalAuthority"],
+            response: LocalAuthorityResponseSchema,
           },
         },
       },
