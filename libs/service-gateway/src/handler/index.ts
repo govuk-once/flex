@@ -1,5 +1,9 @@
 import { logger } from "@flex/logging";
-import { clearTmp } from "@flex/sdk";
+import {
+  clearTmp,
+  extractCorrelationId,
+  runWithCorrelationId,
+} from "@flex/sdk";
 import { emitTelemetry, TelemetryEvent } from "@flex/telemetry";
 import { jsonResponse, stripPathPrefix } from "@flex/utils";
 import createHttpError from "http-errors";
@@ -41,7 +45,12 @@ export function buildHandler<
   const findRouteHandler = (key: RouteKeyOf<Config>) =>
     gateway.routes[key] as GatewayRouteHandler | undefined;
 
-  const coreHandler: GatewayLambda = async (event) => {
+  const coreHandler: GatewayLambda = (event, ...rest) =>
+    runWithCorrelationId(extractCorrelationId(event.headers), () =>
+      handleRequest(event, ...rest),
+    );
+
+  const handleRequest: GatewayLambda = async (event) => {
     try {
       const inboundPath = stripPathPrefix(event.path, gatewayPathPrefix);
 
