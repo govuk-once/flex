@@ -28,7 +28,7 @@ export const handler = route(
       throw new createHttpError.BadGateway(result.error.message);
     }
 
-    logger.info("Successfully fetched searches", { data: result });
+    logger.info("Successfully fetched searches");
 
     return {
       status: 200,

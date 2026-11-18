@@ -74,7 +74,7 @@ export const handler = route(
     });
 
     if (!postResult.ok) {
-      const { status, message, body } = postResult.error;
+      const { status } = postResult.error;
 
       if (status === 409) {
         logger.error("Update rejected because a newer version already exists", {
@@ -85,8 +85,7 @@ export const handler = route(
         throw new createHttpError.Conflict();
       }
 
-      const fullMessage = `Failed to update user searches (${message}), (${JSON.stringify(body)})`;
-      logger.error(fullMessage, { status });
+      logger.error("Failed to update user searches", { status });
 
       throw new createHttpError.BadGateway();
     }
