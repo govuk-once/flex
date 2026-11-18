@@ -60,14 +60,14 @@ Implemented in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), tested 
 
 ## Request headers
 
-Built in [`src/headers.ts`](/platform/domains/udp/src/headers.ts).
+Set per route in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), using the helpers in [`src/headers.ts`](/platform/domains/udp/src/headers.ts) where they apply.
 
-| Header                       | Sent on            | Description                                      |
-| ---------------------------- | ------------------ | ------------------------------------------------ |
-| `x-api-key`                  | All requests       | UDP API key from `consumerConfig`                |
-| `requesting-service`         | User-scoped routes | Requesting service, always `app`                 |
-| `requesting-service-user-id` | User-scoped routes | ID of the user the request is made on behalf of  |
-| `requested-at`               | Data `POST` routes | ISO 8601 timestamp, set per request at call time |
+| Header                       | Sent on                  | Description                                      |
+| ---------------------------- | ------------------------ | ------------------------------------------------ |
+| `x-api-key`                  | All requests             | UDP API key from `consumerConfig`                |
+| `requesting-service`         | Requests made for a user | Requesting service, always `app`                 |
+| `requesting-service-user-id` | Requests made for a user | ID of the user the request is made on behalf of  |
+| `requested-at`               | Data `POST` routes       | ISO 8601 timestamp, set per request at call time |
 
 Data `POST` routes are `/v1/notifications`, `/v1/topics`, `/v1/groups` and `/v1/activity/searches`. UDP rejects a write with `409 Conflict` when its `requested-at` is older than the stored record, and the gateway passes the `409` through.
 
