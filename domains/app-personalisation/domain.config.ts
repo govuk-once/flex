@@ -1,19 +1,15 @@
 import { domain } from "@flex/sdk";
 
 import {
+  GetSelectedTopicsResponseSchema,
   LocalAuthorityResponseSchema,
   LocalAuthoritySchema,
-} from "./src/schemas/local-authority";
-import {
   SearchTermSchema,
-  UserSearchesSchema,
-  UserSearchResponseSchema,
-} from "./src/schemas/search";
-import {
-  GetSelectedTopicsResponseSchema,
   UpdateSelectedTopicsRequestSchema,
   UpdateSelectedTopicsResponseSchema,
-} from "./src/schemas/topic";
+  UserSearchesSchema,
+  UserSearchResponseSchema,
+} from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
   name: "app-personalisation",
