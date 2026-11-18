@@ -32,7 +32,7 @@ export interface JourneyDefinition {
 
 const USER_DATA_PATHS = [
   "/app/udp/v1/*",
-  "/app/topics/v1/*",
+  "/app/app-personalisation/v1/*",
   "/app/groups/v1/*",
 ];
 
