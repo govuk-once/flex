@@ -10,6 +10,6 @@ export interface MacieCoverageConfig {
 }
 
 export const macieCoverage: MacieCoverageConfig = {
-  coveredDomains: ["dvla", "example", "udp", "uns"],
+  coveredDomains: ["app-personalisation", "dvla", "example", "udp", "uns"],
   customDataIdentifiers: [],
 };
