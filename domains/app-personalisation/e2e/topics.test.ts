@@ -1,3 +1,4 @@
+import { config as topicsConfig } from "@domain";
 import { isDomainDeployed, isRouteDeployed } from "@flex/sdk";
 import { it } from "@flex/testing/e2e";
 import {
@@ -6,8 +7,6 @@ import {
   UpdateSelectedTopicsResponse,
 } from "@schemas/topic";
 import { describe, expect } from "vitest";
-
-import { config as topicsConfig } from "../domain.config";
 
 describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
   describe("/app-personalisation/v1/preferences/topics", () => {

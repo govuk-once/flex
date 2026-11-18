@@ -1,3 +1,15 @@
+export type {
+  LocalAuthority,
+  LocalAuthorityResponse,
+  ParentAuthority,
+  Tier,
+} from "./local-authority";
+export {
+  LocalAuthorityResponseSchema,
+  LocalAuthoritySchema,
+  ParentAuthoritySchema,
+  TierSchema,
+} from "./local-authority";
 export type { SearchTerm, UserSearches } from "./search";
 export {
   SearchTermSchema,
