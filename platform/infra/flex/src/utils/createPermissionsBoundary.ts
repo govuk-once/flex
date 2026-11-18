@@ -69,7 +69,6 @@ export function createPermissionsBoundary(
           "ssm:GetParameterHistory",
           "ssm:PutParameter",
           "kms:Decrypt",
-          "kms:GetPublicKey",
           "sts:AssumeRole",
         ],
         resources: ["*"],
