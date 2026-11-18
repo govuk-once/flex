@@ -3,6 +3,7 @@ import { Aspects } from "aws-cdk-lib";
 
 import { EncryptLogGroups } from "./aspects/encrypt-log-groups";
 import { EnforceS3Https } from "./aspects/enforce-s3-https";
+import { EnableOtelTracing } from "./aspects/otel-tracing";
 import { SsmApp } from "./base";
 import { ENV_KEYS, PLATFORM_KEYS } from "./ssm-keys";
 import { FlexCloudWatchDashboardsStack } from "./stacks/cloudwatch-dashboards";
@@ -27,6 +28,7 @@ const { env, persistent, stage } = getEnvConfig();
 const app = new SsmApp();
 Aspects.of(app).add(new EnforceS3Https());
 Aspects.of(app).add(new EncryptLogGroups());
+Aspects.of(app).add(new EnableOtelTracing());
 
 const region = "eu-west-2";
 
