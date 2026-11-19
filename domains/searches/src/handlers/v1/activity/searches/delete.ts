@@ -1,4 +1,5 @@
 import { route } from "@domain";
+import createHttpError from "http-errors";
 
 export const handler = route(
   "DELETE /v1/activity/searches",
@@ -14,15 +15,18 @@ export const handler = route(
 
     if (!postResult.ok) {
       logger.info(
-        `Post of empty (deleted) collection returned error ${JSON.stringify(postResult.error)} - returning`,
+        `Post of empty (deleted) collection returned error ${JSON.stringify(postResult.error)}`,
         {
           userId: auth.userId,
         },
       );
-    } else {
-      logger.info("Successfully deleted all user searches");
+
+      throw new createHttpError.BadGateway(
+        `Post of empty (deleted) collection returned error ${JSON.stringify(postResult.error)}`,
+      );
     }
 
+    logger.info("Successfully deleted all user searches");
     return { status: 201 };
   },
 );

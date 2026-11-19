@@ -56,7 +56,7 @@ export const { config, route, routeContext } = domain({
         },
         DELETE: {
           public: {
-            name: "delete-all-searches",
+            name: "delete-searches",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostSearches", "udpGetSearches"],
           },
@@ -65,7 +65,7 @@ export const { config, route, routeContext } = domain({
       "/activity/searches/:term": {
         DELETE: {
           public: {
-            name: "delete-searches",
+            name: "delete-search",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostSearches", "udpGetSearches"],
           },

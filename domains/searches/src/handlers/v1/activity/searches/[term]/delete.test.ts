@@ -47,7 +47,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
     expect(result.body).toBe("");
   });
 
-  it("returns 201 when specified term is not in existing searches", async ({
+  it("returns 200 when specified term is not in existing searches", async ({
     http,
     sdk,
   }) => {
@@ -59,7 +59,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
       .get(endpoint, {
         headers: { "requesting-service-user-id": userId },
       })
-      .reply(201, oldSearches);
+      .reply(200, oldSearches);
 
     const result = await handler(
       sdk.event.delete("/activity/searches/:term", {
@@ -69,11 +69,11 @@ describe("DELETE /v1/activity/searches/:term", () => {
       sdk.context(),
     );
 
-    expect(result.statusCode).toBe(201);
+    expect(result.statusCode).toBe(200);
     expect(result.body).toBe("");
   });
 
-  it("returns 201 when there are no existing searches", async ({
+  it("returns 204 when there are no existing searches", async ({
     http,
     sdk,
   }) => {
@@ -82,7 +82,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
       .get(endpoint, {
         headers: { "requesting-service-user-id": userId },
       })
-      .reply(201, baseSearches);
+      .reply(404, baseSearches);
 
     const result = await handler(
       sdk.event.delete("/activity/searches/:term", {
@@ -92,7 +92,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
       sdk.context(),
     );
 
-    expect(result.statusCode).toBe(201);
+    expect(result.statusCode).toBe(204);
     expect(result.body).toBe("");
   });
 
@@ -219,7 +219,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
       sdk.context(),
     );
 
-    expect(result.statusCode).toBe(201);
+    expect(result.statusCode).toBe(204);
   });
 
   it("throws when the UDP get searches integration returns a 502", async ({

@@ -1,5 +1,5 @@
 import { it, userId } from "@flex/testing";
-import { makeFilledSearches } from "@tests/fixtures";
+import { baseSearches } from "@tests/fixtures";
 import { describe, expect } from "vitest";
 
 import { handler } from "./delete";
@@ -11,20 +11,13 @@ describe("DELETE /v1/activity/searches", () => {
     http,
     sdk,
   }) => {
-    const userSearches = makeFilledSearches(10);
-    userSearches.searches.selectedSearches.pop();
-
     http
       .gateway("udp")
       .post(endpoint, {
         headers: { "requesting-service-user-id": userId },
-        body: {
-          searches: {
-            selectedSearches: [],
-          },
-        },
+        body: baseSearches,
       })
-      .reply(200);
+      .reply(200, baseSearches);
 
     const result = await handler(
       sdk.event.delete(endpoint, { auth: userId }),
@@ -35,7 +28,7 @@ describe("DELETE /v1/activity/searches", () => {
     expect(result.body).toBe("");
   });
 
-  it("returns 409 when the UDP delete all searches integration fails", async ({
+  it("returns Bad Gateway when the UDP delete all searches integration fails", async ({
     http,
     sdk,
   }) => {
@@ -56,7 +49,6 @@ describe("DELETE /v1/activity/searches", () => {
       sdk.context(),
     );
 
-    expect(result.statusCode).toBe(201);
-    expect(result.body).toBe("");
+    expect(result.statusCode).toBe(502);
   });
 });

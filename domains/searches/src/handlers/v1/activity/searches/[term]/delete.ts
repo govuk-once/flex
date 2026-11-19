@@ -20,22 +20,18 @@ export const handler = route(
       let existingUserSearches: UserSearches;
       if (result.ok) {
         existingUserSearches = result.data;
+      } else if (result.error.status === 404) {
+        logger.info("Existing search data not found, returning", {
+          userId: userId,
+        });
+
+        return { status: 204 };
       } else {
-        const { status } = result.error;
+        logger.error("Failed to get existing searches, not saving search", {
+          userId: userId,
+        });
 
-        if (status === 404) {
-          logger.info("Existing search data not found, returning", {
-            userId: userId,
-          });
-
-          return { status: 201 };
-        } else {
-          logger.error("Failed to get existing searches, not saving search", {
-            status,
-          });
-
-          throw new createHttpError.BadGateway();
-        }
+        throw new createHttpError.BadGateway();
       }
 
       const existingSearchTerms: SearchTerm[] =
@@ -54,7 +50,7 @@ export const handler = route(
           },
         );
 
-        return { status: 201 };
+        return { status: 200 };
       }
     } else {
       logger.info("No valid term specified, returning", {
@@ -85,8 +81,10 @@ export const handler = route(
         throw new createHttpError.Conflict();
       }
 
-      const fullMessage = `Failed to delete specified user search (${message}), (${JSON.stringify(body)})`;
-      logger.error(fullMessage, { status });
+      logger.error(
+        `Failed to delete specified user search (${message}), (${JSON.stringify(body)})`,
+        { status },
+      );
 
       throw new createHttpError.BadGateway();
     }
