@@ -5,10 +5,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-env:
-  AWS_REGION: eu-west-2
-  NODE_VERSION: "24"
-
 jobs:
   qualityChecks:
     name: Quality Checks
@@ -30,14 +26,13 @@ jobs:
 
   release:
     name: Create Release
+    needs: qualityChecks
     uses: govuk-once/platform-shared-ci-cd/.github/workflows/semantic-release.yml@v1.1.6
     permissions:
       id-token: write
       contents: write
       issues: write
       pull-requests: write
-    with:
-      node-version: ${{ vars.NODE_VERSION }}
     secrets:
       deployment-role: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
@@ -120,15 +115,15 @@ jobs:
   send-release-notification:
     name: Notify Production Release Slack channel
     needs: [release, deployProd]
-    if: needs.version.outputs.released == 'true'
+    if: needs.release.outputs.released == 'true'
     uses: govuk-once/platform-shared-ci-cd/.github/workflows/release-notification.yml@v1.1.6
     permissions:
       contents: read
       id-token: write
     with:
       application: "FLEX"
-      version: ${{ needs.version.outputs.version }}
-      type: ${{ needs.version.outputs.type }}
+      version: ${{ needs.release.outputs.version }}
+      type: ${{ needs.release.outputs.type }}
       slack-channel: ${{ vars.SLACK_RELEASE_CHANNEL }}
     secrets:
-      deployment-role: ${{ secrets.PRODUCTION_DEPLOYMENT_ROLE }}
+      deployment-role: ${{ secrets.PROD_DEPLOYMENT_ROLE }}

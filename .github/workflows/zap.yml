@@ -28,7 +28,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
-          aws-region: "eu-west-2"
+          aws-region: ${{ vars.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
       - name: Get AWS account ID
@@ -164,7 +164,7 @@ jobs:
         uses: govuk-once/govuk-platform-notifications-gh-action/security-alerts@9790ae74363e58ed5600a4705a77af94b583435d
         with:
           aws_account_id: ${{ steps.aws-account.outputs.account-id }}
-          aws_region: eu-west-2
+          aws_region: ${{ vars.AWS_REGION }}
           title: "New ZAP security findings"
           message: "New findings detected during the authenticated ZAP API scan."
           finding_count: ${{ steps.zap_findings.outputs.count }}
