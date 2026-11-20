@@ -40,6 +40,15 @@ async function updateNotifications(
   if (!result.ok) {
     const { status } = result.error;
 
+    if (status === 409) {
+      logger.error("Update rejected because a newer version already exists", {
+        status,
+        userId,
+      });
+
+      throw new createHttpError.Conflict();
+    }
+
     logger.error("Failed to update user notification preferences", { status });
     throw new createHttpError.BadGateway();
   }

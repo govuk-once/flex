@@ -59,24 +59,31 @@ describe("PATCH /v0/users/notifications", () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it("returns 502 when the notifications update fails", async ({
-    http,
-    sdk,
-  }) => {
-    http
-      .domain("udp")
-      .get("/users/push-id", { headers: { "User-Id": userId } })
-      .reply(200, { pushId });
-    http.gateway("udp").post("/notifications").reply(500);
+  it.for([
+    {
+      reason: "reports out-of-sequence write timestamps",
+      upstream: 409,
+      expected: 409,
+    },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the notifications update $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .domain("udp")
+        .get("/users/push-id", { headers: { "User-Id": userId } })
+        .reply(200, { pushId });
+      http.gateway("udp").post("/notifications").reply(upstream);
 
-    const result = await handler(
-      sdk.event.patch(endpoint, {
-        auth: userId,
-        body: { consentStatus: "accepted" },
-      }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.patch(endpoint, {
+          auth: userId,
+          body: { consentStatus: "accepted" },
+        }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+    },
+  );
 });

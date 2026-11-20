@@ -233,7 +233,7 @@ export const handler = route(
 
       // A failure the caller can act on: map it to a meaningful status
       if (status === 409) {
-        logger.warn("Update rejected because a newer version exists", {
+        logger.error("Update rejected because a newer version already exists", {
           status,
         });
 
@@ -261,6 +261,7 @@ Use judgement about what each failure means to your caller:
 
 - If the caller caused the failure or can act on it, return the matching `4xx` with a message that is safe to show.
 - If the upstream outcome isn't a failure from your caller's point of view, such as "nothing found yet", consider a successful response instead.
+- For UDP data writes (notifications, topics, groups and searches), a `409` means the write was out-of-sequence (a newer write already exists). Return `409 Conflict`.
 - Otherwise, treat it as an upstream problem and return `502 Bad Gateway`.
 - A network error is thrown, not returned. Catch it and throw a `502`, or let it become a `500`.
 

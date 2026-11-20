@@ -51,6 +51,27 @@ Implemented in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), tested 
 | `DELETE /v1/notifications`                     | `deleteNotificationPreferences` |
 | `GET /v1/groups`                               | `getGroupSubscriptions`         |
 | `POST /v1/groups`                              | `updateGroupSubscriptions`      |
+| `GET /v1/topics`                               | `getTopics`                     |
+| `POST /v1/topics`                              | `upsertTopics`                  |
+| `GET /v1/activity/searches`                    | `getSearches`                   |
+| `POST /v1/activity/searches`                   | `upsertSearches`                |
+
+---
+
+## Request headers
+
+Set per route in [`src/gateway.ts`](/platform/domains/udp/src/gateway.ts), using the helpers in [`src/headers.ts`](/platform/domains/udp/src/headers.ts) where they apply.
+
+| Header                       | Sent on                  | Description                                      |
+| ---------------------------- | ------------------------ | ------------------------------------------------ |
+| `x-api-key`                  | All requests             | UDP API key from `consumerConfig`                |
+| `requesting-service`         | Requests made for a user | Requesting service, always `app`                 |
+| `requesting-service-user-id` | Requests made for a user | ID of the user the request is made on behalf of  |
+| `requested-at`               | Data `POST` routes       | ISO 8601 timestamp, set per request at call time |
+
+Data `POST` routes are `/v1/notifications`, `/v1/topics`, `/v1/groups` and `/v1/activity/searches`. UDP rejects a write with `409 Conflict` when its `requested-at` is older than the stored record, and the gateway passes the `409` through.
+
+Identity and user `POST` requests, and all `DELETE` and `GET` requests, do not send `requested-at`.
 
 ---
 

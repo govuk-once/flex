@@ -235,7 +235,14 @@ describe("POST /v1/groups", () => {
     },
   );
 
-  it.for([{ reason: "fails unexpectedly", upstream: 500, expected: 502 }])(
+  it.for([
+    {
+      reason: "reports out-of-sequence write timestamps",
+      upstream: 409,
+      expected: 409,
+    },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
     "returns $expected when the UDP post groups integration $reason",
     async ({ upstream, expected }, { http, sdk }) => {
       http

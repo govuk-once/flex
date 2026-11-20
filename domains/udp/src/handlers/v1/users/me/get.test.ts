@@ -126,35 +126,42 @@ describe("GET /v1/users/me", () => {
     expect(result.statusCode).toBe(502);
   });
 
-  it("returns 502 when the UDP create notifications integration fails", async ({
-    http,
-    sdk,
-  }) => {
-    http
-      .gateway("udp")
-      .get("/notifications", {
-        headers: {
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
-      })
-      .reply(404);
-    http.gateway("udp").post("/users", { body: userProfile }).reply(204);
-    http
-      .gateway("udp")
-      .post("/notifications", {
-        headers: {
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
-      })
-      .reply(500);
+  it.for([
+    {
+      reason: "rejects the create because a newer request already created them",
+      upstream: 409,
+      expected: 409,
+    },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP create notifications integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      http
+        .gateway("udp")
+        .get("/notifications", {
+          headers: {
+            "requesting-service": "app",
+            "requesting-service-user-id": userId,
+          },
+        })
+        .reply(404);
+      http.gateway("udp").post("/users", { body: userProfile }).reply(204);
+      http
+        .gateway("udp")
+        .post("/notifications", {
+          headers: {
+            "requesting-service": "app",
+            "requesting-service-user-id": userId,
+          },
+        })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.get(endpoint, { auth: userId }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.get(endpoint, { auth: userId }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+    },
+  );
 });
