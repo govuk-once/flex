@@ -64,7 +64,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
   );
 
   describe.runIf(isRouteDeployed(config, "DELETE /v1/activity/searches/:term"))(
-    "DELETE",
+    "DELETE:term",
     () => {
       it("returns 201 with updated user searches", async ({
         cloudfront,
@@ -192,10 +192,10 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
       });
 
       it("returns 200 when no match can be found", async ({
-                                                                     cloudfront,
-                                                                     udpUser: _,
-                                                                     authHeader,
-                                                                   }) => {
+        cloudfront,
+        udpUser: _,
+        authHeader,
+      }) => {
         const result = await cloudfront.client.delete(
           `/searches/v1/activity/searches/xyz`,
           {
@@ -226,10 +226,10 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
       };
 
       it("returns 201 with updated user searches", async ({
-                                                            cloudfront,
-                                                            udpUser: _,
-                                                            authHeader,
-                                                          }) => {
+        cloudfront,
+        udpUser: _,
+        authHeader,
+      }) => {
         let result = await cloudfront.client.patch(endpoint, {
           headers: authHeader,
           body: searchTerm,
@@ -243,12 +243,6 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
 
         expect(result.status).toBe(200);
         expect(result.body).toBeDefined();
-
-        let userSearches: UserSearches = result.body as UserSearches;
-        let searches: SearchTerm[] = userSearches.searches.selectedSearches;
-        let numFoundSearches = searches.length;
-        // @ts-expect-error - it thinks the entry may not be defined
-        const termToDelete: SearchTerm = searches[0];
 
         result = await cloudfront.client.delete(endpoint, {
           headers: authHeader,
@@ -264,8 +258,8 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(result.status).toBe(200);
         expect(result.body).toBeDefined();
 
-        userSearches = result.body as UserSearches;
-        searches = userSearches.searches.selectedSearches;
+        const userSearches: UserSearches = result.body as UserSearches;
+        const searches: SearchTerm[] = userSearches.searches.selectedSearches;
 
         expect(searches).toHaveLength(0);
       });
