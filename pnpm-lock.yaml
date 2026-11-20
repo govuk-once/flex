@@ -253,6 +253,40 @@ importers:
         specifier: 0.27.0
         version: 0.27.0(@astrojs/starlight@0.42.10(astro@7.4.8(@azure/identity@4.14.1(supports-color@10.2.2))(@azure/storage-blob@12.34.0(supports-color@10.2.2))(@types/node@26.6.6)(@upstash/redis@1.41.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(supports-color@10.2.2)(typescript@6.0.3))(astro@7.4.8(@azure/identity@4.14.1(supports-color@10.2.2))(@azure/storage-blob@12.34.0(supports-color@10.2.2))(@types/node@26.6.6)(@upstash/redis@1.41.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))(supports-color@10.2.2)
 
+  domains/app-personalisation:
+    dependencies:
+      '@flex/sdk':
+        specifier: workspace:*
+        version: link:../../libs/sdk
+      '@flex/utils':
+        specifier: workspace:*
+        version: link:../../libs/utils
+      http-errors:
+        specifier: 2.0.1
+        version: 2.0.1
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@flex/config':
+        specifier: workspace:*
+        version: link:../../libs/config
+      '@flex/testing':
+        specifier: workspace:*
+        version: link:../../libs/testing
+      '@types/http-errors':
+        specifier: 2.0.5
+        version: 2.0.5
+      eslint:
+        specifier: 10.14.0
+        version: 10.14.0(jiti@2.7.0)(supports-color@10.2.2)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 5.1.0
+        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
   domains/driving:
     dependencies:
       '@flex/sdk':
@@ -387,108 +421,6 @@ importers:
       '@flex/udp-domain':
         specifier: workspace:*
         version: link:../udp
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../libs/utils
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../../libs/config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../../libs/testing
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
-      eslint:
-        specifier: 10.14.0
-        version: 10.14.0(jiti@2.7.0)(supports-color@10.2.2)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 5.1.0
-        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-
-  domains/local-council:
-    dependencies:
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../libs/utils
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../../libs/config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../../libs/testing
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
-      eslint:
-        specifier: 10.14.0
-        version: 10.14.0(jiti@2.7.0)(supports-color@10.2.2)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 5.1.0
-        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-
-  domains/searches:
-    dependencies:
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
-      '@flex/utils':
-        specifier: workspace:*
-        version: link:../../libs/utils
-      http-errors:
-        specifier: 2.0.1
-        version: 2.0.1
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@flex/config':
-        specifier: workspace:*
-        version: link:../../libs/config
-      '@flex/testing':
-        specifier: workspace:*
-        version: link:../../libs/testing
-      '@types/http-errors':
-        specifier: 2.0.5
-        version: 2.0.5
-      eslint:
-        specifier: 10.14.0
-        version: 10.14.0(jiti@2.7.0)(supports-color@10.2.2)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 5.1.0
-        version: 5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-
-  domains/topics:
-    dependencies:
-      '@flex/sdk':
-        specifier: workspace:*
-        version: link:../../libs/sdk
       '@flex/utils':
         specifier: workspace:*
         version: link:../../libs/utils

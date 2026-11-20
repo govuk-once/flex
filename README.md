@@ -93,11 +93,11 @@ flex/
 
 ## Domains
 
-| Domain                                               | Description                                                       |
-| ---------------------------------------------------- | ----------------------------------------------------------------- |
-| [`@flex/example-domain`](/domains/example/README.md) | Example domain demonstrating route handler patterns using the SDK |
-| [`@flex/udp-domain`](/domains/udp/README.md)         | User Data Platform for user settings management                   |
-| [`@flex/topics-domain`](/domains/topics/README.md)   | Manage user topic selections via integration with UDP             |
+| Domain                                                                       | Description                                                       |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`@flex/example-domain`](/domains/example/README.md)                         | Example domain demonstrating route handler patterns using the SDK |
+| [`@flex/udp-domain`](/domains/udp/README.md)                                 | User Data Platform for user settings management                   |
+| [`@flex/app-personalisation-domain`](/domains/app-personalisation/README.md) | Manage App user data (topics, searches) via integration with UDP  |
 
 ---
 
@@ -128,18 +128,18 @@ flex/
 
 ## Guides
 
-| Guide                                                       | Description                                                           |
-| ----------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Environment Setup](/docs/environment-setup.md)             | Prerequisites and local environment setup                             |
-| [Platform Development Guide](/docs/platform-development.md) | Maintaining infrastructure and shared libraries                       |
-| [Domain Development Guide](/docs/domain-development.md)     | Building application code within a domain                             |
-| [Deployment Guide](/docs/deployment.md)                     | CI/CD pipelines, environments and deployment workflows                |
-| [Releases and Versioning](/docs/releases.md)                | Semantic versioning, release notes and Slack notifications            |
-| [Developer Reference](/docs/developer-reference.md)         | Common patterns, best practices and workflows when developing on FLEX |
-| [Documentation Guide](/docs/documentation-guide.md)         | Standards and templates for writing documentation                     |
-| [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline |
-| [IAM change alerts](/docs/iam-change-alerts.md) | IAM, Lambda and CloudFormation change alerts. |
-| [Critical alerts](/docs/critical-alerts.md) | What is critical, where alerts go, how to respond, and the alarm catalogue. |
+| Guide                                                                             | Description                                                                 |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [Environment Setup](/docs/environment-setup.md)                                   | Prerequisites and local environment setup                                   |
+| [Platform Development Guide](/docs/platform-development.md)                       | Maintaining infrastructure and shared libraries                             |
+| [Domain Development Guide](/docs/domain-development.md)                           | Building application code within a domain                                   |
+| [Deployment Guide](/docs/deployment.md)                                           | CI/CD pipelines, environments and deployment workflows                      |
+| [Releases and Versioning](/docs/releases.md)                                      | Semantic versioning, release notes and Slack notifications                  |
+| [Developer Reference](/docs/developer-reference.md)                               | Common patterns, best practices and workflows when developing on FLEX       |
+| [Documentation Guide](/docs/documentation-guide.md)                               | Standards and templates for writing documentation                           |
+| [Data Classification and Encryption](/docs/data-classification-and-encryption.md) | Classification of persisted data and the encryption baseline                |
+| [IAM change alerts](/docs/iam-change-alerts.md)                                   | IAM, Lambda and CloudFormation change alerts.                               |
+| [Critical alerts](/docs/critical-alerts.md)                                       | What is critical, where alerts go, how to respond, and the alarm catalogue. |
 
 ---
 

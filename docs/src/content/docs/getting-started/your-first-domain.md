@@ -30,7 +30,7 @@ pnpm test
 A domain is a workspace package under `domains/`. Create `domains/hello/` with the five files below. They are the same for every domain, apart from the package name.
 
 :::tip[Topics domain]
-[`domains/topics`](https://github.com/govuk-once/flex/tree/main/domains/topics) is a small, real domain to compare against.
+[`domains/app-personalisation`](https://github.com/govuk-once/flex/tree/main/domains/app-personalisation) is a real domain to compare against.
 :::
 
 ### package.json

@@ -33,7 +33,7 @@ domains/<name>/
 :::tip
 Some examples that may be useful:
 
-- [`domains/topics`](https://github.com/govuk-once/flex/tree/main/domains/topics) is a small, real domain
+- [`domains/app-personalisation`](https://github.com/govuk-once/flex/tree/main/domains/app-personalisation) is a real domain
 - [`domains/example`](https://github.com/govuk-once/flex/tree/main/domains/example) uses most of the config options
   :::
 
@@ -86,12 +86,12 @@ A method can have both: `public` and `private` are separate routes with separate
 
 Leave `access` alone. A domain reaches external services through a [service gateway](/flex/platform/service-gateways/), using an integration, so `"isolated"` covers almost every domain. See [Access](/flex/domains/domain-config/#access) for the full comparison.
 
-### Example: the topics domain
+### Example: the app-personalisation domain
 
-`domains/topics` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway. Because it makes integration calls, the domain declares the [private gateway URL](/flex/domains/domain-config/#the-private-gateway-url) as a resource, which every integration needs.
+`domains/app-personalisation` has `public` routes, so the app can call them, and `access: "isolated"`, so their Lambdas can only call Flex. They reach UDP through the `udp` service gateway. Because it makes integration calls, the domain declares the [private gateway URL](/flex/domains/domain-config/#the-private-gateway-url) as a resource, which every integration needs.
 
 ```text
-GOV.UK app → CloudFront → Lambda authorizer → topics Lambda → private API Gateway → udp gateway → UDP
+GOV.UK app → CloudFront → Lambda authorizer → app-personalisation Lambda → private API Gateway → udp gateway → UDP
 ```
 
 See [How Flex works](/flex/introduction/how-flex-works/) for the full request flow.
