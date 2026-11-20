@@ -42,6 +42,8 @@ export {
   UpdateNotificationPreferencesRequestSchema,
   UpdateNotificationPreferencesResponseSchema,
 } from "./schemas/notifications";
+export type { VisitedPage } from "./schemas/pages";
+export { VisitedPageSchema } from "./schemas/pages";
 export type {
   CreateUserRequest,
   GetUserResponse,
