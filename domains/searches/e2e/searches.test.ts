@@ -66,11 +66,6 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
   describe.runIf(isRouteDeployed(config, "DELETE /v1/activity/searches/:term"))(
     "DELETE",
     () => {
-      const searchTerm: SearchTerm = {
-        term: "A New Search 11",
-        timestamp: "2026-11-04T13:45:00Z",
-      };
-
       it("returns 201 with updated user searches", async ({
         cloudfront,
         udpUser: _,
@@ -78,7 +73,10 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
       }) => {
         let result = await cloudfront.client.patch(endpoint, {
           headers: authHeader,
-          body: searchTerm,
+          body: {
+            term: "A New Search xyz",
+            timestamp: "2026-11-04T13:45:00Z",
+          },
         });
 
         expect(result.status).toBe(201);
@@ -158,7 +156,10 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
       }) => {
         let result = await cloudfront.client.patch(endpoint, {
           headers: authHeader,
-          body: searchTerm,
+          body: {
+            term: "A New Search uvw",
+            timestamp: "2026-11-04T13:45:00Z",
+          },
         });
 
         expect(result.status).toBe(201);
@@ -186,6 +187,85 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
 
         const userSearches = result.body as UserSearches;
         const searches = userSearches.searches.selectedSearches;
+
+        expect(searches).toHaveLength(0);
+      });
+
+      it("returns 200 when no match can be found", async ({
+                                                                     cloudfront,
+                                                                     udpUser: _,
+                                                                     authHeader,
+                                                                   }) => {
+        const result = await cloudfront.client.delete(
+          `/searches/v1/activity/searches/xyz`,
+          {
+            headers: authHeader,
+          },
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeUndefined();
+      });
+
+      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+        const result = await cloudfront.client.delete(endpoint, {
+          params: { term: "" },
+        });
+
+        expect(result.status).toBe(401);
+      });
+    },
+  );
+
+  describe.runIf(isRouteDeployed(config, "DELETE /v1/activity/searches"))(
+    "DELETE",
+    () => {
+      const searchTerm: SearchTerm = {
+        term: "A New Search 11",
+        timestamp: "2026-11-04T13:45:00Z",
+      };
+
+      it("returns 201 with updated user searches", async ({
+                                                            cloudfront,
+                                                            udpUser: _,
+                                                            authHeader,
+                                                          }) => {
+        let result = await cloudfront.client.patch(endpoint, {
+          headers: authHeader,
+          body: searchTerm,
+        });
+
+        expect(result.status).toBe(201);
+
+        result = await cloudfront.client.get(endpoint, {
+          headers: authHeader,
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeDefined();
+
+        let userSearches: UserSearches = result.body as UserSearches;
+        let searches: SearchTerm[] = userSearches.searches.selectedSearches;
+        let numFoundSearches = searches.length;
+        // @ts-expect-error - it thinks the entry may not be defined
+        const termToDelete: SearchTerm = searches[0];
+
+        result = await cloudfront.client.delete(endpoint, {
+          headers: authHeader,
+        });
+
+        expect(result.status).toBe(201);
+        expect(result.body).toBeUndefined();
+
+        result = await cloudfront.client.get(endpoint, {
+          headers: authHeader,
+        });
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeDefined();
+
+        userSearches = result.body as UserSearches;
+        searches = userSearches.searches.selectedSearches;
 
         expect(searches).toHaveLength(0);
       });

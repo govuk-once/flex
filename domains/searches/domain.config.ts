@@ -58,7 +58,7 @@ export const { config, route, routeContext } = domain({
           public: {
             name: "delete-searches",
             resources: ["privateGatewayUrl"],
-            integrations: ["udpPostSearches", "udpGetSearches"],
+            integrations: ["udpPostSearches"],
           },
         },
       },
