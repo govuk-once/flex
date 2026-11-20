@@ -7,6 +7,8 @@ sidebar:
 
 A domain never calls another service directly. It declares an **integration**, and the SDK gives the handler a typed client for it. Every call goes through the private API Gateway, signed with SigV4, and IAM only allows the routes the integration declares.
 
+Every call also carries the request's `x-correlation-id`, so one request can be followed through the domain, the gateway and the external API. You don't need to set it yourself. If you pass your own `x-correlation-id` header, it is replaced with the inbound one.
+
 ## What you can call
 
 | `type`      | Calls                                          | URL                                |

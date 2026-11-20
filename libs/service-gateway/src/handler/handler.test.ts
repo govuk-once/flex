@@ -1,5 +1,5 @@
 import { logger } from "@flex/logging";
-import { clearTmp } from "@flex/sdk";
+import { clearTmp, getCorrelationId } from "@flex/sdk";
 import type { PlatformFixture } from "@flex/testing";
 import { it } from "@flex/testing";
 import {
@@ -189,6 +189,33 @@ describe("buildHandler", () => {
       resources: testGatewayResources,
       logger,
     });
+  });
+
+  it("exposes the inbound correlation id to the route handler", async ({
+    platform,
+  }) => {
+    let seen: string | undefined;
+    const routes = {
+      [testMatchedRoute.key]: () => {
+        seen = getCorrelationId();
+        return { ok: true, status: 200, data: { result: "ok" } };
+      },
+    } as unknown as GatewayHandlerMap<GatewayConfig, GatewayClientMap>;
+
+    const event = platform.gatewayEvent.get(testRoutePath);
+
+    await buildHandler(testGatewayConfig, {
+      clients: createMockClientBuilder,
+      routes,
+    })(
+      {
+        ...event,
+        headers: { ...event.headers, "x-correlation-id": "abc-123" },
+      },
+      platform.context(),
+    );
+
+    expect(seen).toBe("abc-123");
   });
 
   it.for([

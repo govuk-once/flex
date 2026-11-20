@@ -1,39 +1,9 @@
-import { logger } from "@flex/logging";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { getRouteStore } from "../route";
+import { runWithCorrelationId } from "../correlation";
 import { buildHeaders } from "./headers";
 
-vi.mock("../route", () => ({
-  getRouteStore: vi.fn(),
-}));
-
-vi.mock("@flex/logging", () => ({
-  logger: {
-    warn: vi.fn(),
-  },
-}));
-
-const mockedGetRouteStore = vi.mocked(getRouteStore);
-
-function stubRouteStore(headers?: Record<string, string>) {
-  mockedGetRouteStore.mockReturnValue({
-    headers,
-  } as ReturnType<typeof getRouteStore>);
-}
-
-function stubNoRouteContext() {
-  mockedGetRouteStore.mockImplementation(() => {
-    throw new Error("No route store in this async context");
-  });
-}
-
 describe("buildHeaders", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    stubRouteStore({});
-  });
-
   describe("seeding from the url", () => {
     it("copies headers from a Request", () => {
       const request = new Request("https://example.test", {
@@ -99,66 +69,48 @@ describe("buildHeaders", () => {
   });
 
   describe("correlation id injection", () => {
-    it("injects the correlation id from the route store", () => {
-      stubRouteStore({ "x-correlation-id": "abc-123" });
+    const withId = (fn: () => Headers) => runWithCorrelationId("abc-123", fn);
 
-      const headers = buildHeaders("https://example.test");
+    it("injects the correlation id from the current context", () => {
+      const headers = withId(() => buildHeaders("https://example.test"));
 
       expect(headers.get("x-correlation-id")).toBe("abc-123");
     });
 
     it("overrides a correlation id supplied via option headers", () => {
-      stubRouteStore({ "x-correlation-id": "from-store" });
+      const headers = withId(() =>
+        buildHeaders("https://example.test", {
+          "X-Correlation-Id": "from-options",
+        }),
+      );
 
-      const headers = buildHeaders("https://example.test", {
-        "x-correlation-id": "from-options",
-      });
-
-      expect(headers.get("x-correlation-id")).toBe("from-store");
+      expect(headers.get("x-correlation-id")).toBe("abc-123");
     });
 
     it("overrides a correlation id carried on the Request", () => {
-      stubRouteStore({ "x-correlation-id": "from-store" });
       const request = new Request("https://example.test", {
         headers: { "x-correlation-id": "from-request" },
       });
 
-      const headers = buildHeaders(request);
+      const headers = withId(() => buildHeaders(request));
 
-      expect(headers.get("x-correlation-id")).toBe("from-store");
+      expect(headers.get("x-correlation-id")).toBe("abc-123");
     });
 
-    it("does not set a correlation id when the store has no headers", () => {
-      stubRouteStore();
-
-      const headers = buildHeaders("https://example.test", undefined);
+    it("does not set a correlation id when the context has none", () => {
+      const headers = runWithCorrelationId(undefined, () =>
+        buildHeaders("https://example.test"),
+      );
 
       expect(headers.get("x-correlation-id")).toBeNull();
     });
 
-    it("does not set a correlation id when the header is absent from the store", () => {
-      stubRouteStore({ "x-other": "value" });
-
-      const headers = buildHeaders("https://example.test");
-
-      expect(headers.get("x-correlation-id")).toBeNull();
-    });
-  });
-
-  describe("outside a route context", () => {
-    it("warns and skips injection when the store is unavailable", () => {
-      stubNoRouteContext();
-
+    it("leaves caller headers untouched outside a correlation context", () => {
       const headers = buildHeaders("https://example.test", {
-        "content-type": "application/json",
+        "x-correlation-id": "from-options",
       });
 
-      expect(headers.get("content-type")).toBe("application/json");
-      expect(headers.get("x-correlation-id")).toBeNull();
-      expect(logger.warn).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("outside of a route context"),
-      );
+      expect(headers.get("x-correlation-id")).toBe("from-options");
     });
   });
 });

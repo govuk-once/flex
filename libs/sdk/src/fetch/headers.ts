@@ -1,6 +1,4 @@
-import { logger } from "@flex/logging";
-
-import { getRouteStore } from "../route";
+import { CORRELATION_ID_HEADER, getCorrelationId } from "../correlation";
 
 export function buildHeaders(
   url: string | Request | URL,
@@ -14,15 +12,9 @@ export function buildHeaders(
     headers.set(key, value);
   });
 
-  try {
-    const correlationId = getRouteStore().headers?.["x-correlation-id"];
-    if (correlationId) {
-      headers.set("x-correlation-id", correlationId);
-    }
-  } catch {
-    logger.warn(
-      "Fetch used outside of a route context. Skipping correlation id injection",
-    );
+  const correlationId = getCorrelationId();
+  if (correlationId) {
+    headers.set(CORRELATION_ID_HEADER, correlationId);
   }
 
   return headers;
