@@ -331,6 +331,7 @@ export class FlexGlobalStack extends BaseStack {
     subdomainName = domainName,
     warningAction,
     webAcl,
+    wellKnownBucket,
   }: {
     cert: Certificate;
     domainName: string;
@@ -339,6 +340,7 @@ export class FlexGlobalStack extends BaseStack {
     secretHeaderArn: string;
     subdomainName?: string;
     webAcl: CfnWebACL;
+    wellKnownBucket: Bucket;
   } & AlarmActionProps) {
     const { function: viewerRequestPlatformFunction } =
       new FlexCloudfrontFunction(this, "ViewerRequestPlatformFunction", {
@@ -421,6 +423,13 @@ export class FlexGlobalStack extends BaseStack {
         ],
       },
       additionalBehaviors: {
+        "/.well-known/jwks.json": {
+          origin: S3BucketOrigin.withOriginAccessControl(wellKnownBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: apiResponseHeadersPolicy,
+        },
         "/docs*": {
           origin: S3BucketOrigin.withOriginAccessControl(openApiSpecBucket),
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -529,6 +538,24 @@ export class FlexGlobalStack extends BaseStack {
     });
     const cfnRecordSet = domainAliasRecord.node.defaultChild as CfnRecordSet;
     cfnRecordSet.overrideLogicalId("CloudfrontDomainAliasRecord0A299B62");
+  }
+
+  #createWellKnownBucket() {
+    const accessLogBucket = new AccessLogBucket(
+      this,
+      "WellKnownAccessLogBucket",
+    );
+
+    return new Bucket(this, "WellKnownBucket", {
+      bucketName: `flex-${stage}-well-known`,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !persistent,
+      versioned: true,
+      serverAccessLogsBucket: accessLogBucket.bucket,
+    });
   }
 
   #createOpenApiSpecBucket() {
@@ -646,6 +673,7 @@ export class FlexGlobalStack extends BaseStack {
     );
 
     const openApiSpecBucket = this.#createOpenApiSpecBucket();
+    const wellKnownBucket = this.#createWellKnownBucket();
 
     const distribution = this.#createCloudfrontDistribution({
       cert,
@@ -657,6 +685,7 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
       warningAction,
       webAcl,
+      wellKnownBucket,
     });
 
     this.#deploySwaggerUi({ bucket: openApiSpecBucket, distribution });

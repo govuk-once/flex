@@ -108,7 +108,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
-          aws-region: "eu-west-2"
+          aws-region: ${{ inputs.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
       - name: Notify Slack of uncovered domains
@@ -266,6 +266,8 @@ jobs:
           pnpm --filter @platform/flex synth
 
       - name: IAM Access Analyzer
+        env:
+          AWS_REGION: ${{ inputs.AWS_REGION }}
         run: |
           for template in platform/infra/flex/cdk.out/*-FlexPlatform.template.json; do
             echo "=== Auditing Template: $template ==="
@@ -278,7 +280,7 @@ jobs:
             # Catch syntax errors, malformed JSON, and iam:PassRole wildcards
             cfn-policy-validator validate \
               --template-path "$template" \
-              --region eu-west-2 \
+              --region "$AWS_REGION" \
               --parameters $PARAMS \
               --treat-finding-type-as-blocking ERROR,SECURITY_WARNING \
               --ignore-finding MISSING_ARN_FIELD,DATA_TYPE_MISMATCH # ignoring two best practices that are only resulting in false positives
@@ -300,7 +302,7 @@ jobs:
               --actions "kms:Decrypt" \
               --actions "kms:*" \
               --actions "lambda:InvokeFunction" \
-              --region eu-west-2 \
+              --region "$AWS_REGION" \
               --parameters $PARAMS \
               --ignore-finding "$EXCLUSIONS"
 
@@ -312,7 +314,7 @@ jobs:
 
             cfn-policy-validator check-no-public-access \
               --template-path "$template" \
-              --region eu-west-2 \
+              --region "$AWS_REGION" \
               --parameters $PARAMS \
               --ignore-finding "$PUBLIC_EXCLUSIONS"
           done
