@@ -37,7 +37,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
-          aws-region: eu-west-2
+          aws-region: ${{ vars.AWS_REGION }}
           role-session-name: ${{ github.run_id }}
 
       - name: Destroy Stack
