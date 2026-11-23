@@ -77,6 +77,28 @@ describe("DELETE /v1/activity/searches/:term", () => {
     expect(result.body).toBe("");
   });
 
+  it("returns 200 when existing searches are empty", async ({ http, sdk }) => {
+    const oldSearches = createFixtureBuilder<UserSearches>(baseSearches);
+
+    http
+      .gateway("udp")
+      .get(endpoint, {
+        headers: { "requesting-service-user-id": userId },
+      })
+      .reply(200, oldSearches);
+
+    const result = await handler(
+      sdk.event.delete("/activity/searches/:term", {
+        auth: userId,
+        params: { term: "a test term" },
+      }),
+      sdk.context(),
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(result.body).toBe("");
+  });
+
   it("returns 204 when there are no existing searches", async ({
     http,
     sdk,

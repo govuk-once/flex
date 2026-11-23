@@ -15,7 +15,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         timestamp: "2026-11-04T13:45:00Z",
       };
 
-      it("returns 201 with updated user searches", async ({
+      it("patch returns 201 with updated user searches", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -29,7 +29,9 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(result.body).toBeUndefined();
       });
 
-      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      it("patch returns 401 when no auth is provided", async ({
+        cloudfront,
+      }) => {
         const result = await cloudfront.client.patch(endpoint, {
           body: searchTerm,
         });
@@ -42,7 +44,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
   describe.runIf(isRouteDeployed(config, "GET /v1/activity/searches"))(
     "GET",
     () => {
-      it("returns 201 with found user searches", async ({
+      it("get returns 200 with found user searches", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -55,7 +57,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(result.body).toBeDefined();
       });
 
-      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      it("get returns 401 when no auth is provided", async ({ cloudfront }) => {
         const result = await cloudfront.client.get(endpoint, {});
 
         expect(result.status).toBe(401);
@@ -66,7 +68,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
   describe.runIf(isRouteDeployed(config, "DELETE /v1/activity/searches/:term"))(
     "DELETE:term",
     () => {
-      it("delete returns 200 and updates user searches", async ({
+      it("delete returns 201 for a found term and updates user searches; returns 200 for a not found term", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -141,7 +143,9 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(searches).toHaveLength(numFoundSearches);
       });
 
-      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      it("delete returns 401 when no auth is provided", async ({
+        cloudfront,
+      }) => {
         const result = await cloudfront.client.delete(endpoint, {
           params: { term: "" },
         });
@@ -149,7 +153,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(result.status).toBe(401);
       });
 
-      it("returns 201 with updated user searches", async ({
+      it("delete returns 201 with updated user searches", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -191,7 +195,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(searches).toHaveLength(0);
       });
 
-      it("returns 200 when no match can be found", async ({
+      it("delete returns 200 when no match can be found", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -207,7 +211,9 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(result.body).toBeUndefined();
       });
 
-      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      it("delete returns 401 when no auth is provided", async ({
+        cloudfront,
+      }) => {
         const result = await cloudfront.client.delete(endpoint, {
           params: { term: "" },
         });
@@ -225,7 +231,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         timestamp: "2026-11-04T13:45:00Z",
       };
 
-      it("returns 201 with updated user searches", async ({
+      it("delete returns 201 with updated user searches", async ({
         cloudfront,
         udpUser: _,
         authHeader,
@@ -264,7 +270,9 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         expect(searches).toHaveLength(0);
       });
 
-      it("returns 401 when no auth is provided", async ({ cloudfront }) => {
+      it("delete returns 401 when no auth is provided", async ({
+        cloudfront,
+      }) => {
         const result = await cloudfront.client.delete(endpoint, {
           params: { term: "" },
         });
