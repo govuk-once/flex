@@ -14,16 +14,14 @@ export const handler = route(
     });
 
     if (!postResult.ok) {
-      logger.info(
+      logger.error(
         `Post of empty (deleted) collection returned error ${JSON.stringify(postResult.error)}`,
         {
           userId: auth.userId,
         },
       );
 
-      throw new createHttpError.BadGateway(
-        `Post of empty (deleted) collection returned error ${JSON.stringify(postResult.error)}`,
-      );
+      throw new createHttpError.BadGateway();
     }
 
     logger.info("Successfully deleted all user searches");

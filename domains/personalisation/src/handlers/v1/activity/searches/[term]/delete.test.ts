@@ -16,9 +16,13 @@ describe("DELETE /v1/activity/searches/:term", () => {
     const oldSearches = createFixtureBuilder<UserSearches>(userSearches);
     userSearches.searches.selectedSearches.pop();
     const newSearches = createFixtureBuilder<UserSearches>(userSearches);
-    const firstUserTerm = userSearches.searches.selectedSearches[0];
-    // @ts-expect-error - it thinks the entry may not be defined
-    const firstTerm = firstUserTerm.term;
+
+    let firstTerm = "";
+    if (userSearches.searches.selectedSearches[0] !== undefined) {
+      const firstUserTerm = userSearches.searches.selectedSearches[0];
+      firstTerm = firstUserTerm.term;
+    }
+    expect(firstTerm).not.toEqual("");
 
     http
       .gateway("udp")
@@ -164,9 +168,13 @@ describe("DELETE /v1/activity/searches/:term", () => {
     const oldSearches = createFixtureBuilder<UserSearches>(userSearches);
     userSearches.searches.selectedSearches.pop();
     const newSearches = createFixtureBuilder<UserSearches>(userSearches);
-    const firstUserTerm = userSearches.searches.selectedSearches[0];
-    // @ts-expect-error - it thinks the entry may not be defined
-    const firstTerm = firstUserTerm.term;
+
+    let firstTerm = "";
+    if (userSearches.searches.selectedSearches[0] !== undefined) {
+      const firstUserTerm = userSearches.searches.selectedSearches[0];
+      firstTerm = firstUserTerm.term;
+    }
+    expect(firstTerm).not.toEqual("");
 
     http
       .gateway("udp")
