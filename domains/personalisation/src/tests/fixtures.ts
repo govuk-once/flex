@@ -12,7 +12,7 @@ import type {
 import type { SearchTerm, UserSearches } from "@schemas/search";
 import type { SelectedTopics } from "@schemas/topic";
 
-export const userId = createUserId("test-app-personalisation-user");
+export const userId = createUserId("test-personalisation-user");
 
 // Topics
 

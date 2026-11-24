@@ -1,10 +1,6 @@
-# @flex/app-personalisation-domain
+# @flex/personalisation-domain
 
-Manages the GOV.UK App's per-user personalisation data: selected topics and searches. Requests from the App are saved to and retrieved from UDP through the service gateway.
-
-- **Topics:** the PATCH endpoint performs a full replacement of the `selectedTopics` array.
-- **Searches:** the PATCH endpoint adds a search to the user's existing collection.
-- **Local council:** handlers exist but the routes are not deployed to development, staging or production. The UDP gateway has no matching route yet. Completing it is tracked in FLEX-268 (GET), FLEX-269 (POST) and FLEX-270 (DELETE).
+Manages per-user personalisation data for Flex consumers. Requests are saved to and retrieved from UDP through the service gateway.
 
 ---
 
@@ -12,28 +8,39 @@ Manages the GOV.UK App's per-user personalisation data: selected topics and sear
 
 Run these from the repository root:
 
-| Command                                               | Description    |
-| ----------------------------------------------------- | -------------- |
-| `pnpm --filter @flex/app-personalisation-domain lint` | Lint files     |
-| `pnpm --filter @flex/app-personalisation-domain test` | Run tests      |
-| `pnpm --filter @flex/app-personalisation-domain tsc`  | Run type check |
+| Command                                           | Description    |
+| ------------------------------------------------- | -------------- |
+| `pnpm --filter @flex/personalisation-domain lint` | Lint files     |
+| `pnpm --filter @flex/personalisation-domain test` | Run tests      |
+| `pnpm --filter @flex/personalisation-domain tsc`  | Run type check |
 
-Alternatively, run `pnpm <command>` from within `domains/app-personalisation/`.
+Alternatively, run `pnpm <command>` from within `domains/personalisation/`.
 
 ---
 
 ## API
 
-### Handlers
+### Preferences
+
+Settings a user chooses.
 
 | Name                                                         | Access  | Description                           | Code                                                                     |
 | ------------------------------------------------------------ | ------- | ------------------------------------- | ------------------------------------------------------------------------ |
-| [`PATCH /v1/preferences/topics`](#patch-v1preferencestopics) | Public  | Upsert user topic selections          | [View](./src/handlers/v1/preferences/topics/patch.ts)                    |
+| [`PATCH /v1/preferences/topics`](#patch-v1preferencestopics) | Public  | Replace user topic selections         | [View](./src/handlers/v1/preferences/topics/patch.ts)                    |
 | [`GET /v1/preferences/topics`](#get-v1preferencestopics)     | Public  | Retrieve user topic selections        | [View](./src/handlers/v1/preferences/topics/get.ts)                      |
-| [`PATCH /v1/activity/searches`](#patch-v1activitysearches)   | Public  | Upsert user search selections         | [View](./src/handlers/v1/activity/searches/patch.ts)                     |
-| [`GET /v1/activity/searches`](#get-v1activitysearches)       | Public  | Retrieve user search selections       | [View](./src/handlers/v1/activity/searches/get.ts)                       |
 | `POST /v1/preferences/local-council/:id`                     | Private | Save a local authority (not deployed) | [View](./src/handlers/v1/preferences/local-council/[id]/post.private.ts) |
 | `GET /v1/preferences/local-council/:id`                      | Private | Get a local authority (not deployed)  | [View](./src/handlers/v1/preferences/local-council/[id]/get.private.ts)  |
+
+The local council routes are not deployed to development, staging or production because the UDP gateway has no matching route yet. Completing them is tracked in FLEX-268 (GET), FLEX-269 (POST) and FLEX-270 (DELETE).
+
+### Activity
+
+Data recorded from what a user does.
+
+| Name                                                       | Access | Description                           | Code                                                 |
+| ---------------------------------------------------------- | ------ | ------------------------------------- | ---------------------------------------------------- |
+| [`PATCH /v1/activity/searches`](#patch-v1activitysearches) | Public | Add a search to the user's collection | [View](./src/handlers/v1/activity/searches/patch.ts) |
+| [`GET /v1/activity/searches`](#get-v1activitysearches)     | Public | Retrieve user searches                | [View](./src/handlers/v1/activity/searches/get.ts)   |
 
 ---
 

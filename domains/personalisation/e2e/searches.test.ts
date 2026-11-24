@@ -7,8 +7,8 @@ import { describe, expect } from "vitest";
 describe.runIf(isDomainDeployed(config))(
   "App personalisation domain: searches",
   () => {
-    describe("/app-personalisation/v1/activity/searches", () => {
-      const endpoint = "/app-personalisation/v1/activity/searches";
+    describe("/personalisation/v1/activity/searches", () => {
+      const endpoint = "/personalisation/v1/activity/searches";
 
       describe.runIf(isRouteDeployed(config, "PATCH /v1/activity/searches"))(
         "PATCH",

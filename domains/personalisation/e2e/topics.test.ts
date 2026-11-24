@@ -9,8 +9,8 @@ import {
 import { describe, expect } from "vitest";
 
 describe.runIf(isDomainDeployed(topicsConfig))("Topics domain", () => {
-  describe("/app-personalisation/v1/preferences/topics", () => {
-    const endpoint = "/app-personalisation/v1/preferences/topics";
+  describe("/personalisation/v1/preferences/topics", () => {
+    const endpoint = "/personalisation/v1/preferences/topics";
 
     describe.runIf(isRouteDeployed(topicsConfig, "GET /v1/preferences/topics"))(
       "GET",
