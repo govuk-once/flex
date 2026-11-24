@@ -26,7 +26,7 @@ export class ShieldAlarms extends Construct {
 
     const dimensions = { ResourceArn: resourceArn };
 
-    this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected", {
+    this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected2", {
       alarmName: `${alarmNamePrefix}-ddos-detected`,
       alarmDescription:
         "Critical: UNDER ATTACK: Shield Advanced has detected a DDoS attack against the CloudFront distribution.",
