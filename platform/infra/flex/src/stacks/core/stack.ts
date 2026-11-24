@@ -12,6 +12,7 @@ import type { Construct } from "constructs";
 import { BaseStack } from "../../base";
 import { createIamChangeAlerts } from "../../constructs/alarms/iam-change-alerts";
 import { createKeyChangeAlerts } from "../../constructs/alarms/key-change-alerts";
+import { LogVolumeAlarms } from "../../constructs/alarms/log-volume";
 import {
   relayHealthKeyAlias,
   relayHealthTopicName,
@@ -102,6 +103,12 @@ export class FlexCoreStack extends BaseStack {
     createKeyChangeAlerts(this, {
       criticalTopic,
       alarmTopicKey,
+      warningAction,
+    });
+
+    new LogVolumeAlarms(this, "LogVolumeAlarms", {
+      alarmNamePrefix: `${stage}-log-volume`,
+      criticalAction,
       warningAction,
     });
 

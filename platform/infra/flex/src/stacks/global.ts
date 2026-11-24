@@ -51,6 +51,7 @@ import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
 import { createIamChangeAlerts } from "../constructs/alarms/iam-change-alerts";
 import { createKeyChangeAlerts } from "../constructs/alarms/key-change-alerts";
+import { LogVolumeAlarms } from "../constructs/alarms/log-volume";
 import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
@@ -651,6 +652,11 @@ export class FlexGlobalStack extends BaseStack {
       createKeyChangeAlerts(this, {
         criticalTopic,
         alarmTopicKey,
+        warningAction,
+      });
+      new LogVolumeAlarms(this, "LogVolumeAlarms", {
+        alarmNamePrefix: `${stage}-log-volume`,
+        criticalAction,
         warningAction,
       });
     }

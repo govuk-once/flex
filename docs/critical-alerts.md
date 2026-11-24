@@ -132,6 +132,7 @@ The slow burn warnings use 6x over 6 hours and 30 minutes (3% for reads, 0.6% fo
 | `<stage>-*-waf-managed-rules-blocked-requests-v2` | Known bad inputs are being blocked, which is the WAF working |
 | `<stage>-*-waf-blocked-requests-spike-anomaly-v2` | Blocks above baseline; worth a look |
 | `<stage>-shield-ddos-attack-requests-per-second` | Attack volume while mitigation is active |
+| `<stage>-log-volume-incoming-bytes` | CloudWatch Logs in a region took in more than 1 GiB per 5 minutes for 15 minutes, across all log groups. Points to a logging loop or a flood of requests. Exists in `eu-west-2` (`FlexCore`) and `us-east-1` (`FlexGlobal`), in development, staging and production only |
 | `<stage>-cff-*` | The viewer request functions; impact shows in the CloudFront 5xx rate |
 | `<stage>-cloudfront-4xx-error-rate`, `-total-error-rate` | Edge client errors |
 | `*-undelivered`, `*-lost` | An event alert could not be delivered |
