@@ -93,11 +93,11 @@ flex/
 
 ## Domains
 
-| Domain                                                                       | Description                                                       |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [`@flex/example-domain`](/domains/example/README.md)                         | Example domain demonstrating route handler patterns using the SDK |
-| [`@flex/udp-domain`](/domains/udp/README.md)                                 | User Data Platform for user settings management                   |
-| [`@flex/app-personalisation-domain`](/domains/app-personalisation/README.md) | Manage App user data (topics, searches) via integration with UDP  |
+| Domain                                                               | Description                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`@flex/example-domain`](/domains/example/README.md)                 | Example domain demonstrating route handler patterns using the SDK |
+| [`@flex/udp-domain`](/domains/udp/README.md)                         | User Data Platform for user settings management                   |
+| [`@flex/personalisation-domain`](/domains/personalisation/README.md) | Manage App user data (topics, searches) via integration with UDP  |
 
 ---
 

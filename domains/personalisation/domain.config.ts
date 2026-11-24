@@ -12,7 +12,7 @@ import {
 } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
-  name: "app-personalisation",
+  name: "personalisation",
   environments: ["development", "staging"],
   common: {
     access: "isolated",
