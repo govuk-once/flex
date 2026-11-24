@@ -229,3 +229,35 @@ describe("FlexPlatformStack WAF request logging", () => {
     template.resourceCountIs("AWS::S3::Bucket", 0);
   });
 });
+
+describe("FlexPlatformStack private gateway policy", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("denies invoke outside the VPC endpoint using a full execute-api ARN, so API Gateway stores it unchanged", async () => {
+    const template = await synthesise("staging");
+
+    template.hasResourceProperties("AWS::ApiGateway::RestApi", {
+      Name: Match.stringLikeRegexp("[Pp]rivate"),
+      Policy: {
+        Statement: [
+          Match.objectLike({
+            Effect: "Deny",
+            Action: "execute-api:Invoke",
+            Resource: {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  { Ref: "AWS::Partition" },
+                  `:execute-api:eu-west-2:${TEST_ACCOUNT}:*/*`,
+                ],
+              ],
+            },
+          }),
+        ],
+      },
+    });
+  });
+});
