@@ -7,11 +7,13 @@
     "diff": "cdk diff",
     "deploy": "cdk deploy --all --concurrency 4 --require-approval never",
     "destroy": "cdk destroy --all",
+    "drift": "cdk drift",
     "synth": "cdk synth",
     "validate:integrations": "tsx src/scripts/validate-integrations.ts",
     "validate:macie-coverage": "tsx src/scripts/check-macie-coverage.ts",
     "tsc": "tsc --noEmit",
     "lint": "eslint --max-warnings=0 .",
+    "lint:fix": "eslint --max-warnings=0 --fix .",
     "test": "vitest --passWithNoTests",
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"
   },
