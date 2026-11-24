@@ -26,8 +26,13 @@ export class ShieldAlarms extends Construct {
 
     const dimensions = { ResourceArn: resourceArn };
 
-    this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected2", {
-      alarmName: `${alarmNamePrefix}-ddos-detected`,
+    // The -v2 alarm names replace alarms that were deleted outside
+    // CloudFormation, so CloudFormation creates new alarms instead of updating
+    // ones that no longer exist. Changing the logical ID instead would not
+    // work: global.ts pins it, and a new logical ID with the same alarm name
+    // has CloudFormation delete the alarm it just created during cleanup
+    this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected", {
+      alarmName: `${alarmNamePrefix}-ddos-detected-v2`,
       alarmDescription:
         "Critical: UNDER ATTACK: Shield Advanced has detected a DDoS attack against the CloudFront distribution.",
       metric: new Metric({
@@ -48,7 +53,7 @@ export class ShieldAlarms extends Construct {
       this,
       "DDoSAttackRequestsPerSecond",
       {
-        alarmName: `${alarmNamePrefix}-ddos-attack-requests-per-second`,
+        alarmName: `${alarmNamePrefix}-ddos-attack-requests-per-second-v2`,
         alarmDescription:
           "Warning: Shield Advanced is reporting layer 7 attack request volume against the CloudFront distribution",
         metric: new Metric({

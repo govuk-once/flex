@@ -86,7 +86,7 @@ Each condition maps to a test in the rule above. Burn rate alarms are composites
 | C6 | Platform effectively unavailable | `<stage>-smoke-test-<journey>-no-success` | `FlexSmokeTest` | A probed journey fails or does not report 3 times in a row, one run per minute |
 | C7 | Edge failing or traffic stopped | `<stage>-cloudfront-5xx-error-rate`, `<stage>-cloudfront-traffic-cliff` | `FlexGlobal` | CloudFront 5xx above 1% for 5 minutes, or requests below the learned baseline for 3 consecutive 5 minute periods (staging and production only) |
 | C8 | Key, secret or identity resource at risk | `kms-key-change-alert`, `cognito-user-pool-change-alert`, `secret-rotation-alert`, `<stage>-dvla-secret-rotation-failed` | `FlexCore`, `FlexGlobal` | A KMS key is disabled, scheduled for deletion or has its policy changed outside a deployment; a user pool or client is deleted; a secret rotation fails |
-| C9 | Under attack and mitigation not holding | `<stage>-*-waf-blocking-90-percent-requests-v2`, `<stage>-shield-ddos-detected` | `FlexPlatform`, `FlexGlobal` | WAF blocking more than 90% of requests in 5 minutes, or Shield Advanced detects a DDoS (staging and production) |
+| C9 | Under attack and mitigation not holding | `<stage>-*-waf-blocking-90-percent-requests-v2`, `<stage>-shield-ddos-detected-v2` | `FlexPlatform`, `FlexGlobal` | WAF blocking more than 90% of requests in 5 minutes, or Shield Advanced detects a DDoS (staging and production) |
 | C10 | Alerting itself broken | `<stage>-flex-alarm-relay-<severity>-*` | `FlexGlobal` | The relay fails to forward an edge alarm, or a forwarded notification lands in the failure queue |
 
 Other critical alerts already in place and kept: certificate expiry (`<stage>-certificate-days-to-expiry`), Cognito configuration drift, and the IAM, Lambda and CloudFormation change alerts described in [IAM change alerts](/docs/iam-change-alerts.md).
@@ -131,7 +131,7 @@ The slow burn warnings use 6x over 6 hours and 30 minutes (3% for reads, 0.6% fo
 | `<stage>-<function>-alarm-error-rate`, `-throttles`, `-duration` | One function is in trouble; whether users are affected shows in the journey alarms |
 | `<stage>-*-waf-managed-rules-blocked-requests-v2` | Known bad inputs are being blocked, which is the WAF working |
 | `<stage>-*-waf-blocked-requests-spike-anomaly-v2` | Blocks above baseline; worth a look |
-| `<stage>-shield-ddos-attack-requests-per-second` | Attack volume while mitigation is active |
+| `<stage>-shield-ddos-attack-requests-per-second-v2` | Attack volume while mitigation is active |
 | `<stage>-log-volume-incoming-bytes` | CloudWatch Logs in a region took in more than 1 GiB per 5 minutes for 15 minutes, across all log groups. Points to a logging loop or a flood of requests. Exists in `eu-west-2` (`FlexCore`) and `us-east-1` (`FlexGlobal`), in development, staging and production only |
 | `<stage>-cff-*` | The viewer request functions; impact shows in the CloudFront 5xx rate |
 | `<stage>-cloudfront-4xx-error-rate`, `-total-error-rate` | Edge client errors |
