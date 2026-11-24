@@ -5,7 +5,7 @@ import { SearchTerm } from "@schemas/search";
 import { describe, expect } from "vitest";
 
 describe.runIf(isDomainDeployed(config))(
-  "App personalisation domain: searches",
+  "Personalisation domain: searches",
   () => {
     describe("/personalisation/v1/activity/searches", () => {
       const endpoint = "/personalisation/v1/activity/searches";
