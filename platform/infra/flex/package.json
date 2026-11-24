@@ -8,6 +8,7 @@
     "deploy": "cdk deploy --all --concurrency 4 --require-approval never",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
+    "drift:check": "cdk synth --quiet && tsx src/scripts/drift-check.ts",
     "validate:integrations": "tsx src/scripts/validate-integrations.ts",
     "validate:macie-coverage": "tsx src/scripts/check-macie-coverage.ts",
     "tsc": "tsc --noEmit",
@@ -30,6 +31,8 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "3.1165.0",
+    "@aws-sdk/credential-providers": "3.1165.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/node": "26.6.6",
