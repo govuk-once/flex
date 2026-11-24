@@ -8,11 +8,12 @@ import {
   Runtime,
 } from "aws-cdk-lib/aws-lambda";
 import { SqsDestination } from "aws-cdk-lib/aws-lambda-destinations";
-import { Topic } from "aws-cdk-lib/aws-sns";
+import { LoggingProtocol, Topic } from "aws-cdk-lib/aws-sns";
 import { LambdaSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { Queue, QueueEncryption } from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
 
+import { enableDeliveryStatusLogging } from "../sns/delivery-status-logging";
 import { createAboveZeroAlarm } from "./above-zero-alarm";
 import { RELAY_HANDLER_CODE } from "./relay-handler";
 
@@ -88,6 +89,7 @@ export function createAlarmRelay(
   );
 
   relayTopic.addSubscription(new LambdaSubscription(relayFn));
+  enableDeliveryStatusLogging(relayTopic, LoggingProtocol.LAMBDA);
 
   [
     {

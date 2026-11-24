@@ -135,6 +135,135 @@ describe("FlexCoreStack production alert routing", () => {
   });
 });
 
+describe("FlexCoreStack alarm delivery status logging", () => {
+  let result: Awaited<ReturnType<typeof synthesise>>;
+
+  beforeAll(async () => {
+    result = await synthesise();
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const feedbackRoleId = (topicName: string) => {
+    const [topic] = Object.values(
+      result.template.findResources("AWS::SNS::Topic", {
+        Properties: { TopicName: topicName },
+      }),
+    ) as {
+      Properties: {
+        DeliveryStatusLogging: {
+          FailureFeedbackRoleArn: { "Fn::GetAtt": [string, string] };
+        }[];
+      };
+    }[];
+
+    return topic?.Properties.DeliveryStatusLogging[0]?.FailureFeedbackRoleArn[
+      "Fn::GetAtt"
+    ][0];
+  };
+
+  it.each([
+    { topicName: "flex-alerts-critical" },
+    { topicName: "flex-alerts-warning" },
+  ])(
+    "logs every Slack delivery attempt for $topicName, failed or successful",
+    ({ topicName }) => {
+      const roleArn = Match.objectLike({ "Fn::GetAtt": Match.anyValue() });
+
+      result.template.hasResourceProperties("AWS::SNS::Topic", {
+        TopicName: topicName,
+        DeliveryStatusLogging: [
+          {
+            Protocol: "http/s",
+            FailureFeedbackRoleArn: roleArn,
+            SuccessFeedbackRoleArn: roleArn,
+            SuccessFeedbackSampleRate: "100",
+          },
+        ],
+      });
+    },
+  );
+
+  it("keeps the delivery logs SNS writes for a year under the names SNS expects", () => {
+    const { template, criticalTopicId } = result;
+    const logGroupName = (suffix: string) => ({
+      "Fn::Join": [
+        "",
+        [
+          "sns/eu-west-2/123456789012/",
+          { "Fn::GetAtt": [criticalTopicId, "TopicName"] },
+          ...(suffix ? [suffix] : []),
+        ],
+      ],
+    });
+
+    ["", "/Failure"].forEach((suffix) => {
+      template.hasResourceProperties("AWS::Logs::LogGroup", {
+        LogGroupName: logGroupName(suffix),
+        RetentionInDays: 365,
+      });
+    });
+  });
+
+  it("gives each topic its own feedback role that only SNS can assume", () => {
+    const criticalRoleId = feedbackRoleId("flex-alerts-critical");
+
+    expect(criticalRoleId).toBeDefined();
+    expect(criticalRoleId).not.toEqual(feedbackRoleId("flex-alerts-warning"));
+    result.template.hasResource("AWS::IAM::Role", {
+      Properties: {
+        AssumeRolePolicyDocument: {
+          Statement: [
+            {
+              Action: "sts:AssumeRole",
+              Effect: "Allow",
+              Principal: { Service: "sns.amazonaws.com" },
+            },
+          ],
+          Version: "2012-10-17",
+        },
+      },
+    });
+  });
+
+  it("limits the feedback role to writing to its own topic's log groups", () => {
+    const { template } = result;
+    const policies = Object.values(
+      template.findResources("AWS::IAM::Policy", {
+        Properties: {
+          Roles: [{ Ref: feedbackRoleId("flex-alerts-critical") }],
+        },
+      }),
+    ) as {
+      Properties: {
+        PolicyDocument: {
+          Statement: { Action: string[]; Resource: unknown }[];
+        };
+      };
+    }[];
+    const statements = policies.flatMap(
+      (policy) => policy.Properties.PolicyDocument.Statement,
+    );
+    const criticalLogGroupIds = Object.keys(
+      template.findResources("AWS::Logs::LogGroup"),
+    ).filter((id) => id.startsWith("CriticalTopicDelivery"));
+
+    expect(criticalLogGroupIds).toHaveLength(2);
+    expect(statements).toHaveLength(2);
+    statements.forEach((statement) => {
+      expect(statement.Action).toEqual([
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+      ]);
+    });
+    expect(statements.map((statement) => statement.Resource)).toEqual(
+      criticalLogGroupIds.map((id) => ({ "Fn::GetAtt": [id, "Arn"] })),
+    );
+  });
+});
+
 describe("FlexCoreStack credential alerting", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;
 
