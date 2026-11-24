@@ -14,7 +14,7 @@
     "lint": "eslint --max-warnings=0 ."
   },
   "peerDependencies": {
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
   },
@@ -33,11 +33,11 @@
     "eslint-plugin-unicorn": "79.0.0",
     "find-up": "8.0.0",
     "globals": "17.14.0",
-    "typescript-eslint": "8.72.2"
+    "typescript-eslint": "8.73.0"
   },
   "devDependencies": {
     "@types/node": "26.6.6",
-    "eslint": "^10.14.0",
+    "eslint": "^10.15.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
   }

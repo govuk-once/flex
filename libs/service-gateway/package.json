@@ -14,8 +14,8 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.36.0",
-    "@aws-sdk/client-dynamodb": "3.1165.0",
-    "@aws-sdk/lib-dynamodb": "3.1165.0",
+    "@aws-sdk/client-dynamodb": "3.1170.0",
+    "@aws-sdk/lib-dynamodb": "3.1170.0",
     "@flex/logging": "workspace:*",
     "@flex/sdk": "workspace:*",
     "@flex/telemetry": "workspace:*",
@@ -29,7 +29,7 @@
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.164",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "typescript": "6.0.3",
     "vitest": "5.1.0"
   }

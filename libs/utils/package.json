@@ -21,12 +21,12 @@
     "zod-openapi": "6.0.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "3.1165.0",
+    "@aws-sdk/client-cloudformation": "3.1170.0",
     "@flex/config": "workspace:*",
     "@types/aws-lambda": "8.10.164",
     "@types/http-errors": "2.0.5",
     "@types/node": "26.6.6",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "http-server": "14.1.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

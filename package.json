@@ -28,8 +28,8 @@
     "@semantic-release/exec": "7.1.0",
     "conventional-changelog-conventionalcommits": "9.3.1",
     "esbuild": "0.28.2",
-    "eslint": "10.14.0",
-    "nx": "24.0.5",
+    "eslint": "10.15.0",
+    "nx": "24.0.6",
     "semantic-release": "25.0.9",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
