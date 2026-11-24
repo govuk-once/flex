@@ -59,6 +59,7 @@ import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront
 import { FlexResponseHeadersPolicy } from "../constructs/cloudfront/flex-response-headers-policy";
 import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
+import { WafRequestLogging } from "../constructs/waf/WafRequestLogging";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../utils/getEntry";
@@ -307,6 +308,13 @@ export class FlexGlobalStack extends BaseStack {
         },
       ],
     });
+
+    if (persistent) {
+      new WafRequestLogging(this, "CloudFrontWafRequestLogging", {
+        webAcl,
+        bucketNameSuffix: `flex-${stage}-cloudfront`,
+      });
+    }
 
     new WafAlarms(this, "CloudFrontWafAlarms", {
       alarmNamePrefix: `${stage}-cloudfront-waf`,
