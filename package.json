@@ -30,7 +30,7 @@
     "esbuild": "0.28.2",
     "eslint": "10.14.0",
     "nx": "24.0.5",
-    "semantic-release": "25.0.9",
+    "semantic-release": "26.0.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
   },
