@@ -109,7 +109,7 @@ export class CloudFrontAlarms extends Construct {
       // If nothing reaches the edge (DNS, certificate, a distribution or
       // viewer function change) every error rate reads zero, so a drop in
       // volume is the only signal. Missing data is itself the symptom.
-      this.trafficCliffAlarm = new AnomalyDetectionAlarm(this, "TrafficCliff", {
+      this.trafficCliffAlarm = new AnomalyDetectionAlarm(this, "TrafficCliff2", {
         alarmName: `${alarmNamePrefix}-traffic-cliff`,
         alarmDescription:
           "Critical: EDGE FAILURE: requests reaching CloudFront have fallen below the expected band for 3 consecutive 5 minute periods, " +

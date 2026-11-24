@@ -46,7 +46,7 @@ export class ShieldAlarms extends Construct {
 
     this.ddosAttackRequestsPerSecondAlarm = new Alarm(
       this,
-      "DDoSAttackRequestsPerSecond",
+      "DDoSAttackRequestsPerSecond2",
       {
         alarmName: `${alarmNamePrefix}-ddos-attack-requests-per-second`,
         alarmDescription:
