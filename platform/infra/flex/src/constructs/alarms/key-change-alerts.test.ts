@@ -23,7 +23,6 @@ function synthesise() {
 
   createKeyChangeAlerts(stack, {
     criticalTopic,
-    alarmTopicKey,
     warningAction: actions.warningAction,
   });
 

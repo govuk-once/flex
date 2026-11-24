@@ -2,7 +2,6 @@ import { getEnvConfig } from "@flex/utils";
 import { Stack } from "aws-cdk-lib";
 import type { IAlarmAction } from "aws-cdk-lib/aws-cloudwatch";
 import { EventField } from "aws-cdk-lib/aws-events";
-import type { Key } from "aws-cdk-lib/aws-kms";
 import type { Topic } from "aws-cdk-lib/aws-sns";
 import type { Construct } from "constructs";
 
@@ -13,13 +12,12 @@ const { env } = getEnvConfig();
 
 interface IamChangeAlertsProps {
   criticalTopic: Topic;
-  alarmTopicKey: Key;
   warningAction: IAlarmAction;
 }
 
 export function createIamChangeAlerts(
   scope: Construct,
-  { criticalTopic, alarmTopicKey, warningAction }: IamChangeAlertsProps,
+  { criticalTopic, warningAction }: IamChangeAlertsProps,
 ) {
   const { region } = Stack.of(scope);
   const eventName = EventField.fromPath("$.detail.eventName");
@@ -119,7 +117,6 @@ export function createIamChangeAlerts(
         title: `${alert.title} in ${env}`,
         description: `Event: \`${eventName}\`; actor: \`${actor}\`; ${resources}; Region: \`${awsRegion}\`; source IP: \`${sourceIPAddress}\`; errorCode: \`${errorCode}\`. Runbook: docs/runbooks/iam-change-alert.md`,
         criticalTopic,
-        alarmTopicKey,
         warningAction,
       });
     });
