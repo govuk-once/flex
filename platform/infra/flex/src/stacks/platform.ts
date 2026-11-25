@@ -1,6 +1,6 @@
 import type { ValidatedGatewayConfig } from "@flex/service-gateway";
 import { Environment, getEnvConfig } from "@flex/utils";
-import { CfnOutput, Duration } from "aws-cdk-lib";
+import { ArnFormat, CfnOutput, Duration } from "aws-cdk-lib";
 import type { IResource } from "aws-cdk-lib/aws-apigateway";
 import {
   AccessLogFormat,
@@ -294,7 +294,18 @@ export class FlexPlatformStack extends BaseStack {
             effect: Effect.DENY,
             principals: [new AnyPrincipal()],
             actions: ["execute-api:Invoke"],
-            resources: ["execute-api:/*"],
+            // Full ARN with a wildcard API ID rather than the `execute-api:/*`
+            // shorthand. API Gateway stores the shorthand expanded, which
+            // CloudFormation reports as permanent drift. A resource policy only
+            // applies to its own API, so `*` here still means this API only.
+            resources: [
+              this.formatArn({
+                service: "execute-api",
+                resource: "*",
+                resourceName: "*",
+                arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+              }),
+            ],
             conditions: {
               StringNotEquals: {
                 "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
