@@ -28,10 +28,13 @@ See the [Environment Setup](/docs/environment-setup.md) for prerequisites and de
 
 ```bash
 # Generate a JWT against ephemeral or dev stack
-pnpm jwt
+pnpm jwt --show-token
 
 # Generate a JWT against staging stack
-STAGE=staging pnpm jwt
+STAGE=staging pnpm jwt --show-token
+
+# Generate a playground JWT
+pnpm jwt:playground --show-token
 
 # Generate OpenAPI specs for every domain
 # (writes one JSON per domain plus an index manifest to dist/openapi/current)

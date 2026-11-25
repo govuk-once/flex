@@ -48,6 +48,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate OpenAPI specifications
+        run: pnpm openapi:generate
+
+      - name: Merge and validate public OpenAPI specifications for ZAP
+        run: pnpm exec tsx scripts/zap/merge-openapi.ts
+
       - name: Generate JWT
         env:
           STAGE: "staging"
@@ -60,12 +66,6 @@ jobs:
             exit 1
           fi
           echo "Success: Authentication values are available."
-
-      - name: Generate OpenAPI specifications
-        run: pnpm openapi:generate
-
-      - name: Merge and validate public OpenAPI specifications for ZAP
-        run: pnpm exec tsx scripts/zap/merge-openapi.ts
 
       - name: Verify API authentication
         shell: bash
@@ -84,9 +84,23 @@ jobs:
         shell: bash
         run: bash scripts/zap/verify-reports.sh
 
+      - name: Check raw ZAP reports for sensitive data
+        shell: bash
+        run: python3 scripts/zap/check-report-secrets.py --raw-only
+
       - name: Normalize ZAP SARIF for GitHub Code Scanning
         shell: bash
         run: bash scripts/zap/normalize-sarif.sh
+
+      - name: Check ZAP reports for sensitive data
+        id: sensitive_reports
+        shell: bash
+        run: python3 scripts/zap/check-report-secrets.py
+
+      - name: Clear ZAP authentication token
+        if: always()
+        shell: bash
+        run: echo "ZAP_AUTH_HEADER_VALUE=" >> "$GITHUB_ENV"
 
       - name: Generate ZAP finding fingerprints
         id: zap_fingerprints
@@ -146,7 +160,7 @@ jobs:
           category: zap-api-staging
 
       - name: Upload ZAP reports
-        if: always()
+        if: ${{ always() && steps.sensitive_reports.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: zap-api-staging-reports
