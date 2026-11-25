@@ -6,3 +6,5 @@ plugin_id	method	endpoint	parameter	reason
 40018	POST	/app/groups/v1/groups	Namespace	Reviewed false positive - FLEX-528
 40018	POST	/app/groups/v1/groups	Subgroup	Reviewed false positive - FLEX-528
 40018	POST	/app/groups/v1/groups	Type	Reviewed false positive - FLEX-528
+40018	PATCH	/app/searches/v1/activity/searches	term	Reviewed false positive
+40018	PATCH	/app/searches/v1/activity/searches	timestamp	Reviewed false positive
