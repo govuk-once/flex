@@ -10,6 +10,7 @@ import {
   createAlarmActions,
   createTestStack,
 } from "../../__tests__/alarm-actions";
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { SecretRotationAlarms } from "./secret-rotation";
 
 function synthesise() {
@@ -41,7 +42,7 @@ describe("SecretRotationAlarms", () => {
 
     template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-dvla-secret-rotation-failed",
+      AlarmName: `staging-dvla-secret-rotation-failed ${CRITICAL_ALARM_ANNOTATION}`,
       Namespace: "AWS/Lambda",
       MetricName: "Errors",
       Dimensions: [{ Name: "FunctionName", Value: functionRef }],

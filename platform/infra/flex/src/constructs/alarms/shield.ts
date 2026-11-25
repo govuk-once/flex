@@ -8,6 +8,7 @@ import {
 } from "aws-cdk-lib/aws-cloudwatch";
 import { Construct } from "constructs";
 
+import { withCriticalAnnotation } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 export interface ShieldAlarmsProps extends BaseAlarmsProps {
@@ -27,7 +28,7 @@ export class ShieldAlarms extends Construct {
     const dimensions = { ResourceArn: resourceArn };
 
     this.ddosDetectedAlarm = new Alarm(this, "DDoSDetected", {
-      alarmName: `${alarmNamePrefix}-ddos-detected`,
+      alarmName: withCriticalAnnotation(`${alarmNamePrefix}-ddos-detected`),
       alarmDescription:
         "Critical: UNDER ATTACK: Shield Advanced has detected a DDoS attack against the CloudFront distribution.",
       metric: new Metric({

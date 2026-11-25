@@ -8,6 +8,7 @@ import {
 } from "aws-cdk-lib/aws-cloudwatch";
 import { Construct } from "constructs";
 
+import { withCriticalAnnotation } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 const DAYS_TO_EXPIRY_THRESHOLD = 30;
@@ -25,7 +26,7 @@ export class CertificateAlarms extends Construct {
     const { certificate, criticalAction, alarmNamePrefix } = props;
 
     this.daysToExpiryAlarm = new Alarm(this, "DaysToExpiry", {
-      alarmName: `${alarmNamePrefix}-days-to-expiry`,
+      alarmName: withCriticalAnnotation(`${alarmNamePrefix}-days-to-expiry`),
       alarmDescription: `Critical: certificate expires in under ${String(DAYS_TO_EXPIRY_THRESHOLD)} days, past ACM's 45-day renewal point, check its renewal status and DNS validation records`,
       metric: certificate.metricDaysToExpiry({
         statistic: Stats.MINIMUM,

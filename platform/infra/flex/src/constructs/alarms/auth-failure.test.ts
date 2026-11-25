@@ -6,6 +6,7 @@ import {
   createAlarmActions,
   createTestStack,
 } from "../../__tests__/alarm-actions";
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { AuthFailureAlarms } from "./auth-failure";
 
 function synthesise() {
@@ -62,7 +63,7 @@ describe("AuthFailureAlarms", () => {
       ]),
     });
     template.hasResourceProperties("AWS::CloudWatch::CompositeAlarm", {
-      AlarmName: "staging-apigw-auth-failure",
+      AlarmName: `staging-apigw-auth-failure ${CRITICAL_ALARM_ANNOTATION}`,
       AlarmActions: [criticalActionRef],
       AlarmDescription: Match.stringLikeRegexp("^Critical: AUTH FAILURE"),
     });

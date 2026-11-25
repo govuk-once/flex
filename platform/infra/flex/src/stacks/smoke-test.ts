@@ -25,6 +25,7 @@ import {
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { withCriticalAnnotation } from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, PLATFORM_KEYS } from "../ssm-keys";
@@ -128,7 +129,9 @@ export class FlexSmokeTestStack extends BaseStack {
 
     probesForEnvironment(env).forEach(({ journey }) => {
       const alarm = new Alarm(this, `SmokeTest${toPascalCase(journey)}Alarm`, {
-        alarmName: `${stage}-smoke-test-${journey}-no-success`,
+        alarmName: withCriticalAnnotation(
+          `${stage}-smoke-test-${journey}-no-success`,
+        ),
         alarmDescription:
           `Critical: SERVICE UNAVAILABLE: the ${journey} smoke test has failed ${String(CONSECUTIVE_FAILURES)} times in a row ` +
           `(one run per minute). Catches an outage when traffic is too low for the journey alarms. Runbook: ${RUNBOOK}`,
@@ -152,7 +155,7 @@ export class FlexSmokeTestStack extends BaseStack {
     });
 
     const authRejected = new Alarm(this, "SmokeTestAuthRejectedAlarm", {
-      alarmName: `${stage}-smoke-test-auth-rejected`,
+      alarmName: withCriticalAnnotation(`${stage}-smoke-test-auth-rejected`),
       alarmDescription:
         `Critical: AUTH FAILURE: the smoke test's valid token has been refused with a 401 or 403 ${String(CONSECUTIVE_FAILURES)} times in a row. ` +
         `Check Cognito, the JWKS endpoint and the authorizer logs. Runbook: ${RUNBOOK}`,

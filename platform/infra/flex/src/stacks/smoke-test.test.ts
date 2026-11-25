@@ -2,6 +2,7 @@ import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../__tests__/load-infra";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 
 describe("FlexSmokeTestStack", () => {
   let template: Template;
@@ -61,7 +62,7 @@ describe("FlexSmokeTestStack", () => {
 
     ["udp", "travel"].forEach((journey) => {
       template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-        AlarmName: `staging-smoke-test-${journey}-no-success`,
+        AlarmName: `staging-smoke-test-${journey}-no-success ${CRITICAL_ALARM_ANNOTATION}`,
         Namespace: "Flex/SmokeTest",
         MetricName: "SmokeTestSuccess",
         Dimensions: Match.arrayWith([
@@ -81,7 +82,7 @@ describe("FlexSmokeTestStack", () => {
 
   it("pages when the probe's valid token is repeatedly rejected", () => {
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-smoke-test-auth-rejected",
+      AlarmName: `staging-smoke-test-auth-rejected ${CRITICAL_ALARM_ANNOTATION}`,
       MetricName: "SmokeTestAuthRejected",
       Threshold: 0,
       EvaluationPeriods: 3,

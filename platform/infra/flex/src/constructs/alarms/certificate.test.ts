@@ -6,6 +6,7 @@ import {
   createAlarmActions,
   createTestStack,
 } from "../../__tests__/alarm-actions";
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { CertificateAlarms } from "./certificate";
 
 function synthesise() {
@@ -38,7 +39,7 @@ describe("CertificateAlarms", () => {
     const { template, certificateRef, criticalActionRef } = synthesise();
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-certificate-days-to-expiry",
+      AlarmName: `staging-certificate-days-to-expiry ${CRITICAL_ALARM_ANNOTATION}`,
       Namespace: "AWS/CertificateManager",
       MetricName: "DaysToExpiry",
       Dimensions: [{ Name: "CertificateArn", Value: certificateRef }],

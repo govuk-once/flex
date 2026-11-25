@@ -7,6 +7,7 @@ import {
 } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { createTwoWindowAlarm } from "./two-window-alarm";
 import { BaseAlarmsProps } from "./types";
 
@@ -75,6 +76,7 @@ export class AuthFailureAlarms extends Construct {
       longWindow: LONG_WINDOW,
       shortWindow: SHORT_WINDOW,
       action: criticalAction,
+      compositeAlarmNameSuffix: CRITICAL_ALARM_ANNOTATION,
     });
   }
 }

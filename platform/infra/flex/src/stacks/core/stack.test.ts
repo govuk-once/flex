@@ -2,6 +2,7 @@ import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../../__tests__/load-infra";
+import { CRITICAL_ALARM_ANNOTATION } from "../../constructs/alarms/alarm-annotations";
 
 async function synthesise(stage = "staging") {
   const { SsmApp, ENV_KEYS } = await loadInfra(stage);
@@ -174,7 +175,7 @@ describe("FlexCoreStack credential alerting", () => {
     const { template, criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-dvla-secret-rotation-failed",
+      AlarmName: `staging-dvla-secret-rotation-failed ${CRITICAL_ALARM_ANNOTATION}`,
       MetricName: "Errors",
       Threshold: 0,
       AlarmActions: [{ Ref: criticalTopicId }],

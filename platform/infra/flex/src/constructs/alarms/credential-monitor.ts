@@ -16,6 +16,7 @@ import {
 import type { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
+import { withCriticalAnnotation } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 export interface CredentialMonitorAlarmsProps extends BaseAlarmsProps {
@@ -152,8 +153,12 @@ export class CredentialMonitorAlarms extends Construct {
     ];
 
     definitions.forEach((definition) => {
+      const baseName = `${alarmNamePrefix}-${definition.nameSuffix}`;
       const alarm = new Alarm(this, definition.id, {
-        alarmName: `${alarmNamePrefix}-${definition.nameSuffix}`,
+        alarmName:
+          definition.action === criticalAction
+            ? withCriticalAnnotation(baseName)
+            : baseName,
         alarmDescription: definition.description,
         metric: definition.metric,
         threshold: definition.threshold,

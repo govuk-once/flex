@@ -20,6 +20,7 @@ export interface TwoWindowAlarmProps {
   readonly longWindow: Duration;
   readonly shortWindow: Duration;
   readonly action: IAlarmAction;
+  readonly compositeAlarmNameSuffix?: string;
 }
 
 function describeWindow(window: Duration) {
@@ -45,6 +46,7 @@ export function createTwoWindowAlarm(
     longWindow,
     shortWindow,
     action,
+    compositeAlarmNameSuffix,
   }: TwoWindowAlarmProps,
 ) {
   const windowAlarm = (window: Duration) =>
@@ -62,7 +64,9 @@ export function createTwoWindowAlarm(
   const shortAlarm = windowAlarm(shortWindow);
 
   const composite = new CompositeAlarm(scope, id, {
-    compositeAlarmName: alarmName,
+    compositeAlarmName: compositeAlarmNameSuffix
+      ? `${alarmName} ${compositeAlarmNameSuffix}`
+      : alarmName,
     alarmDescription,
     alarmRule: AlarmRule.allOf(
       AlarmRule.fromAlarm(longAlarm, AlarmState.ALARM),

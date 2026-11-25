@@ -2,6 +2,7 @@ import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../__tests__/load-infra";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 
 describe("FlexGlobalStack certificate alarm", () => {
   let template: Template;
@@ -45,7 +46,7 @@ describe("FlexGlobalStack certificate alarm", () => {
     ).find((id) => id.startsWith("CriticalRelayTopic"));
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-cloudfront-traffic-cliff",
+      AlarmName: `staging-cloudfront-traffic-cliff ${CRITICAL_ALARM_ANNOTATION}`,
       ComparisonOperator: "LessThanLowerThreshold",
       EvaluationPeriods: 3,
       DatapointsToAlarm: 3,
@@ -86,7 +87,7 @@ describe("FlexGlobalStack certificate alarm", () => {
     expect(criticalRelayId).toBeDefined();
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: "staging-certificate-days-to-expiry",
+      AlarmName: `staging-certificate-days-to-expiry ${CRITICAL_ALARM_ANNOTATION}`,
       MetricName: "DaysToExpiry",
       Dimensions: [{ Name: "CertificateArn", Value: { Ref: certificateId } }],
       Threshold: 30,

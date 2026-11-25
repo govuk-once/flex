@@ -9,6 +9,7 @@ import {
 import { Construct } from "constructs";
 
 import { toPascalCase } from "../../utils/routes";
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { createTwoWindowAlarm } from "./two-window-alarm";
 import { BaseAlarmsProps } from "./types";
 
@@ -184,6 +185,9 @@ export class JourneyAlarms extends Construct {
           journey.fastBurnSeverity === "critical"
             ? criticalAction
             : warningAction,
+        ...(journey.fastBurnSeverity === "critical" && {
+          compositeAlarmNameSuffix: CRITICAL_ALARM_ANNOTATION,
+        }),
       });
 
       createTwoWindowAlarm(this, {

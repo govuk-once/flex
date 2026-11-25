@@ -6,6 +6,7 @@ import {
   createAlarmActions,
   createTestStack,
 } from "../../__tests__/alarm-actions";
+import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { JourneyAlarms, JOURNEYS } from "./journeys";
 
 vi.hoisted(() => {
@@ -84,7 +85,7 @@ describe("JourneyAlarms", () => {
       ]),
     });
     template.hasResourceProperties("AWS::CloudWatch::CompositeAlarm", {
-      AlarmName: "staging-journey-reads-fast-burn",
+      AlarmName: `staging-journey-reads-fast-burn ${CRITICAL_ALARM_ANNOTATION}`,
       AlarmRule: Match.anyValue(),
       AlarmActions: [criticalActionRef],
       AlarmDescription: Match.stringLikeRegexp("^Critical: READS DEGRADED"),

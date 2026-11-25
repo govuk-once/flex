@@ -8,6 +8,7 @@ import {
 import type { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
+import { withCriticalAnnotation } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 export interface SecretRotationAlarmsProps extends BaseAlarmsProps {
@@ -23,7 +24,7 @@ export class SecretRotationAlarms extends Construct {
     const { fn, criticalAction, alarmNamePrefix } = props;
 
     this.failedAlarm = new Alarm(this, "Failed", {
-      alarmName: `${alarmNamePrefix}-failed`,
+      alarmName: withCriticalAnnotation(`${alarmNamePrefix}-failed`),
       alarmDescription:
         "Critical: the secret rotation Lambda failed, so the secret has not rotated. Check the Lambda logs and the secret's rotation status",
       metric: fn.metricErrors({
