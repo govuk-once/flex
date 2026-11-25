@@ -33,9 +33,7 @@ async function synthesise(stage: string) {
     ...VPC_EXPORTS.map((key) => `${ENV_KEYS.Vpc}/${key}`),
   ]);
 
-  return Template.fromStack(
-    new FlexPlatformStack(app, `${stage}-FlexPlatform`, []),
-  );
+  return new FlexPlatformStack(app, `${stage}-FlexPlatform`, []);
 }
 
 function authorizerEnvironment(template: Template) {
@@ -70,7 +68,7 @@ describe("FlexPlatformStack authorizer", () => {
   });
 
   it("uses the real Cognito parameters and JWKS URI in staging", async () => {
-    const template = await synthesise("staging");
+    const template = Template.fromStack(await synthesise("staging"));
     const variables = authorizerEnvironment(template);
     const userPoolId = parameterReference(
       template,
@@ -95,7 +93,7 @@ describe("FlexPlatformStack authorizer", () => {
   });
 
   it("uses the stub Cognito parameters and stub JWKS endpoint in development", async () => {
-    const template = await synthesise("development");
+    const template = Template.fromStack(await synthesise("development"));
     const variables = authorizerEnvironment(template);
     const [functionUrlId] = Object.keys(
       template.findResources("AWS::Lambda::Url"),
@@ -125,7 +123,7 @@ describe("FlexPlatformStack WAF request logging", () => {
   });
 
   it("logs blocked and counted API WAF requests to S3 with secret bearing headers redacted", async () => {
-    const template = await synthesise("staging");
+    const template = Template.fromStack(await synthesise("staging"));
     const webAclId = Object.keys(
       template.findResources("AWS::WAFv2::WebACL"),
     )[0];
@@ -166,7 +164,7 @@ describe("FlexPlatformStack WAF request logging", () => {
   });
 
   it("keeps API WAF logs for 90 days under a governance lock and only accepts them from log delivery in eu-west-2", async () => {
-    const template = await synthesise("staging");
+    const template = Template.fromStack(await synthesise("staging"));
 
     template.hasResourceProperties("AWS::S3::Bucket", {
       BucketName: "aws-waf-logs-flex-staging-api",
@@ -223,7 +221,7 @@ describe("FlexPlatformStack WAF request logging", () => {
   });
 
   it("does not log WAF requests for ephemeral stages", async () => {
-    const template = await synthesise("my-branch-12");
+    const template = Template.fromStack(await synthesise("my-branch-12"));
 
     template.resourceCountIs("AWS::WAFv2::LoggingConfiguration", 0);
     template.resourceCountIs("AWS::S3::Bucket", 0);
@@ -236,7 +234,7 @@ describe("FlexPlatformStack private gateway policy", () => {
   });
 
   it("denies invoke outside the VPC endpoint using a full execute-api ARN, so API Gateway stores it unchanged", async () => {
-    const template = await synthesise("staging");
+    const template = Template.fromStack(await synthesise("staging"));
 
     template.hasResourceProperties("AWS::ApiGateway::RestApi", {
       Name: Match.stringLikeRegexp("[Pp]rivate"),
