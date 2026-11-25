@@ -34,12 +34,13 @@ function synthesise() {
     warningAction: actions.warningAction,
   });
 
-  return { template: Template.fromStack(stack), ...actions };
+  return { stack, ...actions };
 }
 
 describe("LambdaAlarms", () => {
   it("warns rather than pages on a single function's error rate and throttles", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-route-alarm-error-rate",
@@ -52,7 +53,8 @@ describe("LambdaAlarms", () => {
   });
 
   it("ignores duration tails below 10 invocations so cold starts do not alarm", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-route-alarm-duration",

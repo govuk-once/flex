@@ -14,7 +14,7 @@ async function synthesise(stage: string, protocol: LoggingProtocol) {
   });
   enableDeliveryStatusLogging(new Topic(stack, "RelayTopic"), protocol);
 
-  return Template.fromStack(stack);
+  return stack;
 }
 
 const logGroups = (template: Template) =>
@@ -29,7 +29,9 @@ describe("enableDeliveryStatusLogging", () => {
   });
 
   it("logs deliveries for the protocol the topic's subscribers use", async () => {
-    const template = await synthesise("staging", LoggingProtocol.LAMBDA);
+    const template = Template.fromStack(
+      await synthesise("staging", LoggingProtocol.LAMBDA),
+    );
 
     template.hasResourceProperties("AWS::SNS::Topic", {
       DeliveryStatusLogging: [
@@ -42,7 +44,9 @@ describe("enableDeliveryStatusLogging", () => {
   });
 
   it("names the log groups after a topic whose name CloudFormation generates", async () => {
-    const template = await synthesise("staging", LoggingProtocol.LAMBDA);
+    const template = Template.fromStack(
+      await synthesise("staging", LoggingProtocol.LAMBDA),
+    );
     const [topicId] = Object.keys(template.findResources("AWS::SNS::Topic"));
     const logGroupNames = logGroups(template).map(
       (logGroup) => logGroup.Properties.LogGroupName,
@@ -63,7 +67,9 @@ describe("enableDeliveryStatusLogging", () => {
   });
 
   it("keeps the delivery logs when a persistent environment's stack is deleted", async () => {
-    const template = await synthesise("production", LoggingProtocol.HTTP);
+    const template = Template.fromStack(
+      await synthesise("production", LoggingProtocol.HTTP),
+    );
 
     expect(
       logGroups(template).map((logGroup) => logGroup.DeletionPolicy),
@@ -71,7 +77,9 @@ describe("enableDeliveryStatusLogging", () => {
   });
 
   it("removes the delivery logs with an ephemeral stage so its name can be reused", async () => {
-    const template = await synthesise("pr-123", LoggingProtocol.HTTP);
+    const template = Template.fromStack(
+      await synthesise("pr-123", LoggingProtocol.HTTP),
+    );
 
     expect(
       logGroups(template).map((logGroup) => logGroup.DeletionPolicy),

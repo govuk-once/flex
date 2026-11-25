@@ -23,7 +23,7 @@ async function synthesise(stage = "staging") {
     Object.keys(template.findResources(type, { Properties: properties }))[0];
 
   return {
-    template,
+    stack,
     criticalTopicId: resourceId("AWS::SNS::Topic", {
       TopicName: "flex-alerts-critical",
     }),
@@ -38,9 +38,11 @@ async function synthesise(stage = "staging") {
 
 describe("FlexCoreStack alert routing", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;
+  let template: Template;
 
   beforeAll(async () => {
     result = await synthesise();
+    template = Template.fromStack(result.stack);
   });
 
   afterAll(() => {
@@ -48,7 +50,7 @@ describe("FlexCoreStack alert routing", () => {
   });
 
   it("sends critical alarms and relay health alarms to the critical Slack channel", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
       ConfigurationName: "flex-alerts-critical-staging",
@@ -68,8 +70,6 @@ describe("FlexCoreStack alert routing", () => {
   });
 
   it("lets the critical channel decrypt the relay health topic key by alias", () => {
-    const { template } = result;
-
     template.hasResourceProperties("AWS::IAM::Policy", {
       PolicyDocument: Match.objectLike({
         Statement: Match.arrayWith([
@@ -88,7 +88,7 @@ describe("FlexCoreStack alert routing", () => {
   });
 
   it("keeps warnings on the original channel without the critical topic", () => {
-    const { template, warningTopicId } = result;
+    const { warningTopicId } = result;
 
     template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
       ConfigurationName: "flex-alerts-staging",
@@ -97,13 +97,11 @@ describe("FlexCoreStack alert routing", () => {
   });
 
   it("does not post to the GOV.UK Connect channel outside production", () => {
-    const { template } = result;
-
     template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 2);
   });
 
   it("warns when log ingestion in eu-west-2 is excessive", () => {
-    const { template, warningTopicId } = result;
+    const { warningTopicId } = result;
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-log-volume-incoming-bytes",
@@ -114,7 +112,7 @@ describe("FlexCoreStack alert routing", () => {
   });
 
   it("alerts on KMS key and Cognito user pool changes through the critical topic", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
 
     ["aws.kms", "aws.cognito-idp"].forEach((source) => {
       template.hasResourceProperties("AWS::Events::Rule", {
@@ -127,9 +125,11 @@ describe("FlexCoreStack alert routing", () => {
 
 describe("FlexCoreStack production alert routing", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;
+  let template: Template;
 
   beforeAll(async () => {
     result = await synthesise("production");
+    template = Template.fromStack(result.stack);
   });
 
   afterAll(() => {
@@ -137,7 +137,7 @@ describe("FlexCoreStack production alert routing", () => {
   });
 
   it("also posts critical alarms to the shared GOV.UK Connect channel", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
       ConfigurationName: "flex-alerts-critical-production-govuk-connect",
@@ -148,9 +148,11 @@ describe("FlexCoreStack production alert routing", () => {
 
 describe("FlexCoreStack alarm delivery status logging", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;
+  let template: Template;
 
   beforeAll(async () => {
     result = await synthesise();
+    template = Template.fromStack(result.stack);
   });
 
   afterAll(() => {
@@ -159,7 +161,7 @@ describe("FlexCoreStack alarm delivery status logging", () => {
 
   const feedbackRoleId = (topicName: string) => {
     const [topic] = Object.values(
-      result.template.findResources("AWS::SNS::Topic", {
+      template.findResources("AWS::SNS::Topic", {
         Properties: { TopicName: topicName },
       }),
     ) as {
@@ -183,7 +185,7 @@ describe("FlexCoreStack alarm delivery status logging", () => {
     ({ topicName }) => {
       const roleArn = Match.objectLike({ "Fn::GetAtt": Match.anyValue() });
 
-      result.template.hasResourceProperties("AWS::SNS::Topic", {
+      template.hasResourceProperties("AWS::SNS::Topic", {
         TopicName: topicName,
         DeliveryStatusLogging: [
           {
@@ -198,7 +200,7 @@ describe("FlexCoreStack alarm delivery status logging", () => {
   );
 
   it("keeps the delivery logs SNS writes for a year under the names SNS expects", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
     const logGroupName = (suffix: string) => ({
       "Fn::Join": [
         "",
@@ -223,7 +225,7 @@ describe("FlexCoreStack alarm delivery status logging", () => {
 
     expect(criticalRoleId).toBeDefined();
     expect(criticalRoleId).not.toEqual(feedbackRoleId("flex-alerts-warning"));
-    result.template.hasResource("AWS::IAM::Role", {
+    template.hasResource("AWS::IAM::Role", {
       Properties: {
         AssumeRolePolicyDocument: {
           Statement: [
@@ -240,7 +242,6 @@ describe("FlexCoreStack alarm delivery status logging", () => {
   });
 
   it("limits the feedback role to writing to its own topic's log groups", () => {
-    const { template } = result;
     const policies = Object.values(
       template.findResources("AWS::IAM::Policy", {
         Properties: {
@@ -277,9 +278,11 @@ describe("FlexCoreStack alarm delivery status logging", () => {
 
 describe("FlexCoreStack credential alerting", () => {
   let result: Awaited<ReturnType<typeof synthesise>>;
+  let template: Template;
 
   beforeAll(async () => {
     result = await synthesise();
+    template = Template.fromStack(result.stack);
   });
 
   afterAll(() => {
@@ -287,7 +290,7 @@ describe("FlexCoreStack credential alerting", () => {
   });
 
   it("sends Secrets Manager rotation failures to the critical alarm topic", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: Match.objectLike({
@@ -299,7 +302,7 @@ describe("FlexCoreStack credential alerting", () => {
   });
 
   it("encrypts the rotation alert dead-letter queue with a key other than the alarm topic key", () => {
-    const { template, alarmTopicKeyId } = result;
+    const { alarmTopicKeyId } = result;
     const [queue] = Object.values(
       template.findResources("AWS::SQS::Queue"),
     ) as { Properties: { KmsMasterKeyId: unknown } }[];
@@ -311,7 +314,7 @@ describe("FlexCoreStack credential alerting", () => {
   });
 
   it("alarms critical when the DVLA rotation Lambda fails", () => {
-    const { template, criticalTopicId } = result;
+    const { criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-dvla-secret-rotation-failed",
@@ -322,14 +325,14 @@ describe("FlexCoreStack credential alerting", () => {
   });
 
   it("warns when a rotation alert cannot be delivered", () => {
-    result.template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-secret-rotation-alert-undelivered",
       MetricName: "ApproximateNumberOfMessagesVisible",
     });
   });
 
   it("exports the alarm topic key ARN for the us-east-1 relay", () => {
-    const { template, alarmTopicKeyId } = result;
+    const { alarmTopicKeyId } = result;
 
     template.hasResourceProperties("AWS::SSM::Parameter", {
       Name: "/staging/flex/kms/alarm-topic-key-arn",

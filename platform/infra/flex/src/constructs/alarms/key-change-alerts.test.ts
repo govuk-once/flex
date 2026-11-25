@@ -28,14 +28,15 @@ function synthesise() {
   });
 
   return {
-    template: Template.fromStack(stack),
+    stack,
     topicRef: stack.resolve(criticalTopic.topicArn) as unknown,
   };
 }
 
 describe("createKeyChangeAlerts", () => {
   it("alerts on destructive KMS key calls made outside a CloudFormation deployment", () => {
-    const { template, topicRef } = synthesise();
+    const { stack, topicRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: Match.objectLike({
@@ -57,7 +58,8 @@ describe("createKeyChangeAlerts", () => {
   });
 
   it("alerts on Cognito user pool or client deletion", () => {
-    const { template, topicRef } = synthesise();
+    const { stack, topicRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: Match.objectLike({
@@ -72,7 +74,9 @@ describe("createKeyChangeAlerts", () => {
   });
 
   it("warns when an alert cannot be delivered", () => {
-    synthesise().template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-kms-key-change-alert-undelivered",
     });
   });
