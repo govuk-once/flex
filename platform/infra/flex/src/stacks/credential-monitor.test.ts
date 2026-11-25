@@ -21,12 +21,7 @@ async function synthesiseFor(stage: string) {
     STAGE_KEYS.ApigwPublicAuthorizerFn,
   ]);
 
-  const stack = new FlexCredentialMonitorStack(
-    app,
-    `${stage}-FlexCredentialMonitor`,
-  );
-
-  return Template.fromStack(stack);
+  return new FlexCredentialMonitorStack(app, `${stage}-FlexCredentialMonitor`);
 }
 
 function statementsOf(template: Template): PolicyStatementJson[] {
@@ -73,7 +68,7 @@ describe("FlexCredentialMonitorStack", () => {
     let template: Template;
 
     beforeAll(async () => {
-      template = await synthesiseFor("staging");
+      template = Template.fromStack(await synthesiseFor("staging"));
       vi.unstubAllEnvs();
     });
 
@@ -173,7 +168,7 @@ describe("FlexCredentialMonitorStack", () => {
     let template: Template;
 
     beforeAll(async () => {
-      template = await synthesiseFor("development");
+      template = Template.fromStack(await synthesiseFor("development"));
       vi.unstubAllEnvs();
     });
 
