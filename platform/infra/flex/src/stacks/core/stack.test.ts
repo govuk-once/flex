@@ -2,7 +2,6 @@ import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra } from "../../__tests__/load-infra";
-import { CRITICAL_ALARM_ANNOTATION } from "../../constructs/alarms/alarm-annotations";
 
 async function synthesise(stage = "staging") {
   const { SsmApp, ENV_KEYS } = await loadInfra(stage);
@@ -14,7 +13,6 @@ async function synthesise(stage = "staging") {
     ENV_KEYS.MonitoringSlackWorkspaceId,
     ENV_KEYS.MonitoringSlackChannelId,
     ENV_KEYS.MonitoringCriticalSlackChannelId,
-    ENV_KEYS.MonitoringConnectCriticalSlackChannelId,
   ]);
 
   const stack = new FlexCoreStack(app, `${stage}-FlexCore`);
@@ -97,7 +95,7 @@ describe("FlexCoreStack alert routing", () => {
     });
   });
 
-  it("does not post to the GOV.UK Connect channel outside production", () => {
+  it("creates only the warning and critical Slack channel configurations", () => {
     const { template } = result;
 
     template.resourceCountIs("AWS::Chatbot::SlackChannelConfiguration", 2);
@@ -111,27 +109,6 @@ describe("FlexCoreStack alert routing", () => {
         EventPattern: Match.objectLike({ source: [source] }),
         Targets: [Match.objectLike({ Arn: { Ref: criticalTopicId } })],
       });
-    });
-  });
-});
-
-describe("FlexCoreStack production alert routing", () => {
-  let result: Awaited<ReturnType<typeof synthesise>>;
-
-  beforeAll(async () => {
-    result = await synthesise("production");
-  });
-
-  afterAll(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it("also posts critical alarms to the shared GOV.UK Connect channel", () => {
-    const { template, criticalTopicId } = result;
-
-    template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
-      ConfigurationName: "flex-alerts-critical-production-govuk-connect",
-      SnsTopicArns: [{ Ref: criticalTopicId }],
     });
   });
 });
@@ -175,7 +152,7 @@ describe("FlexCoreStack credential alerting", () => {
     const { template, criticalTopicId } = result;
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: `staging-dvla-secret-rotation-failed ${CRITICAL_ALARM_ANNOTATION}`,
+      AlarmName: "staging-dvla-secret-rotation-failed",
       MetricName: "Errors",
       Threshold: 0,
       AlarmActions: [{ Ref: criticalTopicId }],

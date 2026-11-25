@@ -16,7 +16,7 @@ import {
 import type { IFunction } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
-import { withCriticalAnnotation } from "./alarm-annotations";
+import { withAlarmSuffix } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 export interface CredentialMonitorAlarmsProps extends BaseAlarmsProps {
@@ -52,6 +52,7 @@ export class CredentialMonitorAlarms extends Construct {
       monitorFunction,
       alarmNamePrefix,
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
     } = props;
 
@@ -157,7 +158,7 @@ export class CredentialMonitorAlarms extends Construct {
       const alarm = new Alarm(this, definition.id, {
         alarmName:
           definition.action === criticalAction
-            ? withCriticalAnnotation(baseName)
+            ? withAlarmSuffix(baseName, criticalAlarmNameSuffix)
             : baseName,
         alarmDescription: definition.description,
         metric: definition.metric,

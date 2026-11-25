@@ -1,4 +1,4 @@
-import { getEnvConfig } from "@flex/utils";
+import { Environment, getEnvConfig } from "@flex/utils";
 import { METRIC_NAMESPACE } from "@platform/credential-monitor/metrics";
 import { Duration } from "aws-cdk-lib";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
@@ -7,6 +7,7 @@ import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { CredentialMonitorAlarms } from "../constructs/alarms/credential-monitor";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
@@ -64,10 +65,15 @@ export class FlexCredentialMonitorStack extends BaseStack {
       env: { region: "eu-west-2" },
     });
 
-    const { criticalAction, warningAction } = importAlarmActions(this, {
-      criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
-      warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
-    });
+    const { criticalAction, criticalAlarmNameSuffix, warningAction } =
+      importAlarmActions(this, {
+        criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
+        warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
+        criticalAlarmNameSuffix:
+          env === Environment.production
+            ? CRITICAL_ALARM_ANNOTATION
+            : undefined,
+      });
 
     const authorizerFunctionArn = this.import(
       STAGE_KEYS.ApigwPublicAuthorizerFn,
@@ -135,6 +141,7 @@ export class FlexCredentialMonitorStack extends BaseStack {
       environment: env,
       monitorFunction: monitor.function,
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
     });
   }

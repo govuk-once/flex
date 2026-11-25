@@ -44,6 +44,7 @@ import { CfnWebACL } from "aws-cdk-lib/aws-wafv2";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { createAlarmRelay } from "../constructs/alarms/alarm-relay";
 import { CertificateAlarms } from "../constructs/alarms/certificate";
@@ -116,6 +117,10 @@ export class FlexGlobalStack extends BaseStack {
       ...importAlarmActions(this, {
         criticalTopicArn: criticalRelay.topicArn,
         warningTopicArn: warningRelay.topicArn,
+        criticalAlarmNameSuffix:
+          env === Environment.production
+            ? CRITICAL_ALARM_ANNOTATION
+            : undefined,
       }),
       criticalTopic: criticalRelay,
       alarmTopicKey,
@@ -631,8 +636,14 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
     });
 
-    const { criticalAction, warningAction, criticalTopic, alarmTopicKey } =
-      this.#createAlarmActions();
+    const alarmActions = this.#createAlarmActions();
+    const {
+      criticalAction,
+      criticalAlarmNameSuffix,
+      warningAction,
+      criticalTopic,
+      alarmTopicKey,
+    } = alarmActions;
 
     if (persistent) {
       createIamChangeAlerts(this, {
@@ -651,15 +662,15 @@ export class FlexGlobalStack extends BaseStack {
       alarmNamePrefix: `${stage}-certificate`,
       certificate: cert,
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
     });
 
     const { restApi } = this.#getPublicRestApi();
 
-    const { e2eBypassSecret, webAcl } = this.#createCloudfrontWebAcl({
-      criticalAction,
-      warningAction,
-    });
+    const { e2eBypassSecret, webAcl } = this.#createCloudfrontWebAcl(
+      alarmActions,
+    );
 
     const secretHeaderArn = this.import(
       STAGE_KEYS.WafCfSecretHeaderArn,
@@ -671,13 +682,12 @@ export class FlexGlobalStack extends BaseStack {
 
     const distribution = this.#createCloudfrontDistribution({
       cert,
-      criticalAction,
+      ...alarmActions,
       domainName,
       openApiSpecBucket,
       restApi,
       secretHeaderArn,
       subdomainName,
-      warningAction,
       webAcl,
       wellKnownBucket,
     });
@@ -688,8 +698,7 @@ export class FlexGlobalStack extends BaseStack {
 
     this.#createCloudfrontShield({
       distribution,
-      criticalAction,
-      warningAction,
+      ...alarmActions,
     });
 
     new CfnOutput(this, "FlexApiUrl", {

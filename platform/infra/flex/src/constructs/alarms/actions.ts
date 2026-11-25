@@ -7,11 +7,12 @@ import { AlarmActionProps } from "./types";
 interface ActionsProps {
   criticalTopicArn: string;
   warningTopicArn: string;
+  criticalAlarmNameSuffix?: string;
 }
 
 export function importAlarmActions(
   scope: Construct,
-  { criticalTopicArn, warningTopicArn }: ActionsProps,
+  { criticalTopicArn, warningTopicArn, criticalAlarmNameSuffix }: ActionsProps,
 ): AlarmActionProps {
   const criticalTopic = Topic.fromTopicArn(
     scope,
@@ -27,5 +28,6 @@ export function importAlarmActions(
   return {
     criticalAction: new SnsAction(criticalTopic),
     warningAction: new SnsAction(warningTopic),
+    criticalAlarmNameSuffix,
   };
 }

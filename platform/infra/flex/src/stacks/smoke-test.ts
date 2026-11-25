@@ -25,7 +25,10 @@ import {
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
-import { withCriticalAnnotation } from "../constructs/alarms/alarm-annotations";
+import {
+  CRITICAL_ALARM_ANNOTATION,
+  withAlarmSuffix,
+} from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { FlexPublicFunction } from "../constructs/lambda/flex-public-function";
 import { ENV_KEYS, PLATFORM_KEYS } from "../ssm-keys";
@@ -34,6 +37,9 @@ import { putMetricDataStatement } from "../utils/put-metric-data-statement";
 import { toPascalCase } from "../utils/routes";
 
 const { env, stage } = getEnvConfig();
+
+const criticalAlarmNameSuffix =
+  env === Environment.production ? CRITICAL_ALARM_ANNOTATION : undefined;
 
 const PROBE_PERIOD = Duration.minutes(1);
 const CONSECUTIVE_FAILURES = 3;
@@ -129,8 +135,9 @@ export class FlexSmokeTestStack extends BaseStack {
 
     probesForEnvironment(env).forEach(({ journey }) => {
       const alarm = new Alarm(this, `SmokeTest${toPascalCase(journey)}Alarm`, {
-        alarmName: withCriticalAnnotation(
+        alarmName: withAlarmSuffix(
           `${stage}-smoke-test-${journey}-no-success`,
+          criticalAlarmNameSuffix,
         ),
         alarmDescription:
           `Critical: SERVICE UNAVAILABLE: the ${journey} smoke test has failed ${String(CONSECUTIVE_FAILURES)} times in a row ` +
@@ -155,7 +162,10 @@ export class FlexSmokeTestStack extends BaseStack {
     });
 
     const authRejected = new Alarm(this, "SmokeTestAuthRejectedAlarm", {
-      alarmName: withCriticalAnnotation(`${stage}-smoke-test-auth-rejected`),
+      alarmName: withAlarmSuffix(
+        `${stage}-smoke-test-auth-rejected`,
+        criticalAlarmNameSuffix,
+      ),
       alarmDescription:
         `Critical: AUTH FAILURE: the smoke test's valid token has been refused with a 401 or 403 ${String(CONSECUTIVE_FAILURES)} times in a row. ` +
         `Check Cognito, the JWKS endpoint and the authorizer logs. Runbook: ${RUNBOOK}`,

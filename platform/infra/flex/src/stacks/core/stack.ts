@@ -10,6 +10,7 @@ import { StringParameter } from "aws-cdk-lib/aws-ssm";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../../base";
+import { CRITICAL_ALARM_ANNOTATION } from "../../constructs/alarms/alarm-annotations";
 import { createIamChangeAlerts } from "../../constructs/alarms/iam-change-alerts";
 import { createKeyChangeAlerts } from "../../constructs/alarms/key-change-alerts";
 import {
@@ -64,6 +65,8 @@ export class FlexCoreStack extends BaseStack {
 
     const criticalAction = new SnsAction(criticalTopic);
     const warningAction = new SnsAction(warningTopic);
+    const criticalAlarmNameSuffix =
+      env === Environment.production ? CRITICAL_ALARM_ANNOTATION : undefined;
 
     const dvlaSecretArn = this.import(ENV_KEYS.DvlaConfigSecretArn);
 
@@ -83,6 +86,7 @@ export class FlexCoreStack extends BaseStack {
       privateEgressSg: privateEgress,
       dvlaSecretArn,
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
       permissionsBoundary,
     });
@@ -155,19 +159,6 @@ export class FlexCoreStack extends BaseStack {
         },
       }),
     );
-
-    if (env === Environment.production) {
-      createSlackNotifications(this, {
-        id: "ConnectCriticalSlackChannel",
-        channelConfigurationName: `flex-alerts-critical-${stage}-govuk-connect`,
-        topicKey: alarmTopicKey,
-        topics: [criticalTopic],
-        slackWorkspaceId,
-        slackChannelId: this.import(
-          ENV_KEYS.MonitoringConnectCriticalSlackChannelId,
-        ),
-      });
-    }
 
     // Release notifications are published once per pipeline run, so the
     // topic and channel config only exist in the development environment

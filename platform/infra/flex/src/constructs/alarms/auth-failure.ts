@@ -7,7 +7,6 @@ import {
 } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 
-import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { createTwoWindowAlarm } from "./two-window-alarm";
 import { BaseAlarmsProps } from "./types";
 
@@ -30,7 +29,12 @@ export class AuthFailureAlarms extends Construct {
   constructor(scope: Construct, id: string, props: AuthFailureAlarmsProps) {
     super(scope, id);
 
-    const { accessLogGroup, alarmNamePrefix, criticalAction } = props;
+    const {
+      accessLogGroup,
+      alarmNamePrefix,
+      criticalAction,
+      criticalAlarmNameSuffix,
+    } = props;
 
     const requests = new MetricFilter(this, "Requests", {
       logGroup: accessLogGroup,
@@ -76,7 +80,7 @@ export class AuthFailureAlarms extends Construct {
       longWindow: LONG_WINDOW,
       shortWindow: SHORT_WINDOW,
       action: criticalAction,
-      compositeAlarmNameSuffix: CRITICAL_ALARM_ANNOTATION,
+      compositeAlarmNameSuffix: criticalAlarmNameSuffix,
     });
   }
 }

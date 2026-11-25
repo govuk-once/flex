@@ -10,7 +10,7 @@ import {
 } from "aws-cdk-lib/aws-cloudwatch";
 import { Construct } from "constructs";
 
-import { withCriticalAnnotation } from "./alarm-annotations";
+import { withAlarmSuffix } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 /**
@@ -42,6 +42,7 @@ export class CloudFrontAlarms extends Construct {
     const {
       distribution,
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
       alarmNamePrefix,
       trafficCliff = false,
@@ -51,7 +52,7 @@ export class CloudFrontAlarms extends Construct {
 
     // 5xxErrorRate is already a percentage (0-100), so threshold is 1, not 0.01.
     this.fiveXxErrorRateAlarm = new Alarm(this, "5xxErrorRate", {
-      alarmName: withCriticalAnnotation(`${alarmNamePrefix}-5xx-error-rate`),
+      alarmName: withAlarmSuffix(`${alarmNamePrefix}-5xx-error-rate`, criticalAlarmNameSuffix),
       alarmDescription:
         "Critical: EDGE FAILURE: CloudFront 5xx error rate above 1% over 5 consecutive 1 minute periods. Runbook: docs/runbooks/api-gateway-5xx.md",
       metric: new Metric({
@@ -111,7 +112,7 @@ export class CloudFrontAlarms extends Construct {
       // viewer function change) every error rate reads zero, so a drop in
       // volume is the only signal. Missing data is itself the symptom.
       this.trafficCliffAlarm = new AnomalyDetectionAlarm(this, "TrafficCliff", {
-        alarmName: withCriticalAnnotation(`${alarmNamePrefix}-traffic-cliff`),
+        alarmName: withAlarmSuffix(`${alarmNamePrefix}-traffic-cliff`, criticalAlarmNameSuffix),
         alarmDescription:
           "Critical: EDGE FAILURE: requests reaching CloudFront have fallen below the expected band for 3 consecutive 5 minute periods, " +
           "or stopped altogether. Check DNS, the certificate, the distribution and the viewer request function. Runbook: docs/runbooks/verify-environment-health.md",

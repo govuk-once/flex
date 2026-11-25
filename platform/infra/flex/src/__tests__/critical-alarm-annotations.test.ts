@@ -10,6 +10,7 @@ import {
 import { LogGroup } from "aws-cdk-lib/aws-logs";
 import { describe, expect, it } from "vitest";
 
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { AuthFailureAlarms } from "../constructs/alarms/auth-failure";
 import { CertificateAlarms } from "../constructs/alarms/certificate";
 import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
@@ -18,10 +19,9 @@ import { JourneyAlarms } from "../constructs/alarms/journeys";
 import { SecretRotationAlarms } from "../constructs/alarms/secret-rotation";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { WafAlarms } from "../constructs/alarms/waf";
-import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { createAlarmActions, createTestStack } from "./alarm-actions";
 
-function synthesiseAllAlarmTypes() {
+function synthesiseAllAlarmTypes(criticalAlarmNameSuffix?: string) {
   const stack = createTestStack();
   const actions = createAlarmActions(stack);
 
@@ -33,29 +33,31 @@ function synthesiseAllAlarmTypes() {
   });
   const logGroup = new LogGroup(stack, "AccessLogs");
 
+  const alarmProps = { ...actions, criticalAlarmNameSuffix };
+
   new CertificateAlarms(stack, "CertAlarms", {
     alarmNamePrefix: "test-cert",
     certificate: new Certificate(stack, "Cert", { domainName: "example.com" }),
-    ...actions,
+    ...alarmProps,
   });
 
   new SecretRotationAlarms(stack, "RotAlarms", {
     alarmNamePrefix: "test-rotation",
     fn,
-    ...actions,
+    ...alarmProps,
   });
 
   new CredentialMonitorAlarms(stack, "CredAlarms", {
     alarmNamePrefix: "test-cred-monitor",
     environment: "test",
     monitorFunction: fn,
-    ...actions,
+    ...alarmProps,
   });
 
   new ShieldAlarms(stack, "ShieldAlarms", {
     alarmNamePrefix: "test-shield",
     resourceArn: `arn:aws:cloudfront::${Stack.of(stack).account}:distribution/E123`,
-    ...actions,
+    ...alarmProps,
   });
 
   new WafAlarms(stack, "WafAlarms", {
@@ -63,7 +65,7 @@ function synthesiseAllAlarmTypes() {
     webAclScope: "REGIONAL",
     webAclMetricName: "TestAcl",
     managedRuleMetricNames: ["ALL"],
-    ...actions,
+    ...alarmProps,
   });
 
   new CloudFrontAlarms(stack, "CfAlarms", {
@@ -77,27 +79,29 @@ function synthesiseAllAlarmTypes() {
       },
     ),
     trafficCliff: true,
-    ...actions,
+    ...alarmProps,
   });
 
   new AuthFailureAlarms(stack, "AuthAlarms", {
     alarmNamePrefix: "test-apigw",
     accessLogGroup: logGroup,
-    ...actions,
+    ...alarmProps,
   });
 
   new JourneyAlarms(stack, "JourneyAlarms", {
     alarmNamePrefix: "test-journey",
     accessLogGroup: logGroup,
-    ...actions,
+    ...alarmProps,
   });
 
   return { template: Template.fromStack(stack), ...actions };
 }
 
 describe("Critical alarm annotation enforcement", () => {
-  it("every alarm with the critical action carries the channel annotation", () => {
-    const { template, criticalActionRef } = synthesiseAllAlarmTypes();
+  it("in production, every alarm with the critical action carries the channel annotation", () => {
+    const { template, criticalActionRef } = synthesiseAllAlarmTypes(
+      CRITICAL_ALARM_ANNOTATION,
+    );
 
     const alarms = template.findResources("AWS::CloudWatch::Alarm");
     const composites = template.findResources(
@@ -153,9 +157,8 @@ describe("Critical alarm annotation enforcement", () => {
     ).toHaveLength(0);
   });
 
-  it("warning-only alarms do not carry the annotation", () => {
-    const { template, criticalActionRef, warningActionRef } =
-      synthesiseAllAlarmTypes();
+  it("outside production, no alarm carries the annotation", () => {
+    const { template } = synthesiseAllAlarmTypes();
 
     const alarms = template.findResources("AWS::CloudWatch::Alarm");
     const composites = template.findResources(
@@ -173,31 +176,21 @@ describe("Critical alarm annotation enforcement", () => {
         Properties: {
           AlarmName?: string;
           CompositeAlarmName?: string;
-          AlarmActions?: unknown[];
         };
       },
     ][]) {
-      const actions = resource.Properties.AlarmActions ?? [];
-      const isCritical = actions.some(
-        (a) => JSON.stringify(a) === JSON.stringify(criticalActionRef),
-      );
-      const isWarning = actions.some(
-        (a) => JSON.stringify(a) === JSON.stringify(warningActionRef),
-      );
-      if (isWarning && !isCritical) {
-        const name =
-          resource.Properties.AlarmName ??
-          resource.Properties.CompositeAlarmName ??
-          id;
-        if (String(name).includes(CRITICAL_ALARM_ANNOTATION)) {
-          wronglyAnnotated.push(String(name));
-        }
+      const name =
+        resource.Properties.AlarmName ??
+        resource.Properties.CompositeAlarmName ??
+        id;
+      if (String(name).includes(CRITICAL_ALARM_ANNOTATION)) {
+        wronglyAnnotated.push(String(name));
       }
     }
 
     expect(
       wronglyAnnotated,
-      `Warning alarms incorrectly carrying ${CRITICAL_ALARM_ANNOTATION}: ${wronglyAnnotated.join(", ")}`,
+      `Non-production alarms carrying ${CRITICAL_ALARM_ANNOTATION}: ${wronglyAnnotated.join(", ")}`,
     ).toHaveLength(0);
   });
 });

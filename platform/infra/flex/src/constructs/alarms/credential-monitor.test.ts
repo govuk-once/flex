@@ -11,7 +11,6 @@ import {
   createAlarmActions,
   createTestStack,
 } from "../../__tests__/alarm-actions";
-import { CRITICAL_ALARM_ANNOTATION } from "./alarm-annotations";
 import { CredentialMonitorAlarms } from "./credential-monitor";
 
 function synthesise() {
@@ -74,7 +73,7 @@ describe("CredentialMonitorAlarms", () => {
     const { template, criticalActionRef } = synthesise();
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-      AlarmName: `staging-credential-monitor-cognito-config-drift ${CRITICAL_ALARM_ANNOTATION}`,
+      AlarmName: "staging-credential-monitor-cognito-config-drift",
       Namespace: METRIC_NAMESPACE,
       MetricName: "CognitoConfigDrift",
       Dimensions: environmentDimension,

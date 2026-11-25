@@ -10,7 +10,7 @@ import {
 } from "aws-cdk-lib/aws-cloudwatch";
 import { Construct } from "constructs";
 
-import { withCriticalAnnotation } from "./alarm-annotations";
+import { withAlarmSuffix } from "./alarm-annotations";
 import { BaseAlarmsProps } from "./types";
 
 export interface WafAlarmsProps extends BaseAlarmsProps {
@@ -29,6 +29,7 @@ export class WafAlarms extends Construct {
 
     const {
       criticalAction,
+      criticalAlarmNameSuffix,
       warningAction,
       alarmNamePrefix,
       webAclMetricName,
@@ -84,8 +85,9 @@ export class WafAlarms extends Construct {
       this,
       "Blocking90PercentRequests",
       {
-        alarmName: withCriticalAnnotation(
+        alarmName: withAlarmSuffix(
           `${alarmNamePrefix}-blocking-90-percent-requests-v2`,
+          criticalAlarmNameSuffix,
         ),
         alarmDescription:
           "Critical: UNDER ATTACK: WAF blocking >90% of total requests over 5 minutes, so real users are being refused. Check for a bad rule change before assuming an attack. Runbook: docs/runbooks/verify-environment-health.md",

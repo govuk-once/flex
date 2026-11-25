@@ -15,6 +15,7 @@ import { Function } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { AlarmActionProps } from "../constructs/alarms/types";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
@@ -133,10 +134,15 @@ export class FlexDomainStack extends BaseStack {
         })
       : undefined;
 
-    const { criticalAction, warningAction } = importAlarmActions(this, {
-      criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
-      warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
-    });
+    const { criticalAction, criticalAlarmNameSuffix, warningAction } =
+      importAlarmActions(this, {
+        criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
+        warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
+        criticalAlarmNameSuffix:
+          stage === Environment.production
+            ? CRITICAL_ALARM_ANNOTATION
+            : undefined,
+      });
 
     routes.forEach(
       ({ gateway, handlerPath, method, path, routeConfig, version }) => {

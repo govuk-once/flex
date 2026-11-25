@@ -28,6 +28,7 @@ import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 import type { Construct } from "constructs";
 
 import { BaseStack } from "../base";
+import { CRITICAL_ALARM_ANNOTATION } from "../constructs/alarms/alarm-annotations";
 import { importAlarmActions } from "../constructs/alarms/actions";
 import { ApiGatewayAlarms } from "../constructs/alarms/api-gateway";
 import { AuthFailureAlarms } from "../constructs/alarms/auth-failure";
@@ -509,34 +510,30 @@ export class FlexPlatformStack extends BaseStack {
       },
     });
 
-    const { criticalAction, warningAction } = importAlarmActions(this, {
+    const alarmActions = importAlarmActions(this, {
       criticalTopicArn: this.import(ENV_KEYS.TopicCriticalAlarms),
       warningTopicArn: this.import(ENV_KEYS.TopicWarningAlarms),
+      criticalAlarmNameSuffix:
+        env === Environment.production ? CRITICAL_ALARM_ANNOTATION : undefined,
     });
+    const { criticalAction, warningAction } = alarmActions;
 
-    const { restApi, appRoot } = this.#createRestApi({
-      criticalAction,
-      warningAction,
-    });
+    const { restApi, appRoot } = this.#createRestApi(alarmActions);
 
     const { originVerifySecret } = this.#createWebAcl({
       restApiStageArn: restApi.deploymentStage.stageArn,
-      criticalAction,
-      warningAction,
+      ...alarmActions,
     });
 
-    const authorizerFn = this.#getAuthorizerFunction({
-      criticalAction,
-      warningAction,
-    });
+    const authorizerFn = this.#getAuthorizerFunction(alarmActions);
 
     const { domainsRoot, gatewaysRoot, privateGateway, privateGatewayUrl } =
-      this.#createPrivateRestApi({ criticalAction, warningAction });
+      this.#createPrivateRestApi(alarmActions);
 
     this.privateRouteBindings = this.#createServiceGateways(
       gatewaysRoot,
       serviceGatewayConfigs,
-      { criticalAction, warningAction },
+      alarmActions,
     );
 
     const permissionsBoundary = createPermissionsBoundary(
