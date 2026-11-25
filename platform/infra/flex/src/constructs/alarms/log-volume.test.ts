@@ -17,16 +17,19 @@ function synthesise() {
     warningAction: actions.warningAction,
   });
 
-  return { template: Template.fromStack(stack), ...actions };
+  return { stack, ...actions };
 }
 
 describe("LogVolumeAlarms", () => {
   it("creates a single alarm", () => {
-    synthesise().template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
+    const template = Template.fromStack(synthesise().stack);
+
+    template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
   });
 
   it("warns when log ingestion stays above 1 GiB per 5 minutes for 15 minutes", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-log-volume-incoming-bytes",
@@ -45,7 +48,9 @@ describe("LogVolumeAlarms", () => {
 
   it("measures every log group in the region rather than a single one", () => {
     const [alarm] = Object.values(
-      synthesise().template.findResources("AWS::CloudWatch::Alarm"),
+      Template.fromStack(synthesise().stack).findResources(
+        "AWS::CloudWatch::Alarm",
+      ),
     ) as { Properties: { Dimensions?: unknown } }[];
 
     expect(alarm?.Properties.Dimensions).toBeUndefined();
@@ -53,7 +58,9 @@ describe("LogVolumeAlarms", () => {
 
   it("names the threshold and the region in its description", () => {
     const [alarm] = Object.values(
-      synthesise().template.findResources("AWS::CloudWatch::Alarm"),
+      Template.fromStack(synthesise().stack).findResources(
+        "AWS::CloudWatch::Alarm",
+      ),
     ) as { Properties: { AlarmDescription: string } }[];
 
     expect(alarm?.Properties.AlarmDescription).toContain(

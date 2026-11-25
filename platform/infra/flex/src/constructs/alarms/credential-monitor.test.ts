@@ -31,7 +31,7 @@ function synthesise() {
   });
 
   return {
-    template: Template.fromStack(stack),
+    stack,
     functionRef: stack.resolve(monitorFunction.functionName) as unknown,
     ...actions,
   };
@@ -41,7 +41,9 @@ const environmentDimension = [{ Name: "Environment", Value: "staging" }];
 
 describe("CredentialMonitorAlarms", () => {
   it("creates five alarms", () => {
-    synthesise().template.resourceCountIs("AWS::CloudWatch::Alarm", 5);
+    const template = Template.fromStack(synthesise().stack);
+
+    template.resourceCountIs("AWS::CloudWatch::Alarm", 5);
   });
 
   it.each([
@@ -50,7 +52,8 @@ describe("CredentialMonitorAlarms", () => {
   ])(
     "warns on any %s credential and keeps its state through a missed run",
     (suffix, metricName) => {
-      const { template, warningActionRef } = synthesise();
+      const { stack, warningActionRef } = synthesise();
+      const template = Template.fromStack(stack);
 
       template.hasResourceProperties("AWS::CloudWatch::Alarm", {
         AlarmName: `staging-credential-monitor-${suffix}`,
@@ -70,7 +73,8 @@ describe("CredentialMonitorAlarms", () => {
   );
 
   it("raises Cognito drift as critical", () => {
-    const { template, criticalActionRef } = synthesise();
+    const { stack, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-credential-monitor-cognito-config-drift",
@@ -85,7 +89,8 @@ describe("CredentialMonitorAlarms", () => {
   });
 
   it("warns when no run succeeds in 3 of the last 4 hours, counting missing hours as zero", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-credential-monitor-not-reporting",
@@ -115,7 +120,8 @@ describe("CredentialMonitorAlarms", () => {
   });
 
   it("warns when the monitor fails in each of the last 3 hours, counting missing hours as zero", () => {
-    const { template, functionRef, warningActionRef } = synthesise();
+    const { stack, functionRef, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-credential-monitor-failing",
@@ -143,7 +149,8 @@ describe("CredentialMonitorAlarms", () => {
   });
 
   it("sends only Cognito drift to the critical topic", () => {
-    const { template, criticalActionRef } = synthesise();
+    const { stack, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
     const critical = template.findResources("AWS::CloudWatch::Alarm", {
       Properties: { AlarmActions: [criticalActionRef] },
     });

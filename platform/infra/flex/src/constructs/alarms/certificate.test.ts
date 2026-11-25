@@ -23,7 +23,7 @@ function synthesise() {
   });
 
   return {
-    template: Template.fromStack(stack),
+    stack,
     certificateRef: stack.resolve(certificate.certificateArn) as unknown,
     ...actions,
   };
@@ -31,11 +31,14 @@ function synthesise() {
 
 describe("CertificateAlarms", () => {
   it("creates a single alarm", () => {
-    synthesise().template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
+    const template = Template.fromStack(synthesise().stack);
+
+    template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
   });
 
   it("alarms below 30 days to expiry, past ACM's 45-day renewal point", () => {
-    const { template, certificateRef, criticalActionRef } = synthesise();
+    const { stack, certificateRef, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-certificate-days-to-expiry",
@@ -52,13 +55,15 @@ describe("CertificateAlarms", () => {
   });
 
   it("keeps its state when ACM stops publishing after expiry", () => {
-    synthesise().template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       TreatMissingData: "ignore",
     });
   });
 
   it("names the threshold in its description", () => {
-    const alarms = synthesise().template.findResources(
+    const alarms = Template.fromStack(synthesise().stack).findResources(
       "AWS::CloudWatch::Alarm",
     );
     const [alarm] = Object.values(alarms) as {

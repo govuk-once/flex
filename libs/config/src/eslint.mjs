@@ -140,5 +140,12 @@ export const config = [
       vitest: { vitestImports: ["@flex/e2e", "@flex/testing"] },
     },
   },
+  {
+    // Fail locally on tests SonarQube S2699 would flag
+    files: ["tests/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "sonarjs/assertions-in-tests": "error",
+    },
+  },
   eslintPluginPrettierRecommended,
 ];
