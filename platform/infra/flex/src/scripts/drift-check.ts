@@ -44,27 +44,32 @@ const DETECTION_TIMEOUT_MS = 10 * 60_000;
 
 const clients = new Map<string, CloudFormationClient>();
 
+function parseEnvironment(environment = "") {
+  const [, account = "", region = ""] =
+    /^aws:\/\/([^/]+)\/(.+)$/.exec(environment) ?? [];
+  return { account, region };
+}
+
 // Each stack is checked with its CDK lookup role, which has read-only access.
 // Stacks in the same account and region share a client, so they share its
 // adaptive retry rate limiter and assume the role once.
 function clientFor(environment = "", lookupRoleArn?: string) {
-  const [, account = "", region] =
-    /^aws:\/\/([^/]+)\/(.+)$/.exec(environment) ?? [];
+  const { account, region } = parseEnvironment(environment);
   const roleArn = lookupRoleArn
     ?.replace("${AWS::Partition}", "aws")
     .replace("${AWS::AccountId}", account);
 
-  const key = `${region ?? ""}|${roleArn ?? ""}`;
+  const key = `${region}|${roleArn ?? ""}`;
   let client = clients.get(key);
   if (!client) {
     client = new CloudFormationClient({
-      region,
+      region: region || undefined,
       retryMode: "adaptive",
       maxAttempts: 10,
       credentials: roleArn
         ? fromTemporaryCredentials({
             params: { RoleArn: roleArn, RoleSessionName: "flex-drift-check" },
-            clientConfig: { region },
+            clientConfig: { region: region || undefined },
           })
         : undefined,
     });
@@ -133,6 +138,7 @@ async function detectDrift(client: CloudFormationClient, StackName: string) {
     for (const drift of page.StackResourceDrifts ?? []) {
       drifts.push({
         logicalId: drift.LogicalResourceId ?? "",
+        physicalId: drift.PhysicalResourceId,
         resourceType: drift.ResourceType ?? "",
         status: drift.StackResourceDriftStatus ?? "",
         differences: (drift.PropertyDifferences ?? []).map((difference) => ({
@@ -172,6 +178,7 @@ async function checkStack(artifact: StackArtifact, stackName: string) {
     unprefixedStackName(stackName, stage),
     await detectDrift(client, stackName),
     driftAllowlist,
+    parseEnvironment(artifact.environment),
   );
 
   return drifts.flatMap(({ status, resourceType, logicalId, differences }) => [
