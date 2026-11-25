@@ -221,4 +221,18 @@ describe("FlexGlobalStack certificate alarm", () => {
       },
     });
   });
+
+  it("names the Shield alarms -v2 under their pinned logical IDs, so the deleted originals are replaced rather than updated", () => {
+    const alarms = template.findResources("AWS::CloudWatch::Alarm");
+
+    expect(
+      alarms.CloudfrontShieldAlarmsDDoSDetected3029FCB9?.Properties,
+    ).toMatchObject({ AlarmName: "staging-shield-ddos-detected-v2" });
+    expect(
+      alarms.CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F // pragma: allowlist secret
+        ?.Properties,
+    ).toMatchObject({
+      AlarmName: "staging-shield-ddos-attack-requests-per-second-v2",
+    });
+  });
 });
