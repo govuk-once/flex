@@ -92,6 +92,7 @@ export const config = [
       "sonarjs/no-skipped-tests": "warn",
       "unicorn/no-useless-promise-resolve-reject": "warn",
       "unicorn/prefer-default-parameters": "warn",
+      "unicorn/prefer-export-from": "warn",
       "unicorn/prefer-node-protocol": "warn",
       "unicorn/prefer-string-raw": "warn",
     },

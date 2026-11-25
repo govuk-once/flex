@@ -609,16 +609,16 @@ export type FlexLambdaHandler = (
   context: LambdaContext,
 ) => Promise<LambdaResult>;
 
-export interface RouteHandler<Config extends DomainConfig> {
-  <const Route extends DomainRoutes<Config>>(
-    route: Route,
-    handler: (
-      context: RouteContext<Route, Config, ResolveRouteConfig<Config, Route>>,
-    ) =>
-      | Promise<RouteHandlerResult<ResolveRouteConfig<Config, Route>>>
-      | RouteHandlerResult<ResolveRouteConfig<Config, Route>>,
-  ): FlexLambdaHandler;
-}
+export type RouteHandler<Config extends DomainConfig> = <
+  const Route extends DomainRoutes<Config>,
+>(
+  route: Route,
+  handler: (
+    context: RouteContext<Route, Config, ResolveRouteConfig<Config, Route>>,
+  ) =>
+    | Promise<RouteHandlerResult<ResolveRouteConfig<Config, Route>>>
+    | RouteHandlerResult<ResolveRouteConfig<Config, Route>>,
+) => FlexLambdaHandler;
 
 export type InferRouteContext<
   Config extends DomainConfig,

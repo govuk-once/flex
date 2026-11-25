@@ -6,7 +6,9 @@ export function requestIdToUuidV4(requestId: string) {
 
   // char & 0x3 -> keep low 2 bits, so it collapses to 0,1,2,3
   // then | 0x8 -> adds 8 (1000) so shifts it to 8,9,a,b
-  const variant = ((parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(16);
+  const variant = ((Number.parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(
+    16,
+  );
 
   return [
     hex.slice(0, 8),

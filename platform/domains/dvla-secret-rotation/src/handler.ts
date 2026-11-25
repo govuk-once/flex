@@ -99,8 +99,7 @@ async function handleCreateSecret(
   }
 
   const resumePassword =
-    checkpointSecret &&
-    checkpointSecret.apiKey === currentSecret.apiKey &&
+    checkpointSecret?.apiKey === currentSecret.apiKey &&
     checkpointSecret.apiPassword !== currentSecret.apiPassword
       ? checkpointSecret.apiPassword
       : undefined;
