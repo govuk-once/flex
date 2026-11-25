@@ -7,8 +7,6 @@ import {
   GroupTypeSchema,
 } from "@schemas/group";
 
-export { createUserId };
-
 export const userId = createUserId("test-uns-user");
 
 export const createPushId = (value = "test-push-id") => value as PushId;
@@ -62,3 +60,5 @@ export const groupSubscriptions = [
   groupSubscription,
   groupSubscriptionWithSubgroup,
 ];
+
+export { createUserId } from "@flex/testing";

@@ -151,8 +151,8 @@ function verifySessionHash(
   //eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const payloadBase64Url = accessToken.split(".")[1]!;
   const payloadBase64 = payloadBase64Url
-    .replace(/-/g, "+")
-    .replace(/_/g, "/")
+    .replaceAll("-", "+")
+    .replaceAll("_", "/")
     .padEnd(
       payloadBase64Url.length + ((4 - (payloadBase64Url.length % 4)) % 4),
       "=",
@@ -167,7 +167,7 @@ function verifySessionHash(
     .update(sub)
     .digest("hex");
 
-  if (!(sessionHash === calculatedHash)) {
+  if (sessionHash !== calculatedHash) {
     ctx.logger.error("Session hash did not match", {
       sessionHash,
       calculatedHash,
@@ -202,7 +202,7 @@ export async function extractServiceId(
     ctx,
   );
 
-  if (payload === null || !payload.linking_id || !payload.session) {
+  if (!payload?.linking_id || !payload.session) {
     return null;
   }
   verifySessionHash(payload.session, accessToken, ctx);

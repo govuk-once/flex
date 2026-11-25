@@ -6,6 +6,8 @@ import { backOff } from "exponential-backoff";
 import { MAX_ATTEMPTS, MAX_DELAY_MS, MIN_DELAY_MS } from "./constants";
 import { buildHeaders } from "./headers";
 
+export type FlexFetchInput = string | Request | URL;
+
 export interface FlexFetchRequestInit extends RequestInit {
   retryAttempts?: NumberUpTo<typeof MAX_ATTEMPTS>;
   maxRetryDelay?: number;
@@ -16,7 +18,7 @@ export interface FlexFetchRequestInit extends RequestInit {
  * @param url
  * @returns An object containing the fetch request promise and an abort function.
  */
-export function flexFetch(url: string | Request | URL): {
+export function flexFetch(url: FlexFetchInput): {
   request: Promise<Response>;
   abort: () => void;
 };
@@ -29,13 +31,13 @@ export function flexFetch(url: string | Request | URL): {
  * @returns An object containing the fetch request promise and an abort function.
  */
 export function flexFetch(
-  url: string | Request | URL,
+  url: FlexFetchInput,
   options: FlexFetchRequestInit,
   fetcher?: typeof fetch,
 ): { request: Promise<Response>; abort: () => void };
 
 export function flexFetch(
-  url: string | Request | URL,
+  url: FlexFetchInput,
   options: FlexFetchRequestInit = {},
   fetcher: typeof fetch = fetch,
 ): { request: Promise<Response>; abort: () => void } {

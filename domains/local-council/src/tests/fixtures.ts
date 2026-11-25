@@ -6,7 +6,6 @@ import type {
   Tier,
 } from "@schemas/local-authority";
 
-export { createUserId };
 export const userId = createUserId("test-localcouncil-user");
 
 export const createLocalCouncilId = (value = "test-localcouncil-id") => value;
@@ -43,3 +42,5 @@ export const createLocalAuthority = (overrides?: DeepPartial<LocalAuthority>) =>
     overrides,
   );
 export const localAuthority = createLocalAuthority();
+
+export { createUserId } from "@flex/testing";

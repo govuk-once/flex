@@ -1,13 +1,11 @@
-import {
-  customerVehicleDetailsSchema,
-  customerVehiclesResponseSchema,
-  vehicleEnquiryResponseSchema,
-} from "@flex/dvla-service-gateway";
+import type { vehicleEnquiryResponseSchema } from "@flex/dvla-service-gateway";
 import type { z } from "zod";
 
 // TODO: Improve types
 
-export const CustomerVehicleSchema = customerVehicleDetailsSchema;
-export const CustomerVehiclesSchema = customerVehiclesResponseSchema;
-export const VehicleSchema = vehicleEnquiryResponseSchema;
-export type Vehicle = z.output<typeof VehicleSchema>;
+export {
+  customerVehicleDetailsSchema as CustomerVehicleSchema,
+  customerVehiclesResponseSchema as CustomerVehiclesSchema,
+  vehicleEnquiryResponseSchema as VehicleSchema,
+} from "@flex/dvla-service-gateway";
+export type Vehicle = z.output<typeof vehicleEnquiryResponseSchema>;

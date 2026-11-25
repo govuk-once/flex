@@ -13,7 +13,6 @@ import { Session } from "@schemas/session";
 import { ShareCode, SingleShareCode } from "@schemas/share-code";
 import { Vehicle } from "@schemas/vehicle";
 
-export { createUserId };
 export const userId = createUserId("test-dvla-user");
 
 export const createLinkingId = (
@@ -113,3 +112,5 @@ export const singleShareCode = createSingleShareCode();
 
 export const createUnlinkResult = (success = true) => ({ success });
 export const unlinkResult = createUnlinkResult();
+
+export { createUserId } from "@flex/testing";

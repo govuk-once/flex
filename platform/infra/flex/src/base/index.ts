@@ -212,7 +212,7 @@ export abstract class BaseStack extends cdk.Stack {
     });
 
     if (!(app instanceof SsmApp)) {
-      throw new Error("BaseStack must be used within an SsmApp");
+      throw new TypeError("BaseStack must be used within an SsmApp");
     }
 
     app.register(this, dependencies);
