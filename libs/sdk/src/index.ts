@@ -1,6 +1,12 @@
 export type { AssumedRoleCredentialsOptions } from "./aws/credentials";
 export { getAssumedRoleCredentials } from "./aws/credentials";
 export * from "./config";
+export {
+  CORRELATION_ID_HEADER,
+  extractCorrelationId,
+  getCorrelationId,
+  runWithCorrelationId,
+} from "./correlation";
 export { domain } from "./domain";
 export type {
   ApiResult,
