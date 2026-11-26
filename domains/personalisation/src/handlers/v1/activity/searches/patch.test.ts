@@ -19,7 +19,7 @@ import {
 describe("PATCH /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
 
-  it("returns 201 and new term when existing searches are updated", async ({
+  it("returns 201 when existing searches are updated", async ({
     http,
     sdk,
   }) => {
@@ -57,10 +57,7 @@ describe("PATCH /v1/activity/searches", () => {
     expect(result.body).toBe("");
   });
 
-  it("returns 201 and new term when no existing searches exist", async ({
-    http,
-    sdk,
-  }) => {
+  it("returns 201 when no existing searches exist", async ({ http, sdk }) => {
     const emptySearches: UserSearches = {
       searches: {
         selectedSearches: [],
@@ -93,10 +90,7 @@ describe("PATCH /v1/activity/searches", () => {
     expect(result.body).toBe("");
   });
 
-  it("returns 201 and new term when empty searches are updated", async ({
-    http,
-    sdk,
-  }) => {
+  it("returns 201 when empty searches are updated", async ({ http, sdk }) => {
     const newSearchTerm: SearchTerm = makeSearchTerm("a new search");
 
     const emptySearches: UserSearches = {
@@ -312,49 +306,49 @@ describe("PATCH /v1/activity/searches", () => {
 
     expect(result.statusCode).toBe(502);
   });
+});
 
-  describe("Exercise PATCH utility processing", () => {
-    const arrayLimit = MAX_SEARCH_TERMS;
+describe("Exercise PATCH utility processing", () => {
+  const arrayLimit = MAX_SEARCH_TERMS;
 
-    it("limitArraySize: removes the oldest term when there are already the maximum held", () => {
-      const oldSearches = makeFilledSearches(arrayLimit);
-      const oldestSearch = oldSearches.searches.selectedSearches[0];
-      const newSearches = limitArraySize(
-        oldSearches.searches.selectedSearches,
-        arrayLimit,
-      );
+  it("limitArraySize: removes the oldest term when there are already the maximum held", () => {
+    const oldSearches = makeFilledSearches(arrayLimit);
+    const oldestSearch = oldSearches.searches.selectedSearches[0];
+    const newSearches = limitArraySize(
+      oldSearches.searches.selectedSearches,
+      arrayLimit,
+    );
 
-      expect(newSearches).toHaveLength(arrayLimit - 1);
-      expect(newSearches).not.toContain(oldestSearch);
-    });
+    expect(newSearches).toHaveLength(arrayLimit - 1);
+    expect(newSearches).not.toContain(oldestSearch);
+  });
 
-    it("limitArraySize: leave array the same when there are less than the maximum held", () => {
-      const oldSearches = makeFilledSearches(arrayLimit - 1);
-      const oldestSearch = oldSearches.searches.selectedSearches[0];
-      const newSearches = limitArraySize(
-        oldSearches.searches.selectedSearches,
-        arrayLimit,
-      );
+  it("limitArraySize: leave array the same when there are less than the maximum held", () => {
+    const oldSearches = makeFilledSearches(arrayLimit - 1);
+    const oldestSearch = oldSearches.searches.selectedSearches[0];
+    const newSearches = limitArraySize(
+      oldSearches.searches.selectedSearches,
+      arrayLimit,
+    );
 
-      expect(newSearches).toHaveLength(arrayLimit - 1);
-      expect(newSearches).toContain(oldestSearch);
-    });
+    expect(newSearches).toHaveLength(arrayLimit - 1);
+    expect(newSearches).toContain(oldestSearch);
+  });
 
-    it("removeDuplicates: replaces any existing matching term with the new term when existing searches are updated", () => {
-      const testIndex = 4;
-      const oldSearches: UserSearches = makeFilledSearches(arrayLimit);
-      const oldMatch = oldSearches.searches.selectedSearches[testIndex];
-      const newSearch: SearchTerm = makeSearchTerm(
-        `(${testSearchTermBase.toUpperCase()}) (${testIndex.toString()})`,
-      );
+  it("removeDuplicates: replaces any existing matching term with the new term when existing searches are updated", () => {
+    const testIndex = 4;
+    const oldSearches: UserSearches = makeFilledSearches(arrayLimit);
+    const oldMatch = oldSearches.searches.selectedSearches[testIndex];
+    const newSearch: SearchTerm = makeSearchTerm(
+      `(${testSearchTermBase.toUpperCase()}) (${testIndex.toString()})`,
+    );
 
-      const newSearches = removeDuplicates(
-        oldSearches.searches.selectedSearches,
-        newSearch,
-      );
+    const newSearches = removeDuplicates(
+      oldSearches.searches.selectedSearches,
+      newSearch,
+    );
 
-      expect(newSearches).toHaveLength(arrayLimit - 1);
-      expect(newSearches).not.toContain(oldMatch);
-    });
+    expect(newSearches).toHaveLength(arrayLimit - 1);
+    expect(newSearches).not.toContain(oldMatch);
   });
 });
