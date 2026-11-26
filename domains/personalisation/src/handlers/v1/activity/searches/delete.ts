@@ -24,7 +24,6 @@ export const handler = route(
       throw new createHttpError.BadGateway();
     }
 
-    logger.info("Successfully deleted all user searches");
     return { status: 201 };
   },
 );

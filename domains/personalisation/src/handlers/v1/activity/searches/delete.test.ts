@@ -7,7 +7,7 @@ import { handler } from "./delete";
 describe("DELETE /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
 
-  it("returns 200 when existing searches are updated to remove all terms", async ({
+  it("returns 201 when existing searches are updated to remove all terms", async ({
     http,
     sdk,
   }) => {
