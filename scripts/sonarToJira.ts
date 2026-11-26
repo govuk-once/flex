@@ -316,6 +316,8 @@ async function getFindings(): Promise<SonarIssue[]> {
       componentKeys: sonarProject,
       impactSoftwareQualities: "SECURITY",
       impactSeverities: "HIGH,BLOCKER",
+      // Only unresolved issues: skip Accepted, False positive and Fixed ones.
+      issueStatuses: "OPEN,CONFIRMED",
       branch: "main",
       ps: "100",
       p: String(page),
