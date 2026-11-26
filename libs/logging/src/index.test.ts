@@ -30,6 +30,31 @@ describe("logging", () => {
     expect(mod.logger.getLevelName()).toBe("INFO");
   });
 
+  describe("createChildLogger", () => {
+    it("returns a child that keeps the production log-level guard", async () => {
+      vi.stubEnv("FLEX_ENVIRONMENT", "production");
+      const mod = await import(".");
+      const child = mod.createChildLogger({ requestId: "abc" });
+      child.setLogLevel("DEBUG");
+      expect(child.getLevelName()).toBe("INFO");
+    });
+
+    it("returns a child that still redacts sensitive keys", async () => {
+      const mod = await import(".");
+      const child = mod.createChildLogger({ requestId: "abc" });
+      const spy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+      child.info("child log", { authorization: "Bearer x" });
+      const written = spy.mock.calls.map((call) => String(call[0])).join("");
+      spy.mockRestore();
+
+      const entry = JSON.parse(
+        written.split("\n").filter(Boolean).at(-1) ?? "{}",
+      ) as Record<string, unknown>;
+      expect(entry.requestId).toBe("abc");
+      expect(entry.authorization).toBe("***REDACTED***");
+    });
+  });
+
   describe("redaction via jsonReplacerFn", () => {
     const capture = async (
       log: (logger: typeof import(".").logger) => void,

@@ -5,7 +5,7 @@ import {
   Bucket,
   BucketAccessControl,
   BucketEncryption,
-  ObjectLockMode,
+  ObjectLockRetention,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
@@ -29,10 +29,9 @@ export class FlowLogBucket extends Construct {
       bucketKeyEnabled: true,
       versioned: true,
       objectLockEnabled: true,
-      objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
-        duration: Duration.days(365),
-      },
+      objectLockDefaultRetention: ObjectLockRetention.governance(
+        Duration.days(365),
+      ),
       lifecycleRules: [
         {
           id: "deleteLogsAfter12Months",

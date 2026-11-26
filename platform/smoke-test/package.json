@@ -13,15 +13,15 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.36.0",
-    "@aws-sdk/client-cloudwatch": "3.1165.0",
+    "@aws-sdk/client-cloudwatch": "3.1172.0",
     "@flex/testing": "workspace:*",
     "@flex/utils": "workspace:*",
     "axios": "1.21.1",
     "axios-cookiejar-support": "7.0.0",
     "cheerio": "1.2.0",
-    "firebase-admin": "14.5.0",
+    "firebase-admin": "14.5.1",
     "google-auth-library": "11.3.4",
-    "pkce-challenge": "6.0.0",
+    "pkce-challenge": "6.0.1",
     "totp-generator": "2.0.1",
     "tough-cookie": "6.1.0",
     "zod": "4.6.7"
@@ -29,8 +29,8 @@
   "devDependencies": {
     "@flex/config": "workspace:*",
     "@types/node": "26.6.6",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "typescript": "6.0.3",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   }
 }

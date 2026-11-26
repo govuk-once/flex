@@ -461,7 +461,12 @@ export class FlexGlobalStack extends BaseStack {
     cfnDistribution.overrideLogicalId("CloudfrontDistributionD69C1995");
     const cfnMonitoringSubscription = distribution.node.findChild(
       "MonitoringSubscription",
-    ) as CfnMonitoringSubscription;
+    );
+    if (!(cfnMonitoringSubscription instanceof CfnMonitoringSubscription)) {
+      throw new TypeError(
+        "Expected the distribution's MonitoringSubscription child to be a CfnMonitoringSubscription",
+      );
+    }
     cfnMonitoringSubscription.overrideLogicalId(
       "CloudfrontDistributionMonitoringSubscription4785C264",
     );

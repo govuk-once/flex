@@ -3,7 +3,7 @@ import {
   BlockPublicAccess,
   Bucket,
   BucketAccessControl,
-  ObjectLockMode,
+  ObjectLockRetention,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
@@ -26,10 +26,7 @@ export class AccessLogBucket extends Construct {
       accessControl: BucketAccessControl.LOG_DELIVERY_WRITE,
       versioned: true,
       objectLockEnabled: true,
-      objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
-        duration: retention,
-      },
+      objectLockDefaultRetention: ObjectLockRetention.governance(retention),
       lifecycleRules: [
         {
           id: "expireLogs",

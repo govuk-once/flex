@@ -21,8 +21,8 @@
     "@flex/service-gateway": "workspace:*",
     "@platform/credential-monitor": "workspace:*",
     "@platform/smoke-test": "workspace:*",
-    "aws-cdk": "2.1148.0",
-    "aws-cdk-lib": "2.275.0",
+    "aws-cdk": "2.1149.0",
+    "aws-cdk-lib": "2.277.0",
     "constructs": "10.8.1",
     "esbuild": "0.28.2",
     "graphology": "0.26.0",
@@ -31,14 +31,14 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudformation": "3.1165.0",
-    "@aws-sdk/credential-providers": "3.1165.0",
+    "@aws-sdk/client-cloudformation": "3.1172.0",
+    "@aws-sdk/credential-providers": "3.1172.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
     "@types/node": "26.6.6",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   }
 }

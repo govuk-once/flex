@@ -1,3 +1,4 @@
+import { logger } from "@flex/logging";
 import { it } from "@flex/testing";
 import { describe, expect } from "vitest";
 
@@ -5,7 +6,7 @@ import type { RouteStore } from "./store";
 import { getRouteStore, routeStorage } from "./store";
 
 describe("getRouteStore", () => {
-  const store: RouteStore = { logger: {} } as RouteStore;
+  const store: RouteStore = { logger };
 
   it("returns the store when called within a route handler context", () => {
     routeStorage.run(store, () => {
