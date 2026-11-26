@@ -5,7 +5,7 @@ import { SearchTerm, UserSearches } from "@schemas/search";
 import { describe, expect } from "vitest";
 
 describe.runIf(isDomainDeployed(config))("Searches domain", () => {
-  const endpoint = "/searches/v1/activity/searches";
+  const endpoint = "/personalisation/v1/activity/searches";
 
   describe.runIf(isRouteDeployed(config, "PATCH /v1/activity/searches"))(
     "PATCH",
@@ -97,7 +97,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         const termToDelete: SearchTerm = searches[0];
 
         result = await cloudfront.client.delete(
-          `/searches/v1/activity/searches/${termToDelete.term}`,
+          `/personalisation/v1/activity/searches/${termToDelete.term}`,
           {
             headers: authHeader,
           },
@@ -121,7 +121,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         numFoundSearches = searches.length;
 
         result = await cloudfront.client.delete(
-          `/searches/v1/activity/searches/dummy`,
+          `/personalisation/v1/activity/searches/dummy`,
           {
             headers: authHeader,
           },
@@ -201,7 +201,7 @@ describe.runIf(isDomainDeployed(config))("Searches domain", () => {
         authHeader,
       }) => {
         const result = await cloudfront.client.delete(
-          `/searches/v1/activity/searches/xyz`,
+          `/personalisation/v1/activity/searches/xyz`,
           {
             headers: authHeader,
           },
