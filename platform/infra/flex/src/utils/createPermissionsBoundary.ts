@@ -1,3 +1,4 @@
+import { Stack } from "aws-cdk-lib";
 import type { IRestApi } from "aws-cdk-lib/aws-apigateway";
 import { Effect, ManagedPolicy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
@@ -55,7 +56,7 @@ export function createPermissionsBoundary(
         ],
         resources: ["*"],
       }),
-      // We need these for the platform constructs to be able to grant permissions for secrets, parameters, KMS keys, and STS assume role.
+      // We need these for the platform constructs to be able to grant permissions for secrets, parameters and KMS keys.
       new PolicyStatement({
         sid: "AllowServiceIntegrations",
         effect: Effect.ALLOW,
@@ -69,9 +70,16 @@ export function createPermissionsBoundary(
           "ssm:GetParameterHistory",
           "ssm:PutParameter",
           "kms:Decrypt",
-          "sts:AssumeRole",
         ],
         resources: ["*"],
+      }),
+      // Gateways assume roles in other accounts, so the account stays open. The resource is
+      // limited to IAM roles; identity-based policies name the exact role ARNs.
+      new PolicyStatement({
+        sid: "AllowAssumeRole",
+        effect: Effect.ALLOW,
+        actions: ["sts:AssumeRole"],
+        resources: [`arn:${Stack.of(scope).partition}:iam::*:role/*`],
       }),
       // execute-api:Invoke is restricted to the Flex private API gateway only.
       // Inline policies further scope this down to specific routes and methods.
@@ -111,11 +119,6 @@ export function createPermissionsBoundary(
   // A permissions boundary intentionally uses wildcard resources to define the maximum
   // permissions allowed.
   applyCheckovSkips(policy, [
-    {
-      id: "CKV_AWS_107",
-      comment:
-        "Permissions boundary: sts:AssumeRole on * is intentional; identity-based policies constrain the actual scope.",
-    },
     {
       id: "CKV_AWS_108",
       comment:
