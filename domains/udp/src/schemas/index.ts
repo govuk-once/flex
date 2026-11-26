@@ -33,8 +33,6 @@ export {
   UpdateNotificationPreferencesRequestSchema,
   UpdateNotificationPreferencesResponseSchema,
 } from "./notifications";
-export type { VisitedPage } from "./pages";
-export { VisitedPageSchema } from "./pages";
 export type { CreateUserRequest, GetUserResponse } from "./user";
 export {
   CreateUserRequestSchema,

@@ -14,7 +14,6 @@ import {
   JwkSetSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
-  VisitedPageSchema,
 } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
@@ -74,11 +73,6 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       route: "GET /v1/identities/*",
       response: GetIdentitiesGWResponseSchema,
-    },
-    udpAddVisitedPage: {
-      type: "gateway",
-      route: "POST /v1/activity/pages",
-      body: VisitedPageSchema,
     },
     dvlaGetWellKnownJwk: {
       type: "gateway",
@@ -215,16 +209,6 @@ export const { config, route, routeContext } = domain({
             integrations: ["udpCreateNotificationPreferences"],
             body: UpdateNotificationPreferencesRequestSchema,
             response: UpdateNotificationPreferencesOutboundResponseSchema,
-          },
-        },
-      },
-      "/activity/pages": {
-        POST: {
-          public: {
-            name: "add-visited-page",
-            resources: ["privateGatewayUrl"],
-            integrations: ["udpAddVisitedPage"],
-            body: VisitedPageSchema,
           },
         },
       },
