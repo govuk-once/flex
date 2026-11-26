@@ -6,7 +6,7 @@ import { logger } from "./logger";
  * Domain developers use this to decorate logs with request-specific data.
  */
 export function createChildLogger(context?: Record<string, unknown>): Logger {
-  return logger.createChild({ persistentKeys: context }) as Logger;
+  return logger.createChild({ persistentKeys: context });
 }
 
 export type { Logger } from "./logger";

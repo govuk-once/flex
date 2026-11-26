@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@aws-lambda-powertools/parameters": "2.36.0",
-    "@aws-sdk/client-secrets-manager": "3.1165.0",
+    "@aws-sdk/client-secrets-manager": "3.1172.0",
     "@flex/logging": "workspace:*",
     "@flex/telemetry": "workspace:*",
     "@middy/core": "7.9.2",
@@ -23,9 +23,9 @@
     "@flex/testing": "workspace:*",
     "@types/aws-lambda": "8.10.164",
     "@types/node": "26.6.6",
-    "eslint": "10.14.0",
+    "eslint": "10.15.0",
     "nock": "15.0.6",
     "typescript": "6.0.3",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   }
 }

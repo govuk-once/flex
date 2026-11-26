@@ -178,7 +178,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Run SonarQube Scan and Quality Gate
-        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         with:
           args: >
             -Dsonar.qualitygate.wait=true
@@ -253,7 +253,7 @@ jobs:
         run: pnpm run checkov
 
       - name: Run Dependency Review
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           fail-on-severity: high
           license-check: false

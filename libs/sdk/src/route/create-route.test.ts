@@ -57,7 +57,7 @@ const mockMiddyHandler = vi.fn((fn: unknown) => fn);
 
 const mockEvent = {} as LambdaEvent;
 const mockContext = {} as LambdaContext;
-const mockStore = { logger: {} } as RouteStore;
+const mockStore: RouteStore = { logger };
 
 const routeKey = "GET /v1/endpoint";
 const routeKeySegments: RouteKeySegments = {

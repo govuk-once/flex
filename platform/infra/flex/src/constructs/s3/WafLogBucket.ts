@@ -4,7 +4,7 @@ import {
   BlockPublicAccess,
   Bucket,
   BucketEncryption,
-  ObjectLockMode,
+  ObjectLockRetention,
   ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
@@ -40,10 +40,7 @@ export class WafLogBucket extends Construct {
       encryption: BucketEncryption.S3_MANAGED,
       versioned: true,
       objectLockEnabled: true,
-      objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
-        duration: retention,
-      },
+      objectLockDefaultRetention: ObjectLockRetention.governance(retention),
       lifecycleRules: [
         {
           id: "expireLogs",
