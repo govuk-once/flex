@@ -1,4 +1,3 @@
-import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 import { Environment, findProjectRoot, getEnvConfig } from "@flex/utils";
@@ -64,6 +63,7 @@ import { WafRequestLogging } from "../constructs/waf/WafRequestLogging";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../utils/getEntry";
+import { hasGeneratedSpecs } from "../utils/openapi-specs";
 
 interface DomainNames {
   domainName: string;
@@ -582,7 +582,9 @@ export class FlexGlobalStack extends BaseStack {
       versioned: true,
       lifecycleRules: [
         {
-          prefix: "docs/specs/",
+          // Specs and the docs UI are published straight under docs/, and
+          // pruning leaves removed specs behind as noncurrent versions
+          prefix: "docs/",
           noncurrentVersionExpiration: Duration.days(30),
         },
       ],
@@ -598,17 +600,22 @@ export class FlexGlobalStack extends BaseStack {
     distribution: Distribution;
   }) {
     const specsFolder = `${findProjectRoot()}/dist/openapi/current`;
-    mkdirSync(specsFolder, { recursive: true });
+    // Pruning deletes anything under docs/ that is not in the sources, so a
+    // removed domain's spec stops being served and stops showing as removed
+    // in the OpenAPI breaking change check. Without generated specs (e.g. a
+    // synth or deploy that skipped `pnpm openapi:generate`) only the UI is
+    // uploaded and nothing is pruned, so the published specs are left alone
+    const withSpecs = hasGeneratedSpecs(specsFolder);
     const docsDeployment = new BucketDeployment(this, "DocsUi", {
       sources: [
         Source.asset(path.join(import.meta.dirname, "../docs")),
-        Source.asset(specsFolder),
+        ...(withSpecs ? [Source.asset(specsFolder)] : []),
       ],
       destinationBucket: bucket,
       destinationKeyPrefix: "docs/",
       distribution,
       distributionPaths: ["/docs/*"],
-      prune: false,
+      prune: withSpecs,
     });
     applyCheckovSkip(
       docsDeployment.handlerRole.node.findChild("DefaultPolicy"),
