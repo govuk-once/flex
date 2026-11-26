@@ -1,31 +1,38 @@
+import { mkdirSync } from "node:fs";
+
+import { findProjectRoot } from "@flex/utils";
 import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { loadInfra, TEST_ACCOUNT } from "../__tests__/load-infra";
 
+const SPECS_FOLDER = `${findProjectRoot()}/dist/openapi/current`;
+
+async function createGlobalStack() {
+  const { SsmApp, ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } =
+    await loadInfra("staging");
+  const { FlexGlobalStack } = await import("./global");
+
+  const app = new SsmApp();
+  app.addExternalExports("eu-west-2", [
+    ENV_KEYS.TopicCriticalAlarms,
+    ENV_KEYS.TopicWarningAlarms,
+    ENV_KEYS.AlarmTopicKeyArn,
+    PLATFORM_KEYS.HostedZoneId,
+    PLATFORM_KEYS.HostedZoneName,
+    STAGE_KEYS.ApigwPublicRestId,
+    STAGE_KEYS.ApigwPublicAppRoot,
+    STAGE_KEYS.WafCfSecretHeaderArn,
+  ]);
+
+  return new FlexGlobalStack(app, "staging-FlexGlobal");
+}
+
 describe("FlexGlobalStack certificate alarm", () => {
   let template: Template;
 
   beforeAll(async () => {
-    const { SsmApp, ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } =
-      await loadInfra("staging");
-    const { FlexGlobalStack } = await import("./global");
-
-    const app = new SsmApp();
-    app.addExternalExports("eu-west-2", [
-      ENV_KEYS.TopicCriticalAlarms,
-      ENV_KEYS.TopicWarningAlarms,
-      ENV_KEYS.AlarmTopicKeyArn,
-      PLATFORM_KEYS.HostedZoneId,
-      PLATFORM_KEYS.HostedZoneName,
-      STAGE_KEYS.ApigwPublicRestId,
-      STAGE_KEYS.ApigwPublicAppRoot,
-      STAGE_KEYS.WafCfSecretHeaderArn,
-    ]);
-
-    template = Template.fromStack(
-      new FlexGlobalStack(app, "staging-FlexGlobal"),
-    );
+    template = Template.fromStack(await createGlobalStack());
   });
 
   afterAll(() => {
@@ -233,6 +240,56 @@ describe("FlexGlobalStack certificate alarm", () => {
         ?.Properties,
     ).toMatchObject({
       AlarmName: "staging-shield-ddos-attack-requests-per-second-v2",
+    });
+  });
+});
+
+describe("FlexGlobalStack docs deployment", () => {
+  afterAll(() => {
+    vi.doUnmock("../utils/openapi-specs");
+    vi.unstubAllEnvs();
+  });
+
+  it("expires old versions of everything published under docs/, where pruned specs are left", async () => {
+    const template = Template.fromStack(await createGlobalStack());
+
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      BucketName: "flex-staging-openapi-specs",
+      LifecycleConfiguration: {
+        Rules: Match.arrayWith([
+          Match.objectLike({
+            Prefix: "docs/",
+            NoncurrentVersionExpiration: { NoncurrentDays: 30 },
+          }),
+        ]),
+      },
+    });
+  });
+
+  it("prunes docs/ when the specs are generated, so removed specs are deleted", async () => {
+    vi.doMock("../utils/openapi-specs", () => ({
+      hasGeneratedSpecs: () => true,
+    }));
+    mkdirSync(SPECS_FOLDER, { recursive: true });
+    const template = Template.fromStack(await createGlobalStack());
+
+    template.hasResourceProperties("Custom::CDKBucketDeployment", {
+      DestinationBucketKeyPrefix: "docs/",
+      Prune: true,
+      SourceObjectKeys: Match.arrayEquals([Match.anyValue(), Match.anyValue()]),
+    });
+  });
+
+  it("uploads only the docs UI and prunes nothing when the specs are not generated", async () => {
+    vi.doMock("../utils/openapi-specs", () => ({
+      hasGeneratedSpecs: () => false,
+    }));
+    const template = Template.fromStack(await createGlobalStack());
+
+    template.hasResourceProperties("Custom::CDKBucketDeployment", {
+      DestinationBucketKeyPrefix: "docs/",
+      Prune: false,
+      SourceObjectKeys: Match.arrayEquals([Match.anyValue()]),
     });
   });
 });
