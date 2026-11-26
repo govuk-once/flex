@@ -13,9 +13,12 @@ export interface ResourceDrift {
   resourceType: string;
   status: string;
   differences: PropertyDifference[];
+  /** When CloudFormation last checked the resource */
+  timestamp?: Date;
 }
 
-export interface DriftAllowlistEntry {
+/** Allows a property difference on a resource that exists */
+export interface PropertyDriftAllowlistEntry {
   /** Stack name without the `${stage}-` prefix, e.g. "FlexPlatform" */
   stack: string;
   logicalId: string;
@@ -41,6 +44,23 @@ export interface DriftAllowlistEntry {
   expectedRewrites?: { from: string; to: string }[];
   reason: string;
 }
+
+/**
+ * Allows a resource that CloudFormation tracks but that no longer exists.
+ * Only use it for a resource that the next deploy replaces, and remove the
+ * entry once that deploy has run.
+ */
+export interface DeletedResourceAllowlistEntry {
+  /** Stack name without the `${stage}-` prefix, e.g. "FlexPlatform" */
+  stack: string;
+  logicalId: string;
+  deleted: true;
+  reason: string;
+}
+
+export type DriftAllowlistEntry =
+  | PropertyDriftAllowlistEntry
+  | DeletedResourceAllowlistEntry;
 
 /** Where the stack is deployed, used to fill in rewrite placeholders */
 export interface DriftContext {
@@ -107,7 +127,7 @@ function containsFields(pattern: unknown, actual: unknown): boolean {
  * that value contains the entry's fields
  */
 function matchesAddedValue(
-  entry: DriftAllowlistEntry,
+  entry: PropertyDriftAllowlistEntry,
   difference: PropertyDifference,
 ): boolean {
   if (!entry.addedValue) return true;
@@ -117,7 +137,7 @@ function matchesAddedValue(
   return containsFields(entry.addedValue, parseJson(difference.actual ?? ""));
 }
 
-function matchesPath(entry: DriftAllowlistEntry, propertyPath: string) {
+function matchesPath(entry: PropertyDriftAllowlistEntry, propertyPath: string) {
   return typeof entry.propertyPath === "string"
     ? entry.propertyPath === propertyPath
     : entry.propertyPath.test(propertyPath);
@@ -128,7 +148,7 @@ function matchesPath(entry: DriftAllowlistEntry, propertyPath: string) {
  * Entries without rewrites match any value.
  */
 function matchesRewrites(
-  entry: DriftAllowlistEntry,
+  entry: PropertyDriftAllowlistEntry,
   difference: PropertyDifference,
   context: DriftContext,
   physicalId = "",
@@ -183,6 +203,7 @@ function isAllowed(
 ): boolean {
   return allowlist.some(
     (entry) =>
+      !("deleted" in entry) &&
       entry.stack === stack &&
       entry.logicalId === drift.logicalId &&
       matchesPath(entry, difference.propertyPath) &&
@@ -191,10 +212,40 @@ function isAllowed(
   );
 }
 
+function isAllowedDeleted(
+  stack: string,
+  drift: ResourceDrift,
+  allowlist: DriftAllowlistEntry[],
+): boolean {
+  return allowlist.some(
+    (entry) =>
+      "deleted" in entry &&
+      entry.stack === stack &&
+      entry.logicalId === drift.logicalId,
+  );
+}
+
 /**
- * Removes allowlisted property differences. A resource is only dropped when
- * every one of its differences is allowlisted, and a deleted resource is
- * never dropped.
+ * Keeps only the drift records written by the detection that started at
+ * detectedAt. DescribeStackResourceDrifts also returns the last record of
+ * every resource an earlier detection checked, including resources that have
+ * since left the stack, such as ones a failed update created and its
+ * rollback removed. Records without a timestamp are kept.
+ */
+export function fromDetection(
+  drifts: ResourceDrift[],
+  detectedAt?: Date,
+): ResourceDrift[] {
+  if (!detectedAt) return drifts;
+  return drifts.filter(
+    ({ timestamp }) => !timestamp || timestamp >= detectedAt,
+  );
+}
+
+/**
+ * Removes allowlisted drift. A modified resource is only dropped when every
+ * one of its differences is allowlisted. A deleted resource is only dropped
+ * by a deleted entry for its logical ID.
  */
 export function filterDrift(
   stack: string,
@@ -203,6 +254,9 @@ export function filterDrift(
   context: DriftContext,
 ): ResourceDrift[] {
   return drifts.flatMap((drift) => {
+    if (drift.status === "DELETED") {
+      return isAllowedDeleted(stack, drift, allowlist) ? [] : [drift];
+    }
     if (drift.status !== "MODIFIED") return [drift];
 
     const differences = drift.differences.filter(

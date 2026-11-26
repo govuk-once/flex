@@ -17,6 +17,8 @@ import type { DriftAllowlistEntry } from "./utils/drift";
  * value, so any other change to the property still fails the check.
  * Entries with addedValue only allow a value the template does not have at
  * all, and only when it contains every field given.
+ * Entries with deleted allow a resource that no longer exists. They are only
+ * for a resource the next deploy replaces, and are removed after it.
  */
 export const driftAllowlist: DriftAllowlistEntry[] = [
   {
@@ -68,5 +70,20 @@ export const driftAllowlist: DriftAllowlistEntry[] = [
     },
     reason:
       "Shield Advanced automatic application layer DDoS mitigation adds the AWS Anti-DDoS managed rule group to the CloudFront web ACL. Shield owns the rule, so the template does not declare it",
+  },
+  // Remove both entries once a production FlexGlobal deploy has run #653
+  {
+    stack: "FlexGlobal",
+    logicalId: "CloudfrontShieldAlarmsDDoSDetected3029FCB9",
+    deleted: true,
+    reason:
+      "The alarm was deleted outside CloudFormation. #653 renames it so the next deploy creates a replacement",
+  },
+  {
+    stack: "FlexGlobal",
+    logicalId: "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
+    deleted: true,
+    reason:
+      "The alarm was deleted outside CloudFormation. #653 renames it so the next deploy creates a replacement",
   },
 ];

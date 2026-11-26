@@ -22,6 +22,7 @@ import { getEnvConfig } from "@flex/utils";
 import { driftAllowlist } from "../drift-allowlist";
 import {
   filterDrift,
+  fromDetection,
   isBlockingStackStatus,
   type ResourceDrift,
   unprefixedStackName,
@@ -98,17 +99,18 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-// DETECTION_FAILED still returns results for the resources it could check
+// DETECTION_FAILED still returns results for the resources it could check.
+// Resolves to the time the detection started.
 async function waitForDetection(
   client: CloudFormationClient,
   StackName: string,
   StackDriftDetectionId: string | undefined,
   deadline: number,
-): Promise<void> {
-  const { DetectionStatus } = await client.send(
+): Promise<Date | undefined> {
+  const { DetectionStatus, Timestamp } = await client.send(
     new DescribeStackDriftDetectionStatusCommand({ StackDriftDetectionId }),
   );
-  if (DetectionStatus !== "DETECTION_IN_PROGRESS") return;
+  if (DetectionStatus !== "DETECTION_IN_PROGRESS") return Timestamp;
   if (Date.now() >= deadline) {
     throw new Error(
       `${StackName}: drift detection did not finish within ${String(DETECTION_TIMEOUT_MS / 60_000)} minutes`,
@@ -123,7 +125,7 @@ async function detectDrift(client: CloudFormationClient, StackName: string) {
     new DetectStackDriftCommand({ StackName }),
   );
 
-  await waitForDetection(
+  const detectedAt = await waitForDetection(
     client,
     StackName,
     StackDriftDetectionId,
@@ -146,10 +148,11 @@ async function detectDrift(client: CloudFormationClient, StackName: string) {
           expected: difference.ExpectedValue,
           actual: difference.ActualValue,
         })),
+        timestamp: drift.Timestamp,
       });
     }
   }
-  return drifts;
+  return fromDetection(drifts, detectedAt);
 }
 
 /** Returns the problems found in one stack, empty when it is safe to deploy */
