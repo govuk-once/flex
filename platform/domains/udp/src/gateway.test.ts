@@ -439,7 +439,7 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  describe("GET /v1/topics", () => {
+  describe("GET /v1/personalisation/preferences/topics", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -450,13 +450,13 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .get("/v1/topics", {
+        .get("/v1/personalisation/preferences/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
         .reply(200, mockUpstreamTopics);
 
       const result = await handler(
-        platform.gatewayEvent.get("/v1/topics", {
+        platform.gatewayEvent.get("/v1/personalisation/preferences/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -475,13 +475,13 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .get("/v1/topics", {
+        .get("/v1/personalisation/preferences/topics", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
         .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
-        platform.gatewayEvent.get("/v1/topics", {
+        platform.gatewayEvent.get("/v1/personalisation/preferences/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -495,7 +495,7 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  describe("POST /v1/topics", () => {
+  describe("POST /v1/personalisation/preferences/topics", () => {
     const now = new Date("2026-09-14T12:00:00.000Z");
     const mockHeadersRequestedAt = {
       ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
@@ -518,14 +518,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/topics", {
+        .post("/v1/personalisation/preferences/topics", {
           headers: mockHeadersRequestedAt,
           body: { data: mockTopics },
         })
         .reply(200, mockUpstreamTopics);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/topics", {
+        platform.gatewayEvent.post("/v1/personalisation/preferences/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -545,14 +545,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/topics", {
+        .post("/v1/personalisation/preferences/topics", {
           headers: mockHeadersRequestedAt,
           body: { data: mockTopicsEmpty },
         })
         .reply(200, mockUpstreamTopicsEmpty);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/topics", {
+        platform.gatewayEvent.post("/v1/personalisation/preferences/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -572,14 +572,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/topics", {
+        .post("/v1/personalisation/preferences/topics", {
           headers: mockHeadersRequestedAt,
           body: { data: mockTopics },
         })
         .reply(409);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/topics", {
+        platform.gatewayEvent.post("/v1/personalisation/preferences/topics", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -672,7 +672,7 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  describe("GET /v1/activity/searches", () => {
+  describe("GET /v1/personalisation/activity/searches", () => {
     it.beforeEach(({ http }) => {
       stubConsumerConfig(http);
     });
@@ -683,13 +683,13 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .get("/v1/activity/searches", {
+        .get("/v1/personalisation/activity/searches", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
         .reply(200, mockUpstreamSearches);
 
       const result = await handler(
-        platform.gatewayEvent.get("/v1/activity/searches", {
+        platform.gatewayEvent.get("/v1/personalisation/activity/searches", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -708,13 +708,13 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .get("/v1/activity/searches", {
+        .get("/v1/personalisation/activity/searches", {
           headers: mockHeaders.withServiceUserId(mockRequestingServiceUserId),
         })
         .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
-        platform.gatewayEvent.get("/v1/activity/searches", {
+        platform.gatewayEvent.get("/v1/personalisation/activity/searches", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -728,7 +728,7 @@ describe("UDP Service Gateway", () => {
     });
   });
 
-  describe("POST /v1/activity/searches", () => {
+  describe("POST /v1/personalisation/activity/searches", () => {
     const now = new Date("2026-09-14T12:00:00.000Z");
     const mockHeadersRequestedAt = {
       ...mockHeaders.withServiceUserId(mockRequestingServiceUserId),
@@ -751,14 +751,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/activity/searches", {
+        .post("/v1/personalisation/activity/searches", {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearches },
         })
         .reply(200, mockUpstreamSearches);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/activity/searches", {
+        platform.gatewayEvent.post("/v1/personalisation/activity/searches", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -778,14 +778,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/activity/searches", {
+        .post("/v1/personalisation/activity/searches", {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(200, mockUpstreamSearchesEmpty);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/activity/searches", {
+        platform.gatewayEvent.post("/v1/personalisation/activity/searches", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
@@ -805,14 +805,14 @@ describe("UDP Service Gateway", () => {
     }) => {
       http
         .url(mockConsumerConfig.apiUrl)
-        .post("/v1/activity/searches", {
+        .post("/v1/personalisation/activity/searches", {
           headers: mockHeadersRequestedAt,
           body: { data: mockSearchesEmpty },
         })
         .reply(409);
 
       const result = await handler(
-        platform.gatewayEvent.post("/v1/activity/searches", {
+        platform.gatewayEvent.post("/v1/personalisation/activity/searches", {
           headers: {
             "requesting-service-user-id": mockRequestingServiceUserId,
           },
