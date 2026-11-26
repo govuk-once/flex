@@ -7,6 +7,7 @@ import { handler } from "./delete";
 
 describe("DELETE /v1/activity/searches/:term", () => {
   const endpoint = "/activity/searches";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 201 when existing searches are updated to remove a term", async ({
     http,
@@ -26,7 +27,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -34,7 +35,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -60,7 +61,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, oldSearches);
@@ -82,7 +83,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, oldSearches);
@@ -105,7 +106,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
   }) => {
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(404, baseSearches);
@@ -128,7 +129,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
   }) => {
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(500);
@@ -158,7 +159,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -166,7 +167,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -200,7 +201,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -208,7 +209,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -236,7 +237,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(404);
@@ -264,7 +265,7 @@ describe("DELETE /v1/activity/searches/:term", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(502);

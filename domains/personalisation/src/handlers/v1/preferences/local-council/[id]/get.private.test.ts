@@ -6,7 +6,7 @@ import { handler } from "./get.private";
 
 describe("GET /v1/preferences/local-council/:id [private]", () => {
   const endpoint = `/preferences/local-council/${localCouncilId}`;
-  const gatewayPath = `/local-council/${localCouncilId}`;
+  const gatewayPath = `/personalisation/preferences/local-council/${localCouncilId}`;
 
   it("returns 200 with the local authority data", async ({ http, sdk }) => {
     http.gateway("udp").get(gatewayPath).reply(200, localAuthority);

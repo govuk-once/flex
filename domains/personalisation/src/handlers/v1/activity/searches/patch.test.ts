@@ -18,6 +18,7 @@ import {
 
 describe("PATCH /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 201 when existing searches are updated", async ({
     http,
@@ -35,7 +36,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -43,7 +44,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -68,7 +69,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -76,7 +77,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(404);
@@ -103,7 +104,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -111,7 +112,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, emptySearches);
@@ -136,7 +137,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -144,7 +145,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -181,7 +182,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: newSearches,
       })
@@ -189,7 +190,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(201, oldSearches);
@@ -224,7 +225,7 @@ describe("PATCH /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
@@ -236,7 +237,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, {
@@ -259,7 +260,7 @@ describe("PATCH /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {
@@ -271,7 +272,7 @@ describe("PATCH /v1/activity/searches", () => {
 
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, {
@@ -294,7 +295,7 @@ describe("PATCH /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .get(endpoint, {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(500);

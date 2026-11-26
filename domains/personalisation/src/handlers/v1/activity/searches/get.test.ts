@@ -11,12 +11,13 @@ import { handler } from "./get";
 
 describe("GET /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 200 with single selectedSearch", async ({ http, sdk }) => {
     const foundSearches: UserSearches = createSearches(makeFilledSearches(1));
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, foundSearches);
@@ -33,7 +34,7 @@ describe("GET /v1/activity/searches", () => {
   it("returns 200 with empty searches", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, createSearches(baseSearches));
@@ -51,7 +52,7 @@ describe("GET /v1/activity/searches", () => {
     const selectedTerms = makeFilledSearches(3);
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, createSearches(selectedTerms));
@@ -71,7 +72,7 @@ describe("GET /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(404);
@@ -91,7 +92,7 @@ describe("GET /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .get("/activity/searches", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(500);

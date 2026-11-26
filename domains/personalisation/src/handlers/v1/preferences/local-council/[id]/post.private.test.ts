@@ -6,7 +6,7 @@ import { handler } from "./post.private";
 
 describe("POST /v1/preferences/local-council/:id [private]", () => {
   const endpoint = `/preferences/local-council/${localCouncilId}`;
-  const gatewayPath = `/local-council/${localCouncilId}`;
+  const gatewayPath = `/personalisation/preferences/local-council/${localCouncilId}`;
 
   it("returns 200 when the local authority is created", async ({
     http,
