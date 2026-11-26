@@ -15,6 +15,8 @@ import type { DriftAllowlistEntry } from "./utils/drift";
  * Entries with expectedRewrites are narrower: the difference is only allowed
  * when applying the rewrites to the expected value gives exactly the actual
  * value, so any other change to the property still fails the check.
+ * Entries with addedValue only allow a value the template does not have at
+ * all, and only when it contains every field given.
  */
 export const driftAllowlist: DriftAllowlistEntry[] = [
   {
@@ -49,5 +51,22 @@ export const driftAllowlist: DriftAllowlistEntry[] = [
     ],
     reason:
       "API Gateway stores the policy Resource with the API's own ID filled in. The template cannot use that ID because a RestApi cannot reference itself",
+  },
+  {
+    stack: "FlexGlobal",
+    logicalId: "CfWebAcl",
+    propertyPath: /^\/Rules\/\d+$/,
+    addedValue: {
+      Name: "AWSManagedRulesAntiDDoSRuleSet",
+      Priority: 10000001,
+      Statement: {
+        ManagedRuleGroupStatement: {
+          Name: "AWSManagedRulesAntiDDoSRuleSet",
+          VendorName: "AWS",
+        },
+      },
+    },
+    reason:
+      "Shield Advanced automatic application layer DDoS mitigation adds the AWS Anti-DDoS managed rule group to the CloudFront web ACL. Shield owns the rule, so the template does not declare it",
   },
 ];

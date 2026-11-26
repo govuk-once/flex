@@ -208,6 +208,183 @@ describe("filterDrift private gateway policy", () => {
   });
 });
 
+describe("filterDrift Shield Anti-DDoS rule", () => {
+  const shieldRule = {
+    Name: "AWSManagedRulesAntiDDoSRuleSet",
+    OverrideAction: { None: {} },
+    Priority: 10000001,
+    Statement: {
+      ManagedRuleGroupStatement: {
+        Name: "AWSManagedRulesAntiDDoSRuleSet",
+        VendorName: "AWS",
+      },
+    },
+    VisibilityConfig: {
+      CloudWatchMetricsEnabled: true,
+      MetricName: "AWSManagedRulesAntiDDoSRuleSet",
+      SampledRequestsEnabled: false,
+    },
+  };
+
+  function aclDrift(
+    propertyPath: string,
+    actual: string | undefined,
+    expected?: string,
+  ): ResourceDrift {
+    return {
+      logicalId: "CfWebAcl",
+      resourceType: "AWS::WAFv2::WebACL",
+      status: "MODIFIED",
+      differences: [{ propertyPath, expected, actual }],
+    };
+  }
+
+  it.for(["/Rules/6", "/Rules/7"])(
+    "drops the rule Shield adds at %s",
+    (path) => {
+      const drift = aclDrift(path, JSON.stringify(shieldRule));
+
+      expect(
+        filterDrift("FlexGlobal", [drift], driftAllowlist, context),
+      ).toEqual([]);
+    },
+  );
+
+  it("drops the rule when expected is reported as the string null", () => {
+    const drift = aclDrift("/Rules/6", JSON.stringify(shieldRule), "null");
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [],
+    );
+  });
+
+  it("drops the rule whatever action and visibility config Shield sets", () => {
+    const drift = aclDrift(
+      "/Rules/6",
+      JSON.stringify({
+        ...shieldRule,
+        OverrideAction: { Count: {} },
+        VisibilityConfig: { ...shieldRule.VisibilityConfig, MetricName: "x" },
+      }),
+    );
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [],
+    );
+  });
+
+  it("drops the rule when Shield adds fields to its statement", () => {
+    const drift = aclDrift(
+      "/Rules/6",
+      JSON.stringify({
+        ...shieldRule,
+        Statement: {
+          ManagedRuleGroupStatement: {
+            ...shieldRule.Statement.ManagedRuleGroupStatement,
+            ManagedRuleGroupConfigs: [{ AWSManagedRulesAntiDDoSRuleSet: {} }],
+          },
+        },
+      }),
+    );
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [],
+    );
+  });
+
+  it("keeps an added value that is not JSON", () => {
+    const drift = aclDrift("/Rules/6", "not json");
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [drift],
+    );
+  });
+
+  it.for([
+    ["a different rule name", { ...shieldRule, Name: "SomethingElse" }],
+    ["a template priority", { ...shieldRule, Priority: 6 }],
+    ["no priority", { ...shieldRule, Priority: undefined }],
+    [
+      "a different rule group",
+      {
+        ...shieldRule,
+        Statement: {
+          ManagedRuleGroupStatement: {
+            Name: "AWSManagedRulesCommonRuleSet",
+            VendorName: "AWS",
+          },
+        },
+      },
+    ],
+    [
+      "a different vendor",
+      {
+        ...shieldRule,
+        Statement: {
+          ManagedRuleGroupStatement: {
+            ...shieldRule.Statement.ManagedRuleGroupStatement,
+            VendorName: "Someone",
+          },
+        },
+      },
+    ],
+    [
+      "an allow rule",
+      {
+        Name: "AWSManagedRulesAntiDDoSRuleSet",
+        Priority: 10000001,
+        Action: { Allow: {} },
+        Statement: { ByteMatchStatement: {} },
+      },
+    ],
+  ] as const)("keeps an added rule with %s", ([, rule]) => {
+    const drift = aclDrift("/Rules/6", JSON.stringify(rule));
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [drift],
+    );
+  });
+
+  it("keeps a change to a rule the template declares", () => {
+    const drift = aclDrift(
+      "/Rules/0",
+      JSON.stringify(shieldRule),
+      JSON.stringify({ ...shieldRule, Priority: 0 }),
+    );
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [drift],
+    );
+  });
+
+  it("keeps a removed rule", () => {
+    const drift = aclDrift("/Rules/6", undefined, JSON.stringify(shieldRule));
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [drift],
+    );
+  });
+
+  it("keeps drift on other web ACL properties", () => {
+    const drift = aclDrift("/DefaultAction", '{"Block":{}}', '{"Allow":{}}');
+
+    expect(filterDrift("FlexGlobal", [drift], driftAllowlist, context)).toEqual(
+      [drift],
+    );
+  });
+
+  it("only applies to the CloudFront web ACL", () => {
+    const drift = {
+      ...aclDrift("/Rules/6", JSON.stringify(shieldRule)),
+      logicalId: "ApiWebAcl",
+    };
+
+    expect(
+      filterDrift("FlexPlatform", [drift], driftAllowlist, context),
+    ).toEqual([drift]);
+  });
+});
+
 describe("isBlockingStackStatus", () => {
   it.for([
     ["UPDATE_ROLLBACK_FAILED", true],

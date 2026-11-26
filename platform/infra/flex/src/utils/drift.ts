@@ -19,11 +19,23 @@ export interface DriftAllowlistEntry {
   /** Stack name without the `${stage}-` prefix, e.g. "FlexPlatform" */
   stack: string;
   logicalId: string;
-  propertyPath: string;
   /**
-   * Without this, any value at propertyPath is allowed. With it, the
-   * difference is allowed only when applying these rewrites to the expected
-   * value gives exactly the actual value (compared as JSON when both parse).
+   * The exact property path, or a RegExp for a path that includes an array
+   * index that can move, e.g. /^\/Rules\/\d+$/
+   */
+  propertyPath: string | RegExp;
+  /**
+   * Allows only a value that is not in the template at all (expected is
+   * null) and that, parsed as JSON, contains every field given here. Fields
+   * not given are ignored. Use it for entries that AWS adds to a resource,
+   * such as a rule in a web ACL.
+   */
+  addedValue?: Record<string, unknown>;
+  /**
+   * Without this or addedValue, any value at propertyPath is allowed. With
+   * it, the difference is allowed only when applying these rewrites to the
+   * expected value gives exactly the actual value (compared as JSON when both
+   * parse).
    * `from` and `to` may use {region}, {account} and {physicalId}.
    */
   expectedRewrites?: { from: string; to: string }[];
@@ -64,6 +76,51 @@ function sameValue(a: string, b: string): boolean {
     parsedB !== undefined &&
     isDeepStrictEqual(parsedA, parsedB)
   );
+}
+
+function isAbsent(value?: string): boolean {
+  return value === undefined || value === "null";
+}
+
+/**
+ * True when actual has every field in pattern, with the same value. Objects
+ * are compared field by field at every depth; anything else must be equal.
+ */
+function containsFields(pattern: unknown, actual: unknown): boolean {
+  if (
+    typeof pattern !== "object" ||
+    pattern === null ||
+    Array.isArray(pattern)
+  ) {
+    return isDeepStrictEqual(pattern, actual);
+  }
+  if (typeof actual !== "object" || actual === null || Array.isArray(actual)) {
+    return false;
+  }
+  return Object.entries(pattern).every(([key, value]) =>
+    containsFields(value, (actual as Record<string, unknown>)[key]),
+  );
+}
+
+/**
+ * True when the difference adds a value the template does not have, and
+ * that value contains the entry's fields
+ */
+function matchesAddedValue(
+  entry: DriftAllowlistEntry,
+  difference: PropertyDifference,
+): boolean {
+  if (!entry.addedValue) return true;
+  if (!isAbsent(difference.expected) || isAbsent(difference.actual)) {
+    return false;
+  }
+  return containsFields(entry.addedValue, parseJson(difference.actual ?? ""));
+}
+
+function matchesPath(entry: DriftAllowlistEntry, propertyPath: string) {
+  return typeof entry.propertyPath === "string"
+    ? entry.propertyPath === propertyPath
+    : entry.propertyPath.test(propertyPath);
 }
 
 /**
@@ -128,7 +185,8 @@ function isAllowed(
     (entry) =>
       entry.stack === stack &&
       entry.logicalId === drift.logicalId &&
-      entry.propertyPath === difference.propertyPath &&
+      matchesPath(entry, difference.propertyPath) &&
+      matchesAddedValue(entry, difference) &&
       matchesRewrites(entry, difference, context, drift.physicalId),
   );
 }
