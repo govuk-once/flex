@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { driftAllowlist } from "../drift-allowlist";
 import {
+  type DriftAllowlistEntry,
   type DriftContext,
   filterDrift,
   fromDetection,
@@ -387,6 +388,14 @@ describe("filterDrift Shield Anti-DDoS rule", () => {
 });
 
 describe("filterDrift deleted resources", () => {
+  const allowlist: DriftAllowlistEntry[] = [
+    {
+      stack: "FlexGlobal",
+      logicalId: "ReplacedAlarm",
+      deleted: true,
+      reason: "test",
+    },
+  ];
   const deletedAlarm = (logicalId: string): ResourceDrift => ({
     logicalId,
     resourceType: "AWS::CloudWatch::Alarm",
@@ -394,17 +403,12 @@ describe("filterDrift deleted resources", () => {
     differences: [],
   });
 
-  it("drops the deleted Shield alarms", () => {
+  it("drops a deleted resource with a deleted entry", () => {
     expect(
       filterDrift(
         "FlexGlobal",
-        [
-          deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9"),
-          deletedAlarm(
-            "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
-          ),
-        ],
-        driftAllowlist,
+        [deletedAlarm("ReplacedAlarm")],
+        allowlist,
         context,
       ),
     ).toEqual([]);
@@ -413,29 +417,29 @@ describe("filterDrift deleted resources", () => {
   it("keeps other deleted resources in the same stack", () => {
     const deleted = deletedAlarm("AlarmsTrafficCliff7C7B8676");
 
-    expect(
-      filterDrift("FlexGlobal", [deleted], driftAllowlist, context),
-    ).toEqual([deleted]);
+    expect(filterDrift("FlexGlobal", [deleted], allowlist, context)).toEqual([
+      deleted,
+    ]);
   });
 
   it("only applies to its own stack", () => {
-    const deleted = deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9");
+    const deleted = deletedAlarm("ReplacedAlarm");
 
-    expect(filterDrift("FlexCore", [deleted], driftAllowlist, context)).toEqual(
-      [deleted],
-    );
+    expect(filterDrift("FlexCore", [deleted], allowlist, context)).toEqual([
+      deleted,
+    ]);
   });
 
   it("does not allow modifying the resource", () => {
     const modified: ResourceDrift = {
-      ...deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9"),
+      ...deletedAlarm("ReplacedAlarm"),
       status: "MODIFIED",
       differences: [{ propertyPath: "/Threshold", expected: "1", actual: "5" }],
     };
 
-    expect(
-      filterDrift("FlexGlobal", [modified], driftAllowlist, context),
-    ).toEqual([modified]);
+    expect(filterDrift("FlexGlobal", [modified], allowlist, context)).toEqual([
+      modified,
+    ]);
   });
 });
 
