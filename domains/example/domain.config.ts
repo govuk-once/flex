@@ -9,6 +9,10 @@ import {
 } from "@flex/udp-domain";
 import { NotificationsResponseSchema } from "@flex/uns-domain";
 
+import {
+  CorrelationIdResponseSchema,
+  ForwardedCorrelationIdResponseSchema,
+} from "./src/schemas/correlation";
 import { UpdateNotificationPreferencesOutboundResponseWithFeatureFlagSchema } from "./src/schemas/notifications";
 import {
   CreateTodoRequestSchema,
@@ -76,6 +80,11 @@ export const { config, route, routeContext } = domain({
       route: "POST /v0/todos",
       body: CreateTodoRequestSchema,
       response: CreateTodoResponseSchema,
+    },
+    getForwardedCorrelationId: {
+      type: "domain",
+      route: "GET /v0/correlation",
+      response: ForwardedCorrelationIdResponseSchema,
     },
     udpGetIdentity: {
       type: "gateway",
@@ -145,6 +154,23 @@ export const { config, route, routeContext } = domain({
             name: "get-headers",
             headers: {
               requestId: { name: "x-request-id", required: true },
+              correlationId: { name: "x-correlation-id", required: false },
+            },
+          },
+        },
+      },
+      "/correlation": {
+        GET: {
+          public: {
+            name: "get-correlation-id",
+            response: CorrelationIdResponseSchema,
+            resources: ["privateGatewayUrl"],
+            integrations: ["getForwardedCorrelationId"],
+          },
+          private: {
+            name: "echo-correlation-id",
+            response: ForwardedCorrelationIdResponseSchema,
+            headers: {
               correlationId: { name: "x-correlation-id", required: false },
             },
           },

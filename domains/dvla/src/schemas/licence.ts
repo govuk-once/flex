@@ -1,3 +1,1 @@
-import { customerDriversLicenceSchema } from "@flex/dvla-service-gateway";
-
-export const DriversLicenceSchema = customerDriversLicenceSchema;
+export { customerDriversLicenceSchema as DriversLicenceSchema } from "@flex/dvla-service-gateway";

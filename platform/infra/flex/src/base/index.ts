@@ -133,7 +133,7 @@ export class SsmApp extends cdk.App {
       console.log(
         `Adding dependency between source: ${sourceStack.stackName} and target: ${targetStack.stackName}`,
       );
-      targetStack.addDependency(sourceStack);
+      targetStack.addStackDependency(sourceStack);
     });
 
     this.printDependencyTree(this.#stackGraph);
@@ -212,7 +212,7 @@ export abstract class BaseStack extends cdk.Stack {
     });
 
     if (!(app instanceof SsmApp)) {
-      throw new Error("BaseStack must be used within an SsmApp");
+      throw new TypeError("BaseStack must be used within an SsmApp");
     }
 
     app.register(this, dependencies);

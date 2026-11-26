@@ -51,6 +51,7 @@ import { CloudFrontAlarms } from "../constructs/alarms/cloudfront";
 import { CloudFrontFunctionAlarms } from "../constructs/alarms/cloudfront-function";
 import { createIamChangeAlerts } from "../constructs/alarms/iam-change-alerts";
 import { createKeyChangeAlerts } from "../constructs/alarms/key-change-alerts";
+import { LogVolumeAlarms } from "../constructs/alarms/log-volume";
 import { createRelayHealthAction } from "../constructs/alarms/relay-health";
 import { ShieldAlarms } from "../constructs/alarms/shield";
 import { AlarmActionProps } from "../constructs/alarms/types";
@@ -59,6 +60,7 @@ import { FlexCloudfrontFunction } from "../constructs/cloudfront/flex-cloudfront
 import { FlexResponseHeadersPolicy } from "../constructs/cloudfront/flex-response-headers-policy";
 import { createLogGroupKey } from "../constructs/kms/log-group-key";
 import { AccessLogBucket } from "../constructs/s3/AccessLogBucket";
+import { WafRequestLogging } from "../constructs/waf/WafRequestLogging";
 import { ENV_KEYS, PLATFORM_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getPlatformEntry } from "../utils/getEntry";
@@ -129,14 +131,14 @@ export class FlexGlobalStack extends BaseStack {
     return { domainName, subdomainName };
   }
 
-  #createCertificate({ domainName, subdomainName }: DomainNames) {
+  #createCertificate({ domainName, subdomainName = domainName }: DomainNames) {
     const hostedZone = HostedZone.fromHostedZoneAttributes(this, "Zone", {
       hostedZoneId: this.import(PLATFORM_KEYS.HostedZoneId, "eu-west-2"),
       zoneName: this.import(PLATFORM_KEYS.HostedZoneName, "eu-west-2"),
     });
 
     const cert = new Certificate(this, "FlexCert", {
-      domainName: subdomainName ?? domainName,
+      domainName: subdomainName,
       validation: CertificateValidation.fromDns(hostedZone),
     });
 
@@ -308,6 +310,13 @@ export class FlexGlobalStack extends BaseStack {
       ],
     });
 
+    if (persistent) {
+      new WafRequestLogging(this, "CloudFrontWafRequestLogging", {
+        webAcl,
+        bucketNameSuffix: `flex-${stage}-cloudfront`,
+      });
+    }
+
     new WafAlarms(this, "CloudFrontWafAlarms", {
       alarmNamePrefix: `${stage}-cloudfront-waf`,
       webAclScope: "CLOUDFRONT",
@@ -327,9 +336,10 @@ export class FlexGlobalStack extends BaseStack {
     openApiSpecBucket,
     restApi,
     secretHeaderArn,
-    subdomainName,
+    subdomainName = domainName,
     warningAction,
     webAcl,
+    wellKnownBucket,
   }: {
     cert: Certificate;
     domainName: string;
@@ -338,6 +348,7 @@ export class FlexGlobalStack extends BaseStack {
     secretHeaderArn: string;
     subdomainName?: string;
     webAcl: CfnWebACL;
+    wellKnownBucket: Bucket;
   } & AlarmActionProps) {
     const { function: viewerRequestPlatformFunction } =
       new FlexCloudfrontFunction(this, "ViewerRequestPlatformFunction", {
@@ -420,6 +431,13 @@ export class FlexGlobalStack extends BaseStack {
         ],
       },
       additionalBehaviors: {
+        "/.well-known/jwks.json": {
+          origin: S3BucketOrigin.withOriginAccessControl(wellKnownBucket),
+          viewerProtocolPolicy: ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: CachePolicy.CACHING_OPTIMIZED,
+          responseHeadersPolicy: apiResponseHeadersPolicy,
+        },
         "/docs*": {
           origin: S3BucketOrigin.withOriginAccessControl(openApiSpecBucket),
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -436,7 +454,7 @@ export class FlexGlobalStack extends BaseStack {
       },
       logBucket: accessLogBucket.bucket,
       publishAdditionalMetrics: true,
-      domainNames: [subdomainName ?? domainName],
+      domainNames: [subdomainName],
       certificate: cert,
     });
     const cfnDistribution = distribution.node.defaultChild as CfnDistribution;
@@ -530,6 +548,24 @@ export class FlexGlobalStack extends BaseStack {
     cfnRecordSet.overrideLogicalId("CloudfrontDomainAliasRecord0A299B62");
   }
 
+  #createWellKnownBucket() {
+    const accessLogBucket = new AccessLogBucket(
+      this,
+      "WellKnownAccessLogBucket",
+    );
+
+    return new Bucket(this, "WellKnownBucket", {
+      bucketName: `flex-${stage}-well-known`,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      encryption: BucketEncryption.S3_MANAGED,
+      removalPolicy: persistent ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY,
+      autoDeleteObjects: !persistent,
+      versioned: true,
+      serverAccessLogsBucket: accessLogBucket.bucket,
+    });
+  }
+
   #createOpenApiSpecBucket() {
     const accessLogBucket = new AccessLogBucket(
       this,
@@ -618,6 +654,11 @@ export class FlexGlobalStack extends BaseStack {
         alarmTopicKey,
         warningAction,
       });
+      new LogVolumeAlarms(this, "LogVolumeAlarms", {
+        alarmNamePrefix: `${stage}-log-volume`,
+        criticalAction,
+        warningAction,
+      });
     }
 
     new CertificateAlarms(this, "CertificateAlarms", {
@@ -640,6 +681,7 @@ export class FlexGlobalStack extends BaseStack {
     );
 
     const openApiSpecBucket = this.#createOpenApiSpecBucket();
+    const wellKnownBucket = this.#createWellKnownBucket();
 
     const distribution = this.#createCloudfrontDistribution({
       cert,
@@ -651,6 +693,7 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
       warningAction,
       webAcl,
+      wellKnownBucket,
     });
 
     this.#deploySwaggerUi({ bucket: openApiSpecBucket, distribution });

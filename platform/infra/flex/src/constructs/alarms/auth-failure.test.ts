@@ -19,12 +19,12 @@ function synthesise() {
     warningAction: actions.warningAction,
   });
 
-  return { template: Template.fromStack(stack), ...actions };
+  return { stack, ...actions };
 }
 
 describe("AuthFailureAlarms", () => {
   it("counts 401 and 403 responses against all requests from the access logs", () => {
-    const { template } = synthesise();
+    const template = Template.fromStack(synthesise().stack);
 
     template.hasResourceProperties("AWS::Logs::MetricFilter", {
       FilterPattern: '{ ($.status = "401") || ($.status = "403") }',
@@ -41,7 +41,8 @@ describe("AuthFailureAlarms", () => {
   });
 
   it("pages when more than half of requests are rejected over both 15m and 5m", () => {
-    const { template, criticalActionRef } = synthesise();
+    const { stack, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-apigw-auth-failure-15m",

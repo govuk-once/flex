@@ -293,7 +293,7 @@ export default mergeConfig(
 
 `e2eConfig` shares the base settings with the unit config (path aliases, the `node` environment and coverage) but not the dummy AWS values, so E2E tests use your real credentials. Always extend `e2eConfig` here and never `@flex/config/vitest`, which is the unit config. See [`libs/config/src`](https://github.com/govuk-once/flex/tree/main/libs/config/src).
 
-CI finds domains to test by looking for a `test:e2e` script. Used in: [`domains/topics`](https://github.com/govuk-once/flex/blob/main/domains/topics/vitest.e2e.config.ts).
+CI finds domains to test by looking for a `test:e2e` script. Used in: [`domains/personalisation`](https://github.com/govuk-once/flex/blob/main/domains/personalisation/vitest.e2e.config.ts).
 
 ### Write a test
 
@@ -326,7 +326,7 @@ describe.runIf(isDomainDeployed(config))("Items domain", () => {
 });
 ```
 
-Used in: [`domains/topics/e2e`](https://github.com/govuk-once/flex/blob/main/domains/topics/e2e/topics.test.ts).
+Used in: [`domains/personalisation/e2e`](https://github.com/govuk-once/flex/blob/main/domains/personalisation/e2e/topics.test.ts).
 
 ### E2E fixtures
 

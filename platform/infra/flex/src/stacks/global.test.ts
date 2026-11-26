@@ -1,7 +1,7 @@
 import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { loadInfra } from "../__tests__/load-infra";
+import { loadInfra, TEST_ACCOUNT } from "../__tests__/load-infra";
 
 describe("FlexGlobalStack certificate alarm", () => {
   let template: Template;
@@ -62,6 +62,33 @@ describe("FlexGlobalStack certificate alarm", () => {
     });
   });
 
+  it("warns through the relay when log ingestion in us-east-1 is excessive", () => {
+    const warningRelayId = Object.keys(
+      template.findResources("AWS::SNS::Topic"),
+    ).find((id) => id.startsWith("WarningRelayTopic"));
+
+    expect(warningRelayId).toBeDefined();
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+      AlarmName: "staging-log-volume-incoming-bytes",
+      Namespace: "AWS/Logs",
+      MetricName: "IncomingBytes",
+      AlarmActions: [{ Ref: warningRelayId }],
+    });
+  });
+
+  it("creates a well-known S3 bucket for the CloudFront distribution", () => {
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      BucketName: "flex-staging-well-known",
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      },
+    });
+  });
+
   it("alarms on the CloudFront certificate through the critical relay", () => {
     const certificateId = Object.keys(
       template.findResources("AWS::CertificateManager::Certificate"),
@@ -79,6 +106,133 @@ describe("FlexGlobalStack certificate alarm", () => {
       Dimensions: [{ Name: "CertificateArn", Value: { Ref: certificateId } }],
       Threshold: 30,
       AlarmActions: [{ Ref: criticalRelayId }],
+    });
+  });
+
+  it("logs blocked and counted CloudFront WAF requests to S3 with secret bearing headers redacted", () => {
+    const webAclId = Object.keys(
+      template.findResources("AWS::WAFv2::WebACL"),
+    )[0];
+    const logBucketId = Object.keys(
+      template.findResources("AWS::S3::Bucket", {
+        Properties: { BucketName: "aws-waf-logs-flex-staging-cloudfront" },
+      }),
+    )[0];
+
+    expect(webAclId).toBeDefined();
+    expect(logBucketId).toBeDefined();
+
+    template.resourceCountIs("AWS::WAFv2::LoggingConfiguration", 1);
+    template.hasResourceProperties("AWS::WAFv2::LoggingConfiguration", {
+      ResourceArn: { "Fn::GetAtt": [webAclId, "Arn"] },
+      LogDestinationConfigs: [{ "Fn::GetAtt": [logBucketId, "Arn"] }],
+      RedactedFields: [
+        { SingleHeader: { Name: "authorization" } },
+        { SingleHeader: { Name: "cookie" } },
+        { SingleHeader: { Name: "x-origin-verify" } },
+        { SingleHeader: { Name: "x-flex-e2e-bypass" } },
+        { SingleHeader: { Name: "x-linking-token" } },
+      ],
+      LoggingFilter: {
+        DefaultBehavior: "DROP",
+        Filters: [
+          {
+            Behavior: "KEEP",
+            Requirement: "MEETS_ANY",
+            Conditions: [
+              { ActionCondition: { Action: "BLOCK" } },
+              { ActionCondition: { Action: "COUNT" } },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("keeps CloudFront WAF logs for 90 days under a governance lock and only accepts them from log delivery in us-east-1", () => {
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      BucketName: "aws-waf-logs-flex-staging-cloudfront",
+      BucketEncryption: {
+        ServerSideEncryptionConfiguration: [
+          { ServerSideEncryptionByDefault: { SSEAlgorithm: "AES256" } },
+        ],
+      },
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      },
+      ObjectLockEnabled: true,
+      ObjectLockConfiguration: {
+        Rule: { DefaultRetention: { Mode: "GOVERNANCE", Days: 90 } },
+      },
+      LifecycleConfiguration: {
+        Rules: [
+          Match.objectLike({
+            ExpirationInDays: 90,
+            NoncurrentVersionExpiration: { NoncurrentDays: 90 },
+            Status: "Enabled",
+          }),
+        ],
+      },
+    });
+
+    const logDeliverySource = {
+      "aws:SourceArn": {
+        "Fn::Join": [
+          "",
+          [
+            "arn:",
+            { Ref: "AWS::Partition" },
+            `:logs:us-east-1:${TEST_ACCOUNT}:*`,
+          ],
+        ],
+      },
+    };
+
+    template.hasResourceProperties("AWS::S3::BucketPolicy", {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: "AWSLogDeliveryWrite",
+            Effect: "Allow",
+            Principal: { Service: "delivery.logs.amazonaws.com" },
+            Action: "s3:PutObject",
+            Condition: {
+              StringEquals: {
+                "aws:SourceAccount": TEST_ACCOUNT,
+                "s3:x-amz-acl": "bucket-owner-full-control",
+              },
+              ArnLike: logDeliverySource,
+            },
+          }),
+          Match.objectLike({
+            Sid: "AWSLogDeliveryAclCheck",
+            Effect: "Allow",
+            Principal: { Service: "delivery.logs.amazonaws.com" },
+            Action: "s3:GetBucketAcl",
+            Condition: {
+              StringEquals: { "aws:SourceAccount": TEST_ACCOUNT },
+              ArnLike: logDeliverySource,
+            },
+          }),
+        ]),
+      },
+    });
+  });
+
+  it("names the Shield alarms -v2 under their pinned logical IDs, so the deleted originals are replaced rather than updated", () => {
+    const alarms = template.findResources("AWS::CloudWatch::Alarm");
+
+    expect(
+      alarms.CloudfrontShieldAlarmsDDoSDetected3029FCB9?.Properties,
+    ).toMatchObject({ AlarmName: "staging-shield-ddos-detected-v2" });
+    expect(
+      alarms.CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F // pragma: allowlist secret
+        ?.Properties,
+    ).toMatchObject({
+      AlarmName: "staging-shield-ddos-attack-requests-per-second-v2",
     });
   });
 });

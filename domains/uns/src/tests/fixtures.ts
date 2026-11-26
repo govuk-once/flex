@@ -3,7 +3,6 @@ import type { PushId } from "@flex/udp-domain";
 import type { DeepPartial } from "@flex/utils";
 import type { Notification, NotificationStatus } from "@schemas/notification";
 
-export { createUserId };
 export const userId = createUserId("test-uns-user");
 
 export const createPushId = (value = "test-push-id") => value as PushId;
@@ -42,3 +41,5 @@ export const createSecrets = (overrides?: Record<string, string>) =>
     overrides,
   );
 export const secrets = createSecrets();
+
+export { createUserId } from "@flex/testing";

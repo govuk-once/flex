@@ -24,12 +24,12 @@ function synthesise() {
     warningAction: actions.warningAction,
   });
 
-  return { template: Template.fromStack(stack), ...actions };
+  return { stack, ...actions };
 }
 
 describe("JourneyAlarms", () => {
   it("creates a valid and a failed request filter per journey", () => {
-    const { template } = synthesise();
+    const template = Template.fromStack(synthesise().stack);
 
     template.resourceCountIs("AWS::Logs::MetricFilter", JOURNEYS.length * 2);
     template.hasResourceProperties("AWS::Logs::MetricFilter", {
@@ -48,7 +48,9 @@ describe("JourneyAlarms", () => {
   });
 
   it("excludes the DVLA test notification route from the driving journey", () => {
-    synthesise().template.hasResourceProperties("AWS::Logs::MetricFilter", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::Logs::MetricFilter", {
       FilterPattern: Match.stringLikeRegexp(
         String.raw`\$\.resourcePath != "/app/dvla/v1/test-notification"`,
       ),
@@ -61,7 +63,8 @@ describe("JourneyAlarms", () => {
   });
 
   it("pages on reads only when both the 1h and 5m windows burn at 14.4x the 99.5% budget", () => {
-    const { template, criticalActionRef } = synthesise();
+    const { stack, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-journey-reads-fast-burn-1h",
@@ -92,14 +95,17 @@ describe("JourneyAlarms", () => {
   });
 
   it("holds writes to the tighter 99.9% budget", () => {
-    synthesise().template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-journey-writes-fast-burn-1h",
       Threshold: 1.44,
     });
   });
 
   it("warns on a 6x slow burn over 6h and 30m", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-journey-reads-slow-burn-6h",
@@ -121,7 +127,8 @@ describe("JourneyAlarms", () => {
   });
 
   it("keeps the travel journey as a warning even on a fast burn", () => {
-    const { template, warningActionRef } = synthesise();
+    const { stack, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::CompositeAlarm", {
       AlarmName: "staging-journey-travel-fast-burn",
@@ -130,7 +137,7 @@ describe("JourneyAlarms", () => {
   });
 
   it("gives the window alarms no actions of their own", () => {
-    const { template } = synthesise();
+    const template = Template.fromStack(synthesise().stack);
     const windowAlarms = Object.values(
       template.findResources("AWS::CloudWatch::Alarm"),
     ) as { Properties: { AlarmActions?: unknown[] } }[];

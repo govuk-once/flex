@@ -1,7 +1,7 @@
 import { Match, Template } from "aws-cdk-lib/assertions";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { loadInfra } from "../__tests__/load-infra";
+import { loadInfra, TEST_ACCOUNT } from "../__tests__/load-infra";
 
 const VPC_EXPORTS = [
   "vpc-id",
@@ -33,9 +33,7 @@ async function synthesise(stage: string) {
     ...VPC_EXPORTS.map((key) => `${ENV_KEYS.Vpc}/${key}`),
   ]);
 
-  return Template.fromStack(
-    new FlexPlatformStack(app, `${stage}-FlexPlatform`, []),
-  );
+  return new FlexPlatformStack(app, `${stage}-FlexPlatform`, []);
 }
 
 function authorizerEnvironment(template: Template) {
@@ -70,7 +68,7 @@ describe("FlexPlatformStack authorizer", () => {
   });
 
   it("uses the real Cognito parameters and JWKS URI in staging", async () => {
-    const template = await synthesise("staging");
+    const template = Template.fromStack(await synthesise("staging"));
     const variables = authorizerEnvironment(template);
     const userPoolId = parameterReference(
       template,
@@ -95,7 +93,7 @@ describe("FlexPlatformStack authorizer", () => {
   });
 
   it("uses the stub Cognito parameters and stub JWKS endpoint in development", async () => {
-    const template = await synthesise("development");
+    const template = Template.fromStack(await synthesise("development"));
     const variables = authorizerEnvironment(template);
     const [functionUrlId] = Object.keys(
       template.findResources("AWS::Lambda::Url"),
@@ -115,6 +113,149 @@ describe("FlexPlatformStack authorizer", () => {
     );
     expect(variables.JWKS_URI).toEqual({
       "Fn::GetAtt": [functionUrlId, "FunctionUrl"],
+    });
+  });
+});
+
+describe("FlexPlatformStack WAF request logging", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("logs blocked and counted API WAF requests to S3 with secret bearing headers redacted", async () => {
+    const template = Template.fromStack(await synthesise("staging"));
+    const webAclId = Object.keys(
+      template.findResources("AWS::WAFv2::WebACL"),
+    )[0];
+    const logBucketId = Object.keys(
+      template.findResources("AWS::S3::Bucket", {
+        Properties: { BucketName: "aws-waf-logs-flex-staging-api" },
+      }),
+    )[0];
+
+    expect(webAclId).toBeDefined();
+    expect(logBucketId).toBeDefined();
+
+    template.resourceCountIs("AWS::WAFv2::LoggingConfiguration", 1);
+    template.hasResourceProperties("AWS::WAFv2::LoggingConfiguration", {
+      ResourceArn: { "Fn::GetAtt": [webAclId, "Arn"] },
+      LogDestinationConfigs: [{ "Fn::GetAtt": [logBucketId, "Arn"] }],
+      RedactedFields: [
+        { SingleHeader: { Name: "authorization" } },
+        { SingleHeader: { Name: "cookie" } },
+        { SingleHeader: { Name: "x-origin-verify" } },
+        { SingleHeader: { Name: "x-flex-e2e-bypass" } },
+        { SingleHeader: { Name: "x-linking-token" } },
+      ],
+      LoggingFilter: {
+        DefaultBehavior: "DROP",
+        Filters: [
+          {
+            Behavior: "KEEP",
+            Requirement: "MEETS_ANY",
+            Conditions: [
+              { ActionCondition: { Action: "BLOCK" } },
+              { ActionCondition: { Action: "COUNT" } },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("keeps API WAF logs for 90 days under a governance lock and only accepts them from log delivery in eu-west-2", async () => {
+    const template = Template.fromStack(await synthesise("staging"));
+
+    template.hasResourceProperties("AWS::S3::Bucket", {
+      BucketName: "aws-waf-logs-flex-staging-api",
+      BucketEncryption: {
+        ServerSideEncryptionConfiguration: [
+          { ServerSideEncryptionByDefault: { SSEAlgorithm: "AES256" } },
+        ],
+      },
+      ObjectLockEnabled: true,
+      ObjectLockConfiguration: {
+        Rule: { DefaultRetention: { Mode: "GOVERNANCE", Days: 90 } },
+      },
+      LifecycleConfiguration: {
+        Rules: [
+          Match.objectLike({
+            ExpirationInDays: 90,
+            NoncurrentVersionExpiration: { NoncurrentDays: 90 },
+            Status: "Enabled",
+          }),
+        ],
+      },
+    });
+
+    template.hasResourceProperties("AWS::S3::BucketPolicy", {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: "AWSLogDeliveryWrite",
+            Principal: { Service: "delivery.logs.amazonaws.com" },
+            Action: "s3:PutObject",
+            Condition: Match.objectLike({
+              ArnLike: {
+                "aws:SourceArn": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      { Ref: "AWS::Partition" },
+                      `:logs:eu-west-2:${TEST_ACCOUNT}:*`,
+                    ],
+                  ],
+                },
+              },
+            }),
+          }),
+          Match.objectLike({
+            Sid: "AWSLogDeliveryAclCheck",
+            Principal: { Service: "delivery.logs.amazonaws.com" },
+            Action: "s3:GetBucketAcl",
+          }),
+        ]),
+      },
+    });
+  });
+
+  it("does not log WAF requests for ephemeral stages", async () => {
+    const template = Template.fromStack(await synthesise("my-branch-12"));
+
+    template.resourceCountIs("AWS::WAFv2::LoggingConfiguration", 0);
+    template.resourceCountIs("AWS::S3::Bucket", 0);
+  });
+});
+
+describe("FlexPlatformStack private gateway policy", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("denies invoke outside the VPC endpoint using a full execute-api ARN, so API Gateway stores it unchanged", async () => {
+    const template = Template.fromStack(await synthesise("staging"));
+
+    template.hasResourceProperties("AWS::ApiGateway::RestApi", {
+      Name: Match.stringLikeRegexp("[Pp]rivate"),
+      Policy: {
+        Statement: [
+          Match.objectLike({
+            Effect: "Deny",
+            Action: "execute-api:Invoke",
+            Resource: {
+              "Fn::Join": [
+                "",
+                [
+                  "arn:",
+                  { Ref: "AWS::Partition" },
+                  `:execute-api:eu-west-2:${TEST_ACCOUNT}:*/*`,
+                ],
+              ],
+            },
+          }),
+        ],
+      },
     });
   });
 });

@@ -87,7 +87,7 @@ const prisonSentSuspendedPeriodSchema = z.object({
 const endorsementSchema = z.object({
   appealCourtCode: z
     .string()
-    .regex(/^[0-9]{4}$/)
+    .regex(/^\d{4}$/)
     .optional()
     .describe("A court-code object holding details of the appeal court"),
   appealCourtName: z
@@ -103,7 +103,7 @@ const endorsementSchema = z.object({
   convictionDate: z.string().optional().describe("The date of the conviction"),
   convictionCourtCode: z
     .string()
-    .regex(/^[0-9]{4}$/)
+    .regex(/^\d{4}$/)
     .describe(
       "A court-code object holding details of the court the driver was convicted at",
     ),
@@ -210,7 +210,7 @@ const endorsementSchema = z.object({
     ),
   sentencingCourtCode: z
     .string()
-    .regex(/^[0-9]{4}$/)
+    .regex(/^\d{4}$/)
     .optional()
     .describe(
       "A court-code object holding details of the court the driver was sentenced at",

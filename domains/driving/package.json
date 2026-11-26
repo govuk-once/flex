@@ -15,9 +15,7 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@flex/logging": "workspace:*",
     "@flex/sdk": "workspace:*",
-    "@flex/utils": "workspace:*",
     "http-errors": "2.0.1",
     "http-status": "2.1.0",
     "zod": "4.6.7"
@@ -26,10 +24,9 @@
     "@flex/config": "workspace:*",
     "@flex/dvsa-service-gateway": "workspace:*",
     "@flex/testing": "workspace:*",
-    "@types/aws-lambda": "8.10.162",
     "@types/http-errors": "2.0.5",
-    "eslint": "10.7.0",
+    "eslint": "10.14.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "5.1.0"
   }
 }

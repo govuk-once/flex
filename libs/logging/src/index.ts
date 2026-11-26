@@ -1,12 +1,5 @@
-import { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
-import type { LogLevel } from "@aws-lambda-powertools/logger/types";
-
-import { Logger, logger } from "./logger";
-import {
-  addSecretValue,
-  addSensitiveKey,
-  addSensitivePattern,
-} from "./sanitizer";
+import type { Logger } from "./logger";
+import { logger } from "./logger";
 
 /**
  * Creates a child logger with additional persistent context.
@@ -16,11 +9,12 @@ export function createChildLogger(context?: Record<string, unknown>): Logger {
   return logger.createChild({ persistentKeys: context }) as Logger;
 }
 
+export type { Logger } from "./logger";
+export { logger } from "./logger";
 export {
   addSecretValue,
   addSensitiveKey,
   addSensitivePattern,
-  injectLambdaContext,
-  logger,
-};
-export type { Logger, LogLevel };
+} from "./sanitizer";
+export { injectLambdaContext } from "@aws-lambda-powertools/logger/middleware";
+export type { LogLevel } from "@aws-lambda-powertools/logger/types";

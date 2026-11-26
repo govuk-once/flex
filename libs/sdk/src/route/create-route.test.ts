@@ -6,6 +6,7 @@ import createHttpError from "http-errors";
 import { beforeEach, describe, expect, vi } from "vitest";
 import { z } from "zod";
 
+import { getCorrelationId } from "../correlation";
 import type { LambdaContext, LambdaEvent } from "../types";
 import { AuthorizationError } from "../utils/errors";
 import { buildHandlerContext } from "./build-context";
@@ -340,6 +341,35 @@ describe("createRouteHandler", () => {
       await invokeRoute();
 
       expect(mockHandlerFn).toHaveBeenCalledExactlyOnceWith(mockStore);
+    });
+
+    it("exposes the inbound correlation id to the handler", async () => {
+      let seen: string | undefined;
+      mockHandlerFn.mockImplementation(() => {
+        seen = getCorrelationId();
+        return { status: 200, data: {} };
+      });
+
+      await registerRoute()(
+        {
+          headers: { "X-Correlation-Id": "abc-123" },
+        } as unknown as LambdaEvent,
+        mockContext,
+      );
+
+      expect(seen).toBe("abc-123");
+    });
+
+    it("leaves the correlation id unset when none is received", async () => {
+      let seen: string | undefined = "unset";
+      mockHandlerFn.mockImplementation(() => {
+        seen = getCorrelationId();
+        return { status: 200, data: {} };
+      });
+
+      await invokeRoute();
+
+      expect(seen).toBeUndefined();
     });
 
     it("executes the handler within the route execution context", async () => {

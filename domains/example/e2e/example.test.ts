@@ -148,6 +148,51 @@ describe.runIf(isDomainDeployed(exampleConfig))("Example domain", () => {
     );
   });
 
+  describe("/example/v0/correlation", () => {
+    const endpoint = "/example/v0/correlation";
+
+    describe.runIf(isRouteDeployed(exampleConfig, "GET /v0/correlation"))(
+      "GET",
+      () => {
+        it("forwards the inbound correlation id to downstream domains", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const correlationId = "3b241101-e2bb-4255-8caf-4136c566a962";
+
+          const result = await cloudfront.client.get(endpoint, {
+            headers: { ...authHeader, "x-correlation-id": correlationId },
+          });
+
+          expect(result.status).toBe(200);
+          expect(result.body).toStrictEqual({
+            correlationId,
+            forwardedCorrelationId: correlationId,
+          });
+        });
+
+        it("forwards the edge-generated correlation id when none is sent", async ({
+          cloudfront,
+          authHeader,
+        }) => {
+          const result = await cloudfront.client.get(endpoint, {
+            headers: authHeader,
+          });
+
+          expect(result.status).toBe(200);
+
+          const body = result.body as {
+            correlationId: string | null;
+            forwardedCorrelationId: string | null;
+          };
+
+          expect(body.correlationId).toEqual(expect.any(String));
+          expect(body.forwardedCorrelationId).toBe(body.correlationId);
+        });
+      },
+    );
+  });
+
   describe("/example/v0/resources", () => {
     const endpoint = "/example/v0/resources";
 

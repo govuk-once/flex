@@ -8,6 +8,7 @@
     "deploy": "cdk deploy --all --concurrency 4 --require-approval never",
     "destroy": "cdk destroy --all",
     "synth": "cdk synth",
+    "drift:check": "cdk synth --quiet && tsx src/scripts/drift-check.ts",
     "validate:integrations": "tsx src/scripts/validate-integrations.ts",
     "validate:macie-coverage": "tsx src/scripts/check-macie-coverage.ts",
     "tsc": "tsc --noEmit",
@@ -16,26 +17,28 @@
     "checkov": "cdk synth --quiet && checkov --config-file checkov.yaml -d cdk.out --framework cloudformation --compact --quiet"
   },
   "dependencies": {
-    "@aws-sdk/client-ssm": "3.1091.0",
     "@flex/sdk": "workspace:*",
     "@flex/service-gateway": "workspace:*",
     "@platform/credential-monitor": "workspace:*",
     "@platform/smoke-test": "workspace:*",
-    "aws-cdk": "2.1132.0",
-    "aws-cdk-lib": "2.261.0",
-    "constructs": "10.7.1",
+    "aws-cdk": "2.1148.0",
+    "aws-cdk-lib": "2.275.0",
+    "constructs": "10.8.1",
+    "esbuild": "0.28.2",
     "graphology": "0.26.0",
     "graphology-dag": "0.4.1",
     "jiti": "2.7.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudformation": "3.1165.0",
+    "@aws-sdk/credential-providers": "3.1165.0",
     "@flex/config": "workspace:*",
     "@flex/utils": "workspace:*",
-    "@types/node": "26.1.1",
-    "eslint": "10.7.0",
-    "tsx": "4.23.1",
+    "@types/node": "26.6.6",
+    "eslint": "10.14.0",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "5.1.0"
   }
 }

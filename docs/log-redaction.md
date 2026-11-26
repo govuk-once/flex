@@ -143,6 +143,47 @@ The toggle is protected by two independent mechanisms:
 
 ---
 
+## WAF request logs
+
+The sanitiser only covers application logs. The two web ACLs (CloudFront and API Gateway) write their own request logs straight to S3, so redaction for those is configured on the WAF logging configuration itself ([`WafRequestLogging`](/platform/infra/flex/src/constructs/waf/WafRequestLogging.ts)).
+
+Request logging is enabled in the persistent environments only (development, staging and production).
+
+| Web ACL    | Region      | Bucket                                 |
+| ---------- | ----------- | -------------------------------------- |
+| CloudFront | `us-east-1` | `aws-waf-logs-flex-<stage>-cloudfront` |
+| API        | `eu-west-2` | `aws-waf-logs-flex-<stage>-api`        |
+
+### What is logged
+
+Only requests that WAF blocked or counted are kept. Allowed requests are dropped, which keeps ordinary user traffic out of the bucket.
+
+WAF logs never contain the request body. They do contain the client IP address, the URI path, the query string and the request headers. When a managed rule matches, the log also holds the fragment of the request that triggered the match, which can come from the body.
+
+### What is redacted
+
+The values of these headers are replaced before the log record is written:
+
+| Header              | Why                                              |
+| ------------------- | ------------------------------------------------ |
+| `authorization`     | User access token                                |
+| `cookie`            | May carry session identifiers                    |
+| `x-origin-verify`   | Shared secret between CloudFront and API Gateway |
+| `x-flex-e2e-bypass` | Shared secret that lets E2E tests bypass the WAF |
+| `x-linking-token`   | Identity linking token                           |
+
+The `authorization` header is also protected on the web ACLs themselves (`dataProtectionConfig`), which covers sampled requests and rule match details as well as the logs.
+
+The URI path and query string are not redacted. FLEX does not put tokens or secrets in either, but a path can carry an identifier such as a vehicle registration. The same paths and query strings are already recorded against the client IP address in the CloudFront access logs, and without them a blocked request cannot be investigated.
+
+A new header that carries a secret or a token must be added to `WAF_LOG_REDACTED_HEADERS` before it is first used.
+
+### Retention
+
+The buckets follow the other log buckets: Object Lock in governance mode with a default retention of 90 days, and a lifecycle rule that expires objects after the same period. Governance mode (not compliance mode) is deliberate, as it lets a suitably privileged administrator remove an object if something sensitive is ever logged by mistake.
+
+---
+
 ## Related
 
 **FLEX:**

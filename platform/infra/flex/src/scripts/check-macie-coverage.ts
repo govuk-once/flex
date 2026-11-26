@@ -50,9 +50,9 @@ async function main(): Promise<number> {
   return 0;
 }
 
-main()
-  .then((code) => process.exit(code))
-  .catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  });
+try {
+  process.exit(await main());
+} catch (error: unknown) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}

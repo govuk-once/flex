@@ -54,11 +54,9 @@ interface RoutePermissionApi {
 }
 
 interface RoutePermissionTarget {
-  readonly role?:
-    | {
-        addToPrincipalPolicy(statement: PolicyStatement): unknown;
-      }
-    | undefined;
+  readonly role?: {
+    addToPrincipalPolicy(statement: PolicyStatement): unknown;
+  };
 }
 
 export function grantRoutePermissions(

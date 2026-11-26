@@ -14,7 +14,7 @@ jobs:
       contents: read
       actions: read # required by nrwl/nx-set-shas to find the last successful workflow run on main
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "development"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
@@ -25,89 +25,16 @@ jobs:
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
   release:
-    name: Release
+    name: Create Release
     needs: qualityChecks
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    concurrency:
-      group: semantic-release
-      cancel-in-progress: false
+    uses: govuk-once/platform-shared-ci-cd/.github/workflows/semantic-release.yml@v1.1.6
     permissions:
-      contents: write
       id-token: write
-    outputs:
-      released: ${{ steps.semantic.outputs.released }}
-      version: ${{ steps.version.outputs.value }}
-      type: ${{ steps.semantic.outputs.type }}
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
-          persist-credentials: false
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
-
-      - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run semantic release
-        id: semantic
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm run semantic:release
-
-      - name: Resolve deployed version
-        id: version
-        env:
-          RELEASED_VERSION: ${{ steps.semantic.outputs.version }}
-        run: |
-          VERSION="$RELEASED_VERSION"
-          if [ -z "$VERSION" ]; then
-            VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
-          fi
-          if [ -z "$VERSION" ]; then
-            VERSION="$(git rev-parse --short HEAD)"
-          fi
-          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Version
-        if: steps.semantic.outputs.released == 'true'
-        run: echo "Released version ${{ steps.version.outputs.value }} (${{ steps.semantic.outputs.type }})"
-
-      - name: Configure AWS credentials
-        if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
-        continue-on-error: true
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
-        with:
-          role-to-assume: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
-          aws-region: "eu-west-2"
-          role-session-name: ${{ github.run_id }}
-
-      - name: Notify Slack
-        if: steps.semantic.outputs.type == 'major' || steps.semantic.outputs.type == 'minor'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.semantic.outputs.version }}
-          TITLE: "Flex ${{ steps.semantic.outputs.type }} release: v${{ steps.semantic.outputs.version }}"
-          URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.semantic.outputs.version }}
-        run: |
-          MESSAGE=$(gh release view "v${VERSION}" --json body --jq .body \
-            | pnpm exec tsx scripts/buildReleaseNotification.ts)
-
-          TOPIC_ARN=$(aws ssm get-parameter \
-            --name "/development/flex/topic/release-notifications" \
-            --query "Parameter.Value" --output text)
-
-          aws sns publish --topic-arn "$TOPIC_ARN" --message "$MESSAGE"
+      contents: write
+      issues: write
+      pull-requests: write
+    secrets:
+      deployment-role: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
   deployDev:
     name: Deploy to Development
@@ -117,7 +44,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "development"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
@@ -130,7 +57,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "development"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
@@ -143,23 +70,10 @@ jobs:
       id-token: write
       contents: read
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "staging"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
-
-  notifyStaging:
-    name: Notify Staging Deployment
-    needs: [release, deployStaging]
-    uses: ./.github/workflows/_notify-deployment.yml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      ENVIRONMENT: staging
-      VERSION: ${{ needs.release.outputs.version }}
-    secrets:
-      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
 
   moduleE2EStaging:
     name: Module E2E (Staging)
@@ -169,7 +83,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "staging"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.STAGING_DEPLOYMENT_ROLE }}
@@ -187,45 +101,29 @@ jobs:
 
   deployProd:
     name: Deploy to Production
-    needs: deployStaging
+    needs: [deployStaging, zapSecurityScan]
     uses: ./.github/workflows/_build-deploy.yml
     permissions:
       id-token: write
       contents: read
     with:
-      AWS_REGION: "eu-west-2"
+      AWS_REGION: ${{ vars.AWS_REGION }}
       STAGE: "production"
     secrets:
       ROLE_TO_ASSUME: ${{ secrets.PROD_DEPLOYMENT_ROLE }}
 
-  notifyProd:
-    name: Notify Production Deployment
+  send-release-notification:
+    name: Notify Production Release Slack channel
     needs: [release, deployProd]
-    uses: ./.github/workflows/_notify-deployment.yml
+    if: needs.release.outputs.released == 'true'
+    uses: govuk-once/platform-shared-ci-cd/.github/workflows/release-notification.yml@v1.1.6
     permissions:
-      id-token: write
       contents: read
-    with:
-      ENVIRONMENT: production
-      VERSION: ${{ needs.release.outputs.version }}
-    secrets:
-      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
-
-  notifyFailure:
-    name: Notify Deployment Failure
-    needs: [release, deployDev, deployStaging, deployProd]
-    if: >-
-      always() &&
-      (needs.deployDev.result == 'failure' ||
-       needs.deployStaging.result == 'failure' ||
-       needs.deployProd.result == 'failure')
-    uses: ./.github/workflows/_notify-deployment.yml
-    permissions:
       id-token: write
-      contents: read
     with:
-      ENVIRONMENT: ${{ (needs.deployDev.result == 'failure' && 'development') || (needs.deployStaging.result == 'failure' && 'staging') || 'production' }}
-      VERSION: ${{ needs.release.outputs.version }}
-      STATUS: failure
+      application: "FLEX"
+      version: ${{ needs.release.outputs.version }}
+      type: ${{ needs.release.outputs.type }}
+      slack-channel: ${{ vars.SLACK_RELEASE_CHANNEL }}
     secrets:
-      ROLE_TO_ASSUME: ${{ secrets.DEV_DEPLOYMENT_ROLE }}
+      deployment-role: ${{ secrets.PROD_DEPLOYMENT_ROLE }}

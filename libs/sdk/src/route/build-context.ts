@@ -132,7 +132,7 @@ function extractResources(
       const contextValue = (context as unknown as Record<string, unknown>)[key];
 
       if (typeof contextValue !== "string") {
-        throw new Error(
+        throw new TypeError(
           `"${key}" (${type}) resource was not resolved by middleware`,
         );
       }
