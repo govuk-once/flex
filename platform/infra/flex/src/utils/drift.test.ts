@@ -4,6 +4,7 @@ import { driftAllowlist } from "../drift-allowlist";
 import {
   type DriftContext,
   filterDrift,
+  fromDetection,
   isBlockingStackStatus,
   type ResourceDrift,
   unprefixedStackName,
@@ -84,7 +85,7 @@ describe("filterDrift", () => {
     ]);
   });
 
-  it("never drops a deleted resource", () => {
+  it("keeps a deleted resource that only has property entries", () => {
     const deleted: ResourceDrift = {
       logicalId: "ApiDeploymentStageprod3EB9684E",
       resourceType: "AWS::ApiGateway::Stage",
@@ -382,6 +383,95 @@ describe("filterDrift Shield Anti-DDoS rule", () => {
     expect(
       filterDrift("FlexPlatform", [drift], driftAllowlist, context),
     ).toEqual([drift]);
+  });
+});
+
+describe("filterDrift deleted resources", () => {
+  const deletedAlarm = (logicalId: string): ResourceDrift => ({
+    logicalId,
+    resourceType: "AWS::CloudWatch::Alarm",
+    status: "DELETED",
+    differences: [],
+  });
+
+  it("drops the deleted Shield alarms", () => {
+    expect(
+      filterDrift(
+        "FlexGlobal",
+        [
+          deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9"),
+          deletedAlarm(
+            "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
+          ),
+        ],
+        driftAllowlist,
+        context,
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps other deleted resources in the same stack", () => {
+    const deleted = deletedAlarm("AlarmsTrafficCliff7C7B8676");
+
+    expect(
+      filterDrift("FlexGlobal", [deleted], driftAllowlist, context),
+    ).toEqual([deleted]);
+  });
+
+  it("only applies to its own stack", () => {
+    const deleted = deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9");
+
+    expect(filterDrift("FlexCore", [deleted], driftAllowlist, context)).toEqual(
+      [deleted],
+    );
+  });
+
+  it("does not allow modifying the resource", () => {
+    const modified: ResourceDrift = {
+      ...deletedAlarm("CloudfrontShieldAlarmsDDoSDetected3029FCB9"),
+      status: "MODIFIED",
+      differences: [{ propertyPath: "/Threshold", expected: "1", actual: "5" }],
+    };
+
+    expect(
+      filterDrift("FlexGlobal", [modified], driftAllowlist, context),
+    ).toEqual([modified]);
+  });
+});
+
+describe("fromDetection", () => {
+  const detectedAt = new Date("2026-11-26T14:04:33.802Z");
+  const drift = (logicalId: string, timestamp?: Date): ResourceDrift => ({
+    logicalId,
+    resourceType: "AWS::Events::Rule",
+    status: "MODIFIED",
+    differences: [],
+    timestamp,
+  });
+
+  it("drops records from an earlier detection", () => {
+    const stale = drift(
+      "KmsKeyChangeRuleAE44FD84",
+      new Date("2026-11-24T15:31:01.800Z"),
+    );
+    const current = drift("CfWebAcl", new Date("2026-11-26T14:04:38.309Z"));
+
+    expect(fromDetection([stale, current], detectedAt)).toEqual([current]);
+  });
+
+  it("keeps records without a timestamp", () => {
+    const undated = drift("CfWebAcl");
+
+    expect(fromDetection([undated], detectedAt)).toEqual([undated]);
+  });
+
+  it("keeps every record when the detection time is unknown", () => {
+    const stale = drift(
+      "KmsKeyChangeRuleAE44FD84",
+      new Date("2026-11-24T15:31:01.800Z"),
+    );
+
+    expect(fromDetection([stale])).toEqual([stale]);
   });
 });
 
