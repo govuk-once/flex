@@ -71,19 +71,4 @@ export const driftAllowlist: DriftAllowlistEntry[] = [
     reason:
       "Shield Advanced automatic application layer DDoS mitigation adds the AWS Anti-DDoS managed rule group to the CloudFront web ACL. Shield owns the rule, so the template does not declare it",
   },
-  // Remove both entries once a production FlexGlobal deploy has run #653
-  {
-    stack: "FlexGlobal",
-    logicalId: "CloudfrontShieldAlarmsDDoSDetected3029FCB9",
-    deleted: true,
-    reason:
-      "The alarm was deleted outside CloudFormation. #653 renames it so the next deploy creates a replacement",
-  },
-  {
-    stack: "FlexGlobal",
-    logicalId: "CloudfrontShieldAlarmsDDoSAttackRequestsPerSecond3D89A18F", // pragma: allowlist secret
-    deleted: true,
-    reason:
-      "The alarm was deleted outside CloudFormation. #653 renames it so the next deploy creates a replacement",
-  },
 ];
