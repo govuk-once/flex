@@ -85,7 +85,7 @@ describe("GET /v1/activity/searches", () => {
     expect(JSON.parse(result.body)).toStrictEqual(baseSearches);
   });
 
-  it("returns 502 when the UDP post searches integration fails", async ({
+  it("returns 502 when the UDP get searches integration fails", async ({
     http,
     sdk,
   }) => {

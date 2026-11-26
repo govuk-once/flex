@@ -37,10 +37,12 @@ The local council routes are not deployed to development, staging or production 
 
 Data recorded from what a user does.
 
-| Name                                                       | Access | Description                           | Code                                                 |
-| ---------------------------------------------------------- | ------ | ------------------------------------- | ---------------------------------------------------- |
-| [`PATCH /v1/activity/searches`](#patch-v1activitysearches) | Public | Add a search to the user's collection | [View](./src/handlers/v1/activity/searches/patch.ts) |
-| [`GET /v1/activity/searches`](#get-v1activitysearches)     | Public | Retrieve user searches                | [View](./src/handlers/v1/activity/searches/get.ts)   |
+| Name                                                       | Access | Description                                          | Code                                                         |
+| ---------------------------------------------------------- | ------ | ---------------------------------------------------- | ------------------------------------------------------------ |
+| [`PATCH /v1/activity/searches`](#patch-v1activitysearches) | Public | Add a search to the user's collection                | [View](./src/handlers/v1/activity/searches/patch.ts)         |
+| [`GET /v1/activity/searches`](#get-v1activitysearches)     | Public | Retrieve user searches                               | [View](./src/handlers/v1/activity/searches/get.ts)           |
+| [`DELETE /v1/activity/searches`](#patch-v1searches)        | Public | Delete all searches from the user's collection       | [View](./src/handlers/v1/activity/searches/delete.ts)        |
+| [`DELETE /v1/activity/searches/:term`](#patch-v1searches)  | Public | Delete a specified search from the user's collection | [View](./src/handlers/v1/activity/searches/[term]/delete.ts) |
 
 ---
 
@@ -105,7 +107,7 @@ Returns the authenticated user's selected topics.
 
 ## PATCH `/v1/activity/searches`
 
-Adds a search to the existing collection. The search term is validated according to the rules for `Search terms` above.
+Adds a search to the existing collection. The search term is validated according to the rules for `Search Terms` above.
 
 ### Request
 
@@ -115,21 +117,6 @@ Adds a search to the existing collection. The search term is validated according
   "timestamp": "2026-11-03T14:20:00Z"
 }
 ```
-
-### Response
-
-```json
-{
-  "searches": {
-    "selectedSearches": [
-      { "term": "search term 1", "timestamp": "2026-11-03T14:20:00Z" },
-      { "term": "search term 2", "timestamp": "2026-11-04T13:45:00Z" }
-    ]
-  }
-}
-```
-
----
 
 ## GET `/v1/activity/searches`
 
@@ -146,6 +133,20 @@ Returns the authenticated user's searches.
     ]
   }
 }
+```
+
+## DELETE `/v1/activity/searches`
+
+Delete all the authenticated user's searches from their collection.
+
+## DELETE `/v1/activity/searches/:term`
+
+Delete a specified search from the authenticated user's collection.
+
+### Path Parameter
+
+```json
+{ "term": "a user search term" }
 ```
 
 ---
