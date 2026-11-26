@@ -57,27 +57,34 @@ describe("PATCH /v1/users/me/notifications", () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it("returns 502 when the UDP create notifications integration fails", async ({
-    http,
-    sdk,
-  }) => {
-    const consentStatus = createConsentStatus("accepted");
+  it.for([
+    {
+      reason: "reports out-of-sequence write timestamps",
+      upstream: 409,
+      expected: 409,
+    },
+    { reason: "fails unexpectedly", upstream: 500, expected: 502 },
+  ])(
+    "returns $expected when the UDP create notifications integration $reason",
+    async ({ upstream, expected }, { http, sdk }) => {
+      const consentStatus = createConsentStatus("accepted");
 
-    http
-      .gateway("udp")
-      .post("/notifications", {
-        headers: {
-          "requesting-service": "app",
-          "requesting-service-user-id": userId,
-        },
-      })
-      .reply(500);
+      http
+        .gateway("udp")
+        .post("/notifications", {
+          headers: {
+            "requesting-service": "app",
+            "requesting-service-user-id": userId,
+          },
+        })
+        .reply(upstream);
 
-    const result = await handler(
-      sdk.event.patch(endpoint, { auth: userId, body: { consentStatus } }),
-      sdk.context({ secrets }),
-    );
+      const result = await handler(
+        sdk.event.patch(endpoint, { auth: userId, body: { consentStatus } }),
+        sdk.context({ secrets }),
+      );
 
-    expect(result.statusCode).toBe(502);
-  });
+      expect(result.statusCode).toBe(expected);
+    },
+  );
 });

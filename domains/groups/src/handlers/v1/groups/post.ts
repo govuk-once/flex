@@ -54,7 +54,18 @@ export const handler = route(
     });
 
     if (!udpResponse.ok) {
-      logger.error("Call to udp post groups failed", udpResponse.error.message);
+      const { status, message } = udpResponse.error;
+
+      if (status === 409) {
+        logger.error("Update rejected because a newer version already exists", {
+          status,
+          userId,
+        });
+
+        throw new createHttpError.Conflict();
+      }
+
+      logger.error("Call to udp post groups failed", message);
       throw new createHttpError.BadGateway();
     }
 

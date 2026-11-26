@@ -346,7 +346,7 @@ Update user notifications in UDP. Demonstrates a service that uses `routeContext
 }
 ```
 
-> Returns `502` when the upstream integration fails.
+> Returns `409` when the upstream rejects the write as out-of-sequence. Returns `502` when the upstream integration fails.
 
 ---
 
@@ -401,7 +401,7 @@ Update the authenticated user's notification preferences. Demonstrates reading a
 }
 ```
 
-> Returns `502` when either the UDP push ID lookup or the UDP notifications update fails. The `newUserProfileEnabled` flag is scoped to `development` and `staging`.
+> Returns `409` when the UDP notifications update is rejected as out-of-sequence. Returns `502` when either the UDP push ID lookup or the UDP notifications update fails. The `newUserProfileEnabled` flag is scoped to `development` and `staging`.
 
 ---
 
