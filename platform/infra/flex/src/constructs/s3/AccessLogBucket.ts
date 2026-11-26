@@ -1,3 +1,4 @@
+import { getEnvConfig } from "@flex/utils";
 import { Duration } from "aws-cdk-lib";
 import {
   BlockPublicAccess,
@@ -9,6 +10,8 @@ import {
 import { Construct } from "constructs";
 
 import { applyCheckovSkip } from "../../utils/applyCheckovSkip";
+
+const { persistent } = getEnvConfig();
 
 export class AccessLogBucket extends Construct {
   public readonly bucket: Bucket;
@@ -27,7 +30,9 @@ export class AccessLogBucket extends Construct {
       versioned: true,
       objectLockEnabled: true,
       objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
+        mode: persistent
+          ? ObjectLockMode.COMPLIANCE
+          : ObjectLockMode.GOVERNANCE,
         duration: retention,
       },
       lifecycleRules: [

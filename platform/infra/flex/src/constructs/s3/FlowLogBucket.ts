@@ -30,7 +30,7 @@ export class FlowLogBucket extends Construct {
       versioned: true,
       objectLockEnabled: true,
       objectLockDefaultRetention: {
-        mode: ObjectLockMode.GOVERNANCE,
+        mode: ObjectLockMode.COMPLIANCE,
         duration: Duration.days(365),
       },
       lifecycleRules: [
