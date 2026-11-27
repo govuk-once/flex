@@ -120,7 +120,6 @@ export class FlexGlobalStack extends BaseStack {
         warningTopicArn: warningRelay.topicArn,
       }),
       criticalTopic: criticalRelay,
-      alarmTopicKey,
     };
   }
 
@@ -647,18 +646,16 @@ export class FlexGlobalStack extends BaseStack {
       subdomainName,
     });
 
-    const { criticalAction, warningAction, criticalTopic, alarmTopicKey } =
+    const { criticalAction, warningAction, criticalTopic } =
       this.#createAlarmActions();
 
     if (persistent) {
       createIamChangeAlerts(this, {
         criticalTopic,
-        alarmTopicKey,
         warningAction,
       });
       createKeyChangeAlerts(this, {
         criticalTopic,
-        alarmTopicKey,
         warningAction,
       });
       new LogVolumeAlarms(this, "LogVolumeAlarms", {

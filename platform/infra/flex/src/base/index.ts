@@ -227,12 +227,19 @@ export abstract class BaseStack extends cdk.Stack {
     const cacheValue = this.#importCache.get(compoundKey);
     if (cacheValue !== undefined) return cacheValue;
 
+    // Registered now, because SsmApp.synth works out stack dependencies
+    // before any tokens are resolved
     this.#app.addImport(this.stackName, region, key);
 
+    // The SSM template parameter is only created when something resolves the
+    // value, so imports a stack never uses leave no unused parameter behind
+    // (CloudFormation W2001) and no deploy-time lookup of that parameter
     const isRemote = region !== this.region;
     const importValue = isRemote
       ? this.#crossRegionRead(key, region)
-      : ssm.StringParameter.valueForStringParameter(this, key);
+      : cdk.Lazy.string({
+          produce: () => ssm.StringParameter.valueForStringParameter(this, key),
+        });
 
     this.#importCache.set(compoundKey, importValue);
     return importValue;

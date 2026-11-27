@@ -4,7 +4,7 @@ import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
-import { load } from "cheerio";
+import { load } from "cheerio/slim";
 import pkceChallenge from "pkce-challenge";
 import { TOTP } from "totp-generator";
 import { CookieJar } from "tough-cookie";

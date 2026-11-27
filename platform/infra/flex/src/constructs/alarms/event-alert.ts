@@ -7,7 +7,7 @@ import {
   RuleTargetInput,
 } from "aws-cdk-lib/aws-events";
 import { SnsTopic } from "aws-cdk-lib/aws-events-targets";
-import { PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { Queue, QueueEncryption } from "aws-cdk-lib/aws-sqs";
@@ -29,7 +29,6 @@ interface EventAlertProps {
   title: string;
   description: string;
   criticalTopic: Topic;
-  alarmTopicKey?: Key;
   warningAction: IAlarmAction;
 }
 
@@ -45,7 +44,6 @@ export function createEventAlert(
     title,
     description,
     criticalTopic,
-    alarmTopicKey,
     warningAction,
   }: EventAlertProps,
 ) {
@@ -69,38 +67,31 @@ export function createEventAlert(
     eventPattern,
   });
 
+  // Publishing through a role scoped to this rule keeps EventBridge out of the
+  // topic and key policies, and grants the role use of the topic's key
   rule.addTarget(
-    new SnsTopic(
-      Topic.fromTopicArn(scope, `${id}Topic`, criticalTopic.topicArn),
-      {
-        deadLetterQueue,
-        message: RuleTargetInput.fromObject({
-          version: "1.0",
-          source: "custom",
-          content: {
-            textType: "client-markdown",
-            title,
-            description,
-          },
-        }),
-      },
-    ),
-  );
-
-  criticalTopic.addToResourcePolicy(
-    new PolicyStatement({
-      principals: [eventsPrincipal],
-      actions: ["sns:Publish"],
-      resources: [criticalTopic.topicArn],
-      conditions: { ArnEquals: { "aws:SourceArn": rule.ruleArn } },
+    new SnsTopic(criticalTopic, {
+      authorizeUsingRole: true,
+      deadLetterQueue,
+      message: RuleTargetInput.fromObject({
+        version: "1.0",
+        source: "custom",
+        content: {
+          textType: "client-markdown",
+          title,
+          description,
+        },
+      }),
     }),
   );
 
-  [alarmTopicKey, deadLetterQueueKey]
-    .filter((key) => key !== undefined)
-    .forEach((key) =>
-      key.grant(eventsPrincipal, "kms:Decrypt", "kms:GenerateDataKey*"),
-    );
+  // Undelivered alerts are written to the dead-letter queue by EventBridge
+  // itself, not the role
+  deadLetterQueueKey.grant(
+    eventsPrincipal,
+    "kms:Decrypt",
+    "kms:GenerateDataKey*",
+  );
 
   [
     {

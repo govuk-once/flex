@@ -90,19 +90,16 @@ export class FlexCoreStack extends BaseStack {
 
     createSecretRotationFailureAlert(this, {
       criticalTopic,
-      alarmTopicKey,
       warningAction,
     });
 
     createIamChangeAlerts(this, {
       criticalTopic,
-      alarmTopicKey,
       warningAction,
     });
 
     createKeyChangeAlerts(this, {
       criticalTopic,
-      alarmTopicKey,
       warningAction,
     });
 

@@ -1,4 +1,4 @@
-import { Match, Template } from "aws-cdk-lib/assertions";
+import { Annotations, Match, Template } from "aws-cdk-lib/assertions";
 import { Key } from "aws-cdk-lib/aws-kms";
 import { Topic } from "aws-cdk-lib/aws-sns";
 import { describe, expect, it, vi } from "vitest";
@@ -23,7 +23,6 @@ function synthesise() {
 
   createSecretRotationFailureAlert(stack, {
     criticalTopic,
-    alarmTopicKey,
     warningAction: actions.warningAction,
   });
 
@@ -111,19 +110,50 @@ describe("createSecretRotationFailureAlert", () => {
     expect(message.content.description).toContain("can repeat");
   });
 
-  it("allows EventBridge to publish to the topic only from this rule", () => {
-    const { stack, topicRef, ruleArn } = synthesise();
+  it("targets the topic itself, so CDK can resolve the rule and target environments", () => {
+    expect(
+      Annotations.fromStack(synthesise().stack).findWarning(
+        "*",
+        Match.stringLikeRegexp("unresolved environment"),
+      ),
+    ).toEqual([]);
+  });
+
+  it("publishes through a role that only EventBridge can assume", () => {
+    const template = Template.fromStack(synthesise().stack);
+    const [roleId] = Object.keys(
+      template.findResources("AWS::IAM::Role", {
+        Properties: {
+          AssumeRolePolicyDocument: {
+            Statement: [
+              Match.objectLike({
+                Principal: { Service: "events.amazonaws.com" },
+              }),
+            ],
+          },
+        },
+      }),
+    );
+
+    expect(roleId).toBeDefined();
+    template.hasResourceProperties("AWS::Events::Rule", {
+      Targets: [
+        Match.objectLike({ RoleArn: { "Fn::GetAtt": [roleId, "Arn"] } }),
+      ],
+    });
+  });
+
+  it("lets the role publish to the topic and use its key", () => {
+    const { stack, topicRef, keyArn } = synthesise();
     const template = Template.fromStack(stack);
 
-    template.hasResourceProperties("AWS::SNS::TopicPolicy", {
+    template.hasResourceProperties("AWS::IAM::Policy", {
       PolicyDocument: {
         Statement: Match.arrayWith([
+          Match.objectLike({ Action: "sns:Publish", Resource: topicRef }),
           Match.objectLike({
-            Effect: "Allow",
-            Principal: { Service: "events.amazonaws.com" },
-            Action: "sns:Publish",
-            Resource: topicRef,
-            Condition: { ArnEquals: { "aws:SourceArn": ruleArn } },
+            Action: ["kms:Decrypt", "kms:GenerateDataKey*"],
+            Resource: keyArn,
           }),
         ]),
       },
@@ -154,20 +184,28 @@ describe("createSecretRotationFailureAlert", () => {
     expect(unconditioned).toEqual([]);
   });
 
-  it("lets EventBridge use the topic's encryption key", () => {
-    const template = Template.fromStack(synthesise().stack);
+  it("lets EventBridge use the dead-letter queue key but not the topic key", () => {
+    const { stack, keyArn } = synthesise();
+    const template = Template.fromStack(stack);
+    const [queue] = Object.values(
+      template.findResources("AWS::SQS::Queue"),
+    ) as { Properties: { KmsMasterKeyId: { "Fn::GetAtt": string[] } } }[];
+    const keys = template.findResources("AWS::KMS::Key") as Record<
+      string,
+      { Properties: { KeyPolicy: { Statement: { Principal?: unknown }[] } } }
+    >;
+    const grantsEvents = (id = "") =>
+      keys[id]?.Properties.KeyPolicy.Statement.some(
+        ({ Principal }) =>
+          JSON.stringify(Principal) ===
+          JSON.stringify({ Service: "events.amazonaws.com" }),
+      );
+    const topicKeyId = (keyArn as { "Fn::GetAtt": string[] })["Fn::GetAtt"][0];
 
-    template.hasResourceProperties("AWS::KMS::Key", {
-      KeyPolicy: {
-        Statement: Match.arrayWith([
-          Match.objectLike({
-            Effect: "Allow",
-            Principal: { Service: "events.amazonaws.com" },
-            Action: ["kms:Decrypt", "kms:GenerateDataKey*"],
-          }),
-        ]),
-      },
-    });
+    expect(
+      grantsEvents(queue?.Properties.KmsMasterKeyId["Fn::GetAtt"][0]),
+    ).toBe(true);
+    expect(grantsEvents(topicKeyId)).toBe(false);
   });
 
   it("keeps undelivered alerts for 14 days, encrypted with a key other than the alarm topic key", () => {
