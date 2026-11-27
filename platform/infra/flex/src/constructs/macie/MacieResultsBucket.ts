@@ -1,10 +1,11 @@
-import { RemovalPolicy, Stack } from "aws-cdk-lib";
+import { Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import { Effect, PolicyStatement, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
 import {
   BlockPublicAccess,
   Bucket,
   BucketEncryption,
+  ObjectOwnership,
 } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 
@@ -45,6 +46,27 @@ export class MacieResultsBucket extends Construct {
       }),
     );
 
+    const accessLogBucket = new Bucket(this, "AccessLogBucket", {
+      encryption: BucketEncryption.S3_MANAGED,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      objectOwnership: ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      enforceSSL: true,
+      versioned: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+      lifecycleRules: [
+        {
+          id: "expireLogs",
+          expiration: Duration.days(365),
+          noncurrentVersionExpiration: Duration.days(365),
+        },
+      ],
+    });
+    applyCheckovSkip(
+      accessLogBucket,
+      "CKV_AWS_18",
+      "Log bucket intentionally does not log",
+    );
+
     this.bucket = new Bucket(this, "Bucket", {
       encryption: BucketEncryption.KMS,
       encryptionKey: this.key,
@@ -53,6 +75,7 @@ export class MacieResultsBucket extends Construct {
       enforceSSL: true,
       versioned: true,
       removalPolicy: RemovalPolicy.RETAIN,
+      serverAccessLogsBucket: accessLogBucket,
     });
 
     this.bucket.addToResourcePolicy(
@@ -74,12 +97,6 @@ export class MacieResultsBucket extends Construct {
         resources: [`${this.bucket.bucketArn}/macie-results/*`],
         conditions: macieSourceConditions,
       }),
-    );
-
-    applyCheckovSkip(
-      this.bucket,
-      "CKV_AWS_18",
-      "Macie results bucket does not require access logging",
     );
   }
 }
