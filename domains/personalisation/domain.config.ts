@@ -9,6 +9,7 @@ import {
   UpdateSelectedTopicsResponseSchema,
   UserSearchesSchema,
   UserSearchResponseSchema,
+  VisitedPageSchema,
 } from "./src/schemas";
 
 export const { config, route, routeContext } = domain({
@@ -51,6 +52,12 @@ export const { config, route, routeContext } = domain({
       target: "udp",
       route: "GET /v1/activity/searches",
       response: UserSearchesSchema,
+    },
+    udpAddVisitedPage: {
+      type: "gateway",
+      target: "udp",
+      route: "POST /v1/activity/pages",
+      body: VisitedPageSchema,
     },
     udpSaveLocalAuthority: {
       type: "gateway",
@@ -116,6 +123,16 @@ export const { config, route, routeContext } = domain({
             name: "delete-search",
             resources: ["privateGatewayUrl"],
             integrations: ["udpPostSearches", "udpGetSearches"],
+          },
+        },
+      },
+      "/activity/pages": {
+        POST: {
+          public: {
+            name: "add-visited-page",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpAddVisitedPage"],
+            body: VisitedPageSchema,
           },
         },
       },
