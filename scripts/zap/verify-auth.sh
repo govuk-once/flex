@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -43,12 +42,12 @@ fi
 AUTHENTICATED=false
 
 for ENDPOINT in "${ENDPOINTS[@]}"; do
-  STATUS=$(curl --silent --show-error \
+  STATUS=$(printf 'Authorization: %s\n' "$ZAP_AUTH_HEADER_VALUE" | curl --silent --show-error \
     --output /dev/null \
     --write-out '%{http_code}' \
     --connect-timeout 10 \
     --max-time 30 \
-    --header "Authorization: ${ZAP_AUTH_HEADER_VALUE}" \
+    --header @- \
     "${API_URL%/}${ENDPOINT}") || STATUS="000"
 
   echo "GET ${ENDPOINT}: HTTP ${STATUS}"

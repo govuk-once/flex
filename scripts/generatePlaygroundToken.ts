@@ -6,8 +6,6 @@ import {
 } from "@flex/testing/auth";
 import { z } from "zod";
 
-loadEnvFile(".env");
-
 const PlaygroundEnvSchema = z.object({
   PLAYGROUND_EMAIL: z.email(),
   PLAYGROUND_PASSWORD: z.string().min(1),
@@ -47,7 +45,22 @@ function readConfig(): JwtAuthConfig {
 }
 
 async function main() {
+  const showToken = process.argv.includes("--show-token");
+
+  if (
+    showToken &&
+    (process.env.GITHUB_ACTIONS === "true" ||
+      process.env.CI ||
+      !process.stdout.isTTY)
+  ) {
+    console.error(
+      "Token output requires an interactive local terminal outside CI.",
+    );
+    process.exit(1);
+  }
+
   try {
+    loadEnvFile(".env");
     console.log("Generating playground token...");
 
     const generator = createTokenGeneratorFromConfig(readConfig());
@@ -55,14 +68,14 @@ async function main() {
 
     console.log("\n--------------------------------------------------");
     console.log("\nToken Generated Successfully:\n");
-    console.log(token);
-    console.log("\n--------------------------------------------------");
-  } catch (error) {
-    console.error("\nError generating token:");
-
-    if (error instanceof Error) {
-      console.error(error.message);
+    if (showToken) {
+      console.warn("Sensitive token - do not share or store in logs.");
+      process.stdout.write(`${token}\n`);
     }
+    console.log("\n--------------------------------------------------");
+  } catch {
+    console.error("\nError generating token:");
+    console.error("Failed to generate playground token.");
     process.exit(1);
   }
 }

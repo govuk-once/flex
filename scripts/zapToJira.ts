@@ -150,9 +150,7 @@ async function jiraRequest(
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Jira HTTP ${String(response.status)}: ${await response.text()}`,
-    );
+    throw new Error(`Jira request failed with HTTP ${String(response.status)}`);
   }
 
   return response;
@@ -595,7 +593,7 @@ async function main(): Promise<void> {
   console.log(`Created ${String(created)} Jira tickets`);
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
+main().catch(() => {
+  console.error("ZAP Jira integration failed.");
   process.exitCode = 1;
 });
