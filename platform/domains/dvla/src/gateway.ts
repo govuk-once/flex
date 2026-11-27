@@ -2,7 +2,6 @@ import { clearCaches } from "@aws-lambda-powertools/parameters";
 import { logger } from "@flex/logging";
 import type { ApiResult } from "@flex/sdk";
 import { createRestClient, type GatewayLambda } from "@flex/service-gateway";
-import { v4 as uuidV4 } from "uuid";
 
 import { createHandler } from "../gateway.config";
 import { JwkSetSchema } from "./schemas/domain/wellKnownJwk";
@@ -28,16 +27,11 @@ function getJwtExp(token: string): number | undefined {
 
 const baseHandler = createHandler({
   clients: ({ consumerConfig }) => {
-    // TODO: Conditionally include the correlation ID header alongside the base headers in the REST client instead?
-    const correlationId = uuidV4();
-
-    logger.info("DVLA correlation ID", { correlationId });
-
+    // The inbound x-correlation-id is forwarded automatically by flexFetch
     return {
       api: createRestClient({
         baseUrl: consumerConfig.apiUrl,
         auth: { type: "public" },
-        headers: { "X-Correlation-Id": correlationId },
       }),
       jwks: createRestClient({
         baseUrl: consumerConfig.wellKnownJwkUrl,

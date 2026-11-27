@@ -29,7 +29,7 @@ function synthesise() {
   });
 
   return {
-    template: Template.fromStack(stack),
+    stack,
     functionRef: stack.resolve(fn.functionName) as unknown,
     ...actions,
   };
@@ -37,7 +37,8 @@ function synthesise() {
 
 describe("SecretRotationAlarms", () => {
   it("alarms critical on any rotation Lambda error within 5 minutes", () => {
-    const { template, functionRef, criticalActionRef } = synthesise();
+    const { stack, functionRef, criticalActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.resourceCountIs("AWS::CloudWatch::Alarm", 1);
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {

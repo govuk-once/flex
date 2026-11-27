@@ -44,10 +44,9 @@ const handler: MiddyfiedHandler<
   APIGatewayAuthorizerResult
 > = middy<APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult>()
   .use(
-    injectLambdaContext(logger, {
-      clearState: true,
-      correlationIdPath: 'headers."x-correlation-id"',
-    }),
+    // Token authorizer events carry no headers, so there is no correlation id
+    // to extract here. It is logged by the domain Lambdas instead
+    injectLambdaContext(logger, { clearState: true }),
   )
   .handler(
     async (

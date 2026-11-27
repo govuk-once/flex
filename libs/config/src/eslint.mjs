@@ -1,12 +1,10 @@
 import js from "@eslint/js";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
-import eslintReact from "@eslint-react/eslint-plugin";
 import html from "@html-eslint/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 import { readGitignoreFiles } from "eslint-gitignore";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
-import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
@@ -55,7 +53,7 @@ export const config = [
     },
   },
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ["**/*.ts"],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -94,17 +92,10 @@ export const config = [
       "sonarjs/no-skipped-tests": "warn",
       "unicorn/no-useless-promise-resolve-reject": "warn",
       "unicorn/prefer-default-parameters": "warn",
+      "unicorn/prefer-export-from": "warn",
       "unicorn/prefer-node-protocol": "warn",
       "unicorn/prefer-string-raw": "warn",
     },
-  },
-  {
-    files: ["**/*.tsx"],
-    ...eslintReact.configs["recommended-typescript"],
-  },
-  {
-    files: ["**/*.tsx", "libs/cli/*.ts"],
-    ...reactHooks.configs.flat.recommended,
   },
   {
     files: ["**/*.html"],
@@ -148,6 +139,13 @@ export const config = [
     },
     settings: {
       vitest: { vitestImports: ["@flex/e2e", "@flex/testing"] },
+    },
+  },
+  {
+    // Fail locally on tests SonarQube S2699 would flag
+    files: ["tests/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "sonarjs/assertions-in-tests": "error",
     },
   },
   eslintPluginPrettierRecommended,

@@ -75,4 +75,24 @@ describe("createPermissionsBoundary", () => {
       },
     ]);
   });
+
+  it("allows sts:AssumeRole on IAM roles only", () => {
+    expect(
+      statements.filter(({ Action }) =>
+        [Action].flat().some((action) => action.startsWith("sts:")),
+      ),
+    ).toEqual([
+      {
+        Sid: "AllowAssumeRole",
+        Effect: "Allow",
+        Action: "sts:AssumeRole",
+        Resource: {
+          "Fn::Join": [
+            "",
+            ["arn:", { Ref: "AWS::Partition" }, ":iam::*:role/*"],
+          ],
+        },
+      },
+    ]);
+  });
 });

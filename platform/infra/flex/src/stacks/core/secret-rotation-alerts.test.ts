@@ -32,7 +32,7 @@ function synthesise() {
   const [queueId] = Object.keys(template.findResources("AWS::SQS::Queue"));
 
   return {
-    template,
+    stack,
     ruleArn: { "Fn::GetAtt": [ruleId, "Arn"] },
     queueArn: { "Fn::GetAtt": [queueId, "Arn"] },
     queueName: { "Fn::GetAtt": [queueId, "QueueName"] },
@@ -44,7 +44,9 @@ function synthesise() {
 
 describe("createSecretRotationFailureAlert", () => {
   it("matches Secrets Manager rotation failures delivered through CloudTrail", () => {
-    synthesise().template.hasResourceProperties("AWS::Events::Rule", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: {
         source: ["aws.secretsmanager"],
         "detail-type": ["AWS Service Event via CloudTrail"],
@@ -54,7 +56,8 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("publishes to the critical topic with a dead-letter queue", () => {
-    const { template, topicRef, queueArn } = synthesise();
+    const { stack, topicRef, queueArn } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::Events::Rule", {
       Targets: [
@@ -67,7 +70,7 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("sends a Chatbot custom notification naming the event and the secret", () => {
-    const { template } = synthesise();
+    const template = Template.fromStack(synthesise().stack);
     const [rule] = Object.values(
       template.findResources("AWS::Events::Rule"),
     ) as {
@@ -109,7 +112,8 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("allows EventBridge to publish to the topic only from this rule", () => {
-    const { template, topicRef, ruleArn } = synthesise();
+    const { stack, topicRef, ruleArn } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::SNS::TopicPolicy", {
       PolicyDocument: {
@@ -128,7 +132,9 @@ describe("createSecretRotationFailureAlert", () => {
 
   it("has no unconditioned EventBridge statement on the topic", () => {
     const policies = Object.values(
-      synthesise().template.findResources("AWS::SNS::TopicPolicy"),
+      Template.fromStack(synthesise().stack).findResources(
+        "AWS::SNS::TopicPolicy",
+      ),
     ) as {
       Properties: {
         PolicyDocument: {
@@ -149,7 +155,9 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("lets EventBridge use the topic's encryption key", () => {
-    synthesise().template.hasResourceProperties("AWS::KMS::Key", {
+    const template = Template.fromStack(synthesise().stack);
+
+    template.hasResourceProperties("AWS::KMS::Key", {
       KeyPolicy: {
         Statement: Match.arrayWith([
           Match.objectLike({
@@ -163,7 +171,8 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("keeps undelivered alerts for 14 days, encrypted with a key other than the alarm topic key", () => {
-    const { template, keyArn } = synthesise();
+    const { stack, keyArn } = synthesise();
+    const template = Template.fromStack(stack);
     const [queue] = Object.values(
       template.findResources("AWS::SQS::Queue"),
     ) as { Properties: { KmsMasterKeyId: unknown } }[];
@@ -176,7 +185,8 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("allows only this rule to send to the dead-letter queue, over TLS", () => {
-    const { template, queueArn, ruleArn } = synthesise();
+    const { stack, queueArn, ruleArn } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::SQS::QueuePolicy", {
       PolicyDocument: {
@@ -198,7 +208,8 @@ describe("createSecretRotationFailureAlert", () => {
   });
 
   it("warns when an alert reaches the dead-letter queue", () => {
-    const { template, queueName, warningActionRef } = synthesise();
+    const { stack, queueName, warningActionRef } = synthesise();
+    const template = Template.fromStack(stack);
 
     template.hasResourceProperties("AWS::CloudWatch::Alarm", {
       AlarmName: "staging-secret-rotation-alert-undelivered",

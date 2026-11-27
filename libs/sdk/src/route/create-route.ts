@@ -10,6 +10,7 @@ import {
 } from "@flex/utils";
 import createHttpError from "http-errors";
 
+import { extractCorrelationId, runWithCorrelationId } from "../correlation";
 import type {
   DomainConfig,
   DomainResult,
@@ -84,7 +85,15 @@ export function createRouteHandler<const Config extends DomainConfig>(
       resources,
     });
 
-    const coreHandler = async (
+    const coreHandler = (
+      event: LambdaEvent,
+      context: LambdaContext,
+    ): Promise<LambdaResult> =>
+      runWithCorrelationId(extractCorrelationId(event.headers), () =>
+        handleRequest(event, context),
+      );
+
+    const handleRequest = async (
       event: LambdaEvent,
       context: LambdaContext,
     ): Promise<LambdaResult> => {

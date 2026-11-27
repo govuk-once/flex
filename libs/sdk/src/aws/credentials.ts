@@ -25,8 +25,8 @@ const cachedCredentialProviders: Map<string, AwsCredentialIdentityProvider> =
  * externalId is optional but undefined is valid and should be included in the cache key.
  * Assuming a role with a different externalId represents a different trust relationship.
  */
-function getCredentialsCacheKey(roleArn: string, externalId?: string) {
-  return `${roleArn}:${externalId ?? ""}`;
+function getCredentialsCacheKey(roleArn: string, externalId = "") {
+  return `${roleArn}:${externalId}`;
 }
 
 /**

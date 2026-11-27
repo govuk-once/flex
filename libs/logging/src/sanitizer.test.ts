@@ -87,8 +87,8 @@ describe("sanitizer", () => {
     });
 
     it("handles null and undefined values", () => {
-      expect(sanitize("key", null)).toBe(null);
-      expect(sanitize("key", undefined)).toBe(undefined);
+      expect(sanitize("key", null)).toBeNull();
+      expect(sanitize("key", undefined)).toBeUndefined();
     });
   });
 

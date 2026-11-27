@@ -1,8 +1,10 @@
 import { SnsAction } from "aws-cdk-lib/aws-cloudwatch-actions";
 import { ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { Key } from "aws-cdk-lib/aws-kms";
-import { Topic } from "aws-cdk-lib/aws-sns";
+import { LoggingProtocol, Topic } from "aws-cdk-lib/aws-sns";
 import type { Construct } from "constructs";
+
+import { enableDeliveryStatusLogging } from "../sns/delivery-status-logging";
 
 /**
  * The names are deterministic so that FlexCore, in eu-west-2, can subscribe
@@ -29,6 +31,7 @@ export function createRelayHealthAction(scope: Construct, stage: string) {
     masterKey: healthKey,
   });
   healthTopic.grantPublish(cloudwatchPrincipal);
+  enableDeliveryStatusLogging(healthTopic, LoggingProtocol.HTTP);
 
   return { healthKey, healthAction: new SnsAction(healthTopic) };
 }

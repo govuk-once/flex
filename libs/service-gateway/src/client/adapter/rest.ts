@@ -7,8 +7,6 @@ import type { RestClient, RestWriteOperationOptions } from "../../types";
 import type { RestAuth } from "../fetcher/build";
 import { buildFetcher } from "../fetcher/build";
 
-export type { RestAuth };
-
 export interface RestClientOptions {
   readonly baseUrl: string;
   readonly auth: RestAuth;
@@ -65,3 +63,5 @@ export function createRestClient({
     delete: (path, options) => send("DELETE", path, options),
   } as RestClient;
 }
+
+export type { RestAuth } from "../fetcher/build";

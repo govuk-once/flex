@@ -1,7 +1,6 @@
 import { createFixtureBuilder, createUserId } from "@flex/testing";
 import type { Country, TravelEvent } from "@flex/travel-service-gateway";
 
-export { createUserId };
 export const userId = createUserId("test-travel-user");
 const baseCountry: Country = {
   country: "France",
@@ -35,3 +34,5 @@ export const events = [
     eventTimestamp: "2026-08-15T09:00:00.000Z",
   }),
 ];
+
+export { createUserId } from "@flex/testing";

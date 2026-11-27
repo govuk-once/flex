@@ -2,7 +2,6 @@ import { createUserId, mergeFixture, timestamp } from "@flex/testing";
 import type { PushId } from "@flex/udp-domain";
 import type { Todo, TodoId, TodoWithMetadata } from "@schemas/todos";
 
-export { createUserId };
 export const userId = createUserId("test-example-user");
 
 export const createPushId = (value = "test-push-id") => value as PushId;
@@ -54,3 +53,5 @@ export const withMetadata = (value: Todo): TodoWithMetadata => ({
 export const createTodoWithMetadata = (overrides?: Partial<Todo>) =>
   withMetadata(createTodo(overrides));
 export const todoWithMetadata = createTodoWithMetadata();
+
+export { createUserId } from "@flex/testing";

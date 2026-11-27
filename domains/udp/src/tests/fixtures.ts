@@ -11,7 +11,6 @@ import type {
 } from "@schemas/notifications";
 import type { UserProfile } from "@schemas/user";
 
-export { createUserId };
 export const userId = createUserId("test-udp-user");
 
 export const createSecrets = (overrides?: Record<string, string>) =>
@@ -53,3 +52,5 @@ export const notification = createNotification();
 export const createUserProfile = (overrides?: DeepPartial<UserProfile>) =>
   mergeFixture<UserProfile>({ userId, pushId }, overrides);
 export const userProfile = createUserProfile();
+
+export { createUserId } from "@flex/testing";

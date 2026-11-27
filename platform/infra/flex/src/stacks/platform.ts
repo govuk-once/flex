@@ -1,6 +1,6 @@
 import type { ValidatedGatewayConfig } from "@flex/service-gateway";
 import { Environment, getEnvConfig } from "@flex/utils";
-import { CfnOutput, Duration } from "aws-cdk-lib";
+import { ArnFormat, CfnOutput, Duration } from "aws-cdk-lib";
 import type { IResource } from "aws-cdk-lib/aws-apigateway";
 import {
   AccessLogFormat,
@@ -35,6 +35,7 @@ import { JourneyAlarms } from "../constructs/alarms/journeys";
 import type { AlarmActionProps } from "../constructs/alarms/types";
 import { WafAlarms } from "../constructs/alarms/waf";
 import { FlexPrivateEgressFunction } from "../constructs/lambda/flex-private-egress-function";
+import { WafRequestLogging } from "../constructs/waf/WafRequestLogging";
 import { ENV_KEYS, STAGE_KEYS } from "../ssm-keys";
 import { applyCheckovSkip } from "../utils/applyCheckovSkip";
 import { getAuthorizerParameterKeys } from "../utils/auth-parameters";
@@ -42,7 +43,7 @@ import { createServiceGateway } from "../utils/create-service-gateway";
 import { createPermissionsBoundary } from "../utils/createPermissionsBoundary";
 import { getPlatformEntry } from "../utils/getEntry";
 
-const { env, stage } = getEnvConfig();
+const { env, persistent, stage } = getEnvConfig();
 
 const STAGE_NAME = "prod";
 
@@ -293,7 +294,18 @@ export class FlexPlatformStack extends BaseStack {
             effect: Effect.DENY,
             principals: [new AnyPrincipal()],
             actions: ["execute-api:Invoke"],
-            resources: ["execute-api:/*"],
+            // Full ARN with a wildcard API ID rather than the `execute-api:/*`
+            // shorthand. API Gateway stores the shorthand expanded, which
+            // CloudFormation reports as permanent drift. A resource policy only
+            // applies to its own API, so `*` here still means this API only.
+            resources: [
+              this.formatArn({
+                service: "execute-api",
+                resource: "*",
+                resourceName: "*",
+                arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+              }),
+            ],
             conditions: {
               StringNotEquals: {
                 "aws:SourceVpce": apiGatewayEndpoint.vpcEndpointId,
@@ -478,6 +490,13 @@ export class FlexPlatformStack extends BaseStack {
       webAclArn: webAcl.attrArn,
       resourceArn: restApiStageArn,
     });
+
+    if (persistent) {
+      new WafRequestLogging(this, "ApiWafRequestLogging", {
+        webAcl,
+        bucketNameSuffix: `flex-${stage}-api`,
+      });
+    }
 
     new WafAlarms(this, "WafApiAlarms", {
       alarmNamePrefix: `${stage}-api-waf`,
