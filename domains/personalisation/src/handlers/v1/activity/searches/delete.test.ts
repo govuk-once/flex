@@ -6,6 +6,7 @@ import { handler } from "./delete";
 
 describe("DELETE /v1/activity/searches", () => {
   const endpoint = "/activity/searches";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 201 when existing searches are updated to remove all terms", async ({
     http,
@@ -13,7 +14,7 @@ describe("DELETE /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: baseSearches,
       })
@@ -34,7 +35,7 @@ describe("DELETE /v1/activity/searches", () => {
   }) => {
     http
       .gateway("udp")
-      .post(endpoint, {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: {
           searches: {

@@ -109,7 +109,7 @@ export const { config, createHandler } = defineGateway({
       },
       response: DomainGroupsSchema,
     },
-    "GET /v1/topics": {
+    "GET /v1/personalisation/preferences/topics": {
       name: "getTopics",
       headers: {
         requestingServiceUserId: {
@@ -119,7 +119,7 @@ export const { config, createHandler } = defineGateway({
       },
       response: domainTopicsSchema,
     },
-    "POST /v1/topics": {
+    "POST /v1/personalisation/preferences/topics": {
       name: "upsertTopics",
       headers: {
         requestingServiceUserId: {
@@ -141,7 +141,7 @@ export const { config, createHandler } = defineGateway({
       body: DomainGroupsSchema,
       response: DomainGroupsSchema,
     },
-    "GET /v1/activity/searches": {
+    "GET /v1/personalisation/activity/searches": {
       name: "getSearches",
       headers: {
         requestingServiceUserId: {
@@ -151,7 +151,7 @@ export const { config, createHandler } = defineGateway({
       },
       response: domainSearchesSchema,
     },
-    "POST /v1/activity/searches": {
+    "POST /v1/personalisation/activity/searches": {
       name: "upsertSearches",
       headers: {
         requestingServiceUserId: {

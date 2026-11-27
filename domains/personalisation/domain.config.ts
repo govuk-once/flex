@@ -30,27 +30,27 @@ export const { config, route, routeContext } = domain({
     udpPostTopics: {
       type: "gateway",
       target: "udp",
-      route: "POST /v1/topics",
+      route: "POST /v1/personalisation/preferences/topics",
       body: UpdateSelectedTopicsRequestSchema,
       response: UpdateSelectedTopicsResponseSchema,
     },
     udpGetTopics: {
       type: "gateway",
       target: "udp",
-      route: "GET /v1/topics",
+      route: "GET /v1/personalisation/preferences/topics",
       response: GetSelectedTopicsResponseSchema,
     },
     udpPostSearches: {
       type: "gateway",
       target: "udp",
-      route: "POST /v1/activity/searches",
+      route: "POST /v1/personalisation/activity/searches",
       body: UserSearchesSchema,
       response: UserSearchResponseSchema,
     },
     udpGetSearches: {
       type: "gateway",
       target: "udp",
-      route: "GET /v1/activity/searches",
+      route: "GET /v1/personalisation/activity/searches",
       response: UserSearchesSchema,
     },
     udpAddVisitedPage: {
@@ -62,13 +62,13 @@ export const { config, route, routeContext } = domain({
     udpSaveLocalAuthority: {
       type: "gateway",
       target: "udp",
-      route: "POST /v1/local-council/*",
+      route: "POST /v1/personalisation/preferences/local-council/*",
       body: LocalAuthoritySchema,
     },
     udpGetLocalAuthority: {
       type: "gateway",
       target: "udp",
-      route: "GET /v1/local-council/*",
+      route: "GET /v1/personalisation/preferences/local-council/*",
       response: LocalAuthorityResponseSchema,
     },
   },

@@ -135,13 +135,13 @@ export const handler = createHandler({
         },
       });
     },
-    "POST /v1/topics": async ({
+    "POST /v1/personalisation/preferences/topics": async ({
       clients: { api },
       resources: { consumerConfig },
       body,
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.post("/v1/topics", {
+      const result = await api.post("/v1/personalisation/preferences/topics", {
         schema: upsertTopicsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
@@ -154,12 +154,12 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data);
     },
-    "GET /v1/topics": async ({
+    "GET /v1/personalisation/preferences/topics": async ({
       clients: { api },
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.get("/v1/topics", {
+      const result = await api.get("/v1/personalisation/preferences/topics", {
         schema: topicsResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
@@ -209,13 +209,13 @@ export const handler = createHandler({
 
       return mapApiResult(result, ({ data }) => data.groups);
     },
-    "POST /v1/activity/searches": async ({
+    "POST /v1/personalisation/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
       body,
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.post("/v1/activity/searches", {
+      const result = await api.post("/v1/personalisation/activity/searches", {
         schema: SearchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,
@@ -227,12 +227,12 @@ export const handler = createHandler({
       });
       return mapApiResult(result, ({ data }) => data);
     },
-    "GET /v1/activity/searches": async ({
+    "GET /v1/personalisation/activity/searches": async ({
       clients: { api },
       resources: { consumerConfig },
       headers: { requestingServiceUserId },
     }) => {
-      const result = await api.get("/v1/activity/searches", {
+      const result = await api.get("/v1/personalisation/activity/searches", {
         schema: SearchesResponseSchema,
         headers: {
           "x-api-key": consumerConfig.apiKey,

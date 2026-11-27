@@ -11,11 +11,12 @@ import { handler } from "./get";
 
 describe("GET /v1/preferences/topics", () => {
   const endpoint = "/preferences/topics";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 200 with single selectedTopic", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get("/topics", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, createTopics(singleTopic));
@@ -32,7 +33,7 @@ describe("GET /v1/preferences/topics", () => {
   it("returns 200 with multiple selectedTopics", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get("/topics", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, createTopics());
@@ -49,7 +50,7 @@ describe("GET /v1/preferences/topics", () => {
   it("returns 200 with empty selectedTopics", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .get("/topics", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(200, createTopics(emptyTopics));
@@ -69,7 +70,7 @@ describe("GET /v1/preferences/topics", () => {
   }) => {
     http
       .gateway("udp")
-      .get("/topics", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(404);
@@ -89,7 +90,7 @@ describe("GET /v1/preferences/topics", () => {
   }) => {
     http
       .gateway("udp")
-      .get("/topics", {
+      .get(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
       })
       .reply(500);

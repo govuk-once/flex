@@ -6,11 +6,12 @@ import { handler } from "./patch";
 
 describe("PATCH /v1/preferences/topics", () => {
   const endpoint = "/preferences/topics";
+  const gatewayEndpoint = `/personalisation${endpoint}`;
 
   it("returns 204 when topics are updated", async ({ http, sdk }) => {
     http
       .gateway("udp")
-      .post("/topics", {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: createTopics(),
       })
@@ -33,7 +34,7 @@ describe("PATCH /v1/preferences/topics", () => {
 
     http
       .gateway("udp")
-      .post("/topics", {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: createTopics(emptyTopics),
       })
@@ -66,7 +67,7 @@ describe("PATCH /v1/preferences/topics", () => {
   }) => {
     http
       .gateway("udp")
-      .post("/topics", {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: createTopics(),
       })
@@ -86,7 +87,7 @@ describe("PATCH /v1/preferences/topics", () => {
   }) => {
     http
       .gateway("udp")
-      .post("/topics", {
+      .post(gatewayEndpoint, {
         headers: { "requesting-service-user-id": userId },
         body: createTopics(),
       })
