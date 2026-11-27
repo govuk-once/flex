@@ -11,7 +11,6 @@ import {
   GetServiceIdentityLinkResponseSchema,
   GetUserPushIdResponseSchema,
   GetUserResponseSchema,
-  GetVisitedPagesResponseSchema,
   JwkSetSchema,
   UpdateNotificationPreferencesOutboundResponseSchema,
   UpdateNotificationPreferencesRequestSchema,
@@ -75,11 +74,6 @@ export const { config, route, routeContext } = domain({
       type: "gateway",
       route: "GET /v1/identities/*",
       response: GetIdentitiesGWResponseSchema,
-    },
-    udpGetVisitedPages: {
-      type: "gateway",
-      route: "GET /v1/activity/pages",
-      response: GetVisitedPagesResponseSchema,
     },
     udpAddVisitedPage: {
       type: "gateway",
@@ -225,14 +219,6 @@ export const { config, route, routeContext } = domain({
         },
       },
       "/activity/pages": {
-        GET: {
-          public: {
-            name: "get-visited-pages",
-            resources: ["privateGatewayUrl"],
-            integrations: ["udpGetVisitedPages"],
-            response: GetVisitedPagesResponseSchema,
-          },
-        },
         POST: {
           public: {
             name: "add-visited-page",

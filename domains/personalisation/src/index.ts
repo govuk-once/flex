@@ -1,5 +1,8 @@
-export type { VisitedPage } from "./schemas/pages";
-export { VisitedPageSchema } from "./schemas/pages";
+export type { GetVisitedPagesResponse, VisitedPage } from "./schemas/pages";
+export {
+  GetVisitedPagesResponseSchema,
+  VisitedPageSchema,
+} from "./schemas/pages";
 export type {
   SearchTerm,
   UpdateUserSearchRequest,

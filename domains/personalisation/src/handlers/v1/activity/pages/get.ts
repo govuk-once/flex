@@ -1,6 +1,5 @@
 import { route } from "@domain";
 import createHttpError from "http-errors";
-import status from "http-status";
 
 export const handler = route(
   "GET /v1/activity/pages",
@@ -16,6 +15,6 @@ export const handler = route(
       throw new createHttpError.BadGateway();
     }
 
-    return { status: status.OK, data: result.data };
+    return { status: 200, data: result.data };
   },
 );

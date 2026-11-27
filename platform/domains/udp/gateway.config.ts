@@ -11,7 +11,10 @@ import {
   domainNotificationsResponseSchema,
   inboundCreateOrUpdateNotificationsRequestSchema,
 } from "./src/schemas/domain/notifications";
-import { domainVisitedPagesSchema } from "./src/schemas/domain/pages";
+import {
+  domainVisitedPagesSchema,
+  inboundAddVisitedPageRequestSchema,
+} from "./src/schemas/domain/pages";
 import { domainSearchesSchema } from "./src/schemas/domain/searches";
 import {
   domainTopicsSchema,

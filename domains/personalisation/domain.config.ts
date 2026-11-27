@@ -2,6 +2,7 @@ import { domain } from "@flex/sdk";
 
 import {
   GetSelectedTopicsResponseSchema,
+  GetVisitedPagesResponseSchema,
   LocalAuthorityResponseSchema,
   LocalAuthoritySchema,
   SearchTermSchema,
@@ -52,6 +53,12 @@ export const { config, route, routeContext } = domain({
       target: "udp",
       route: "GET /v1/activity/searches",
       response: UserSearchesSchema,
+    },
+    udpGetVisitedPages: {
+      type: "gateway",
+      target: "udp",
+      route: "GET /v1/activity/pages",
+      response: GetVisitedPagesResponseSchema,
     },
     udpAddVisitedPage: {
       type: "gateway",
@@ -127,6 +134,14 @@ export const { config, route, routeContext } = domain({
         },
       },
       "/activity/pages": {
+        GET: {
+          public: {
+            name: "get-visited-pages",
+            resources: ["privateGatewayUrl"],
+            integrations: ["udpGetVisitedPages"],
+            response: GetVisitedPagesResponseSchema,
+          },
+        },
         POST: {
           public: {
             name: "add-visited-page",

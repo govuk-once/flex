@@ -9,6 +9,32 @@ describe.runIf(isDomainDeployed(config))(
     describe("/personalisation/v1/activity/pages", () => {
       const endpoint = "/personalisation/v1/activity/pages";
 
+      describe.runIf(isRouteDeployed(config, "GET /v1/activity/pages"))(
+        "GET",
+        () => {
+          it("returns 200 with a list of visited pages", async ({
+            cloudfront,
+            udpUser: _,
+            authHeader,
+          }) => {
+            const result = await cloudfront.client.get(endpoint, {
+              headers: authHeader,
+            });
+
+            expect(result.status).toBe(200);
+            expect(Array.isArray(result.body)).toBe(true);
+          });
+
+          it("returns 401 when no auth header is provided", async ({
+            cloudfront,
+          }) => {
+            const result = await cloudfront.client.get(endpoint);
+
+            expect(result.status).toBe(401);
+          });
+        },
+      );
+
       describe.runIf(isRouteDeployed(config, "POST /v1/activity/pages"))(
         "POST",
         () => {
